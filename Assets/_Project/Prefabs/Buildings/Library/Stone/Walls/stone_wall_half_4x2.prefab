@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 6797833675673818769}
   - component: {fileID: 1965064260052711474}
   - component: {fileID: 1545541017730124860}
-  m_Layer: 0
+  m_Layer: 24
   m_Name: stone_wall_half_4x2
   m_TagString: Climbable
   m_Icon: {fileID: 0}

@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 7551972212064114754}
   - component: {fileID: 3402229098637672325}
   - component: {fileID: 7166588082289270784}
-  m_Layer: 0
+  m_Layer: 24
   m_Name: stone_ramp_4x4
   m_TagString: Climbable
   m_Icon: {fileID: 0}

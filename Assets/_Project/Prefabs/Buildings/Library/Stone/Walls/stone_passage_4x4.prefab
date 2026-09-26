@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 4884064874644678220}
   - component: {fileID: 2150997697547305991}
   - component: {fileID: 1458489904463562458}
-  m_Layer: 0
+  m_Layer: 24
   m_Name: stone_passage_4x4
   m_TagString: Climbable
   m_Icon: {fileID: 0}

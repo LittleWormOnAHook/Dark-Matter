@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 8940154595868186903}
   - component: {fileID: 247387572945943821}
   - component: {fileID: 2689670385906520427}
-  m_Layer: 0
+  m_Layer: 24
   m_Name: stone_wall_tri_r_4x2
   m_TagString: Climbable
   m_Icon: {fileID: 0}

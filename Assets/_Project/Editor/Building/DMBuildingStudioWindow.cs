@@ -11,9 +11,11 @@ namespace Project.EditorTools.Building
     public sealed class DMBuildingStudioWindow : EditorWindow
     {
         const string AssetPath = DMBuildingGhostProfile.AssetPath;
-        static readonly string[] Tabs = { "Settings", "Library" };
+        static readonly string[] Tabs = { "Settings", "Library", "Creation Effects" };
 
         DMBuildingGhostProfile profile;
+        DMBuildingCreationFxProfile fxProfile;
+        SerializedObject fxSerialized;
         Vector2 scrollPosition;
         int tab;
         readonly DMBuildingLibraryPanel libraryPanel = new DMBuildingLibraryPanel();
@@ -53,6 +55,8 @@ namespace Project.EditorTools.Building
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
             if (tab == 1)
                 libraryPanel.Draw();
+            else if (tab == 2)
+                DrawCreationFx();
             else
                 DrawSettings();
             EditorGUILayout.EndScrollView();
@@ -185,6 +189,92 @@ namespace Project.EditorTools.Building
             profile.doorSwingDegrees = EditorGUILayout.FloatField("Swing degrees", profile.doorSwingDegrees);
             profile.doorSwingSeconds = EditorGUILayout.FloatField("Swing duration (s)", profile.doorSwingSeconds);
             profile.doorInteractRangeMeters = EditorGUILayout.FloatField("Interact range (m)", profile.doorInteractRangeMeters);
+        }
+
+        void DrawCreationFx()
+        {
+            if (fxProfile == null)
+            {
+                fxProfile = LoadOrCreateFx();
+                fxSerialized = null;
+            }
+            if (fxSerialized == null || fxSerialized.targetObject != fxProfile)
+                fxSerialized = new SerializedObject(fxProfile);
+
+            DMStudioStyles.DrawSection("Building Creation Effects", DMStudioStyles.ContentPanel, () =>
+            {
+                EditorGUILayout.ObjectField("Asset", fxProfile, typeof(DMBuildingCreationFxProfile), false);
+                EditorGUILayout.HelpBox(
+                    "Plays on a piece the moment a hold-to-build finishes: grow and shrink, bounce up and settle, optional VFX, "
+                    + "optional material swap. The piece always ends on its exact seat. Pieces loaded from a save do not play it.",
+                    MessageType.Info);
+            });
+
+            fxSerialized.Update();
+            DMStudioStyles.DrawSection(null, DMStudioStyles.ContentPanel, () =>
+            {
+                Prop("enabled", "Enabled");
+                EditorGUILayout.Space(4f);
+                EditorGUILayout.LabelField("Pop & bounce", EditorStyles.boldLabel);
+                Prop("duration", "Duration (s)");
+                Prop("scalePunch", "Size punch (0.1 = 10%)");
+                Prop("bounceHeightMeters", "Bounce height (m)");
+                Prop("scaleCurve", "Size curve");
+                Prop("bounceCurve", "Bounce curve");
+                if (GUILayout.Button("Reset curves to smooth hump", GUILayout.Width(220f)))
+                {
+                    Undo.RecordObject(fxProfile, "Reset Creation FX Curves");
+                    fxProfile.scaleCurve = DMBuildingCreationFxProfile.Hump();
+                    fxProfile.bounceCurve = DMBuildingCreationFxProfile.Hump();
+                    EditorUtility.SetDirty(fxProfile);
+                    fxSerialized.Update();
+                }
+            });
+            DMStudioStyles.DrawSection(null, DMStudioStyles.ContentPanel, () =>
+            {
+                EditorGUILayout.LabelField("VFX", EditorStyles.boldLabel);
+                Prop("vfxPrefab", "VFX prefab");
+                Prop("vfxDelay", "Delay (s)");
+                Prop("vfxLifetime", "Lifetime (s)");
+                Prop("vfxAnchor", "Spawn at");
+                Prop("vfxScaleWithPiece", "Scale with piece size");
+            });
+            DMStudioStyles.DrawSection(null, DMStudioStyles.ContentPanel, () =>
+            {
+                EditorGUILayout.LabelField("Material swap", EditorStyles.boldLabel);
+                Prop("swapMaterial", "Swap material");
+                using (new EditorGUI.DisabledScope(!fxProfile.swapMaterial))
+                {
+                    Prop("swapMaterialAsset", "Material");
+                    Prop("swapStart", "Start (s)");
+                    Prop("swapDuration", "Duration (s)");
+                }
+            });
+
+            if (fxSerialized.ApplyModifiedProperties())
+            {
+                EditorUtility.SetDirty(fxProfile);
+                AssetDatabase.SaveAssetIfDirty(fxProfile);
+            }
+        }
+
+        void Prop(string name, string label)
+        {
+            SerializedProperty property = fxSerialized.FindProperty(name);
+            if (property != null)
+                EditorGUILayout.PropertyField(property, new GUIContent(label, property.tooltip));
+        }
+
+        static DMBuildingCreationFxProfile LoadOrCreateFx()
+        {
+            var existing = AssetDatabase.LoadAssetAtPath<DMBuildingCreationFxProfile>(DMBuildingCreationFxProfile.AssetPath);
+            if (existing != null)
+                return existing;
+
+            var created = CreateInstance<DMBuildingCreationFxProfile>();
+            AssetDatabase.CreateAsset(created, DMBuildingCreationFxProfile.AssetPath);
+            AssetDatabase.SaveAssets();
+            return created;
         }
 
         static DMBuildingGhostProfile LoadOrCreate()

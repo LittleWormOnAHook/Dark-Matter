@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 3403379264702235430}
   - component: {fileID: 3390103158789730537}
   - component: {fileID: 8467325339051990765}
-  m_Layer: 0
+  m_Layer: 24
   m_Name: stone_hatch_4x4
   m_TagString: Climbable
   m_Icon: {fileID: 0}

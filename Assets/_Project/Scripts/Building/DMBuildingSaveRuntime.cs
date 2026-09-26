@@ -47,7 +47,7 @@ namespace Project.Building
                 entries[i] = new BuiltPieceSaveEntry
                 {
                     pieceId = ghost.PieceId,
-                    position = t.position,
+                    position = DMBuildingCreationFx.RestPosition(ghost),
                     rotation = t.rotation,
                     materialVariantId = ghost.MaterialVariantId,
                     paidItemId = ghost.PaidItem != null ? ghost.PaidItem.name : null,

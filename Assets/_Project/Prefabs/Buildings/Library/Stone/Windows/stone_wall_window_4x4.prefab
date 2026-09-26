@@ -11,9 +11,9 @@ GameObject:
   - component: {fileID: 6706202264912204781}
   - component: {fileID: 3842414580456665198}
   - component: {fileID: 4822776885793020748}
-  m_Layer: 0
+  m_Layer: 24
   m_Name: GlassPane
-  m_TagString: Untagged
+  m_TagString: Climbable
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -102,7 +102,7 @@ GameObject:
   - component: {fileID: 2260974935928483624}
   - component: {fileID: 1823590163698063773}
   - component: {fileID: 621635388912594244}
-  m_Layer: 0
+  m_Layer: 24
   m_Name: stone_wall_window_4x4
   m_TagString: Climbable
   m_Icon: {fileID: 0}

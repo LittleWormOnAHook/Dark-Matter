@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 3755091005357253718}
   - component: {fileID: 7929709366385695357}
   - component: {fileID: 1249185300174380737}
-  m_Layer: 0
+  m_Layer: 24
   m_Name: stone_railing_4x1
   m_TagString: Climbable
   m_Icon: {fileID: 0}

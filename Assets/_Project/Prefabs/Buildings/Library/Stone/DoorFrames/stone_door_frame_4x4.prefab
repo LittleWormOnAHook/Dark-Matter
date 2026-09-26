@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 5429754587414261592}
   - component: {fileID: 9038870008190158265}
   - component: {fileID: 1552310876980713781}
-  m_Layer: 0
+  m_Layer: 24
   m_Name: stone_door_frame_4x4
   m_TagString: Climbable
   m_Icon: {fileID: 0}

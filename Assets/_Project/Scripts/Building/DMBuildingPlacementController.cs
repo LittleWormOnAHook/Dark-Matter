@@ -10,7 +10,7 @@ namespace Project.Building
     /// Preview ghost follows aim. Hold left click to create it when the seat is green.
     /// Red means not enough of the style cost item (Rock, Iron Ore, Silicate Ore) in inventory or storage. Hold right click to destroy.
     /// </summary>
-    public sealed class DMBuildingPlacementController : MonoBehaviour
+    public sealed partial class DMBuildingPlacementController : MonoBehaviour
     {
         static DMBuildingPlacementController instance;
         static Material ghostMaterial;
@@ -277,6 +277,7 @@ namespace Project.Building
                     && DMBuildingCatalog.TrySpend(aimedPiece, out ItemData paid))
                 {
                     lastPlaced = Commit(aimedPiece, aimedPosition, aimedRotation, paid);
+                    DMBuildingCreationFx.Play(lastPlaced);
                     buildHold = 0f;
                     DMUiToolkitBuildingHotbar.SetHoldRing(false, 0f, Vector3.zero);
                 }
@@ -309,7 +310,7 @@ namespace Project.Building
             }
         }
 
-        static bool TryAim(out DMBuildingPiece piece, out Vector3 position, out Quaternion rotation, out bool canCommit)
+        static bool TryAimCore(out DMBuildingPiece piece, out Vector3 position, out Quaternion rotation, out bool canCommit)
         {
             piece = DMBuildingMode.SelectedPiece;
             position = default;

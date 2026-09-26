@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 933046607623490195}
   - component: {fileID: 7665136415514759932}
   - component: {fileID: 5405557000525246994}
-  m_Layer: 0
+  m_Layer: 24
   m_Name: stone_foundation_tri_4x4
   m_TagString: Climbable
   m_Icon: {fileID: 0}

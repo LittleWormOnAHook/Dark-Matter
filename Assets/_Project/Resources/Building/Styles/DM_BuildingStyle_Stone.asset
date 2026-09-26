@@ -47,6 +47,24 @@ MonoBehaviour:
     hatchOpeningMeters: 1.4
     stairSteps: 12
     railingPosts: 3
+    wideWindowWidthMeters: 3.2
+    wideWindowHeightMeters: 1.8
+    wideWindowSillMeters: 1.1
+    slitWidthMeters: 0.3
+    slitHeightMeters: 1.4
+    slitSillMeters: 1.5
+    archWidthMeters: 2.8
+    archSpringMeters: 2.2
+    archSegments: 12
+    ventWidthMeters: 2
+    ventHeightMeters: 0.8
+    ventSillMeters: 2.7
+    ventSlats: 4
+    foundationStepCount: 4
+    stairwellOpeningMeters: 2.8
+    spiralSteps: 16
+    ladderRungs: 12
+    rooftopEdgeHeightMeters: 0.6
   parts:
   - id: stone_foundation_4x4
     displayName: Foundation
@@ -296,7 +314,7 @@ MonoBehaviour:
     icon: {fileID: 2800000, guid: 7afc51876853e454db453177578e9fc2, type: 3}
     cost: 1
     enabled: 1
-    applyStyleFinish: 0
+    applyStyleFinish: 1
     surfaceOffsetMeters: 0.001
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 180, y: 90, z: -90}
@@ -308,7 +326,7 @@ MonoBehaviour:
     icon: {fileID: 2800000, guid: a17835fd78d325043ae29cd61a1fb281, type: 3}
     cost: 2
     enabled: 1
-    applyStyleFinish: 0
+    applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
@@ -381,6 +399,294 @@ MonoBehaviour:
     cost: 1
     enabled: 1
     applyStyleFinish: 0
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_foundation_steps_4x2
+    displayName: Foundation Steps
+    shape: 22
+    category: 0
+    prefab: {fileID: 1366414338328250906, guid: cf0a7dbe7d68dd048a1769114e1723ed, type: 3}
+    icon: {fileID: 2800000, guid: 9ec8c90d8ffd74147828d8f90794e076, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_support_pillar
+    displayName: Support Pillar
+    shape: 23
+    category: 0
+    prefab: {fileID: 2418995246445491858, guid: 4820db56ae90a334fbe4011d39cf0583, type: 3}
+    icon: {fileID: 2800000, guid: 133f57d95c25a884da61a43d9d78c5a3, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_floor_stairwell_4x4
+    displayName: Stairwell Floor
+    shape: 24
+    category: 2
+    prefab: {fileID: 1813757435382065974, guid: dd745b550bfee7c4795db67611053774, type: 3}
+    icon: {fileID: 2800000, guid: b8e355531abce804781ffbb7f9a14f85, type: 3}
+    cost: 3
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_balcony_4x2
+    displayName: Balcony
+    shape: 25
+    category: 2
+    prefab: {fileID: 1989384684245505988, guid: a05ec14a28d83df468d156a6262766cb, type: 3}
+    icon: {fileID: 2800000, guid: 8dea7454c3a832f42ba90a2ab90e8249, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_wall_quarter_4x1
+    displayName: Quarter Wall
+    shape: 26
+    category: 1
+    prefab: {fileID: 11088422968220948, guid: dcf5001ff07c9b54bb5c7dec93f8522b, type: 3}
+    icon: {fileID: 2800000, guid: eb1ccd62806a67b41971acfa5ed96ca2, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_wall_window_wide_4x4
+    displayName: Wide Window
+    shape: 27
+    category: 1
+    prefab: {fileID: 434214118110289348, guid: af05f0a8b08f5d843b6276e2ba654e29, type: 3}
+    icon: {fileID: 2800000, guid: e31014310cd5e1947a181fa404249347, type: 3}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_wall_slit_4x4
+    displayName: Slit Window
+    shape: 28
+    category: 1
+    prefab: {fileID: 1065591350715743452, guid: f94cd8dd42db34649bbfe8aa25755f01, type: 3}
+    icon: {fileID: 2800000, guid: 743fe16ffd8695e408afec9714772134, type: 3}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_wall_arch_4x4
+    displayName: Archway
+    shape: 29
+    category: 1
+    prefab: {fileID: 4694490403323502440, guid: 4dca06dab342b0c4db6ab71b0286bb16, type: 3}
+    icon: {fileID: 2800000, guid: 67b9934f4ec81a441a209a062924387e, type: 3}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_wall_tri_inv_l_4x2
+    displayName: Inverted Tri Wall L
+    shape: 30
+    category: 1
+    prefab: {fileID: 2829010593317407170, guid: 9749c3feeab2c144ab72cc73b506e78b, type: 3}
+    icon: {fileID: 2800000, guid: 4c013ec43af281549befbd7dd5ed74f3, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_wall_tri_inv_r_4x2
+    displayName: Inverted Tri Wall R
+    shape: 31
+    category: 1
+    prefab: {fileID: 1981556231236086816, guid: 7304553e8d515694894becb0efa3a6ce, type: 3}
+    icon: {fileID: 2800000, guid: 197e1e30a66091347aa0e56b7e4e66e8, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_wall_vent_4x4
+    displayName: Vent Wall
+    shape: 32
+    category: 1
+    prefab: {fileID: 983253053157632311, guid: 584ff99a6fa6b2e4b857ce0131ff410b, type: 3}
+    icon: {fileID: 2800000, guid: 60fae083ea1eef048a31abd7c99133d1, type: 3}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_column_4m
+    displayName: Column
+    shape: 33
+    category: 3
+    prefab: {fileID: 6441193707060051089, guid: 1799f229ab76a1140bd6af23a857a383, type: 3}
+    icon: {fileID: 2800000, guid: 24aee051ec6b5734c8d97699f14a4786, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_column_half_2m
+    displayName: Half Column
+    shape: 34
+    category: 3
+    prefab: {fileID: 2712355809972730964, guid: e68936fef1720044085e0b5d25c23981, type: 3}
+    icon: {fileID: 2800000, guid: 8aa51a3fedc16a148a6343a1a3555a8b, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_beam_4m
+    displayName: Beam
+    shape: 35
+    category: 3
+    prefab: {fileID: 117155119311815417, guid: 637df42f3c2a0ff4793e01132dbfea82, type: 3}
+    icon: {fileID: 2800000, guid: b667808a0ff12bd46a75630513d4e37a, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_brace_4x4
+    displayName: Angled Brace
+    shape: 36
+    category: 3
+    prefab: {fileID: 1715431352871319782, guid: 80f45d56d25ee6b48ba10b5e2058f9d2, type: 3}
+    icon: {fileID: 2800000, guid: 1efef80d07bd3f0419db3c4eb5bacef3, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_railing_half_4x05
+    displayName: Half Railing
+    shape: 37
+    category: 3
+    prefab: {fileID: 438392352977210319, guid: e68ab925549a4f847874af25c8dca184, type: 3}
+    icon: {fileID: 2800000, guid: 907e66a739d9fdc40889ca2885cb407c, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_stairs_half_4x2
+    displayName: Half Stairs
+    shape: 38
+    category: 3
+    prefab: {fileID: 3038547013698956361, guid: 78bef6aafc3d9e5428c3f121448eecc4, type: 3}
+    icon: {fileID: 2800000, guid: 4fe40b3333f9c85468c061d67998dd93, type: 3}
+    cost: 3
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_stairs_spiral_4x4
+    displayName: Spiral Stairs
+    shape: 39
+    category: 3
+    prefab: {fileID: 967927779186730435, guid: 67c873d607d3bc7468cd3cf39d9761b6, type: 3}
+    icon: {fileID: 2800000, guid: 8ec2e8357f521f048b4bf9adb7396499, type: 3}
+    cost: 6
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_ramp_half_4x2
+    displayName: Half Ramp
+    shape: 40
+    category: 3
+    prefab: {fileID: 4633724516333325390, guid: 213f1744b7d44f744b3bd17da83fcade, type: 3}
+    icon: {fileID: 2800000, guid: a5fa3539ea172c34db32f177427257e2, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_ladder_4m
+    displayName: Ladder
+    shape: 41
+    category: 3
+    prefab: {fileID: 4628073997107962050, guid: 4fb198d920887c14f8f8d61a928eee3c, type: 3}
+    icon: {fileID: 2800000, guid: 45809402e60ceb44d8672f2b21e1b38b, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_roof_steep_4x4
+    displayName: Steep Roof
+    shape: 42
+    category: 2
+    prefab: {fileID: 7702070906139566495, guid: 0438fb321e6fcd24cbc3241588d9f1bf, type: 3}
+    icon: {fileID: 2800000, guid: 2f959c66a64a2ab43ab8ef15491a55ee, type: 3}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_roof_ridge_4m
+    displayName: Ridge Cap
+    shape: 43
+    category: 2
+    prefab: {fileID: 1102475125546034326, guid: 078863d85233b7b4bbf3ebb5d1fd9c54, type: 3}
+    icon: {fileID: 2800000, guid: 3ef670211e3d0a241b2b216ccde03756, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_rooftop_4x4
+    displayName: Flat Rooftop
+    shape: 44
+    category: 2
+    prefab: {fileID: 947649649813504593, guid: 96c298dda156ce5418e4a3191d157433, type: 3}
+    icon: {fileID: 2800000, guid: bde74474378eebb4aba63c523f83564b, type: 3}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_hatch_lid
+    displayName: Hatch Lid
+    shape: 45
+    category: 4
+    prefab: {fileID: 5726224393698788877, guid: 86d5ca94c7d728b4593c6b82fb22ecdd, type: 3}
+    icon: {fileID: 2800000, guid: 9716f5ab5f5c82c46970e9daf20bf92f, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}

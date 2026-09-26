@@ -50,6 +50,26 @@ namespace Project.Building
         public const float RailingHeight = 1f;
         public const float RailingThickness = 0.15f;
 
+        // Kit phase 2 (0926) snap sizes.
+        public const float QuarterWallHeight = 1f;
+        public const float HalfRailingHeight = 0.5f;
+        public const float HalfRise = 2f;
+        public const float SteepRoofRise = 4f;
+        /// <summary>Foundation steps and balcony slabs reach this far out past the edge they hang on.</summary>
+        public const float OverhangDepth = 2f;
+        public const float FoundationStepsHeight = 1.2f;
+        public const float PillarWidth = 0.8f;
+        public const float PillarLength = 4f;
+        public const float ColumnWidth = 0.5f;
+        public const float BeamHeight = 0.4f;
+        public const float BeamDepth = 0.4f;
+        public const float BraceDepth = 0.25f;
+        public const float LadderWidth = 0.8f;
+        public const float LadderDepth = 0.12f;
+        public const float RidgeCapWidth = 1.2f;
+        public const float RidgeCapHeight = 0.35f;
+        public const float HatchLidThickness = 0.1f;
+
         /// <summary>Kit template. Suffixes are appended to a style prefix (stone_, iron_, silicate_).</summary>
         public struct KitPartTemplate
         {
@@ -89,6 +109,31 @@ namespace Project.Building
             new KitPartTemplate("roof_4x4", "Roof", DMBuildingShape.Roof, 3),
             new KitPartTemplate("roof_corner_4x4", "Roof Corner", DMBuildingShape.RoofCorner, 3),
             new KitPartTemplate("roof_inner_4x4", "Roof Inner", DMBuildingShape.RoofInner, 4),
+            // Kit phase 2 (0926)
+            new KitPartTemplate("foundation_steps_4x2", "Foundation Steps", DMBuildingShape.FoundationSteps, 2),
+            new KitPartTemplate("support_pillar", "Support Pillar", DMBuildingShape.SupportPillar, 2),
+            new KitPartTemplate("floor_stairwell_4x4", "Stairwell Floor", DMBuildingShape.StairwellFloor, 3),
+            new KitPartTemplate("balcony_4x2", "Balcony", DMBuildingShape.Balcony, 2),
+            new KitPartTemplate("wall_quarter_4x1", "Quarter Wall", DMBuildingShape.QuarterWall, 1),
+            new KitPartTemplate("wall_window_wide_4x4", "Wide Window", DMBuildingShape.WideWindow, 4),
+            new KitPartTemplate("wall_slit_4x4", "Slit Window", DMBuildingShape.SlitWindow, 4),
+            new KitPartTemplate("wall_arch_4x4", "Archway", DMBuildingShape.Archway, 4),
+            new KitPartTemplate("wall_tri_inv_l_4x2", "Inverted Tri Wall L", DMBuildingShape.InvTriWallLeft, 2),
+            new KitPartTemplate("wall_tri_inv_r_4x2", "Inverted Tri Wall R", DMBuildingShape.InvTriWallRight, 2),
+            new KitPartTemplate("wall_vent_4x4", "Vent Wall", DMBuildingShape.VentWall, 4),
+            new KitPartTemplate("column_4m", "Column", DMBuildingShape.Column, 2),
+            new KitPartTemplate("column_half_2m", "Half Column", DMBuildingShape.HalfColumn, 1),
+            new KitPartTemplate("beam_4m", "Beam", DMBuildingShape.Beam, 2),
+            new KitPartTemplate("brace_4x4", "Angled Brace", DMBuildingShape.Brace, 1),
+            new KitPartTemplate("railing_half_4x05", "Half Railing", DMBuildingShape.HalfRailing, 1),
+            new KitPartTemplate("stairs_half_4x2", "Half Stairs", DMBuildingShape.HalfStairs, 3),
+            new KitPartTemplate("stairs_spiral_4x4", "Spiral Stairs", DMBuildingShape.SpiralStairs, 6),
+            new KitPartTemplate("ramp_half_4x2", "Half Ramp", DMBuildingShape.HalfRamp, 2),
+            new KitPartTemplate("ladder_4m", "Ladder", DMBuildingShape.Ladder, 1),
+            new KitPartTemplate("roof_steep_4x4", "Steep Roof", DMBuildingShape.SteepRoof, 4),
+            new KitPartTemplate("roof_ridge_4m", "Ridge Cap", DMBuildingShape.RidgeCap, 1),
+            new KitPartTemplate("rooftop_4x4", "Flat Rooftop", DMBuildingShape.Rooftop, 4),
+            new KitPartTemplate("hatch_lid", "Hatch Lid", DMBuildingShape.HatchLid, 1),
         };
 
         static readonly List<DMBuildingPiece> pieces = new List<DMBuildingPiece>();
@@ -245,7 +290,30 @@ namespace Project.Building
                 case DMBuildingShape.TriWallLeft:
                 case DMBuildingShape.TriWallRight:
                 case DMBuildingShape.Railing:
+                case DMBuildingShape.QuarterWall:
+                case DMBuildingShape.WideWindow:
+                case DMBuildingShape.SlitWindow:
+                case DMBuildingShape.Archway:
+                case DMBuildingShape.InvTriWallLeft:
+                case DMBuildingShape.InvTriWallRight:
+                case DMBuildingShape.VentWall:
+                case DMBuildingShape.Brace:
+                case DMBuildingShape.HalfRailing:
+                case DMBuildingShape.Ladder:
                     return DMBuildingSnap.Edge;
+                case DMBuildingShape.SupportPillar:
+                    return DMBuildingSnap.Under;
+                case DMBuildingShape.Column:
+                case DMBuildingShape.HalfColumn:
+                    return DMBuildingSnap.Corner;
+                case DMBuildingShape.Beam:
+                case DMBuildingShape.RidgeCap:
+                    return DMBuildingSnap.Beam;
+                case DMBuildingShape.FoundationSteps:
+                case DMBuildingShape.Balcony:
+                    return DMBuildingSnap.Overhang;
+                case DMBuildingShape.HatchLid:
+                    return DMBuildingSnap.Lid;
                 case DMBuildingShape.Door:
                     return DMBuildingSnap.Door;
                 case DMBuildingShape.SurfaceItem:
@@ -261,7 +329,35 @@ namespace Project.Building
             {
                 case DMBuildingShape.Foundation:
                 case DMBuildingShape.TriFoundation:
+                case DMBuildingShape.FoundationSteps:
+                case DMBuildingShape.SupportPillar:
                     return DMBuildingCategory.Foundations;
+                case DMBuildingShape.QuarterWall:
+                case DMBuildingShape.WideWindow:
+                case DMBuildingShape.SlitWindow:
+                case DMBuildingShape.Archway:
+                case DMBuildingShape.InvTriWallLeft:
+                case DMBuildingShape.InvTriWallRight:
+                case DMBuildingShape.VentWall:
+                    return DMBuildingCategory.Walls;
+                case DMBuildingShape.StairwellFloor:
+                case DMBuildingShape.Balcony:
+                case DMBuildingShape.SteepRoof:
+                case DMBuildingShape.RidgeCap:
+                case DMBuildingShape.Rooftop:
+                    return DMBuildingCategory.FloorsAndRoofs;
+                case DMBuildingShape.Column:
+                case DMBuildingShape.HalfColumn:
+                case DMBuildingShape.Beam:
+                case DMBuildingShape.Brace:
+                case DMBuildingShape.HalfRailing:
+                case DMBuildingShape.HalfStairs:
+                case DMBuildingShape.SpiralStairs:
+                case DMBuildingShape.HalfRamp:
+                case DMBuildingShape.Ladder:
+                    return DMBuildingCategory.StructureAndStairs;
+                case DMBuildingShape.HatchLid:
+                    return DMBuildingCategory.Doors;
                 case DMBuildingShape.Wall:
                 case DMBuildingShape.HalfWall:
                 case DMBuildingShape.Window:
@@ -323,6 +419,49 @@ namespace Project.Building
                 case DMBuildingShape.RoofCorner:
                 case DMBuildingShape.RoofInner:
                     return new Vector3(ModuleMeters, RoofRise, ModuleMeters);
+                // Kit phase 2 (0926)
+                case DMBuildingShape.FoundationSteps:
+                    return new Vector3(ModuleMeters, FoundationStepsHeight, OverhangDepth);
+                case DMBuildingShape.SupportPillar:
+                    return new Vector3(PillarWidth, PillarLength, PillarWidth);
+                case DMBuildingShape.StairwellFloor:
+                case DMBuildingShape.Rooftop:
+                    return new Vector3(ModuleMeters, SlabThickness, ModuleMeters);
+                case DMBuildingShape.Balcony:
+                    return new Vector3(ModuleMeters, SlabThickness, OverhangDepth);
+                case DMBuildingShape.QuarterWall:
+                    return new Vector3(ModuleMeters, QuarterWallHeight, WallThickness);
+                case DMBuildingShape.WideWindow:
+                case DMBuildingShape.SlitWindow:
+                case DMBuildingShape.Archway:
+                case DMBuildingShape.VentWall:
+                    return new Vector3(ModuleMeters, StoryHeight, WallThickness);
+                case DMBuildingShape.InvTriWallLeft:
+                case DMBuildingShape.InvTriWallRight:
+                    return new Vector3(ModuleMeters, RoofRise, WallThickness);
+                case DMBuildingShape.Column:
+                    return new Vector3(ColumnWidth, StoryHeight, ColumnWidth);
+                case DMBuildingShape.HalfColumn:
+                    return new Vector3(ColumnWidth, HalfRise, ColumnWidth);
+                case DMBuildingShape.Beam:
+                    return new Vector3(ModuleMeters, BeamHeight, BeamDepth);
+                case DMBuildingShape.Brace:
+                    return new Vector3(ModuleMeters, StoryHeight, BraceDepth);
+                case DMBuildingShape.HalfRailing:
+                    return new Vector3(ModuleMeters, HalfRailingHeight, RailingThickness);
+                case DMBuildingShape.HalfStairs:
+                case DMBuildingShape.HalfRamp:
+                    return new Vector3(ModuleMeters, HalfRise, ModuleMeters);
+                case DMBuildingShape.SpiralStairs:
+                    return new Vector3(ModuleMeters, StoryHeight, ModuleMeters);
+                case DMBuildingShape.Ladder:
+                    return new Vector3(LadderWidth, StoryHeight, LadderDepth);
+                case DMBuildingShape.SteepRoof:
+                    return new Vector3(ModuleMeters, SteepRoofRise, ModuleMeters);
+                case DMBuildingShape.RidgeCap:
+                    return new Vector3(ModuleMeters, RidgeCapHeight, RidgeCapWidth);
+                case DMBuildingShape.HatchLid:
+                    return new Vector3(1.6f, HatchLidThickness, 1.6f);
             }
 
             if (sizeOverride.x > 0.001f && sizeOverride.y > 0.001f && sizeOverride.z > 0.001f)
@@ -431,7 +570,11 @@ namespace Project.Building
             return shape == DMBuildingShape.Wall
                 || shape == DMBuildingShape.Window
                 || shape == DMBuildingShape.DoorFrame
-                || shape == DMBuildingShape.Passage;
+                || shape == DMBuildingShape.Passage
+                || shape == DMBuildingShape.WideWindow
+                || shape == DMBuildingShape.SlitWindow
+                || shape == DMBuildingShape.Archway
+                || shape == DMBuildingShape.VentWall;
         }
 
         public static bool IsFoundation(string pieceId)
@@ -446,7 +589,8 @@ namespace Project.Building
 
         public static bool IsDoor(string pieceId)
         {
-            return ShapeOf(pieceId) == DMBuildingShape.Door;
+            DMBuildingShape shape = ShapeOf(pieceId);
+            return shape == DMBuildingShape.Door || shape == DMBuildingShape.HatchLid;
         }
 
         public static bool IsDoorFrame(string pieceId)
@@ -493,7 +637,10 @@ namespace Project.Building
         public static bool IsCeiling(string pieceId)
         {
             DMBuildingShape shape = ShapeOf(pieceId);
-            return shape == DMBuildingShape.Ceiling || shape == DMBuildingShape.Hatch;
+            return shape == DMBuildingShape.Ceiling
+                || shape == DMBuildingShape.Hatch
+                || shape == DMBuildingShape.StairwellFloor
+                || shape == DMBuildingShape.Rooftop;
         }
 
         /// <summary>Flat walkable slabs above the foundation layer (floor, ceiling, hatch, tri floor).</summary>
@@ -503,13 +650,16 @@ namespace Project.Building
             return shape == DMBuildingShape.Floor
                 || shape == DMBuildingShape.Ceiling
                 || shape == DMBuildingShape.Hatch
-                || shape == DMBuildingShape.TriFloor;
+                || shape == DMBuildingShape.TriFloor
+                || shape == DMBuildingShape.StairwellFloor
+                || shape == DMBuildingShape.Rooftop;
         }
 
         /// <summary>Wall-like pieces another wall can stack on or a slab can sit on.</summary>
         public static bool IsStackableWall(string pieceId)
         {
-            return IsVerticalSupport(pieceId) || ShapeOf(pieceId) == DMBuildingShape.HalfWall;
+            DMBuildingShape shape = ShapeOf(pieceId);
+            return IsVerticalSupport(pieceId) || shape == DMBuildingShape.HalfWall || shape == DMBuildingShape.QuarterWall;
         }
 
         public static bool IsStackLayerAllowed(int layer)
@@ -523,7 +673,27 @@ namespace Project.Building
             return shape == DMBuildingShape.Foundation
                 || shape == DMBuildingShape.Floor
                 || shape == DMBuildingShape.Ceiling
-                || shape == DMBuildingShape.Hatch;
+                || shape == DMBuildingShape.Hatch
+                || shape == DMBuildingShape.StairwellFloor
+                || shape == DMBuildingShape.Rooftop;
+        }
+
+        public static bool IsColumn(string pieceId)
+        {
+            DMBuildingShape shape = ShapeOf(pieceId);
+            return shape == DMBuildingShape.Column || shape == DMBuildingShape.HalfColumn;
+        }
+
+        public static bool IsHatch(string pieceId)
+        {
+            return ShapeOf(pieceId) == DMBuildingShape.Hatch;
+        }
+
+        /// <summary>Roof slopes with a straight ridge along local +Z (ridge caps seat on these).</summary>
+        public static bool IsRidgeRoof(string pieceId)
+        {
+            DMBuildingShape shape = ShapeOf(pieceId);
+            return shape == DMBuildingShape.Roof || shape == DMBuildingShape.SteepRoof;
         }
 
         // ---- hotbar lists ----
@@ -779,7 +949,17 @@ namespace Project.Building
         Edge,
         Door,
         /// <summary>Sticks to the face of a built piece (lights, decorations).</summary>
-        Surface
+        Surface,
+        /// <summary>Kit phase 2: hangs under a foundation (support pillar).</summary>
+        Under,
+        /// <summary>Kit phase 2: stands on a grid corner point (columns).</summary>
+        Corner,
+        /// <summary>Kit phase 2: lies along a wall top, between column tops, or on a roof ridge.</summary>
+        Beam,
+        /// <summary>Kit phase 2: hangs off the outside of a foundation or floor edge (foundation steps, balcony).</summary>
+        Overhang,
+        /// <summary>Kit phase 2: lies in a built hatch opening (hatch lid).</summary>
+        Lid
     }
 
     public sealed class DMBuildingPiece

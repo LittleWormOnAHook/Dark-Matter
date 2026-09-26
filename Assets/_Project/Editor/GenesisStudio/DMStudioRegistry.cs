@@ -467,6 +467,13 @@ new DMStudioSubtab(
                             playModeSave: true,
                             sectionFilter: DMStudioProfileSectionFilter.BuildingDoorOnly),
                         new DMStudioSubtab(
+                            "building-creation-fx",
+                            "Creation Effects",
+                            "Pop, bounce, VFX and material swap when a hold-to-build finishes.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Building/DM_BuildingCreationFxProfile.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
                             "building-library",
                             "Library",
                             "Build styles (Stone, Iron, Silicate, ...): each kit's cost item, finishes, kit shapes and parts with prefab, icon, shape and cost.",

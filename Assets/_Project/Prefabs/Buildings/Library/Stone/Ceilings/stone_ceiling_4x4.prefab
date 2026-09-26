@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 4162685158853297309}
   - component: {fileID: 1676096619013518007}
   - component: {fileID: 6834420817746228734}
-  m_Layer: 0
+  m_Layer: 24
   m_Name: stone_ceiling_4x4
   m_TagString: Climbable
   m_Icon: {fileID: 0}

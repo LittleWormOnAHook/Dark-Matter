@@ -51,6 +51,24 @@ MonoBehaviour:
     hatchOpeningMeters: 1.4
     stairSteps: 12
     railingPosts: 3
+    wideWindowWidthMeters: 3.2
+    wideWindowHeightMeters: 1.8
+    wideWindowSillMeters: 1.1
+    slitWidthMeters: 0.3
+    slitHeightMeters: 1.4
+    slitSillMeters: 1.5
+    archWidthMeters: 2.8
+    archSpringMeters: 2.2
+    archSegments: 12
+    ventWidthMeters: 2
+    ventHeightMeters: 0.8
+    ventSillMeters: 2.7
+    ventSlats: 4
+    foundationStepCount: 4
+    stairwellOpeningMeters: 2.8
+    spiralSteps: 16
+    ladderRungs: 12
+    rooftopEdgeHeightMeters: 0.6
   parts:
   - id: silicate_foundation_4x4
     displayName: Foundation
@@ -373,6 +391,294 @@ MonoBehaviour:
     cost: 1
     enabled: 1
     applyStyleFinish: 0
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_foundation_steps_4x2
+    displayName: Foundation Steps
+    shape: 22
+    category: 0
+    prefab: {fileID: 4193555753086014306, guid: 0607ca7e68fe77348afb482b938c6411, type: 3}
+    icon: {fileID: 2800000, guid: 5b17b8c10a66e114da9bc31479aecabf, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_support_pillar
+    displayName: Support Pillar
+    shape: 23
+    category: 0
+    prefab: {fileID: 6785108026595169234, guid: 9a1f32befdcf0b1499a692288904981d, type: 3}
+    icon: {fileID: 2800000, guid: 08ad90b1ed0372d48ab9daec56ee4fab, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_floor_stairwell_4x4
+    displayName: Stairwell Floor
+    shape: 24
+    category: 2
+    prefab: {fileID: 541681518238009080, guid: d7a252e83a17dad4192bfed21b363d1f, type: 3}
+    icon: {fileID: 2800000, guid: e6abfa08197b4f847a36a5b6d96ef3d7, type: 3}
+    cost: 3
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_balcony_4x2
+    displayName: Balcony
+    shape: 25
+    category: 2
+    prefab: {fileID: 531887587697358966, guid: 51bf3ea6fe1efa64b800ced9a0dce405, type: 3}
+    icon: {fileID: 2800000, guid: 02f3b3a5260b3d44b9e4af782702d682, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_wall_quarter_4x1
+    displayName: Quarter Wall
+    shape: 26
+    category: 1
+    prefab: {fileID: 1469629289282360552, guid: c5eb4c904b4babe4da8495765bdf8b5d, type: 3}
+    icon: {fileID: 2800000, guid: cdc63232ad1a3cc4a93abbee25445bf5, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_wall_window_wide_4x4
+    displayName: Wide Window
+    shape: 27
+    category: 1
+    prefab: {fileID: 1277970264290229742, guid: 444382bb09efcea4289a5526463989c3, type: 3}
+    icon: {fileID: 2800000, guid: c5b6fa8ef3adcce47bef2d0af0976fa8, type: 3}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_wall_slit_4x4
+    displayName: Slit Window
+    shape: 28
+    category: 1
+    prefab: {fileID: 7793233979648260622, guid: 4ac059e2dfecd6a49bedc55c52ac14c2, type: 3}
+    icon: {fileID: 2800000, guid: 3b4151bb8f3e4d94ca429149c1c413f3, type: 3}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_wall_arch_4x4
+    displayName: Archway
+    shape: 29
+    category: 1
+    prefab: {fileID: 3783506488148259681, guid: 401e45e76ed9614429dbcabb37beea6a, type: 3}
+    icon: {fileID: 2800000, guid: 9152bea126de7454e86940026e15bd6c, type: 3}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_wall_tri_inv_l_4x2
+    displayName: Inverted Tri Wall L
+    shape: 30
+    category: 1
+    prefab: {fileID: 1138069177100090360, guid: e82455287a0403946a2d7dfc44b5e40d, type: 3}
+    icon: {fileID: 2800000, guid: 7c5e9618f87f71e44bc384e5db618793, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_wall_tri_inv_r_4x2
+    displayName: Inverted Tri Wall R
+    shape: 31
+    category: 1
+    prefab: {fileID: 3671335028066298440, guid: 6953b17aa67824b4296a523a69a508a2, type: 3}
+    icon: {fileID: 2800000, guid: 836e760d9cce4d543b295f91f825f618, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_wall_vent_4x4
+    displayName: Vent Wall
+    shape: 32
+    category: 1
+    prefab: {fileID: 253500998146785298, guid: d881273f025a7f640a35d3e32f29968c, type: 3}
+    icon: {fileID: 2800000, guid: 10ef04478cbf3134abcc7fec803924df, type: 3}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_column_4m
+    displayName: Column
+    shape: 33
+    category: 3
+    prefab: {fileID: 6059091420445231938, guid: c5d2beb9d7935794d86af2e6e7c60f64, type: 3}
+    icon: {fileID: 2800000, guid: 4233fee5fe3b73241b4f93c3e7c269ca, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_column_half_2m
+    displayName: Half Column
+    shape: 34
+    category: 3
+    prefab: {fileID: 5500369831016439678, guid: 4328f913c2bd98d44a8dde206cc6f228, type: 3}
+    icon: {fileID: 2800000, guid: d92c03fd5d9ecc94bad5de9275d9ead8, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_beam_4m
+    displayName: Beam
+    shape: 35
+    category: 3
+    prefab: {fileID: 3697899488513752796, guid: ea7e6f8b2a63f9541a4298ac6f9fbc79, type: 3}
+    icon: {fileID: 2800000, guid: d94817da465775740b08a2f7d52f82f5, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_brace_4x4
+    displayName: Angled Brace
+    shape: 36
+    category: 3
+    prefab: {fileID: 759586894313610528, guid: a07cfd1c7e465df4291663a847313f17, type: 3}
+    icon: {fileID: 2800000, guid: d311461523d991746bdfc76b59e78618, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_railing_half_4x05
+    displayName: Half Railing
+    shape: 37
+    category: 3
+    prefab: {fileID: 6008389398178400495, guid: ce55721939d8cb24ea776e44786f39bb, type: 3}
+    icon: {fileID: 2800000, guid: cdb5f4d88d49b834e966360675ebde5c, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_stairs_half_4x2
+    displayName: Half Stairs
+    shape: 38
+    category: 3
+    prefab: {fileID: 3144559272256645622, guid: e52f384ac344e4b4ab6f6fa95b7f3fbd, type: 3}
+    icon: {fileID: 2800000, guid: 28b3f3645bed5db4485ec1d393fb7d80, type: 3}
+    cost: 3
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_stairs_spiral_4x4
+    displayName: Spiral Stairs
+    shape: 39
+    category: 3
+    prefab: {fileID: 2204501592651273686, guid: b2ea6abccb684134f971d24909c45f4a, type: 3}
+    icon: {fileID: 2800000, guid: 33fabf92ebb10664aa837c20f3097fbb, type: 3}
+    cost: 6
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_ramp_half_4x2
+    displayName: Half Ramp
+    shape: 40
+    category: 3
+    prefab: {fileID: 7604948033231943855, guid: 20a281fb60e536144b46605e01f1dade, type: 3}
+    icon: {fileID: 2800000, guid: f06f829c5d3304048a3ad3d6e5266f59, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_ladder_4m
+    displayName: Ladder
+    shape: 41
+    category: 3
+    prefab: {fileID: 4155767412963917174, guid: 8136fc638abcf744196e6ce19142ae59, type: 3}
+    icon: {fileID: 2800000, guid: bec45598f4494024e9f70b729c99261e, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_roof_steep_4x4
+    displayName: Steep Roof
+    shape: 42
+    category: 2
+    prefab: {fileID: 1716507418875523270, guid: 5c519794fb77a54449d06aa5a96878aa, type: 3}
+    icon: {fileID: 2800000, guid: 84b628865c188fb4a8110327a2265fcf, type: 3}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_roof_ridge_4m
+    displayName: Ridge Cap
+    shape: 43
+    category: 2
+    prefab: {fileID: 1028794269905802355, guid: 7f88e0344f7c6174da96a2b86b6da5b1, type: 3}
+    icon: {fileID: 2800000, guid: 5a50e3727b1a7f946aff9683cf362f61, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_rooftop_4x4
+    displayName: Flat Rooftop
+    shape: 44
+    category: 2
+    prefab: {fileID: 2068626252732628062, guid: 36db7f31f1dd8f34aa2a20458cd5d5ec, type: 3}
+    icon: {fileID: 2800000, guid: 412b8e4ad94400e48b83b60eb84cd3cb, type: 3}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_hatch_lid
+    displayName: Hatch Lid
+    shape: 45
+    category: 4
+    prefab: {fileID: 1555105984019837032, guid: 92b931a5872c1804d821f729e306d3eb, type: 3}
+    icon: {fileID: 2800000, guid: dd9661b7beee268429deee5fc6da325b, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}

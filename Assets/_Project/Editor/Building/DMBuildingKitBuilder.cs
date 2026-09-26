@@ -14,7 +14,7 @@ namespace Project.EditorTools.Building
     /// Wall pieces: local +Z is the outer face; placement seats the outer face on the grid line.
     /// Ramp, stairs and roofs rise toward local +Z.
     /// </summary>
-    public static class DMBuildingKitBuilder
+    public static partial class DMBuildingKitBuilder
     {
         public const string StoneRoot = DMBuildingStyleLibraryBuilder.PrefabLibraryRoot + "/Stone";
 
@@ -44,6 +44,7 @@ namespace Project.EditorTools.Building
             public Material Material;
             public readonly List<ProBuilderMesh> Solid = new List<ProBuilderMesh>();
             public readonly List<ProBuilderMesh> Glass = new List<ProBuilderMesh>();
+            public readonly List<ProBuilderMesh> Trim = new List<ProBuilderMesh>();
         }
 
         static int kitLayer = -1;
@@ -134,6 +135,10 @@ namespace Project.EditorTools.Building
             yield return Wedge(prefix + "roof_4x4", "Roofs", stone, DMBuildingCatalog.RoofRise);
             yield return RoofCorner(stone);
             yield return RoofInner(stone);
+
+            // Kit phase 2 (0926).
+            foreach (KitPiece extra in BuildKit2Pieces(stone, door))
+                yield return extra;
         }
 
         static KitPiece New(string id, string folder, Material material, ColliderKind collider)
@@ -423,8 +428,10 @@ namespace Project.EditorTools.Building
         {
             Mesh solid = Combine(piece.Solid);
             Mesh glass = piece.Glass.Count > 0 ? Combine(piece.Glass) : null;
+            Mesh trim = piece.Trim.Count > 0 ? Combine(piece.Trim) : null;
             DestroyParts(piece.Solid);
             DestroyParts(piece.Glass);
+            DestroyParts(piece.Trim);
             if (solid == null)
                 return null;
 
@@ -432,10 +439,14 @@ namespace Project.EditorTools.Building
             Recentre(solid, offset);
             if (glass != null)
                 Recentre(glass, offset);
+            if (trim != null)
+                Recentre(trim, offset);
 
             solid = SaveMesh(solid, piece.Id);
             if (glass != null)
                 glass = SaveMesh(glass, piece.Id + "_glass");
+            if (trim != null)
+                trim = SaveMesh(trim, piece.Id + "_trim");
 
             var root = new GameObject(piece.Id);
             try
@@ -461,6 +472,16 @@ namespace Project.EditorTools.Building
                     pane.transform.SetParent(root.transform, false);
                     pane.AddComponent<MeshFilter>().sharedMesh = glass;
                     pane.AddComponent<MeshRenderer>().sharedMaterial = glassMaterial;
+                }
+
+                if (trim != null)
+                {
+                    var trimObject = new GameObject("Trim");
+                    trimObject.transform.SetParent(root.transform, false);
+                    trimObject.AddComponent<MeshFilter>().sharedMesh = trim;
+                    trimObject.AddComponent<MeshRenderer>().sharedMaterial = piece.Material;
+                    MeshCollider trimCollider = trimObject.AddComponent<MeshCollider>();
+                    trimCollider.sharedMesh = trim;
                 }
 
                 // 0925: every build piece is climbable.

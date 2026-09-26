@@ -146,8 +146,16 @@ namespace Project.Building
             Vector3 fromPosition = transform.position;
             float angle = toOpen ? swingDegrees : 0f;
             Quaternion yaw = Quaternion.Euler(0f, angle, 0f);
-            Quaternion targetRotation = yaw * closedRotation;
             Vector3 hinge = closedPosition + closedRotation * new Vector3(-DMBuildingCatalog.DoorWidth * 0.5f, 0f, 0f);
+            // Kit phase 2 (0926): a hatch lid hinges on its back edge and lifts upward.
+            if (ghost != null && DMBuildingCatalog.ShapeOf(ghost.PieceId) == DMBuildingShape.HatchLid)
+            {
+                MeshFilter filter = GetComponentInChildren<MeshFilter>();
+                float halfDepth = filter != null && filter.sharedMesh != null ? filter.sharedMesh.bounds.extents.z : 0.8f;
+                yaw = Quaternion.AngleAxis(-angle, closedRotation * Vector3.right);
+                hinge = closedPosition + closedRotation * new Vector3(0f, 0f, -halfDepth);
+            }
+            Quaternion targetRotation = yaw * closedRotation;
             Vector3 targetPosition = hinge + yaw * (closedPosition - hinge);
 
             while (elapsed < swingSeconds)

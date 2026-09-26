@@ -256,6 +256,28 @@ namespace Project.EditorTools.Building
             kit.stairSteps = EditorGUILayout.IntSlider("Stair steps", kit.stairSteps, 4, 32);
             kit.railingPosts = EditorGUILayout.IntSlider("Railing posts", kit.railingPosts, 2, 8);
 
+            // Kit phase 2 (0926).
+            EditorGUILayout.Space(4f);
+            EditorGUILayout.LabelField("Phase 2 pieces", EditorStyles.boldLabel);
+            kit.wideWindowWidthMeters = EditorGUILayout.FloatField("Wide window width (m)", kit.wideWindowWidthMeters);
+            kit.wideWindowHeightMeters = EditorGUILayout.FloatField("Wide window height (m)", kit.wideWindowHeightMeters);
+            kit.wideWindowSillMeters = EditorGUILayout.FloatField("Wide window sill (m)", kit.wideWindowSillMeters);
+            kit.slitWidthMeters = EditorGUILayout.FloatField("Slit window width (m)", kit.slitWidthMeters);
+            kit.slitHeightMeters = EditorGUILayout.FloatField("Slit window height (m)", kit.slitHeightMeters);
+            kit.slitSillMeters = EditorGUILayout.FloatField("Slit window sill (m)", kit.slitSillMeters);
+            kit.archWidthMeters = EditorGUILayout.FloatField("Archway width (m)", kit.archWidthMeters);
+            kit.archSpringMeters = EditorGUILayout.FloatField("Archway spring height (m)", kit.archSpringMeters);
+            kit.archSegments = EditorGUILayout.IntSlider("Archway segments", kit.archSegments, 4, 32);
+            kit.ventWidthMeters = EditorGUILayout.FloatField("Vent width (m)", kit.ventWidthMeters);
+            kit.ventHeightMeters = EditorGUILayout.FloatField("Vent height (m)", kit.ventHeightMeters);
+            kit.ventSillMeters = EditorGUILayout.FloatField("Vent sill (m)", kit.ventSillMeters);
+            kit.ventSlats = EditorGUILayout.IntSlider("Vent slats", kit.ventSlats, 1, 12);
+            kit.foundationStepCount = EditorGUILayout.IntSlider("Foundation steps", kit.foundationStepCount, 2, 12);
+            kit.stairwellOpeningMeters = EditorGUILayout.FloatField("Stairwell opening length (m)", kit.stairwellOpeningMeters);
+            kit.spiralSteps = EditorGUILayout.IntSlider("Spiral stair steps", kit.spiralSteps, 8, 32);
+            kit.ladderRungs = EditorGUILayout.IntSlider("Ladder rungs", kit.ladderRungs, 4, 24);
+            kit.rooftopEdgeHeightMeters = EditorGUILayout.FloatField("Rooftop edge height (m)", kit.rooftopEdgeHeightMeters);
+
             EditorGUILayout.Space(4f);
             if (GUILayout.Button("Rebuild " + style.displayName + " Kit (ProBuilder)", GUILayout.Height(26f)))
             {

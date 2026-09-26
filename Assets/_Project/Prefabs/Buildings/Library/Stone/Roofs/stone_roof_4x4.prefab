@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 2376434578811041645}
   - component: {fileID: 1445460549242149023}
   - component: {fileID: 8661121856147160004}
-  m_Layer: 0
+  m_Layer: 24
   m_Name: stone_roof_4x4
   m_TagString: Climbable
   m_Icon: {fileID: 0}

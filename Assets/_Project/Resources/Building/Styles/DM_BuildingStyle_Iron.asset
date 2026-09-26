@@ -51,6 +51,24 @@ MonoBehaviour:
     hatchOpeningMeters: 1.4
     stairSteps: 12
     railingPosts: 3
+    wideWindowWidthMeters: 3.2
+    wideWindowHeightMeters: 1.8
+    wideWindowSillMeters: 1.1
+    slitWidthMeters: 0.3
+    slitHeightMeters: 1.4
+    slitSillMeters: 1.5
+    archWidthMeters: 2.8
+    archSpringMeters: 2.2
+    archSegments: 12
+    ventWidthMeters: 2
+    ventHeightMeters: 0.8
+    ventSillMeters: 2.7
+    ventSlats: 4
+    foundationStepCount: 4
+    stairwellOpeningMeters: 2.8
+    spiralSteps: 16
+    ladderRungs: 12
+    rooftopEdgeHeightMeters: 0.6
   parts:
   - id: iron_foundation_4x4
     displayName: Foundation
@@ -373,6 +391,294 @@ MonoBehaviour:
     cost: 1
     enabled: 1
     applyStyleFinish: 0
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_foundation_steps_4x2
+    displayName: Foundation Steps
+    shape: 22
+    category: 0
+    prefab: {fileID: 8482986481078855349, guid: 533655a981b973d4184b13cd8381f58e, type: 3}
+    icon: {fileID: 2800000, guid: 39b16af8491331a4d86fd22f9d577678, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_support_pillar
+    displayName: Support Pillar
+    shape: 23
+    category: 0
+    prefab: {fileID: 7457307125182667721, guid: 41a74ede39b2d504bbb9933e2c668776, type: 3}
+    icon: {fileID: 2800000, guid: f722de76388a8444f860a306f7ea45c4, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_floor_stairwell_4x4
+    displayName: Stairwell Floor
+    shape: 24
+    category: 2
+    prefab: {fileID: 3703580162622509187, guid: aed0ee4009863224f8f769e25d1fc710, type: 3}
+    icon: {fileID: 2800000, guid: 77c04f8b3e8f7744597e095e0adf88a9, type: 3}
+    cost: 3
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_balcony_4x2
+    displayName: Balcony
+    shape: 25
+    category: 2
+    prefab: {fileID: 8899156074017394644, guid: f7922d6d13cf82d45b64ac0a4ceabded, type: 3}
+    icon: {fileID: 2800000, guid: 90cea6a31fd5d3447af0a211ebbc08e9, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_wall_quarter_4x1
+    displayName: Quarter Wall
+    shape: 26
+    category: 1
+    prefab: {fileID: 4648096995451625280, guid: ebbe913eae8f95c4e8c589fd5f8891ac, type: 3}
+    icon: {fileID: 2800000, guid: de597367190eabd4bacfa7fbe627be6e, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_wall_window_wide_4x4
+    displayName: Wide Window
+    shape: 27
+    category: 1
+    prefab: {fileID: 7916570316261636176, guid: f149ec5386b54ee4faf961733be37c12, type: 3}
+    icon: {fileID: 2800000, guid: e51edbe720445ab458259764995f537f, type: 3}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_wall_slit_4x4
+    displayName: Slit Window
+    shape: 28
+    category: 1
+    prefab: {fileID: 3210749641082258807, guid: 76f82064561b2394baff389ec3f0ea79, type: 3}
+    icon: {fileID: 2800000, guid: a8ee92569c9d3b140809578b43b0ac1b, type: 3}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_wall_arch_4x4
+    displayName: Archway
+    shape: 29
+    category: 1
+    prefab: {fileID: 7825591286487444407, guid: e463690ad23ad5a44b17c53be65c091b, type: 3}
+    icon: {fileID: 2800000, guid: ab2822ea02db6cf4dbbda304f2a4514f, type: 3}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_wall_tri_inv_l_4x2
+    displayName: Inverted Tri Wall L
+    shape: 30
+    category: 1
+    prefab: {fileID: 6534764099348444387, guid: b6471b64213fa3d408b4c349f66da6dc, type: 3}
+    icon: {fileID: 2800000, guid: adca385d372dad44c845b572f1063bc7, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_wall_tri_inv_r_4x2
+    displayName: Inverted Tri Wall R
+    shape: 31
+    category: 1
+    prefab: {fileID: 2575419587384504373, guid: e087dc237d0b38549ae7fc1c1322921e, type: 3}
+    icon: {fileID: 2800000, guid: 6cdf6d133d86c014191854d7db696aeb, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_wall_vent_4x4
+    displayName: Vent Wall
+    shape: 32
+    category: 1
+    prefab: {fileID: 1077577408899654964, guid: 8ca6d612a8a9422448238bd7070c84a9, type: 3}
+    icon: {fileID: 2800000, guid: 6e16041c9c79d4749a30e9f133b25f7c, type: 3}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_column_4m
+    displayName: Column
+    shape: 33
+    category: 3
+    prefab: {fileID: 8202041792426414933, guid: 07a00445345fc0d40b27a6ada41f48bb, type: 3}
+    icon: {fileID: 2800000, guid: 47f38ff9201924848b057a9618cffea5, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_column_half_2m
+    displayName: Half Column
+    shape: 34
+    category: 3
+    prefab: {fileID: 6646458717181836062, guid: e11ceb34668758048941756150c18fb4, type: 3}
+    icon: {fileID: 2800000, guid: a60fb99be7a6ebe4ea16b7927d3ca360, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_beam_4m
+    displayName: Beam
+    shape: 35
+    category: 3
+    prefab: {fileID: 8436808008739350223, guid: abc69a6583902ee4d9390e49858a62c5, type: 3}
+    icon: {fileID: 2800000, guid: 5d78794c7d9254b48a2dca41387b878b, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_brace_4x4
+    displayName: Angled Brace
+    shape: 36
+    category: 3
+    prefab: {fileID: 5088481707582830638, guid: bdd9726a6ef79494291d7ae535deb0a3, type: 3}
+    icon: {fileID: 2800000, guid: 70e86596a3d974e4ebae9052cf66740f, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_railing_half_4x05
+    displayName: Half Railing
+    shape: 37
+    category: 3
+    prefab: {fileID: 8179674151667631708, guid: 0d2324b4e1fd65942b8b5d4d7caa4ee7, type: 3}
+    icon: {fileID: 2800000, guid: ab906835d45e4c745bfe77e3941afa96, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_stairs_half_4x2
+    displayName: Half Stairs
+    shape: 38
+    category: 3
+    prefab: {fileID: 6929751080713423874, guid: bd9d0b2ffaa0c784aa4aaa024eb8acf7, type: 3}
+    icon: {fileID: 2800000, guid: 2ec10206709dd1848811eb826e6893e4, type: 3}
+    cost: 3
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_stairs_spiral_4x4
+    displayName: Spiral Stairs
+    shape: 39
+    category: 3
+    prefab: {fileID: 3023511293751791469, guid: 899d7cfb093b0f340b8a2cba4c494618, type: 3}
+    icon: {fileID: 2800000, guid: 9ed4a72efc7582b4eabb3763cab0ec24, type: 3}
+    cost: 6
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_ramp_half_4x2
+    displayName: Half Ramp
+    shape: 40
+    category: 3
+    prefab: {fileID: 7210824700734612815, guid: 3ba2d37aa10c72440a20d2012cbb5eef, type: 3}
+    icon: {fileID: 2800000, guid: 4843b188998c1a244a7f62aa38fb66f8, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_ladder_4m
+    displayName: Ladder
+    shape: 41
+    category: 3
+    prefab: {fileID: 8006820732199878188, guid: 678ad1364a8aec242abb61870e807571, type: 3}
+    icon: {fileID: 2800000, guid: 2f36e00ff468375499429a160650388c, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_roof_steep_4x4
+    displayName: Steep Roof
+    shape: 42
+    category: 2
+    prefab: {fileID: 2281613575861750317, guid: 049ea633964d30c4f86957ffca1ceac5, type: 3}
+    icon: {fileID: 2800000, guid: e6b95261899d10f42abebcc11866b718, type: 3}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_roof_ridge_4m
+    displayName: Ridge Cap
+    shape: 43
+    category: 2
+    prefab: {fileID: 7152045309519956535, guid: b9e1ea1be6a52da40ba4cd3fd9f2c3d7, type: 3}
+    icon: {fileID: 2800000, guid: b8619b12dc45175499c9e99972b725df, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_rooftop_4x4
+    displayName: Flat Rooftop
+    shape: 44
+    category: 2
+    prefab: {fileID: 2348182691408008547, guid: 9f65fb83b431479409e7b53506689c71, type: 3}
+    icon: {fileID: 2800000, guid: ca3b3b4255693a94ba83ffb814acc107, type: 3}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_hatch_lid
+    displayName: Hatch Lid
+    shape: 45
+    category: 4
+    prefab: {fileID: 3184824710238057349, guid: fea2378fa765705498fe8473baf04dfe, type: 3}
+    icon: {fileID: 2800000, guid: ec55218d290797242871a7b4113f3774, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}

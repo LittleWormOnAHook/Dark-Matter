@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 3467205062400469527}
   - component: {fileID: 7369812303398557381}
   - component: {fileID: 7672097607851969322}
-  m_Layer: 0
+  m_Layer: 24
   m_Name: stone_floor_tri_4x4
   m_TagString: Climbable
   m_Icon: {fileID: 0}

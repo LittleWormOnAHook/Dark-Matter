@@ -31,7 +31,33 @@ namespace Project.Building
         /// <summary>Small item (light, decoration) that sticks to the face of a built piece.</summary>
         SurfaceItem,
         /// <summary>Any other prefab. Uses the module grid with its own mesh size.</summary>
-        Custom
+        Custom,
+
+        // Kit phase 2 (0926). Appended after Custom so saved shape numbers in style assets stay valid.
+        FoundationSteps,
+        SupportPillar,
+        StairwellFloor,
+        Balcony,
+        QuarterWall,
+        WideWindow,
+        SlitWindow,
+        Archway,
+        InvTriWallLeft,
+        InvTriWallRight,
+        VentWall,
+        Column,
+        HalfColumn,
+        Beam,
+        Brace,
+        HalfRailing,
+        HalfStairs,
+        SpiralStairs,
+        HalfRamp,
+        Ladder,
+        SteepRoof,
+        RidgeCap,
+        Rooftop,
+        HatchLid
     }
 
     public enum DMBuildingCategory
@@ -71,6 +97,47 @@ namespace Project.Building
         public float hatchOpeningMeters = 1.4f;
         public int stairSteps = 12;
         public int railingPosts = 3;
+
+        [Header("Kit phase 2")]
+        public float wideWindowWidthMeters = 3.2f;
+        public float wideWindowHeightMeters = 1.8f;
+        public float wideWindowSillMeters = 1.1f;
+        public float slitWidthMeters = 0.3f;
+        public float slitHeightMeters = 1.4f;
+        public float slitSillMeters = 1.5f;
+        [Tooltip("Archway opening width. The arch top is a half circle over it.")]
+        public float archWidthMeters = 2.8f;
+        public float archSpringMeters = 2.2f;
+        public int archSegments = 12;
+        public float ventWidthMeters = 2f;
+        public float ventHeightMeters = 0.8f;
+        public float ventSillMeters = 2.7f;
+        public int ventSlats = 4;
+        public int foundationStepCount = 4;
+        [Tooltip("Square hole length in the stairwell floor, toward the stair top (+Z).")]
+        public float stairwellOpeningMeters = 2.8f;
+        public int spiralSteps = 16;
+        public int ladderRungs = 12;
+        public float rooftopEdgeHeightMeters = 0.6f;
+
+        public float WideWindowWidth => Mathf.Clamp(wideWindowWidthMeters, 0.4f, 3.6f);
+        public float WideWindowHeight => Mathf.Clamp(wideWindowHeightMeters, 0.4f, 3.6f);
+        public float WideWindowSill => Mathf.Clamp(wideWindowSillMeters, 0.1f, 3f);
+        public float SlitWidth => Mathf.Clamp(slitWidthMeters, 0.1f, 1f);
+        public float SlitHeight => Mathf.Clamp(slitHeightMeters, 0.3f, 3.4f);
+        public float SlitSill => Mathf.Clamp(slitSillMeters, 0.1f, 3f);
+        public float ArchWidth => Mathf.Clamp(archWidthMeters, 1f, 3.6f);
+        public float ArchSpring => Mathf.Clamp(archSpringMeters, 0.5f, 3.2f);
+        public int ArchSegments => Mathf.Clamp(archSegments, 4, 32);
+        public float VentWidth => Mathf.Clamp(ventWidthMeters, 0.4f, 3.6f);
+        public float VentHeight => Mathf.Clamp(ventHeightMeters, 0.2f, 2f);
+        public float VentSill => Mathf.Clamp(ventSillMeters, 0.1f, 3.6f);
+        public int VentSlats => Mathf.Clamp(ventSlats, 1, 12);
+        public int FoundationStepCount => Mathf.Clamp(foundationStepCount, 2, 12);
+        public float StairwellOpening => Mathf.Clamp(stairwellOpeningMeters, 1f, 3.6f);
+        public int SpiralSteps => Mathf.Clamp(spiralSteps, 8, 32);
+        public int LadderRungs => Mathf.Clamp(ladderRungs, 4, 24);
+        public float RooftopEdgeHeight => Mathf.Clamp(rooftopEdgeHeightMeters, 0.1f, 1.5f);
 
         public float WindowWidth => Mathf.Clamp(windowWidthMeters, 0.4f, 3.4f);
         public float WindowHeight => Mathf.Clamp(windowHeightMeters, 0.4f, 3.4f);

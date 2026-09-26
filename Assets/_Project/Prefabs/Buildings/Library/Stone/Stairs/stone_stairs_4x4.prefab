@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 8207703385600212022}
   - component: {fileID: 5728841075510089258}
   - component: {fileID: 5597247509048190587}
-  m_Layer: 0
+  m_Layer: 24
   m_Name: stone_stairs_4x4
   m_TagString: Climbable
   m_Icon: {fileID: 0}
