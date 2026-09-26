@@ -165,6 +165,7 @@ namespace Project.EditorTools.Building
             style.displayName = EditorGUILayout.TextField("Display name", style.displayName);
             style.order = EditorGUILayout.IntField("Order (hotbar Tab list)", style.order);
             style.accent = EditorGUILayout.ColorField("Accent", style.accent);
+            style.resourceTextColor = EditorGUILayout.ColorField("Resource text colour", style.resourceTextColor);
             EditorGUILayout.EndVertical();
             style.icon = (Texture2D)EditorGUILayout.ObjectField(style.icon, typeof(Texture2D), false, GUILayout.Width(64f), GUILayout.Height(64f));
             EditorGUILayout.EndHorizontal();
@@ -327,13 +328,13 @@ namespace Project.EditorTools.Building
             if (GUILayout.Button("Bake Missing Icons"))
             {
                 int n = DMBuildingStyleLibraryBuilder.BakeIcons(style, false);
-                Debug.Log("[DM Building Library] Baked " + n + " " + style.displayName + " icons.");
+                Debug.Log("[DM Building Library] Queued " + n + " " + style.displayName + " icons to bake.");
             }
 
             if (GUILayout.Button("Rebake All Icons"))
             {
                 int n = DMBuildingStyleLibraryBuilder.BakeIcons(style, true);
-                Debug.Log("[DM Building Library] Rebaked " + n + " " + style.displayName + " icons.");
+                Debug.Log("[DM Building Library] Queued " + n + " " + style.displayName + " icons to rebake.");
             }
 
             EditorGUILayout.EndHorizontal();
@@ -407,6 +408,8 @@ namespace Project.EditorTools.Building
                 if (part.shape == DMBuildingShape.SurfaceItem)
                     part.surfaceOffsetMeters = EditorGUILayout.FloatField(new GUIContent("Surface offset (m)", "Gap between the item and the face it sticks to."), part.surfaceOffsetMeters);
                 part.sizeOverride = EditorGUILayout.Vector3Field(new GUIContent("Size override (m)", "Zero uses the shape's grid size or the prefab mesh bounds."), part.sizeOverride);
+                if (part.shape == DMBuildingShape.SurfaceItem || part.shape == DMBuildingShape.Custom)
+                    part.modelRotation = EditorGUILayout.Vector3Field(new GUIContent("Model rotation (deg)", "Turns the model inside the piece, for prefabs authored facing the wrong way. Wall items face +Z out of the wall; floor and ceiling items point +Y away from the face."), part.modelRotation);
                 EditorGUI.indentLevel--;
             }
 

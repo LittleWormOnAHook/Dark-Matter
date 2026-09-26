@@ -414,9 +414,9 @@
 .dmg-build-bar {
     position: absolute;
     left: 50%;
-    bottom: 108px;
-    width: 760px;
-    margin-left: -380px;
+    bottom: 96px;
+    width: 900px;
+    margin-left: -450px;
     flex-direction: column;
     align-items: center;
 }
@@ -424,7 +424,7 @@
 .dmg-build-list {
     position: absolute;
     left: 0;
-    bottom: 90px;
+    bottom: 176px;
     width: 220px;
     max-height: 240px;
     padding: 6px;
@@ -456,24 +456,39 @@
     color: rgb(237, 233, 228);
 }
 
-.dmg-build-cost {
-    margin-top: 10px;
-    margin-bottom: 0;
-    padding: 2px 8px;
-    font-size: 14px;
-    color: rgb(237, 233, 228);
-    background-color: rgba(28, 42, 56, 0.92);
-    border-width: 1px;
-    border-color: rgb(74, 74, 90);
+.dmg-build-name {
+    margin-bottom: 6px;
+    padding: 0;
+    font-size: 28px;
+    -unity-font-style: bold;
+    color: rgb(212, 160, 23);
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
     -unity-text-align: middle-center;
+    text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.85);
+    white-space: nowrap;
+    align-self: center;
+}
+
+.dmg-build-cost {
+    margin-top: 6px;
+    margin-bottom: 0;
+    padding: 0;
+    font-size: 28px;
+    -unity-font-style: bold;
+    color: rgb(237, 233, 228);
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    -unity-text-align: middle-center;
+    text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.85);
+    white-space: nowrap;
     align-self: center;
 }
 
 .dmg-build-row {
     flex-direction: row;
     align-items: center;
-    width: 100%;
-    height: 80px;
+    align-self: center;
     padding: 4px;
     background-color: rgba(28, 42, 56, 0.92);
     border-width: 1px;
@@ -482,8 +497,8 @@
 
 .dmg-build-arrow {
     width: 28px;
-    height: 68px;
-    margin-right: 4px;
+    height: 72px;
+    margin: 2px;
     color: rgb(237, 233, 228);
     background-color: rgb(143, 30, 94);
     border-width: 0;
@@ -492,15 +507,18 @@
 
 .dmg-build-slots {
     flex-direction: row;
-    flex-grow: 1;
     align-items: center;
+    justify-content: center;
 }
 
 .dmg-build-slot {
-    width: 64px;
-    height: 68px;
+    width: 72px;
+    height: 72px;
+    min-width: 72px;
+    flex-shrink: 0;
     flex-direction: column;
-    margin-right: 4px;
+    margin: 2px;
+    overflow: hidden;
     background-color: rgb(28, 42, 56);
     border-width: 1px;
     border-color: rgb(74, 74, 90);
@@ -518,14 +536,17 @@
 }
 
 .dmg-build-slot-icon {
-    width: 40px;
-    height: 40px;
-    margin-bottom: 2px;
+    position: absolute;
+    left: 5px;
+    top: 5px;
+    right: 5px;
+    bottom: 5px;
     -unity-background-scale-mode: scale-to-fit;
 }
 
 .dmg-build-slot-label {
-    font-size: 10px;
+    padding: 2px;
+    font-size: 11px;
     color: rgb(237, 233, 228);
     -unity-text-align: middle-center;
     white-space: normal;

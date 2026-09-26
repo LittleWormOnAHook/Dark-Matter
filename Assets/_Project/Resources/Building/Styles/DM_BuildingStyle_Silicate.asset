@@ -15,12 +15,13 @@ MonoBehaviour:
   styleId: silicate
   displayName: Silicate
   order: 2
-  icon: {fileID: 0}
+  icon: {fileID: 2800000, guid: 4287dece1d21e6e47bc35f98ce2f6764, type: 3}
   accent: {r: 0.55, g: 0.74, b: 0.84, a: 1}
+  resourceTextColor: {r: 0.45, g: 0.82, b: 0.96, a: 1}
   costItem: {fileID: 11400000, guid: e83b019ce015f214286d8fee0f4c3554, type: 2}
   costItemNames:
   - Silicate Ore
-  costMultiplier: 1
+  costMultiplier: 1.2
   finishes:
   - id: silicate_smooth
     displayName: Smooth Silicate
@@ -56,218 +57,322 @@ MonoBehaviour:
     shape: 0
     category: 0
     prefab: {fileID: 2095676896886987019, guid: a22cc961fe81c224993e3e56362e9dc9, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: ee3861c778092b842b28f24a1f5b4f4c, type: 3}
     cost: 4
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: silicate_foundation_tri_4x4
     displayName: Tri Foundation
     shape: 1
     category: 0
     prefab: {fileID: 6478734342097260282, guid: 1651b704428fb99429d4765e1701eaa2, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: c1e5cff5f25d8844aad0f1d0f2079c69, type: 3}
     cost: 2
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: silicate_floor_4x4
     displayName: Floor
     shape: 2
     category: 2
     prefab: {fileID: 6734398759893717088, guid: 32149786a7e07bc40849ad79271abefa, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 8518109c2bd1baf4d849d24875eb9c46, type: 3}
     cost: 4
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: silicate_floor_tri_4x4
     displayName: Tri Floor
     shape: 3
     category: 2
     prefab: {fileID: 3704193253858777608, guid: 39f46c696d12b5a458f5b74c4b6adb3d, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 3aae6945ad3ba8344a19019bdea03b57, type: 3}
     cost: 2
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: silicate_ceiling_4x4
     displayName: Ceiling
     shape: 4
     category: 2
     prefab: {fileID: 5600213225111591011, guid: c5e247396fad556488b0847c3d59b0a4, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: ea8e918d9fc01a14b93e8b1d200f64c7, type: 3}
     cost: 4
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: silicate_hatch_4x4
     displayName: Hatch
     shape: 5
     category: 2
     prefab: {fileID: 2020585807688787391, guid: d2439377f05485b4c8f69951e9dcb1ca, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: b1db04d2638e9ad4aa053ced5a034dba, type: 3}
     cost: 3
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: silicate_wall_4x4
     displayName: Wall
     shape: 6
     category: 1
     prefab: {fileID: 4689873514625725918, guid: ae69683c001bdc74bb159251c0c7acbd, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: c6ba809a6bd6e474eb88d8d1a8763fb0, type: 3}
     cost: 4
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: silicate_wall_half_4x2
     displayName: Half Wall
     shape: 7
     category: 1
     prefab: {fileID: 727724042462034674, guid: 0ef8bde61b4948046862b2b405faa31a, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: a9c7c0d10340303429dfa40b5840d734, type: 3}
     cost: 2
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: silicate_wall_window_4x4
     displayName: Window
     shape: 8
     category: 1
     prefab: {fileID: 8311960388953323529, guid: 26175ec16a09ca14b803b52fb7411325, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: d3410d60c34f691429c3d0790cfb8cf2, type: 3}
     cost: 4
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: silicate_door_frame_4x4
     displayName: Door Frame
     shape: 9
     category: 4
     prefab: {fileID: 3390538262045508875, guid: afa86b398914b7a43baeddca24a79b51, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: fa51888b140e49644b2cb86db0524544, type: 3}
     cost: 4
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: silicate_door_basic
     displayName: Door
     shape: 10
     category: 4
     prefab: {fileID: 934456585239428248, guid: 5d5e22f5bd6bd0e438ea60650fc3a106, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 944a4b906d1c285468f13a6fccb3a539, type: 3}
     cost: 2
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: silicate_passage_4x4
     displayName: Passage
     shape: 11
     category: 1
     prefab: {fileID: 398717205229501662, guid: be68270ffbd02824d980b473bbc16e00, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: d1ed050e234571045a4c1daabb86b066, type: 3}
     cost: 3
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: silicate_wall_tri_l_4x2
     displayName: Tri Wall L
     shape: 12
     category: 1
     prefab: {fileID: 6526665851365933089, guid: d3adf8c2c65d3094ebd49e0ead0e1fb2, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: caa5c114240a765448c506442a498bad, type: 3}
     cost: 2
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: silicate_wall_tri_r_4x2
     displayName: Tri Wall R
     shape: 13
     category: 1
     prefab: {fileID: 2776377397278988507, guid: a773f3c58a5a8b84398901037d8211b3, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: dea89585db34feb42aea2455d5bdb0eb, type: 3}
     cost: 2
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: silicate_railing_4x1
     displayName: Railing
     shape: 14
     category: 3
     prefab: {fileID: 4714208461392545354, guid: 89f5084c3bc0fa24fbffd77b2261c7be, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 6919563140ecd3b4c9de59d03f9d5a95, type: 3}
     cost: 1
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: silicate_stairs_4x4
     displayName: Stairs
     shape: 15
     category: 3
     prefab: {fileID: 7430286172638595787, guid: edc3121932e662e48aca283f259ddd4f, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: d123c9ae2494b7a40a6142bcd04a0831, type: 3}
     cost: 6
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: silicate_ramp_4x4
     displayName: Ramp
     shape: 16
     category: 3
     prefab: {fileID: 8232981981840030843, guid: 0b4bcbff9737c574a8d5ece4c9cb5737, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 29ad02cf10b2c8b4d910d5cd51017526, type: 3}
     cost: 4
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: silicate_roof_4x4
     displayName: Roof
     shape: 17
     category: 2
     prefab: {fileID: 3397221751916178498, guid: 140d628bdeab4d049a53f04ce28827c6, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: b23e8d9c7f17eab44ae438e22bf3e771, type: 3}
     cost: 3
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: silicate_roof_corner_4x4
     displayName: Roof Corner
     shape: 18
     category: 2
     prefab: {fileID: 2513977112195199141, guid: e2a1758084c7a5346901775299f77506, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: a9333f68d61bedf429fe2263dd591d47, type: 3}
     cost: 3
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: silicate_roof_inner_4x4
     displayName: Roof Inner
     shape: 19
     category: 2
     prefab: {fileID: 9176097582985043477, guid: dca1dee7e8510214bb9965f4b781614a, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 5e7d786b33f9f0a4a86e64d2c08947f6, type: 3}
     cost: 4
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_si_wall_light
+    displayName: Wall Light
+    shape: 20
+    category: 5
+    prefab: {fileID: 2406196272878205201, guid: 55266fb06c1731044b551b9aa130cf08, type: 3}
+    icon: {fileID: 2800000, guid: e6ae6ac5f15565040bfd528cb47c402e, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 0
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_si_ceiling_light_a
+    displayName: Ceiling Light A
+    shape: 20
+    category: 5
+    prefab: {fileID: 9222567173803765752, guid: ca2cf882f4cbfb1488f7fc93bd2ed131, type: 3}
+    icon: {fileID: 2800000, guid: a4cac5ee6145aa64ba4716309156b5c8, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 0
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_si_ceiling_light_b
+    displayName: Ceiling Light B
+    shape: 20
+    category: 5
+    prefab: {fileID: 8850616088266937070, guid: 172d163e4d3091b4d8bbc06c571aca88, type: 3}
+    icon: {fileID: 2800000, guid: 5b769f68955c9e24eacc86582f5dcb9b, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 0
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_si_ceiling_light_c
+    displayName: Ceiling Light C
+    shape: 20
+    category: 5
+    prefab: {fileID: 5674834174039980693, guid: 4d6572a1eaebac64b8779f28dbd144c7, type: 3}
+    icon: {fileID: 2800000, guid: 1810f21dd7270dc4fbe6fb781f319529, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 0
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_si_banner
+    displayName: Banner
+    shape: 20
+    category: 5
+    prefab: {fileID: 2009919008642179851, guid: 6e01b400ac8eef741ac8aea30a0a712c, type: 3}
+    icon: {fileID: 2800000, guid: 591755c5b169a3943aa52b1d4aac0176, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 0
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_si_poster
+    displayName: Poster
+    shape: 20
+    category: 5
+    prefab: {fileID: 9017169724171110778, guid: 7db54fa5488a6c841822a8695983b8bc, type: 3}
+    icon: {fileID: 2800000, guid: 4d7a0d1a605abf743863d8a2179301ce, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 0
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_si_sign
+    displayName: Sign
+    shape: 20
+    category: 5
+    prefab: {fileID: 3167820947896243578, guid: db30aa87f8f6bd149bf9f459acd30d7a, type: 3}
+    icon: {fileID: 2800000, guid: 83328d4d003eb1b4ba4eff91a7dc2486, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 0
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}

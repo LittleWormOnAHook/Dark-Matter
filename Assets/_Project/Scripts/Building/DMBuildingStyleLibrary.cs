@@ -101,6 +101,8 @@ namespace Project.Building
         public float surfaceOffsetMeters = 0.01f;
         [Tooltip("Custom and surface items: footprint override (m). Zero uses the prefab mesh bounds.")]
         public Vector3 sizeOverride = Vector3.zero;
+        [Tooltip("Custom and surface items: extra rotation (degrees) applied to the model inside the piece, for prefabs authored facing the wrong way.")]
+        public Vector3 modelRotation = Vector3.zero;
     }
 
     /// <summary>
@@ -119,6 +121,8 @@ namespace Project.Building
         public int order;
         public Texture2D icon;
         public Color accent = new Color(0.75f, 0.72f, 0.68f, 1f);
+        [Tooltip("Colour of the resource amount under the build hotbar for this style's parts.")]
+        public Color resourceTextColor = new Color(0.93f, 0.91f, 0.89f, 1f);
 
         [Header("Cost")]
         [Tooltip("Item spent per part cost point. Names below also match (inventory and storage).")]

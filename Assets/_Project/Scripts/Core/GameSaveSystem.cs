@@ -117,6 +117,40 @@ namespace Project.Core
             }
         }
 
+        /// <summary>
+        /// Newest written slot across autosave (0–1) and manual saves.
+        /// </summary>
+        public static bool TryGetNewestSaveSlot(out int slotIndex)
+        {
+            slotIndex = -1;
+            long newest = long.MinValue;
+            for (int i = 0; i < SlotCount; i++)
+            {
+                SaveSlotInfo info = GetSlotInfo(i);
+                if (!info.HasData)
+                    continue;
+
+                if (info.SavedAtUtcTicks < newest)
+                    continue;
+
+                newest = info.SavedAtUtcTicks;
+                slotIndex = i;
+            }
+
+            return slotIndex >= 0;
+        }
+
+        public static bool TryLoadNewestSave(out string message)
+        {
+            if (!TryGetNewestSaveSlot(out int slotIndex))
+            {
+                message = "No save to load.";
+                return false;
+            }
+
+            return TryLoad(slotIndex, out message);
+        }
+
         /// <summary>Persists the active expedition to the continue slot before a settings reload.</summary>
         public static bool TrySaveContinueExpedition(out string message)
         {
@@ -365,6 +399,7 @@ namespace Project.Core
             DMIoClock.CaptureSave(out data.ioDay, out data.ioHour, out data.ioMinute);
             data.vendors = DMVendorRuntime.BuildSave();
             data.storageCrates = Project.Storage.DMStorageCrateRuntime.BuildSave();
+            data.builtPieces = DMBuildingSaveRuntime.BuildSave();
 
             if (progressionManager != null)
             {
@@ -480,6 +515,7 @@ namespace Project.Core
             ApplyIoClockSave(data);
             ApplyVendorSave(data);
             ApplyStorageCrateSave(data);
+            DMBuildingSaveRuntime.ApplySave(data.builtPieces);
 
             ApplyQuestSave(player, data.questProgress);
             ApplyCraftingSave(player, data.discoveredRecipeIds, data.pendingRecipeScrollIds);

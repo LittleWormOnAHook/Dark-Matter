@@ -458,54 +458,151 @@ namespace Project.EditorTools.Building
             return variant;
         }
 
-        /// <summary>Renders part prefab thumbnails to PNG icons (Library/&lt;Style&gt;/Icons) and assigns them.</summary>
+        struct IconJob
+        {
+            public DMBuildingStyleLibrary Style;
+            public int Index;
+            public string Folder;
+        }
+
+        static readonly List<IconJob> IconJobs = new List<IconJob>();
+        static readonly HashSet<DMBuildingStyleLibrary> IconDirtyStyles = new HashSet<DMBuildingStyleLibrary>();
+        static double iconDeadline;
+        static int iconBaked;
+        static int iconSkipped;
+
+        [MenuItem("Tools/Dark Matter Genesis/Buildings/Bake Missing Part Icons (All Styles)")]
+        public static void BakeAllMissingIconsMenu()
+        {
+            int queued = 0;
+            foreach (DMBuildingStyleLibrary style in DMBuildingStyles.All)
+                queued += BakeIcons(style, false);
+            Debug.Log("[DM Building Library] Queued " + queued + " part icons across " + DMBuildingStyles.All.Count + " styles.");
+        }
+
+        /// <summary>
+        /// Queues part prefab thumbnails to be written as PNG icons (Library/&lt;Style&gt;/Icons) and assigned.
+        /// Unity builds asset previews over several editor frames, so the bake finishes on EditorApplication.update.
+        /// Returns the number of icons queued.
+        /// </summary>
         public static int BakeIcons(DMBuildingStyleLibrary style, bool overwrite)
         {
             if (style == null || style.parts == null)
                 return 0;
             string folder = StyleRoot(style) + "/Icons";
             EnsureFolder(folder);
-            int baked = 0;
+            AssetPreview.SetPreviewTextureCacheSize(Mathf.Max(512, IconJobs.Count + style.parts.Count + 64));
+            int queued = 0;
             for (int i = 0; i < style.parts.Count; i++)
             {
                 DMBuildingPartEntry part = style.parts[i];
                 if (part == null || part.prefab == null || (!overwrite && part.icon != null))
                     continue;
-
-                Texture2D preview = AssetPreview.GetAssetPreview(part.prefab);
-                double until = EditorApplication.timeSinceStartup + 3.0;
-                while (preview == null && EditorApplication.timeSinceStartup < until)
-                {
-                    System.Threading.Thread.Sleep(20);
-                    preview = AssetPreview.GetAssetPreview(part.prefab);
-                }
-
-                if (preview == null)
+                bool already = false;
+                for (int j = 0; j < IconJobs.Count; j++)
+                    already |= IconJobs[j].Style == style && IconJobs[j].Index == i;
+                if (already)
                     continue;
-
-                string path = folder + "/" + part.id + ".png";
-                var readable = new Texture2D(preview.width, preview.height, TextureFormat.RGBA32, false);
-                readable.SetPixels(preview.GetPixels());
-                readable.Apply();
-                File.WriteAllBytes(path, readable.EncodeToPNG());
-                Object.DestroyImmediate(readable);
-                AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
-                if (AssetImporter.GetAtPath(path) is TextureImporter importer)
-                {
-                    importer.textureType = TextureImporterType.Default;
-                    importer.alphaIsTransparency = true;
-                    importer.mipmapEnabled = false;
-                    importer.SaveAndReimport();
-                }
-
-                part.icon = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
-                baked++;
+                AssetPreview.GetAssetPreview(part.prefab);
+                IconJobs.Add(new IconJob { Style = style, Index = i, Folder = folder });
+                queued++;
             }
 
-            EditorUtility.SetDirty(style);
+            if (queued > 0)
+            {
+                iconDeadline = EditorApplication.timeSinceStartup + 60.0;
+                EditorApplication.update -= PumpIconJobs;
+                EditorApplication.update += PumpIconJobs;
+            }
+
+            return queued;
+        }
+
+        static void PumpIconJobs()
+        {
+            bool timedOut = EditorApplication.timeSinceStartup > iconDeadline;
+            for (int i = IconJobs.Count - 1; i >= 0; i--)
+            {
+                IconJob job = IconJobs[i];
+                DMBuildingPartEntry part = job.Style != null && job.Style.parts != null && job.Index < job.Style.parts.Count
+                    ? job.Style.parts[job.Index]
+                    : null;
+                if (part == null || part.prefab == null)
+                {
+                    IconJobs.RemoveAt(i);
+                    continue;
+                }
+
+                Texture2D preview = AssetPreview.GetAssetPreview(part.prefab);
+                if (preview == null)
+                {
+                    if (!timedOut)
+                        continue;
+                    iconSkipped++;
+                    IconJobs.RemoveAt(i);
+                    continue;
+                }
+
+                try
+                {
+                    WriteIcon(job, part, preview);
+                    iconBaked++;
+                    // 0926: a cold preview cache after an editor restart is slow; keep waiting while icons still arrive.
+                    iconDeadline = EditorApplication.timeSinceStartup + 60.0;
+                }
+                catch (System.Exception ex)
+                {
+                    iconSkipped++;
+                    Debug.LogWarning("[DM Building Library] Icon bake failed for " + part.id + ": " + ex.Message);
+                }
+
+                IconJobs.RemoveAt(i);
+            }
+
+            if (IconJobs.Count > 0)
+                return;
+
+            EditorApplication.update -= PumpIconJobs;
+            foreach (DMBuildingStyleLibrary style in IconDirtyStyles)
+            {
+                if (style != null)
+                    EditorUtility.SetDirty(style);
+            }
+
+            IconDirtyStyles.Clear();
             AssetDatabase.SaveAssets();
             DMBuildingStyles.Invalidate();
-            return baked;
+            Debug.Log("[DM Building Library] Icon bake finished: " + iconBaked + " baked, " + iconSkipped + " skipped (no preview).");
+            iconBaked = 0;
+            iconSkipped = 0;
+        }
+
+        static void WriteIcon(IconJob job, DMBuildingPartEntry part, Texture2D preview)
+        {
+            string path = job.Folder + "/" + part.id + ".png";
+            RenderTexture rt = RenderTexture.GetTemporary(preview.width, preview.height, 0, RenderTextureFormat.ARGB32);
+            RenderTexture previous = RenderTexture.active;
+            Graphics.Blit(preview, rt);
+            RenderTexture.active = rt;
+            var readable = new Texture2D(preview.width, preview.height, TextureFormat.RGBA32, false);
+            readable.ReadPixels(new Rect(0, 0, preview.width, preview.height), 0, 0);
+            readable.Apply();
+            RenderTexture.active = previous;
+            RenderTexture.ReleaseTemporary(rt);
+            File.WriteAllBytes(path, readable.EncodeToPNG());
+            Object.DestroyImmediate(readable);
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
+            if (AssetImporter.GetAtPath(path) is TextureImporter importer)
+            {
+                importer.textureType = TextureImporterType.Default;
+                importer.alphaIsTransparency = true;
+                importer.mipmapEnabled = false;
+                importer.sRGBTexture = true;
+                importer.SaveAndReimport();
+            }
+
+            part.icon = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            IconDirtyStyles.Add(job.Style);
         }
 
         static Material EnsureMaterial(string path, Color color, bool transparent, float metallic, float smoothness)

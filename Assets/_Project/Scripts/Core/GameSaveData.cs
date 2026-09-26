@@ -74,6 +74,8 @@ namespace Project.Core
         public int ioMinute;
         public Project.Vendor.VendorRuntimeSave[] vendors;
         public Project.Storage.StorageCrateSave[] storageCrates;
+        /// <summary>Placed build pieces (0926). Null in older saves, which load with no pieces.</summary>
+        public Project.Building.BuiltPieceSaveEntry[] builtPieces;
     }
 
     /// <summary>Per-building generator fuel level, keyed by BuildingControlPanel.BuildingId so it

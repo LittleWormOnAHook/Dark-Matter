@@ -15,12 +15,13 @@ MonoBehaviour:
   styleId: iron
   displayName: Iron
   order: 1
-  icon: {fileID: 0}
+  icon: {fileID: 2800000, guid: 8b49c2acc1e26f9429616ebf132b2ff0, type: 3}
   accent: {r: 0.55, g: 0.58, b: 0.62, a: 1}
+  resourceTextColor: {r: 0.9, g: 0.52, b: 0.3, a: 1}
   costItem: {fileID: 11400000, guid: 22d2fe71fa16cbc45901218ef6195945, type: 2}
   costItemNames:
   - Iron Ore
-  costMultiplier: 1
+  costMultiplier: 1.5
   finishes:
   - id: iron_plate
     displayName: Iron Plate
@@ -56,218 +57,322 @@ MonoBehaviour:
     shape: 0
     category: 0
     prefab: {fileID: 7249045315292712286, guid: e63492f18e7186347ae39ed6895b3598, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 3c23c98fab86107488ce9f147058be70, type: 3}
     cost: 4
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: iron_foundation_tri_4x4
     displayName: Tri Foundation
     shape: 1
     category: 0
     prefab: {fileID: 1109592066910413069, guid: 042e39ccd5c978b4481df084c01acfc4, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: d0fa8f2136213bc4e8e54cc381e2cf7a, type: 3}
     cost: 2
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: iron_floor_4x4
     displayName: Floor
     shape: 2
     category: 2
     prefab: {fileID: 960636440424103980, guid: 683f0972600f66f4b8049eb113fd6b0e, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: c867e42e1b9ac434fb41d96916506c60, type: 3}
     cost: 4
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: iron_floor_tri_4x4
     displayName: Tri Floor
     shape: 3
     category: 2
     prefab: {fileID: 2787229682579466468, guid: 012f0afb7f67e394480eb2cdf6339fac, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: b6e56b8c485db8d4e9701d666a14be68, type: 3}
     cost: 2
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: iron_ceiling_4x4
     displayName: Ceiling
     shape: 4
     category: 2
     prefab: {fileID: 7417172561766735743, guid: 4aebe203e9985e54db43c64cd3fc056c, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 5e26d2b8b01504f40a308ac8f419d640, type: 3}
     cost: 4
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: iron_hatch_4x4
     displayName: Hatch
     shape: 5
     category: 2
     prefab: {fileID: 6428637741328603571, guid: 5c33bad22d3f4294e8f7898cb6513ad5, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 7cd9f1ffc39bc234698befc352346aff, type: 3}
     cost: 3
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: iron_wall_4x4
     displayName: Wall
     shape: 6
     category: 1
     prefab: {fileID: 3783473118321638332, guid: e9d1dfd75cffe9b49bd30fbbde95d8cb, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 89efc4488371b2c498e74e20460b00dd, type: 3}
     cost: 4
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: iron_wall_half_4x2
     displayName: Half Wall
     shape: 7
     category: 1
     prefab: {fileID: 962279829610727329, guid: 9852faa1464b21e42b0f10b2fd30d2d1, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 7f312728570f5af48bba6480826125c3, type: 3}
     cost: 2
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: iron_wall_window_4x4
     displayName: Window
     shape: 8
     category: 1
     prefab: {fileID: 7031060528672386814, guid: 94eed2809e4f58346aae9022a137d24f, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 3970bb0114da5824fb7045f74c8cb60b, type: 3}
     cost: 4
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: iron_door_frame_4x4
     displayName: Door Frame
     shape: 9
     category: 4
     prefab: {fileID: 5389070698613937270, guid: 8bf34a4a9138d184eb85b09787908c13, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 0953d62bfe28f104a86da952dba6b6d5, type: 3}
     cost: 4
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: iron_door_basic
     displayName: Door
     shape: 10
     category: 4
     prefab: {fileID: 2571241868864917382, guid: e75daa5e293ce5b4187dd9e41b351aad, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: d817896c78bae244688479368b2f8309, type: 3}
     cost: 2
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: iron_passage_4x4
     displayName: Passage
     shape: 11
     category: 1
     prefab: {fileID: 8023396968240550673, guid: a67ff2b44b41a774ebdac1ab6cbe04a7, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 663372570bc8ec549a7bff82b3469346, type: 3}
     cost: 3
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: iron_wall_tri_l_4x2
     displayName: Tri Wall L
     shape: 12
     category: 1
     prefab: {fileID: 385485497405014443, guid: 0b36935097aec224b9803b2d6d39b8f1, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 4335e62e97b53634680e3f9144a1cd48, type: 3}
     cost: 2
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: iron_wall_tri_r_4x2
     displayName: Tri Wall R
     shape: 13
     category: 1
     prefab: {fileID: 6887175403535112196, guid: 8e46e2644138a2d44952cc25e00ff178, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 67edb08c1bd9ad947a1f44b1a0d54252, type: 3}
     cost: 2
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: iron_railing_4x1
     displayName: Railing
     shape: 14
     category: 3
     prefab: {fileID: 4522674953609071165, guid: b80830547a9da824fbeb8f7308875c96, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 536acff7e2a618143bfc98296449eef3, type: 3}
     cost: 1
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: iron_stairs_4x4
     displayName: Stairs
     shape: 15
     category: 3
     prefab: {fileID: 8163705352521159779, guid: 11fef900717b9c348a07415496a572be, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 26b304edffa314346b2301fa63f0bce5, type: 3}
     cost: 6
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: iron_ramp_4x4
     displayName: Ramp
     shape: 16
     category: 3
     prefab: {fileID: 4121596714959714462, guid: ec7059135d0072d42ac039c3a8fc43ca, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 005191343f5898a4ebf3776175c7cf38, type: 3}
     cost: 4
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: iron_roof_4x4
     displayName: Roof
     shape: 17
     category: 2
     prefab: {fileID: 726432287080206530, guid: 3ecda623fb3263645a7b8431ecabbbb1, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 322bd2c975fb99840b1944fd56d544c3, type: 3}
     cost: 3
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: iron_roof_corner_4x4
     displayName: Roof Corner
     shape: 18
     category: 2
     prefab: {fileID: 8461863914042069234, guid: 6bad1ccf64ae3fe4a8e050dbdd9d214e, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 279f4b93b555a094d83ee75ac63896b2, type: 3}
     cost: 3
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: iron_roof_inner_4x4
     displayName: Roof Inner
     shape: 19
     category: 2
     prefab: {fileID: 5543618990843906136, guid: 019bb87650a9f1340b884646cea0828c, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: f494de78321909d41b653298bbf84c01, type: 3}
     cost: 4
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_si_wall_light
+    displayName: Wall Light
+    shape: 20
+    category: 5
+    prefab: {fileID: 2406196272878205201, guid: 55266fb06c1731044b551b9aa130cf08, type: 3}
+    icon: {fileID: 2800000, guid: 4f8370c87d891c24782c777a1dc4d362, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 0
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_si_ceiling_light_a
+    displayName: Ceiling Light A
+    shape: 20
+    category: 5
+    prefab: {fileID: 9222567173803765752, guid: ca2cf882f4cbfb1488f7fc93bd2ed131, type: 3}
+    icon: {fileID: 2800000, guid: a6b66b79632d852449bd70a345e5f66f, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 0
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_si_ceiling_light_b
+    displayName: Ceiling Light B
+    shape: 20
+    category: 5
+    prefab: {fileID: 8850616088266937070, guid: 172d163e4d3091b4d8bbc06c571aca88, type: 3}
+    icon: {fileID: 2800000, guid: 8f76c84471bfe0742b1c88fd541b68e6, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 0
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_si_ceiling_light_c
+    displayName: Ceiling Light C
+    shape: 20
+    category: 5
+    prefab: {fileID: 5674834174039980693, guid: 4d6572a1eaebac64b8779f28dbd144c7, type: 3}
+    icon: {fileID: 2800000, guid: 97bd70ae9b4385b48b215741be11653a, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 0
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_si_banner
+    displayName: Banner
+    shape: 20
+    category: 5
+    prefab: {fileID: 2009919008642179851, guid: 6e01b400ac8eef741ac8aea30a0a712c, type: 3}
+    icon: {fileID: 2800000, guid: c4b2779722102e84a9c06b741f9df103, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 0
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_si_poster
+    displayName: Poster
+    shape: 20
+    category: 5
+    prefab: {fileID: 9017169724171110778, guid: 7db54fa5488a6c841822a8695983b8bc, type: 3}
+    icon: {fileID: 2800000, guid: 9ce74bc62ca0e9542af6553daccefb73, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 0
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: iron_si_sign
+    displayName: Sign
+    shape: 20
+    category: 5
+    prefab: {fileID: 3167820947896243578, guid: db30aa87f8f6bd149bf9f459acd30d7a, type: 3}
+    icon: {fileID: 2800000, guid: 66ded8ee52b8aff4aa5da3bd2b8a5aa8, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 0
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}

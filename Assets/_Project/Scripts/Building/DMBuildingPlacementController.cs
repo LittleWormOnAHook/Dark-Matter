@@ -2089,6 +2089,44 @@ namespace Project.Building
 
         static DMBuildingGhost Commit(DMBuildingPiece piece, Vector3 position, Quaternion rotation, ItemData paid)
         {
+            return Spawn(piece, position, rotation, paid, piece.Cost, surfaceHost, null);
+        }
+
+        /// <summary>Save load (0926): rebuilds a placed piece with its saved finish. Surface hosts are linked afterwards.</summary>
+        public static DMBuildingGhost RestorePiece(DMBuildingPiece piece, Vector3 position, Quaternion rotation, ItemData paid, int cost, string materialVariantId)
+        {
+            if (piece == null)
+                return null;
+            return Spawn(piece, position, rotation, paid, cost, null, materialVariantId);
+        }
+
+        /// <summary>Save load (0926): removes every placed piece without refunds so the saved set replaces it.</summary>
+        public static void ClearAllPieces()
+        {
+            DMBuildingGhost[] ghosts = DMBuildingGhost.Snapshot();
+            for (int i = 0; i < ghosts.Length; i++)
+            {
+                if (ghosts[i] == null)
+                    continue;
+                ghosts[i].gameObject.SetActive(false);
+                if (Application.isPlaying)
+                    Destroy(ghosts[i].gameObject);
+                else
+                    DestroyImmediate(ghosts[i].gameObject);
+            }
+
+            if (instance != null)
+            {
+                instance.lastPlaced = null;
+                instance.destroyFocus = null;
+                instance.stickyVerticalSupport = null;
+            }
+
+            InvalidateBuiltGhostCache();
+        }
+
+        static DMBuildingGhost Spawn(DMBuildingPiece piece, Vector3 position, Quaternion rotation, ItemData paid, int cost, DMBuildingGhost host, string materialVariantId)
+        {
             GameObject ghostObject = DMBuildingPieceFactory.Create(piece.Id);
             ghostObject.name = "BuildingGhost_" + piece.Id;
             ghostObject.transform.SetPositionAndRotation(position, rotation);
@@ -2097,7 +2135,7 @@ namespace Project.Building
             if (marker == null)
                 marker = ghostObject.AddComponent<DMBuildingGhost>();
             marker.PieceId = piece.Id;
-            marker.Cost = piece.Cost;
+            marker.Cost = cost;
             marker.PaidItem = paid;
             marker.Built = true;
             marker.LocalHalfExtents = piece.Size * 0.5f;
@@ -2105,13 +2143,15 @@ namespace Project.Building
             DMBuildingStyleLibrary style = DMBuildingCatalog.StyleOf(piece.Id);
             DMBuildingMaterialVariant variant = !isDoor && style != null ? style.FirstFinish() : null;
             marker.MaterialVariantId = variant != null ? variant.id : null;
+            if (!isDoor && !string.IsNullOrEmpty(materialVariantId))
+                marker.MaterialVariantId = materialVariantId;
 
             if (isDoor && ghostObject.GetComponent<DMBuildingDoor>() == null)
                 ghostObject.AddComponent<DMBuildingDoor>();
 
             if (piece.Snap == DMBuildingSnap.Surface)
             {
-                marker.Host = surfaceHost;
+                marker.Host = host;
                 DMBuildingPieceFactory.SetTag(ghostObject, "Untagged"); // small items are not climb holds
             }
 

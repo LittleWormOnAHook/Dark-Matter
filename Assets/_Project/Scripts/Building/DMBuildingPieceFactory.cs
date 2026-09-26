@@ -19,10 +19,48 @@ namespace Project.Building
             GameObject instance = prefab != null
                 ? UnityEngine.Object.Instantiate(prefab)
                 : CreateRuntimeMesh(DMBuildingCatalog.FallbackMeshId(pieceId));
+            Vector3 modelRotation = DMBuildingCatalog.ModelRotationFor(pieceId);
+            if (modelRotation.sqrMagnitude > 0.0001f)
+                instance = WrapRotated(instance, modelRotation);
             CenterPivot(instance);
             SetTag(instance, ClimbableTag);
             DMBuildingLayers.Apply(instance); // 0925-layers
             return instance;
+        }
+
+        /// <summary>
+        /// Library model rotation (0926): the prefab goes under a fresh root, turned by the part's model rotation and
+        /// centered, so placement and colliders work off the turned model.
+        /// </summary>
+        static GameObject WrapRotated(GameObject instance, Vector3 euler)
+        {
+            var root = new GameObject(instance.name);
+            instance.name = "Model";
+            instance.transform.SetParent(root.transform, false);
+            instance.transform.localPosition = Vector3.zero;
+            instance.transform.localRotation = Quaternion.Euler(euler) * instance.transform.localRotation;
+
+            Renderer[] renderers = instance.GetComponentsInChildren<Renderer>(true);
+            bool any = false;
+            Bounds bounds = default;
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                if (renderers[i] == null || renderers[i] is ParticleSystemRenderer)
+                    continue;
+                if (!any)
+                {
+                    bounds = renderers[i].bounds;
+                    any = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(renderers[i].bounds);
+                }
+            }
+
+            if (any)
+                instance.transform.position -= bounds.center;
+            return root;
         }
 
         public static void SetTag(GameObject root, string tag)

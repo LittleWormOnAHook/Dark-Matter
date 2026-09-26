@@ -118,7 +118,7 @@
                 <ui:Label text="Buildings" picking-mode="Ignore" class="dmg-build-list-header"/>
                 <ui:Label text="Known Building" picking-mode="Ignore" class="dmg-build-list-row"/>
             </ui:ScrollView>
-            <ui:Label name="build-cost" text="Rock 4 / 12" picking-mode="Ignore" class="dmg-build-cost"/>
+            <ui:Label name="build-name" text="Wall" picking-mode="Ignore" class="dmg-build-name"/>
             <ui:VisualElement name="build-row" picking-mode="Position" class="dmg-build-row">
                 <ui:Button name="build-materials" text="▲" picking-mode="Position" class="dmg-build-arrow"/>
                 <ui:Button name="build-scroll-left" text="◀" picking-mode="Position" class="dmg-build-arrow"/>
@@ -136,6 +136,7 @@
                 </ui:VisualElement>
                 <ui:Button name="build-scroll-right" text="▶" picking-mode="Position" class="dmg-build-arrow"/>
             </ui:VisualElement>
+            <ui:Label name="build-cost" text="Rock 4 / 12" picking-mode="Ignore" class="dmg-build-cost"/>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

@@ -15,8 +15,9 @@ MonoBehaviour:
   styleId: stone
   displayName: Stone
   order: 0
-  icon: {fileID: 0}
+  icon: {fileID: 2800000, guid: cbb427ca4bdcb7843ab0d554c4d6bde4, type: 3}
   accent: {r: 0.75, g: 0.72, b: 0.68, a: 1}
+  resourceTextColor: {r: 0.88, g: 0.76, b: 0.58, a: 1}
   costItem: {fileID: 11400000, guid: 8f054857689cdd94d8f8323255554cfa, type: 2}
   costItemNames:
   - Rock
@@ -52,218 +53,334 @@ MonoBehaviour:
     shape: 0
     category: 0
     prefab: {fileID: 6003366801586016187, guid: 62af11c7bd7bfdd49bfde88b942a2a6b, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 67508e74d9c1af14a828ad02fa82c648, type: 3}
     cost: 4
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: stone_foundation_tri_4x4
     displayName: Tri Foundation
     shape: 1
     category: 0
     prefab: {fileID: 6933038858168513452, guid: 660e3f2ca5e20f84b8e39599c6fd6d88, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 96721e796b186fa4b91463d5b2bfe117, type: 3}
     cost: 2
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: stone_floor_4x4
     displayName: Floor
     shape: 2
     category: 2
     prefab: {fileID: 1632219233167993731, guid: 8d7d93e5d3bc5864f9622a0052fbdd6f, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: d1964d916b54be6479304cf0ab60e797, type: 3}
     cost: 4
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: stone_floor_tri_4x4
     displayName: Tri Floor
     shape: 3
     category: 2
     prefab: {fileID: 6278971066372503040, guid: f8c87bdc248d52e4491c320ce3dfa789, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 16841c49e823ea84397cda333af304e3, type: 3}
     cost: 2
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: stone_ceiling_4x4
     displayName: Ceiling
     shape: 4
     category: 2
     prefab: {fileID: 6919228367469974749, guid: 2cca2be8374e59a41989e8373a6feca7, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 55d374c1ce36469409eb4aa868f14914, type: 3}
     cost: 4
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: stone_hatch_4x4
     displayName: Hatch
     shape: 5
     category: 2
     prefab: {fileID: 7357694272079514637, guid: 2fcfd5a3ab1849d428fcd5ca9969872e, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: c2887bbf95bc5b84a8206c1666b4403f, type: 3}
     cost: 3
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: stone_wall_4x4
     displayName: Wall
     shape: 6
     category: 1
     prefab: {fileID: 6587126998690137564, guid: 191e4d4de51f8214b99525610a844c83, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: fb0afb3e19002f440b4bbdce916259c6, type: 3}
     cost: 4
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: stone_wall_half_4x2
     displayName: Half Wall
     shape: 7
     category: 1
     prefab: {fileID: 8691650662879385080, guid: c4960899fbf8c4748bee883dd37b2f29, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 8e5e32064f17f6644847441d0ded6b20, type: 3}
     cost: 2
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: stone_wall_window_4x4
     displayName: Window
     shape: 8
     category: 1
     prefab: {fileID: 4813987836797080729, guid: 16bd045704bf2ac4c957007401468365, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 53ba10b35606db641a37ea181a72b26a, type: 3}
     cost: 4
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: stone_door_frame_4x4
     displayName: Door Frame
     shape: 9
     category: 4
     prefab: {fileID: 1594952802536331735, guid: c75ca97774a952742a6f3ebd35f9eba8, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: f1ca7c6030773c144bfa205c1c309bcd, type: 3}
     cost: 4
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: stone_door_basic
     displayName: Door
     shape: 10
     category: 4
     prefab: {fileID: 4198157748491310853, guid: b929ba82fff30cb43a6b57732ca1bb16, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 181367f6c86805a4dbc824f769798c06, type: 3}
     cost: 2
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: stone_passage_4x4
     displayName: Passage
     shape: 11
     category: 1
     prefab: {fileID: 4760767460827940048, guid: 8de5e4844e9a66b4b80c207009b023f9, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 94ba49880e41abc458a6ac6b6d321372, type: 3}
     cost: 3
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: stone_wall_tri_l_4x2
     displayName: Tri Wall L
     shape: 12
     category: 1
     prefab: {fileID: 7640463594078019026, guid: 16f8128a90b240841a19842f9530afb6, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 1fe333d4ab8e9de478a10ddff34097d4, type: 3}
     cost: 2
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: stone_wall_tri_r_4x2
     displayName: Tri Wall R
     shape: 13
     category: 1
     prefab: {fileID: 4534018357591266090, guid: 4d9d10218b6931e468558a8740d3b62a, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 00bd2489d06918b42bcc71d55ebdf19d, type: 3}
     cost: 2
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: stone_railing_4x1
     displayName: Railing
     shape: 14
     category: 3
     prefab: {fileID: 6804738935610565975, guid: 6ce10054e613bf4428c6e217a9ca945e, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 4f0dbbfae8bc3c04c8e8a450b5667ecc, type: 3}
     cost: 1
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: stone_stairs_4x4
     displayName: Stairs
     shape: 15
     category: 3
     prefab: {fileID: 5356956798971073238, guid: ed15d51196eec664eb4fdfd3e314c54f, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: b4e2f492adce4f8429342a31031066d8, type: 3}
     cost: 6
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: stone_ramp_4x4
     displayName: Ramp
     shape: 16
     category: 3
     prefab: {fileID: 8141703070648023229, guid: 8eb79c8aa8e5c514b924108c1f81122d, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 4ead5587402bdd044953effb8c59a34b, type: 3}
     cost: 4
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: stone_roof_4x4
     displayName: Roof
     shape: 17
     category: 2
     prefab: {fileID: 1616203820002658832, guid: 9f6c73bc0f6bdb94591260879b4e32d2, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: ff26ead3c356b604684bed7c91893d4b, type: 3}
     cost: 3
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: stone_roof_corner_4x4
     displayName: Roof Corner
     shape: 18
     category: 2
     prefab: {fileID: 7354781217048919409, guid: 68974a645f5341d4ea4ecb7e2c84dd90, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 503f9eec7c0fa8d4589f471b8ce415ad, type: 3}
     cost: 3
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: stone_roof_inner_4x4
     displayName: Roof Inner
     shape: 19
     category: 2
     prefab: {fileID: 3280735931899083995, guid: a1cb75c6a36e6314ab7fe547ccdbe878, type: 3}
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 03278b4a60c44134c9bcda3b499254dd, type: 3}
     cost: 4
     enabled: 1
     applyStyleFinish: 1
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_surface_item
+    displayName: Wall_Light
+    shape: 20
+    category: 5
+    prefab: {fileID: 1503639998294784, guid: 7eb44e6d0f419324b83e33d3678c4f4f, type: 3}
+    icon: {fileID: 2800000, guid: 7afc51876853e454db453177578e9fc2, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 0
+    surfaceOffsetMeters: 0.001
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 180, y: 90, z: -90}
+  - id: stone_si_wall_light
+    displayName: Wall Light
+    shape: 20
+    category: 5
+    prefab: {fileID: 2406196272878205201, guid: 55266fb06c1731044b551b9aa130cf08, type: 3}
+    icon: {fileID: 2800000, guid: a17835fd78d325043ae29cd61a1fb281, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 0
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_si_ceiling_light_a
+    displayName: Ceiling Light A
+    shape: 20
+    category: 5
+    prefab: {fileID: 9222567173803765752, guid: ca2cf882f4cbfb1488f7fc93bd2ed131, type: 3}
+    icon: {fileID: 2800000, guid: ba9f82bee2565ae4998d683d2bacbc26, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 0
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_si_ceiling_light_b
+    displayName: Ceiling Light B
+    shape: 20
+    category: 5
+    prefab: {fileID: 8850616088266937070, guid: 172d163e4d3091b4d8bbc06c571aca88, type: 3}
+    icon: {fileID: 2800000, guid: 855b4940ab59526488fe693115d17a34, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 0
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_si_ceiling_light_c
+    displayName: Ceiling Light C
+    shape: 20
+    category: 5
+    prefab: {fileID: 5674834174039980693, guid: 4d6572a1eaebac64b8779f28dbd144c7, type: 3}
+    icon: {fileID: 2800000, guid: 06e21e0a31bc61548a0a37d325933e28, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 0
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_si_banner
+    displayName: Banner
+    shape: 20
+    category: 5
+    prefab: {fileID: 2009919008642179851, guid: 6e01b400ac8eef741ac8aea30a0a712c, type: 3}
+    icon: {fileID: 2800000, guid: cacfd26e7ea326a40ba58a0cea3bed47, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 0
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_si_poster
+    displayName: Poster
+    shape: 20
+    category: 5
+    prefab: {fileID: 9017169724171110778, guid: 7db54fa5488a6c841822a8695983b8bc, type: 3}
+    icon: {fileID: 2800000, guid: 6206dd6b976295b4ba6b55065ae77518, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 0
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: stone_si_sign
+    displayName: Sign
+    shape: 20
+    category: 5
+    prefab: {fileID: 3167820947896243578, guid: db30aa87f8f6bd149bf9f459acd30d7a, type: 3}
+    icon: {fileID: 2800000, guid: d38e1cd8f3ac56446b17ec2ac555459a, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 0
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}

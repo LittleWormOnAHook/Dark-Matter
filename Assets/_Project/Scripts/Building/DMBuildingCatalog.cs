@@ -169,7 +169,8 @@ namespace Project.Building
                 part.surfaceOffsetMeters,
                 part.sizeOverride,
                 part.applyStyleFinish,
-                part.category);
+                part.category,
+                part.modelRotation);
         }
 
         static DMBuildingPiece Make(
@@ -183,9 +184,15 @@ namespace Project.Building
             float surfaceOffset,
             Vector3 sizeOverride,
             bool applyStyleFinish,
-            DMBuildingCategory? category = null)
+            DMBuildingCategory? category = null,
+            Vector3 modelRotation = default)
         {
             DMBuildingSnap snap = SnapFor(shape);
+            Vector3 size = SizeFor(shape, prefab, sizeOverride);
+            bool meshSized = (shape == DMBuildingShape.SurfaceItem || shape == DMBuildingShape.Custom)
+                && !(sizeOverride.x > 0.001f && sizeOverride.y > 0.001f && sizeOverride.z > 0.001f);
+            if (meshSized && modelRotation.sqrMagnitude > 0.0001f)
+                size = RotatedSize(size, modelRotation);
             return new DMBuildingPiece
             {
                 Id = id,
@@ -195,7 +202,7 @@ namespace Project.Building
                 IsBuilding = false,
                 Shape = shape,
                 Category = category ?? DefaultCategory(shape),
-                Size = SizeFor(shape, prefab, sizeOverride),
+                Size = size,
                 Cost = cost,
                 Snap = snap,
                 RequiresDoorFrame = snap == DMBuildingSnap.Door,
@@ -203,7 +210,27 @@ namespace Project.Building
                 Icon = icon,
                 SurfaceOffset = surfaceOffset,
                 ApplyStyleFinish = applyStyleFinish,
+                ModelRotation = modelRotation,
             };
+        }
+
+        /// <summary>Axis-aligned size of a box after the model rotation.</summary>
+        public static Vector3 RotatedSize(Vector3 size, Vector3 euler)
+        {
+            Matrix4x4 m = Matrix4x4.Rotate(Quaternion.Euler(euler));
+            Vector3 e = size * 0.5f;
+            Vector3 r = new Vector3(
+                Mathf.Abs(m.m00) * e.x + Mathf.Abs(m.m01) * e.y + Mathf.Abs(m.m02) * e.z,
+                Mathf.Abs(m.m10) * e.x + Mathf.Abs(m.m11) * e.y + Mathf.Abs(m.m12) * e.z,
+                Mathf.Abs(m.m20) * e.x + Mathf.Abs(m.m21) * e.y + Mathf.Abs(m.m22) * e.z);
+            return r * 2f;
+        }
+
+        /// <summary>Extra model rotation (degrees) set on the part in the style library.</summary>
+        public static Vector3 ModelRotationFor(string pieceId)
+        {
+            DMBuildingPiece piece = Find(pieceId);
+            return piece != null ? piece.ModelRotation : Vector3.zero;
         }
 
         public static DMBuildingSnap SnapFor(DMBuildingShape shape)
@@ -772,5 +799,6 @@ namespace Project.Building
         public Texture2D Icon;
         public float SurfaceOffset;
         public bool ApplyStyleFinish = true;
+        public Vector3 ModelRotation;
     }
 }

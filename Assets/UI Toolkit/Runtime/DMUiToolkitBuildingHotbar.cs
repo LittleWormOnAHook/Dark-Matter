@@ -31,6 +31,7 @@ namespace Project.UI
         VisualElement holdRing;
         VisualElement crosshairDot;
         Label costLabel;
+        Label nameLabel;
         InventorySystem inventoryHook;
         bool wheelStopped;
         bool ringPainted;
@@ -70,6 +71,17 @@ namespace Project.UI
             costLabel = hudRoot.Q<Label>("build-cost");
             if (costLabel != null)
                 costLabel.enableRichText = true;
+            // 0926: selected piece name above the hotbar (gold, text only). Created here if an older Hud.uxml lacks it.
+            nameLabel = hudRoot.Q<Label>("build-name");
+            VisualElement buildRow = hudRoot.Q<VisualElement>("build-row");
+            if (nameLabel == null && buildRow != null && buildRow.parent != null)
+            {
+                nameLabel = new Label { name = "build-name", pickingMode = PickingMode.Ignore };
+                nameLabel.AddToClassList("dmg-build-name");
+                buildRow.parent.Insert(buildRow.parent.IndexOf(buildRow), nameLabel);
+            }
+            if (nameLabel != null)
+                nameLabel.text = string.Empty;
             if (!wheelStopped)
             {
                 hudRoot.RegisterCallback<WheelEvent>(OnBuildWheel, TrickleDown.TrickleDown);
@@ -418,20 +430,26 @@ namespace Project.UI
 
         void PaintCost()
         {
+            DMBuildingPiece piece = DMBuildingMode.SelectedPiece;
+            if (nameLabel != null)
+                nameLabel.text = piece != null ? piece.DisplayName : string.Empty;
+
             if (costLabel == null)
                 return;
 
-            DMBuildingPiece piece = DMBuildingMode.SelectedPiece;
             if (piece == null || piece.Cost <= 0)
             {
                 costLabel.text = string.Empty;
                 return;
             }
 
+            // 0926: each resource reads in its style's colour; the needed number turns soft red when short.
+            DMBuildingStyleLibrary style = DMBuildingCatalog.StyleOf(piece.Id);
+            costLabel.style.color = style != null ? style.resourceTextColor : new Color(0.93f, 0.91f, 0.89f, 1f);
             int remaining = DMBuildingCatalog.CountCost(piece);
             bool shortOnParts = remaining < piece.Cost;
             string needed = shortOnParts
-                ? $"<color=#4A4A5A>{piece.Cost}</color>"
+                ? $"<color=#FF6B6B>{piece.Cost}</color>"
                 : piece.Cost.ToString();
             costLabel.text = $"{DMBuildingCatalog.CostItemName(piece)} {needed} / {remaining}";
         }
@@ -531,11 +549,15 @@ namespace Project.UI
                 int index = window + i;
                 bool filled = index < pieces.Count;
                 DMBuildingPiece piece = filled ? pieces[index] : null;
+                bool hasIcon = piece != null && piece.Icon != null;
                 if (slotLabels[i] != null)
+                {
+                    // 0926: icons fill the square slot; the name only shows when a part has no icon yet.
                     slotLabels[i].text = piece != null ? piece.DisplayName : string.Empty;
+                    slotLabels[i].style.display = hasIcon ? DisplayStyle.None : DisplayStyle.Flex;
+                }
                 if (slotIcons[i] != null)
                 {
-                    bool hasIcon = piece != null && piece.Icon != null;
                     slotIcons[i].style.display = hasIcon ? DisplayStyle.Flex : DisplayStyle.None;
                     slotIcons[i].style.backgroundImage = hasIcon ? new StyleBackground(piece.Icon) : new StyleBackground(StyleKeyword.None);
                 }
