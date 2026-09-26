@@ -204,10 +204,10 @@ namespace Project.UI
 
         private IEnumerator AnimateToast()
         {
-            const float slideInDuration = 0.35f;
-            const float holdDuration = 2.3f;
-            const float fadeOutDuration = 0.35f;
-            const float slideDistance = 28f;
+            float slideInDuration = Project.Interaction.DMPickupProfile.ToastSlideInSeconds;
+            float holdDuration = Project.Interaction.DMPickupProfile.ToastHoldSeconds;
+            float fadeOutDuration = Project.Interaction.DMPickupProfile.ToastFadeOutSeconds;
+            float slideDistance = Project.Interaction.DMPickupProfile.ToastSlideDistance;
 
             Vector2 startPosition = restAnchoredPosition + new Vector2(0f, -slideDistance);
             toastRect.anchoredPosition = startPosition;

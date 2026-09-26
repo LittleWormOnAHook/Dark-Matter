@@ -7,7 +7,9 @@ using UnityEngine;
 namespace Project.EditorTools.Building
 {
     /// <summary>
-    /// Writes the first Stone kit as ProBuilder prefabs the first time the editor domain loads.
+    /// Retired 0925: the Stone kit is owned by <see cref="DMBuildingKitBuilder"/>. This class used to rewrite the
+    /// foundation, wall, floor, ceiling, window, door frame and door prefabs on every domain reload, which overwrote
+    /// the kit with the old mesh-less versions. Only the stone material finishes are still ensured on load.
     /// </summary>
     [InitializeOnLoad]
     public static class DMBuildingStoneLibraryBuilder
@@ -32,16 +34,16 @@ namespace Project.EditorTools.Building
         {
             EditorApplication.delayCall += () =>
             {
-                EnsureLibrary(false);
+                if (EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isCompiling)
+                    return;
                 DMBuildingMaterialLibraryBuilder.EnsureStoneFinishes();
-                RefreshWindowAndDoorMeshes();
             };
         }
 
         [MenuItem("Tools/Dark Matter Genesis/Buildings/Build Stone Library")]
         public static void BuildFromMenu()
         {
-            EnsureLibrary(true);
+            DMBuildingKitBuilder.RebuildStoneKit();
         }
 
         static void EnsureLibrary(bool force)

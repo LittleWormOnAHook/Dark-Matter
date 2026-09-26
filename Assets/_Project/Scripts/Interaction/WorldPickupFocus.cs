@@ -14,10 +14,10 @@ namespace Project.Interaction
         /// Planar (XZ) distance at which the tip swaps from yellow DOT to the Hold-E / Take prompt
         /// and hold-E pickup becomes eligible.
         /// </summary>
-        public const float ClosePromptPlanarMeters = 1.25f;
+        public static float ClosePromptPlanarMeters => DMPickupProfile.ClosePromptMeters;
 
-        /// <summary>Hold duration for focused item/blueprint pickup (seconds).</summary>
-        public const float PickupHoldSeconds = 0.75f;
+        /// <summary>Hold duration for focused item/blueprint pickup (seconds). Tuned on DMPickupProfile (default 0.5).</summary>
+        public static float PickupHoldSeconds => DMPickupProfile.HoldSeconds;
 
         public static ItemPickup Item { get; private set; }
         public static RecipePickup Recipe { get; private set; }

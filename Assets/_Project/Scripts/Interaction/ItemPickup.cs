@@ -82,7 +82,7 @@ namespace Project.Interaction
 
         public float HoldDurationSeconds => WorldPickupFocus.PickupHoldSeconds;
 
-        public string HoldPromptText => string.IsNullOrEmpty(promptText) ? "Hold E to Take" : promptText;
+        public string HoldPromptText => DMPickupProfile.PromptText(promptText);
 
         public bool IsHoldActive => holdActive;
 

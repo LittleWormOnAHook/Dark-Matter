@@ -37,16 +37,42 @@ namespace Project.Building
         public const float DoorSeatDrop = (FrameOuter - DoorHeight) * 0.5f;
         public const string CommandCenterSeedId = "cc_seed";
 
+        // DM kit 0925: fixed kit dimensions. Snapping reads these, so they stay constants (detail sizes live on the profile).
+        public const string FoundationId = "stone_foundation_4x4";
+        public const string HatchId = "stone_hatch_4x4";
+        public const string PassageId = "stone_passage_4x4";
+        public const float ModuleMeters = 4f;
+        public const float StoryHeight = 4f;
+        public const float WallThickness = 0.3f;
+        public const float FoundationHeight = 0.4f;
+        public const float SlabThickness = 0.2f;
+        public const float HalfWallHeight = 2f;
+        public const float RoofRise = 2f;
+        public const float RailingHeight = 1f;
+        public const float RailingThickness = 0.15f;
+
         static readonly DMBuildingPiece[] Pieces =
         {
-            Piece("stone_foundation_4x4", "Foundation", StoneId, false, new Vector3(4f, 0.4f, 4f), 4, DMBuildingSnap.Ground),
-            Piece("stone_wall_4x4", "Wall", StoneId, false, new Vector3(4f, 4f, 0.3f), 4, DMBuildingSnap.Edge),
-            Piece(FloorId, "Floor", StoneId, false, new Vector3(4f, 0.2f, 4f), 4, DMBuildingSnap.Ground),
-            Piece("stone_slope_4x4", "Slope", StoneId, false, new Vector3(4f, 4f, 4f), 4, DMBuildingSnap.Ground),
-            Piece("stone_wall_window_4x4", "Window", StoneId, false, new Vector3(4f, 4f, 0.3f), 4, DMBuildingSnap.Edge),
-            Piece(DoorFrameId, "Frame", StoneId, false, new Vector3(4f, 4f, 0.3f), 4, DMBuildingSnap.Edge),
-            Piece("stone_door_basic", "Door", StoneId, false, new Vector3(2.2f, 3.2f, 0.12f), 2, DMBuildingSnap.Door),
-            Piece(CeilingId, "Ceiling", StoneId, false, new Vector3(4f, 0.2f, 4f), 4, DMBuildingSnap.Ground),
+            Piece(FoundationId, "Foundation", StoneId, false, new Vector3(4f, FoundationHeight, 4f), 4, DMBuildingSnap.Ground),
+            Piece("stone_foundation_tri_4x4", "Tri Foundation", StoneId, false, new Vector3(4f, FoundationHeight, 4f), 2, DMBuildingSnap.Ground),
+            Piece(FloorId, "Floor", StoneId, false, new Vector3(4f, SlabThickness, 4f), 4, DMBuildingSnap.Ground),
+            Piece("stone_floor_tri_4x4", "Tri Floor", StoneId, false, new Vector3(4f, SlabThickness, 4f), 2, DMBuildingSnap.Ground),
+            Piece(CeilingId, "Ceiling", StoneId, false, new Vector3(4f, SlabThickness, 4f), 4, DMBuildingSnap.Ground),
+            Piece(HatchId, "Hatch", StoneId, false, new Vector3(4f, SlabThickness, 4f), 3, DMBuildingSnap.Ground),
+            Piece(WallId, "Wall", StoneId, false, new Vector3(4f, StoryHeight, WallThickness), 4, DMBuildingSnap.Edge),
+            Piece("stone_wall_half_4x2", "Half Wall", StoneId, false, new Vector3(4f, HalfWallHeight, WallThickness), 2, DMBuildingSnap.Edge),
+            Piece("stone_wall_window_4x4", "Window", StoneId, false, new Vector3(4f, StoryHeight, WallThickness), 4, DMBuildingSnap.Edge),
+            Piece(DoorFrameId, "Door Frame", StoneId, false, new Vector3(4f, StoryHeight, WallThickness), 4, DMBuildingSnap.Edge),
+            Piece("stone_door_basic", "Door", StoneId, false, new Vector3(DoorWidth, DoorHeight, DoorDepth), 2, DMBuildingSnap.Door),
+            Piece(PassageId, "Passage", StoneId, false, new Vector3(4f, StoryHeight, WallThickness), 3, DMBuildingSnap.Edge),
+            Piece("stone_wall_tri_l_4x2", "Tri Wall L", StoneId, false, new Vector3(4f, RoofRise, WallThickness), 2, DMBuildingSnap.Edge),
+            Piece("stone_wall_tri_r_4x2", "Tri Wall R", StoneId, false, new Vector3(4f, RoofRise, WallThickness), 2, DMBuildingSnap.Edge),
+            Piece("stone_railing_4x1", "Railing", StoneId, false, new Vector3(4f, RailingHeight, RailingThickness), 1, DMBuildingSnap.Edge),
+            Piece("stone_stairs_4x4", "Stairs", StoneId, false, new Vector3(4f, StoryHeight, 4f), 6, DMBuildingSnap.Ground),
+            Piece("stone_ramp_4x4", "Ramp", StoneId, false, new Vector3(4f, StoryHeight, 4f), 4, DMBuildingSnap.Ground),
+            Piece("stone_roof_4x4", "Roof", StoneId, false, new Vector3(4f, RoofRise, 4f), 3, DMBuildingSnap.Ground),
+            Piece("stone_roof_corner_4x4", "Roof Corner", StoneId, false, new Vector3(4f, RoofRise, 4f), 3, DMBuildingSnap.Ground),
+            Piece("stone_roof_inner_4x4", "Roof Inner", StoneId, false, new Vector3(4f, RoofRise, 4f), 4, DMBuildingSnap.Ground),
             Piece(CommandCenterSeedId, "CC Seed", CommandCenterSeedId, true, new Vector3(4f, 3f, 4f), 8, DMBuildingSnap.Ground),
         };
 
@@ -56,12 +82,13 @@ namespace Project.Building
         {
             return pieceId == WallId
                 || pieceId == "stone_wall_window_4x4"
-                || pieceId == DoorFrameId;
+                || pieceId == DoorFrameId
+                || pieceId == PassageId;
         }
 
         public static bool IsFoundation(string pieceId)
         {
-            return pieceId == "stone_foundation_4x4";
+            return pieceId == FoundationId;
         }
 
         public static bool IsFloor(string pieceId)
@@ -93,7 +120,19 @@ namespace Project.Building
 
         public static bool IsCeiling(string pieceId)
         {
-            return pieceId == CeilingId;
+            return pieceId == CeilingId || pieceId == HatchId;
+        }
+
+        /// <summary>Flat walkable slabs above the foundation layer (floor, ceiling, hatch, tri floor).</summary>
+        public static bool IsSlab(string pieceId)
+        {
+            return pieceId == FloorId || pieceId == CeilingId || pieceId == HatchId || pieceId == "stone_floor_tri_4x4";
+        }
+
+        /// <summary>Wall-like pieces another wall can stack on or a slab can sit on.</summary>
+        public static bool IsStackableWall(string pieceId)
+        {
+            return IsVerticalSupport(pieceId) || pieceId == "stone_wall_half_4x2";
         }
 
         public static bool IsStackLayerAllowed(int layer)
@@ -103,7 +142,7 @@ namespace Project.Building
 
         public static bool IsEdgeSupport(string pieceId)
         {
-            return pieceId == "stone_foundation_4x4" || pieceId == "stone_floor_4x4" || pieceId == CeilingId;
+            return pieceId == FoundationId || pieceId == FloorId || pieceId == CeilingId || pieceId == HatchId;
         }
 
         public static List<DMBuildingPiece> PiecesFor(string hotbarId)

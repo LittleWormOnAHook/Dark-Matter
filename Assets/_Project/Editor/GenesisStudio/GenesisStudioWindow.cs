@@ -20,12 +20,14 @@ namespace Project.EditorTools.GenesisStudio
         private readonly DMStudioSectionProfilePanel sectionProfilePanel = new DMStudioSectionProfilePanel();
         private readonly DMStudioFootstepsPanel footstepsPanel = new DMStudioFootstepsPanel();
         private readonly DMStudioLandingPanel landingPanel = new DMStudioLandingPanel();
+        private readonly DMStudioControlsPanel controlsPanel = new DMStudioControlsPanel();
         private readonly DMStudioCameraPanel cameraPanel = new DMStudioCameraPanel();
         private readonly DMStudioCompanionEditorPanel companionEditorPanel = new DMStudioCompanionEditorPanel();
         private readonly DMStudioCompanionSystemsPanel companionSystemsPanel = new DMStudioCompanionSystemsPanel();
         private readonly ItemDataCreatorPanel itemDataPanel = new ItemDataCreatorPanel();
         private readonly DMAmmoCreatorPanel ammoPanel = new DMAmmoCreatorPanel();
         private readonly CraftingItemCreatorPanel craftingItemPanel = new CraftingItemCreatorPanel();
+        private readonly DMStudioPickupItemsPanel pickupItemsPanel = new DMStudioPickupItemsPanel();
         private UnityEditor.Editor playerSystemsEditor;
         private DMPlayerSystemsProfile playerSystemsTarget;
 
@@ -40,8 +42,10 @@ namespace Project.EditorTools.GenesisStudio
         private void OnDisable()
         {
             assetPanel.Dispose();
+            controlsPanel.Dispose();
             companionEditorPanel.Dispose();
             companionSystemsPanel.Dispose();
+            pickupItemsPanel.Dispose();
             DestroyPlayerSystemsEditor();
         }
 
@@ -185,6 +189,9 @@ namespace Project.EditorTools.GenesisStudio
                     case DMStudioPanelMode.EmbeddedCraftingItem:
                         craftingItemPanel.Draw();
                         break;
+                    case DMStudioPanelMode.PickupItemsCombined:
+                        pickupItemsPanel.Draw();
+                        break;
                     case DMStudioPanelMode.ExternalBlueprintTab:
                         DrawExternalBlueprint(sub);
                         break;
@@ -196,6 +203,9 @@ namespace Project.EditorTools.GenesisStudio
                         break;
                     case DMStudioPanelMode.LandingCombined:
                         landingPanel.Draw();
+                        break;
+                    case DMStudioPanelMode.ControlsInputEditor:
+                        controlsPanel.Draw();
                         break;
                     case DMStudioPanelMode.FootstepsCombined:
                         footstepsPanel.Draw();

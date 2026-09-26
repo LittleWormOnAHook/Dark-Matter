@@ -9,6 +9,9 @@ namespace Project.Building
     /// </summary>
     public static class DMBuildingPieceFactory
     {
+        /// <summary>Tag the climb system looks for; every build piece carries it (0925).</summary>
+        public const string ClimbableTag = "Climbable";
+
         public static GameObject Create(string pieceId)
         {
             GameObject prefab = DMBuildingLibrary.PrefabFor(pieceId);
@@ -16,7 +19,16 @@ namespace Project.Building
                 ? UnityEngine.Object.Instantiate(prefab)
                 : CreateRuntimeMesh(pieceId);
             CenterPivot(instance);
+            SetTag(instance, ClimbableTag);
             return instance;
+        }
+
+        public static void SetTag(GameObject root, string tag)
+        {
+            if (root == null)
+                return;
+            foreach (Transform part in root.GetComponentsInChildren<Transform>(true))
+                part.gameObject.tag = tag;
         }
 
         public static GameObject CreateRuntimeMesh(string pieceId)

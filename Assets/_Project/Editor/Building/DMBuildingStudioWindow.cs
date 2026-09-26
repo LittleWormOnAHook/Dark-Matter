@@ -58,6 +58,9 @@ namespace Project.EditorTools.Building
             DrawDoorSection();
 
             EditorGUILayout.Space();
+            DrawKitSection();
+
+            EditorGUILayout.Space();
             DrawFinishedMaterialLibrary();
 
             if (GUILayout.Button("Create Stone Finishes"))
@@ -170,6 +173,27 @@ namespace Project.EditorTools.Building
             profile.doorSwingDegrees = EditorGUILayout.FloatField("Swing degrees", profile.doorSwingDegrees);
             profile.doorSwingSeconds = EditorGUILayout.FloatField("Swing duration (s)", profile.doorSwingSeconds);
             profile.doorInteractRangeMeters = EditorGUILayout.FloatField("Interact range (m)", profile.doorInteractRangeMeters);
+        }
+
+        void DrawKitSection()
+        {
+            EditorGUILayout.LabelField("Stone kit (ProBuilder)", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                "Footprints are fixed: 4 m module, 4 m story, 0.3 m walls, 0.4 m foundation, 0.2 m slabs, 2 m roof rise. "
+                + "These fields shape openings and details. Press Rebuild Stone Kit to regenerate meshes and prefabs in "
+                + DMBuildingKitBuilder.Root + ".",
+                MessageType.None);
+            profile.kitWindowWidthMeters = EditorGUILayout.FloatField("Window width (m)", profile.kitWindowWidthMeters);
+            profile.kitWindowHeightMeters = EditorGUILayout.FloatField("Window height (m)", profile.kitWindowHeightMeters);
+            profile.kitWindowSillMeters = EditorGUILayout.FloatField("Window sill (m)", profile.kitWindowSillMeters);
+            profile.kitGlassThicknessMeters = EditorGUILayout.FloatField("Glass thickness (m)", profile.kitGlassThicknessMeters);
+            profile.kitPassageWidthMeters = EditorGUILayout.FloatField("Passage width (m)", profile.kitPassageWidthMeters);
+            profile.kitPassageHeightMeters = EditorGUILayout.FloatField("Passage height (m)", profile.kitPassageHeightMeters);
+            profile.kitHatchOpeningMeters = EditorGUILayout.FloatField("Hatch opening (m)", profile.kitHatchOpeningMeters);
+            profile.kitStairSteps = EditorGUILayout.IntSlider("Stair steps", profile.kitStairSteps, 4, 32);
+            profile.kitRailingPosts = EditorGUILayout.IntSlider("Railing posts", profile.kitRailingPosts, 2, 8);
+            if (GUILayout.Button("Rebuild Stone Kit"))
+                EditorApplication.delayCall += DMBuildingKitBuilder.RebuildStoneKit;
         }
 
         void DrawFinishedMaterialLibrary()

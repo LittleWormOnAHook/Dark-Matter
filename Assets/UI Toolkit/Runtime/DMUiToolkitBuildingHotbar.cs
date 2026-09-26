@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Project.Building;
 using Project.Inventory;
+using Project.Storage;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
@@ -28,6 +29,7 @@ namespace Project.UI
         Button scrollLeft;
         Button scrollRight;
         VisualElement holdRing;
+        VisualElement crosshairDot;
         Label costLabel;
         InventorySystem inventoryHook;
         bool wheelStopped;
@@ -82,6 +84,15 @@ namespace Project.UI
             if (holdRing != null)
                 holdRing.style.display = DisplayStyle.None;
 
+            // 0925-dot: small centre dot while building so the snap target is easy to read.
+            crosshairDot?.RemoveFromHierarchy();
+            crosshairDot = new VisualElement { name = "build-crosshair-dot", pickingMode = PickingMode.Ignore };
+            crosshairDot.style.position = Position.Absolute;
+            crosshairDot.style.left = Length.Percent(50f);
+            crosshairDot.style.top = Length.Percent(50f);
+            crosshairDot.style.display = DisplayStyle.None;
+            hudRoot.Add(crosshairDot);
+
             for (int i = 0; i < VisibleSlots; i++)
             {
                 slots[i] = hudRoot.Q<VisualElement>("build-slot-" + i);
@@ -103,22 +114,26 @@ namespace Project.UI
                 if (materialsButton != null)
                 {
                     materialsButton.pickingMode = PickingMode.Position;
+                    materialsButton.focusable = false;
                     materialsButton.clicked += DMBuildingMode.ToggleMaterials;
                 }
 
                 if (scrollLeft != null)
                 {
                     scrollLeft.pickingMode = PickingMode.Position;
-                    scrollLeft.clicked += () => DMBuildingMode.StepHighlight(-1);
+                    scrollLeft.focusable = false;
+                    scrollLeft.clicked += () => DMBuildingMode.StepSelection(-1);
                 }
 
                 if (scrollRight != null)
                 {
                     scrollRight.pickingMode = PickingMode.Position;
-                    scrollRight.clicked += () => DMBuildingMode.StepHighlight(1);
+                    scrollRight.focusable = false;
+                    scrollRight.clicked += () => DMBuildingMode.StepSelection(1);
                 }
 
                 DMBuildingMode.Changed += Refresh;
+                DMStorageCrateRuntime.StatesChanged += OnInventoryChanged;
                 bound = true;
             }
 
@@ -130,6 +145,7 @@ namespace Project.UI
             if (instance == this)
                 instance = null;
             DMBuildingMode.Changed -= Refresh;
+            DMStorageCrateRuntime.StatesChanged -= OnInventoryChanged;
             if (inventoryHook != null)
                 inventoryHook.OnInventoryChanged -= OnInventoryChanged;
         }
@@ -143,11 +159,48 @@ namespace Project.UI
             bar.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
             if (!show && holdRing != null)
                 holdRing.style.display = DisplayStyle.None;
+            UpdateCrosshairDot(show);
             if (show)
             {
                 HookInventory();
                 PollSelectionKeys();
+                PollHotbarWheel();
             }
+        }
+
+        void UpdateCrosshairDot(bool show)
+        {
+            if (crosshairDot == null)
+                return;
+
+            float size = DMBuildingGhostProfile.CrosshairDotPixels;
+            if (!show || !DMBuildingMode.IsActive || size <= 0f)
+            {
+                crosshairDot.style.display = DisplayStyle.None;
+                return;
+            }
+
+            float half = size * 0.5f;
+            IStyle s = crosshairDot.style;
+            s.width = size;
+            s.height = size;
+            s.marginLeft = -half;
+            s.marginTop = -half;
+            s.borderTopLeftRadius = half;
+            s.borderTopRightRadius = half;
+            s.borderBottomLeftRadius = half;
+            s.borderBottomRightRadius = half;
+            s.backgroundColor = DMBuildingGhostProfile.CrosshairDotColor;
+            Color outline = DMBuildingGhostProfile.CrosshairDotOutline;
+            s.borderTopWidth = 1f;
+            s.borderBottomWidth = 1f;
+            s.borderLeftWidth = 1f;
+            s.borderRightWidth = 1f;
+            s.borderTopColor = outline;
+            s.borderBottomColor = outline;
+            s.borderLeftColor = outline;
+            s.borderRightColor = outline;
+            s.display = DisplayStyle.Flex;
         }
 
         static void OnBuildWheel(WheelEvent evt)
@@ -155,33 +208,63 @@ namespace Project.UI
             if (!DMBuildingMode.IsActive)
                 return;
 
+            ApplyHotbarWheel(evt.delta.y);
             evt.StopImmediatePropagation();
+        }
+
+        static void PollHotbarWheel()
+        {
+            if (Mouse.current == null)
+                return;
+
+            ApplyHotbarWheel(Mouse.current.scroll.ReadValue().y);
+        }
+
+        static int wheelFrame = -1;
+
+        static void ApplyHotbarWheel(float raw)
+        {
+            if (Mathf.Abs(raw) < 0.01f)
+                return;
+            if (Time.frameCount == wheelFrame)
+                return;
+
+            bool shift = Keyboard.current != null
+                && (Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed);
+            bool alt = Keyboard.current != null
+                && (Keyboard.current.leftAltKey.isPressed || Keyboard.current.rightAltKey.isPressed);
+            if (shift || alt) // 0925-rotate: Shift = height, Alt = rotate
+                return;
+
+            int notches = Mathf.RoundToInt(raw / 120f);
+            if (notches == 0)
+                notches = raw > 0f ? 1 : -1;
+
+            wheelFrame = Time.frameCount;
+            if (DMBuildingMode.MaterialsOpen)
+                NudgeMenu(-notches);
+            else
+                DMBuildingMode.StepSelection(-notches);
         }
 
         static int activateFrame = -1;
 
         /// <summary>
-        /// Popup open: E runs the highlighted row. Popup closed: E selects the highlighted hotbar slot.
+        /// E only confirms the Tab / ▲ popup. Wheel auto-selects hotbar pieces.
         /// </summary>
         public static bool TryActivateFocused()
         {
-            if (instance == null || !DMBuildingMode.IsActive || !BarVisible())
+            if (instance == null || !DMBuildingMode.IsActive || !BarVisible() || !DMBuildingMode.MaterialsOpen)
                 return false;
             if (Time.frameCount == activateFrame)
                 return true;
 
             activateFrame = Time.frameCount;
-            if (DMBuildingMode.MaterialsOpen)
-            {
-                if (instance.menuActions.Count == 0)
-                    return true;
-
-                int index = Mathf.Clamp(instance.menuFocus, 0, instance.menuActions.Count - 1);
-                instance.menuActions[index]?.Invoke();
+            if (instance.menuActions.Count == 0)
                 return true;
-            }
 
-            DMBuildingMode.ConfirmHighlight();
+            int index = Mathf.Clamp(instance.menuFocus, 0, instance.menuActions.Count - 1);
+            instance.menuActions[index]?.Invoke();
             return true;
         }
 
@@ -226,14 +309,13 @@ namespace Project.UI
             if (keyboard == null)
                 return;
 
-            if (instance != null && keyboard.upArrowKey.wasPressedThisFrame && DMBuildingMode.MaterialsOpen)
+            if (instance == null || !DMBuildingMode.MaterialsOpen)
+                return;
+
+            if (keyboard.upArrowKey.wasPressedThisFrame)
                 instance.StepMenuFocus(-1);
-            else if (instance != null && keyboard.downArrowKey.wasPressedThisFrame && DMBuildingMode.MaterialsOpen)
+            else if (keyboard.downArrowKey.wasPressedThisFrame)
                 instance.StepMenuFocus(1);
-            else if (keyboard.aKey.wasPressedThisFrame || keyboard.leftArrowKey.wasPressedThisFrame)
-                DMBuildingMode.StepHighlight(-1);
-            else if (keyboard.dKey.wasPressedThisFrame || keyboard.rightArrowKey.wasPressedThisFrame)
-                DMBuildingMode.StepHighlight(1);
         }
 
         public static bool PointerOverBar()
@@ -408,6 +490,7 @@ namespace Project.UI
             var button = new Button(onClick) { text = text };
             button.AddToClassList("dmg-build-list-row");
             button.userData = selected;
+            button.focusable = false;
             button.pickingMode = PickingMode.Position;
             int index = menuActions.Count;
             menuActions.Add(onClick);
@@ -433,7 +516,7 @@ namespace Project.UI
                 if (slotLabels[i] != null)
                     slotLabels[i].text = piece != null ? piece.DisplayName : string.Empty;
 
-                slots[i].EnableInClassList("dmg-build-slot-selected", piece != null && index == DMBuildingMode.SlotFocus);
+                slots[i].EnableInClassList("dmg-build-slot-selected", piece != null && index == DMBuildingMode.SelectedIndex);
                 bool affordable = piece != null && DMBuildingCatalog.HasStone(piece.StoneCost);
                 slots[i].EnableInClassList("dmg-build-slot-short", piece != null && !affordable);
                 slots[i].style.display = DisplayStyle.Flex;

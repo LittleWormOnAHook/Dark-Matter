@@ -289,7 +289,7 @@ namespace Project.UI
 
             float nearR = Mathf.Min(WorldUseController.MaxPickupDistance, Mathf.Max(0.5f, nearExclusiveRadius));
             float nearSqr = nearR * nearR;
-            float halfCone = Mathf.Clamp(pickupConeFovDegrees, 1f, 179f) * 0.5f;
+            float halfCone = Mathf.Clamp(DMPickupProfile.ConeFovDegrees(pickupConeFovDegrees), 1f, 179f) * 0.5f;
             Vector3 coneOrigin = worldCamera != null
                 ? worldCamera.transform.position
                 : playerTransform.position;

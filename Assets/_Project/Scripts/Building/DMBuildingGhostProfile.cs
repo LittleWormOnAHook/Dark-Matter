@@ -44,7 +44,8 @@ namespace Project.Building
         [Tooltip("Edge-to-edge spacing for smaller footprints.")]
         public float smallModuleMeters = 2f;
 
-        public float yawStepDegrees = 90f;
+        [Tooltip("Alt + scroll step for the first foundation. Pieces on the building grid turn in 90 degree steps.")]
+        public float yawStepDegrees = 45f;
         public float heightStepMeters = 0.25f;
         public float maxHeightOffsetMeters = 4f;
         public float edgeSnapRangeMeters = 4f;
@@ -69,10 +70,31 @@ namespace Project.Building
         public float doorSeatDropMeters = 0.4f;
         public float overlapPaddingMeters = 0.08f;
 
+        [Header("Build crosshair")]
+        [Tooltip("Centre dot shown while build mode is on, in pixels. 0 hides it.")]
+        public float crosshairDotPixels = 6f;
+        public Color crosshairDotColor = new Color(1f, 1f, 1f, 0.9f);
+        public Color crosshairDotOutline = new Color(0f, 0f, 0f, 0.6f);
+
         [Header("Door swing (E)")]
         public float doorSwingDegrees = 90f;
         public float doorSwingSeconds = 0.35f;
         public float doorInteractRangeMeters = 2.4f;
+
+        [Header("Stone kit (Rebuild Stone Kit)")]
+        [Tooltip("Window opening width. Outer piece stays 4 x 4 m.")]
+        public float kitWindowWidthMeters = 2f;
+        public float kitWindowHeightMeters = 1.6f;
+        [Tooltip("Height of the window sill above the wall bottom.")]
+        public float kitWindowSillMeters = 1.2f;
+        public float kitGlassThicknessMeters = 0.04f;
+        [Tooltip("Passageway opening. Door frame opening uses the door size.")]
+        public float kitPassageWidthMeters = 2.8f;
+        public float kitPassageHeightMeters = 3.4f;
+        [Tooltip("Square opening in the hatch slab.")]
+        public float kitHatchOpeningMeters = 1.4f;
+        public int kitStairSteps = 12;
+        public int kitRailingPosts = 3;
 
         static DMBuildingGhostProfile live;
 
@@ -136,6 +158,9 @@ namespace Project.Building
         public static float DoorFrameRangeMeters => Positive(Live != null ? Live.doorFrameRangeMeters : 5f, 5f);
         public static float EdgeFacingDot => Mathf.Clamp(Live != null ? Live.edgeFacingDot : 0.5f, -1f, 1f);
         public static float BuildSeconds => Positive(Live != null ? Live.buildSeconds : 2f, 2f);
+        public static float CrosshairDotPixels => Mathf.Max(0f, Live != null ? Live.crosshairDotPixels : 6f);
+        public static Color CrosshairDotColor => Live != null ? Live.crosshairDotColor : new Color(1f, 1f, 1f, 0.9f);
+        public static Color CrosshairDotOutline => Live != null ? Live.crosshairDotOutline : new Color(0f, 0f, 0f, 0.6f);
         public static float DestroyHoldSeconds => Positive(Live != null ? Live.destroyHoldSeconds : 2f, 2f);
         public static float AimDistanceMeters => Positive(Live != null ? Live.aimDistanceMeters : 80f, 80f);
         public static float DoorSeatDropMeters => Mathf.Max(0f, Live != null ? Live.doorSeatDropMeters : 0.4f);
@@ -143,6 +168,16 @@ namespace Project.Building
         public static float DoorSwingDegrees => Positive(Live != null ? Live.doorSwingDegrees : 90f, 90f);
         public static float DoorSwingSeconds => Positive(Live != null ? Live.doorSwingSeconds : 0.35f, 0.35f);
         public static float DoorInteractRangeMeters => Positive(Live != null ? Live.doorInteractRangeMeters : 2.4f, 2.4f);
+
+        public static float KitWindowWidthMeters => Mathf.Clamp(Live != null ? Live.kitWindowWidthMeters : 2f, 0.4f, 3.4f);
+        public static float KitWindowHeightMeters => Mathf.Clamp(Live != null ? Live.kitWindowHeightMeters : 1.6f, 0.4f, 3.4f);
+        public static float KitWindowSillMeters => Mathf.Clamp(Live != null ? Live.kitWindowSillMeters : 1.2f, 0.1f, 3f);
+        public static float KitGlassThicknessMeters => Mathf.Clamp(Live != null ? Live.kitGlassThicknessMeters : 0.04f, 0.01f, 0.25f);
+        public static float KitPassageWidthMeters => Mathf.Clamp(Live != null ? Live.kitPassageWidthMeters : 2.8f, 1f, 3.6f);
+        public static float KitPassageHeightMeters => Mathf.Clamp(Live != null ? Live.kitPassageHeightMeters : 3.4f, 2f, 3.8f);
+        public static float KitHatchOpeningMeters => Mathf.Clamp(Live != null ? Live.kitHatchOpeningMeters : 1.4f, 0.6f, 3.4f);
+        public static int KitStairSteps => Mathf.Clamp(Live != null ? Live.kitStairSteps : 12, 4, 32);
+        public static int KitRailingPosts => Mathf.Clamp(Live != null ? Live.kitRailingPosts : 3, 2, 8);
 
         static float Positive(float value, float fallback)
         {

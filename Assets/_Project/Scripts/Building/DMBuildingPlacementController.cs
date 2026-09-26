@@ -22,16 +22,21 @@ namespace Project.Building
         static int blockedGhostMaterialSourceId = int.MinValue;
 
         GameObject preview;
+        Material previewTintMaterial;
         string previewId;
         float buildHold;
         float destroyHold;
         DMBuildingGhost lastPlaced;
         DMBuildingGhost destroyFocus;
         Vector3 holdSeat;
-        float yawDegrees;
+        // 0925-rotate: Alt + scroll notches. Free pieces turn by YawStep, grid-locked pieces by whole quarter turns.
+        int yawNotches;
         float heightOffset;
+        string adjustPieceId;
         string heightResetPieceId;
         int stickyVerticalSide = -1;
+        // DM snap 0925-support-cell: keep one horizontal support while aim stays on/near it.
+        DMBuildingGhost stickyVerticalSupport;
 
         static int builtGhostCacheFrame = -1;
         static DMBuildingGhost[] builtGhostCache = System.Array.Empty<DMBuildingGhost>();
@@ -145,6 +150,7 @@ namespace Project.Building
             heightResetPieceId = id;
             heightOffset = 0f;
             stickyVerticalSide = -1;
+            stickyVerticalSupport = null;
         }
 
         void OnDestroy()
@@ -168,12 +174,27 @@ namespace Project.Building
                 destroyHold = 0f;
                 destroyFocus = null;
                 lastPlaced = null;
-                yawDegrees = 0f;
+                yawNotches = 0;
                 heightOffset = 0f;
+                stickyVerticalSide = -1;
+                stickyVerticalSupport = null;
                 if (preview != null)
                     preview.SetActive(false);
                 DMUiToolkitBuildingHotbar.SetHoldRing(false, 0f, Vector3.zero);
                 return;
+            }
+
+            // 0925-adjust-reset: height and rotate belong to one pick. Switching pieces starts clean.
+            DMBuildingPiece picked = DMBuildingMode.SelectedPiece;
+            string pickedId = picked != null ? picked.Id : null;
+            if (pickedId != adjustPieceId)
+            {
+                adjustPieceId = pickedId;
+                yawNotches = 0;
+                heightOffset = 0f;
+                stickyVerticalSide = -1;
+                stickyVerticalSupport = null;
+                buildHold = 0f;
             }
 
             ConsumeWheel();
@@ -258,7 +279,13 @@ namespace Project.Building
                 return;
             preview.SetActive(true);
             preview.transform.SetPositionAndRotation(aimedPosition, aimedRotation);
-            ApplyTint(preview, canCommit ? GhostMaterial() : BlockedMaterial(), keepGlass: true);
+            // 0925-perf: repaint the ghost only when valid/blocked flips, not every frame.
+            Material tint = canCommit ? GhostMaterial() : BlockedMaterial();
+            if (tint != previewTintMaterial)
+            {
+                ApplyTint(preview, tint, keepGlass: true);
+                previewTintMaterial = tint;
+            }
         }
 
         static bool TryAim(out DMBuildingPiece piece, out Vector3 position, out Quaternion rotation, out bool canCommit)
@@ -281,7 +308,7 @@ namespace Project.Building
                 return false;
 
             Vector3 feet = PlayerFeet();
-            float yaw = instance.yawDegrees;
+            float yaw = instance.yawNotches * YawStep();
             float lift = Mathf.Clamp(instance.heightOffset, -DMBuildingGhostProfile.MaxHeightOffsetMeters, DMBuildingGhostProfile.MaxHeightOffsetMeters);
             rotation = Quaternion.Euler(0f, yaw, 0f);
             bool hasBase = HasBuiltBase();
@@ -296,6 +323,22 @@ namespace Project.Building
                 position = SnapModule(aim, piece);
                 position.y = SeatY(aim.y, piece, lift);
                 canCommit = CanAffordAndClear(piece, position, rotation);
+                return true;
+            }
+
+            // 0925-rotate: after the first foundation every piece follows the building grid yaw.
+            rotation = GridLockedRotation(aim, instance.yawNotches);
+            yaw = rotation.eulerAngles.y;
+
+            // 0925-upper: above the ground story the built piece under the crosshair is the anchor.
+            if (TrySnapFromHitPiece(ray, piece, lift, out Vector3 hitSeat, out Quaternion hitRotation, out float hitGround))
+            {
+                position = hitSeat;
+                rotation = hitRotation;
+                int upperLayer = float.IsNegativeInfinity(hitGround)
+                    ? 0
+                    : StackLayer(position.y - piece.Size.y * 0.5f, hitGround);
+                canCommit = DMBuildingCatalog.IsStackLayerAllowed(upperLayer) && CanAffordAndClear(piece, position, rotation);
                 return true;
             }
 
@@ -344,6 +387,8 @@ namespace Project.Building
             if (piece.Snap == DMBuildingSnap.Edge
                 && TrySnapEdge(aim, piece, yaw, lift, lookingUp, out position, out rotation))
             {
+                if (EdgeFlipped(instance.yawNotches))
+                    rotation *= Quaternion.Euler(0f, 180f, 0f);
                 canCommit = CanAffordAndClear(piece, position, rotation);
                 return true;
             }
@@ -355,6 +400,217 @@ namespace Project.Building
             }
 
             return false;
+        }
+
+        // ---- 0925-upper: crosshair-anchored snapping for second story and higher ----
+
+        static bool TryHitBuiltForSnap(Ray ray, out DMBuildingGhost ghost, out RaycastHit hit)
+        {
+            ghost = null;
+            hit = default;
+            RaycastHit[] hits = Physics.RaycastAll(ray, DMBuildingGhostProfile.AimDistanceMeters, ~0, QueryTriggerInteraction.Ignore);
+            float best = float.MaxValue;
+            for (int i = 0; i < hits.Length; i++)
+            {
+                if (hits[i].collider == null || hits[i].distance >= best)
+                    continue;
+                DMBuildingGhost candidate = hits[i].collider.GetComponentInParent<DMBuildingGhost>();
+                if (candidate == null || !candidate.Built)
+                    continue;
+                best = hits[i].distance;
+                ghost = candidate;
+                hit = hits[i];
+            }
+
+            return ghost != null;
+        }
+
+        static float GroundTopNear(Vector3 point)
+        {
+            DMBuildingGhost foundation = NearestFoundation(point, DMBuildingGhostProfile.LargeModuleMeters * 6f);
+            return foundation != null ? SurfaceTop(foundation) : float.NegativeInfinity;
+        }
+
+        static bool TrySnapFromHitPiece(Ray ray, DMBuildingPiece piece, float lift, out Vector3 position, out Quaternion rotation, out float groundTop)
+        {
+            position = default;
+            rotation = Quaternion.identity;
+            groundTop = float.NegativeInfinity;
+            if (piece == null || instance == null || piece.Snap == DMBuildingSnap.Door || DMBuildingCatalog.IsFoundation(piece.Id))
+                return false;
+            // 0925-last: the crosshair's piece wins; with nothing under it, the last placed piece anchors.
+            DMBuildingGhost hitGhost;
+            Vector3 hitPoint;
+            if (TryHitBuiltForSnap(ray, out DMBuildingGhost rayGhost, out RaycastHit hit))
+            {
+                hitGhost = rayGhost;
+                hitPoint = hit.point;
+            }
+            else if (!TryAimAtLastPlaced(ray, out hitGhost, out hitPoint))
+                return false;
+            if (DMBuildingCatalog.IsFoundation(hitGhost.PieceId))
+                return false;
+
+            groundTop = GroundTopNear(hitPoint);
+            float top = SurfaceTop(hitGhost);
+            float bottom = hitGhost.transform.position.y - HalfExtents(hitGhost).y;
+            bool groundStory = bottom <= groundTop + 0.6f;
+
+            if (DMBuildingCatalog.IsEdgeSupport(hitGhost.PieceId))
+            {
+                // Ground-story floors stay on the tuned first-floor path.
+                if (groundStory)
+                    return false;
+                return TrySnapFromHitSlab(hitGhost, hitPoint, top, piece, lift, out position, out rotation);
+            }
+
+            if (DMBuildingCatalog.IsStackableWall(hitGhost.PieceId))
+            {
+                if (piece.Snap == DMBuildingSnap.Edge)
+                {
+                    bool upperHalf = hitPoint.y >= hitGhost.transform.position.y;
+                    if (upperHalf)
+                        return TryStackOnHitWall(hitGhost, top, piece, lift, out position, out rotation);
+                    if (groundStory)
+                        return false;
+                    return TrySideOfHitWall(hitGhost, hitPoint, bottom, piece, lift, out position, out rotation);
+                }
+
+                return TrySeatOnHitWallTop(hitGhost, top, piece, lift, out position, out rotation);
+            }
+
+            return false;
+        }
+
+        static bool TryAimAtLastPlaced(Ray ray, out DMBuildingGhost ghost, out Vector3 point)
+        {
+            ghost = instance != null ? instance.lastPlaced : null;
+            point = default;
+            if (ghost == null || !ghost.isActiveAndEnabled)
+            {
+                ghost = null;
+                return false;
+            }
+
+            float range = DMBuildingGhostProfile.AimDistanceMeters;
+            float module = DMBuildingGhostProfile.LargeModuleMeters;
+            Vector3 center = ghost.transform.position;
+            float t = Vector3.Dot(center - ray.origin, ray.direction);
+            if (DMBuildingCatalog.IsEdgeSupport(ghost.PieceId) && Mathf.Abs(ray.direction.y) > 0.05f)
+            {
+                float onTop = (SurfaceTop(ghost) - ray.origin.y) / ray.direction.y;
+                if (onTop > 0f && onTop <= range)
+                    t = onTop;
+            }
+
+            if (t <= 0f || t > range)
+            {
+                ghost = null;
+                return false;
+            }
+
+            point = ray.origin + ray.direction * t;
+            if (FlatDistance(point, center) > module * 1.25f || Mathf.Abs(point.y - center.y) > module)
+            {
+                ghost = null;
+                return false;
+            }
+
+            return true;
+        }
+
+        static bool TrySnapFromHitSlab(DMBuildingGhost slab, Vector3 point, float top, DMBuildingPiece piece, float lift, out Vector3 position, out Quaternion rotation)
+        {
+            if (piece.Snap == DMBuildingSnap.Edge)
+            {
+                if (!TrySeatVerticalOnCornerEdge(slab, point, top, piece, lift, instance.stickyVerticalSide, out position, out rotation, out int side))
+                    return false;
+                instance.stickyVerticalSide = side;
+                instance.stickyVerticalSupport = slab;
+                if (EdgeFlipped(instance.yawNotches))
+                    rotation *= Quaternion.Euler(0f, 180f, 0f);
+                return true;
+            }
+
+            ModuleCornerLattice lattice = ModuleCornerLattice.FromSupport(slab);
+            rotation = GridLockedRotation(point, instance.yawNotches);
+            Vector3 center = slab.transform.position;
+            if (DMBuildingCatalog.IsSlab(piece.Id))
+            {
+                // Extend at the same level into the neighbour cell the crosshair leans toward.
+                Vector3 local = point - center;
+                float u = Vector3.Dot(local, lattice.Right);
+                float v = Vector3.Dot(local, lattice.Forward);
+                Vector3 step = Mathf.Abs(u) >= Mathf.Abs(v)
+                    ? lattice.Right * (u >= 0f ? 1f : -1f)
+                    : lattice.Forward * (v >= 0f ? 1f : -1f);
+                float seatY = top - piece.Size.y * 0.5f + lift;
+                position = lattice.SnapCellCenter(center + step * lattice.Module, seatY);
+                return true;
+            }
+
+            // Stairs, ramps and roofs sit on top of the slab cell under the crosshair.
+            position = lattice.SnapCellCenter(center, SeatCenterY(top, piece, lift));
+            return true;
+        }
+
+        static bool TryStackOnHitWall(DMBuildingGhost wall, float top, DMBuildingPiece piece, float lift, out Vector3 position, out Quaternion rotation)
+        {
+            position = wall.transform.position;
+            position.y = SeatCenterY(top, piece, lift);
+            rotation = wall.transform.rotation;
+            if (EdgeFlipped(instance.yawNotches))
+                rotation *= Quaternion.Euler(0f, 180f, 0f);
+            return true;
+        }
+
+        static bool TrySideOfHitWall(DMBuildingGhost wall, Vector3 point, float bottom, DMBuildingPiece piece, float lift, out Vector3 position, out Quaternion rotation)
+        {
+            Vector3 run = wall.transform.right;
+            run.y = 0f;
+            if (run.sqrMagnitude < 0.0001f)
+            {
+                position = default;
+                rotation = Quaternion.identity;
+                return false;
+            }
+
+            run.Normalize();
+            float sign = Vector3.Dot(point - wall.transform.position, run) >= 0f ? 1f : -1f;
+            position = wall.transform.position + run * (sign * DMBuildingGhostProfile.LargeModuleMeters);
+            position.y = SeatCenterY(bottom, piece, lift);
+            rotation = wall.transform.rotation;
+            if (EdgeFlipped(instance.yawNotches))
+                rotation *= Quaternion.Euler(0f, 180f, 0f);
+            return true;
+        }
+
+        static bool TrySeatOnHitWallTop(DMBuildingGhost wall, float top, DMBuildingPiece piece, float lift, out Vector3 position, out Quaternion rotation)
+        {
+            position = default;
+            rotation = Quaternion.identity;
+            Vector3 thin = wall.transform.forward;
+            thin.y = 0f;
+            if (thin.sqrMagnitude < 0.0001f)
+                return false;
+            thin.Normalize();
+
+            DMBuildingGhost reference = NearestHorizontalLatticeReference(wall.transform.position, DMBuildingGhostProfile.LargeModuleMeters * 6f);
+            if (reference == null)
+                return false;
+
+            ModuleCornerLattice lattice = ModuleCornerLattice.FromSupport(reference);
+            Camera camera = Camera.main;
+            float camSide = camera != null && Vector3.Dot(camera.transform.position - wall.transform.position, thin) < 0f ? -1f : 1f;
+            float seatY = SeatCenterY(top, piece, lift);
+            float reach = lattice.Module * 0.5f;
+            rotation = GridLockedRotation(wall.transform.position, instance.yawNotches);
+            Vector3 near = lattice.SnapCellCenter(wall.transform.position + thin * (camSide * reach), seatY);
+            Vector3 far = lattice.SnapCellCenter(wall.transform.position - thin * (camSide * reach), seatY);
+            position = near;
+            if (Overlaps(near, piece.Size, rotation, piece.Id) && !Overlaps(far, piece.Size, rotation, piece.Id))
+                position = far;
+            return true;
         }
 
         static bool CanAffordAndClear(DMBuildingPiece piece, Vector3 position, Quaternion rotation)
@@ -430,8 +686,8 @@ namespace Project.Building
                         return true;
                 }
 
-                if ((DMBuildingCatalog.IsFloor(piece.Id) || DMBuildingCatalog.IsCeiling(piece.Id))
-                    && (DMBuildingCatalog.IsEdgeSupport(support.PieceId) || DMBuildingCatalog.IsVerticalSupport(support.PieceId)))
+                if (DMBuildingCatalog.IsSlab(piece.Id)
+                    && (DMBuildingCatalog.IsEdgeSupport(support.PieceId) || DMBuildingCatalog.IsStackableWall(support.PieceId)))
                 {
                     float expectedY = SeatCenterY(top, piece, 0f);
                     if (Mathf.Abs(expectedY - position.y) <= yTol)
@@ -547,6 +803,9 @@ namespace Project.Building
 
                 float seatY = SeatCenterY(top, piece, heightOffset);
                 float score = distance + Mathf.Abs(aim.y - seatY) * 0.15f;
+                if (instance != null && ghost == instance.stickyVerticalSupport
+                    && AimInsideSupportFootprint(ghost, aim, StickySupportMarginMeters))
+                    score -= StickySupportBiasMeters;
                 if (DMBuildingCatalog.IsFloor(ghost.PieceId))
                 {
                     if (score >= bestFloorScore)
@@ -563,7 +822,45 @@ namespace Project.Building
                 }
             }
 
-            return bestFloor != null ? bestFloor : bestOther;
+            DMBuildingGhost chosen = bestFloor != null ? bestFloor : bestOther;
+            if (instance != null)
+                instance.stickyVerticalSupport = chosen;
+            return chosen;
+        }
+
+        const float StickySupportMarginMeters = 0.6f;
+        const float StickySupportBiasMeters = 1.5f;
+
+        static bool AimInsideSupportFootprint(DMBuildingGhost support, Vector3 aim, float margin)
+        {
+            if (support == null)
+                return false;
+
+            GetCatalogFootprint(support, out Vector3 center, out float halfRight, out float halfForward);
+            Vector3 local = aim - center;
+            float u = Vector3.Dot(local, support.transform.right);
+            float v = Vector3.Dot(local, support.transform.forward);
+            return Mathf.Abs(u) <= halfRight + margin && Mathf.Abs(v) <= halfForward + margin;
+        }
+
+        /// <summary>
+        /// Clamp the aim into the support's own footprint so the edge cell is always a cell the support covers.
+        /// Aim past the slab edge then picks that edge (outward) instead of the empty neighbour cell (inward flip).
+        /// </summary>
+        static Vector3 ClampAimToSupportCell(DMBuildingGhost support, Vector3 aim)
+        {
+            GetCatalogFootprint(support, out Vector3 center, out float halfRight, out float halfForward);
+            Vector3 right = support.transform.right;
+            Vector3 forward = support.transform.forward;
+            Vector3 local = aim - center;
+            float u = Vector3.Dot(local, right);
+            float v = Vector3.Dot(local, forward);
+            float inset = 0.01f;
+            float cu = Mathf.Clamp(u, -Mathf.Max(0f, halfRight - inset), Mathf.Max(0f, halfRight - inset));
+            float cv = Mathf.Clamp(v, -Mathf.Max(0f, halfForward - inset), Mathf.Max(0f, halfForward - inset));
+            Vector3 clamped = center + right * cu + forward * cv;
+            clamped.y = aim.y;
+            return clamped;
         }
 
         static bool TrySnapEdge(
@@ -828,10 +1125,11 @@ namespace Project.Building
 
             outward.Normalize();
             Vector3 mid = (cornerA + cornerB) * 0.5f;
-            seat = mid + outward * halfThick;
+            // 0925-flush: wall sits inside the footprint; its outer face lands on the grid line.
+            seat = mid - outward * halfThick;
             seat.y = seatY;
             float plane = Vector3.Dot(cornerA, outward);
-            seat += outward * (plane + halfThick - Vector3.Dot(seat, outward));
+            seat += outward * (plane - halfThick - Vector3.Dot(seat, outward));
         }
 
         /// <summary>
@@ -1373,7 +1671,7 @@ namespace Project.Building
             float halfThick = VerticalPieceHalfThickness(piece);
             float seatY = SeatCenterY(top, piece, heightOffset);
             ModuleCornerLattice lattice = ModuleCornerLattice.FromSupport(support);
-            Vector3 cellCenter = lattice.SnapCellCenter(aim, seatY);
+            Vector3 cellCenter = lattice.SnapCellCenter(ClampAimToSupportCell(support, aim), seatY);
             lattice.PickEdgeFromCellCenter(
                 cellCenter,
                 aim,
@@ -1423,7 +1721,7 @@ namespace Project.Building
             tangent = rotation * Vector3.right;
             ModuleCornerLattice lattice = ModuleCornerLattice.FromSupport(support);
             float seatY = SeatCenterY(top, piece, heightOffset);
-            Vector3 cellCenter = lattice.SnapCellCenter(aim, seatY);
+            Vector3 cellCenter = lattice.SnapCellCenter(ClampAimToSupportCell(support, aim), seatY);
             lattice.GetCellCorners(cellCenter, out Vector3 sw, out Vector3 se, out Vector3 ne, out Vector3 nw);
             lattice.PickEdgeFromCellCenter(cellCenter, aim, -1, out cornerA, out cornerB, out _, out _, out _);
             return true;
@@ -1892,6 +2190,15 @@ namespace Project.Building
             if (notches == 0)
                 notches = raw > 0f ? 1 : -1;
 
+            bool alt = Keyboard.current != null
+                && (Keyboard.current.leftAltKey.isPressed || Keyboard.current.rightAltKey.isPressed);
+            if (alt)
+            {
+                int turns = Mathf.Max(1, Mathf.RoundToInt(360f / YawStep()));
+                yawNotches = ((yawNotches + notches) % turns + turns) % turns;
+                return;
+            }
+
             bool shift = Keyboard.current != null
                 && (Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed);
             if (!shift)
@@ -1899,6 +2206,29 @@ namespace Project.Building
 
             float limit = DMBuildingGhostProfile.MaxHeightOffsetMeters;
             heightOffset = Mathf.Clamp(heightOffset + notches * DMBuildingGhostProfile.HeightStepMeters, -limit, limit);
+        }
+
+        static Quaternion GridLockedRotation(Vector3 aim, int notches)
+        {
+            float gridYaw = 0f;
+            DMBuildingGhost reference = NearestHorizontalLatticeReference(
+                aim,
+                DMBuildingGhostProfile.LargeModuleMeters * 3f + DMBuildingGhostProfile.EdgeSnapRangeMeters);
+            if (reference != null)
+                gridYaw = Mathf.Repeat(reference.transform.eulerAngles.y, 90f);
+            return Quaternion.Euler(0f, gridYaw + GridQuarterTurns(notches) * 90f, 0f);
+        }
+
+        /// <summary>Grid pieces turn at least 90 degrees per notch so squares never sit diagonal on the 4 m grid.</summary>
+        static int GridQuarterTurns(int notches)
+        {
+            float step = Mathf.Max(90f, YawStep());
+            return Mathf.RoundToInt(notches * step / 90f);
+        }
+
+        static bool EdgeFlipped(int notches)
+        {
+            return (GridQuarterTurns(notches) & 1) != 0;
         }
 
         static float YawStep()
@@ -1936,7 +2266,9 @@ namespace Project.Building
                 Destroy(preview);
 
             preview = DMBuildingPieceFactory.Create(pieceId);
+            DMBuildingPieceFactory.SetTag(preview, "Untagged"); // the ghost itself is never climbable
             previewId = pieceId;
+            previewTintMaterial = null;
             preview.name = "BuildingPreview";
             preview.hideFlags = HideFlags.HideAndDontSave;
             preview.transform.SetParent(transform, false);
@@ -1992,6 +2324,11 @@ namespace Project.Building
                         hideFlags = HideFlags.HideAndDontSave,
                     }
                     : CreateMaterial(fallbackName);
+                // 0925-perf: instanced HDRP ghosts drew flat with undefined matrices and spammed the console.
+                if (runtime != null)
+                    runtime.enableInstancing = false;
+                if (instance != null)
+                    instance.previewTintMaterial = null;
             }
 
             return runtime;
@@ -2057,6 +2394,7 @@ namespace Project.Building
             {
                 name = materialName,
                 hideFlags = HideFlags.HideAndDontSave,
+                enableInstancing = false,
             };
 
             if (shader.name.StartsWith("HDRP/", System.StringComparison.Ordinal))

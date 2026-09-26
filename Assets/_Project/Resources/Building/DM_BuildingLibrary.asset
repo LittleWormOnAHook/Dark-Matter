@@ -21,11 +21,35 @@ MonoBehaviour:
     prefab: {fileID: 1632219233167993731, guid: 8d7d93e5d3bc5864f9622a0052fbdd6f, type: 3}
   - id: stone_ceiling_4x4
     prefab: {fileID: 6919228367469974749, guid: 2cca2be8374e59a41989e8373a6feca7, type: 3}
-  - id: stone_slope_4x4
-    prefab: {fileID: 3086766533778197584, guid: 0eb7d86aa4f634c409e62c4960483fb4, type: 3}
   - id: stone_wall_window_4x4
     prefab: {fileID: 4813987836797080729, guid: 16bd045704bf2ac4c957007401468365, type: 3}
   - id: stone_door_frame_4x4
     prefab: {fileID: 1594952802536331735, guid: c75ca97774a952742a6f3ebd35f9eba8, type: 3}
   - id: stone_door_basic
     prefab: {fileID: 4198157748491310853, guid: b929ba82fff30cb43a6b57732ca1bb16, type: 3}
+  - id: stone_foundation_tri_4x4
+    prefab: {fileID: 6933038858168513452, guid: 660e3f2ca5e20f84b8e39599c6fd6d88, type: 3}
+  - id: stone_floor_tri_4x4
+    prefab: {fileID: 6278971066372503040, guid: f8c87bdc248d52e4491c320ce3dfa789, type: 3}
+  - id: stone_hatch_4x4
+    prefab: {fileID: 7357694272079514637, guid: 2fcfd5a3ab1849d428fcd5ca9969872e, type: 3}
+  - id: stone_wall_half_4x2
+    prefab: {fileID: 8691650662879385080, guid: c4960899fbf8c4748bee883dd37b2f29, type: 3}
+  - id: stone_passage_4x4
+    prefab: {fileID: 4760767460827940048, guid: 8de5e4844e9a66b4b80c207009b023f9, type: 3}
+  - id: stone_wall_tri_l_4x2
+    prefab: {fileID: 7640463594078019026, guid: 16f8128a90b240841a19842f9530afb6, type: 3}
+  - id: stone_wall_tri_r_4x2
+    prefab: {fileID: 4534018357591266090, guid: 4d9d10218b6931e468558a8740d3b62a, type: 3}
+  - id: stone_railing_4x1
+    prefab: {fileID: 6804738935610565975, guid: 6ce10054e613bf4428c6e217a9ca945e, type: 3}
+  - id: stone_stairs_4x4
+    prefab: {fileID: 5356956798971073238, guid: ed15d51196eec664eb4fdfd3e314c54f, type: 3}
+  - id: stone_ramp_4x4
+    prefab: {fileID: 8141703070648023229, guid: 8eb79c8aa8e5c514b924108c1f81122d, type: 3}
+  - id: stone_roof_4x4
+    prefab: {fileID: 1616203820002658832, guid: 9f6c73bc0f6bdb94591260879b4e32d2, type: 3}
+  - id: stone_roof_corner_4x4
+    prefab: {fileID: 7354781217048919409, guid: 68974a645f5341d4ea4ecb7e2c84dd90, type: 3}
+  - id: stone_roof_inner_4x4
+    prefab: {fileID: 3280735931899083995, guid: a1cb75c6a36e6314ab7fe547ccdbe878, type: 3}

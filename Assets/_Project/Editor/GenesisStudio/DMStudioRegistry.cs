@@ -19,7 +19,8 @@ namespace Project.EditorTools.GenesisStudio
         EmbeddedCompanionSystems = 10,
         CameraCombined = 11,
         LandingCombined = 12,
-        ControlsInputEditor = 13
+        ControlsInputEditor = 13,
+        PickupItemsCombined = 14
     }
 
     public readonly struct DMStudioSubtab
@@ -202,6 +203,13 @@ namespace Project.EditorTools.GenesisStudio
                             "Assets/_Project/Resources/Landing/DMLandingProfile.asset",
                             playModeSave: true),
                         new DMStudioSubtab(
+                            "pickup-items",
+                            "Pickup Items",
+                            "Hold-E time, prompt range, focus cone and toast; the library of world pickup prefabs; and the item + pickup prefab creator.",
+                            DMStudioPanelMode.PickupItemsCombined,
+                            "Assets/_Project/Resources/Interaction/DM_PickupProfile.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
                             "footsteps",
                             "Footsteps",
                             "Look (marks, dust, tags, terrain 0-10) and audio clip libraries in one place.",
@@ -349,11 +357,6 @@ new DMStudioSubtab(
                             "Recipe definitions, ingredients, and outputs.",
                             DMStudioPanelMode.ExternalBlueprintTab,
                             externalMenuPath: DarkMatterGenesisEditorMenus.BlueprintCraftingManager),
-                        new DMStudioSubtab(
-                            "item-data",
-                            "Item Data",
-                            "Gatherables, consumables, throwables.",
-                            DMStudioPanelMode.EmbeddedItemData),
                         new DMStudioSubtab(
                             "ammo-creator",
                             "Ammo Creator",
