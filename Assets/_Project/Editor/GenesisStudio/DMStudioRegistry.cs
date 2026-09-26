@@ -20,7 +20,8 @@ namespace Project.EditorTools.GenesisStudio
         CameraCombined = 11,
         LandingCombined = 12,
         ControlsInputEditor = 13,
-        PickupItemsCombined = 14
+        PickupItemsCombined = 14,
+        BuildingLibrary = 15
     }
 
     public readonly struct DMStudioSubtab
@@ -465,6 +466,11 @@ new DMStudioSubtab(
                             "Assets/_Project/Resources/Building/DM_BuildingGhostProfile.asset",
                             playModeSave: true,
                             sectionFilter: DMStudioProfileSectionFilter.BuildingDoorOnly),
+                        new DMStudioSubtab(
+                            "building-library",
+                            "Library",
+                            "Build styles (Stone, Iron, Silicate, ...): each kit's cost item, finishes, kit shapes and parts with prefab, icon, shape and cost.",
+                            DMStudioPanelMode.BuildingLibrary),
                         new DMStudioSubtab(
                             "building-studio",
                             "Building Studio",

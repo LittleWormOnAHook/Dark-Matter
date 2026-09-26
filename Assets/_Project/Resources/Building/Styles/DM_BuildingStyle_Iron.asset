@@ -1,0 +1,273 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bddcc98afcd530458a056d37dd09fdf, type: 3}
+  m_Name: DM_BuildingStyle_Iron
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Building.DMBuildingStyleLibrary
+  styleId: iron
+  displayName: Iron
+  order: 1
+  icon: {fileID: 0}
+  accent: {r: 0.55, g: 0.58, b: 0.62, a: 1}
+  costItem: {fileID: 11400000, guid: 22d2fe71fa16cbc45901218ef6195945, type: 2}
+  costItemNames:
+  - Iron Ore
+  costMultiplier: 1
+  finishes:
+  - id: iron_plate
+    displayName: Iron Plate
+    finishedMaterial: {fileID: 2100000, guid: f783f36af3a75074bbdc6940e48549a8, type: 2}
+    overrideGhostTint: 0
+    ghostTint: {r: 0.92, g: 0.38, b: 0.32, a: 1}
+  - id: iron_brushed
+    displayName: Brushed Iron
+    finishedMaterial: {fileID: 2100000, guid: 09569a454792c604190b12669c8f10c1, type: 2}
+    overrideGhostTint: 0
+    ghostTint: {r: 0.92, g: 0.38, b: 0.32, a: 1}
+  - id: iron_trim
+    displayName: Iron Trim
+    finishedMaterial: {fileID: 2100000, guid: da90373243ed09449aa6f0a95e819b21, type: 2}
+    overrideGhostTint: 0
+    ghostTint: {r: 0.92, g: 0.38, b: 0.32, a: 1}
+  doorMaterial: {fileID: 2100000, guid: da90373243ed09449aa6f0a95e819b21, type: 2}
+  glassMaterial: {fileID: 2100000, guid: 92576792c5b37bb4cb409f9a126acfb7, type: 2}
+  partIdPrefix: iron_
+  kit:
+    windowWidthMeters: 2
+    windowHeightMeters: 1.6
+    windowSillMeters: 1.2
+    glassThicknessMeters: 0.04
+    passageWidthMeters: 2.8
+    passageHeightMeters: 3.4
+    hatchOpeningMeters: 1.4
+    stairSteps: 12
+    railingPosts: 3
+  parts:
+  - id: iron_foundation_4x4
+    displayName: Foundation
+    shape: 0
+    category: 0
+    prefab: {fileID: 7249045315292712286, guid: e63492f18e7186347ae39ed6895b3598, type: 3}
+    icon: {fileID: 0}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: iron_foundation_tri_4x4
+    displayName: Tri Foundation
+    shape: 1
+    category: 0
+    prefab: {fileID: 1109592066910413069, guid: 042e39ccd5c978b4481df084c01acfc4, type: 3}
+    icon: {fileID: 0}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: iron_floor_4x4
+    displayName: Floor
+    shape: 2
+    category: 2
+    prefab: {fileID: 960636440424103980, guid: 683f0972600f66f4b8049eb113fd6b0e, type: 3}
+    icon: {fileID: 0}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: iron_floor_tri_4x4
+    displayName: Tri Floor
+    shape: 3
+    category: 2
+    prefab: {fileID: 2787229682579466468, guid: 012f0afb7f67e394480eb2cdf6339fac, type: 3}
+    icon: {fileID: 0}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: iron_ceiling_4x4
+    displayName: Ceiling
+    shape: 4
+    category: 2
+    prefab: {fileID: 7417172561766735743, guid: 4aebe203e9985e54db43c64cd3fc056c, type: 3}
+    icon: {fileID: 0}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: iron_hatch_4x4
+    displayName: Hatch
+    shape: 5
+    category: 2
+    prefab: {fileID: 6428637741328603571, guid: 5c33bad22d3f4294e8f7898cb6513ad5, type: 3}
+    icon: {fileID: 0}
+    cost: 3
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: iron_wall_4x4
+    displayName: Wall
+    shape: 6
+    category: 1
+    prefab: {fileID: 3783473118321638332, guid: e9d1dfd75cffe9b49bd30fbbde95d8cb, type: 3}
+    icon: {fileID: 0}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: iron_wall_half_4x2
+    displayName: Half Wall
+    shape: 7
+    category: 1
+    prefab: {fileID: 962279829610727329, guid: 9852faa1464b21e42b0f10b2fd30d2d1, type: 3}
+    icon: {fileID: 0}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: iron_wall_window_4x4
+    displayName: Window
+    shape: 8
+    category: 1
+    prefab: {fileID: 7031060528672386814, guid: 94eed2809e4f58346aae9022a137d24f, type: 3}
+    icon: {fileID: 0}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: iron_door_frame_4x4
+    displayName: Door Frame
+    shape: 9
+    category: 4
+    prefab: {fileID: 5389070698613937270, guid: 8bf34a4a9138d184eb85b09787908c13, type: 3}
+    icon: {fileID: 0}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: iron_door_basic
+    displayName: Door
+    shape: 10
+    category: 4
+    prefab: {fileID: 2571241868864917382, guid: e75daa5e293ce5b4187dd9e41b351aad, type: 3}
+    icon: {fileID: 0}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: iron_passage_4x4
+    displayName: Passage
+    shape: 11
+    category: 1
+    prefab: {fileID: 8023396968240550673, guid: a67ff2b44b41a774ebdac1ab6cbe04a7, type: 3}
+    icon: {fileID: 0}
+    cost: 3
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: iron_wall_tri_l_4x2
+    displayName: Tri Wall L
+    shape: 12
+    category: 1
+    prefab: {fileID: 385485497405014443, guid: 0b36935097aec224b9803b2d6d39b8f1, type: 3}
+    icon: {fileID: 0}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: iron_wall_tri_r_4x2
+    displayName: Tri Wall R
+    shape: 13
+    category: 1
+    prefab: {fileID: 6887175403535112196, guid: 8e46e2644138a2d44952cc25e00ff178, type: 3}
+    icon: {fileID: 0}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: iron_railing_4x1
+    displayName: Railing
+    shape: 14
+    category: 3
+    prefab: {fileID: 4522674953609071165, guid: b80830547a9da824fbeb8f7308875c96, type: 3}
+    icon: {fileID: 0}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: iron_stairs_4x4
+    displayName: Stairs
+    shape: 15
+    category: 3
+    prefab: {fileID: 8163705352521159779, guid: 11fef900717b9c348a07415496a572be, type: 3}
+    icon: {fileID: 0}
+    cost: 6
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: iron_ramp_4x4
+    displayName: Ramp
+    shape: 16
+    category: 3
+    prefab: {fileID: 4121596714959714462, guid: ec7059135d0072d42ac039c3a8fc43ca, type: 3}
+    icon: {fileID: 0}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: iron_roof_4x4
+    displayName: Roof
+    shape: 17
+    category: 2
+    prefab: {fileID: 726432287080206530, guid: 3ecda623fb3263645a7b8431ecabbbb1, type: 3}
+    icon: {fileID: 0}
+    cost: 3
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: iron_roof_corner_4x4
+    displayName: Roof Corner
+    shape: 18
+    category: 2
+    prefab: {fileID: 8461863914042069234, guid: 6bad1ccf64ae3fe4a8e050dbdd9d214e, type: 3}
+    icon: {fileID: 0}
+    cost: 3
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: iron_roof_inner_4x4
+    displayName: Roof Inner
+    shape: 19
+    category: 2
+    prefab: {fileID: 5543618990843906136, guid: 019bb87650a9f1340b884646cea0828c, type: 3}
+    icon: {fileID: 0}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}

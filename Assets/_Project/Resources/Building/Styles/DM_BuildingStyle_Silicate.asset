@@ -1,0 +1,273 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bddcc98afcd530458a056d37dd09fdf, type: 3}
+  m_Name: DM_BuildingStyle_Silicate
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Building.DMBuildingStyleLibrary
+  styleId: silicate
+  displayName: Silicate
+  order: 2
+  icon: {fileID: 0}
+  accent: {r: 0.55, g: 0.74, b: 0.84, a: 1}
+  costItem: {fileID: 11400000, guid: e83b019ce015f214286d8fee0f4c3554, type: 2}
+  costItemNames:
+  - Silicate Ore
+  costMultiplier: 1
+  finishes:
+  - id: silicate_smooth
+    displayName: Smooth Silicate
+    finishedMaterial: {fileID: 2100000, guid: 550ea8aeff1065b438d588298449b67d, type: 2}
+    overrideGhostTint: 0
+    ghostTint: {r: 0.92, g: 0.38, b: 0.32, a: 1}
+  - id: silicate_crystal
+    displayName: Crystal Silicate
+    finishedMaterial: {fileID: 2100000, guid: 359021ad38f73c845bc75adddb673fa3, type: 2}
+    overrideGhostTint: 0
+    ghostTint: {r: 0.92, g: 0.38, b: 0.32, a: 1}
+  - id: silicate_trim
+    displayName: Silicate Trim
+    finishedMaterial: {fileID: 2100000, guid: 23d4180eb84eab147bba3f005c127071, type: 2}
+    overrideGhostTint: 0
+    ghostTint: {r: 0.92, g: 0.38, b: 0.32, a: 1}
+  doorMaterial: {fileID: 2100000, guid: 23d4180eb84eab147bba3f005c127071, type: 2}
+  glassMaterial: {fileID: 2100000, guid: 92576792c5b37bb4cb409f9a126acfb7, type: 2}
+  partIdPrefix: silicate_
+  kit:
+    windowWidthMeters: 2
+    windowHeightMeters: 1.6
+    windowSillMeters: 1.2
+    glassThicknessMeters: 0.04
+    passageWidthMeters: 2.8
+    passageHeightMeters: 3.4
+    hatchOpeningMeters: 1.4
+    stairSteps: 12
+    railingPosts: 3
+  parts:
+  - id: silicate_foundation_4x4
+    displayName: Foundation
+    shape: 0
+    category: 0
+    prefab: {fileID: 2095676896886987019, guid: a22cc961fe81c224993e3e56362e9dc9, type: 3}
+    icon: {fileID: 0}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: silicate_foundation_tri_4x4
+    displayName: Tri Foundation
+    shape: 1
+    category: 0
+    prefab: {fileID: 6478734342097260282, guid: 1651b704428fb99429d4765e1701eaa2, type: 3}
+    icon: {fileID: 0}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: silicate_floor_4x4
+    displayName: Floor
+    shape: 2
+    category: 2
+    prefab: {fileID: 6734398759893717088, guid: 32149786a7e07bc40849ad79271abefa, type: 3}
+    icon: {fileID: 0}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: silicate_floor_tri_4x4
+    displayName: Tri Floor
+    shape: 3
+    category: 2
+    prefab: {fileID: 3704193253858777608, guid: 39f46c696d12b5a458f5b74c4b6adb3d, type: 3}
+    icon: {fileID: 0}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: silicate_ceiling_4x4
+    displayName: Ceiling
+    shape: 4
+    category: 2
+    prefab: {fileID: 5600213225111591011, guid: c5e247396fad556488b0847c3d59b0a4, type: 3}
+    icon: {fileID: 0}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: silicate_hatch_4x4
+    displayName: Hatch
+    shape: 5
+    category: 2
+    prefab: {fileID: 2020585807688787391, guid: d2439377f05485b4c8f69951e9dcb1ca, type: 3}
+    icon: {fileID: 0}
+    cost: 3
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: silicate_wall_4x4
+    displayName: Wall
+    shape: 6
+    category: 1
+    prefab: {fileID: 4689873514625725918, guid: ae69683c001bdc74bb159251c0c7acbd, type: 3}
+    icon: {fileID: 0}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: silicate_wall_half_4x2
+    displayName: Half Wall
+    shape: 7
+    category: 1
+    prefab: {fileID: 727724042462034674, guid: 0ef8bde61b4948046862b2b405faa31a, type: 3}
+    icon: {fileID: 0}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: silicate_wall_window_4x4
+    displayName: Window
+    shape: 8
+    category: 1
+    prefab: {fileID: 8311960388953323529, guid: 26175ec16a09ca14b803b52fb7411325, type: 3}
+    icon: {fileID: 0}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: silicate_door_frame_4x4
+    displayName: Door Frame
+    shape: 9
+    category: 4
+    prefab: {fileID: 3390538262045508875, guid: afa86b398914b7a43baeddca24a79b51, type: 3}
+    icon: {fileID: 0}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: silicate_door_basic
+    displayName: Door
+    shape: 10
+    category: 4
+    prefab: {fileID: 934456585239428248, guid: 5d5e22f5bd6bd0e438ea60650fc3a106, type: 3}
+    icon: {fileID: 0}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: silicate_passage_4x4
+    displayName: Passage
+    shape: 11
+    category: 1
+    prefab: {fileID: 398717205229501662, guid: be68270ffbd02824d980b473bbc16e00, type: 3}
+    icon: {fileID: 0}
+    cost: 3
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: silicate_wall_tri_l_4x2
+    displayName: Tri Wall L
+    shape: 12
+    category: 1
+    prefab: {fileID: 6526665851365933089, guid: d3adf8c2c65d3094ebd49e0ead0e1fb2, type: 3}
+    icon: {fileID: 0}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: silicate_wall_tri_r_4x2
+    displayName: Tri Wall R
+    shape: 13
+    category: 1
+    prefab: {fileID: 2776377397278988507, guid: a773f3c58a5a8b84398901037d8211b3, type: 3}
+    icon: {fileID: 0}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: silicate_railing_4x1
+    displayName: Railing
+    shape: 14
+    category: 3
+    prefab: {fileID: 4714208461392545354, guid: 89f5084c3bc0fa24fbffd77b2261c7be, type: 3}
+    icon: {fileID: 0}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: silicate_stairs_4x4
+    displayName: Stairs
+    shape: 15
+    category: 3
+    prefab: {fileID: 7430286172638595787, guid: edc3121932e662e48aca283f259ddd4f, type: 3}
+    icon: {fileID: 0}
+    cost: 6
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: silicate_ramp_4x4
+    displayName: Ramp
+    shape: 16
+    category: 3
+    prefab: {fileID: 8232981981840030843, guid: 0b4bcbff9737c574a8d5ece4c9cb5737, type: 3}
+    icon: {fileID: 0}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: silicate_roof_4x4
+    displayName: Roof
+    shape: 17
+    category: 2
+    prefab: {fileID: 3397221751916178498, guid: 140d628bdeab4d049a53f04ce28827c6, type: 3}
+    icon: {fileID: 0}
+    cost: 3
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: silicate_roof_corner_4x4
+    displayName: Roof Corner
+    shape: 18
+    category: 2
+    prefab: {fileID: 2513977112195199141, guid: e2a1758084c7a5346901775299f77506, type: 3}
+    icon: {fileID: 0}
+    cost: 3
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: silicate_roof_inner_4x4
+    displayName: Roof Inner
+    shape: 19
+    category: 2
+    prefab: {fileID: 9176097582985043477, guid: dca1dee7e8510214bb9965f4b781614a, type: 3}
+    icon: {fileID: 0}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}

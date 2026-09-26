@@ -3,7 +3,7 @@ using System;
 namespace Project.Building
 {
     /// <summary>
-    /// Hold B toggles build mode. The up panel selects Stone components or one known building.
+    /// Hold B toggles build mode. The up panel selects a style library (Stone, Iron, Silicate...) or one known building.
     /// </summary>
     public static class DMBuildingMode
     {
@@ -37,7 +37,13 @@ namespace Project.Building
 
         public static void SelectStone()
         {
-            HotbarId = DMBuildingCatalog.StoneId;
+            SelectStyle(DMBuildingStyles.DefaultStyleId);
+        }
+
+        /// <summary>Opens one style library (Stone, Iron, Silicate...) as the build hotbar.</summary>
+        public static void SelectStyle(string styleId)
+        {
+            HotbarId = string.IsNullOrEmpty(styleId) ? DMBuildingStyles.DefaultStyleId : styleId;
             SelectedIndex = 0;
             SlotFocus = 0;
             WindowStart = 0;

@@ -10,7 +10,7 @@ namespace Project.UI
 {
     /// <summary>
     /// Build-mode hotbar on the gameplay HUD. Ten slots, arrow scroll, no scrollbar.
-    /// The up panel lists Stone and known buildings.
+    /// The up panel lists the style libraries (Stone, Iron, Silicate...) and known buildings.
     /// </summary>
     public sealed class DMUiToolkitBuildingHotbar : MonoBehaviour
     {
@@ -35,6 +35,7 @@ namespace Project.UI
         bool wheelStopped;
         bool ringPainted;
         readonly Label[] slotLabels = new Label[VisibleSlots];
+        readonly VisualElement[] slotIcons = new VisualElement[VisibleSlots];
         readonly VisualElement[] slots = new VisualElement[VisibleSlots];
 
         public static void Bind(DMUiToolkitHud hud, VisualElement hudRoot)
@@ -97,6 +98,14 @@ namespace Project.UI
             {
                 slots[i] = hudRoot.Q<VisualElement>("build-slot-" + i);
                 slotLabels[i] = hudRoot.Q<Label>("build-slot-label-" + i);
+                // Library: part icon above the label (icons are set per part in the style library).
+                slotIcons[i] = slots[i] != null ? slots[i].Q<VisualElement>("build-slot-icon-" + i) : null;
+                if (slots[i] != null && slotIcons[i] == null)
+                {
+                    slotIcons[i] = new VisualElement { name = "build-slot-icon-" + i, pickingMode = PickingMode.Ignore };
+                    slotIcons[i].AddToClassList("dmg-build-slot-icon");
+                    slots[i].Insert(0, slotIcons[i]);
+                }
             }
 
             if (!bound)
@@ -278,7 +287,8 @@ namespace Project.UI
 
         void HookInventory()
         {
-            InventorySystem found = UnityEngine.Object.FindAnyObjectByType<InventorySystem>();
+            // 0926-perf: cached lookup, not a scene search every frame.
+            InventorySystem found = DMBuildingCatalog.Inventory();
             if (found == inventoryHook)
                 return;
 
@@ -412,18 +422,18 @@ namespace Project.UI
                 return;
 
             DMBuildingPiece piece = DMBuildingMode.SelectedPiece;
-            if (piece == null || piece.StoneCost <= 0)
+            if (piece == null || piece.Cost <= 0)
             {
                 costLabel.text = string.Empty;
                 return;
             }
 
-            int remaining = DMBuildingCatalog.CountStone();
-            bool shortOnParts = remaining < piece.StoneCost;
+            int remaining = DMBuildingCatalog.CountCost(piece);
+            bool shortOnParts = remaining < piece.Cost;
             string needed = shortOnParts
-                ? $"<color=#4A4A5A>{piece.StoneCost}</color>"
-                : piece.StoneCost.ToString();
-            costLabel.text = $"Rock {needed} / {remaining}";
+                ? $"<color=#4A4A5A>{piece.Cost}</color>"
+                : piece.Cost.ToString();
+            costLabel.text = $"{DMBuildingCatalog.CostItemName(piece)} {needed} / {remaining}";
         }
 
         void RebuildList()
@@ -435,8 +445,16 @@ namespace Project.UI
             menuActions.Clear();
             menuButtons.Clear();
             selectedMenuRow = -1;
-            AddHeader("Components");
-            AddRow("Stone", DMBuildingMode.SelectStone, DMBuildingMode.HotbarId == DMBuildingCatalog.StoneId);
+            AddHeader("Styles");
+            IReadOnlyList<DMBuildingStyleLibrary> styles = DMBuildingStyles.All;
+            for (int i = 0; i < styles.Count; i++)
+            {
+                string styleId = styles[i].styleId;
+                AddRow(styles[i].displayName, () => DMBuildingMode.SelectStyle(styleId), DMBuildingMode.HotbarId == styleId);
+            }
+
+            if (styles.Count == 0)
+                AddRow("Stone", DMBuildingMode.SelectStone, DMBuildingMode.HotbarId == DMBuildingCatalog.StoneId);
             AddHeader("Buildings");
 
             List<DMBuildingPiece> buildings = DMBuildingCatalog.KnownBuildings();
@@ -515,9 +533,15 @@ namespace Project.UI
                 DMBuildingPiece piece = filled ? pieces[index] : null;
                 if (slotLabels[i] != null)
                     slotLabels[i].text = piece != null ? piece.DisplayName : string.Empty;
+                if (slotIcons[i] != null)
+                {
+                    bool hasIcon = piece != null && piece.Icon != null;
+                    slotIcons[i].style.display = hasIcon ? DisplayStyle.Flex : DisplayStyle.None;
+                    slotIcons[i].style.backgroundImage = hasIcon ? new StyleBackground(piece.Icon) : new StyleBackground(StyleKeyword.None);
+                }
 
                 slots[i].EnableInClassList("dmg-build-slot-selected", piece != null && index == DMBuildingMode.SelectedIndex);
-                bool affordable = piece != null && DMBuildingCatalog.HasStone(piece.StoneCost);
+                bool affordable = piece != null && DMBuildingCatalog.HasCost(piece);
                 slots[i].EnableInClassList("dmg-build-slot-short", piece != null && !affordable);
                 slots[i].style.display = DisplayStyle.Flex;
             }

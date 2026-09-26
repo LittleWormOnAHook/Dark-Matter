@@ -8,23 +8,27 @@ using UnityEngine.ProBuilder;
 namespace Project.EditorTools.Building
 {
     /// <summary>
-    /// DM kit 0925: builds the Stone building kit with ProBuilder. Every piece is centred on its bounds and sized to the
-    /// 4 m grid from <see cref="DMBuildingCatalog"/> constants plus the kit fields on <see cref="DMBuildingGhostProfile"/>.
-    /// Meshes, prefabs and library entries are written in place under Prefabs/Buildings/Library/Stone.
+    /// DM kit 0926: builds one building style kit (Stone, Iron, Silicate, ...) with ProBuilder. Every piece is centred on
+    /// its bounds and sized to the 4 m grid from <see cref="DMBuildingCatalog"/> constants plus the style's kit settings.
+    /// Meshes, prefabs and part rows are written in place under Prefabs/Buildings/Library/&lt;Style&gt;.
     /// Wall pieces: local +Z is the outer face; placement seats the outer face on the grid line.
     /// Ramp, stairs and roofs rise toward local +Z.
     /// </summary>
     public static class DMBuildingKitBuilder
     {
-        public const string Root = "Assets/_Project/Prefabs/Buildings/Library/Stone";
-        const string MeshFolder = Root + "/Meshes";
-        const string MaterialFolder = Root + "/Materials";
-        const string LibraryPath = "Assets/_Project/Resources/Building/DM_BuildingLibrary.asset";
+        public const string StoneRoot = DMBuildingStyleLibraryBuilder.PrefabLibraryRoot + "/Stone";
 
         static readonly string[] Obsolete =
         {
-            Root + "/Slopes/stone_slope_4x4.prefab",
+            StoneRoot + "/Slopes/stone_slope_4x4.prefab",
         };
+
+        // Set per rebuild by RebuildStyle.
+        static string styleRoot = StoneRoot;
+        static string prefix = "stone_";
+        static DMBuildingKitSettings kit = new DMBuildingKitSettings();
+
+        static string MeshFolder => styleRoot + "/Meshes";
 
         enum ColliderKind
         {
@@ -42,29 +46,58 @@ namespace Project.EditorTools.Building
             public readonly List<ProBuilderMesh> Glass = new List<ProBuilderMesh>();
         }
 
+        static int kitLayer = -1;
+
         [MenuItem("Tools/Dark Matter Genesis/Buildings/Rebuild Stone Kit (ProBuilder)")]
         public static void RebuildStoneKit()
         {
-            DMBuildingMaterialLibraryBuilder.EnsureStoneFinishes();
-            Material stone = AssetDatabase.LoadAssetAtPath<Material>(MaterialFolder + "/StoneRough.mat");
-            Material glass = AssetDatabase.LoadAssetAtPath<Material>(MaterialFolder + "/WindowGlass.mat");
-            Material door = AssetDatabase.LoadAssetAtPath<Material>(MaterialFolder + "/Door.mat");
+            DMBuildingStyleLibraryBuilder.EnsureStyles();
+            RebuildStyle(DMBuildingStyles.Find(DMBuildingStyles.DefaultId));
+        }
+
+        [MenuItem("Tools/Dark Matter Genesis/Buildings/Rebuild All Style Kits (ProBuilder)")]
+        public static void RebuildAllKits()
+        {
+            List<DMBuildingStyleLibrary> styles = DMBuildingStyleLibraryBuilder.EnsureStyles();
+            for (int i = 0; i < styles.Count; i++)
+                RebuildStyle(styles[i], refresh: i == styles.Count - 1);
+        }
+
+        /// <summary>Builds every kit shape for one style into Prefabs/Buildings/Library/&lt;Style&gt; and links the prefabs.</summary>
+        public static void RebuildStyle(DMBuildingStyleLibrary style, bool refresh = true)
+        {
+            if (style == null)
+            {
+                Debug.LogWarning("[DM Building Kit] No style to rebuild. Run Tools/Dark Matter Genesis/Buildings/Ensure Style Libraries first.");
+                return;
+            }
+
+            kitLayer = Project.EditorTools.EditorTagUtility.EnsureLayer(DMBuildingGhostProfile.BuildingLayerName); // 0925-layers
+            styleRoot = DMBuildingStyleLibraryBuilder.StyleRoot(style);
+            prefix = DMBuildingStyleLibraryBuilder.PrefixOf(style);
+            kit = style.kit ?? new DMBuildingKitSettings();
+            DMBuildingMaterialVariant first = style.FirstFinish();
+            Material solid = first != null ? first.finishedMaterial : null;
+            Material glass = style.glassMaterial;
+            Material door = style.doorMaterial != null ? style.doorMaterial : solid;
             EnsureFolder(MeshFolder);
 
             var built = new List<KeyValuePair<string, GameObject>>();
-            foreach (KitPiece piece in BuildPieces(stone, door))
+            foreach (KitPiece piece in BuildPieces(solid, door))
             {
                 GameObject prefab = SavePiece(piece, glass);
                 if (prefab != null)
                     built.Add(new KeyValuePair<string, GameObject>(piece.Id, prefab));
             }
 
-            List<string> removed = DeleteObsolete();
-            UpdateLibrary(built);
+            List<string> removed = style.styleId == DMBuildingStyles.DefaultId ? DeleteObsolete() : new List<string>();
+            UpdateStyleParts(style, built);
             AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
+            if (refresh)
+                AssetDatabase.Refresh();
+            DMBuildingStyles.Invalidate();
             Debug.Log(
-                "[DM Building Kit] Rebuilt " + built.Count + " stone pieces in " + Root
+                "[DM Building Kit] Rebuilt " + built.Count + " " + style.displayName + " pieces in " + styleRoot
                 + (removed.Count > 0 ? ". Removed: " + string.Join(", ", removed) : "."));
         }
 
@@ -77,28 +110,28 @@ namespace Project.EditorTools.Building
             float t = DMBuildingCatalog.WallThickness;
 
             // Horizontal slabs (bottom at y = 0; recentred on save).
-            yield return Box("stone_foundation_4x4", "Foundations", stone, new Vector3(m, DMBuildingCatalog.FoundationHeight, m));
-            yield return Box("stone_floor_4x4", "Floors", stone, new Vector3(m, DMBuildingCatalog.SlabThickness, m));
-            yield return Box("stone_ceiling_4x4", "Ceilings", stone, new Vector3(m, DMBuildingCatalog.SlabThickness, m));
-            yield return TriSlab("stone_foundation_tri_4x4", "Foundations", stone, DMBuildingCatalog.FoundationHeight);
-            yield return TriSlab("stone_floor_tri_4x4", "Floors", stone, DMBuildingCatalog.SlabThickness);
+            yield return Box(prefix + "foundation_4x4", "Foundations", stone, new Vector3(m, DMBuildingCatalog.FoundationHeight, m));
+            yield return Box(prefix + "floor_4x4", "Floors", stone, new Vector3(m, DMBuildingCatalog.SlabThickness, m));
+            yield return Box(prefix + "ceiling_4x4", "Ceilings", stone, new Vector3(m, DMBuildingCatalog.SlabThickness, m));
+            yield return TriSlab(prefix + "foundation_tri_4x4", "Foundations", stone, DMBuildingCatalog.FoundationHeight);
+            yield return TriSlab(prefix + "floor_tri_4x4", "Floors", stone, DMBuildingCatalog.SlabThickness);
             yield return Hatch(stone);
 
             // Edge pieces (thin axis = local Z).
-            yield return Box("stone_wall_4x4", "Walls", stone, new Vector3(m, h, t));
-            yield return Box("stone_wall_half_4x2", "Walls", stone, new Vector3(m, DMBuildingCatalog.HalfWallHeight, t));
+            yield return Box(prefix + "wall_4x4", "Walls", stone, new Vector3(m, h, t));
+            yield return Box(prefix + "wall_half_4x2", "Walls", stone, new Vector3(m, DMBuildingCatalog.HalfWallHeight, t));
             yield return Window(stone);
-            yield return Opening("stone_door_frame_4x4", "DoorFrames", stone, DMBuildingCatalog.DoorWidth, DMBuildingCatalog.DoorHeight);
-            yield return Opening("stone_passage_4x4", "Walls", stone, DMBuildingGhostProfile.KitPassageWidthMeters, DMBuildingGhostProfile.KitPassageHeightMeters);
-            yield return TriWall("stone_wall_tri_l_4x2", stone, left: true);
-            yield return TriWall("stone_wall_tri_r_4x2", stone, left: false);
+            yield return Opening(prefix + "door_frame_4x4", "DoorFrames", stone, DMBuildingCatalog.DoorWidth, DMBuildingCatalog.DoorHeight);
+            yield return Opening(prefix + "passage_4x4", "Walls", stone, kit.PassageWidth, kit.PassageHeight);
+            yield return TriWall(prefix + "wall_tri_l_4x2", stone, left: true);
+            yield return TriWall(prefix + "wall_tri_r_4x2", stone, left: false);
             yield return Railing(stone);
-            yield return Box("stone_door_basic", "Doors", door, new Vector3(DMBuildingCatalog.DoorWidth, DMBuildingCatalog.DoorHeight, DMBuildingCatalog.DoorDepth));
+            yield return Box(prefix + "door_basic", "Doors", door, new Vector3(DMBuildingCatalog.DoorWidth, DMBuildingCatalog.DoorHeight, DMBuildingCatalog.DoorDepth));
 
             // Ground pieces that climb.
             yield return Stairs(stone);
-            yield return Wedge("stone_ramp_4x4", "Ramps", stone, h);
-            yield return Wedge("stone_roof_4x4", "Roofs", stone, DMBuildingCatalog.RoofRise);
+            yield return Wedge(prefix + "ramp_4x4", "Ramps", stone, h);
+            yield return Wedge(prefix + "roof_4x4", "Roofs", stone, DMBuildingCatalog.RoofRise);
             yield return RoofCorner(stone);
             yield return RoofInner(stone);
         }
@@ -129,10 +162,10 @@ namespace Project.EditorTools.Building
         {
             float m = DMBuildingCatalog.ModuleMeters;
             float s = DMBuildingCatalog.SlabThickness;
-            float o = Mathf.Min(DMBuildingGhostProfile.KitHatchOpeningMeters, m - 0.4f);
+            float o = Mathf.Min(kit.HatchOpening, m - 0.4f);
             float band = (m - o) * 0.5f;
             float y = s * 0.5f;
-            KitPiece piece = New(DMBuildingCatalog.HatchId, "Ceilings", material, ColliderKind.Mesh);
+            KitPiece piece = New(prefix + "hatch_4x4", "Ceilings", material, ColliderKind.Mesh);
             piece.Solid.Add(Cube(new Vector3(m, s, band), new Vector3(0f, y, -(o * 0.5f + band * 0.5f))));
             piece.Solid.Add(Cube(new Vector3(m, s, band), new Vector3(0f, y, o * 0.5f + band * 0.5f)));
             piece.Solid.Add(Cube(new Vector3(band, s, o), new Vector3(-(o * 0.5f + band * 0.5f), y, 0f)));
@@ -145,17 +178,17 @@ namespace Project.EditorTools.Building
             float m = DMBuildingCatalog.ModuleMeters;
             float h = DMBuildingCatalog.StoryHeight;
             float t = DMBuildingCatalog.WallThickness;
-            float ww = Mathf.Min(DMBuildingGhostProfile.KitWindowWidthMeters, m - 0.4f);
-            float sill = DMBuildingGhostProfile.KitWindowSillMeters;
-            float wh = Mathf.Min(DMBuildingGhostProfile.KitWindowHeightMeters, h - sill - 0.2f);
+            float ww = Mathf.Min(kit.WindowWidth, m - 0.4f);
+            float sill = kit.WindowSill;
+            float wh = Mathf.Min(kit.WindowHeight, h - sill - 0.2f);
             float jamb = (m - ww) * 0.5f;
             float head = h - sill - wh;
-            KitPiece piece = New("stone_wall_window_4x4", "Windows", material, ColliderKind.Mesh);
+            KitPiece piece = New(prefix + "wall_window_4x4", "Windows", material, ColliderKind.Mesh);
             piece.Solid.Add(Cube(new Vector3(jamb, h, t), new Vector3(-(ww * 0.5f + jamb * 0.5f), h * 0.5f, 0f)));
             piece.Solid.Add(Cube(new Vector3(jamb, h, t), new Vector3(ww * 0.5f + jamb * 0.5f, h * 0.5f, 0f)));
             piece.Solid.Add(Cube(new Vector3(ww, sill, t), new Vector3(0f, sill * 0.5f, 0f)));
             piece.Solid.Add(Cube(new Vector3(ww, head, t), new Vector3(0f, h - head * 0.5f, 0f)));
-            piece.Glass.Add(Cube(new Vector3(ww, wh, DMBuildingGhostProfile.KitGlassThicknessMeters), new Vector3(0f, sill + wh * 0.5f, 0f)));
+            piece.Glass.Add(Cube(new Vector3(ww, wh, kit.GlassThickness), new Vector3(0f, sill + wh * 0.5f, 0f)));
             return piece;
         }
 
@@ -195,8 +228,8 @@ namespace Project.EditorTools.Building
             float rt = DMBuildingCatalog.RailingThickness;
             float rail = 0.12f;
             float post = rt;
-            int posts = DMBuildingGhostProfile.KitRailingPosts;
-            KitPiece piece = New("stone_railing_4x1", "Railings", material, ColliderKind.Box);
+            int posts = kit.RailingPosts;
+            KitPiece piece = New(prefix + "railing_4x1", "Railings", material, ColliderKind.Box);
             piece.Solid.Add(Cube(new Vector3(m, rail, rt), new Vector3(0f, rh - rail * 0.5f, 0f)));
             piece.Solid.Add(Cube(new Vector3(m, rail, rt), new Vector3(0f, 0.15f + rail * 0.5f, 0f)));
             float span = m - post;
@@ -213,10 +246,10 @@ namespace Project.EditorTools.Building
         {
             float m = DMBuildingCatalog.ModuleMeters;
             float h = DMBuildingCatalog.StoryHeight;
-            int steps = DMBuildingGhostProfile.KitStairSteps;
+            int steps = kit.StairSteps;
             float run = m / steps;
             float rise = h / steps;
-            KitPiece piece = New("stone_stairs_4x4", "Stairs", material, ColliderKind.Mesh);
+            KitPiece piece = New(prefix + "stairs_4x4", "Stairs", material, ColliderKind.Mesh);
             for (int i = 0; i < steps; i++)
             {
                 float top = rise * (i + 1);
@@ -238,7 +271,7 @@ namespace Project.EditorTools.Building
         {
             float a = DMBuildingCatalog.ModuleMeters * 0.5f;
             float r = DMBuildingCatalog.RoofRise;
-            KitPiece piece = New("stone_roof_corner_4x4", "Roofs", material, ColliderKind.Mesh);
+            KitPiece piece = New(prefix + "roof_corner_4x4", "Roofs", material, ColliderKind.Mesh);
             // Outer (hip) corner: eaves on -X and -Z, apex at the +X +Z corner.
             var v = new[]
             {
@@ -260,7 +293,7 @@ namespace Project.EditorTools.Building
         {
             float half = DMBuildingCatalog.ModuleMeters * 0.5f;
             float r = DMBuildingCatalog.RoofRise;
-            KitPiece piece = New("stone_roof_inner_4x4", "Roofs", material, ColliderKind.Mesh);
+            KitPiece piece = New(prefix + "roof_inner_4x4", "Roofs", material, ColliderKind.Mesh);
             // Inner (valley) corner: two roof wedges rising to +Z and +X overlap into one piece.
             piece.Solid.Add(WedgeMesh(half, r, alongX: false));
             piece.Solid.Add(WedgeMesh(half, r, alongX: true));
@@ -432,9 +465,13 @@ namespace Project.EditorTools.Building
 
                 // 0925: every build piece is climbable.
                 foreach (Transform part in root.GetComponentsInChildren<Transform>(true))
+                {
                     part.gameObject.tag = DMBuildingPieceFactory.ClimbableTag;
+                    if (kitLayer >= 0)
+                        part.gameObject.layer = kitLayer;
+                }
 
-                string folder = Root + "/" + piece.Folder;
+                string folder = styleRoot + "/" + piece.Folder;
                 EnsureFolder(folder);
                 return PrefabUtility.SaveAsPrefabAsset(root, folder + "/" + piece.Id + ".prefab");
             }
@@ -520,40 +557,39 @@ namespace Project.EditorTools.Building
                     removed.Add(Path.GetFileName(Obsolete[i]));
             }
 
-            string slopes = Root + "/Slopes";
+            string slopes = StoneRoot + "/Slopes";
             if (AssetDatabase.IsValidFolder(slopes) && AssetDatabase.FindAssets(string.Empty, new[] { slopes }).Length == 0)
                 AssetDatabase.DeleteAsset(slopes);
             return removed;
         }
 
-        static void UpdateLibrary(List<KeyValuePair<string, GameObject>> built)
+        static void UpdateStyleParts(DMBuildingStyleLibrary style, List<KeyValuePair<string, GameObject>> built)
         {
-            DMBuildingLibrary library = AssetDatabase.LoadAssetAtPath<DMBuildingLibrary>(LibraryPath);
-            if (library == null)
-            {
-                library = ScriptableObject.CreateInstance<DMBuildingLibrary>();
-                AssetDatabase.CreateAsset(library, LibraryPath);
-            }
-
-            var known = new HashSet<string>();
-            IReadOnlyList<DMBuildingPiece> catalog = DMBuildingCatalog.All;
-            for (int i = 0; i < catalog.Count; i++)
-                known.Add(catalog[i].Id);
-
-            library.pieces.RemoveAll(entry => entry == null || string.IsNullOrEmpty(entry.id) || (!known.Contains(entry.id) && entry.id.StartsWith("stone_")));
+            if (style.parts == null)
+                style.parts = new List<DMBuildingPartEntry>();
             for (int i = 0; i < built.Count; i++)
             {
-                DMBuildingLibrary.Entry entry = library.pieces.Find(e => e.id == built[i].Key);
-                if (entry == null)
+                DMBuildingPartEntry part = style.FindPart(built[i].Key);
+                if (part == null)
                 {
-                    entry = new DMBuildingLibrary.Entry { id = built[i].Key };
-                    library.pieces.Add(entry);
+                    string suffix = built[i].Key.Substring(prefix.Length);
+                    for (int t = 0; t < DMBuildingCatalog.KitTemplate.Length; t++)
+                    {
+                        if (DMBuildingCatalog.KitTemplate[t].Suffix != suffix)
+                            continue;
+                        part = DMBuildingStyleLibraryBuilder.NewKitPart(built[i].Key, DMBuildingCatalog.KitTemplate[t]);
+                        break;
+                    }
+
+                    if (part == null)
+                        part = new DMBuildingPartEntry { id = built[i].Key, displayName = built[i].Key };
+                    style.parts.Add(part);
                 }
 
-                entry.prefab = built[i].Value;
+                part.prefab = built[i].Value;
             }
 
-            EditorUtility.SetDirty(library);
+            EditorUtility.SetDirty(style);
         }
 
         static void EnsureFolder(string path)

@@ -8,13 +8,15 @@ namespace Project.Building
 {
     /// <summary>
     /// Preview ghost follows aim. Hold left click to create it when the seat is green.
-    /// Red means not enough Rock in inventory or storage. Hold right click to destroy.
+    /// Red means not enough of the style cost item (Rock, Iron Ore, Silicate Ore) in inventory or storage. Hold right click to destroy.
     /// </summary>
     public sealed class DMBuildingPlacementController : MonoBehaviour
     {
         static DMBuildingPlacementController instance;
         static Material ghostMaterial;
         static Material solidMaterial;
+        static int solidMaterialSourceId;
+        float nextColorRefresh;
         static Material blockedMaterial;
         static Material glassMaterial;
         static Material ghostGlassMaterial;
@@ -38,23 +40,29 @@ namespace Project.Building
         // DM snap 0925-support-cell: keep one horizontal support while aim stays on/near it.
         DMBuildingGhost stickyVerticalSupport;
 
-        static int builtGhostCacheFrame = -1;
+        static int builtGhostCacheVersion = -1;
         static DMBuildingGhost[] builtGhostCache = System.Array.Empty<DMBuildingGhost>();
+        // 0925-layers: shared cast buffers so aim and overlap tests stop allocating every frame.
+        static readonly RaycastHit[] rayHits = new RaycastHit[64];
+        static readonly Collider[] overlapHits = new Collider[128];
+        static Project.Player.PlayerController cachedPlayer;
+        float nextWorldMaskCheck;
 
-        static DMBuildingGhost[] BuiltGhosts()
+        /// <summary>Placed pieces. Rebuilt only when a piece is enabled or disabled, not every frame.</summary>
+        internal static DMBuildingGhost[] BuiltGhosts()
         {
-            int frame = Time.frameCount;
-            if (builtGhostCacheFrame == frame)
+            int version = DMBuildingGhost.RegistryVersion;
+            if (builtGhostCacheVersion == version)
                 return builtGhostCache;
 
-            builtGhostCacheFrame = frame;
-            builtGhostCache = Object.FindObjectsByType<DMBuildingGhost>(FindObjectsInactive.Exclude);
+            builtGhostCacheVersion = version;
+            builtGhostCache = DMBuildingGhost.Snapshot();
             return builtGhostCache;
         }
 
         static void InvalidateBuiltGhostCache()
         {
-            builtGhostCacheFrame = -1;
+            builtGhostCacheVersion = -1;
         }
 
         static bool IsHorizontalLatticePiece(string pieceId)
@@ -168,6 +176,14 @@ namespace Project.Building
                 return;
             }
 
+            // 0925-layers: characters and the camera must treat the Building layer like Default.
+            if (Time.unscaledTime >= nextWorldMaskCheck)
+            {
+                nextWorldMaskCheck = Time.unscaledTime + 3f;
+                if (DMBuildingMode.IsActive || BuiltGhosts().Length > 0)
+                    DMBuildingLayers.EnsureWorldMasks();
+            }
+
             if (!DMBuildingMode.IsActive)
             {
                 buildHold = 0f;
@@ -198,7 +214,12 @@ namespace Project.Building
             }
 
             ConsumeWheel();
-            ApplyProfileColors();
+            // 0926-perf: Studio colour edits show within a quarter second; no need to repaint five materials every frame.
+            if (Time.unscaledTime >= nextColorRefresh)
+            {
+                nextColorRefresh = Time.unscaledTime + 0.25f;
+                ApplyProfileColors();
+            }
 
             Mouse mouse = Mouse.current;
             bool overBar = DMUiToolkitBuildingHotbar.PointerOverBar();
@@ -253,7 +274,7 @@ namespace Project.Building
                 buildHold += Time.deltaTime;
                 DMUiToolkitBuildingHotbar.SetHoldRing(true, buildHold / DMBuildingGhostProfile.BuildSeconds, Vector3.zero);
                 if (buildHold >= DMBuildingGhostProfile.BuildSeconds
-                    && DMBuildingCatalog.TrySpendStone(aimedPiece.StoneCost, out ItemData paid))
+                    && DMBuildingCatalog.TrySpend(aimedPiece, out ItemData paid))
                 {
                     lastPlaced = Commit(aimedPiece, aimedPosition, aimedRotation, paid);
                     buildHold = 0f;
@@ -302,6 +323,18 @@ namespace Project.Building
                 return false;
 
             Ray ray = camera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+
+            // Library: surface items (lights, decorations) stick to the face of the built piece under the crosshair.
+            if (piece.Snap == DMBuildingSnap.Surface)
+            {
+                surfaceHost = null;
+                if (!TrySeatSurfaceItem(ray, piece, camera, out position, out rotation, out DMBuildingGhost host))
+                    return false;
+                surfaceHost = host;
+                canCommit = DMBuildingCatalog.HasCost(piece);
+                return true;
+            }
+
             bool lookingUp = ray.direction.y > 0.18f || AimIsAboveWallMid(ray);
             ResolveAimPoint(ray, lookingUp, out Vector3 aim, out bool hasHit);
             if (!hasHit && !lookingUp)
@@ -402,15 +435,59 @@ namespace Project.Building
             return false;
         }
 
+        // ---- Library: surface items ----
+
+        static DMBuildingGhost surfaceHost;
+
+        /// <summary>
+        /// Walls: the item's forward (+Z) points out of the face and its up stays world up.
+        /// Floors and ceilings: the item's up (+Y) points out of the face. Alt + scroll spins it around the face normal.
+        /// </summary>
+        static bool TrySeatSurfaceItem(Ray ray, DMBuildingPiece piece, Camera camera, out Vector3 position, out Quaternion rotation, out DMBuildingGhost host)
+        {
+            position = default;
+            rotation = Quaternion.identity;
+            host = null;
+            if (!TryHitBuiltAlongRay(ray, DMBuildingGhostProfile.AimDistanceMeters, out RaycastHit hit))
+                return false;
+
+            host = hit.collider != null ? hit.collider.GetComponentInParent<DMBuildingGhost>() : null;
+            if (host == null)
+                return false;
+
+            Vector3 normal = hit.normal.sqrMagnitude > 0.0001f ? hit.normal.normalized : Vector3.up;
+            float spin = instance.yawNotches * YawStep();
+            Quaternion baseRotation;
+            float extent;
+            if (Mathf.Abs(normal.y) < 0.5f)
+            {
+                baseRotation = Quaternion.LookRotation(normal, Vector3.up);
+                extent = piece.Size.z * 0.5f;
+            }
+            else
+            {
+                Vector3 forward = Vector3.ProjectOnPlane(camera.transform.forward, normal);
+                if (forward.sqrMagnitude < 0.0001f)
+                    forward = Vector3.ProjectOnPlane(camera.transform.up, normal);
+                baseRotation = Quaternion.LookRotation(forward.normalized, normal);
+                extent = piece.Size.y * 0.5f;
+            }
+
+            rotation = Quaternion.AngleAxis(spin, normal) * baseRotation;
+            position = hit.point + normal * (extent + Mathf.Max(0f, piece.SurfaceOffset));
+            return true;
+        }
+
         // ---- 0925-upper: crosshair-anchored snapping for second story and higher ----
 
         static bool TryHitBuiltForSnap(Ray ray, out DMBuildingGhost ghost, out RaycastHit hit)
         {
             ghost = null;
             hit = default;
-            RaycastHit[] hits = Physics.RaycastAll(ray, DMBuildingGhostProfile.AimDistanceMeters, ~0, QueryTriggerInteraction.Ignore);
+            RaycastHit[] hits = rayHits;
+            int hitCount = Physics.RaycastNonAlloc(ray, rayHits, DMBuildingGhostProfile.AimDistanceMeters, DMBuildingLayers.AimMask, QueryTriggerInteraction.Ignore);
             float best = float.MaxValue;
-            for (int i = 0; i < hits.Length; i++)
+            for (int i = 0; i < hitCount; i++)
             {
                 if (hits[i].collider == null || hits[i].distance >= best)
                     continue;
@@ -616,7 +693,7 @@ namespace Project.Building
         static bool CanAffordAndClear(DMBuildingPiece piece, Vector3 position, Quaternion rotation)
         {
             return piece != null
-                && DMBuildingCatalog.HasStone(piece.StoneCost)
+                && DMBuildingCatalog.HasCost(piece)
                 && PassesStructureAnchor(piece, position, rotation)
                 && !Overlaps(position, piece.Size, rotation, piece.Id);
         }
@@ -731,8 +808,9 @@ namespace Project.Building
 
         static bool AimIsAboveWallMid(Ray ray)
         {
-            RaycastHit[] hits = Physics.RaycastAll(ray, DMBuildingGhostProfile.AimDistanceMeters, ~0, QueryTriggerInteraction.Ignore);
-            for (int i = 0; i < hits.Length; i++)
+            RaycastHit[] hits = rayHits;
+            int hitCount = Physics.RaycastNonAlloc(ray, rayHits, DMBuildingGhostProfile.AimDistanceMeters, DMBuildingLayers.AimMask, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < hitCount; i++)
             {
                 if (hits[i].collider == null)
                     continue;
@@ -938,10 +1016,11 @@ namespace Project.Building
         static bool TryGroundHit(Ray ray, out RaycastHit chosen)
         {
             chosen = default;
-            RaycastHit[] hits = Physics.RaycastAll(ray, DMBuildingGhostProfile.AimDistanceMeters, ~0, QueryTriggerInteraction.Ignore);
+            RaycastHit[] hits = rayHits;
+            int hitCount = Physics.RaycastNonAlloc(ray, rayHits, DMBuildingGhostProfile.AimDistanceMeters, DMBuildingLayers.GroundMask, QueryTriggerInteraction.Ignore);
             float best = float.MaxValue;
             bool found = false;
-            for (int i = 0; i < hits.Length; i++)
+            for (int i = 0; i < hitCount; i++)
             {
                 Collider collider = hits[i].collider;
                 if (collider == null)
@@ -992,10 +1071,11 @@ namespace Project.Building
         static bool TryHitBuiltAlongRay(Ray ray, float maxDistance, out RaycastHit chosen)
         {
             chosen = default;
-            RaycastHit[] hits = Physics.RaycastAll(ray, maxDistance, ~0, QueryTriggerInteraction.Ignore);
+            RaycastHit[] hits = rayHits;
+            int hitCount = Physics.RaycastNonAlloc(ray, rayHits, maxDistance, DMBuildingLayers.AimMask, QueryTriggerInteraction.Ignore);
             float best = float.MaxValue;
             bool found = false;
-            for (int i = 0; i < hits.Length; i++)
+            for (int i = 0; i < hitCount; i++)
             {
                 Collider collider = hits[i].collider;
                 if (collider == null || collider.gameObject.layer == 8)
@@ -1003,6 +1083,8 @@ namespace Project.Building
                 DMBuildingGhost ghost = collider.GetComponentInParent<DMBuildingGhost>();
                 if (ghost == null || !ghost.Built)
                     continue;
+                if (DMBuildingCatalog.IsSurfaceItem(ghost.PieceId))
+                    continue; // lights and decorations never anchor structure or other items
                 if (hits[i].distance >= best)
                     continue;
                 best = hits[i].distance;
@@ -1169,9 +1251,10 @@ namespace Project.Building
                 return false;
 
             Ray ray = camera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
-            RaycastHit[] hits = Physics.RaycastAll(ray, DMBuildingGhostProfile.AimDistanceMeters, ~0, QueryTriggerInteraction.Ignore);
+            RaycastHit[] hits = rayHits;
+            int hitCount = Physics.RaycastNonAlloc(ray, rayHits, DMBuildingGhostProfile.AimDistanceMeters, DMBuildingLayers.AimMask, QueryTriggerInteraction.Ignore);
             float best = float.MaxValue;
-            for (int i = 0; i < hits.Length; i++)
+            for (int i = 0; i < hitCount; i++)
             {
                 if (hits[i].collider == null || hits[i].distance >= best)
                     continue;
@@ -1268,7 +1351,7 @@ namespace Project.Building
             for (int i = 0; i < ghosts.Length; i++)
             {
                 DMBuildingGhost ghost = ghosts[i];
-                if (ghost == null || !ghost.Built || ghost.PieceId != "stone_foundation_4x4")
+                if (ghost == null || !ghost.Built || !DMBuildingCatalog.IsFoundation(ghost.PieceId))
                     continue;
                 float distance = Vector2.Distance(
                     new Vector2(aim.x, aim.z),
@@ -1395,7 +1478,9 @@ namespace Project.Building
 
         static Vector3 PlayerFeet()
         {
-            Project.Player.PlayerController player = UnityEngine.Object.FindAnyObjectByType<Project.Player.PlayerController>();
+            if (cachedPlayer == null)
+                cachedPlayer = UnityEngine.Object.FindAnyObjectByType<Project.Player.PlayerController>();
+            Project.Player.PlayerController player = cachedPlayer;
             if (player != null)
                 return player.transform.position;
 
@@ -1928,8 +2013,9 @@ namespace Project.Building
             half.x = Mathf.Max(0.05f, half.x - pad);
             half.y = Mathf.Max(0.05f, half.y - pad);
             half.z = Mathf.Max(0.05f, half.z - pad);
-            Collider[] hits = Physics.OverlapBox(center, half, rotation, ~0, QueryTriggerInteraction.Ignore);
-            for (int i = 0; i < hits.Length; i++)
+            Collider[] hits = overlapHits;
+            int hitCount = Physics.OverlapBoxNonAlloc(center, half, overlapHits, rotation, DMBuildingLayers.OverlapMask, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < hitCount; i++)
             {
                 Collider collider = hits[i];
                 if (collider == null || collider is TerrainCollider)
@@ -1942,7 +2028,7 @@ namespace Project.Building
                 DMBuildingGhost ghost = collider.GetComponentInParent<DMBuildingGhost>();
                 if (ghost != null)
                 {
-                    if (ghost.PieceId == pieceId && OccupiesSameModuleCell(center, ghost, size))
+                    if (DMBuildingCatalog.SameShape(ghost.PieceId, pieceId) && OccupiesSameModuleCell(center, ghost, size))
                         return true;
                     continue;
                 }
@@ -1983,7 +2069,7 @@ namespace Project.Building
             for (int i = 0; i < ghosts.Length; i++)
             {
                 DMBuildingGhost frame = ghosts[i];
-                if (frame == null || !frame.Built || frame.PieceId != DMBuildingCatalog.DoorFrameId)
+                if (frame == null || !frame.Built || !DMBuildingCatalog.IsDoorFrame(frame.PieceId))
                     continue;
 
                 Renderer renderer = frame.GetComponentInChildren<Renderer>();
@@ -2011,23 +2097,27 @@ namespace Project.Building
             if (marker == null)
                 marker = ghostObject.AddComponent<DMBuildingGhost>();
             marker.PieceId = piece.Id;
-            marker.StoneCost = piece.StoneCost;
+            marker.Cost = piece.Cost;
             marker.PaidItem = paid;
             marker.Built = true;
             marker.LocalHalfExtents = piece.Size * 0.5f;
-            if (piece.Id == "stone_door_basic")
-                marker.MaterialVariantId = "door";
-            else
-            {
-                DMBuildingMaterialVariant variant = DMBuildingMaterialLibrary.FirstForTier(DMBuildingMaterialTier.Stone);
-                marker.MaterialVariantId = variant != null ? variant.id : null;
-            }
+            bool isDoor = DMBuildingCatalog.IsDoor(piece.Id);
+            DMBuildingStyleLibrary style = DMBuildingCatalog.StyleOf(piece.Id);
+            DMBuildingMaterialVariant variant = !isDoor && style != null ? style.FirstFinish() : null;
+            marker.MaterialVariantId = variant != null ? variant.id : null;
 
-            if (piece.Id == "stone_door_basic")
+            if (isDoor && ghostObject.GetComponent<DMBuildingDoor>() == null)
                 ghostObject.AddComponent<DMBuildingDoor>();
+
+            if (piece.Snap == DMBuildingSnap.Surface)
+            {
+                marker.Host = surfaceHost;
+                DMBuildingPieceFactory.SetTag(ghostObject, "Untagged"); // small items are not climb holds
+            }
 
             ApplyBuiltMaterial(marker);
             InvalidateBuiltGhostCache();
+            DMBuildingLayers.EnsureWorldMasks();
             return marker;
         }
 
@@ -2036,12 +2126,13 @@ namespace Project.Building
         /// </summary>
         static void TryApplyNextMaterial()
         {
-            if (!TryResolveBuiltTarget(out DMBuildingGhost ghost) || ghost.PieceId == "stone_door_basic")
+            if (!TryResolveBuiltTarget(out DMBuildingGhost ghost) || DMBuildingCatalog.IsDoor(ghost.PieceId))
+                return;
+            if (KeepsPrefabMaterials(ghost.PieceId))
                 return;
 
-            DMBuildingMaterialVariant next = DMBuildingMaterialLibrary.NextForTier(
-                DMBuildingMaterialTier.Stone,
-                ghost.MaterialVariantId);
+            DMBuildingStyleLibrary style = DMBuildingCatalog.StyleOf(ghost.PieceId);
+            DMBuildingMaterialVariant next = style != null ? style.NextFinish(ghost.MaterialVariantId) : null;
             if (next == null)
                 return;
 
@@ -2054,13 +2145,34 @@ namespace Project.Building
             if (ghost == null)
                 return;
 
-            DMBuildingMaterialVariant variant = DMBuildingMaterialLibrary.Find(ghost.MaterialVariantId);
-            if (variant != null && variant.finishedMaterial != null)
-                ApplySharedMaterial(ghost.gameObject, variant.finishedMaterial);
+            // Library: custom and surface prefabs can keep their own materials.
+            if (KeepsPrefabMaterials(ghost.PieceId))
+                return;
+
+            DMBuildingStyleLibrary style = DMBuildingCatalog.StyleOf(ghost.PieceId);
+            Material finished = null;
+            if (DMBuildingCatalog.IsDoor(ghost.PieceId))
+                finished = style != null ? style.doorMaterial : null;
+            else
+            {
+                DMBuildingMaterialVariant variant = style != null ? style.FindFinish(ghost.MaterialVariantId) : null;
+                if (variant == null)
+                    variant = DMBuildingStyles.FindFinish(ghost.MaterialVariantId);
+                finished = variant != null ? variant.finishedMaterial : null;
+            }
+
+            if (finished != null)
+                ApplySharedMaterial(ghost.gameObject, finished);
             else
                 ApplyTint(ghost.gameObject, SolidMaterial(), keepGlass: false);
 
-            PaintPanes(ghost.gameObject, GlassMaterial());
+            PaintPanes(ghost.gameObject, style != null && style.glassMaterial != null ? style.glassMaterial : GlassMaterial());
+        }
+
+        static bool KeepsPrefabMaterials(string pieceId)
+        {
+            DMBuildingPiece piece = DMBuildingCatalog.Find(pieceId);
+            return piece != null && piece.Prefab != null && !piece.ApplyStyleFinish;
         }
 
         static void ApplySharedMaterial(GameObject target, Material material)
@@ -2153,7 +2265,19 @@ namespace Project.Building
         {
             if (ghost == null)
                 return;
-            DMBuildingCatalog.RefundStone(ghost.PaidItem, ghost.StoneCost);
+            DMBuildingCatalog.Refund(ghost.PaidItem, ghost.Cost, ghost.PieceId);
+
+            // Library: lights and decorations stuck to this piece come off with it.
+            DMBuildingGhost[] built = BuiltGhosts();
+            for (int i = 0; i < built.Length; i++)
+            {
+                DMBuildingGhost attached = built[i];
+                if (attached == null || attached == ghost || attached.Host != ghost)
+                    continue;
+                DMBuildingCatalog.Refund(attached.PaidItem, attached.Cost, attached.PieceId);
+                Destroy(attached.gameObject);
+            }
+
             InvalidateBuiltGhostCache();
             Destroy(ghost.gameObject);
         }
@@ -2267,6 +2391,7 @@ namespace Project.Building
 
             preview = DMBuildingPieceFactory.Create(pieceId);
             DMBuildingPieceFactory.SetTag(preview, "Untagged"); // the ghost itself is never climbable
+            DMBuildingLayers.SetLayer(preview, DMBuildingLayers.IgnoreRaycastLayer); // 0925-layers: never in any build mask
             previewId = pieceId;
             previewTintMaterial = null;
             preview.name = "BuildingPreview";
@@ -2341,11 +2466,85 @@ namespace Project.Building
             return ghostMaterial;
         }
 
+        /// <summary>
+        /// Built pieces whose style has no finish. 0926-tint: an opaque lit copy of the profile's Built material
+        /// (tinted by Finished mesh), or a plain HDRP/Lit surface, instead of a flat transparent unlit colour.
+        /// </summary>
         static Material SolidMaterial()
         {
-            if (solidMaterial == null)
-                solidMaterial = CreateMaterial("DM_BuildGhost_Solid");
+            Material template = DMBuildingGhostProfile.BuiltMaterialTemplate;
+            int sourceId = template != null ? template.GetEntityId().GetHashCode() : 0;
+            if (solidMaterial != null && solidMaterialSourceId == sourceId)
+                return solidMaterial;
+
+            Material previous = solidMaterial;
+            solidMaterialSourceId = sourceId;
+            solidMaterial = template != null
+                ? new Material(template)
+                {
+                    name = "DM_BuiltTint_Inst",
+                    hideFlags = HideFlags.HideAndDontSave,
+                }
+                : CreateLitMaterial("DM_BuiltTint");
+            Paint(solidMaterial, DMBuildingGhostProfile.ResolveFinishedColor());
+
+            if (previous != null)
+            {
+                SwapBuiltMaterial(previous, solidMaterial);
+                if (Application.isPlaying)
+                    Object.Destroy(previous);
+                else
+                    Object.DestroyImmediate(previous);
+            }
+
             return solidMaterial;
+        }
+
+        static Material CreateLitMaterial(string materialName)
+        {
+            Shader shader = Shader.Find("HDRP/Lit");
+            if (shader == null)
+                return CreateMaterial(materialName);
+
+            var material = new Material(shader)
+            {
+                name = materialName,
+                hideFlags = HideFlags.HideAndDontSave,
+                enableInstancing = false,
+            };
+            HDMaterial.ValidateMaterial(material);
+            return material;
+        }
+
+        /// <summary>Placed pieces still using the old built material move to the new one (runs only when the template changes).</summary>
+        static void SwapBuiltMaterial(Material from, Material to)
+        {
+            if (from == null || to == null)
+                return;
+
+            DMBuildingGhost[] ghosts = BuiltGhosts();
+            for (int g = 0; g < ghosts.Length; g++)
+            {
+                if (ghosts[g] == null)
+                    continue;
+                Renderer[] renderers = ghosts[g].GetComponentsInChildren<Renderer>(true);
+                for (int r = 0; r < renderers.Length; r++)
+                {
+                    Material[] shared = renderers[r].sharedMaterials;
+                    bool changed = false;
+                    for (int m = 0; m < shared.Length; m++)
+                    {
+                        if (shared[m] == from)
+                        {
+                            shared[m] = to;
+                            changed = true;
+                        }
+                    }
+
+                    if (changed)
+                        renderers[r].sharedMaterials = shared;
+                }
+            }
         }
 
         static Material BlockedMaterial()

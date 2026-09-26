@@ -37,6 +37,9 @@ namespace Project.Building
         [Range(0f, 1f)]
         public float glassAlpha = 0.35f;
 
+        [Tooltip("Material for built pieces when their style has no finish. Tinted by Finished mesh. Empty = plain lit surface.")]
+        public Material builtMaterial;
+
         [Header("Snap")]
         [Tooltip("Edge-to-edge spacing for 4 m footprints (foundations, walls, floors).")]
         public float largeModuleMeters = 4f;
@@ -76,25 +79,23 @@ namespace Project.Building
         public Color crosshairDotColor = new Color(1f, 1f, 1f, 0.9f);
         public Color crosshairDotOutline = new Color(0f, 0f, 0f, 0.6f);
 
+        [Header("Layers")]
+        [Tooltip("Layer every placed piece lives on. Rebuild Stone Kit creates it when missing.")]
+        public string buildingLayerName = "Building";
+
+        [Tooltip("Crosshair ray that finds built pieces for snapping and destroy. The Building layer is always included. Nothing = Building + Climbable.")]
+        public LayerMask builtAimLayers;
+
+        [Tooltip("Ground ray for the first foundation. The Building layer is never included. Nothing = Default + Terrain.")]
+        public LayerMask groundLayers;
+
+        [Tooltip("What blocks a seat besides other pieces. The Building layer is always included. Nothing = Default, Climbable, Resource, Pushable and the PW object layers.")]
+        public LayerMask blockerLayers;
+
         [Header("Door swing (E)")]
         public float doorSwingDegrees = 90f;
         public float doorSwingSeconds = 0.35f;
         public float doorInteractRangeMeters = 2.4f;
-
-        [Header("Stone kit (Rebuild Stone Kit)")]
-        [Tooltip("Window opening width. Outer piece stays 4 x 4 m.")]
-        public float kitWindowWidthMeters = 2f;
-        public float kitWindowHeightMeters = 1.6f;
-        [Tooltip("Height of the window sill above the wall bottom.")]
-        public float kitWindowSillMeters = 1.2f;
-        public float kitGlassThicknessMeters = 0.04f;
-        [Tooltip("Passageway opening. Door frame opening uses the door size.")]
-        public float kitPassageWidthMeters = 2.8f;
-        public float kitPassageHeightMeters = 3.4f;
-        [Tooltip("Square opening in the hatch slab.")]
-        public float kitHatchOpeningMeters = 1.4f;
-        public int kitStairSteps = 12;
-        public int kitRailingPosts = 3;
 
         static DMBuildingGhostProfile live;
 
@@ -126,6 +127,7 @@ namespace Project.Building
 
         public static Material ValidGhostMaterialTemplate => Live != null ? Live.validGhostMaterial : null;
         public static Material BlockedGhostMaterialTemplate => Live != null ? Live.blockedGhostMaterial : null;
+        public static Material BuiltMaterialTemplate => Live != null ? Live.builtMaterial : null;
 
         public static Color ResolveFinishedColor()
         {
@@ -169,15 +171,10 @@ namespace Project.Building
         public static float DoorSwingSeconds => Positive(Live != null ? Live.doorSwingSeconds : 0.35f, 0.35f);
         public static float DoorInteractRangeMeters => Positive(Live != null ? Live.doorInteractRangeMeters : 2.4f, 2.4f);
 
-        public static float KitWindowWidthMeters => Mathf.Clamp(Live != null ? Live.kitWindowWidthMeters : 2f, 0.4f, 3.4f);
-        public static float KitWindowHeightMeters => Mathf.Clamp(Live != null ? Live.kitWindowHeightMeters : 1.6f, 0.4f, 3.4f);
-        public static float KitWindowSillMeters => Mathf.Clamp(Live != null ? Live.kitWindowSillMeters : 1.2f, 0.1f, 3f);
-        public static float KitGlassThicknessMeters => Mathf.Clamp(Live != null ? Live.kitGlassThicknessMeters : 0.04f, 0.01f, 0.25f);
-        public static float KitPassageWidthMeters => Mathf.Clamp(Live != null ? Live.kitPassageWidthMeters : 2.8f, 1f, 3.6f);
-        public static float KitPassageHeightMeters => Mathf.Clamp(Live != null ? Live.kitPassageHeightMeters : 3.4f, 2f, 3.8f);
-        public static float KitHatchOpeningMeters => Mathf.Clamp(Live != null ? Live.kitHatchOpeningMeters : 1.4f, 0.6f, 3.4f);
-        public static int KitStairSteps => Mathf.Clamp(Live != null ? Live.kitStairSteps : 12, 4, 32);
-        public static int KitRailingPosts => Mathf.Clamp(Live != null ? Live.kitRailingPosts : 3, 2, 8);
+        public static string BuildingLayerName => Live != null && !string.IsNullOrWhiteSpace(Live.buildingLayerName) ? Live.buildingLayerName.Trim() : "Building";
+        public static int BuiltAimLayersRaw => Live != null ? Live.builtAimLayers.value : 0;
+        public static int GroundLayersRaw => Live != null ? Live.groundLayers.value : 0;
+        public static int BlockerLayersRaw => Live != null ? Live.blockerLayers.value : 0;
 
         static float Positive(float value, float fallback)
         {

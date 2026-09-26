@@ -12,15 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 69127ecfd4cebd64cbf8846000a2c999, type: 3}
   m_Name: DM_BuildingGhostProfile
   m_EditorClassIdentifier: Assembly-CSharp::Project.Building.DMBuildingGhostProfile
-  validGhostMaterial: {fileID: 2100000, guid: f74860af266164f4f9d8887f49a99adf, type: 2}
+  validGhostMaterial: {fileID: 2100000, guid: 9e9d6018d30b41fdbabcad6d4f59e570, type: 2}
   ghostColor: {r: 0.08924115, g: 1, b: 0, a: 1}
   ghostAlpha: 0.1746
-  blockedGhostMaterial: {fileID: 0}
+  blockedGhostMaterial: {fileID: 2100000, guid: ee2e6d94584966547ad02e75a87ab2bf, type: 2}
   blockedGhostColor: {r: 0.9607843, g: 0.09530779, b: 0, a: 1}
   blockedGhostAlpha: 0.2539
-  finishedColor: {r: 0.62, g: 0.58, b: 0.52, a: 1}
-  glassColor: {r: 0.89433956, g: 0.1484598, b: 0.14680664, a: 1}
+  finishedColor: {r: 1, g: 1, b: 1, a: 1}
+  glassColor: {r: 0.89411765, g: 0.35064578, b: 0.14509802, a: 1}
   glassAlpha: 0.3244
+  builtMaterial: {fileID: 2100000, guid: 9236eacf325a1dc4baf15bf11801e8d2, type: 2}
   largeModuleMeters: 4
   smallModuleMeters: 2
   yawStepDegrees: 45
@@ -38,18 +39,19 @@ MonoBehaviour:
   aimDistanceMeters: 80
   doorSeatDropMeters: 0.4
   overlapPaddingMeters: 0.08
-  crosshairDotPixels: 6
-  crosshairDotColor: {r: 1, g: 1, b: 1, a: 0.9}
-  crosshairDotOutline: {r: 0, g: 0, b: 0, a: 0.6}
+  crosshairDotPixels: 8
+  crosshairDotColor: {r: 0.1486494, g: 1, b: 0, a: 1}
+  crosshairDotOutline: {r: 1, g: 0.8038391, b: 0, a: 1}
+  buildingLayerName: Building
+  builtAimLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  groundLayers:
+    serializedVersion: 2
+    m_Bits: 8388609
+  blockerLayers:
+    serializedVersion: 2
+    m_Bits: 0
   doorSwingDegrees: 75
   doorSwingSeconds: 0.35
   doorInteractRangeMeters: 5
-  kitWindowWidthMeters: 2
-  kitWindowHeightMeters: 1.6
-  kitWindowSillMeters: 1.2
-  kitGlassThicknessMeters: 0.04
-  kitPassageWidthMeters: 2.8
-  kitPassageHeightMeters: 3.4
-  kitHatchOpeningMeters: 1.4
-  kitStairSteps: 12
-  kitRailingPosts: 3

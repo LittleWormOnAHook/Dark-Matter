@@ -1,0 +1,269 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bddcc98afcd530458a056d37dd09fdf, type: 3}
+  m_Name: DM_BuildingStyle_Stone
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Building.DMBuildingStyleLibrary
+  styleId: stone
+  displayName: Stone
+  order: 0
+  icon: {fileID: 0}
+  accent: {r: 0.75, g: 0.72, b: 0.68, a: 1}
+  costItem: {fileID: 11400000, guid: 8f054857689cdd94d8f8323255554cfa, type: 2}
+  costItemNames:
+  - Rock
+  - Stone
+  costMultiplier: 1
+  finishes:
+  - id: stone_rough
+    displayName: Rough Stone
+    finishedMaterial: {fileID: 2100000, guid: 9236eacf325a1dc4baf15bf11801e8d2, type: 2}
+    overrideGhostTint: 0
+    ghostTint: {r: 0.92, g: 0.38, b: 0.32, a: 1}
+  - id: stone_cut
+    displayName: Cut Stone
+    finishedMaterial: {fileID: 2100000, guid: 44577e2a2911aea419c295848a6dc677, type: 2}
+    overrideGhostTint: 0
+    ghostTint: {r: 0.92, g: 0.38, b: 0.32, a: 1}
+  doorMaterial: {fileID: 2100000, guid: 74e0e1643572bd345bb90ffd07b1234c, type: 2}
+  glassMaterial: {fileID: 2100000, guid: 92576792c5b37bb4cb409f9a126acfb7, type: 2}
+  partIdPrefix: stone_
+  kit:
+    windowWidthMeters: 2
+    windowHeightMeters: 1.6
+    windowSillMeters: 1.2
+    glassThicknessMeters: 0.04
+    passageWidthMeters: 2.8
+    passageHeightMeters: 3.4
+    hatchOpeningMeters: 1.4
+    stairSteps: 12
+    railingPosts: 3
+  parts:
+  - id: stone_foundation_4x4
+    displayName: Foundation
+    shape: 0
+    category: 0
+    prefab: {fileID: 6003366801586016187, guid: 62af11c7bd7bfdd49bfde88b942a2a6b, type: 3}
+    icon: {fileID: 0}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: stone_foundation_tri_4x4
+    displayName: Tri Foundation
+    shape: 1
+    category: 0
+    prefab: {fileID: 6933038858168513452, guid: 660e3f2ca5e20f84b8e39599c6fd6d88, type: 3}
+    icon: {fileID: 0}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: stone_floor_4x4
+    displayName: Floor
+    shape: 2
+    category: 2
+    prefab: {fileID: 1632219233167993731, guid: 8d7d93e5d3bc5864f9622a0052fbdd6f, type: 3}
+    icon: {fileID: 0}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: stone_floor_tri_4x4
+    displayName: Tri Floor
+    shape: 3
+    category: 2
+    prefab: {fileID: 6278971066372503040, guid: f8c87bdc248d52e4491c320ce3dfa789, type: 3}
+    icon: {fileID: 0}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: stone_ceiling_4x4
+    displayName: Ceiling
+    shape: 4
+    category: 2
+    prefab: {fileID: 6919228367469974749, guid: 2cca2be8374e59a41989e8373a6feca7, type: 3}
+    icon: {fileID: 0}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: stone_hatch_4x4
+    displayName: Hatch
+    shape: 5
+    category: 2
+    prefab: {fileID: 7357694272079514637, guid: 2fcfd5a3ab1849d428fcd5ca9969872e, type: 3}
+    icon: {fileID: 0}
+    cost: 3
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: stone_wall_4x4
+    displayName: Wall
+    shape: 6
+    category: 1
+    prefab: {fileID: 6587126998690137564, guid: 191e4d4de51f8214b99525610a844c83, type: 3}
+    icon: {fileID: 0}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: stone_wall_half_4x2
+    displayName: Half Wall
+    shape: 7
+    category: 1
+    prefab: {fileID: 8691650662879385080, guid: c4960899fbf8c4748bee883dd37b2f29, type: 3}
+    icon: {fileID: 0}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: stone_wall_window_4x4
+    displayName: Window
+    shape: 8
+    category: 1
+    prefab: {fileID: 4813987836797080729, guid: 16bd045704bf2ac4c957007401468365, type: 3}
+    icon: {fileID: 0}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: stone_door_frame_4x4
+    displayName: Door Frame
+    shape: 9
+    category: 4
+    prefab: {fileID: 1594952802536331735, guid: c75ca97774a952742a6f3ebd35f9eba8, type: 3}
+    icon: {fileID: 0}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: stone_door_basic
+    displayName: Door
+    shape: 10
+    category: 4
+    prefab: {fileID: 4198157748491310853, guid: b929ba82fff30cb43a6b57732ca1bb16, type: 3}
+    icon: {fileID: 0}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: stone_passage_4x4
+    displayName: Passage
+    shape: 11
+    category: 1
+    prefab: {fileID: 4760767460827940048, guid: 8de5e4844e9a66b4b80c207009b023f9, type: 3}
+    icon: {fileID: 0}
+    cost: 3
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: stone_wall_tri_l_4x2
+    displayName: Tri Wall L
+    shape: 12
+    category: 1
+    prefab: {fileID: 7640463594078019026, guid: 16f8128a90b240841a19842f9530afb6, type: 3}
+    icon: {fileID: 0}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: stone_wall_tri_r_4x2
+    displayName: Tri Wall R
+    shape: 13
+    category: 1
+    prefab: {fileID: 4534018357591266090, guid: 4d9d10218b6931e468558a8740d3b62a, type: 3}
+    icon: {fileID: 0}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: stone_railing_4x1
+    displayName: Railing
+    shape: 14
+    category: 3
+    prefab: {fileID: 6804738935610565975, guid: 6ce10054e613bf4428c6e217a9ca945e, type: 3}
+    icon: {fileID: 0}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: stone_stairs_4x4
+    displayName: Stairs
+    shape: 15
+    category: 3
+    prefab: {fileID: 5356956798971073238, guid: ed15d51196eec664eb4fdfd3e314c54f, type: 3}
+    icon: {fileID: 0}
+    cost: 6
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: stone_ramp_4x4
+    displayName: Ramp
+    shape: 16
+    category: 3
+    prefab: {fileID: 8141703070648023229, guid: 8eb79c8aa8e5c514b924108c1f81122d, type: 3}
+    icon: {fileID: 0}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: stone_roof_4x4
+    displayName: Roof
+    shape: 17
+    category: 2
+    prefab: {fileID: 1616203820002658832, guid: 9f6c73bc0f6bdb94591260879b4e32d2, type: 3}
+    icon: {fileID: 0}
+    cost: 3
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: stone_roof_corner_4x4
+    displayName: Roof Corner
+    shape: 18
+    category: 2
+    prefab: {fileID: 7354781217048919409, guid: 68974a645f5341d4ea4ecb7e2c84dd90, type: 3}
+    icon: {fileID: 0}
+    cost: 3
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+  - id: stone_roof_inner_4x4
+    displayName: Roof Inner
+    shape: 19
+    category: 2
+    prefab: {fileID: 3280735931899083995, guid: a1cb75c6a36e6314ab7fe547ccdbe878, type: 3}
+    icon: {fileID: 0}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}

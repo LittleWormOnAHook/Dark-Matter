@@ -1,18 +1,22 @@
 using Project.Building;
+using Project.EditorTools.GenesisStudio;
 using UnityEditor;
 using UnityEngine;
 
 namespace Project.EditorTools.Building
 {
     /// <summary>
-    /// Building Studio: placement profile, preview ghost materials, and finished-piece library.
+    /// Building Studio: Settings (placement profile, preview ghosts, snap, doors) and Library (styles, kits, parts).
     /// </summary>
     public sealed class DMBuildingStudioWindow : EditorWindow
     {
         const string AssetPath = DMBuildingGhostProfile.AssetPath;
+        static readonly string[] Tabs = { "Settings", "Library" };
 
         DMBuildingGhostProfile profile;
         Vector2 scrollPosition;
+        int tab;
+        readonly DMBuildingLibraryPanel libraryPanel = new DMBuildingLibraryPanel();
 
         [MenuItem("Tools/Dark Matter Genesis/Buildings/Building Studio")]
         public static void Open()
@@ -23,6 +27,7 @@ namespace Project.EditorTools.Building
         void OnEnable()
         {
             profile = LoadOrCreate();
+            tab = EditorPrefs.GetInt("DM.BuildingStudio.Tab", 0);
         }
 
         void OnGUI()
@@ -30,43 +35,48 @@ namespace Project.EditorTools.Building
             if (profile == null)
                 profile = LoadOrCreate();
 
-            EditorGUILayout.LabelField("Building profile", EditorStyles.boldLabel);
-            EditorGUILayout.ObjectField("Asset", profile, typeof(DMBuildingGhostProfile), false);
-            EditorGUILayout.HelpBox(
-                "Play reads DM_BuildingGhostProfile from Resources. "
-                + "Valid snap preview uses Snap & Build fields; invalid seats use Blocked. "
-                + "Unbuilt ghosts still refund when build mode ends.",
-                MessageType.Info);
+            DMStudioStyles.DrawHeroHeader("Building Studio", "Stone, Iron and Silicate build kits - placement, snap, and the part library.");
+            EditorGUILayout.BeginHorizontal(DMStudioStyles.SidebarPanel);
+            for (int i = 0; i < Tabs.Length; i++)
+            {
+                if (DMStudioStyles.DrawCategoryTab(Tabs[i], tab == i, new Color(0.75f, 0.18f, 0.48f, 1f)) && tab != i)
+                {
+                    tab = i;
+                    EditorPrefs.SetInt("DM.BuildingStudio.Tab", tab);
+                    GUI.FocusControl(null);
+                }
+            }
+
+            GUILayout.FlexibleSpace();
+            EditorGUILayout.EndHorizontal();
 
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
+            if (tab == 1)
+                libraryPanel.Draw();
+            else
+                DrawSettings();
+            EditorGUILayout.EndScrollView();
+        }
+
+        void DrawSettings()
+        {
+            DMStudioStyles.DrawSection("Building profile", DMStudioStyles.ContentPanel, () =>
+            {
+                EditorGUILayout.ObjectField("Asset", profile, typeof(DMBuildingGhostProfile), false);
+                EditorGUILayout.HelpBox(
+                    "Play reads DM_BuildingGhostProfile from Resources. "
+                    + "Valid snap preview uses Snap & Build fields; invalid seats use Blocked. "
+                    + "Unbuilt ghosts still refund when build mode ends. Kit shapes, finishes and parts live per style under Library.",
+                    MessageType.Info);
+            });
+
             EditorGUI.BeginChangeCheck();
             Undo.RecordObject(profile, "Edit Building Profile");
-
-            EditorGUILayout.Space();
-            DrawPreviewGhostSection();
-
-            EditorGUILayout.Space();
-            DrawBuiltTintSection();
-
-            EditorGUILayout.Space();
-            DrawSnapSection();
-
-            EditorGUILayout.Space();
-            DrawPlacementSection();
-
-            EditorGUILayout.Space();
-            DrawDoorSection();
-
-            EditorGUILayout.Space();
-            DrawKitSection();
-
-            EditorGUILayout.Space();
-            DrawFinishedMaterialLibrary();
-
-            if (GUILayout.Button("Create Stone Finishes"))
-                DMBuildingMaterialLibraryBuilder.EnsureStoneFinishes();
-
-            EditorGUILayout.EndScrollView();
+            DMStudioStyles.DrawSection(null, DMStudioStyles.ContentPanel, DrawPreviewGhostSection);
+            DMStudioStyles.DrawSection(null, DMStudioStyles.ContentPanel, DrawBuiltTintSection);
+            DMStudioStyles.DrawSection(null, DMStudioStyles.ContentPanel, DrawSnapSection);
+            DMStudioStyles.DrawSection(null, DMStudioStyles.ContentPanel, DrawPlacementSection);
+            DMStudioStyles.DrawSection(null, DMStudioStyles.ContentPanel, DrawDoorSection);
 
             if (EditorGUI.EndChangeCheck())
             {
@@ -75,9 +85,6 @@ namespace Project.EditorTools.Building
                 profile.glassAlpha = Mathf.Clamp01(profile.glassAlpha);
                 profile.edgeFacingDot = Mathf.Clamp01(profile.edgeFacingDot);
                 EditorUtility.SetDirty(profile);
-                DMBuildingMaterialLibrary materialLibrary = DMBuildingMaterialLibrary.Live;
-                if (materialLibrary != null)
-                    EditorUtility.SetDirty(materialLibrary);
                 AssetDatabase.SaveAssets();
             }
         }
@@ -119,6 +126,11 @@ namespace Project.EditorTools.Building
         void DrawBuiltTintSection()
         {
             EditorGUILayout.LabelField("Built piece tints", EditorStyles.boldLabel);
+            profile.builtMaterial = (Material)EditorGUILayout.ObjectField(
+                new GUIContent("Built material", "Used on built pieces when their style has no finish. Tinted by Finished mesh."),
+                profile.builtMaterial,
+                typeof(Material),
+                false);
             profile.finishedColor = EditorGUILayout.ColorField(
                 new GUIContent("Finished mesh"),
                 profile.finishedColor,
@@ -173,53 +185,6 @@ namespace Project.EditorTools.Building
             profile.doorSwingDegrees = EditorGUILayout.FloatField("Swing degrees", profile.doorSwingDegrees);
             profile.doorSwingSeconds = EditorGUILayout.FloatField("Swing duration (s)", profile.doorSwingSeconds);
             profile.doorInteractRangeMeters = EditorGUILayout.FloatField("Interact range (m)", profile.doorInteractRangeMeters);
-        }
-
-        void DrawKitSection()
-        {
-            EditorGUILayout.LabelField("Stone kit (ProBuilder)", EditorStyles.boldLabel);
-            EditorGUILayout.HelpBox(
-                "Footprints are fixed: 4 m module, 4 m story, 0.3 m walls, 0.4 m foundation, 0.2 m slabs, 2 m roof rise. "
-                + "These fields shape openings and details. Press Rebuild Stone Kit to regenerate meshes and prefabs in "
-                + DMBuildingKitBuilder.Root + ".",
-                MessageType.None);
-            profile.kitWindowWidthMeters = EditorGUILayout.FloatField("Window width (m)", profile.kitWindowWidthMeters);
-            profile.kitWindowHeightMeters = EditorGUILayout.FloatField("Window height (m)", profile.kitWindowHeightMeters);
-            profile.kitWindowSillMeters = EditorGUILayout.FloatField("Window sill (m)", profile.kitWindowSillMeters);
-            profile.kitGlassThicknessMeters = EditorGUILayout.FloatField("Glass thickness (m)", profile.kitGlassThicknessMeters);
-            profile.kitPassageWidthMeters = EditorGUILayout.FloatField("Passage width (m)", profile.kitPassageWidthMeters);
-            profile.kitPassageHeightMeters = EditorGUILayout.FloatField("Passage height (m)", profile.kitPassageHeightMeters);
-            profile.kitHatchOpeningMeters = EditorGUILayout.FloatField("Hatch opening (m)", profile.kitHatchOpeningMeters);
-            profile.kitStairSteps = EditorGUILayout.IntSlider("Stair steps", profile.kitStairSteps, 4, 32);
-            profile.kitRailingPosts = EditorGUILayout.IntSlider("Railing posts", profile.kitRailingPosts, 2, 8);
-            if (GUILayout.Button("Rebuild Stone Kit"))
-                EditorApplication.delayCall += DMBuildingKitBuilder.RebuildStoneKit;
-        }
-
-        void DrawFinishedMaterialLibrary()
-        {
-            EditorGUILayout.LabelField("Finished materials (M key)", EditorStyles.boldLabel);
-            DMBuildingMaterialLibrary materialLibrary = DMBuildingMaterialLibrary.Live;
-            if (materialLibrary == null || materialLibrary.variants == null || materialLibrary.variants.Count == 0)
-            {
-                EditorGUILayout.HelpBox(
-                    "No material variants yet. Use Create Stone Finishes, then assign HDRP materials per tier.",
-                    MessageType.None);
-                return;
-            }
-
-            for (int i = 0; i < materialLibrary.variants.Count; i++)
-            {
-                DMBuildingMaterialVariant variant = materialLibrary.variants[i];
-                if (variant == null)
-                    continue;
-                EditorGUILayout.LabelField(variant.displayName + " (" + variant.tier + ")");
-                variant.finishedMaterial = (Material)EditorGUILayout.ObjectField(
-                    "Finished material",
-                    variant.finishedMaterial,
-                    typeof(Material),
-                    false);
-            }
         }
 
         static DMBuildingGhostProfile LoadOrCreate()

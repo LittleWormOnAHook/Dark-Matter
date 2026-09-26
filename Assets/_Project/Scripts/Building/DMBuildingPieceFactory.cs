@@ -5,7 +5,7 @@ using UnityEngine.ProBuilder;
 namespace Project.Building
 {
     /// <summary>
-    /// Stone kit meshes. Prefabs win when the library has them; otherwise ProBuilder builds the same piece.
+    /// Kit meshes. Prefabs win when the style library has them; otherwise ProBuilder builds the same piece.
     /// </summary>
     public static class DMBuildingPieceFactory
     {
@@ -14,12 +14,14 @@ namespace Project.Building
 
         public static GameObject Create(string pieceId)
         {
-            GameObject prefab = DMBuildingLibrary.PrefabFor(pieceId);
+            // Library: prefab from the style library; a part with no prefab yet borrows the stone mesh of the same shape.
+            GameObject prefab = DMBuildingCatalog.PrefabFor(pieceId);
             GameObject instance = prefab != null
                 ? UnityEngine.Object.Instantiate(prefab)
-                : CreateRuntimeMesh(pieceId);
+                : CreateRuntimeMesh(DMBuildingCatalog.FallbackMeshId(pieceId));
             CenterPivot(instance);
             SetTag(instance, ClimbableTag);
+            DMBuildingLayers.Apply(instance); // 0925-layers
             return instance;
         }
 
@@ -43,8 +45,6 @@ namespace Project.Building
                     return Finish(ShapeGenerator.GenerateCube(PivotLocation.Center, new Vector3(4f, 0.2f, 4f)), pieceId, meshCollider: false);
                 case "stone_wall_4x4":
                     return Finish(ShapeGenerator.GenerateCube(PivotLocation.Center, new Vector3(4f, 4f, 0.3f)), pieceId, meshCollider: false);
-                case "stone_slope_4x4":
-                    return Finish(ShapeGenerator.GeneratePrism(PivotLocation.Center, new Vector3(4f, 4f, 4f)), pieceId, meshCollider: false);
                 case "stone_door_frame_4x4":
                     return Finish(ShapeGenerator.GenerateDoor(
                         PivotLocation.Center,

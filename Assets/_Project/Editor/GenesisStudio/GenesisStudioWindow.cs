@@ -28,6 +28,7 @@ namespace Project.EditorTools.GenesisStudio
         private readonly DMAmmoCreatorPanel ammoPanel = new DMAmmoCreatorPanel();
         private readonly CraftingItemCreatorPanel craftingItemPanel = new CraftingItemCreatorPanel();
         private readonly DMStudioPickupItemsPanel pickupItemsPanel = new DMStudioPickupItemsPanel();
+        private readonly Project.EditorTools.Building.DMBuildingLibraryPanel buildingLibraryPanel = new Project.EditorTools.Building.DMBuildingLibraryPanel();
         private UnityEditor.Editor playerSystemsEditor;
         private DMPlayerSystemsProfile playerSystemsTarget;
 
@@ -191,6 +192,9 @@ namespace Project.EditorTools.GenesisStudio
                         break;
                     case DMStudioPanelMode.PickupItemsCombined:
                         pickupItemsPanel.Draw();
+                        break;
+                    case DMStudioPanelMode.BuildingLibrary:
+                        buildingLibraryPanel.Draw();
                         break;
                     case DMStudioPanelMode.ExternalBlueprintTab:
                         DrawExternalBlueprint(sub);
