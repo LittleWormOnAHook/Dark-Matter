@@ -36,7 +36,7 @@ Material:
     - _ScrollSpeed: 0.35
     m_Colors:
     - _Color: {r: 0.25, g: 0.75, b: 1.6, a: 1}
-    - _EdgeColor: {r: 3.2041886, g: 0.21448286, b: 0, a: 1}
+    - _EdgeColor: {r: 0.0039215535, g: 0.5396425, b: 0.8784314, a: 1}
     - _Ripple0: {r: 0, g: 0, b: 0, a: -100}
     - _Ripple1: {r: 0, g: 0, b: 0, a: -100}
     - _Ripple2: {r: 0, g: 0, b: 0, a: -100}

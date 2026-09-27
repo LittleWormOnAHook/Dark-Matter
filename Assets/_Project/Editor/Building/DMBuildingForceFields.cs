@@ -18,6 +18,7 @@ namespace Project.EditorTools.Building
         const string MenuPath = "Tools/Dark Matter Genesis/Buildings/Add Force Field Pieces (All Styles)";
         public const string MaterialPath = "Assets/_Project/Resources/Building/DM_ForceField.mat";
         public const string ShaderName = "Project/DMForceField";
+        public const string CornerMaterialPath = "Assets/_Project/Resources/Building/DM_ForceFieldCorner.mat";
         const string MeshFolder = DMBuildingStyleLibraryBuilder.PrefabLibraryRoot + "/ForceFields";
         const float FrameOverlap = 0.04f;
         const float MinColliderDepth = 0.15f;
@@ -61,6 +62,26 @@ namespace Project.EditorTools.Building
             var created = new Material(shader) { name = "DM_ForceField" };
             created.renderQueue = (int)RenderQueue.Transparent;
             AssetDatabase.CreateAsset(created, MaterialPath);
+            AssetDatabase.SaveAssets();
+            return created;
+        }
+
+        /// <summary>0927-ff-corners: the editable dark metal material for the corner blocks (HDRP/Lit), created once.</summary>
+        public static Material EnsureCornerMaterial()
+        {
+            var existing = AssetDatabase.LoadAssetAtPath<Material>(CornerMaterialPath);
+            if (existing != null)
+                return existing;
+            Material created = DMForceField.CreateDefaultCornerMaterial();
+            if (created == null)
+            {
+                Debug.LogError("[DM Force Fields] HDRP/Lit not found; corner block material not created.");
+                return null;
+            }
+
+            created.hideFlags = HideFlags.None;
+            created.name = "DM_ForceFieldCorner";
+            AssetDatabase.CreateAsset(created, CornerMaterialPath);
             AssetDatabase.SaveAssets();
             return created;
         }

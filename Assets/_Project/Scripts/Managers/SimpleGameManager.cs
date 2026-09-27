@@ -80,8 +80,19 @@ namespace Project.Managers
                 return;
             }
 
+            // 0927-start-items: the inventory may sit on a child of the player rig; fall back to any in the scene.
             InventorySystem inventory = player.GetComponent<InventorySystem>();
-            if (inventory != null && startingItems != null)
+            if (inventory == null)
+                inventory = player.GetComponentInChildren<InventorySystem>(true);
+            if (inventory == null)
+                inventory = FindAnyObjectByType<InventorySystem>(FindObjectsInactive.Include);
+            if (inventory == null)
+            {
+                Debug.LogWarning("[GameManager] New game: the player has no InventorySystem, so no starting items were given.");
+                return;
+            }
+
+            if (startingItems != null)
             {
                 for (int i = 0; i < startingItems.Length; i++)
                 {

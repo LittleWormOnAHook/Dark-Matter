@@ -9,7 +9,7 @@
                 <ui:Label text="GENERATOR" class="dmg-section-title dmg-gold" picking-mode="Ignore" />
                 <ui:Label name="gen-state" text="ONLINE" class="dmg-gen-state" picking-mode="Ignore" />
                 <ui:VisualElement class="dmg-gen-spacer" picking-mode="Ignore" />
-                <ui:Button name="gen-close" text="Close" class="dmg-tab" />
+                <ui:Button name="gen-close" text="Close" class="dmg-tab dmg-gen-btn" />
             </ui:VisualElement>
             <ui:VisualElement class="dmg-vendor-split">
                 <ui:VisualElement class="dmg-vendor-col">
@@ -22,6 +22,9 @@
                     <ui:Label name="gen-burn" class="dmg-gen-line" picking-mode="Ignore" />
                     <ui:Label name="gen-left" class="dmg-gen-line" picking-mode="Ignore" />
                     <ui:Label name="gen-zone" class="dmg-gen-line dmg-hint" picking-mode="Ignore" />
+                    <ui:VisualElement class="dmg-gen-buttons">
+                        <ui:Button name="gen-power" text="Turn Off Power" class="dmg-tab dmg-gen-btn dmg-gen-button" />
+                    </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement class="dmg-vendor-rule" picking-mode="Ignore" />
                 <ui:VisualElement class="dmg-vendor-col">
@@ -30,9 +33,9 @@
                     <ui:Label name="gen-crates" class="dmg-gen-line" picking-mode="Ignore" />
                     <ui:Label name="gen-room" class="dmg-gen-line" picking-mode="Ignore" />
                     <ui:VisualElement class="dmg-gen-buttons">
-                        <ui:Button name="gen-add1" text="Add 1" class="dmg-tab dmg-gen-button" />
-                        <ui:Button name="gen-add10" text="Add 10" class="dmg-tab dmg-gen-button" />
-                        <ui:Button name="gen-fill-btn" text="Fill Tank" class="dmg-tab dmg-gen-button" />
+                        <ui:Button name="gen-add1" text="Add 1" class="dmg-tab dmg-gen-btn dmg-gen-button" />
+                        <ui:Button name="gen-add10" text="Add 10" class="dmg-tab dmg-gen-btn dmg-gen-button" />
+                        <ui:Button name="gen-fill-btn" text="Fill Tank" class="dmg-tab dmg-gen-btn dmg-gen-button" />
                     </ui:VisualElement>
                     <ui:Label text="Takes Plasma Fuel from your inventory first, then the nearest storage crates." class="dmg-hint dmg-gen-line" picking-mode="Ignore" />
                 </ui:VisualElement>

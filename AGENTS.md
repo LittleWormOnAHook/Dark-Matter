@@ -35,6 +35,7 @@
 - No forced Unity refresh unless the user asks.
 - **No NavMesh** (baking, NavMeshSurface, NavMeshAgent, terrain NavMesh refs).
 - **Do not retune `Player_v7`** capsule, layers, or physics. **Tune/wire both** `Assets/_Project/Prefabs/Players/Player_v7 Variant.prefab` **and** hierarchy `Player_v7`. See `dark-matter-genesis-player-physics.mdc`.
+- **Stone build mode:** any `DMBuilding*` / placement / door / ghost tuning change must update `DMBuildingGhostProfile`, **Building Studio** (`Tools/Dark Matter Genesis/Buildings/Building Studio`), and Genesis **Building** subtabs — see `.cursor/rules/dark-matter-genesis-building-studio.mdc`.
 
 **All created UI is UITK only** (UXML/USS/`DMUiToolkit*` runtime) — `.cursor/rules/dark-matter-genesis-uitk-lock.mdc` and `dark-matter-genesis-ui-toolkit.mdc`. No new uGUI. Hot Cross uses `Assets/_Project/Resources/UI/HotCrossIcons` cutouts only.
 

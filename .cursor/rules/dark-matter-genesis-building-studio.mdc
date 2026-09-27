@@ -1,0 +1,41 @@
+---
+description: Keep Building Studio and Genesis Building tabs in sync when stone build mode or building subsystems change.
+alwaysApply: true
+---
+
+# Building Studio — Registration (Stone Build Mode)
+
+When you **add or change** stone hold-B build mode, placement, snap, preview ghosts, doors, finished materials, or any **`DMBuilding*` / `Assets/_Project/Scripts/Building/`** subsystem with tunable behavior:
+
+## Required (same PR / task as the code change)
+
+1. **Profile-first tunables** — Put adjustable values on durable assets under `Assets/_Project/Resources/Building/` (primary: `DM_BuildingGhostProfile.asset` via `DMBuildingGhostProfile.cs`). Do not leave new magic numbers only in `MonoBehaviour` constants unless they are truly fixed engine limits.
+2. **Building Studio** — Extend `Assets/_Project/Editor/Building/DMBuildingStudioWindow.cs` with a labeled section (material slot, color, alpha slider, floats, or object fields) matching the new fields. Group: Preview holograms | Built tints | Snap & grid | Placement | Doors | Finished materials (M key).
+3. **Genesis Studio → Building** — Register or extend subtabs in `DMStudioRegistry.cs` and add matching **`DMStudioProfileSectionFilter`** entries in `DMStudioProfileSectionFilter.cs` when the ghost profile gains new field groups.
+4. **Runtime reads `DMBuildingGhostProfile.Live`** (or the correct Resources profile) so Play-mode and studio edits apply immediately — same pattern as Genesis Studio profiles.
+5. **`playModeSave: true`** on Building profile subtabs in Genesis Studio (already set on ghost profile tabs).
+
+## Placement guide
+
+| Building surface | Studio home |
+|------------------|-------------|
+| Valid / blocked preview ghost material, color, alpha | **Preview holograms** |
+| Finished mesh + window glass tints | **Built tints** |
+| Module grid, yaw, height, edge/top snap | **Snap & grid** |
+| Hold build/destroy, aim, overlap, door seat | **Placement** |
+| Door swing, interact range | **Doors** |
+| Stone finishes / M-key cycling | **Finished materials** + `DMBuildingMaterialLibrary` |
+
+## Do not
+
+- Ship new building tuning only on prefab Inspector fields when Building Studio is the design hub for stone mode.
+- Add profile fields without updating **both** Building Studio window **and** Genesis Building filtered subtabs (or the external Building Studio link description).
+- Forget `.asset` YAML / serialized defaults when adding new profile members.
+
+## Agent checklist (before marking building work done)
+
+- [ ] New tunables on `DMBuildingGhostProfile` or documented Resources asset
+- [ ] `DMBuildingStudioWindow` section updated
+- [ ] `DMStudioRegistry` + `DMStudioProfileSectionFilter` if profile shape changed
+- [ ] Runtime uses `Profile.Live` / static accessors — not duplicate constants
+- [ ] User reminded **Ctrl+R** (Auto Refresh off)

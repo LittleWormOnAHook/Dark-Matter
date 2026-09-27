@@ -3584,7 +3584,7 @@ Shader "ANGRYMESH/Nature Pack/HDRP/Props"
 				#define ASE_NEED_CULLFACE 1
 			#endif
 			#include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Material.hlsl"
-			#include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Lit/Lit.hlsl"
+			// DM 0927: duplicate Lit.hlsl removed (no include guard -> ComputeTransmittanceDisney redefinition)
 			#include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/BuiltinUtilities.hlsl"
 
 			struct AttributesMesh

@@ -83,9 +83,9 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   vfxPrefab: {fileID: 1266052911378142, guid: f6d1b4c37e8059a5d2f3a4b5c6d7e8f9, type: 3}
-  vfxDelay: 0
+  vfxDelay: 0.129
   vfxLifetime: 2
-  vfxAnchor: 1
+  vfxAnchor: 2
   vfxScaleWithPiece: 1
   swapMaterial: 0
   swapMaterialAsset: {fileID: 2100000, guid: e510d76bc6c14a80a7e98d59a5cdfb11, type: 2}
@@ -99,7 +99,7 @@ MonoBehaviour:
   forceFieldEdgeWidth: 0.06
   forceFieldPatternScale: 1.2
   forceFieldScrollSpeed: 0.35
-  forceFieldPulseBrightness: 1.5
+  forceFieldPulseBrightness: 2.015
   forceFieldPulseSeconds: 0.6
   forceFieldRippleSpeed: 3
   forceFieldRippleWidth: 0.35
@@ -113,3 +113,12 @@ MonoBehaviour:
   forceFieldLetFriendliesThrough: 1
   forceFieldSenseDepthMeters: 0.9
   forceFieldCloseDelaySeconds: 0.35
+  forceFieldCorners: 1
+  forceFieldCornerMaterial: {fileID: 0}
+  forceFieldCornerSize: 0.18
+  forceFieldCornerDepth: 0.24
+  forceFieldStripMaterial: {fileID: 0}
+  forceFieldStripUnpoweredColor: {r: 1, g: 0.05, b: 0.03, a: 1}
+  forceFieldStripPoweredColor: {r: 0.1, g: 1, b: 0.2, a: 1}
+  forceFieldStripGlow: 9.89
+  forceFieldStripThickness: 0.0441

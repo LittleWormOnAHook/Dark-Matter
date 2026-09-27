@@ -2,21 +2,31 @@
 %TAG !u! tag:unity3d.com,2011:
 --- !u!21 &2100000
 Material:
-  serializedVersion: 6
+  serializedVersion: 8
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Rock_13_22_Sand
   m_Shader: {fileID: 4800000, guid: d0f7254d46c7d0e4fbfee3f7ffe67411, type: 3}
-  m_ShaderKeywords: _DETAILWORLDMAPPING_ON _DETAIL_MULX2 _EMISSION _FLOAT2_ON _KEYWORD3_ON
-    _METALLICGLOSSMAP _NORMALMAP
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords:
+  - _DETAILWORLDMAPPING_ON
+  - _DETAIL_MULX2
+  - _EMISSION
+  - _FLOAT2_ON
+  - _KEYWORD3_ON
+  - _METALLICGLOSSMAP
+  - _NORMALMAP
   m_LightmapFlags: 5
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -248,15 +258,22 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    m_Ints: []
     m_Floats:
     - _AOIntensity: 0.469
     - _AO_Intensity: 0
     - _AlphaCutoff: 0.5
+    - _AlphaCutoffEnable: 0
+    - _AlphaDstBlend: 0
+    - _AlphaSrcBlend: 1
     - _BaseAOIntensity: 0.25
     - _BaseSmoothness: 0.47
+    - _BlendMode: 0
     - _BumpScale: 1
     - _Contrast: 0.5
     - _ContrastMask: 1
+    - _CullMode: 2
+    - _CullModeForward: 2
     - _Cutoff: 0.5
     - _Detail: 2
     - _DetailAlbedoIntensity: 0.096
@@ -268,7 +285,10 @@ Material:
     - _DetailUVScale: 5.2
     - _DetailWorldMapping: 1
     - _Detail_Contrast: 1
+    - _DoubleSidedEnable: 0
+    - _DoubleSidedNormalMode: 2
     - _DstBlend: 0
+    - _EnableFogOnTransparent: 1
     - _Float0: -2
     - _Float1: 1
     - _Float2: 0.743
@@ -301,11 +321,25 @@ Material:
     - _Offset: 0.5
     - _Parallax: 0.02
     - _Range: 1
+    - _ReceivesSSR: 1
+    - _RenderQueueType: 1
+    - _RequireSplitLighting: 0
     - _Scale: 2
     - _Smoothness: 1
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
+    - _StencilRef: 0
+    - _StencilRefDepth: 8
+    - _StencilRefDistortionVec: 4
+    - _StencilRefGBuffer: 10
+    - _StencilRefMV: 40
+    - _StencilWriteMask: 6
+    - _StencilWriteMaskDepth: 8
+    - _StencilWriteMaskDistortionVec: 4
+    - _StencilWriteMaskGBuffer: 14
+    - _StencilWriteMaskMV: 40
+    - _SurfaceType: 0
     - _ToggleSwitch0: 0
     - _TopContrast: 0.61
     - _TopEnableNoise: 0
@@ -316,8 +350,16 @@ Material:
     - _TopOffset: 0.214
     - _TopSmoothness: 0.16
     - _TopUVScale: 2.7
+    - _TransparentBackfaceEnable: 0
+    - _TransparentCullMode: 2
+    - _TransparentSortPriority: 0
+    - _TransparentZWrite: 1
     - _UVSec: 0
+    - _UseShadowThreshold: 0
     - _WANT: 0
+    - _ZTestDepthEqualForOpaque: 4
+    - _ZTestGBuffer: 4
+    - _ZTestTransparent: 4
     - _ZWrite: 1
     - __dirty: 0
     - _contrast: 1
@@ -332,13 +374,14 @@ Material:
     - _node_7069: 0.51
     - _node_9200: 0
     m_Colors:
-    - _BaseColor: {r: 1, g: 0.681317, b: 0.5235849, a: 1}
+    - _BaseColor: {r: 0.4188679, g: 0.2881913, b: 0.22365962, a: 1}
     - _COLORRR: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _Color0: {r: 1, g: 1, b: 1, a: 0}
     - _Color1: {r: 0.72794116, g: 0.7065311, b: 0.7065311, a: 0}
     - _Color2: {r: 0.26503026, g: 0.27173218, b: 0.31617647, a: 0}
     - _Color3: {r: 0.49803913, g: 0.49803913, b: 1, a: 0}
+    - _DoubleSidedConstants: {r: 1, g: 1, b: -1, a: 0}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _MaskColor: {r: 1, g: 1, b: 1, a: 0}
     - _MultiplyColor: {r: 1, g: 1, b: 1, a: 1}
@@ -346,3 +389,5 @@ Material:
     - _Top_Color: {r: 0.49803913, g: 0.49803913, b: 1, a: 0}
     - _node_4205: {r: 1, g: 1, b: 1, a: 1}
     - _node_7672: {r: 1, g: 1, b: 1, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

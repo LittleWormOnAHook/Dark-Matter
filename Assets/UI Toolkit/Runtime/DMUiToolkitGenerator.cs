@@ -37,6 +37,7 @@ namespace Project.UI
         private Button add1;
         private Button add10;
         private Button fillButton;
+        private Button powerButton;
         private bool bound;
         private bool open;
         private float nextRefresh;
@@ -125,6 +126,7 @@ namespace Project.UI
             add1 = root.Q<Button>("gen-add1");
             add10 = root.Q<Button>("gen-add10");
             fillButton = root.Q<Button>("gen-fill-btn");
+            powerButton = root.Q<Button>("gen-power");
 
             Button close = root.Q<Button>("gen-close");
             if (close != null)
@@ -135,6 +137,8 @@ namespace Project.UI
                 add10.clicked += () => DoRefuel(10);
             if (fillButton != null)
                 fillButton.clicked += () => DoRefuel(int.MaxValue);
+            if (powerButton != null)
+                powerButton.clicked += TogglePower;
             VisualElement veil = root.Q("gen-veil");
             if (veil != null)
                 veil.RegisterCallback<PointerDownEvent>(_ => TryHide());
@@ -225,6 +229,22 @@ namespace Project.UI
             Refresh();
         }
 
+        /// <summary>0927-gen-power: Turn Off / Turn On Power.</summary>
+        private void TogglePower()
+        {
+            if (generator == null)
+                return;
+            bool on = !generator.PoweredOn;
+            generator.SetPoweredOn(on);
+            if (!on)
+                SetStatus("Generator switched off. Force fields and powered items in this base have no power.");
+            else if (!generator.HasFuel)
+                SetStatus("Generator switched on, but the tank is empty. Add Plasma Fuel to power the base.");
+            else
+                SetStatus("Generator switched on.");
+            Refresh();
+        }
+
         private void SetStatus(string text)
         {
             if (statusLabel != null)
@@ -257,7 +277,9 @@ namespace Project.UI
                     + "\nTotal: " + FormatUnits(perPeriod) + " units per " + FormatMinutes(period);
             }
             if (leftLabel != null)
-                leftLabel.text = generator.IsRunning ? "Time left: " + FormatDuration(generator.SecondsLeft) : "Time left: empty";
+                leftLabel.text = !generator.HasFuel ? "Time left: empty"
+                    : !generator.PoweredOn ? "Time left: " + FormatDuration(generator.SecondsLeft) + " (paused while switched off)"
+                    : "Time left: " + FormatDuration(generator.SecondsLeft);
 
             bool inBase = DMBasePower.IsInsideAnyBase(generator.transform.position);
             int square = Mathf.RoundToInt(DMBuildingGhostProfile.BasePowerSquareMeters);
@@ -270,7 +292,8 @@ namespace Project.UI
 
             if (stateLabel != null)
             {
-                stateLabel.text = !generator.IsRunning ? "OFFLINE - NO FUEL" : inBase ? "ONLINE" : "RUNNING - NO BASE";
+                stateLabel.text = !generator.PoweredOn ? "OFFLINE - SWITCHED OFF"
+                    : !generator.IsRunning ? "OFFLINE - NO FUEL" : inBase ? "ONLINE" : "RUNNING - NO BASE";
                 stateLabel.EnableInClassList("dmg-gen-offline", !generator.IsRunning || !inBase);
             }
 
@@ -290,6 +313,8 @@ namespace Project.UI
             add1?.SetEnabled(canLoad);
             add10?.SetEnabled(canLoad);
             fillButton?.SetEnabled(canLoad);
+            if (powerButton != null)
+                powerButton.text = generator.PoweredOn ? "Turn Off Power" : "Turn On Power";
         }
 
         private static string FormatUnits(float units)

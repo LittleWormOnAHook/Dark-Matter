@@ -99,6 +99,27 @@ namespace Project.Building
         [Tooltip("How long the field stays open after the last person leaves it (s).")]
         [Range(0f, 2f)] public float forceFieldCloseDelaySeconds = 0.35f;
 
+        // 0927-ff-corners: a small block in each corner of every field, with a glowing strip through its middle.
+        [Header("Force fields: corner blocks")]
+        [Tooltip("Put a small block in each corner of every force field.")]
+        public bool forceFieldCorners = true;
+        [Tooltip("Material on the corner blocks. Empty uses DM_ForceFieldCorner in Resources/Building (Building Studio can create it), or a plain dark metal.")]
+        public Material forceFieldCornerMaterial;
+        [Tooltip("Width and height of each corner block (m).")]
+        [Range(0.05f, 0.6f)] public float forceFieldCornerSize = 0.18f;
+        [Tooltip("Thickness of each corner block, measured through the field (m).")]
+        [Range(0.05f, 0.8f)] public float forceFieldCornerDepth = 0.24f;
+        [Tooltip("Material for the glowing strip sandwiched in the middle of each block. Empty uses a generated glow. Its emission colour is replaced by the two colours below.")]
+        public Material forceFieldStripMaterial;
+        [Tooltip("Strip colour while the base has no power. The field material and its collider are off in this state.")]
+        [ColorUsage(false, true)] public Color forceFieldStripUnpoweredColor = new Color(1f, 0.05f, 0.03f, 1f);
+        [Tooltip("Strip colour once a fuelled generator powers the base and the field is on.")]
+        [ColorUsage(false, true)] public Color forceFieldStripPoweredColor = new Color(0.1f, 1f, 0.2f, 1f);
+        [Tooltip("How bright the strip glows (multiplies both colours).")]
+        [Range(0f, 30f)] public float forceFieldStripGlow = 4f;
+        [Tooltip("Thickness of the glowing strip (m).")]
+        [Range(0.005f, 0.2f)] public float forceFieldStripThickness = 0.035f;
+
         static DMBuildingCreationFxProfile live;
 
         public static DMBuildingCreationFxProfile Live

@@ -33,6 +33,11 @@ namespace Project.Building
                     return TryAimGateFrame(piece, out position, out rotation, out canCommit);
                 if (piece.Snap == DMBuildingSnap.HalfCell)
                     return TryAimHalfCell(piece, out position, out rotation, out canCommit);
+                if (IsRampLike(piece.Shape)) // 0927-ramps: off foundations, on terrain, chained (roof slopes too)
+                    return TryAimRamp(piece, out position, out rotation, out canCommit);
+                if (piece.Snap == DMBuildingSnap.Edge // 0927-ramps: flush on a foundation's side face
+                    && TryAimEdgeOnFoundationSide(piece, out position, out rotation, out canCommit))
+                    return true;
             }
 
             return TryAimCore(out piece, out position, out rotation, out canCommit);
@@ -278,6 +283,10 @@ namespace Project.Building
         {
             position = default;
             rotation = Quaternion.identity;
+            // 0927-ramps: built foundation steps under the crosshair chain sideways or step down and out.
+            if (piece.Shape == DMBuildingShape.FoundationSteps
+                && TrySeatStepsChain(hitGhost, point, piece, lift, out position, out rotation, out anchor))
+                return true;
             System.Func<string, bool> accept = piece.Shape == DMBuildingShape.FoundationSteps
                 ? (System.Func<string, bool>)DMBuildingCatalog.IsFoundation
                 : DMBuildingCatalog.IsEdgeSupport;

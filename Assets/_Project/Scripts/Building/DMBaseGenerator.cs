@@ -31,6 +31,7 @@ namespace Project.Building
         public static event Action Changed;
 
         float fuel;
+        bool switchedOff; // 0927-gen-power: the player turned the generator off from its menu
         bool lastRunning;
         float nextLoadCheck;
         Behaviour[] spinners;
@@ -40,7 +41,10 @@ namespace Project.Building
         public int Capacity => DMBuildingGhostProfile.GeneratorTankUnits;
         public float Fill01 => Capacity > 0 ? Mathf.Clamp01(fuel / Capacity) : 0f;
         public int Percent => Mathf.Clamp(Mathf.CeilToInt(Fill01 * 100f - 0.001f), 0, 100);
-        public bool IsRunning => fuel > 0.0001f;
+        public bool HasFuel => fuel > 0.0001f;
+        /// <summary>0927-gen-power: false while the player has switched the generator off (no power, no burn).</summary>
+        public bool PoweredOn => !switchedOff;
+        public bool IsRunning => HasFuel && !switchedOff;
         public float SecondsPerUnit => DMBuildingGhostProfile.GeneratorMinutesPerUnit * 60f;
         /// <summary>0926-power-load: force fields and powered items in this generator's base (refreshed every second).</summary>
         public int LoadForceFields { get; private set; }
@@ -97,7 +101,7 @@ namespace Project.Building
                 RefreshLoad();
 
             float dt = Time.deltaTime;
-            if (fuel > 0f && dt > 0f)
+            if (fuel > 0f && dt > 0f && !switchedOff)
                 fuel = Mathf.Max(0f, fuel - dt * UnitsPerSecond);
 
             bool running = IsRunning;
@@ -125,6 +129,18 @@ namespace Project.Building
         public void SetFuel(float units)
         {
             fuel = Mathf.Clamp(units, 0f, Mathf.Max(1, Capacity));
+            lastRunning = IsRunning;
+            ApplyRunning();
+            DMBasePower.MarkDirty();
+            Changed?.Invoke();
+        }
+
+        /// <summary>0927-gen-power: the menu's Turn Off / Turn On Power switch. Off cuts base power and stops the burn.</summary>
+        public void SetPoweredOn(bool on)
+        {
+            if (switchedOff == !on)
+                return;
+            switchedOff = !on;
             lastRunning = IsRunning;
             ApplyRunning();
             DMBasePower.MarkDirty();
@@ -353,6 +369,8 @@ namespace Project.Building
 
         public string GetInteractionPromptMessage()
         {
+            if (switchedOff)
+                return "Press E - Generator (switched off, " + Percent + "% fuel)";
             return IsRunning ? "Press E - Generator (" + Percent + "% fuel)" : "Press E - Generator (no fuel)";
         }
 

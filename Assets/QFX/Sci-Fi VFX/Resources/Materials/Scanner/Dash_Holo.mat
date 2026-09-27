@@ -15,7 +15,7 @@ Material:
   m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
+  m_DoubleSidedGI: 1
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
@@ -29,7 +29,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     - _CutOutA:
         m_Texture: {fileID: 2800000, guid: 7515bfba34872954da2c1d96332d03de, type: 3}
-        m_Scale: {x: 6, y: 6}
+        m_Scale: {x: 12, y: 12}
         m_Offset: {x: 0, y: 0}
     - _DetailAlbedoMap:
         m_Texture: {fileID: 0}
@@ -99,16 +99,18 @@ Material:
     m_Floats:
     - _Alpha: 0.422
     - _BumpScale: 1
+    - _Cull: 2
     - _Cutoff: 0.5
     - _DepthDistance: 0
     - _DepthFadeExp: 5.316663
     - _DetailNormalMapScale: 1
-    - _Distortion: 0.86
+    - _Distortion: 0.728
     - _DstBlend: 0
     - _Float0: 0
     - _Float1: 20
     - _Float2: 0.8
-    - _FresnelPower: 1.39
+    - _FresnelPower: 1.28
+    - _FresnelScale: 0.510905
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
@@ -149,6 +151,6 @@ Material:
     - _NoiseSpeed: {r: 0.2, g: 0, b: 0, a: 0}
     - _SmokeSpeed1: {r: 0.2, g: 0.2, b: 0, a: 0}
     - _SmokeSpeed2: {r: -0.2, g: 0.2, b: 0, a: 0}
-    - _TintColor: {r: 0, g: 200.92203, b: 362.03867, a: 1}
+    - _TintColor: {r: 0, g: 57.026764, b: 102.75575, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

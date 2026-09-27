@@ -19,6 +19,8 @@ namespace Project.Building
         public int hostIndex = -1;
         /// <summary>0926-generator: fuel units in a generator's tank, or -1.</summary>
         public float fuel = -1f;
+        /// <summary>0927-gen-power: the generator was switched off from its menu (old saves: false, so on).</summary>
+        public bool generatorSwitchedOff;
         /// <summary>0926-build-hub: a Build Hub's zone upgrade level, or -1.</summary>
         public int hubLevel = -1;
         /// <summary>0927-zone-anchor: true when hubZoneCenter/hubZoneRotation hold the hub's zone anchor (old saves: false).</summary>
@@ -69,6 +71,8 @@ namespace Project.Building
                     fuel = ghost.TryGetComponent(out DMBaseGenerator generator) ? generator.Fuel : -1f,
                     hubLevel = hub != null ? hub.UpgradeLevel : -1,
                 };
+                if (ghost.TryGetComponent(out DMBaseGenerator switchGen) && !switchGen.PoweredOn)
+                    entries[i].generatorSwitchedOff = true;
                 if (hub != null)
                 {
                     entries[i].hasHubZone = true;
@@ -88,6 +92,7 @@ namespace Project.Building
 
         public static void ApplySave(BuiltPieceSaveEntry[] entries)
         {
+            DMBuildingSceneCleaner.CleanForSessionChange(false); // 0927-cleaner: close build mode, sweep previews
             DMBuildingPlacementController.ClearAllPieces();
             if (entries == null || entries.Length == 0)
                 return;
@@ -116,6 +121,8 @@ namespace Project.Building
                     restored++;
                     if (entry.fuel >= 0f && spawned[i].TryGetComponent(out DMBaseGenerator generator))
                         generator.SetFuel(entry.fuel);
+                    if (entry.generatorSwitchedOff && spawned[i].TryGetComponent(out DMBaseGenerator offGen))
+                        offGen.SetPoweredOn(false);
                     if (spawned[i].TryGetComponent(out DMBuildHub hub))
                     {
                         // Old saves have no anchor: the zone stays on the hub's saved position (set on spawn).

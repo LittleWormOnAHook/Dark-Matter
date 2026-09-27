@@ -2,19 +2,24 @@
 %TAG !u! tag:unity3d.com,2011:
 --- !u!21 &2100000
 Material:
-  serializedVersion: 6
+  serializedVersion: 8
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
   m_Name: GO_Scanner_Wall
   m_Shader: {fileID: 4800000, guid: 1303fd942b9f4e0c82d91e1bbf03e20a, type: 3}
-  m_ShaderKeywords: 
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
   m_LightmapFlags: 5
   m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
+  m_DoubleSidedGI: 1
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -59,8 +64,8 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MaskMap:
-        m_Texture: {fileID: 2800000, guid: 261d8dd40b1a4668a8136fe40b9a5c6f, type: 3}
-        m_Scale: {x: 1, y: 8}
+        m_Texture: {fileID: 2800000, guid: db8e4666a7a8bbc4b939148f96c74415, type: 3}
+        m_Scale: {x: 3, y: 3}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
         m_Texture: {fileID: 0}
@@ -114,12 +119,13 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    m_Ints: []
     m_Floats:
     - _AppearProgress: 1
     - _BumpScale: 1
     - _Cutoff: 0.5
-    - _DepthDistance: 4
-    - _DepthFadeExp: 3.44
+    - _DepthDistance: 29.84
+    - _DepthFadeExp: 2.81
     - _DetailNormalMapScale: 1
     - _DistortionPower: 0.05
     - _DstBlend: 0
@@ -145,9 +151,9 @@ Material:
     - _Mode: 0
     - _NoiseDistortionPower: 0.09
     - _NoiseDistortionTilling: 0.93
-    - _NoisePower: 0.09
+    - _NoisePower: 0.67
     - _NoiseScroll: -0.35
-    - _NoiseTilling: 1.29
+    - _NoiseTilling: 1.04
     - _OcclusionStrength: 1
     - _POW: 1
     - _Parallax: 0.02
@@ -164,16 +170,18 @@ Material:
     - __dirty: 0
     m_Colors:
     - _Color: {r: 5.0000005, g: 3.2068968, b: 0, a: 1}
-    - _DepthColor: {r: 0, g: 0.26206875, b: 2, a: 1}
+    - _DepthColor: {r: 0.35853338, g: 25.688932, b: 0, a: 0}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _FlickerSpeed: {r: 0.1, g: 0.1, b: 0, a: 0}
     - _GlitchOffset: {r: 0, g: 0, b: 0, a: 0}
     - _GlowSpeed: {r: 0, g: 0, b: 0, a: 0}
     - _MainColor: {r: 1, g: 0, b: 0, a: 1}
     - _MaskSpeed: {r: 0.2, g: 0.1, b: 0, a: 0}
-    - _NoiseDistortionSpeed: {r: 0, g: 0.2, b: 0, a: 0}
+    - _NoiseDistortionSpeed: {r: 0, g: 0.3, b: 0, a: 0}
     - _RimColor: {r: 0, g: 0, b: 0, a: 0}
     - _ScanSpeed: {r: 0, g: 0, b: 0, a: 0}
-    - _TintColor: {r: 0.81617653, g: 0.8250507, b: 1, a: 1}
+    - _TintColor: {r: 0, g: 1, b: 0.12100756, a: 1}
     - _Vector0: {r: 0, g: 0.5, b: 0, a: 0}
     - _Vector2: {r: 0, g: 0.2, b: 0, a: 0}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

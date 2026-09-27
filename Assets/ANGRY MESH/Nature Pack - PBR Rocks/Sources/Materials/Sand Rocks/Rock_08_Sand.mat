@@ -374,7 +374,7 @@ Material:
     - _node_7069: 0.51
     - _node_9200: 0
     m_Colors:
-    - _BaseColor: {r: 0.9924528, g: 0.9101496, b: 0.67224634, a: 1}
+    - _BaseColor: {r: 0.5471698, g: 0.51887965, b: 0.43670344, a: 1}
     - _COLORRR: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _Color0: {r: 1, g: 1, b: 1, a: 0}

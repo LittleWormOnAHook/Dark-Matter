@@ -1,4 +1,4 @@
-using Project.Building;
+﻿using Project.Building;
 using Project.EditorTools.GenesisStudio;
 using UnityEditor;
 using UnityEngine;
@@ -377,6 +377,30 @@ namespace Project.EditorTools.Building
                     Prop("forceFieldSenseDepthMeters", "Open distance (m)");
                     Prop("forceFieldCloseDelaySeconds", "Close delay (s)");
                 }
+            });
+            DMStudioStyles.DrawSection(null, DMStudioStyles.ContentPanel, () =>
+            {
+                EditorGUILayout.LabelField("Force fields: corner blocks and power strips", EditorStyles.boldLabel);
+                EditorGUILayout.HelpBox(
+                    "A small block sits in each corner of every field. The strip through the middle of each block glows red while the base "
+                    + "has no power (the field material and collider are off) and turns green when a fuelled generator powers the field.",
+                    MessageType.None);
+                Prop("forceFieldCorners", "Show corner blocks");
+                Prop("forceFieldCornerMaterial", "Block material (empty = DM_ForceFieldCorner)");
+                if (fxProfile.forceFieldCornerMaterial == null && GUILayout.Button("Create editable block material"))
+                {
+                    Material made = DMBuildingForceFields.EnsureCornerMaterial();
+                    SerializedProperty slot = fxSerialized.FindProperty("forceFieldCornerMaterial");
+                    if (made != null && slot != null)
+                        slot.objectReferenceValue = made;
+                }
+                Prop("forceFieldCornerSize", "Block size (m)");
+                Prop("forceFieldCornerDepth", "Block depth (m)");
+                Prop("forceFieldStripMaterial", "Strip material (empty = generated glow)");
+                Prop("forceFieldStripUnpoweredColor", "Strip colour, no power");
+                Prop("forceFieldStripPoweredColor", "Strip colour, powered");
+                Prop("forceFieldStripGlow", "Strip glow");
+                Prop("forceFieldStripThickness", "Strip thickness (m)");
             });
         }
 

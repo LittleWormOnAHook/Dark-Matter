@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using Project.Audio;
@@ -984,6 +984,30 @@ namespace Project.UI
             ReleaseGameplayInputCapture();
             RefreshGameplayCamera();
             GameAudioManager.Instance?.StartGameplayMusic();
+
+            // 0927-start-items: the old uGUI StartPopupPanel (GameStartPopup) is no longer in the current scenes, so
+            // this path used to skip the new-game setup and the player spawned with no starting items. Run it here:
+            // fresh survival stats, then the Game Manager (SimpleGameManager) grants its Starting Items to the player.
+            GameObject player = PlayerLocator.FindPlayerObject();
+            SurvivalStats survivalStats = player != null ? player.GetComponent<SurvivalStats>() : null;
+            if (survivalStats != null)
+            {
+                survivalStats.ResetForNewGame();
+                survivalStats.SetSimulationPaused(false);
+            }
+
+            DmUiRuntimeRefs.ResolveUiManager()?.SyncSurvivalBars();
+            // 0927-cleaner: no build-mode preview or last session's placed pieces carry into a new game.
+            Project.Building.DMBuildingSceneCleaner.CleanForSessionChange(true);
+            SimpleGameManager gameManager = SimpleGameManager.Instance != null
+                ? SimpleGameManager.Instance
+                : FindAnyObjectByType<SimpleGameManager>(FindObjectsInactive.Include);
+            if (gameManager != null)
+                gameManager.BeginNewGameSession();
+            else
+                Debug.LogWarning("[MainMenu] New game: no Game Manager (SimpleGameManager) in the scene, so no starting items were given.");
+            GameSaveSystem.TrySave(0, out _);
+
             MainCanvasFlow.Refresh();
         }
 

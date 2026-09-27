@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace Project.Building
 {
@@ -33,19 +33,73 @@ namespace Project.Building
             Changed = null;
         }
 
+        // 0927-last-style: build mode reopens on the style (or building) and slot used last, also across plays.
+        const string LastHotbarPref = "DM.Build.LastHotbar";
+        const string LastSlotPref = "DM.Build.LastSlot";
+
+        static void RememberLast()
+        {
+            if (string.IsNullOrEmpty(HotbarId))
+                return;
+            UnityEngine.PlayerPrefs.SetString(LastHotbarPref, HotbarId);
+            UnityEngine.PlayerPrefs.SetInt(LastSlotPref, SelectedIndex);
+        }
+
+        static void RestoreLast()
+        {
+            string hotbar = HotbarId;
+            int slot = SelectedIndex;
+            string saved = UnityEngine.PlayerPrefs.GetString(LastHotbarPref, string.Empty);
+            if (!string.IsNullOrEmpty(saved) && DMBuildingCatalog.PiecesFor(saved).Count > 0)
+            {
+                hotbar = saved;
+                slot = UnityEngine.PlayerPrefs.GetInt(LastSlotPref, 0);
+            }
+
+            int count = DMBuildingCatalog.PiecesFor(hotbar).Count;
+            if (count == 0) // a building that is no longer known: fall back to Stone
+            {
+                hotbar = DMBuildingStyles.DefaultStyleId;
+                slot = 0;
+                count = DMBuildingCatalog.PiecesFor(hotbar).Count;
+            }
+
+            HotbarId = hotbar;
+            SelectedIndex = count > 0 ? UnityEngine.Mathf.Clamp(slot, 0, count - 1) : 0;
+            SlotFocus = SelectedIndex;
+            WindowStart = SlotFocus >= 10 ? SlotFocus - 9 : 0;
+        }
+
         public static void Toggle()
         {
             IsActive = !IsActive;
             if (!IsActive)
             {
+                RememberLast();
                 MaterialsOpen = false;
                 DMBuildingPlacementController.DiscardUnbuiltGhosts();
                 DMBuildingPlacementController.Release();
             }
             else
+            {
+                RestoreLast();
                 DMBuildingPlacementController.Ensure();
+            }
 
             Changed?.Invoke();
+        }
+
+        /// <summary>0927-cleaner: close build mode (if open) and drop its preview; used on New Game / Load.</summary>
+        public static void ForceExit()
+        {
+            if (IsActive)
+            {
+                Toggle();
+                return;
+            }
+
+            MaterialsOpen = false;
+            DMBuildingPlacementController.Release();
         }
 
         public static void SelectStone()
@@ -61,6 +115,7 @@ namespace Project.Building
             SlotFocus = 0;
             WindowStart = 0;
             MaterialsOpen = false;
+            RememberLast();
             Changed?.Invoke();
         }
 
@@ -71,6 +126,7 @@ namespace Project.Building
             SlotFocus = 0;
             WindowStart = 0;
             MaterialsOpen = false;
+            RememberLast();
             Changed?.Invoke();
         }
 
@@ -91,6 +147,7 @@ namespace Project.Building
                 WindowStart = SlotFocus;
             else if (SlotFocus >= WindowStart + 10)
                 WindowStart = SlotFocus - 9;
+            RememberLast();
             Changed?.Invoke();
         }
 

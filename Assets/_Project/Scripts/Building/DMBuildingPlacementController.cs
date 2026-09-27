@@ -1,4 +1,4 @@
-using Project.Data;
+﻿using Project.Data;
 using Project.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -47,6 +47,8 @@ namespace Project.Building
         static readonly Collider[] overlapHits = new Collider[128];
         static Project.Player.PlayerController cachedPlayer;
         float nextWorldMaskCheck;
+        // 0927-cleaner: every preview object ever made, so a session change can sweep strays.
+        static readonly System.Collections.Generic.List<GameObject> spawnedPreviews = new System.Collections.Generic.List<GameObject>();
 
         /// <summary>Placed pieces. Rebuilt only when a piece is enabled or disabled, not every frame.</summary>
         internal static DMBuildingGhost[] BuiltGhosts()
@@ -74,6 +76,43 @@ namespace Project.Building
             builtGhostCache = System.Array.Empty<DMBuildingGhost>();
             surfaceHost = null;
             cachedPlayer = null;
+            spawnedPreviews.Clear();
+        }
+
+        /// <summary>
+        /// 0927-cleaner: destroys every placement preview and every placement host that is not the live one
+        /// (tracked previews first, then a name sweep for anything made before tracking).
+        /// </summary>
+        public static void SweepStrayPreviews()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (instance != null)
+                instance.DestroyPreview();
+
+            for (int i = 0; i < spawnedPreviews.Count; i++)
+            {
+                if (spawnedPreviews[i] != null)
+                    Destroy(spawnedPreviews[i]);
+            }
+            spawnedPreviews.Clear();
+
+            GameObject[] all = Resources.FindObjectsOfTypeAll<GameObject>();
+            for (int i = 0; i < all.Length; i++)
+            {
+                GameObject go = all[i];
+                if (go == null || (go.hideFlags & HideFlags.DontSave) == 0)
+                    continue;
+                if (go.name == "BuildingPreview")
+                {
+                    Destroy(go);
+                    continue;
+                }
+
+                if (go.name == "DMBuildingPlacement" && (instance == null || go != instance.gameObject))
+                    Destroy(go);
+            }
         }
 
         static bool IsHorizontalLatticePiece(string pieceId)
@@ -2562,6 +2601,7 @@ namespace Project.Building
                 Destroy(preview);
 
             preview = DMBuildingPieceFactory.Create(pieceId);
+            spawnedPreviews.Add(preview);
             DMBuildingPieceFactory.SetTag(preview, "Untagged"); // the ghost itself is never climbable
             DMBuildingLayers.SetLayer(preview, DMBuildingLayers.IgnoreRaycastLayer); // 0925-layers: never in any build mask
             previewId = pieceId;

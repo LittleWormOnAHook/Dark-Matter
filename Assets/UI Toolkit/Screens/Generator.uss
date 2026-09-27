@@ -1,4 +1,4 @@
-﻿.dmg-gen-panel {
+.dmg-gen-panel {
     left: 22%;
     right: 22%;
     top: 20%;
@@ -59,4 +59,30 @@
     font-size: 14px;
     color: rgb(212, 160, 23);
     white-space: normal;
+}
+
+/* 0927-gen-buttons: every generator button uses the same look as the Crate / Vendor Close button
+   (near-black fill, thin grey border, gold text). */
+#gen-panel .dmg-gen-btn {
+    color: rgb(212, 160, 23);
+    background-color: rgb(18, 18, 22);
+    border-color: rgb(74, 74, 90);
+    border-width: 1px;
+    border-radius: 0;
+    padding: 6px 14px;
+}
+#gen-panel .dmg-gen-btn:hover {
+    background-color: rgb(30, 30, 38);
+    border-color: rgb(212, 160, 23);
+}
+#gen-panel .dmg-gen-btn:focus,
+#gen-panel .dmg-gen-btn.dmg-pad-focus {
+    border-width: 2px;
+    border-color: rgb(212, 160, 23);
+    background-color: rgb(30, 30, 38);
+    color: rgb(212, 160, 23);
+}
+#gen-panel .dmg-gen-btn:disabled {
+    color: rgba(212, 160, 23, 0.4);
+    border-color: rgba(74, 74, 90, 0.5);
 }

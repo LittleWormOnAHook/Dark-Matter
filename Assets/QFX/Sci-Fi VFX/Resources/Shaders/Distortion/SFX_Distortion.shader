@@ -11,6 +11,7 @@ Shader "QFX/SFX/Distortion/DistortionCutOut"
 		_Scale("Scale", Float) = 1
 		_DistortionSpeed("Distortion Speed", Vector) = (0,0,0,0)
 		_Distortion("Distortion", Range( 0 , 1)) = 0
+		[Enum(UnityEngine.Rendering.CullMode)] _Cull("Cull (Off = double sided)", Float) = 2
 		[HideInInspector] _texcoord( "", 2D ) = "white" {}
 	}
 	
@@ -22,7 +23,7 @@ Shader "QFX/SFX/Distortion/DistortionCutOut"
 		#pragma target 3.0
 		ENDCG
 		Blend SrcAlpha OneMinusSrcAlpha
-		Cull Back
+		Cull [_Cull] // 0927-holo-2side: per-material, default Back
 		ColorMask RGBA
 		ZWrite On
 		ZTest LEqual
