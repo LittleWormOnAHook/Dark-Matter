@@ -736,7 +736,7 @@ namespace Project.Player
             // Game Over must stay None (not Confined) so UITK buttons receive clicks.
             bool deathOpen = Project.UI.DMUiToolkitDeath.IsOpen;
             bool vendorOpen = DMUiToolkitVendor.IsOpen;
-            bool crateOpen = DMUiToolkitCrate.IsOpen;
+            bool crateOpen = DMUiToolkitCrate.IsOpen || Project.UI.DMUiToolkitGenerator.IsOpen;
             bool cursorFree = deathOpen || _inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen ||
                               _buildingControlOpen || QuoraShelterMenuUI.IsOpen || _gameplayPaused || !GameSession.HasStarted || Time.timeScale <= 0f ||
                               DMDevCommandState.UnlockCursor || DMUiToolkitDevPanel.IsOpen
@@ -1191,6 +1191,8 @@ namespace Project.Player
             cameraTransform.rotation = Quaternion.Euler(_cameraPitch, _cameraYaw, 0f);
 
             float followTarget = _rangedAimActive ? _aimFollowDistance : followDistance;
+            if (Project.Building.DMBuildingMode.IsActive)
+                followTarget *= 3f;
             _currentFollowDistance = Mathf.SmoothDamp(
                 _currentFollowDistance,
                 followTarget,

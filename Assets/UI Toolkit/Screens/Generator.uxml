@@ -1,0 +1,43 @@
+﻿<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="../Themes/DarkMatterGenesis.uss" />
+    <Style src="Vendor.uss" />
+    <Style src="Generator.uss" />
+    <ui:VisualElement name="gen-root" picking-mode="Position" class="dmg-vendor-root">
+        <ui:VisualElement name="gen-veil" picking-mode="Position" class="dmg-vendor-veil" />
+        <ui:VisualElement name="gen-panel" picking-mode="Position" class="dmg-vendor-panel dmg-gen-panel">
+            <ui:VisualElement class="dmg-vendor-header" picking-mode="Ignore">
+                <ui:Label text="GENERATOR" class="dmg-section-title dmg-gold" picking-mode="Ignore" />
+                <ui:Label name="gen-state" text="ONLINE" class="dmg-gen-state" picking-mode="Ignore" />
+                <ui:VisualElement class="dmg-gen-spacer" picking-mode="Ignore" />
+                <ui:Button name="gen-close" text="Close" class="dmg-tab" />
+            </ui:VisualElement>
+            <ui:VisualElement class="dmg-vendor-split">
+                <ui:VisualElement class="dmg-vendor-col">
+                    <ui:Label text="Plasma Fuel Tank" class="dmg-gold-heading" picking-mode="Ignore" />
+                    <ui:Label name="gen-percent" text="0%" class="dmg-gen-percent" picking-mode="Ignore" />
+                    <ui:VisualElement class="dmg-gen-bar" picking-mode="Ignore">
+                        <ui:VisualElement name="gen-fill" class="dmg-gen-fill" picking-mode="Ignore" />
+                    </ui:VisualElement>
+                    <ui:Label name="gen-units" class="dmg-gen-line" picking-mode="Ignore" />
+                    <ui:Label name="gen-burn" class="dmg-gen-line" picking-mode="Ignore" />
+                    <ui:Label name="gen-left" class="dmg-gen-line" picking-mode="Ignore" />
+                    <ui:Label name="gen-zone" class="dmg-gen-line dmg-hint" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:VisualElement class="dmg-vendor-rule" picking-mode="Ignore" />
+                <ui:VisualElement class="dmg-vendor-col">
+                    <ui:Label text="Refuel" class="dmg-gold-heading" picking-mode="Ignore" />
+                    <ui:Label name="gen-inv" class="dmg-gen-line" picking-mode="Ignore" />
+                    <ui:Label name="gen-crates" class="dmg-gen-line" picking-mode="Ignore" />
+                    <ui:Label name="gen-room" class="dmg-gen-line" picking-mode="Ignore" />
+                    <ui:VisualElement class="dmg-gen-buttons">
+                        <ui:Button name="gen-add1" text="Add 1" class="dmg-tab dmg-gen-button" />
+                        <ui:Button name="gen-add10" text="Add 10" class="dmg-tab dmg-gen-button" />
+                        <ui:Button name="gen-fill-btn" text="Fill Tank" class="dmg-tab dmg-gen-button" />
+                    </ui:VisualElement>
+                    <ui:Label text="Takes Plasma Fuel from your inventory first, then the nearest storage crates." class="dmg-hint dmg-gen-line" picking-mode="Ignore" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:Label name="gen-status" text="" class="dmg-gen-status" picking-mode="Ignore" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

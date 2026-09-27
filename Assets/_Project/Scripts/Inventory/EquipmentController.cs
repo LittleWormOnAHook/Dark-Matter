@@ -279,6 +279,63 @@ namespace Project.Inventory
             return false;
         }
 
+        /// <summary>Next utility hotbar local index that holds ammo (CountsAsAmmo).</summary>
+        public bool TryGetNextOccupiedAmmoHotbarLocal(int fromLocalHotbarSlot, out int nextLocalHotbarSlot)
+        {
+            nextLocalHotbarSlot = fromLocalHotbarSlot;
+            if (inventory == null || inventory.hotbarSize <= 0)
+                return false;
+
+            int lastWeaponHotbar = Mathf.Max(
+                Mathf.Max(primaryWeaponHotbarSlot, secondaryWeaponHotbarSlot),
+                Mathf.Max(tertiaryWeaponHotbarSlot, quaternaryWeaponHotbarSlot));
+            int first = lastWeaponHotbar + 1;
+            int last = inventory.hotbarSize - 1;
+            if (last < first)
+                return false;
+
+            int span = last - first + 1;
+            int start = Mathf.Clamp(fromLocalHotbarSlot, first, last);
+            for (int offset = 1; offset <= span; offset++)
+            {
+                int candidate = first + ((start - first + offset) % span);
+                if (!IsUtilityHotbarSlot(candidate))
+                    continue;
+                ItemData item = GetHotbarItem(candidate);
+                if (!IsAmmoItem(item))
+                    continue;
+
+                nextLocalHotbarSlot = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>True if any Hot Cross utility slot currently holds ammo.</summary>
+        public bool TryGetAnyAmmoHotbarLocal(out int ammoLocalHotbarSlot)
+        {
+            ammoLocalHotbarSlot = -1;
+            if (inventory == null || inventory.hotbarSize <= 0)
+                return false;
+
+            int lastWeaponHotbar = Mathf.Max(
+                Mathf.Max(primaryWeaponHotbarSlot, secondaryWeaponHotbarSlot),
+                Mathf.Max(tertiaryWeaponHotbarSlot, quaternaryWeaponHotbarSlot));
+            int first = lastWeaponHotbar + 1;
+            for (int slot = first; slot < inventory.hotbarSize; slot++)
+            {
+                if (!IsUtilityHotbarSlot(slot))
+                    continue;
+                if (!IsAmmoItem(GetHotbarItem(slot)))
+                    continue;
+                ammoLocalHotbarSlot = slot;
+                return true;
+            }
+
+            return false;
+        }
+
         /// <summary>Next weapon hotbar local index (typically 0-3) that has an equippable item.</summary>
         public bool TryGetNextOccupiedWeaponHotbarLocal(int fromLocalHotbarSlot, out int nextLocalHotbarSlot)
         {

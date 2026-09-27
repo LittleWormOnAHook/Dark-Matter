@@ -224,6 +224,14 @@ namespace Project.Audio
             PlayUiClip(PickClip(profile?.buttonClickClips), profile != null ? profile.uiVolume : 0.85f);
         }
 
+        public void PlayUiDeny()
+        {
+            AudioClip[] clips = profile?.uiDenyClips;
+            if (clips == null || clips.Length == 0)
+                clips = profile?.buttonClickClips;
+            PlayUiClip(PickClip(clips), profile != null ? profile.uiVolume * 0.7f : 0.55f);
+        }
+
         /// <summary>
         /// Soft UI tick for hover / focus changes (journal tabs, etc.). Reuses buttonClickClips (keyPress).
         /// </summary>

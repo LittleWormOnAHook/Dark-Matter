@@ -81,9 +81,11 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 2100000, guid: ccfea5a823f8ff142ae7e77fbc82809f, type: 2}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_foundation_tri_4x4
     displayName: Tri Foundation
     shape: 1
@@ -93,9 +95,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_floor_4x4
     displayName: Floor
     shape: 2
@@ -105,9 +109,11 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 2100000, guid: ccfea5a823f8ff142ae7e77fbc82809f, type: 2}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_floor_tri_4x4
     displayName: Tri Floor
     shape: 3
@@ -117,9 +123,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_ceiling_4x4
     displayName: Ceiling
     shape: 4
@@ -129,9 +137,11 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 2100000, guid: ccfea5a823f8ff142ae7e77fbc82809f, type: 2}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_hatch_4x4
     displayName: Hatch
     shape: 5
@@ -141,9 +151,11 @@ MonoBehaviour:
     cost: 3
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_wall_4x4
     displayName: Wall
     shape: 6
@@ -153,9 +165,11 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 2100000, guid: ccfea5a823f8ff142ae7e77fbc82809f, type: 2}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_wall_half_4x2
     displayName: Half Wall
     shape: 7
@@ -165,9 +179,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_wall_window_4x4
     displayName: Window
     shape: 8
@@ -177,9 +193,11 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 2100000, guid: ccfea5a823f8ff142ae7e77fbc82809f, type: 2}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_door_frame_4x4
     displayName: Door Frame
     shape: 9
@@ -189,9 +207,11 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 2100000, guid: ccfea5a823f8ff142ae7e77fbc82809f, type: 2}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_door_basic
     displayName: Door
     shape: 10
@@ -201,9 +221,25 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
+  - id: iron_ff_door
+    displayName: Force Field Door
+    shape: 10
+    category: 4
+    prefab: {fileID: 4045673122039675848, guid: c0ffa6c54aa047b4dba48197df224d60, type: 3}
+    icon: {fileID: 2800000, guid: 7efb51f76dc16db478816cce6845b239, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 0
+    materialOverride: {fileID: 0}
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_passage_4x4
     displayName: Passage
     shape: 11
@@ -213,9 +249,11 @@ MonoBehaviour:
     cost: 3
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_wall_tri_l_4x2
     displayName: Tri Wall L
     shape: 12
@@ -225,9 +263,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_wall_tri_r_4x2
     displayName: Tri Wall R
     shape: 13
@@ -237,9 +277,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_railing_4x1
     displayName: Railing
     shape: 14
@@ -249,9 +291,11 @@ MonoBehaviour:
     cost: 1
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_stairs_4x4
     displayName: Stairs
     shape: 15
@@ -261,9 +305,11 @@ MonoBehaviour:
     cost: 6
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_ramp_4x4
     displayName: Ramp
     shape: 16
@@ -273,9 +319,11 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 2100000, guid: ccfea5a823f8ff142ae7e77fbc82809f, type: 2}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_roof_4x4
     displayName: Roof
     shape: 17
@@ -285,9 +333,11 @@ MonoBehaviour:
     cost: 3
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_roof_corner_4x4
     displayName: Roof Corner
     shape: 18
@@ -297,9 +347,11 @@ MonoBehaviour:
     cost: 3
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_roof_inner_4x4
     displayName: Roof Inner
     shape: 19
@@ -309,9 +361,11 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_si_wall_light
     displayName: Wall Light
     shape: 20
@@ -321,9 +375,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 0
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_si_ceiling_light_a
     displayName: Ceiling Light A
     shape: 20
@@ -333,9 +389,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 0
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_si_ceiling_light_b
     displayName: Ceiling Light B
     shape: 20
@@ -345,9 +403,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 0
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_si_ceiling_light_c
     displayName: Ceiling Light C
     shape: 20
@@ -357,9 +417,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 0
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_si_banner
     displayName: Banner
     shape: 20
@@ -369,9 +431,11 @@ MonoBehaviour:
     cost: 1
     enabled: 1
     applyStyleFinish: 0
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_si_poster
     displayName: Poster
     shape: 20
@@ -381,9 +445,11 @@ MonoBehaviour:
     cost: 1
     enabled: 1
     applyStyleFinish: 0
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_si_sign
     displayName: Sign
     shape: 20
@@ -393,9 +459,11 @@ MonoBehaviour:
     cost: 1
     enabled: 1
     applyStyleFinish: 0
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_foundation_steps_4x2
     displayName: Foundation Steps
     shape: 22
@@ -405,9 +473,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_support_pillar
     displayName: Support Pillar
     shape: 23
@@ -417,9 +487,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_floor_stairwell_4x4
     displayName: Stairwell Floor
     shape: 24
@@ -429,9 +501,11 @@ MonoBehaviour:
     cost: 3
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_balcony_4x2
     displayName: Balcony
     shape: 25
@@ -441,9 +515,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_wall_quarter_4x1
     displayName: Quarter Wall
     shape: 26
@@ -453,9 +529,11 @@ MonoBehaviour:
     cost: 1
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_wall_window_wide_4x4
     displayName: Wide Window
     shape: 27
@@ -465,9 +543,11 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_wall_slit_4x4
     displayName: Slit Window
     shape: 28
@@ -477,9 +557,11 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_wall_arch_4x4
     displayName: Archway
     shape: 29
@@ -489,9 +571,11 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_wall_tri_inv_l_4x2
     displayName: Inverted Tri Wall L
     shape: 30
@@ -501,9 +585,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_wall_tri_inv_r_4x2
     displayName: Inverted Tri Wall R
     shape: 31
@@ -513,9 +599,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_wall_vent_4x4
     displayName: Vent Wall
     shape: 32
@@ -525,9 +613,11 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_column_4m
     displayName: Column
     shape: 33
@@ -537,9 +627,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_column_half_2m
     displayName: Half Column
     shape: 34
@@ -549,9 +641,11 @@ MonoBehaviour:
     cost: 1
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_beam_4m
     displayName: Beam
     shape: 35
@@ -561,9 +655,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_brace_4x4
     displayName: Angled Brace
     shape: 36
@@ -573,9 +669,11 @@ MonoBehaviour:
     cost: 1
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_railing_half_4x05
     displayName: Half Railing
     shape: 37
@@ -585,9 +683,11 @@ MonoBehaviour:
     cost: 1
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_stairs_half_4x2
     displayName: Half Stairs
     shape: 38
@@ -597,9 +697,11 @@ MonoBehaviour:
     cost: 3
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_stairs_spiral_4x4
     displayName: Spiral Stairs
     shape: 39
@@ -609,9 +711,11 @@ MonoBehaviour:
     cost: 6
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_ramp_half_4x2
     displayName: Half Ramp
     shape: 40
@@ -621,9 +725,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_ladder_4m
     displayName: Ladder
     shape: 41
@@ -633,9 +739,11 @@ MonoBehaviour:
     cost: 1
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_roof_steep_4x4
     displayName: Steep Roof
     shape: 42
@@ -645,9 +753,11 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_roof_ridge_4m
     displayName: Ridge Cap
     shape: 43
@@ -657,9 +767,11 @@ MonoBehaviour:
     cost: 1
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_rooftop_4x4
     displayName: Flat Rooftop
     shape: 44
@@ -669,9 +781,11 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_hatch_lid
     displayName: Hatch Lid
     shape: 45
@@ -681,9 +795,25 @@ MonoBehaviour:
     cost: 1
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
+  - id: iron_ff_hatch_lid
+    displayName: Force Field Hatch
+    shape: 45
+    category: 4
+    prefab: {fileID: 2270065490591895536, guid: 4c66378c0a0c45c408d5462011fb3f7a, type: 3}
+    icon: {fileID: 2800000, guid: 7019f97851e92eb45a3387d2ef8262fa, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 0
+    materialOverride: {fileID: 0}
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_door_frame_double_4x4
     displayName: Double Door Frame
     shape: 46
@@ -693,9 +823,11 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_door_double
     displayName: Double Door
     shape: 47
@@ -705,9 +837,25 @@ MonoBehaviour:
     cost: 3
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
+  - id: iron_ff_door_double
+    displayName: Double Force Field Door
+    shape: 47
+    category: 4
+    prefab: {fileID: 2575465540735455367, guid: 903f2b4d6ce52e94995f7d8e7a4b3b83, type: 3}
+    icon: {fileID: 2800000, guid: 6adf6ab936cd73c469b2c98357515372, type: 3}
+    cost: 3
+    enabled: 1
+    applyStyleFinish: 0
+    materialOverride: {fileID: 0}
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_gate_frame_8x8
     displayName: Gate Frame (8 m)
     shape: 48
@@ -717,9 +865,11 @@ MonoBehaviour:
     cost: 12
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_gate_8x8
     displayName: Gate (8 m)
     shape: 49
@@ -729,9 +879,25 @@ MonoBehaviour:
     cost: 8
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
+  - id: iron_ff_gate_8x8
+    displayName: Force Field Gate (8 m)
+    shape: 49
+    category: 4
+    prefab: {fileID: 5550146288032004715, guid: f67a2cb110e96c247813384d7ee069ac, type: 3}
+    icon: {fileID: 2800000, guid: 750a1513e15aeb24c8594a67ec09c8bc, type: 3}
+    cost: 8
+    enabled: 1
+    applyStyleFinish: 0
+    materialOverride: {fileID: 0}
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_foundation_half_4x2
     displayName: Half Foundation
     shape: 50
@@ -741,9 +907,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: iron_foundation_quarter_2x2
     displayName: Quarter Foundation
     shape: 51
@@ -753,6 +921,8 @@ MonoBehaviour:
     cost: 1
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []

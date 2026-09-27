@@ -70,6 +70,24 @@ MonoBehaviour:
   jogSpeedMultiplier: 1
   sprintBurstSpeedMultiplier: 1.2
   shiftDoubleTapWindow: 0.28
+  leanOverrideEnabled: 1
+  leanWalkStrength: 1.6
+  leanRunStrength: 1.8
+  leanSmoothTime: 0.12
+  leanMaxValue: 1
+  leanSpineRollDegrees: 6
+  leanSpineRollWhileStrafing: 0
+  stepAssistEnabled: 1
+  stepMaxHeight: 0.5
+  stepMinHeight: 0
+  stepProbeDistance: 0.1
+  stepOnGroundLayers: 1
+  walkableSlopeDegrees: 43
+  stepLiftHelper: 0
+  stepRiserMinAngle: 50
+  stepLiftSpeed: 3.01
+  stepLiftForwardPush: 1.191
+  stepIgnoreSlopeBlock: 1
   maxHealth: 100
   maxEnergy: 100
   maxStamina: 100
@@ -94,7 +112,7 @@ MonoBehaviour:
   maxVolcano: 100
   exposureRecoveryPerSecond: 8
   thermalRecoveryPerSecond: 12
-  idleStaminaRegenPerSecond: 3
+  idleStaminaRegenPerSecond: 5
   sprintStaminaDrainPerSecond: 12
   sprintStaminaRegenPerSecond: 0
   climbStartStaminaCost: 1
@@ -137,7 +155,7 @@ MonoBehaviour:
   climbableTag: Climbable
   climbableLayers:
     serializedVersion: 2
-    m_Bits: 8388608
+    m_Bits: 25165824
   enableClingSense: 1
   drawClingSenseGizmos: 1
   preferBakedProbes: 0

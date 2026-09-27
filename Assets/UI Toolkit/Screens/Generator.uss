@@ -1,0 +1,62 @@
+﻿.dmg-gen-panel {
+    left: 22%;
+    right: 22%;
+    top: 20%;
+    bottom: auto;
+    min-height: 380px;
+}
+.dmg-gen-spacer {
+    flex-grow: 1;
+}
+.dmg-gen-state {
+    margin-left: 14px;
+    font-size: 15px;
+    -unity-font-style: bold;
+    color: rgb(96, 220, 150);
+}
+.dmg-gen-state.dmg-gen-offline {
+    color: rgb(235, 96, 80);
+}
+.dmg-gen-percent {
+    font-size: 44px;
+    -unity-font-style: bold;
+    color: rgb(120, 210, 255);
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+.dmg-gen-bar {
+    height: 18px;
+    background-color: rgba(8, 12, 18, 0.9);
+    border-color: rgb(74, 74, 90);
+    border-width: 1px;
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+.dmg-gen-fill {
+    height: 100%;
+    width: 0%;
+    background-color: rgb(90, 190, 255);
+}
+.dmg-gen-line {
+    font-size: 14px;
+    color: rgb(220, 226, 235);
+    margin-top: 3px;
+    white-space: normal;
+}
+.dmg-gen-buttons {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-top: 12px;
+    margin-bottom: 8px;
+}
+.dmg-gen-button {
+    min-width: 96px;
+    margin-right: 8px;
+    margin-bottom: 6px;
+}
+.dmg-gen-status {
+    margin-top: 10px;
+    font-size: 14px;
+    color: rgb(212, 160, 23);
+    white-space: normal;
+}

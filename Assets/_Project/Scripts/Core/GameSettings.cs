@@ -30,6 +30,8 @@ namespace Project.Core
         private const string DlssQualityKey = "settings.dlss.quality";
         private const string UiScaleKey = "settings.uiScale";
         private const string TargetFrameRateKey = "settings.targetFrameRate";
+        private const string ToggleCrouchStickKey = "settings.game.toggleCrouchStick";
+        private const string ToggleSprintStickKey = "settings.game.toggleSprintStick";
         private const string SaveExistsKey = "save.exists";
 
         public const float UiScaleMin = 0.4f;
@@ -55,6 +57,10 @@ namespace Project.Core
         public static bool DlssEnabled { get; private set; }
         public static int DlssQualityIndex { get; private set; } = 2;
         public static int TargetFrameRate { get; private set; } = -1;
+        /// <summary>When true, RS click toggles crouch; when false, hold RS click to crouch.</summary>
+        public static bool ToggleCrouchStickClick { get; private set; } = true;
+        /// <summary>When true, LS click toggles sprint; when false, hold LS click to sprint.</summary>
+        public static bool ToggleSprintStickClick { get; private set; } = true;
         public static int QualityLevel { get; private set; }
 
         public static bool HasSaveFile => GameSaveSystem.HasAnySaveFile;
@@ -95,6 +101,8 @@ namespace Project.Core
             ColorGradingEnabled = PlayerPrefs.GetInt(ColorGradingKey, 1) == 1;
             VignetteEnabled = PlayerPrefs.GetInt(VignetteKey, 1) == 1;
             MinimapEnabled = PlayerPrefs.GetInt(MinimapEnabledKey, 1) == 1;
+            ToggleCrouchStickClick = PlayerPrefs.GetInt(ToggleCrouchStickKey, 1) == 1;
+            ToggleSprintStickClick = PlayerPrefs.GetInt(ToggleSprintStickKey, 1) == 1;
             Fullscreen = PlayerPrefs.GetInt(FullscreenKey, Screen.fullScreen ? 1 : 0) == 1;
             VSync = PlayerPrefs.GetInt(VSyncKey, QualitySettings.vSyncCount > 0 ? 1 : 0) == 1;
             RayTracingEnabled = PlayerPrefs.GetInt(RayTracingKey, 0) == 1;
@@ -134,6 +142,8 @@ namespace Project.Core
             PlayerPrefs.SetInt(ColorGradingKey, ColorGradingEnabled ? 1 : 0);
             PlayerPrefs.SetInt(VignetteKey, VignetteEnabled ? 1 : 0);
             PlayerPrefs.SetInt(MinimapEnabledKey, MinimapEnabled ? 1 : 0);
+            PlayerPrefs.SetInt(ToggleCrouchStickKey, ToggleCrouchStickClick ? 1 : 0);
+            PlayerPrefs.SetInt(ToggleSprintStickKey, ToggleSprintStickClick ? 1 : 0);
             PlayerPrefs.SetInt(FullscreenKey, Fullscreen ? 1 : 0);
             PlayerPrefs.SetInt(VSyncKey, VSync ? 1 : 0);
             PlayerPrefs.SetInt(RayTracingKey, RayTracingEnabled ? 1 : 0);
@@ -522,5 +532,20 @@ namespace Project.Core
 
             Screen.fullScreenMode = desired;
         }
+
+        public static void SetToggleCrouchStickClick(bool enabled)
+        {
+            ToggleCrouchStickClick = enabled;
+            PlayerPrefs.SetInt(ToggleCrouchStickKey, enabled ? 1 : 0);
+            PlayerPrefs.Save();
+        }
+
+        public static void SetToggleSprintStickClick(bool enabled)
+        {
+            ToggleSprintStickClick = enabled;
+            PlayerPrefs.SetInt(ToggleSprintStickKey, enabled ? 1 : 0);
+            PlayerPrefs.Save();
+        }
+
     }
 }

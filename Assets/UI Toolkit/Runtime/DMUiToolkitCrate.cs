@@ -320,6 +320,8 @@ namespace Project.UI
                     Amount = amount,
                     Block = block
                 };
+                slot.RegisterCallback<PointerEnterEvent>(OnSlotPointerEnter);
+                slot.RegisterCallback<PointerLeaveEvent>(OnSlotPointerLeave);
                 slot.RegisterCallback<PointerDownEvent>(OnSlotPointerDown);
                 slot.RegisterCallback<PointerMoveEvent>(OnSlotPointerMove);
                 slot.RegisterCallback<PointerUpEvent>(OnSlotPointerUp);
@@ -364,6 +366,7 @@ namespace Project.UI
             if (evt.button == 1)
             {
                 CancelDrag();
+                DMUiToolkitWorldMenus.HideItemTooltip();
                 ShowContext(key.Side, key.Index, evt.position);
                 return;
             }
@@ -712,6 +715,33 @@ namespace Project.UI
                 HideContext();
         }
 
+        private void OnSlotPointerEnter(PointerEnterEvent evt)
+        {
+            if (dragActive || dragIndex >= 0)
+                return;
+            if (evt.currentTarget is not VisualElement slot || slot.userData is not SlotKey key)
+                return;
+
+            ItemData item = ResolveItem(key.Side, key.Index);
+            if (item == null)
+            {
+                DMUiToolkitWorldMenus.HideItemTooltip();
+                return;
+            }
+
+            int amount = ResolveAmount(key.Side, key.Index);
+            Vector2 pointer = UnityEngine.InputSystem.Mouse.current != null
+                ? UnityEngine.InputSystem.Mouse.current.position.ReadValue()
+                : Vector2.zero;
+            DMUiToolkitWorldMenus.TryShowItemTooltip(item, amount, pointer);
+        }
+
+        private void OnSlotPointerLeave(PointerLeaveEvent evt)
+        {
+            if (!dragActive)
+                DMUiToolkitWorldMenus.HideItemTooltip();
+        }
+
         private ItemData ResolveItem(FocusSide side, int index)
         {
             if (side == FocusSide.Player)
@@ -729,6 +759,25 @@ namespace Project.UI
                 return null;
             CrateSlot crateSlot = state.Slots[index];
             return crateSlot != null && !crateSlot.IsEmpty ? crateSlot.item : null;
+        }
+
+        private int ResolveAmount(FocusSide side, int index)
+        {
+            if (side == FocusSide.Player)
+            {
+                if (inventory == null || index < 0 || index >= inventory.slots.Count)
+                    return 0;
+                InventorySystem.InventorySlot playerSlot = inventory.slots[index];
+                return playerSlot != null && !playerSlot.IsEmpty ? playerSlot.amount : 0;
+            }
+
+            DMStorageCrateState state = crate != null
+                ? DMStorageCrateRuntime.GetOrCreate(crate.CrateId, crate.SlotCount)
+                : null;
+            if (state == null || index < 0 || index >= state.Slots.Count)
+                return 0;
+            CrateSlot crateSlot = state.Slots[index];
+            return crateSlot != null && !crateSlot.IsEmpty ? crateSlot.amount : 0;
         }
 
         private bool CanSplitCrate(int index)

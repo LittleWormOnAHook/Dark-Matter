@@ -65,6 +65,17 @@ namespace Project.Building
             builtGhostCacheVersion = -1;
         }
 
+        /// <summary>0927-fast-play: with domain reload off, drop the last play's controller, piece cache and player.</summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetCoreStatics()
+        {
+            instance = null;
+            builtGhostCacheVersion = -1;
+            builtGhostCache = System.Array.Empty<DMBuildingGhost>();
+            surfaceHost = null;
+            cachedPlayer = null;
+        }
+
         static bool IsHorizontalLatticePiece(string pieceId)
         {
             return DMBuildingCatalog.IsEdgeSupport(pieceId);
@@ -114,6 +125,8 @@ namespace Project.Building
 
         public static void Release()
         {
+            TryCancelMove(); // 0926-move: leaving build mode puts a carried piece back
+            SetMoveHover(null);
             if (instance == null)
                 return;
 
@@ -163,6 +176,8 @@ namespace Project.Building
 
         void OnDestroy()
         {
+            TryCancelMove();
+            SetMoveHover(null);
             DestroyPreview();
             if (instance == this)
                 instance = null;
@@ -225,6 +240,10 @@ namespace Project.Building
             bool overBar = DMUiToolkitBuildingHotbar.PointerOverBar();
             bool leftHeld = mouse != null && mouse.leftButton.isPressed;
             bool rightHeld = mouse != null && mouse.rightButton.isPressed;
+
+            // 0926-move: grab / carry / re-place Equipment (MoveEquipment.cs). Owns the frame while carrying.
+            if (UpdateMoveEquipment(overBar, leftHeld, rightHeld))
+                return;
 
             if (WasMaterialKeyPressed())
                 TryApplyNextMaterial();
@@ -312,7 +331,7 @@ namespace Project.Building
 
         static bool TryAimCore(out DMBuildingPiece piece, out Vector3 position, out Quaternion rotation, out bool canCommit)
         {
-            piece = DMBuildingMode.SelectedPiece;
+            piece = AimPiece(); // 0926-move: the carried piece while moving
             position = default;
             rotation = Quaternion.identity;
             canCommit = false;
@@ -323,16 +342,21 @@ namespace Project.Building
             if (camera == null)
                 return false;
 
-            Ray ray = camera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+            Ray ray = BuildAimRay(camera);
 
             // Library: surface items (lights, decorations) stick to the face of the built piece under the crosshair.
             if (piece.Snap == DMBuildingSnap.Surface)
             {
                 surfaceHost = null;
                 if (!TrySeatSurfaceItem(ray, piece, camera, out position, out rotation, out DMBuildingGhost host))
-                    return false;
+                {
+                    // 0926-generator: Equipment also stands on the ground inside a base's power square.
+                    if (!TrySeatEquipmentOnGround(ray, piece, camera, out position, out rotation))
+                        return false;
+                    host = null;
+                }
                 surfaceHost = host;
-                canCommit = DMBuildingCatalog.HasCost(piece);
+                canCommit = HasCostOrMoving(piece); // 0926-move: moving is free
                 return true;
             }
 
@@ -347,7 +371,8 @@ namespace Project.Building
             rotation = Quaternion.Euler(0f, yaw, 0f);
             bool hasBase = HasBuiltBase();
 
-            if (!hasBase)
+            // 0926-rules: far from every foundation a new foundation starts a new base.
+            if (!hasBase || (hasHit && DMBuildingCatalog.IsFoundation(piece.Id) && IsNewBaseSpot(aim)))
             {
                 if (!DMBuildingCatalog.IsFoundation(piece.Id))
                     return false;
@@ -457,6 +482,8 @@ namespace Project.Building
                 return false;
 
             Vector3 normal = hit.normal.sqrMagnitude > 0.0001f ? hit.normal.normalized : Vector3.up;
+            if (DMBuildingCatalog.IsFloorOnlyItem(piece.Id) && normal.y < 0.7f)
+                return false; // 0926-storage-crate: floors only
             float spin = instance.yawNotches * YawStep();
             Quaternion baseRotation;
             float extent;
@@ -493,7 +520,7 @@ namespace Project.Building
                 if (hits[i].collider == null || hits[i].distance >= best)
                     continue;
                 DMBuildingGhost candidate = hits[i].collider.GetComponentInParent<DMBuildingGhost>();
-                if (candidate == null || !candidate.Built)
+                if (candidate == null || !candidate.Built || IsAimThrough(candidate))
                     continue;
                 best = hits[i].distance;
                 ghost = candidate;
@@ -694,7 +721,7 @@ namespace Project.Building
         static bool CanAffordAndClear(DMBuildingPiece piece, Vector3 position, Quaternion rotation)
         {
             return piece != null
-                && DMBuildingCatalog.HasCost(piece)
+                && HasCostOrMoving(piece)
                 && PassesStructureAnchor(piece, position, rotation)
                 && !Overlaps(position, piece.Size, rotation, piece.Id);
         }
@@ -707,8 +734,12 @@ namespace Project.Building
             if (piece == null)
                 return false;
 
+            // 0926-rules: foundations connect edge to edge unless they start a new base.
+            if (DMBuildingCatalog.IsAnyFoundation(piece.Id))
+                return PassesFoundationRule(piece, position, rotation);
+
             if (!HasBuiltBase())
-                return DMBuildingCatalog.IsFoundation(piece.Id);
+                return false;
 
             return IsAnchoredToBuiltPiece(piece, position, rotation);
         }
@@ -1070,6 +1101,15 @@ namespace Project.Building
             }
         }
 
+        /// <summary>
+        /// 0927-gate-walls: the build aim looks through force fields (their solid box still stops bullets and people), so
+        /// aiming past a gate or door field lands on the foundation / wall behind it instead of the field's plane.
+        /// </summary>
+        static bool IsAimThrough(DMBuildingGhost ghost)
+        {
+            return ghost != null && DMBuildingCatalog.IsForceField(ghost.PieceId);
+        }
+
         static bool TryHitBuiltAlongRay(Ray ray, float maxDistance, out RaycastHit chosen)
         {
             chosen = default;
@@ -1087,6 +1127,8 @@ namespace Project.Building
                     continue;
                 if (DMBuildingCatalog.IsSurfaceItem(ghost.PieceId))
                     continue; // lights and decorations never anchor structure or other items
+                if (IsAimThrough(ghost))
+                    continue;
                 if (hits[i].distance >= best)
                     continue;
                 best = hits[i].distance;
@@ -1252,7 +1294,7 @@ namespace Project.Building
             if (camera == null)
                 return false;
 
-            Ray ray = camera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+            Ray ray = BuildAimRay(camera);
             RaycastHit[] hits = rayHits;
             int hitCount = Physics.RaycastNonAlloc(ray, rayHits, DMBuildingGhostProfile.AimDistanceMeters, DMBuildingLayers.AimMask, QueryTriggerInteraction.Ignore);
             float best = float.MaxValue;
@@ -2109,6 +2151,8 @@ namespace Project.Building
         /// <summary>Save load (0926): removes every placed piece without refunds so the saved set replaces it.</summary>
         public static void ClearAllPieces()
         {
+            TryCancelMove(); // 0926-move
+            SetMoveHover(null);
             DMBuildingGhost[] ghosts = DMBuildingGhost.Snapshot();
             for (int i = 0; i < ghosts.Length; i++)
             {
@@ -2145,6 +2189,7 @@ namespace Project.Building
             marker.PaidItem = paid;
             marker.Built = true;
             marker.LocalHalfExtents = piece.Size * 0.5f;
+            marker.BuildOrder = DMBuildingGhost.NextBuildOrder();
             bool isDoor = DMBuildingCatalog.IsDoor(piece.Id);
             DMBuildingStyleLibrary style = DMBuildingCatalog.StyleOf(piece.Id);
             DMBuildingMaterialVariant variant = !isDoor && style != null ? style.FirstFinish() : null;
@@ -2152,8 +2197,21 @@ namespace Project.Building
             if (!isDoor && !string.IsNullOrEmpty(materialVariantId))
                 marker.MaterialVariantId = materialVariantId;
 
-            if (isDoor && ghostObject.GetComponent<DMBuildingDoor>() == null)
+            // 0926-force-fields: force field pieces open for the player and companions; regular doors still swing.
+            if (isDoor && DMBuildingCatalog.IsForceField(piece.Id))
+            {
+                if (ghostObject.GetComponent<DMForceField>() == null)
+                    ghostObject.AddComponent<DMForceField>();
+            }
+            else if (isDoor && ghostObject.GetComponent<DMBuildingDoor>() == null)
                 ghostObject.AddComponent<DMBuildingDoor>();
+
+            // 0926-storage-crate: each built crate keeps its own contents, keyed by where it stands.
+            Project.Storage.DMStorageCrate crate = ghostObject.GetComponentInChildren<Project.Storage.DMStorageCrate>(true);
+            if (crate != null)
+                crate.AssignCrateId(BuiltCrateId(position));
+
+            AttachPoweredParts(ghostObject, piece);
 
             if (piece.Snap == DMBuildingSnap.Surface)
             {
@@ -2162,6 +2220,7 @@ namespace Project.Building
             }
 
             ApplyBuiltMaterial(marker);
+            EnsurePoweredLights(ghostObject, piece); // 0927-power-lights: placement and save load both come through here
             InvalidateBuiltGhostCache();
             DMBuildingLayers.EnsureWorldMasks();
             return marker;
@@ -2191,12 +2250,29 @@ namespace Project.Building
             if (ghost == null)
                 return;
 
+            // 0926-material-override: a part's override material wins over the prefab's own and the style finish.
+            DMBuildingPiece overridden = DMBuildingCatalog.Find(ghost.PieceId);
+            if (overridden != null && overridden.MaterialOverride != null && !DMBuildingCatalog.IsForceField(ghost.PieceId))
+            {
+                ApplyOverrideMaterial(ghost.gameObject, overridden.MaterialOverride);
+                return;
+            }
+
             // Library: custom and surface prefabs can keep their own materials.
             if (KeepsPrefabMaterials(ghost.PieceId))
                 return;
 
             DMBuildingStyleLibrary style = DMBuildingCatalog.StyleOf(ghost.PieceId);
             Material finished = null;
+            if (DMBuildingCatalog.IsForceField(ghost.PieceId))
+            {
+                // 0926-force-fields: keep the field material instead of painting a door finish.
+                DMForceField field = ghost.GetComponent<DMForceField>();
+                if (field != null)
+                    field.ApplyLook();
+                return;
+            }
+
             if (DMBuildingCatalog.IsDoor(ghost.PieceId))
                 finished = style != null ? style.doorMaterial : null;
             else
@@ -2213,6 +2289,30 @@ namespace Project.Building
                 ApplyTint(ghost.gameObject, SolidMaterial(), keepGlass: false);
 
             PaintPanes(ghost.gameObject, style != null && style.glassMaterial != null ? style.glassMaterial : GlassMaterial());
+        }
+
+        /// <summary>Every submesh gets the override; glass panes keep the style glass.</summary>
+        static void ApplyOverrideMaterial(GameObject target, Material material)
+        {
+            DMBuildingStyleLibrary style = null;
+            DMBuildingGhost ghost = target.GetComponent<DMBuildingGhost>();
+            if (ghost != null)
+                style = DMBuildingCatalog.StyleOf(ghost.PieceId);
+            Renderer[] renderers = target.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer r = renderers[i];
+                if (r == null || r is ParticleSystemRenderer || r.gameObject.name == "GlassPane")
+                    continue;
+                Material[] mats = r.sharedMaterials;
+                int count = Mathf.Max(1, mats.Length);
+                var next = new Material[count];
+                for (int m = 0; m < count; m++)
+                    next[m] = material;
+                r.sharedMaterials = next;
+            }
+
+            PaintPanes(target, style != null && style.glassMaterial != null ? style.glassMaterial : GlassMaterial());
         }
 
         static bool KeepsPrefabMaterials(string pieceId)
@@ -2321,11 +2421,37 @@ namespace Project.Building
                 if (attached == null || attached == ghost || attached.Host != ghost)
                     continue;
                 DMBuildingCatalog.Refund(attached.PaidItem, attached.Cost, attached.PieceId);
+                ReleaseBuiltCrate(attached);
+                ReleaseGenerator(attached);
                 Destroy(attached.gameObject);
             }
 
+            ReleaseBuiltCrate(ghost);
+            ReleaseGenerator(ghost);
             InvalidateBuiltGhostCache();
             Destroy(ghost.gameObject);
+        }
+
+        static string BuiltCrateId(Vector3 p)
+        {
+            return "built_crate_" + Mathf.RoundToInt(p.x * 4f) + "_" + Mathf.RoundToInt(p.y * 4f) + "_" + Mathf.RoundToInt(p.z * 4f);
+        }
+
+        /// <summary>0926-storage-crate: a destroyed built crate empties into the player's inventory.</summary>
+        static void ReleaseBuiltCrate(DMBuildingGhost ghost)
+        {
+            Project.Storage.DMStorageCrate crate = ghost != null ? ghost.GetComponentInChildren<Project.Storage.DMStorageCrate>(true) : null;
+            if (crate == null || !crate.IsBuiltCrate)
+                return;
+
+            System.Collections.Generic.List<Project.Storage.CrateSlot> contents = Project.Storage.DMStorageCrateRuntime.Release(crate.CrateId);
+            if (contents.Count == 0)
+                return;
+            var inventory = DMBuildingCatalog.Inventory(true);
+            if (inventory == null)
+                return;
+            for (int i = 0; i < contents.Count; i++)
+                inventory.AddItem(contents[i].item, contents[i].amount, false);
         }
 
         static void ApplyTint(GameObject target, Material material, bool keepGlass)

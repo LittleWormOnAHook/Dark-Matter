@@ -471,7 +471,7 @@ namespace Project.UI
             return boundItemActions;
         }
 
-        private void HandleInvClick(int slotIndex, int button, Vector2 pointerPanelPosition)
+        public void HandleInvClick(int slotIndex, int button, Vector2 pointerPanelPosition)
         {
             if (boundInventory == null)
                 boundInventory = FindAnyObjectByType<InventorySystem>();

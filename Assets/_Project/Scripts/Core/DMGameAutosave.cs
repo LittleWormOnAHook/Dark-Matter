@@ -1,3 +1,4 @@
+using System.Collections;
 using Project.UI;
 using UnityEngine;
 
@@ -8,6 +9,9 @@ namespace Project.Core
     {
         private static DMGameAutosave instance;
         private float elapsed;
+        private bool autosavePending;
+        // Last autosave capture taken with no menu/pause on screen; reused if an autosave fires while a menu is open.
+        private Texture2D lastCleanCapture;
 
         public static void EnsureExists()
         {
@@ -52,6 +56,7 @@ namespace Project.Core
 
         private void OnDestroy()
         {
+            ClearLastCleanCapture();
             if (instance == this)
                 instance = null;
         }
@@ -59,6 +64,7 @@ namespace Project.Core
         private void HandleGameStarted()
         {
             elapsed = 0f;
+            ClearLastCleanCapture();
         }
 
         private void Update()
@@ -71,8 +77,65 @@ namespace Project.Core
                 return;
 
             elapsed = 0f;
-            if (GameSaveSystem.TryAutosave(out string message))
+            if (!autosavePending)
+                StartCoroutine(AutosaveAfterFrame());
+        }
+
+        private IEnumerator AutosaveAfterFrame()
+        {
+            autosavePending = true;
+            // Capture after rendering, same as the manual Save screen's preview grab.
+            yield return new WaitForEndOfFrame();
+            autosavePending = false;
+
+            if (!GameSession.HasStarted)
+                yield break;
+
+            Texture2D screenshot = ResolveAutosaveScreenshot();
+            if (GameSaveSystem.TryAutosave(screenshot, out string message))
                 Debug.Log("DMGameAutosave: " + message);
+        }
+
+        private Texture2D ResolveAutosaveScreenshot()
+        {
+            if (IsGameplayViewClean())
+            {
+                Texture2D capture = SaveSlotScreenshotUtility.CaptureGameplayScreenshot();
+                if (capture != null)
+                {
+                    ClearLastCleanCapture();
+                    lastCleanCapture = capture;
+                }
+            }
+
+            // Menu open: reuse the last clean gameplay frame (may be null -> slot keeps its previous preview).
+            return lastCleanCapture;
+        }
+
+        private static bool IsGameplayViewClean()
+        {
+            if (LoadingOverlayController.IsBlockingMenu || Time.timeScale <= 0.01f)
+                return false;
+
+            if (MainMenuController.PauseOverlayBlocksGameplay()
+                || DMUiToolkitMainMenu.IsVisible
+                || DMUiToolkitMenuPanels.IsAnySubPanelOpen)
+                return false;
+
+            return !DMUiToolkitMenus.IsOpen
+                && !DMUiToolkitWorldMenus.IsAnyModalOpen
+                && !DMUiToolkitDeath.IsOpen
+                && !DMUiToolkitVendor.IsOpen
+                && !DMUiToolkitCraft.IsOpen
+                && !DMUiToolkitCrate.IsOpen
+                && !DMUiToolkitDialogue.IsOpen;
+        }
+
+        private void ClearLastCleanCapture()
+        {
+            if (lastCleanCapture != null)
+                Destroy(lastCleanCapture);
+            lastCleanCapture = null;
         }
     }
 }

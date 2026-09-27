@@ -1,4 +1,5 @@
 using Invector.vCharacterController;
+using Project.Building;
 using Project.Combat;
 using Project.Core;
 using Project.Features.Jetpack;
@@ -105,7 +106,7 @@ namespace Project.Player.Invector
         {
             bool lockLocomotion = ShouldLockLocomotionInput();
             bool lockCombat = lockLocomotion || _combatBlockedByUiPointer;
-            bool lockWeaponFire = lockCombat || BlocksWeaponFireForGrenade;
+            bool lockWeaponFire = lockCombat || BlocksWeaponFireForGrenade || DMBuildingMode.IsActive;
             input.SetLockBasicInput(lockLocomotion);
             input.SetLockMeleeInput(lockWeaponFire);
             input.lockCameraInput = ShouldLockCameraInput();
@@ -130,7 +131,7 @@ namespace Project.Player.Invector
             if (_playerController.IsGameplayPaused || _playerController.BlocksCombatInput)
                 return true;
 
-            if (DMUiToolkitMenus.IsOpen)
+            if (DMUiToolkitMenus.IsOpen || DMUiToolkitVendor.IsOpen || DMUiToolkitCrate.IsOpen || Project.UI.DMUiToolkitGenerator.IsOpen)
                 return true;
 
             if (_survivalStats != null && _survivalStats.IsDead)
@@ -179,7 +180,7 @@ namespace Project.Player.Invector
             if (_playerController == null)
                 return false;
 
-            if (DMUiToolkitMenus.IsOpen)
+            if (DMUiToolkitMenus.IsOpen || DMUiToolkitVendor.IsOpen || DMUiToolkitCrate.IsOpen || Project.UI.DMUiToolkitGenerator.IsOpen)
                 return true;
 
             if (_playerController.IsGameplayPaused ||

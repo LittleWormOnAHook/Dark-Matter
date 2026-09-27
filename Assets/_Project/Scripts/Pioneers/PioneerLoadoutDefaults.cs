@@ -23,16 +23,16 @@ namespace Project.Pioneers
         {
             return pioneerClass switch
             {
-                SkilledPioneerClass.ArchitectEngineer => "weap2_sword",
-                SkilledPioneerClass.ScienceSpecialist => "weap2_sword",
+                SkilledPioneerClass.ArchitectEngineer => "2 Hander",
+                SkilledPioneerClass.ScienceSpecialist => "2 Hander",
                 SkilledPioneerClass.CombatTactician => "Sword of Fear",
                 SkilledPioneerClass.InfiltratorScout => "Spear of Fate",
-                SkilledPioneerClass.IoHybrid => "weap2_sword",
-                SkilledPioneerClass.MedTech => "weap2_sword",
-                SkilledPioneerClass.LogisticsOfficer => "weap2_sword",
+                SkilledPioneerClass.IoHybrid => "2 Hander",
+                SkilledPioneerClass.MedTech => "2 Hander",
+                SkilledPioneerClass.LogisticsOfficer => "2 Hander",
                 SkilledPioneerClass.SalvageEngineer => "Wood Axe",
-                SkilledPioneerClass.CommunicationsOfficer => "weap2_sword",
-                _ => "weap2_sword"
+                SkilledPioneerClass.CommunicationsOfficer => "2 Hander",
+                _ => "2 Hander"
             };
         }
 

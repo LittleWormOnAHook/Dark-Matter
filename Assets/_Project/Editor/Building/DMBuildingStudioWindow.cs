@@ -91,6 +91,8 @@ namespace Project.EditorTools.Building
                 EditorUtility.SetDirty(profile);
                 AssetDatabase.SaveAssets();
             }
+
+            DMStudioStyles.DrawSection(null, DMStudioStyles.ContentPanel, DrawBuildHubTestSection);
         }
 
         void DrawPreviewGhostSection()
@@ -181,6 +183,73 @@ namespace Project.EditorTools.Building
             profile.aimDistanceMeters = EditorGUILayout.FloatField("Aim distance (m)", profile.aimDistanceMeters);
             profile.doorSeatDropMeters = EditorGUILayout.FloatField("Door seat drop (m)", profile.doorSeatDropMeters);
             profile.overlapPaddingMeters = EditorGUILayout.FloatField("Overlap padding (m)", profile.overlapPaddingMeters);
+            profile.newBaseClearanceMeters = EditorGUILayout.FloatField(new GUIContent("New base clearance (m)", "A foundation may stand alone only when no foundation is within this distance. 0 = only the very first foundation in the world."), profile.newBaseClearanceMeters);
+
+            EditorGUILayout.Space(4f);
+            EditorGUILayout.LabelField("Base power (generator)", EditorStyles.boldLabel);
+            profile.basePowerSquareMeters = EditorGUILayout.FloatField(new GUIContent("Base power square (m)", "Side of the powered square around a base, centred on its first placed foundation. Equipment can stand on the ground inside it."), profile.basePowerSquareMeters);
+            profile.generatorFuelRangeMeters = EditorGUILayout.FloatField(new GUIContent("Fuel crate range (m)", "Refuelling reaches Plasma Fuel in storage crates within this distance of the generator."), profile.generatorFuelRangeMeters);
+            profile.generatorTankUnits = EditorGUILayout.IntField(new GUIContent("Tank capacity (units)", "1 Plasma Fuel = 1 unit."), profile.generatorTankUnits);
+            profile.generatorMinutesPerUnit = EditorGUILayout.FloatField(new GUIContent("Minutes per fuel unit", "Gameplay minutes one unit lasts."), profile.generatorMinutesPerUnit);
+            profile.powerLoadPeriodMinutes = EditorGUILayout.FloatField(new GUIContent("Load period (minutes)", "Each powered item and force field in the base adds its units once per period on top of the base burn."), profile.powerLoadPeriodMinutes);
+            profile.poweredItemUnitsPerPeriod = EditorGUILayout.FloatField(new GUIContent("Powered item load (units)", "Extra fuel per load period for each light or powered item."), profile.poweredItemUnitsPerPeriod);
+            profile.forceFieldUnitsPerPeriod = EditorGUILayout.FloatField(new GUIContent("Force field load (units)", "Extra fuel per load period for each force field."), profile.forceFieldUnitsPerPeriod);
+            profile.forceFieldsNeedPower = EditorGUILayout.Toggle(new GUIContent("Force fields need power", "Unpowered force fields shut off and anyone can walk through."), profile.forceFieldsNeedPower);
+            profile.lightsNeedPower = EditorGUILayout.Toggle(new GUIContent("Lights need power", "Lights on built pieces go dark with no powered generator."), profile.lightsNeedPower);
+
+            // 0926-build-hub
+            EditorGUILayout.Space(4f);
+            EditorGUILayout.LabelField("Build Hub zone", EditorStyles.boldLabel);
+            profile.requireBuildHub = EditorGUILayout.Toggle(new GUIContent("Require Build Hub", "Every piece except the Build Hub must stand fully inside a Build Hub zone. Off = build anywhere (testing)."), profile.requireBuildHub);
+            profile.buildHubZoneMeters = EditorGUILayout.FloatField(new GUIContent("Zone width / depth (m)", "X and Z size of a level 0 zone, centred on the hub."), profile.buildHubZoneMeters);
+            profile.buildHubZoneHeightMeters = EditorGUILayout.FloatField(new GUIContent("Zone height (m)", "Y size of a level 0 zone, centred on the hub (half above, half below)."), profile.buildHubZoneHeightMeters);
+            profile.buildHubZoneStepMeters = EditorGUILayout.FloatField(new GUIContent("Width step per level (m)", "Added to the zone width and depth per upgrade level."), profile.buildHubZoneStepMeters);
+            profile.buildHubZoneHeightStepMeters = EditorGUILayout.FloatField(new GUIContent("Height step per level (m)", "Added to the zone height per upgrade level."), profile.buildHubZoneHeightStepMeters);
+            profile.buildHubMaxLevel = EditorGUILayout.IntField(new GUIContent("Max upgrade level", "Highest Build Hub upgrade level."), profile.buildHubMaxLevel);
+            profile.buildHubZoneMustBeClear = EditorGUILayout.Toggle(new GUIContent("Zone must be clear", "A hub's whole zone must be free of colliders except terrain (characters, creatures, items and built pieces are ignored; triggers count). Also checked on upgrade."), profile.buildHubZoneMustBeClear);
+
+            EditorGUILayout.Space(4f);
+            EditorGUILayout.LabelField("Patrol paths", EditorStyles.boldLabel);
+            profile.blockPatrolPaths = EditorGUILayout.Toggle(new GUIContent("Block patrol paths", "Pieces may not be built on or across creature / pet patrol paths (DMIPathFollowProvider)."), profile.blockPatrolPaths);
+            profile.patrolPathClearanceMeters = EditorGUILayout.FloatField(new GUIContent("Path clearance (m)", "The ghost bounds grow by this much before the patrol path test."), profile.patrolPathClearanceMeters);
+            profile.patrolPathHeightToleranceMeters = EditorGUILayout.FloatField(new GUIContent("Path height tolerance (m)", "Extra vertical slack for the patrol path test (path points rarely sit exactly on the ground)."), profile.patrolPathHeightToleranceMeters);
+        }
+
+        /// <summary>0926-build-hub: play-mode test buttons for Build Hub upgrade levels (no crafting recipes yet).</summary>
+        void DrawBuildHubTestSection()
+        {
+            EditorGUILayout.LabelField("Build Hub test (play mode)", EditorStyles.boldLabel);
+            int hubs = Application.isPlaying ? DMBuildHub.Active.Count : 0;
+            EditorGUILayout.LabelField("Hubs in world", Application.isPlaying ? hubs.ToString() : "- (enter play mode)");
+            using (new EditorGUI.DisabledScope(hubs == 0))
+            {
+                EditorGUILayout.BeginHorizontal();
+                if (GUILayout.Button("Upgrade all hubs (+1)"))
+                {
+                    for (int i = 0; i < DMBuildHub.Active.Count; i++)
+                    {
+                        if (DMBuildHub.Active[i] != null)
+                            DMBuildHub.Active[i].Upgrade();
+                    }
+                }
+                if (GUILayout.Button("Reset hubs to level 0"))
+                {
+                    for (int i = 0; i < DMBuildHub.Active.Count; i++)
+                    {
+                        if (DMBuildHub.Active[i] != null)
+                            DMBuildHub.Active[i].SetLevel(0);
+                    }
+                }
+                EditorGUILayout.EndHorizontal();
+                for (int i = 0; i < DMBuildHub.Active.Count && Application.isPlaying; i++)
+                {
+                    DMBuildHub hub = DMBuildHub.Active[i];
+                    if (hub == null)
+                        continue;
+                    Vector3 size = hub.ZoneSize;
+                    EditorGUILayout.LabelField(hub.name, "Level " + hub.UpgradeLevel + "  (" + size.x.ToString("0") + " x " + size.y.ToString("0") + " x " + size.z.ToString("0") + " m)");
+                }
+            }
         }
 
         void DrawDoorSection()
@@ -252,12 +321,63 @@ namespace Project.EditorTools.Building
                     Prop("swapDuration", "Duration (s)");
                 }
             });
+            DrawForceFields();
 
             if (fxSerialized.ApplyModifiedProperties())
             {
                 EditorUtility.SetDirty(fxProfile);
                 AssetDatabase.SaveAssetIfDirty(fxProfile);
             }
+        }
+
+        // 0926-force-fields: material, colour, audio and behaviour for every force field door.
+        void DrawForceFields()
+        {
+            DMStudioStyles.DrawSection(null, DMStudioStyles.ContentPanel, () =>
+            {
+                EditorGUILayout.LabelField("Force fields: look", EditorStyles.boldLabel);
+                EditorGUILayout.HelpBox(
+                    "Force Field Door, Double Force Field Door, Force Field Gate and Force Field Hatch. They seat in the same frames as doors, "
+                    + "stop bullets, enemies and weather, and open for the player and companions. Changes show live on placed fields.",
+                    MessageType.None);
+                Prop("forceFieldMaterial", "Material (empty = default)");
+                Prop("forceFieldColor", "Colour");
+                Prop("forceFieldEdgeColor", "Edge / ripple colour");
+                Prop("forceFieldOpacity", "Idle opacity");
+                Prop("forceFieldEdgeGlow", "Edge glow");
+                Prop("forceFieldEdgeWidth", "Edge width");
+                Prop("forceFieldPatternScale", "Pattern scale");
+                Prop("forceFieldScrollSpeed", "Pattern speed");
+            });
+            DMStudioStyles.DrawSection(null, DMStudioStyles.ContentPanel, () =>
+            {
+                EditorGUILayout.LabelField("Force fields: pass-through shimmer", EditorStyles.boldLabel);
+                Prop("forceFieldPulseBrightness", "Flash brightness");
+                Prop("forceFieldPulseSeconds", "Flash / ripple time (s)");
+                Prop("forceFieldRippleSpeed", "Ripple speed (m/s)");
+                Prop("forceFieldRippleWidth", "Ripple width (m)");
+            });
+            DMStudioStyles.DrawSection(null, DMStudioStyles.ContentPanel, () =>
+            {
+                EditorGUILayout.LabelField("Force fields: audio", EditorStyles.boldLabel);
+                Prop("forceFieldPassClip", "Pass sound (empty = crackle)");
+                Prop("forceFieldPassVolume", "Pass volume");
+                Prop("forceFieldPitchJitter", "Pitch variation");
+                Prop("forceFieldSoundCooldown", "Sound cooldown (s)");
+                Prop("forceFieldAudioMaxDistance", "Hearing distance (m)");
+                Prop("forceFieldIdleHumClip", "Idle hum (empty = generated)");
+                Prop("forceFieldIdleHumVolume", "Idle hum volume (0 = off)");
+            });
+            DMStudioStyles.DrawSection(null, DMStudioStyles.ContentPanel, () =>
+            {
+                EditorGUILayout.LabelField("Force fields: behaviour", EditorStyles.boldLabel);
+                Prop("forceFieldLetFriendliesThrough", "Let player and companions through");
+                using (new EditorGUI.DisabledScope(!fxProfile.forceFieldLetFriendliesThrough))
+                {
+                    Prop("forceFieldSenseDepthMeters", "Open distance (m)");
+                    Prop("forceFieldCloseDelaySeconds", "Close delay (s)");
+                }
+            });
         }
 
         void Prop(string name, string label)

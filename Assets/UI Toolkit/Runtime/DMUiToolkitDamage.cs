@@ -6,7 +6,7 @@ namespace Project.UI
 {
     /// <summary>
     /// Screen-space UITK damage numbers tracking world positions.
-    /// DMUiToolkit 0901-finish
+    /// DMUiToolkit 0919-dot-rise
     /// </summary>
     [DefaultExecutionOrder(-367)]
     [DisallowMultipleComponent]
@@ -14,7 +14,9 @@ namespace Project.UI
     {
         private const float Lifetime = 1.4f;
         private const float FadeDuration = 0.45f;
-        private const float FloatSpeed = 0.75f;
+        private const float FloatSpeed = 0.85f;
+        private const float StartScale = 0.7f;
+        private const float EndScale = 1.55f;
 
         private static DMUiToolkitDamage instance;
 
@@ -158,6 +160,7 @@ namespace Project.UI
             {
                 Popup popup = popups[i];
                 popup.Elapsed += Time.deltaTime;
+                // Rise in world space; panel Y is top-down so we map via viewport (not ScreenToPanel).
                 popup.World += Vector3.up * FloatSpeed * Time.deltaTime;
 
                 if (popup.Elapsed >= Lifetime || popup.Label == null)
@@ -167,33 +170,43 @@ namespace Project.UI
                     continue;
                 }
 
-                if (camera == null)
+                if (camera == null || layer == null)
                     continue;
 
-                Vector3 screen = camera.WorldToScreenPoint(popup.World + popup.Drift);
-                if (screen.z <= 0f)
+                Vector3 viewport = camera.WorldToViewportPoint(popup.World + popup.Drift);
+                if (viewport.z <= 0.05f)
                 {
                     popup.Label.style.opacity = 0f;
                     continue;
                 }
 
-                if (popup.Label.panel != null)
+                Rect layout = layer.contentRect;
+                float w = layout.width;
+                float h = layout.height;
+                if (w < 1f || h < 1f)
                 {
-                    Vector2 panelPos = RuntimePanelUtils.ScreenToPanel(
-                        popup.Label.panel,
-                        new Vector2(screen.x, screen.y));
-                    popup.Label.style.left = panelPos.x - 60f;
-                    popup.Label.style.top = panelPos.y - 20f;
+                    w = layer.resolvedStyle.width;
+                    h = layer.resolvedStyle.height;
                 }
+
+                if (w >= 1f && h >= 1f)
+                {
+                    // Viewport Y is bottom-up; UITK Y is top-down — rising world => smaller top.
+                    float left = viewport.x * w - 60f;
+                    float top = (1f - viewport.y) * h - 20f;
+                    popup.Label.style.left = left;
+                    popup.Label.style.top = top;
+                }
+
+                float lifeT = Mathf.Clamp01(popup.Elapsed / Lifetime);
+                // Grow steadily while rising; keep large through fade-out.
+                float scale = Mathf.Lerp(StartScale, EndScale, lifeT);
+                popup.Label.style.scale = new Scale(new Vector3(scale, scale, 1f));
 
                 float fadeStart = Lifetime - FadeDuration;
                 popup.Label.style.opacity = popup.Elapsed >= fadeStart
                     ? 1f - ((popup.Elapsed - fadeStart) / FadeDuration)
                     : 1f;
-
-                float lifeT = Mathf.Clamp01(popup.Elapsed / Lifetime);
-                float scale = Mathf.Lerp(0.85f, 1.15f, 1f - Mathf.Abs(lifeT - 0.18f));
-                popup.Label.style.scale = new Scale(new Vector3(scale, scale, 1f));
             }
         }
 

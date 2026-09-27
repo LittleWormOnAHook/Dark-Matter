@@ -1,0 +1,179 @@
+﻿using Project.Crafting;
+using Project.Data;
+using Project.Inventory;
+using TMPro;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.UI;
+
+namespace Project.UI
+{
+    public class RecipeHoverTooltip : MonoBehaviour
+    {
+        private static RecipeHoverTooltip instance;
+
+        private RectTransform tooltipRect;
+        private TextMeshProUGUI titleText;
+        private TextMeshProUGUI bodyText;
+        private Vector2 screenOffset = new Vector2(18f, -18f);
+        private bool isVisible;
+
+        public static RecipeHoverTooltip Instance => instance;
+
+        private void OnDestroy()
+        {
+            if (instance == this)
+                instance = null;
+        }
+
+        public static void HideAny()
+        {
+            DMUiToolkitWorldMenus.HideJournalTip();
+            if (instance == null)
+                return;
+
+            instance.Hide();
+        }
+
+        public static RecipeHoverTooltip EnsureExists(Transform canvasRoot)
+        {
+            if (instance != null)
+                return instance;
+
+            GameObject host = new GameObject("BlueprintHoverTooltip", typeof(RectTransform));
+            host.transform.SetParent(canvasRoot, false);
+            RecipeHoverTooltip tooltip = host.AddComponent<RecipeHoverTooltip>();
+            tooltip.Build();
+            instance = tooltip;
+            return instance;
+        }
+
+        private void Build()
+        {
+            tooltipRect = transform as RectTransform;
+            tooltipRect.pivot = new Vector2(0f, 1f);
+
+            GameObject panel = new GameObject("Panel", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter), typeof(LayoutElement));
+            panel.transform.SetParent(transform, false);
+
+            Image panelImage = panel.GetComponent<Image>();
+            MenuUiBuilder.ApplyUiSprite(panelImage);
+            panelImage.color = new Color(0.06f, 0.07f, 0.1f, 0.96f);
+            panelImage.raycastTarget = false;
+
+            RectTransform panelRect = panel.GetComponent<RectTransform>();
+            panelRect.anchorMin = new Vector2(0f, 1f);
+            panelRect.anchorMax = new Vector2(0f, 1f);
+            panelRect.pivot = new Vector2(0f, 1f);
+            panelRect.anchoredPosition = Vector2.zero;
+
+            VerticalLayoutGroup layout = panel.GetComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(14, 14, 12, 12);
+            layout.spacing = 8;
+            layout.childAlignment = TextAnchor.UpperLeft;
+            layout.childControlWidth = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+
+            ContentSizeFitter fitter = panel.GetComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            LayoutElement panelLayout = panel.GetComponent<LayoutElement>();
+            panelLayout.minWidth = 220f;
+            panelLayout.preferredWidth = 280f;
+
+            GameObject titleObject = new GameObject("Title", typeof(RectTransform));
+            titleObject.transform.SetParent(panel.transform, false);
+            titleText = titleObject.AddComponent<TextMeshProUGUI>();
+            TmpUiHelper.ApplyDefaultFont(titleText);
+            titleText.fontSize = 22f;
+            titleText.fontStyle = FontStyles.Bold;
+            titleText.color = Color.white;
+            titleText.raycastTarget = false;
+            titleText.textWrappingMode = TextWrappingModes.Normal;
+
+            GameObject bodyObject = new GameObject("Body", typeof(RectTransform));
+            bodyObject.transform.SetParent(panel.transform, false);
+            bodyText = bodyObject.AddComponent<TextMeshProUGUI>();
+            TmpUiHelper.ApplyDefaultFont(bodyText);
+            bodyText.fontSize = 16f;
+            bodyText.color = new Color(0.88f, 0.9f, 0.94f, 1f);
+            bodyText.raycastTarget = false;
+            bodyText.richText = true;
+            bodyText.textWrappingMode = TextWrappingModes.Normal;
+
+            tooltipRect = panelRect;
+            gameObject.SetActive(false);
+        }
+
+        public void Show(RecipeDefinition recipe, InventorySystem inventory, Vector2 screenPosition, bool pendingScroll = false)
+        {
+            if (recipe == null)
+            {
+                Hide();
+                return;
+            }
+
+            if (DMUiToolkitWorldMenus.TryShowRecipeTooltip(recipe, screenPosition, pendingScroll, inventory))
+            {
+                isVisible = false;
+                if (gameObject != null)
+                    gameObject.SetActive(false);
+                return;
+            }
+
+            ItemHoverTooltip.HideAny();
+            titleText.text = RecipeTooltipFormatter.BuildTitle(recipe);
+            bodyText.text = pendingScroll
+                ? RecipeTooltipFormatter.BuildScrollBody(recipe)
+                : RecipeTooltipFormatter.BuildBody(recipe, inventory);
+
+            gameObject.SetActive(true);
+            transform.SetAsLastSibling();
+            isVisible = true;
+
+            Canvas canvas = GetComponentInParent<Canvas>();
+            if (canvas != null)
+                UiFrontLayer.ReparentToFront(transform, canvas.transform);
+
+            SetScreenPosition(screenPosition);
+        }
+
+        public void Hide()
+        {
+            if (this == null)
+                return;
+
+            isVisible = false;
+
+            if (gameObject != null)
+                gameObject.SetActive(false);
+        }
+
+        private void LateUpdate()
+        {
+            if (!isVisible)
+                return;
+
+            SetScreenPosition(GetPointerScreenPosition());
+        }
+
+        private static Vector2 GetPointerScreenPosition()
+        {
+            if (Mouse.current != null)
+                return Mouse.current.position.ReadValue();
+
+            return Input.mousePosition;
+        }
+
+        private void SetScreenPosition(Vector2 screenPosition)
+        {
+            if (tooltipRect == null)
+                return;
+
+            tooltipRect.position = screenPosition + screenOffset;
+            ItemHoverTooltip.ClampTooltipToScreen(tooltipRect);
+        }
+    }
+}

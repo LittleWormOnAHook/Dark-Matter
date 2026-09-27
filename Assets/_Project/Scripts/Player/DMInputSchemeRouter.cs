@@ -1,14 +1,15 @@
-using Invector.vCharacterController;
+using global::Invector.vCharacterController;
 using Project.Core;
 using Project.Features.Locomotion;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using InvInputDevice = global::Invector.vCharacterController.InputDevice;
 
-namespace Project.Player.Invector
+namespace Project.Player
 {
     /// <summary>
-    /// Tracks Keyboard&amp;Mouse vs Gamepad and applies Invector GenericInput mute/unmute.
-    /// stamp: controller-scheme-router 0920 — Anthony Ctrl+R verify.
+    /// Tracks Keyboard&Mouse vs Gamepad and applies Invector GenericInput mute/unmute.
+    /// stamp: controller-scheme-router 0920f — safe scheme switch (no Invalid user spam).
     /// </summary>
     [DefaultExecutionOrder(-270)]
     [DisallowMultipleComponent]
@@ -17,14 +18,15 @@ namespace Project.Player.Invector
     {
         public const string GamepadScheme = "Gamepad";
         public const string KeyboardMouseScheme = "Keyboard&Mouse";
-        public const string Stamp = "controller-scheme-router 0920";
+        public const string Stamp = "controller-scheme-router 0920f";
 
         private static DMInputSchemeRouter instance;
 
         private PlayerInput playerInput;
-        private PioneerShooterMeleeInput shooterInput;
+        private vThirdPersonInput shooterInput;
         private bool gamepadSchemeActive;
         private bool stampedLog;
+        private float nextSchemeSwitchTime;
 
         public static DMInputSchemeRouter Instance => instance;
 
@@ -33,10 +35,13 @@ namespace Project.Player.Invector
 
         public static bool IsKeyboardMouseScheme => !IsGamepadScheme;
 
+        /// <summary>Instance mirror of <see cref="IsGamepadScheme"/> for Controls / UI hosts.</summary>
+        public bool IsGamepad => gamepadSchemeActive;
+
         private void Awake()
         {
             playerInput = GetComponent<PlayerInput>();
-            shooterInput = GetComponent<PioneerShooterMeleeInput>();
+            shooterInput = GetComponent<vThirdPersonInput>();
         }
 
         private void OnEnable()
@@ -75,32 +80,69 @@ namespace Project.Player.Invector
 
         private void PromoteKeyboardMouseOnLocalActivity()
         {
-            if (playerInput == null || playerInput.currentControlScheme == KeyboardMouseScheme)
+            if (playerInput == null)
                 return;
 
-            if (!DetectKeyboardMouseActivity())
+            if (playerInput.currentControlScheme == KeyboardMouseScheme)
                 return;
 
-            playerInput.SwitchCurrentControlScheme(KeyboardMouseScheme);
+            // While on gamepad: only deliberate KBM (key / mouse button), not tiny mouse delta —
+            // residual pointer motion must not yank the scheme and brick pad InputUser.
+            if (!DetectDeliberateKeyboardMouse())
+                return;
+
+            if (Time.unscaledTime < nextSchemeSwitchTime)
+                return;
+
+            nextSchemeSwitchTime = Time.unscaledTime + 0.35f;
+            TrySwitchScheme(KeyboardMouseScheme, Keyboard.current, Mouse.current);
         }
 
-        private static bool DetectKeyboardMouseActivity()
+        private static bool DetectDeliberateKeyboardMouse()
         {
             Mouse mouse = Mouse.current;
             if (mouse != null)
             {
-                if (mouse.delta.ReadValue().sqrMagnitude > 0.25f)
-                    return true;
-
                 if (mouse.leftButton.wasPressedThisFrame
                     || mouse.rightButton.wasPressedThisFrame
-                    || mouse.middleButton.wasPressedThisFrame
-                    || mouse.scroll.ReadValue().sqrMagnitude > 0.01f)
+                    || mouse.middleButton.wasPressedThisFrame)
                     return true;
             }
 
             Keyboard keyboard = Keyboard.current;
             return keyboard != null && keyboard.anyKey.wasPressedThisFrame;
+        }
+
+        private void TrySwitchScheme(string scheme, params UnityEngine.InputSystem.InputDevice[] devices)
+        {
+            if (playerInput == null || string.IsNullOrEmpty(scheme))
+                return;
+
+            // PlayerInput with no valid user throws InvalidOperationException and breaks pad.
+            try
+            {
+                if (!playerInput.user.valid)
+                    return;
+
+                System.Collections.Generic.List<UnityEngine.InputSystem.InputDevice> list = new System.Collections.Generic.List<UnityEngine.InputSystem.InputDevice>(4);
+                if (devices != null)
+                {
+                    for (int i = 0; i < devices.Length; i++)
+                    {
+                        if (devices[i] != null)
+                            list.Add(devices[i]);
+                    }
+                }
+
+                if (list.Count == 0)
+                    return;
+
+                playerInput.SwitchCurrentControlScheme(scheme, list.ToArray());
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"[DMInputSchemeRouter] scheme switch skipped: {ex.Message}");
+            }
         }
 
         private void RefreshScheme(bool force)
@@ -123,9 +165,9 @@ namespace Project.Player.Invector
             gamepadSchemeActive = gamepad;
 
             if (shooterInput == null)
-                shooterInput = GetComponent<PioneerShooterMeleeInput>();
+                shooterInput = GetComponent<vThirdPersonInput>();
 
-            PioneerInvectorGenericInputGate.ApplyGamepadMute(shooterInput, gamepad);
+            Project.Player.Invector.PioneerInvectorGenericInputGate.ApplyGamepadMute(shooterInput, gamepad);
             SyncInvectorInputDevice(gamepad);
 
             if (!gamepad)
@@ -146,10 +188,9 @@ namespace Project.Player.Invector
             if (vInput.instance == null)
                 return;
 
-            // Gamepad scheme still uses Joystick sensitivity multipliers for RotateCamera stick look.
             vInput.instance.inputDevice = gamepadScheme
-                ? InputDevice.Joystick
-                : InputDevice.MouseKeyboard;
+                ? InvInputDevice.Joystick
+                : InvInputDevice.MouseKeyboard;
         }
     }
 }

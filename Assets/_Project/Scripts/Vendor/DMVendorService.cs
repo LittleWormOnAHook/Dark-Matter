@@ -155,7 +155,8 @@ namespace Project.Vendor
                 return false;
             }
 
-            int added = inventory.AddItem(item, qty);
+            // Purchases land in the backpack. World pickups use AddItem, which fills weapon slots first.
+            int added = inventory.AddItemToMainInventory(item, qty);
             if (added < qty)
             {
                 if (added > 0)

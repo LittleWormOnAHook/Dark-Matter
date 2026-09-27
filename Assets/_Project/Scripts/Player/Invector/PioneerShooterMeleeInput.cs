@@ -76,7 +76,8 @@ namespace Project.Player.Invector
         private bool _buildLookRaised;
         private float _savedLookUpLimit;
         private float _savedLookDownLimit;
-
+        private float _savedBuildZoom = -1f;
+        private float _savedBuildZoomMax = -1f;
         protected override void Start()
         {
             base.Start();
@@ -698,16 +699,30 @@ namespace Project.Player.Invector
                 {
                     _savedLookUpLimit = tpCamera.lerpState.yMinLimit;
                     _savedLookDownLimit = tpCamera.lerpState.yMaxLimit;
+                    _savedBuildZoom = tpCamera.CurrentZoom > 0.01f ? tpCamera.CurrentZoom : GetPreferredZoom();
+                    _savedBuildZoomMax = tpCamera.lerpState.maxDistance;
                     if (_savedLookUpLimit > -5f)
                         _savedLookUpLimit = -40f;
                     if (_savedLookDownLimit < 5f)
                         _savedLookDownLimit = 80f;
                     _buildLookRaised = true;
+
+                    float cameraMul = Project.Building.DMBuildingGhostProfile.BuildModeCameraDistanceMultiplier;
+                    float cameraExtra = Project.Building.DMBuildingGhostProfile.BuildModeCameraExtraMeters;
+                    float zoom = Mathf.Clamp(
+                        Mathf.Max(_savedBuildZoom * cameraMul, _savedBuildZoom + cameraExtra),
+                        _savedBuildZoom,
+                        _savedBuildZoomMax > 0.01f ? _savedBuildZoomMax : MaxCamDistance);
+                    float zoomMax = Mathf.Max(_savedBuildZoomMax > 0.01f ? _savedBuildZoomMax : MaxCamDistance, zoom);
+                    tpCamera.lerpState.maxDistance = zoomMax;
+                    if (tpCamera.currentState != null)
+                        tpCamera.currentState.maxDistance = zoomMax;
+                    tpCamera.ForceSetZoomDistance(zoom);
                 }
 
-                float extra = Project.Building.DMBuildingGhostProfile.BuildLookUpDegrees;
-                float lookUp = Mathf.Max(-89f, _savedLookUpLimit - extra);
-                float lookDown = Mathf.Min(89f, _savedLookDownLimit + extra);
+                float lookExtra = Project.Building.DMBuildingGhostProfile.BuildLookUpDegrees;
+                float lookUp = Mathf.Max(-89f, _savedLookUpLimit - lookExtra);
+                float lookDown = Mathf.Min(89f, _savedLookDownLimit + lookExtra);
                 tpCamera.lerpState.yMinLimit = lookUp;
                 tpCamera.lerpState.yMaxLimit = lookDown;
                 if (tpCamera.currentState != null)
@@ -736,12 +751,20 @@ namespace Project.Player.Invector
             {
                 tpCamera.currentState.yMinLimit = _savedLookUpLimit;
                 tpCamera.currentState.yMaxLimit = _savedLookDownLimit;
+                if (_savedBuildZoomMax > 0.01f)
+                    tpCamera.currentState.maxDistance = _savedBuildZoomMax;
             }
             if (tpCamera.lerpState != null)
             {
                 tpCamera.lerpState.yMinLimit = _savedLookUpLimit;
                 tpCamera.lerpState.yMaxLimit = _savedLookDownLimit;
+                if (_savedBuildZoomMax > 0.01f)
+                    tpCamera.lerpState.maxDistance = _savedBuildZoomMax;
             }
+            if (_savedBuildZoom > 0.01f)
+                tpCamera.ForceSetZoomDistance(_savedBuildZoom);
+            _savedBuildZoom = -1f;
+            _savedBuildZoomMax = -1f;
             _buildLookRaised = false;
         }
 

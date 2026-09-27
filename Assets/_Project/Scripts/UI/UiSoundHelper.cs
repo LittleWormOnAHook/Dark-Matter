@@ -4,10 +4,6 @@ using UnityEngine.UI;
 
 namespace Project.UI
 {
-    internal sealed class UiButtonSoundMarker : MonoBehaviour
-    {
-    }
-
     public static class UiSoundHelper
     {
         public static void BindButton(Button button)

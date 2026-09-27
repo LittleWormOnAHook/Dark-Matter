@@ -1,5 +1,8 @@
 using System.Collections;
+using Invector.vCharacterController;
+using Project.Building;
 using Project.Core;
+using Project.Data;
 using Project.Interaction;
 using Project.Player;
 using Project.UI;
@@ -140,9 +143,14 @@ namespace Project.Player.Invector
                         _playerController?.OnSprint(context);
                     break;
                 case "Crouch":
+                    // B exits ammo menu; do not crouch on the same press.
+                    if (DMUiToolkitHotCross.IsAmmoLoadPopupOpen)
+                        break;
                     _playerController?.OnCrouch(context);
                     break;
                 case "Attack":
+                    if (DMBuildingMode.IsActive)
+                        break;
                     if (context.performed &&
                         (_playerController == null || !_playerController.IsOpticsOpen))
                     {
@@ -159,34 +167,27 @@ namespace Project.Player.Invector
                     }
                     break;
                 case "Block":
+                    if (DMBuildingMode.IsActive)
+                        break;
                     if (_invectorInput != null)
                         _invectorInput.OnBlock(context);
                     _melee?.OnBlock(context);
                     _ranged?.OnBlock(context);
                     break;
                 case "SwitchWeapon":
-                    if (context.performed)
-                        _melee?.OnSwitchWeapon(context);
+                    // Hot Cross owns SwitchWeapon: tap cycles weapon focus, hold arms (GameplayKeyboardShortcuts).
                     break;
                 case "Inventory":
-                    if (context.performed)
-                    {
-                        if (!DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Inventory))
-                            ResolveUiManager()?.OnToggleInventory(context);
-                    }
-                    break;
                 case "Map":
-                    if (context.performed)
-                    {
-                        if (DMUiToolkitConfig.IsEnabled && DMUiToolkitBootstrap.IsRootActive)
-                            DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Map);
-                        else if (!DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Map))
-                            ResolveUiManager()?.OnToggleMap(context);
-                    }
-                    else if (!DMUiToolkitConfig.IsEnabled || !DMUiToolkitBootstrap.IsRootActive)
-                    {
-                        FindAnyObjectByType<MapUI>(FindObjectsInactive.Include)?.OnToggleMap(context);
-                    }
+                case "Craft":
+                case "Blueprints":
+                case "Pioneers":
+                case "Skills":
+                case "Echoes":
+                case "Achievements":
+                case "Character":
+                case "Pets":
+                    // Unbound: open Journal (J / D-Pad Up), then navigate tabs with D-Pad / stick.
                     break;
                 case "Journal":
                     if (context.performed)
@@ -195,74 +196,106 @@ namespace Project.Player.Invector
                             ResolveUiManager()?.OnToggleJournal(context);
                     }
                     break;
-                case "Craft":
-                    if (context.performed)
-                    {
-                        if (DMUiToolkitConfig.IsEnabled && DMUiToolkitBootstrap.IsRootActive)
-                            DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Recipes);
-                        else if (!DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Recipes))
-                            ResolveUiManager()?.OnToggleCraft(context);
-                    }
+                case "Aim":
+                    // ADS / aim — same physical as Block on pad (LT) and RMB; Block still routes melee block.
+                    if (_invectorInput != null)
+                        _invectorInput.OnBlock(context);
+                    _ranged?.OnBlock(context);
                     break;
-                case "Blueprints":
-                    // Keyboard B = binoculars (GameplayKeyboardShortcuts). Gamepad Blueprints only.
+                case "AmmoCycle":
+                    // Tap/hold owned by GameplayKeyboardShortcuts Hot Cross poll (reads this action).
+                    break;
+                case "Binoculars":
+                    // Keyboard B is tap vs hold in GameplayKeyboardShortcuts.
+                    // This action still opens binoculars for the gamepad binding.
                     if (context.performed
-                        && context.control != null
-                        && context.control.device is not Keyboard)
-                    {
-                        if (DMUiToolkitConfig.IsEnabled && DMUiToolkitBootstrap.IsRootActive)
-                            DMUiToolkitMenus.TrySwitchJournalTab(JournalWindowId.Recipes);
-                        else if (!DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Recipes))
-                            ResolveUiManager()?.OnToggleBlueprints(context);
-                    }
+                        && (Keyboard.current == null || !Keyboard.current.bKey.isPressed))
+                        GameplayKeyboardShortcuts.TryUseToolFromAction(ToolType.Binoculars);
                     break;
-                case "Pioneers":
+                case "Scanner":
                     if (context.performed)
-                    {
-                        if (!DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Pioneers))
-                            ResolveUiManager()?.OnTogglePioneers(context);
-                    }
+                        GameplayKeyboardShortcuts.TryUseToolFromAction(ToolType.Scanner);
                     break;
-                case "Skills":
-                    if (context.performed)
-                    {
-                        if (!DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Skills))
-                            ResolveUiManager()?.OnToggleSkills(context);
-                    }
+                case "Jetpack":
+                    // Boost hold is polled by DMJetpackInputBridge (Jump/Space/A + this action).
                     break;
-                case "Echoes":
-                    if (context.performed)
-                    {
-                        if (!DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Echoes))
-                            ResolveUiManager()?.OnToggleEchoes(context);
-                    }
+                case "Reload":
+                    // Hold/tap owned by WeaponModeSwitchController (reads this action).
                     break;
-                case "Achievements":
+                case "Dodge":
                     if (context.performed)
-                    {
-                        if (!DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Achievements))
-                            ResolveUiManager()?.OnToggleAchievements(context);
-                    }
+                        TryDodgeRollFromInput();
                     break;
-                case "Character":
-                    if (context.performed)
-                    {
-                        if (DMUiToolkitConfig.IsEnabled && DMUiToolkitBootstrap.IsRootActive)
-                            DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Character);
-                        else if (!DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Character))
-                            ResolveUiManager()?.OnToggleCharacter(context);
-                    }
+                case "Dash":
+                    // 0925-rotate: Alt + scroll rotates build pieces, so keyboard Alt never dashes in build mode.
+                    if (context.performed && !(DMBuildingMode.IsActive && context.control != null && context.control.device is Keyboard))
+                        TryDashFromInput();
                     break;
-                case "Pets":
+                case "Pause":
                     if (context.performed)
-                    {
-                        if (!DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Pet))
-                            ResolveUiManager()?.OnTogglePets(context);
-                    }
+                        GameplayKeyboardShortcuts.HandleEscapePressed();
+                    break;
+                case "MinimapZoomIn":
+                    if (context.performed)
+                        GameplayKeyboardShortcuts.TryMinimapZoom(zoomIn: true);
+                    break;
+                case "MinimapZoomOut":
+                    if (context.performed)
+                        GameplayKeyboardShortcuts.TryMinimapZoom(zoomIn: false);
+                    break;
+                case "CinematicHud":
+                    if (context.performed)
+                        GameplayKeyboardShortcuts.TryToggleCinematicHudFromAction();
                     break;
             }
         }
 
+
+                private void TryDodgeRollFromInput()
+        {
+            if (GameplayKeyboardShortcuts.IsGameplayInputLockedByUi())
+                return;
+
+            vThirdPersonController cc = GetComponent<vThirdPersonController>();
+            if (cc == null)
+                cc = GetComponentInChildren<vThirdPersonController>();
+            if (cc == null)
+                return;
+
+            // Mirror Invector RollConditions without GenericInput (pad uses Input System, not rollInput).
+            if (cc.isRolling && !cc.canRollAgain)
+                return;
+            if (!cc.isGrounded || cc.customAction)
+                return;
+            if (cc.rollStamina > 0f && cc.currentStamina < cc.rollStamina)
+                return;
+
+            if (cc.input.sqrMagnitude < 0.01f)
+            {
+                // Idle stick: roll camera-forward so B still dodges when standing still.
+                Transform pivot = cc.rotateTarget != null
+                    ? cc.rotateTarget
+                    : (Camera.main != null ? Camera.main.transform : cc.transform);
+                Vector3 forward = pivot.forward;
+                forward.y = 0f;
+                if (forward.sqrMagnitude < 0.001f)
+                    forward = cc.transform.forward;
+                cc.input = forward.normalized;
+            }
+
+            cc.Roll();
+        }
+
+        private void TryDashFromInput()
+        {
+            if (GameplayKeyboardShortcuts.IsGameplayInputLockedByUi())
+                return;
+
+            var dash = GetComponent<Project.Features.Dash.DMDashController>();
+            if (dash == null)
+                dash = GetComponentInChildren<Project.Features.Dash.DMDashController>();
+            dash?.TryStartDashFromInput();
+        }
         private static UIManager ResolveUiManager()
         {
             if (cachedUiManager != null)

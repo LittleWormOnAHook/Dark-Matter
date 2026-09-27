@@ -204,6 +204,18 @@ MonoBehaviour:
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_ff_door
+    displayName: Force Field Door
+    shape: 10
+    category: 4
+    prefab: {fileID: 5559880860176521653, guid: d298799293b765946890bbf638e7e12a, type: 3}
+    icon: {fileID: 2800000, guid: 5092c542309f9fd4bb12efbe1359b6fc, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 0
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: silicate_passage_4x4
     displayName: Passage
     shape: 11
@@ -684,6 +696,18 @@ MonoBehaviour:
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_ff_hatch_lid
+    displayName: Force Field Hatch
+    shape: 45
+    category: 4
+    prefab: {fileID: 1049506190900882206, guid: 109dee07917178c419c3caeb80ee759d, type: 3}
+    icon: {fileID: 2800000, guid: 1585e714ea8c81948a8daec3580b4020, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 0
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: silicate_door_frame_double_4x4
     displayName: Double Door Frame
     shape: 46
@@ -708,6 +732,18 @@ MonoBehaviour:
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_ff_door_double
+    displayName: Double Force Field Door
+    shape: 47
+    category: 4
+    prefab: {fileID: 7184949377650106774, guid: 379bccdd894608946b062ec0a7eb9d79, type: 3}
+    icon: {fileID: 2800000, guid: c4de0611aad8f0a4f8f1be9eb346ddb8, type: 3}
+    cost: 3
+    enabled: 1
+    applyStyleFinish: 0
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   - id: silicate_gate_frame_8x8
     displayName: Gate Frame (8 m)
     shape: 48
@@ -729,6 +765,18 @@ MonoBehaviour:
     cost: 8
     enabled: 1
     applyStyleFinish: 1
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - id: silicate_ff_gate_8x8
+    displayName: Force Field Gate (8 m)
+    shape: 49
+    category: 4
+    prefab: {fileID: 2133755213858045499, guid: d2c99f3edaa54e143894e187ed5f2c70, type: 3}
+    icon: {fileID: 2800000, guid: ad7a7a4661f5c6d4ba1ad37ca19cdb2e, type: 3}
+    cost: 8
+    enabled: 1
+    applyStyleFinish: 0
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}

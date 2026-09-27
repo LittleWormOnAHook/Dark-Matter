@@ -41,7 +41,7 @@ MonoBehaviour:
     followBehaviorMode: 0
     worldAmbientMode: 1
     worldIdleJob: 0
-    wanderPaceScale: 0.3
+    wanderPaceScale: 1
     walkSpeed: 4.4
     runSpeed: 8.5
     catchUpSpeed: 8.5

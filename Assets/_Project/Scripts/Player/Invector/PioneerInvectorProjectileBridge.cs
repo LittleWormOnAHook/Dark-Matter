@@ -68,14 +68,15 @@ namespace Project.Player.Invector
             if (_ammoBridge != null && !_ammoBridge.TryProcessShotAmmo())
                 return;
 
-            FireResolvedRound(invectorWeapon, weaponItem, ammoItem, muzzle);
-
+            BurstAimLock aimLock = default;
             int burst = DMRangedAmmoStats.ResolveBurstCount(weaponItem, ammoItem);
+            FireResolvedRound(invectorWeapon, weaponItem, ammoItem, muzzle, ref aimLock, captureLock: burst > 1);
+
             if (burst <= 1)
                 return;
 
             StopBurst();
-            _burstRoutine = StartCoroutine(ContinueBurst(invectorWeapon, weaponItem, ammoItem, muzzle, burst - 1));
+            _burstRoutine = StartCoroutine(ContinueBurst(invectorWeapon, weaponItem, ammoItem, muzzle, burst - 1, aimLock));
         }
 
         private IEnumerator ContinueBurst(
@@ -83,7 +84,8 @@ namespace Project.Player.Invector
             ItemData weaponItem,
             ItemData ammoItem,
             Transform muzzle,
-            int remaining)
+            int remaining,
+            BurstAimLock aimLock)
         {
             _burstActive = true;
             try
@@ -97,7 +99,7 @@ namespace Project.Player.Invector
                     if (_ammoBridge != null && !_ammoBridge.TryProcessShotAmmo())
                         yield break;
 
-                    FireResolvedRound(invectorWeapon, weaponItem, ammoItem, muzzle);
+                    FireResolvedRound(invectorWeapon, weaponItem, ammoItem, muzzle, ref aimLock, captureLock: false);
                     if (_shooterManager != null)
                         PioneerInvectorRecoilUtility.ApplyPlayerShotRecoil(_shooterManager, weaponItem, ammoItem);
                 }
@@ -192,45 +194,96 @@ namespace Project.Player.Invector
             return muzzle != null;
         }
 
+        /// <summary>
+        /// First burst pellet captures muzzle spawn + aim; later pellets reuse that lock
+        /// so recoil kick does not walk projectile origins across the burst.
+        /// </summary>
+        private struct BurstAimLock
+        {
+            public bool Valid;
+            public Vector3 SpawnPosition;
+            public Vector3 BaseDirection;
+            public float SpreadDegrees;
+        }
+
         private void FireResolvedRound(
             vShooterWeapon invectorWeapon,
             ItemData weaponItem,
             ItemData ammoItem,
-            Transform muzzle)
+            Transform muzzle,
+            ref BurstAimLock aimLock,
+            bool captureLock)
         {
             if (muzzle == null || weaponItem == null)
                 return;
 
-            bool isAiming = _inputBridge != null && _inputBridge.IsAiming;
-            float maxRange = DMRangedAmmoStats.ResolveRange(weaponItem, ammoItem);
+            Vector3 direction;
+            float spread;
+            Vector3? lockedSpawn = null;
 
-            Camera cam = ResolveGameplayCamera();
-            float aimDistance = maxRange;
-            Vector3 reticleAim = muzzle.forward;
-            if (cam != null)
+            if (aimLock.Valid)
             {
-                reticleAim = RangedFireSolver.ResolveMuzzleToReticleDirection(
-                    cam,
-                    muzzle.position,
-                    maxRange,
-                    out aimDistance,
-                    weaponMuzzle: muzzle);
+                direction = aimLock.BaseDirection;
+                spread = aimLock.SpreadDegrees;
+                lockedSpawn = aimLock.SpawnPosition;
+            }
+            else
+            {
+                bool isAiming = _inputBridge != null && _inputBridge.IsAiming;
+                float maxRange = DMRangedAmmoStats.ResolveRange(weaponItem, ammoItem);
+
+                Camera cam = ResolveGameplayCamera();
+                float aimDistance = maxRange;
+                Vector3 reticleAim = muzzle.forward;
+                if (cam != null)
+                {
+                    reticleAim = RangedFireSolver.ResolveMuzzleToReticleDirection(
+                        cam,
+                        muzzle.position,
+                        maxRange,
+                        out aimDistance,
+                        weaponMuzzle: muzzle);
+                }
+
+                direction = RangedFireSolver.ResolveDirection(
+                    reticleAim,
+                    muzzle.forward,
+                    isAiming,
+                    weaponItem.hipFireMaxDeviationDegrees);
+
+                spread = RangedFireSolver.ResolveEffectiveSpreadDegrees(
+                    weaponItem,
+                    ammoItem,
+                    isAiming,
+                    aimDistance,
+                    applyPlayerSkillBonus: true);
+
+                if (captureLock)
+                {
+                    Vector3 barrelForward = RangedFireSolver.ResolveWeaponAimForward(muzzle);
+                    Vector3 spawnPosition = muzzle.position;
+                    if (barrelForward.sqrMagnitude > 0.0001f)
+                        spawnPosition += barrelForward * RangedFireSolver.ProjectileSpawnSkin;
+
+                    aimLock = new BurstAimLock
+                    {
+                        Valid = true,
+                        SpawnPosition = spawnPosition,
+                        BaseDirection = direction,
+                        SpreadDegrees = spread
+                    };
+                    lockedSpawn = spawnPosition;
+                }
             }
 
-            Vector3 direction = RangedFireSolver.ResolveDirection(
-                reticleAim,
-                muzzle.forward,
-                isAiming,
-                weaponItem.hipFireMaxDeviationDegrees);
-
-            float spread = RangedFireSolver.ResolveEffectiveSpreadDegrees(
+            CombatProjectileSpawner.Spawn(
+                gameObject,
+                muzzle,
                 weaponItem,
                 ammoItem,
-                isAiming,
-                aimDistance,
-                applyPlayerSkillBonus: true);
-
-            CombatProjectileSpawner.Spawn(gameObject, muzzle, weaponItem, ammoItem, direction, spread);
+                direction,
+                spread,
+                lockedSpawnPosition: lockedSpawn);
         }
 
         private Camera ResolveGameplayCamera()

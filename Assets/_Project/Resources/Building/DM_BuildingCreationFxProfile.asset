@@ -91,3 +91,25 @@ MonoBehaviour:
   swapMaterialAsset: {fileID: 2100000, guid: e510d76bc6c14a80a7e98d59a5cdfb11, type: 2}
   swapStart: 0
   swapDuration: 0.3
+  forceFieldMaterial: {fileID: 2100000, guid: fb6113fffce38ee49a2392b81e5b9313, type: 2}
+  forceFieldColor: {r: 0.25, g: 0.75, b: 1.6, a: 1}
+  forceFieldEdgeColor: {r: 0.6, g: 1.2, b: 2.4, a: 1}
+  forceFieldOpacity: 0.25
+  forceFieldEdgeGlow: 1.5
+  forceFieldEdgeWidth: 0.06
+  forceFieldPatternScale: 1.2
+  forceFieldScrollSpeed: 0.35
+  forceFieldPulseBrightness: 1.5
+  forceFieldPulseSeconds: 0.6
+  forceFieldRippleSpeed: 3
+  forceFieldRippleWidth: 0.35
+  forceFieldPassClip: {fileID: 0}
+  forceFieldPassVolume: 0.35
+  forceFieldPitchJitter: 0.08
+  forceFieldSoundCooldown: 0.4
+  forceFieldAudioMaxDistance: 14
+  forceFieldIdleHumClip: {fileID: 0}
+  forceFieldIdleHumVolume: 0
+  forceFieldLetFriendliesThrough: 1
+  forceFieldSenseDepthMeters: 0.9
+  forceFieldCloseDelaySeconds: 0.35

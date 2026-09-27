@@ -75,7 +75,9 @@ namespace Project.Building
         FloorsAndRoofs,
         StructureAndStairs,
         Doors,
-        Decor
+        Decor,
+        /// <summary>0926: own Tab menu entry (storage crate and other placeable gear), not a style hotbar.</summary>
+        Equipment
     }
 
     /// <summary>Finished material for built pieces. The first finish of a style is its default; M cycles them.</summary>
@@ -181,12 +183,24 @@ namespace Project.Building
         public bool enabled = true;
         [Tooltip("Paint the style finish on this part. Off keeps the prefab's own materials.")]
         public bool applyStyleFinish = true;
+        [Tooltip("0926-material-override: when set, the built piece uses this material on every mesh (glass panes keep glass) instead of the prefab's materials or the style finish. Empty = normal behaviour.")]
+        public Material materialOverride;
         [Tooltip("Surface items only: gap between the item and the face it sticks to (m).")]
         public float surfaceOffsetMeters = 0.01f;
         [Tooltip("Custom and surface items: footprint override (m). Zero uses the prefab mesh bounds.")]
         public Vector3 sizeOverride = Vector3.zero;
         [Tooltip("Custom and surface items: extra rotation (degrees) applied to the model inside the piece, for prefabs authored facing the wrong way.")]
         public Vector3 modelRotation = Vector3.zero;
+        [Tooltip("Optional: several items for this part (storage crate: Iron Ore 4, Metal Scrap 10). When set it replaces the style cost.")]
+        public List<DMBuildingCostLine> customCost = new List<DMBuildingCostLine>();
+    }
+
+    /// <summary>0926-storage-crate: one item and amount in a part's custom cost.</summary>
+    [System.Serializable]
+    public sealed class DMBuildingCostLine
+    {
+        public ItemData item;
+        [Min(1)] public int amount = 1;
     }
 
     /// <summary>

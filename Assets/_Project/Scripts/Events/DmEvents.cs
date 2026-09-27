@@ -20,7 +20,7 @@ namespace Project.Events
     [DisallowMultipleComponent]
     public class DmEvents : MonoBehaviour, IEnemyLootProvider
     {
-        public const int MaxLootSlots = 10;
+        public const int MaxLootSlots = 25;
 
         [Serializable]
         public class LootSlot
@@ -32,7 +32,7 @@ namespace Project.Events
         [Header("Identity")]
         [SerializeField] private string cacheDisplayName = "IO Ancient Cache";
 
-        [Header("Loot Table (up to 10)")]
+        [Header("Loot Table (up to 25)")]
         [SerializeField] private LootSlot[] lootSlots = new LootSlot[MaxLootSlots];
 
         [Header("Scanner")]

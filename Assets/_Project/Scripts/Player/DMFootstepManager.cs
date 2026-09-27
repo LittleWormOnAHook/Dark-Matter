@@ -105,6 +105,10 @@ namespace Project.Player
         private void Awake()
         {
             footStep = GetComponent<vFootStep>();
+            // Distance-based FootstepController doubles Invector audio when both run.
+            Project.Audio.FootstepController extra = GetComponent<Project.Audio.FootstepController>();
+            if (extra != null)
+                extra.enabled = false;
             ApplyGlobals();
         }
 

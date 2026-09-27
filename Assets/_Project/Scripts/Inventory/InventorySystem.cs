@@ -199,6 +199,10 @@ namespace Project.Inventory
             return true;
         }
 
+        /// <summary>
+        /// World pickups. Equippable leftovers fill empty weapon slots, then the toolbar, before empty backpack slots.
+        /// Vendor purchases use <see cref="AddItemToMainInventory"/>.
+        /// </summary>
         /// <returns>Number of items successfully added.</returns>
         public int AddItem(ItemData item, int amount = 1, bool autoCreditAmmoToWeapons = true)
         {

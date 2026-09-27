@@ -253,7 +253,7 @@ namespace Project.UI
             {
                 string openHint = item.toolType == ToolType.Scanner
                     ? "[N] Use tool  |  [RMB] Toggle optics"
-                    : "[Hold B] Binoculars  |  [B] Blueprints  |  [RMB] Close optics";
+                    : "[B] Binoculars  |  [Hold B] Build  |  [RMB] Close optics";
                 text.AppendLine($"  Toolbar: {openHint}");
                 text.AppendLine("  [Scroll] Zoom while optics are open");
             }

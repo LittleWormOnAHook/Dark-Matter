@@ -26,7 +26,6 @@ namespace Project.Core
             for (int i = 0; i < prewarmCount; i++)
             {
                 GameObject instance = CreateInstance();
-                instance.SetActive(false);
                 inactive.Push(instance);
             }
         }
@@ -44,6 +43,8 @@ namespace Project.Core
             Transform instanceTransform = instance.transform;
             instanceTransform.SetParent(parent, false);
             instanceTransform.SetPositionAndRotation(position, rotation);
+            // Strip again in case a prior lease re-enabled vendor drivers somehow.
+            StripVendorLifecycleComponents(instance);
             instance.SetActive(true);
 
             if (instance.TryGetComponent(out IPoolable poolable))
@@ -64,17 +65,89 @@ namespace Project.Core
             if (instance.TryGetComponent(out IPoolable poolable))
                 poolable.OnReturnedToPool();
 
+            // Detach from gameplay hosts first — SetParent onto poolRoot while the old parent is
+            // activating/deactivating (e.g. TrainingDummy) throws a Unity console error.
+            Transform currentParent = instance.transform.parent;
+            if (currentParent != null && currentParent != poolRoot)
+                instance.transform.SetParent(null, true);
+
+            // Parent under the pool root first so OnDisable orphan-return sees the correct parent
+            // and does not schedule a redundant ReleaseDelayed.
+            if (poolRoot != null)
+                instance.transform.SetParent(poolRoot, false);
             instance.SetActive(false);
-            instance.transform.SetParent(poolRoot, false);
             inactive.Push(instance);
         }
 
         private GameObject CreateInstance()
         {
-            GameObject instance = Object.Instantiate(prefab, poolRoot);
-            PooledInstanceTag tag = instance.AddComponent<PooledInstanceTag>();
+            // Instantiate while the prefab asset is inactive so Awake/Start on vendor
+            // AutoDestroy / ProjectileMover do not run (those schedule Destroy or spawn
+            // unpooled muzzle/hit flashes that linger as hierarchy clones).
+            bool prefabWasActive = prefab.activeSelf;
+            if (prefabWasActive)
+                prefab.SetActive(false);
+
+            GameObject instance;
+            try
+            {
+                instance = Object.Instantiate(prefab, poolRoot);
+            }
+            finally
+            {
+                if (prefabWasActive)
+                    prefab.SetActive(true);
+            }
+
+            instance.SetActive(false);
+            StripVendorLifecycleComponents(instance);
+
+            PooledInstanceTag tag = instance.GetComponent<PooledInstanceTag>();
+            if (tag == null)
+                tag = instance.AddComponent<PooledInstanceTag>();
             tag.SourcePool = this;
             return instance;
+        }
+
+        /// <summary>
+        /// Removes vendor one-shot / projectile drivers before the instance is activated.
+        /// Uses type names so Core does not reference Combat/Hovl/WarFX assemblies.
+        /// </summary>
+        internal static void StripVendorLifecycleComponents(GameObject root)
+        {
+            if (root == null)
+                return;
+
+            MonoBehaviour[] behaviours = root.GetComponentsInChildren<MonoBehaviour>(true);
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                MonoBehaviour behaviour = behaviours[i];
+                if (behaviour == null)
+                    continue;
+
+                if (!IsVendorLifecycleTypeName(behaviour.GetType().Name))
+                    continue;
+
+                behaviour.StopAllCoroutines();
+                Object.DestroyImmediate(behaviour);
+            }
+        }
+
+        private static bool IsVendorLifecycleTypeName(string typeName)
+        {
+            return typeName == "ProjectileMover"
+                || typeName == "ProjectileMover2D"
+                || typeName == "AutoDestroyPS"
+                || typeName == "AutoDestroy"
+                || typeName == "DestroyAfterTime"
+                || typeName == "DestroyAfterSeconds"
+                || typeName == "CFX_AutoDestructShuriken"
+                || typeName == "CFX_AutoStopLoopedEffect"
+                || typeName == "CFX_LightIntensityFade"
+                || typeName == "CFX_Lifetime"
+                || typeName == "ParticleCollisionInstance"
+                || typeName == "SFX_SimpleProjectile"
+                || typeName == "SFX_PhysicsMotion";
         }
     }
 }

@@ -47,7 +47,7 @@ MonoBehaviour:
   meleeKnockback: 0
   gatherPower: 1
   attackTrigger: Attack
-  rangedDamage: 21
+  rangedDamage: 13.5
   rangedDamageRandomRange: 4
   rangedRange: 45
   projectileSpeed: 230
@@ -58,10 +58,10 @@ MonoBehaviour:
   recoilVertical: 1
   recoilHorizontal: 0.48
   recoilFireRateScale: 1
-  fireRate: 8
-  shotsPerBurst: 2
+  fireRate: 10
+  shotsPerBurst: 1
   burstFireRate: 20
-  magazineSize: 30
+  magazineSize: 45
   reloadTimeSeconds: 1.8
   defaultAmmoType: 0
   compatibleAmmoTypes: 00000000

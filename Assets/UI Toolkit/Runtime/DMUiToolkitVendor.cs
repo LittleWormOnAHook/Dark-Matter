@@ -765,7 +765,9 @@ namespace Project.UI
                 screen = Mouse.current.position.ReadValue();
             int max = ResolveFocusedMaxQty();
             int afford = ResolveFocusedAffordableQty();
-            int startQty = afford > 0 ? Mathf.Clamp(afford, 1, max) : 1;
+            int startQty = focusSide == FocusSide.Vendor
+                ? 1
+                : afford > 0 ? Mathf.Clamp(afford, 1, max) : 1;
             DMUiToolkitWorldMenus.TryShowVendorTradeCard(
                 item,
                 amount,

@@ -17,6 +17,14 @@ namespace Project.Building
         public int cost;
         /// <summary>Surface items: index of the piece they stick to in the same list, or -1.</summary>
         public int hostIndex = -1;
+        /// <summary>0926-generator: fuel units in a generator's tank, or -1.</summary>
+        public float fuel = -1f;
+        /// <summary>0926-build-hub: a Build Hub's zone upgrade level, or -1.</summary>
+        public int hubLevel = -1;
+        /// <summary>0927-zone-anchor: true when hubZoneCenter/hubZoneRotation hold the hub's zone anchor (old saves: false).</summary>
+        public bool hasHubZone;
+        public Vector3 hubZoneCenter;
+        public Quaternion hubZoneRotation;
     }
 
     /// <summary>
@@ -35,15 +43,20 @@ namespace Project.Building
                 DMBuildingGhost ghost = ghosts[i];
                 if (ghost == null || !ghost.Built || string.IsNullOrEmpty(ghost.PieceId))
                     continue;
-                index[ghost] = built.Count;
                 built.Add(ghost);
             }
+
+            // 0926-generator: keep placement order so each base's first foundation stays its power anchor.
+            built.Sort((a, b) => a.BuildOrder.CompareTo(b.BuildOrder));
+            for (int i = 0; i < built.Count; i++)
+                index[built[i]] = i;
 
             var entries = new BuiltPieceSaveEntry[built.Count];
             for (int i = 0; i < built.Count; i++)
             {
                 DMBuildingGhost ghost = built[i];
                 Transform t = ghost.transform;
+                DMBuildHub hub = ghost.GetComponent<DMBuildHub>();
                 entries[i] = new BuiltPieceSaveEntry
                 {
                     pieceId = ghost.PieceId,
@@ -53,10 +66,24 @@ namespace Project.Building
                     paidItemId = ghost.PaidItem != null ? ghost.PaidItem.name : null,
                     cost = ghost.Cost,
                     hostIndex = ghost.Host != null && index.TryGetValue(ghost.Host, out int host) ? host : -1,
+                    fuel = ghost.TryGetComponent(out DMBaseGenerator generator) ? generator.Fuel : -1f,
+                    hubLevel = hub != null ? hub.UpgradeLevel : -1,
                 };
+                if (hub != null)
+                {
+                    entries[i].hasHubZone = true;
+                    entries[i].hubZoneCenter = hub.Center;
+                    entries[i].hubZoneRotation = hub.AnchorRotation;
+                }
             }
 
             return entries;
+        }
+
+        static Quaternion NormalizedOrIdentity(Quaternion rotation)
+        {
+            float magnitude = rotation.x * rotation.x + rotation.y * rotation.y + rotation.z * rotation.z + rotation.w * rotation.w;
+            return magnitude > 0.0001f ? Quaternion.Normalize(rotation) : Quaternion.identity;
         }
 
         public static void ApplySave(BuiltPieceSaveEntry[] entries)
@@ -82,12 +109,22 @@ namespace Project.Building
                 }
 
                 ItemData paid = string.IsNullOrEmpty(entry.paidItemId) ? null : ItemRegistry.Resolve(entry.paidItemId);
-                Quaternion rotation = entry.rotation;
-                float magnitude = rotation.x * rotation.x + rotation.y * rotation.y + rotation.z * rotation.z + rotation.w * rotation.w;
-                rotation = magnitude > 0.0001f ? Quaternion.Normalize(rotation) : Quaternion.identity;
+                Quaternion rotation = NormalizedOrIdentity(entry.rotation);
                 spawned[i] = DMBuildingPlacementController.RestorePiece(piece, entry.position, rotation, paid, entry.cost, entry.materialVariantId);
                 if (spawned[i] != null)
+                {
                     restored++;
+                    if (entry.fuel >= 0f && spawned[i].TryGetComponent(out DMBaseGenerator generator))
+                        generator.SetFuel(entry.fuel);
+                    if (spawned[i].TryGetComponent(out DMBuildHub hub))
+                    {
+                        // Old saves have no anchor: the zone stays on the hub's saved position (set on spawn).
+                        if (entry.hasHubZone)
+                            hub.RestoreAnchor(entry.hubZoneCenter, NormalizedOrIdentity(entry.hubZoneRotation));
+                        if (entry.hubLevel >= 0)
+                            hub.RestoreLevel(entry.hubLevel);
+                    }
+                }
             }
 
             for (int i = 0; i < entries.Length; i++)

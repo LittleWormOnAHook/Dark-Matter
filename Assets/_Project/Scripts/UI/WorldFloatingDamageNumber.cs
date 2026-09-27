@@ -18,6 +18,8 @@ namespace Project.UI
         [SerializeField] private float lifetime = 1.4f;
         [SerializeField] private float fadeDuration = 0.45f;
         [SerializeField] private float fontSize = 28f;
+        [SerializeField] private float startScale = 0.7f;
+        [SerializeField] private float endScale = 1.55f;
 
         private TextMeshProUGUI label;
         private CanvasGroup canvasGroup;
@@ -149,6 +151,10 @@ namespace Project.UI
 
             transform.position = worldAnchor + worldDrift;
             FaceCamera();
+
+            float lifeT = Mathf.Clamp01(elapsed / lifetime);
+            float scaleMul = Mathf.Lerp(startScale, endScale, lifeT);
+            transform.localScale = Vector3.one * (worldScale * scaleMul);
 
             if (canvasGroup != null)
             {

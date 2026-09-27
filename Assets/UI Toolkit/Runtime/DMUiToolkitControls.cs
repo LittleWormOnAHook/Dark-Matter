@@ -1,3 +1,4 @@
+using Project.Player;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -6,6 +7,8 @@ namespace Project.UI
     [DisallowMultipleComponent]
     public class DMUiToolkitControls : MonoBehaviour
     {
+        // stamp: controller-compile-fix 0920
+
         public const string Name = "UITK_Controls";
         public const int Sort = 21100;
         public const string UxmlPath = "Assets/UI Toolkit/Screens/Controls.uxml";
@@ -131,7 +134,13 @@ namespace Project.UI
         {
             BindTree();
             LoadSchemes();
-            ShowHub();
+            DMInputSchemeRouter router = DMInputSchemeRouter.Instance;
+            if (router != null && router.IsGamepad && gamepadScheme != null)
+                ShowScheme(gamepadScheme);
+            else if (router != null && !router.IsGamepad && keyboardScheme != null)
+                ShowScheme(keyboardScheme);
+            else
+                ShowHub();
             open = true;
             DMUiToolkitOverlayDocument.SetShown(root, true);
             DMUiToolkitOverlayDocument.PromoteInteractiveOverlay(document);

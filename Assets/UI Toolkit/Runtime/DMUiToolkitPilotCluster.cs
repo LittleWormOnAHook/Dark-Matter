@@ -143,7 +143,8 @@ namespace Project.UI
         private float lastCompassWidth;
         private float nextHeavyRefresh;
         private float nextMapCompassRefresh;
-        private const float MapCompassRefreshInterval = 0.066f;
+        private const float MapCompassRefreshInterval = 0.1f;
+        private const float MapCompassHeadingDelta = 1.25f;
         private float lastMapCompassHeading = float.NaN;
         private GameObject cachedPlayerGo;
         private float cachedCompassStripWidth = 320f;
@@ -550,7 +551,7 @@ private void EnsureArcs()
             float heading = mapUi != null ? mapUi.MapCompassYaw : 0f;
             bool mapCompassDue = Time.unscaledTime >= nextMapCompassRefresh;
             if (!float.IsNaN(lastMapCompassHeading)
-                && Mathf.Abs(Mathf.DeltaAngle(heading, lastMapCompassHeading)) > 0.35f)
+                && Mathf.Abs(Mathf.DeltaAngle(heading, lastMapCompassHeading)) > MapCompassHeadingDelta)
             {
                 mapCompassDue = true;
             }

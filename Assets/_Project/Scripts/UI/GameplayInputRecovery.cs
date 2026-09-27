@@ -246,6 +246,8 @@ namespace Project.UI
         {
             return DMUiToolkitVendor.IsOpen
                 || DMUiToolkitCrate.IsOpen
+                || Project.UI.DMUiToolkitGenerator.IsOpen
+                || GameplayMenuTime.HasPauseReason(Project.UI.DMUiToolkitGenerator.PauseReason)
                 || GameplayMenuTime.HasPauseReason(GameplayMenuTime.ReasonVendorShop)
                 || GameplayMenuTime.HasPauseReason(GameplayMenuTime.ReasonStorageCrate);
         }

@@ -48,6 +48,57 @@ namespace Project.Building
         [Tooltip("How long the swap material stays on.")]
         [Range(0f, 3f)] public float swapDuration = 0.3f;
 
+        // 0926-force-fields: every door piece is a force field. These drive its look, sound and behaviour.
+        [Header("Force fields: look")]
+        [Tooltip("Material on every force field door. Empty uses the default DM_ForceField material. The colour and sliders below tint whichever material is here.")]
+        public Material forceFieldMaterial;
+        [Tooltip("Main glow colour of the field (HDR, so values above 1 glow brighter).")]
+        [ColorUsage(true, true)] public Color forceFieldColor = new Color(0.25f, 0.75f, 1.6f, 1f);
+        [Tooltip("Colour of the rim, the ripples and the glancing-angle glow.")]
+        [ColorUsage(true, true)] public Color forceFieldEdgeColor = new Color(0.6f, 1.2f, 2.4f, 1f);
+        [Tooltip("How see-through the field is when nobody is passing. 0 = almost invisible.")]
+        [Range(0f, 1f)] public float forceFieldOpacity = 0.25f;
+        [Tooltip("Brightness of the rim where the field touches the frame.")]
+        [Range(0f, 4f)] public float forceFieldEdgeGlow = 1.5f;
+        [Tooltip("Width of that rim, as a share of the field (0.06 = 6%).")]
+        [Range(0.005f, 0.5f)] public float forceFieldEdgeWidth = 0.06f;
+        [Tooltip("Size of the moving energy pattern. Higher = finer pattern.")]
+        [Range(0.1f, 5f)] public float forceFieldPatternScale = 1.2f;
+        [Tooltip("How fast the energy pattern drifts.")]
+        [Range(0f, 3f)] public float forceFieldScrollSpeed = 0.35f;
+
+        [Header("Force fields: pass-through shimmer")]
+        [Tooltip("How much brighter the whole field flashes when someone crosses it.")]
+        [Range(0f, 4f)] public float forceFieldPulseBrightness = 1.5f;
+        [Tooltip("How long the flash and the ripple last (s).")]
+        [Range(0.05f, 3f)] public float forceFieldPulseSeconds = 0.6f;
+        [Tooltip("How fast the ripple ring spreads from the crossing point (m/s).")]
+        [Range(0.5f, 10f)] public float forceFieldRippleSpeed = 3f;
+        [Tooltip("Thickness of the ripple ring (m).")]
+        [Range(0.05f, 2f)] public float forceFieldRippleWidth = 0.35f;
+
+        [Header("Force fields: audio")]
+        [Tooltip("Sound played when someone crosses the field. Empty uses the electric crackle generated in code.")]
+        public AudioClip forceFieldPassClip;
+        [Range(0f, 1f)] public float forceFieldPassVolume = 0.35f;
+        [Tooltip("Random pitch change per crossing (0.08 = up to 8% higher or lower).")]
+        [Range(0f, 0.5f)] public float forceFieldPitchJitter = 0.08f;
+        [Tooltip("Minimum time between crossing sounds for the same person (s).")]
+        [Range(0f, 2f)] public float forceFieldSoundCooldown = 0.4f;
+        [Tooltip("Distance where the field sounds fade to silence (m).")]
+        [Range(2f, 40f)] public float forceFieldAudioMaxDistance = 14f;
+        [Tooltip("Optional looping idle sound. Empty uses a hum generated in code. Only plays when the volume below is above 0.")]
+        public AudioClip forceFieldIdleHumClip;
+        [Range(0f, 1f)] public float forceFieldIdleHumVolume = 0f;
+
+        [Header("Force fields: behaviour")]
+        [Tooltip("Let the player and companions walk through. Off keeps every field solid. Bullets, enemies and weather are always stopped.")]
+        public bool forceFieldLetFriendliesThrough = true;
+        [Tooltip("How far in front of or behind the field someone must be for it to open (m).")]
+        [Range(0.2f, 3f)] public float forceFieldSenseDepthMeters = 0.9f;
+        [Tooltip("How long the field stays open after the last person leaves it (s).")]
+        [Range(0f, 2f)] public float forceFieldCloseDelaySeconds = 0.35f;
+
         static DMBuildingCreationFxProfile live;
 
         public static DMBuildingCreationFxProfile Live

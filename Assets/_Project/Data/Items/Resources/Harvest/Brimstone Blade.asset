@@ -15,7 +15,7 @@ MonoBehaviour:
   itemName: Brimstone Blade
   icon: {fileID: 21300000, guid: f05756776c15c884d9a677b45764e9eb, type: 3}
   worldPrefab: {fileID: 9062877512460790226, guid: 993dac5f6f603944ab56d7bc2a5731a3, type: 3}
-  maxStack: 40
+  maxStack: 500
   stableItemId: 5c9d4235006e0474c84112fb00bcbbd3
   itemType: 1
   deployedPrefab: {fileID: 0}
@@ -134,7 +134,7 @@ MonoBehaviour:
   staminaRestore: 0
   oxygenRestore: 0
   isAcInfused: 0
-  acValue: 4
+  acValue: 0
   rarity: 0
   canSell: 1
   canBuy: 1

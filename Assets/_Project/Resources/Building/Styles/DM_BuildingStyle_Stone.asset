@@ -24,14 +24,19 @@ MonoBehaviour:
   - Stone
   costMultiplier: 1
   finishes:
-  - id: stone_rough
-    displayName: Rough Stone
-    finishedMaterial: {fileID: 2100000, guid: 9236eacf325a1dc4baf15bf11801e8d2, type: 2}
-    overrideGhostTint: 0
-    ghostTint: {r: 0.92, g: 0.38, b: 0.32, a: 1}
   - id: stone_cut
     displayName: Cut Stone
     finishedMaterial: {fileID: 2100000, guid: 44577e2a2911aea419c295848a6dc677, type: 2}
+    overrideGhostTint: 0
+    ghostTint: {r: 0.92, g: 0.38, b: 0.32, a: 1}
+  - id: stone_rough1
+    displayName: StoneRough1
+    finishedMaterial: {fileID: 2100000, guid: db36743aaddc0a9408ba35a903d51b54, type: 2}
+    overrideGhostTint: 0
+    ghostTint: {r: 0.92, g: 0.38, b: 0.32, a: 1}
+  - id: stone_rough
+    displayName: Rough Stone
+    finishedMaterial: {fileID: 2100000, guid: 9236eacf325a1dc4baf15bf11801e8d2, type: 2}
     overrideGhostTint: 0
     ghostTint: {r: 0.92, g: 0.38, b: 0.32, a: 1}
   doorMaterial: {fileID: 2100000, guid: 74e0e1643572bd345bb90ffd07b1234c, type: 2}
@@ -68,6 +73,60 @@ MonoBehaviour:
     doorLeafGapMeters: 0.03
     gateCrossbars: 3
   parts:
+  - id: stone_si_storage_crate
+    displayName: Storage Crate
+    shape: 20
+    category: 6
+    prefab: {fileID: 824555141193923281, guid: ad52ab595658e864a8f675665bc9691f, type: 3}
+    icon: {fileID: 2800000, guid: 5b75d3cbc260f3549b1428274f958c22, type: 3}
+    cost: 14
+    enabled: 1
+    applyStyleFinish: 0
+    materialOverride: {fileID: 0}
+    surfaceOffsetMeters: 0
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    customCost:
+    - item: {fileID: 11400000, guid: 22d2fe71fa16cbc45901218ef6195945, type: 2}
+      amount: 4
+    - item: {fileID: 11400000, guid: 7d3d1739874eed3438b054b05869977d, type: 2}
+      amount: 10
+  - id: stone_si_generator
+    displayName: Generator
+    shape: 20
+    category: 6
+    prefab: {fileID: 6891542923839912056, guid: 96113cd681fcaf94db41fa6d3718ba81, type: 3}
+    icon: {fileID: 2800000, guid: 7a1709f6a02f26e44a5dc787e2dc4317, type: 3}
+    cost: 50
+    enabled: 1
+    applyStyleFinish: 0
+    materialOverride: {fileID: 0}
+    surfaceOffsetMeters: 0
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    customCost:
+    - item: {fileID: 11400000, guid: 22d2fe71fa16cbc45901218ef6195945, type: 2}
+      amount: 20
+    - item: {fileID: 11400000, guid: 7d3d1739874eed3438b054b05869977d, type: 2}
+      amount: 30
+  - id: stone_si_build_hub
+    displayName: Build Hub
+    shape: 20
+    category: 6
+    prefab: {fileID: 5823564507684470727, guid: 0bed60331cdecb34abaf4589b226bf40, type: 3}
+    icon: {fileID: 2800000, guid: 5d0989e1e439b6e4fb2ab61bf5e4f788, type: 3}
+    cost: 40
+    enabled: 1
+    applyStyleFinish: 0
+    materialOverride: {fileID: 0}
+    surfaceOffsetMeters: 0
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    customCost:
+    - item: {fileID: 11400000, guid: 22d2fe71fa16cbc45901218ef6195945, type: 2}
+      amount: 15
+    - item: {fileID: 11400000, guid: 7d3d1739874eed3438b054b05869977d, type: 2}
+      amount: 25
   - id: stone_foundation_4x4
     displayName: Foundation
     shape: 0
@@ -77,9 +136,11 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 2100000, guid: db36743aaddc0a9408ba35a903d51b54, type: 2}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_foundation_tri_4x4
     displayName: Tri Foundation
     shape: 1
@@ -89,9 +150,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_floor_4x4
     displayName: Floor
     shape: 2
@@ -101,9 +164,11 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 2100000, guid: db36743aaddc0a9408ba35a903d51b54, type: 2}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_floor_tri_4x4
     displayName: Tri Floor
     shape: 3
@@ -113,9 +178,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_ceiling_4x4
     displayName: Ceiling
     shape: 4
@@ -125,9 +192,11 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 2100000, guid: db36743aaddc0a9408ba35a903d51b54, type: 2}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_hatch_4x4
     displayName: Hatch
     shape: 5
@@ -137,9 +206,11 @@ MonoBehaviour:
     cost: 3
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_wall_4x4
     displayName: Wall
     shape: 6
@@ -149,9 +220,11 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 2100000, guid: db36743aaddc0a9408ba35a903d51b54, type: 2}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_wall_half_4x2
     displayName: Half Wall
     shape: 7
@@ -161,9 +234,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_wall_window_4x4
     displayName: Window
     shape: 8
@@ -173,9 +248,11 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 2100000, guid: db36743aaddc0a9408ba35a903d51b54, type: 2}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_door_frame_4x4
     displayName: Door Frame
     shape: 9
@@ -185,9 +262,11 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_door_basic
     displayName: Door
     shape: 10
@@ -197,9 +276,25 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 2100000, guid: cdcb5bc79c6e5ba4c9f005e5b93b79c0, type: 2}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
+  - id: stone_ff_door
+    displayName: Force Field Door
+    shape: 10
+    category: 4
+    prefab: {fileID: 5111178716822601390, guid: 4e6926ac01b1eee4cb9e143394045e3a, type: 3}
+    icon: {fileID: 2800000, guid: eb2e833ce4c4d214781c20dfa709d2e9, type: 3}
+    cost: 2
+    enabled: 1
+    applyStyleFinish: 0
+    materialOverride: {fileID: 0}
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_passage_4x4
     displayName: Passage
     shape: 11
@@ -209,9 +304,11 @@ MonoBehaviour:
     cost: 3
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_wall_tri_l_4x2
     displayName: Tri Wall L
     shape: 12
@@ -221,9 +318,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_wall_tri_r_4x2
     displayName: Tri Wall R
     shape: 13
@@ -233,9 +332,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_railing_4x1
     displayName: Railing
     shape: 14
@@ -245,9 +346,11 @@ MonoBehaviour:
     cost: 1
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_stairs_4x4
     displayName: Stairs
     shape: 15
@@ -257,9 +360,11 @@ MonoBehaviour:
     cost: 6
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_ramp_4x4
     displayName: Ramp
     shape: 16
@@ -269,9 +374,11 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 2100000, guid: db36743aaddc0a9408ba35a903d51b54, type: 2}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_roof_4x4
     displayName: Roof
     shape: 17
@@ -281,9 +388,11 @@ MonoBehaviour:
     cost: 3
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_roof_corner_4x4
     displayName: Roof Corner
     shape: 18
@@ -293,9 +402,11 @@ MonoBehaviour:
     cost: 3
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_roof_inner_4x4
     displayName: Roof Inner
     shape: 19
@@ -305,9 +416,11 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_surface_item
     displayName: Wall_Light
     shape: 20
@@ -316,10 +429,12 @@ MonoBehaviour:
     icon: {fileID: 2800000, guid: 7afc51876853e454db453177578e9fc2, type: 3}
     cost: 1
     enabled: 1
-    applyStyleFinish: 1
-    surfaceOffsetMeters: 0.001
+    applyStyleFinish: 0
+    materialOverride: {fileID: 0}
+    surfaceOffsetMeters: -0.2
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 180, y: 90, z: -90}
+    customCost: []
   - id: stone_si_wall_light
     displayName: Wall Light
     shape: 20
@@ -329,9 +444,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_si_ceiling_light_a
     displayName: Ceiling Light A
     shape: 20
@@ -341,9 +458,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 0
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_si_ceiling_light_b
     displayName: Ceiling Light B
     shape: 20
@@ -353,9 +472,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 0
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_si_ceiling_light_c
     displayName: Ceiling Light C
     shape: 20
@@ -365,9 +486,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 0
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_si_banner
     displayName: Banner
     shape: 20
@@ -377,9 +500,11 @@ MonoBehaviour:
     cost: 1
     enabled: 1
     applyStyleFinish: 0
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_si_poster
     displayName: Poster
     shape: 20
@@ -389,9 +514,11 @@ MonoBehaviour:
     cost: 1
     enabled: 1
     applyStyleFinish: 0
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_si_sign
     displayName: Sign
     shape: 20
@@ -401,9 +528,11 @@ MonoBehaviour:
     cost: 1
     enabled: 1
     applyStyleFinish: 0
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_foundation_steps_4x2
     displayName: Foundation Steps
     shape: 22
@@ -413,9 +542,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_support_pillar
     displayName: Support Pillar
     shape: 23
@@ -425,9 +556,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_floor_stairwell_4x4
     displayName: Stairwell Floor
     shape: 24
@@ -437,9 +570,11 @@ MonoBehaviour:
     cost: 3
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_balcony_4x2
     displayName: Balcony
     shape: 25
@@ -449,9 +584,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_wall_quarter_4x1
     displayName: Quarter Wall
     shape: 26
@@ -461,9 +598,11 @@ MonoBehaviour:
     cost: 1
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_wall_window_wide_4x4
     displayName: Wide Window
     shape: 27
@@ -473,9 +612,11 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_wall_slit_4x4
     displayName: Slit Window
     shape: 28
@@ -485,9 +626,11 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_wall_arch_4x4
     displayName: Archway
     shape: 29
@@ -497,9 +640,11 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_wall_tri_inv_l_4x2
     displayName: Inverted Tri Wall L
     shape: 30
@@ -509,9 +654,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_wall_tri_inv_r_4x2
     displayName: Inverted Tri Wall R
     shape: 31
@@ -521,9 +668,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_wall_vent_4x4
     displayName: Vent Wall
     shape: 32
@@ -533,9 +682,11 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_column_4m
     displayName: Column
     shape: 33
@@ -545,9 +696,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_column_half_2m
     displayName: Half Column
     shape: 34
@@ -557,9 +710,11 @@ MonoBehaviour:
     cost: 1
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_beam_4m
     displayName: Beam
     shape: 35
@@ -569,9 +724,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_brace_4x4
     displayName: Angled Brace
     shape: 36
@@ -581,9 +738,11 @@ MonoBehaviour:
     cost: 1
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_railing_half_4x05
     displayName: Half Railing
     shape: 37
@@ -593,9 +752,11 @@ MonoBehaviour:
     cost: 1
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_stairs_half_4x2
     displayName: Half Stairs
     shape: 38
@@ -605,9 +766,11 @@ MonoBehaviour:
     cost: 3
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_stairs_spiral_4x4
     displayName: Spiral Stairs
     shape: 39
@@ -617,9 +780,11 @@ MonoBehaviour:
     cost: 6
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_ramp_half_4x2
     displayName: Half Ramp
     shape: 40
@@ -629,9 +794,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_ladder_4m
     displayName: Ladder
     shape: 41
@@ -641,9 +808,11 @@ MonoBehaviour:
     cost: 1
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_roof_steep_4x4
     displayName: Steep Roof
     shape: 42
@@ -653,9 +822,11 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_roof_ridge_4m
     displayName: Ridge Cap
     shape: 43
@@ -665,9 +836,11 @@ MonoBehaviour:
     cost: 1
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_rooftop_4x4
     displayName: Flat Rooftop
     shape: 44
@@ -677,9 +850,11 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_hatch_lid
     displayName: Hatch Lid
     shape: 45
@@ -689,9 +864,25 @@ MonoBehaviour:
     cost: 1
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
+  - id: stone_ff_hatch_lid
+    displayName: Force Field Hatch
+    shape: 45
+    category: 4
+    prefab: {fileID: 7716582357163862272, guid: 222500acd5bc00f419a9b17b40a10875, type: 3}
+    icon: {fileID: 2800000, guid: 6d282dbcf2599f54395366ed77f13076, type: 3}
+    cost: 1
+    enabled: 1
+    applyStyleFinish: 0
+    materialOverride: {fileID: 0}
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_door_frame_double_4x4
     displayName: Double Door Frame
     shape: 46
@@ -701,9 +892,11 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_door_double
     displayName: Double Door
     shape: 47
@@ -713,9 +906,25 @@ MonoBehaviour:
     cost: 3
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
+  - id: stone_ff_door_double
+    displayName: Double Force Field Door
+    shape: 47
+    category: 4
+    prefab: {fileID: 2138001088499807164, guid: 9b3aa37bcded7ca4dbd500f55b089aad, type: 3}
+    icon: {fileID: 2800000, guid: 0b998a9010ff6cf47ab23465e785d4e7, type: 3}
+    cost: 3
+    enabled: 1
+    applyStyleFinish: 0
+    materialOverride: {fileID: 0}
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_gate_frame_8x8
     displayName: Gate Frame (8 m)
     shape: 48
@@ -725,9 +934,11 @@ MonoBehaviour:
     cost: 12
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_gate_8x8
     displayName: Gate (8 m)
     shape: 49
@@ -737,9 +948,25 @@ MonoBehaviour:
     cost: 8
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
+  - id: stone_ff_gate_8x8
+    displayName: Force Field Gate (8 m)
+    shape: 49
+    category: 4
+    prefab: {fileID: 5031689219892497850, guid: c98585dddfbd503449f03fe46095102e, type: 3}
+    icon: {fileID: 2800000, guid: d04c151eaef160044a9842b86879c007, type: 3}
+    cost: 8
+    enabled: 1
+    applyStyleFinish: 0
+    materialOverride: {fileID: 0}
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_foundation_half_4x2
     displayName: Half Foundation
     shape: 50
@@ -749,9 +976,11 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
   - id: stone_foundation_quarter_2x2
     displayName: Quarter Foundation
     shape: 51
@@ -761,6 +990,8 @@ MonoBehaviour:
     cost: 1
     enabled: 1
     applyStyleFinish: 1
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []

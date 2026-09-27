@@ -161,7 +161,7 @@ namespace Project.Vehicles
         /// </summary>
         private bool HandleFollowZoom()
         {
-            if (Mouse.current == null || profile == null)
+            if (Mouse.current == null || profile == null || Project.Building.DMBuildingMode.IsActive)
                 return false;
 
             float scroll = Mouse.current.scroll.ReadValue().y;

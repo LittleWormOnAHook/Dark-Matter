@@ -60,6 +60,11 @@ namespace Project.UI
         private float lastBlitSpan;
         private bool lastBlitInvertH;
         private bool lastBlitInvertV;
+        private Texture lastFogBlitSource;
+        private Vector2 lastFogBlitUv;
+        private float lastFogBlitSpan;
+        private bool lastFogBlitInvertH;
+        private bool lastFogBlitInvertV;
         private MapUI cachedMapUi;
         private global::UnityEngine.CanvasGroup hiddenMinimapGroup;
         private GameObject hiddenMinimapRoot;
@@ -140,6 +145,7 @@ namespace Project.UI
                 return;
 
             instance.lastBlitSource = null;
+            instance.lastFogBlitSource = null;
         }
 
         private void OnEnable()
@@ -167,6 +173,13 @@ namespace Project.UI
             provider.MapTextureReady += InvalidateViewCache;
             provider.WorldBoundsChanged -= InvalidateViewCache;
             provider.WorldBoundsChanged += InvalidateViewCache;
+
+            MapFogOfWar fog = MapFogOfWar.Instance ?? MapFogOfWar.EnsureExists();
+            if (fog != null)
+            {
+                fog.FogUpdated -= InvalidateViewCache;
+                fog.FogUpdated += InvalidateViewCache;
+            }
         }
 
         private void UnhookMapProviderEvents()
@@ -177,6 +190,10 @@ namespace Project.UI
 
             provider.MapTextureReady -= InvalidateViewCache;
             provider.WorldBoundsChanged -= InvalidateViewCache;
+
+            MapFogOfWar fog = MapFogOfWar.Instance;
+            if (fog != null)
+                fog.FogUpdated -= InvalidateViewCache;
         }
 
         private void OnDestroy()
@@ -426,7 +443,22 @@ namespace Project.UI
             WorldMapProvider map = WorldMapProvider.Instance;
             bool invertH = map != null && map.MinimapFlipHorizontal;
             bool invertV = map != null && map.MinimapFlipVertical;
-            BlitCrop(fog.FogTexture, rt, playerUv, uvSpan, invertH, invertV);
+            Texture fogSource = fog.FogTexture;
+            bool dirty = fogSource != lastFogBlitSource
+                || (playerUv - lastFogBlitUv).sqrMagnitude > 0.00000025f
+                || !Mathf.Approximately(uvSpan, lastFogBlitSpan)
+                || invertH != lastFogBlitInvertH
+                || invertV != lastFogBlitInvertV;
+            if (dirty)
+            {
+                BlitCrop(fogSource, rt, playerUv, uvSpan, invertH, invertV);
+                lastFogBlitSource = fogSource;
+                lastFogBlitUv = playerUv;
+                lastFogBlitSpan = uvSpan;
+                lastFogBlitInvertH = invertH;
+                lastFogBlitInvertV = invertV;
+            }
+
             return rt;
         }
 

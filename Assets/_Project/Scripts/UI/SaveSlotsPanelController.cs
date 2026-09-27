@@ -205,13 +205,8 @@ namespace Project.UI
             previewImage.sprite = null;
             previewImage.color = EmptyPreviewColor;
 
-            if (currentMode == Mode.Save && menuController != null && menuController.PendingSaveScreenshot != null)
-            {
-                SetPreviewFromTexture(previewImage, menuController.PendingSaveScreenshot, cacheAssets: false);
-                return;
-            }
-
-            if (!info.HasScreenshot)
+            // Each row shows its own saved thumbnail in Save and Load mode; the pending capture is only written on save.
+            if (!info.HasData || !info.HasScreenshot)
                 return;
 
             Texture2D texture = SaveSlotScreenshotUtility.LoadScreenshot(slotIndex);

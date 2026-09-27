@@ -412,6 +412,14 @@
 }
 
 .dmg-build-bar {
+    /* Build hotbar palette (0927-hotbar-restyle), inherited by everything inside the bar. */
+    --dmg-build-gold: rgb(212, 160, 23);
+    --dmg-build-row-bg: rgba(28, 42, 56, 0.2);
+    --dmg-build-button-bg: rgba(40, 40, 40, 0.5);
+    --dmg-build-button-bg-hover: rgba(58, 58, 58, 0.5);
+    --dmg-build-button-bg-pressed: rgba(28, 28, 28, 0.6);
+    --dmg-build-title-size: 21px;
+    --dmg-build-footer-size: 21px;
     position: absolute;
     left: 50%;
     bottom: 96px;
@@ -459,9 +467,9 @@
 .dmg-build-name {
     margin-bottom: 6px;
     padding: 0;
-    font-size: 28px;
+    font-size: var(--dmg-build-title-size);
     -unity-font-style: bold;
-    color: rgb(212, 160, 23);
+    color: var(--dmg-build-gold);
     background-color: rgba(0, 0, 0, 0);
     border-width: 0;
     -unity-text-align: middle-center;
@@ -474,7 +482,7 @@
     margin-top: 6px;
     margin-bottom: 0;
     padding: 0;
-    font-size: 28px;
+    font-size: var(--dmg-build-footer-size);
     -unity-font-style: bold;
     color: rgb(237, 233, 228);
     background-color: rgba(0, 0, 0, 0);
@@ -490,7 +498,7 @@
     align-items: center;
     align-self: center;
     padding: 4px;
-    background-color: rgba(28, 42, 56, 0.92);
+    background-color: var(--dmg-build-row-bg);
     border-width: 1px;
     border-color: rgb(74, 74, 90);
 }
@@ -499,10 +507,20 @@
     width: 28px;
     height: 72px;
     margin: 2px;
-    color: rgb(237, 233, 228);
-    background-color: rgb(143, 30, 94);
+    color: var(--dmg-build-gold);
+    background-color: var(--dmg-build-button-bg);
     border-width: 0;
     font-size: 16px;
+}
+
+.dmg-build-arrow:hover {
+    color: var(--dmg-build-gold);
+    background-color: var(--dmg-build-button-bg-hover);
+}
+
+.dmg-build-arrow:active {
+    color: var(--dmg-build-gold);
+    background-color: var(--dmg-build-button-bg-pressed);
 }
 
 .dmg-build-slots {
@@ -527,7 +545,7 @@
 }
 
 .dmg-build-slot-selected {
-    border-color: rgb(192, 46, 122);
+    border-color: var(--dmg-build-gold);
     border-width: 2px;
 }
 

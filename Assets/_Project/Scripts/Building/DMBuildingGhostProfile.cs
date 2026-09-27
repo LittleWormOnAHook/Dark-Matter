@@ -73,6 +73,53 @@ namespace Project.Building
         public float doorSeatDropMeters = 0.4f;
         public float overlapPaddingMeters = 0.08f;
 
+        [Tooltip("A foundation may stand alone (start a new base) only when no foundation is within this many meters. Closer than this it must connect edge to edge to another foundation. 0 = only the very first foundation in the world may stand alone.")]
+        public float newBaseClearanceMeters = 30f;
+
+        [Header("Base power (0926-generator)")]
+        [Tooltip("Side of the square power area around a base, centred on its first placed foundation, in meters. Equipment can be placed on the ground inside it.")]
+        public float basePowerSquareMeters = 100f;
+        [Tooltip("Generator refuel reaches Plasma Fuel in storage crates within this many meters.")]
+        public float generatorFuelRangeMeters = 200f;
+        [Tooltip("Generator tank size in units. 1 Plasma Fuel item = 1 unit.")]
+        public int generatorTankUnits = 100;
+        [Tooltip("Minutes of gameplay one fuel unit lasts.")]
+        public float generatorMinutesPerUnit = 5f;
+        [Tooltip("Load period in minutes: every powered item and force field in the base adds its units once per period on top of the base burn.")]
+        public float powerLoadPeriodMinutes = 30f;
+        [Tooltip("Extra Plasma Fuel units per load period for each powered item (lights, equipment).")]
+        public float poweredItemUnitsPerPeriod = 1f;
+        [Tooltip("Extra Plasma Fuel units per load period for each force field.")]
+        public float forceFieldUnitsPerPeriod = 2f;
+        [Tooltip("Force fields shut off (anyone can walk through) while their base has no powered generator.")]
+        public bool forceFieldsNeedPower = true;
+        [Tooltip("Lights on built pieces go dark while their base has no powered generator.")]
+        public bool lightsNeedPower = true;
+
+        [Header("Build Hub zone (0926-build-hub)")]
+        [Tooltip("Every piece except the Build Hub must stand fully inside a Build Hub zone. Off = build anywhere (testing).")]
+        public bool requireBuildHub = true;
+        [Tooltip("Width and depth (X and Z) of a level 0 Build Hub zone, centred on the hub, in meters.")]
+        public float buildHubZoneMeters = 50f;
+        [Tooltip("Height (Y) of a level 0 Build Hub zone, centred on the hub (half above, half below), in meters.")]
+        public float buildHubZoneHeightMeters = 50f;
+        [Tooltip("Meters added to the zone width and depth per upgrade level.")]
+        public float buildHubZoneStepMeters = 25f;
+        [Tooltip("Meters added to the zone height per upgrade level.")]
+        public float buildHubZoneHeightStepMeters = 25f;
+        [Tooltip("Highest Build Hub upgrade level.")]
+        public int buildHubMaxLevel = 10;
+        [Tooltip("A Build Hub's whole zone must be free of colliders except terrain (characters, creatures, items and built pieces are ignored; triggers count). Also checked when upgrading.")]
+        public bool buildHubZoneMustBeClear = true;
+
+        [Header("Patrol paths (0926-build-hub)")]
+        [Tooltip("Pieces may not be built on or across creature / pet patrol paths (DMIPathFollowProvider).")]
+        public bool blockPatrolPaths = true;
+        [Tooltip("Clearance around a patrol path polyline, in meters. The ghost bounds are grown by this much before the test.")]
+        public float patrolPathClearanceMeters = 1.5f;
+        [Tooltip("Extra vertical slack for the patrol path test, in meters (path points rarely sit exactly on the ground).")]
+        public float patrolPathHeightToleranceMeters = 2f;
+
         [Header("Build crosshair")]
         [Tooltip("Centre dot shown while build mode is on, in pixels. 0 hides it.")]
         public float crosshairDotPixels = 6f;
@@ -170,6 +217,26 @@ namespace Project.Building
         public static float DestroyHoldSeconds => Positive(Live != null ? Live.destroyHoldSeconds : 2f, 2f);
         public static float AimDistanceMeters => Positive(Live != null ? Live.aimDistanceMeters : 80f, 80f);
         public static float DoorSeatDropMeters => Mathf.Max(0f, Live != null ? Live.doorSeatDropMeters : 0.4f);
+        public static float NewBaseClearanceMeters => Mathf.Max(0f, Live != null ? Live.newBaseClearanceMeters : 30f);
+        public static float BasePowerSquareMeters => Positive(Live != null ? Live.basePowerSquareMeters : 100f, 100f);
+        public static float GeneratorFuelRangeMeters => Mathf.Max(0f, Live != null ? Live.generatorFuelRangeMeters : 200f);
+        public static int GeneratorTankUnits => Mathf.Max(1, Live != null ? Live.generatorTankUnits : 100);
+        public static float GeneratorMinutesPerUnit => Positive(Live != null ? Live.generatorMinutesPerUnit : 5f, 5f);
+        public static float PowerLoadPeriodMinutes => Positive(Live != null ? Live.powerLoadPeriodMinutes : 30f, 30f);
+        public static float PoweredItemUnitsPerPeriod => Mathf.Max(0f, Live != null ? Live.poweredItemUnitsPerPeriod : 1f);
+        public static float ForceFieldUnitsPerPeriod => Mathf.Max(0f, Live != null ? Live.forceFieldUnitsPerPeriod : 2f);
+        public static bool ForceFieldsNeedPower => Live == null || Live.forceFieldsNeedPower;
+        public static bool LightsNeedPower => Live == null || Live.lightsNeedPower;
+        public static bool RequireBuildHub => Live == null || Live.requireBuildHub;
+        public static float BuildHubZoneMeters => Positive(Live != null ? Live.buildHubZoneMeters : 50f, 50f);
+        public static float BuildHubZoneHeightMeters => Positive(Live != null ? Live.buildHubZoneHeightMeters : 50f, 50f);
+        public static float BuildHubZoneStepMeters => Mathf.Max(0f, Live != null ? Live.buildHubZoneStepMeters : 25f);
+        public static float BuildHubZoneHeightStepMeters => Mathf.Max(0f, Live != null ? Live.buildHubZoneHeightStepMeters : 25f);
+        public static int BuildHubMaxLevel => Mathf.Max(0, Live != null ? Live.buildHubMaxLevel : 10);
+        public static bool BuildHubZoneMustBeClear => Live == null || Live.buildHubZoneMustBeClear;
+        public static bool BlockPatrolPaths => Live == null || Live.blockPatrolPaths;
+        public static float PatrolPathClearanceMeters => Mathf.Max(0f, Live != null ? Live.patrolPathClearanceMeters : 1.5f);
+        public static float PatrolPathHeightToleranceMeters => Mathf.Max(0f, Live != null ? Live.patrolPathHeightToleranceMeters : 2f);
         public static float OverlapPaddingMeters => Mathf.Max(0f, Live != null ? Live.overlapPaddingMeters : 0.08f);
         public static float DoorSwingDegrees => Positive(Live != null ? Live.doorSwingDegrees : 90f, 90f);
         public static float DoorSwingSeconds => Positive(Live != null ? Live.doorSwingSeconds : 0.35f, 0.35f);

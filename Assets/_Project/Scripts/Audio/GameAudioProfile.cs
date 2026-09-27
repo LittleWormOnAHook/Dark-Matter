@@ -44,6 +44,7 @@ namespace Project.Audio
 
         [Header("UI")]
         public AudioClip[] buttonClickClips;
+        public AudioClip[] uiDenyClips;
         public AudioClip[] inventoryItemClickClips;
         public AudioClip[] itemUseClips;
         public AudioClip[] itemEquipClips;

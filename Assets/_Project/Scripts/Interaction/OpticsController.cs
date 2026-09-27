@@ -174,7 +174,7 @@ namespace Project.Interaction
             }
 
             // Mouse-wheel FOV zoom is binoculars-only.
-            if (tool.toolType == ToolType.Binoculars && Mouse.current != null)
+            if (tool.toolType == ToolType.Binoculars && Mouse.current != null && !Project.Building.DMBuildingMode.IsActive)
                 HandleOpticsScrollZoom(tool);
             else
                 DecayScrollMomentum();

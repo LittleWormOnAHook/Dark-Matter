@@ -17,6 +17,14 @@ namespace Project.UI
 
         public static bool IsInventoryContextOpen => instance != null && instance.invContextOpen;
 
+        /// <summary>Gamepad B / Cancel: close inventory RMB context without requiring Escape.</summary>
+        public static bool TryHideInventoryContextMenu()
+        {
+            if (instance == null || !instance.invContextOpen)
+                return false;
+            instance.HideInventoryContextMenu();
+            return true;
+        }
         public static bool TryGetInventoryContextLayer(
             out VisualElement menuRoot,
             out VisualElement menuDismiss,
@@ -77,7 +85,7 @@ namespace Project.UI
                 invCtxRoot.pickingMode = PickingMode.Ignore;
         }
 
-        private void ShowInventoryContextMenu(int slotIndex, Vector2 panelPosition)
+        public void ShowInventoryContextMenu(int slotIndex, Vector2 panelPosition)
         {
             EnsureInventoryContextLayer();
             if (invCtxPanel == null || invCtxRoot == null)

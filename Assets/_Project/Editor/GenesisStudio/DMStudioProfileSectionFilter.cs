@@ -35,7 +35,14 @@ namespace Project.EditorTools.GenesisStudio
             "slowWalkSpeedMultiplier",
             "jogSpeedMultiplier",
             "sprintBurstSpeedMultiplier",
-            "shiftDoubleTapWindow"
+            "shiftDoubleTapWindow",
+            "leanOverrideEnabled",
+            "leanWalkStrength",
+            "leanRunStrength",
+            "leanSmoothTime",
+            "leanMaxValue",
+            "leanSpineRollDegrees",
+            "leanSpineRollWhileStrafing"
         };
 
         private static readonly string[] LandingHeightFields =
@@ -88,7 +95,27 @@ namespace Project.EditorTools.GenesisStudio
             "destroyHoldSeconds",
             "aimDistanceMeters",
             "doorSeatDropMeters",
-            "overlapPaddingMeters"
+            "overlapPaddingMeters",
+            "newBaseClearanceMeters",
+            "basePowerSquareMeters",
+            "generatorFuelRangeMeters",
+            "generatorTankUnits",
+            "generatorMinutesPerUnit",
+            "powerLoadPeriodMinutes",
+            "poweredItemUnitsPerPeriod",
+            "forceFieldUnitsPerPeriod",
+            "forceFieldsNeedPower",
+            "lightsNeedPower",
+            "requireBuildHub",
+            "buildHubZoneMeters",
+            "buildHubZoneHeightMeters",
+            "buildHubZoneStepMeters",
+            "buildHubZoneHeightStepMeters",
+            "buildHubMaxLevel",
+            "buildHubZoneMustBeClear",
+            "blockPatrolPaths",
+            "patrolPathClearanceMeters",
+            "patrolPathHeightToleranceMeters"
         };
 
         private static readonly string[] BuildingDoorFields =
@@ -254,9 +281,9 @@ namespace Project.EditorTools.GenesisStudio
                 DMStudioProfileSectionFilter.DashOnly =>
                     "Dash motion, stamina cost, hologram, streaks, and smoke on DM_ClimbDashProfile — climb tuning lives under Climb.",
                 DMStudioProfileSectionFilter.ClimbOnly =>
-                    "Wall attach, mantle, climb stamina, sprint stamina, and surface probes on DM_ClimbDashProfile — dash, survival, and locomotion have their own tabs.",
+                    "Wall attach, mantle, climb stamina, sprint stamina, steps & slopes (on-foot step height and walkable slope), and surface probes on DM_ClimbDashProfile — dash, survival, and locomotion have their own tabs.",
                 DMStudioProfileSectionFilter.LocomotionOnly =>
-                    "On-foot gaits on DM_ClimbDashProfile — slow walk, Shift jog, and double-tap Shift sprint burst. Play-mode edits persist via Profile Save.",
+                    "On-foot gaits on DM_ClimbDashProfile — slow walk, Shift jog, double-tap Shift sprint burst, and turn lean strength. Play-mode edits persist via Profile Save.",
                 DMStudioProfileSectionFilter.FootstepsAudioOnly =>
                     "Default fallback, Unity-tag, and terrain-layer 0-10 clip libraries on GameAudioProfile.",
                 DMStudioProfileSectionFilter.CombatAmmoOnly =>

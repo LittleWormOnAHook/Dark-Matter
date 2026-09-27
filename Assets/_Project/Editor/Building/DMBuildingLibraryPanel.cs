@@ -12,7 +12,8 @@ namespace Project.EditorTools.Building
     /// <summary>
     /// Building Library: one subtab per style (Stone, Iron, Silicate, ...). Each style is a kit with its own cost item,
     /// finishes, kit shape settings and parts (prefab, icon, shape, category, cost). Shared by Building Studio and
-    /// Genesis Studio &gt; Building &gt; Library.
+    /// Genesis Studio &gt; Building &gt; Library. Extra Equipment and Placements subtabs list those parts from every style.
+    /// Parts are shown grouped by type and sorted by name; the serialized order is never changed.
     /// </summary>
     public sealed class DMBuildingLibraryPanel
     {
@@ -24,6 +25,14 @@ namespace Project.EditorTools.Building
         bool showFinishes = true;
         bool showKit;
         bool showParts = true;
+        bool showCollection = true;
+        readonly HashSet<string> closedGroups = new HashSet<string>();
+
+        // 0927-library-tabs: sub-tabs that list parts from every style instead of one style.
+        const string EquipmentTabId = "__equipment";
+        const string PlacementsTabId = "__placements";
+
+        static bool IsCollectionTab(string id) => id == EquipmentTabId || id == PlacementsTabId;
 
         public void Draw()
         {
@@ -43,6 +52,13 @@ namespace Project.EditorTools.Building
             }
 
             DMBuildingStyleLibrary style = DrawStyleTabs(styles);
+            if (IsCollectionTab(selectedStyleId))
+            {
+                EditorGUILayout.Space(4f);
+                DrawCollectionTab(styles, selectedStyleId == EquipmentTabId);
+                return;
+            }
+
             if (style == null)
                 return;
 
@@ -71,7 +87,7 @@ namespace Project.EditorTools.Building
                     selected = styles[i];
             }
 
-            if (selected == null)
+            if (selected == null && !IsCollectionTab(selectedStyleId))
             {
                 selected = styles[0];
                 selectedStyleId = selected.styleId;
@@ -89,6 +105,18 @@ namespace Project.EditorTools.Building
                     selectedStyleId = s.styleId;
                     GUI.FocusControl(null);
                 }
+            }
+
+            if (DMStudioStyles.DrawSubTab("Equipment", selectedStyleId == EquipmentTabId) && selectedStyleId != EquipmentTabId)
+            {
+                selectedStyleId = EquipmentTabId;
+                GUI.FocusControl(null);
+            }
+
+            if (DMStudioStyles.DrawSubTab("Placements", selectedStyleId == PlacementsTabId) && selectedStyleId != PlacementsTabId)
+            {
+                selectedStyleId = PlacementsTabId;
+                GUI.FocusControl(null);
             }
 
             GUILayout.FlexibleSpace();
@@ -303,32 +331,26 @@ namespace Project.EditorTools.Building
             EditorGUILayout.BeginHorizontal();
             partFilter = EditorGUILayout.TextField("Filter", partFilter);
             if (GUILayout.Button("Expand", GUILayout.Width(60f)))
+            {
+                closedGroups.Clear();
                 foreach (DMBuildingPartEntry p in style.parts)
                     if (p != null) openParts.Add(style.styleId + "/" + p.id);
+            }
             if (GUILayout.Button("Collapse", GUILayout.Width(64f)))
                 openParts.Clear();
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.Space(2f);
 
-            int remove = -1;
+            // 0927-library-tabs: display only - grouped by type and sorted by name. The serialized part order is untouched.
+            var rows = new List<PartRow>();
             for (int i = 0; i < style.parts.Count; i++)
             {
                 DMBuildingPartEntry part = style.parts[i];
-                if (part == null)
-                    continue;
-                if (!string.IsNullOrEmpty(partFilter)
-                    && part.id.IndexOf(partFilter, System.StringComparison.OrdinalIgnoreCase) < 0
-                    && (part.displayName ?? string.Empty).IndexOf(partFilter, System.StringComparison.OrdinalIgnoreCase) < 0)
-                    continue;
-                if (DrawPart(style, part))
-                    remove = i;
+                if (part != null && PassesFilter(part))
+                    rows.Add(new PartRow(style, part));
             }
 
-            if (remove >= 0 && EditorUtility.DisplayDialog("Remove part", "Remove '" + style.parts[remove].displayName + "' from " + style.displayName + "? The prefab is kept.", "Remove", "Cancel"))
-            {
-                style.parts.RemoveAt(remove);
-                GUI.changed = true;
-            }
+            ConfirmRemove(DrawGroupedRows(style.styleId, rows, style.accent, false));
 
             EditorGUILayout.Space(4f);
             EditorGUILayout.BeginHorizontal();
@@ -369,7 +391,7 @@ namespace Project.EditorTools.Building
         }
 
         /// <summary>Returns true when the user pressed remove.</summary>
-        bool DrawPart(DMBuildingStyleLibrary style, DMBuildingPartEntry part)
+        bool DrawPart(DMBuildingStyleLibrary style, DMBuildingPartEntry part, bool showStyle = false)
         {
             string key = style.styleId + "/" + part.id;
             bool open = openParts.Contains(key);
@@ -390,7 +412,9 @@ namespace Project.EditorTools.Building
             bool nextOpen = EditorGUILayout.Foldout(open, part.displayName, true);
             GUILayout.FlexibleSpace();
             DMStudioStyles.DrawBadge(part.shape.ToString(), DarkMatterGenesisUiPalette.WithAlpha(style.accent, 0.35f));
-            DMStudioStyles.DrawBadge(part.cost + " " + CostName(style), DarkMatterGenesisUiPalette.SlateGray);
+            if (showStyle)
+                DMStudioStyles.DrawBadge(style.displayName, DarkMatterGenesisUiPalette.WithAlpha(style.accent, 0.6f));
+            DMStudioStyles.DrawBadge(CostLabel(style, part), DarkMatterGenesisUiPalette.SlateGray);
             if (part.prefab == null)
                 DMStudioStyles.DrawBadge("fallback mesh", DarkMatterGenesisUiPalette.DeepMagenta);
             if (GUILayout.Button("X", GUILayout.Width(22f)))
@@ -430,9 +454,22 @@ namespace Project.EditorTools.Building
                 part.category = (DMBuildingCategory)EditorGUILayout.EnumPopup("Hotbar category", part.category);
                 part.icon = (Texture2D)EditorGUILayout.ObjectField("Icon", part.icon, typeof(Texture2D), false);
                 part.cost = Mathf.Max(0, EditorGUILayout.IntField("Cost (" + CostName(style) + ")", part.cost));
+                if (part.category == DMBuildingCategory.Equipment || (part.customCost != null && part.customCost.Count > 0))
+                    DrawCustomCost(part);
                 part.applyStyleFinish = EditorGUILayout.Toggle(
                     new GUIContent("Apply style finish", "Off keeps the prefab's own materials (lights, decorations)."),
                     part.applyStyleFinish);
+                Material pickedOverride = (Material)EditorGUILayout.ObjectField(
+                    new GUIContent("Material override", "When set, the built piece uses this material on every mesh (glass panes keep glass), replacing the prefab's materials and the style finish. The icon rebakes with it."),
+                    part.materialOverride, typeof(Material), false);
+                if (pickedOverride != part.materialOverride)
+                {
+                    part.materialOverride = pickedOverride;
+                    part.icon = null;
+                    EditorUtility.SetDirty(style);
+                    DMBuildingStyles.Invalidate();
+                    DMBuildingStyleLibraryBuilder.BakeIcons(style, false);
+                }
                 if (part.shape == DMBuildingShape.SurfaceItem)
                     part.surfaceOffsetMeters = EditorGUILayout.FloatField(new GUIContent("Surface offset (m)", "Gap between the item and the face it sticks to."), part.surfaceOffsetMeters);
                 part.sizeOverride = EditorGUILayout.Vector3Field(new GUIContent("Size override (m)", "Zero uses the shape's grid size or the prefab mesh bounds."), part.sizeOverride);
@@ -470,6 +507,354 @@ namespace Project.EditorTools.Building
             style.parts.Add(part);
             openParts.Add(style.styleId + "/" + part.id);
             GUI.changed = true;
+        }
+
+        // ---------------------------------------------------------------- 0927-library-tabs: Equipment / Placements
+
+        readonly struct PartRow
+        {
+            public readonly DMBuildingStyleLibrary style;
+            public readonly DMBuildingPartEntry part;
+
+            public PartRow(DMBuildingStyleLibrary style, DMBuildingPartEntry part)
+            {
+                this.style = style;
+                this.part = part;
+            }
+        }
+
+        /// <summary>Equipment tab: parts whose hotbar category is Equipment (the in-game Equipment Tab entry).</summary>
+        static bool IsEquipmentPart(DMBuildingPartEntry part)
+        {
+            return part != null && part.category == DMBuildingCategory.Equipment;
+        }
+
+        /// <summary>Placements tab: parts that stick to the face of built pieces (Surface snap: lights, signs...), minus Equipment.</summary>
+        static bool IsPlacementPart(DMBuildingPartEntry part)
+        {
+            return part != null
+                && part.category != DMBuildingCategory.Equipment
+                && DMBuildingCatalog.SnapFor(part.shape) == DMBuildingSnap.Surface;
+        }
+
+        void DrawCollectionTab(IReadOnlyList<DMBuildingStyleLibrary> styles, bool equipment)
+        {
+            Color accent = equipment ? new Color(0.95f, 0.62f, 0.2f, 1f) : new Color(0.35f, 0.75f, 0.95f, 1f);
+            var rows = new List<PartRow>();
+            var owners = new List<DMBuildingStyleLibrary>();
+            int total = 0;
+            for (int s = 0; s < styles.Count; s++)
+            {
+                DMBuildingStyleLibrary style = styles[s];
+                if (style == null || style.parts == null)
+                    continue;
+                for (int i = 0; i < style.parts.Count; i++)
+                {
+                    DMBuildingPartEntry part = style.parts[i];
+                    if (!(equipment ? IsEquipmentPart(part) : IsPlacementPart(part)))
+                        continue;
+                    total++;
+                    if (!owners.Contains(style))
+                        owners.Add(style);
+                    if (PassesFilter(part))
+                        rows.Add(new PartRow(style, part));
+                }
+            }
+
+            string title = equipment ? "Equipment" : "Placements";
+            string scope = equipment ? EquipmentTabId : PlacementsTabId;
+            DrawFoldoutSection(ref showCollection, title + " (" + total + ")", accent, () =>
+            {
+                EditorGUILayout.HelpBox(equipment
+                        ? "Every part with Hotbar category = Equipment, from all styles. In game these go to the Equipment Tab entry instead of a style hotbar. Edits save to the owning style asset."
+                        : "Every surface part (lights, signs, banners, posters...) from all styles, except Equipment. Add new ones with + Surface Item on a style's Parts. Edits save to the owning style asset.",
+                    MessageType.None);
+
+                EditorGUILayout.BeginHorizontal();
+                partFilter = EditorGUILayout.TextField("Filter", partFilter);
+                if (GUILayout.Button("Expand", GUILayout.Width(60f)))
+                {
+                    closedGroups.Clear();
+                    foreach (PartRow r in rows)
+                        openParts.Add(r.style.styleId + "/" + r.part.id);
+                }
+
+                if (GUILayout.Button("Collapse", GUILayout.Width(64f)))
+                    openParts.Clear();
+                EditorGUILayout.EndHorizontal();
+                EditorGUILayout.Space(2f);
+
+                for (int i = 0; i < owners.Count; i++)
+                    Undo.RecordObject(owners[i], "Edit Building Part");
+                ConfirmRemove(DrawGroupedRows(scope, rows, accent, true));
+
+                EditorGUILayout.Space(4f);
+                if (GUILayout.Button(new GUIContent("Bake Missing Icons", "Bakes missing icons in every style that owns one of these parts.")))
+                {
+                    int n = 0;
+                    for (int i = 0; i < owners.Count; i++)
+                        n += DMBuildingStyleLibraryBuilder.BakeIcons(owners[i], false);
+                    Debug.Log("[DM Building Library] Queued " + n + " icons to bake.");
+                }
+            });
+        }
+
+        static readonly string[] GroupNames =
+        {
+            "Foundations", "Floors & Ceilings", "Walls", "Windows", "Doors & Gates", "Roofs",
+            "Stairs & Ramps", "Structure", "Surface Items", "Decor & Custom", "Equipment", "Other"
+        };
+
+        /// <summary>Display group from the part's shape (piece kind); Custom and unknown shapes use the hotbar category.</summary>
+        static int GroupOf(DMBuildingPartEntry part)
+        {
+            if (part.category == DMBuildingCategory.Equipment)
+                return 10;
+            switch (part.shape)
+            {
+                case DMBuildingShape.Foundation:
+                case DMBuildingShape.TriFoundation:
+                case DMBuildingShape.FoundationSteps:
+                case DMBuildingShape.SupportPillar:
+                case DMBuildingShape.HalfFoundation:
+                case DMBuildingShape.QuarterFoundation:
+                    return 0;
+                case DMBuildingShape.Floor:
+                case DMBuildingShape.TriFloor:
+                case DMBuildingShape.Ceiling:
+                case DMBuildingShape.Hatch:
+                case DMBuildingShape.StairwellFloor:
+                case DMBuildingShape.Balcony:
+                    return 1;
+                case DMBuildingShape.Wall:
+                case DMBuildingShape.HalfWall:
+                case DMBuildingShape.QuarterWall:
+                case DMBuildingShape.TriWallLeft:
+                case DMBuildingShape.TriWallRight:
+                case DMBuildingShape.InvTriWallLeft:
+                case DMBuildingShape.InvTriWallRight:
+                case DMBuildingShape.VentWall:
+                case DMBuildingShape.Passage:
+                case DMBuildingShape.Archway:
+                    return 2;
+                case DMBuildingShape.Window:
+                case DMBuildingShape.WideWindow:
+                case DMBuildingShape.SlitWindow:
+                    return 3;
+                case DMBuildingShape.DoorFrame:
+                case DMBuildingShape.Door:
+                case DMBuildingShape.DoubleDoorFrame:
+                case DMBuildingShape.DoubleDoor:
+                case DMBuildingShape.GateFrame:
+                case DMBuildingShape.Gate:
+                case DMBuildingShape.HatchLid:
+                    return 4;
+                case DMBuildingShape.Roof:
+                case DMBuildingShape.RoofCorner:
+                case DMBuildingShape.RoofInner:
+                case DMBuildingShape.SteepRoof:
+                case DMBuildingShape.RidgeCap:
+                case DMBuildingShape.Rooftop:
+                    return 5;
+                case DMBuildingShape.Stairs:
+                case DMBuildingShape.HalfStairs:
+                case DMBuildingShape.SpiralStairs:
+                case DMBuildingShape.Ramp:
+                case DMBuildingShape.HalfRamp:
+                case DMBuildingShape.Ladder:
+                    return 6;
+                case DMBuildingShape.Column:
+                case DMBuildingShape.HalfColumn:
+                case DMBuildingShape.Beam:
+                case DMBuildingShape.Brace:
+                case DMBuildingShape.Railing:
+                case DMBuildingShape.HalfRailing:
+                    return 7;
+                case DMBuildingShape.SurfaceItem:
+                    return 8;
+            }
+
+            switch (part.category)
+            {
+                case DMBuildingCategory.Foundations:
+                    return 0;
+                case DMBuildingCategory.FloorsAndRoofs:
+                    return 1;
+                case DMBuildingCategory.Walls:
+                    return 2;
+                case DMBuildingCategory.Doors:
+                    return 4;
+                case DMBuildingCategory.StructureAndStairs:
+                    return 7;
+                case DMBuildingCategory.Decor:
+                    return 9;
+            }
+
+            return GroupNames.Length - 1;
+        }
+
+        static string NameOf(DMBuildingPartEntry part)
+        {
+            return string.IsNullOrEmpty(part.displayName) ? (part.id ?? string.Empty) : part.displayName;
+        }
+
+        static int CompareRows(PartRow a, PartRow b)
+        {
+            int c = GroupOf(a.part).CompareTo(GroupOf(b.part));
+            if (c != 0)
+                return c;
+            c = EditorUtility.NaturalCompare(NameOf(a.part), NameOf(b.part));
+            if (c != 0)
+                return c;
+            c = a.style.order.CompareTo(b.style.order);
+            if (c != 0)
+                return c;
+            c = string.CompareOrdinal(a.style.styleId, b.style.styleId);
+            return c != 0 ? c : string.CompareOrdinal(a.part.id, b.part.id);
+        }
+
+        bool PassesFilter(DMBuildingPartEntry part)
+        {
+            if (string.IsNullOrEmpty(partFilter))
+                return true;
+            return (part.id ?? string.Empty).IndexOf(partFilter, System.StringComparison.OrdinalIgnoreCase) >= 0
+                || (part.displayName ?? string.Empty).IndexOf(partFilter, System.StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        /// <summary>Draws rows under one foldout header per group. Returns the row whose X was pressed (part null if none).</summary>
+        PartRow DrawGroupedRows(string scope, List<PartRow> rows, Color accent, bool acrossStyles)
+        {
+            rows.Sort(CompareRows);
+            var counts = new int[GroupNames.Length];
+            for (int i = 0; i < rows.Count; i++)
+                counts[GroupOf(rows[i].part)]++;
+
+            PartRow remove = default;
+            int current = -1;
+            bool open = true;
+            for (int i = 0; i < rows.Count; i++)
+            {
+                PartRow row = rows[i];
+                int group = GroupOf(row.part);
+                if (group != current)
+                {
+                    current = group;
+                    open = DrawGroupHeader(scope + "/" + GroupNames[group], GroupNames[group] + " (" + counts[group] + ")", accent);
+                }
+
+                if (!open)
+                    continue;
+
+                bool pressed;
+                if (acrossStyles)
+                {
+                    EditorGUI.BeginChangeCheck();
+                    pressed = DrawPart(row.style, row.part, true);
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        EditorUtility.SetDirty(row.style);
+                        DMBuildingStyles.Invalidate();
+                    }
+                }
+                else
+                {
+                    pressed = DrawPart(row.style, row.part);
+                }
+
+                if (pressed)
+                    remove = row;
+            }
+
+            if (rows.Count == 0)
+                EditorGUILayout.LabelField("No parts match.", EditorStyles.miniLabel);
+            return remove;
+        }
+
+        bool DrawGroupHeader(string key, string label, Color accent)
+        {
+            bool open = !closedGroups.Contains(key);
+            EditorGUILayout.Space(2f);
+            Rect r = GUILayoutUtility.GetRect(0f, 20f, GUILayout.ExpandWidth(true));
+            bool next = EditorGUI.Foldout(r, open, label, true, FoldoutStyle);
+            DMStudioStyles.DrawAccentLine(r, DarkMatterGenesisUiPalette.WithAlpha(accent, 0.6f), 1f);
+            if (next != open)
+            {
+                if (next)
+                    closedGroups.Remove(key);
+                else
+                    closedGroups.Add(key);
+            }
+
+            return next;
+        }
+
+        static void ConfirmRemove(PartRow row)
+        {
+            if (row.part == null || row.style == null || row.style.parts == null)
+                return;
+            if (!EditorUtility.DisplayDialog("Remove part", "Remove '" + row.part.displayName + "' from " + row.style.displayName + "? The prefab is kept.", "Remove", "Cancel"))
+                return;
+            Undo.RecordObject(row.style, "Remove Building Part");
+            row.style.parts.Remove(row.part);
+            EditorUtility.SetDirty(row.style);
+            DMBuildingStyles.Invalidate();
+            GUI.changed = true;
+        }
+
+        /// <summary>Equipment and other parts paid with several items (replaces the style cost when any line is valid).</summary>
+        static void DrawCustomCost(DMBuildingPartEntry part)
+        {
+            if (part.customCost == null)
+                part.customCost = new List<DMBuildingCostLine>();
+            EditorGUILayout.LabelField(new GUIContent("Custom cost", "When any line is set it replaces the style cost."), EditorStyles.miniBoldLabel);
+            int remove = -1;
+            for (int i = 0; i < part.customCost.Count; i++)
+            {
+                DMBuildingCostLine line = part.customCost[i];
+                if (line == null)
+                    continue;
+                EditorGUILayout.BeginHorizontal();
+                line.item = (ItemData)EditorGUILayout.ObjectField(line.item, typeof(ItemData), false);
+                line.amount = Mathf.Max(1, EditorGUILayout.IntField(line.amount, GUILayout.Width(80f)));
+                if (GUILayout.Button("X", GUILayout.Width(22f)))
+                    remove = i;
+                EditorGUILayout.EndHorizontal();
+            }
+
+            if (remove >= 0)
+            {
+                part.customCost.RemoveAt(remove);
+                GUI.changed = true;
+            }
+
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.Space(EditorGUI.indentLevel * 15f);
+            if (GUILayout.Button("+ Cost Line", GUILayout.Width(100f)))
+            {
+                part.customCost.Add(new DMBuildingCostLine());
+                GUI.changed = true;
+            }
+
+            EditorGUILayout.EndHorizontal();
+        }
+
+        static string CostLabel(DMBuildingStyleLibrary style, DMBuildingPartEntry part)
+        {
+            if (part.customCost != null && part.customCost.Count > 0)
+            {
+                var bits = new List<string>();
+                for (int i = 0; i < part.customCost.Count; i++)
+                {
+                    DMBuildingCostLine line = part.customCost[i];
+                    if (line != null && line.item != null && line.amount > 0)
+                        bits.Add(line.amount + " " + (string.IsNullOrEmpty(line.item.itemName) ? line.item.name : line.item.itemName));
+                }
+
+                if (bits.Count > 0)
+                    return string.Join(", ", bits);
+            }
+
+            return part.cost + " " + CostName(style);
         }
 
         static string CostName(DMBuildingStyleLibrary style)

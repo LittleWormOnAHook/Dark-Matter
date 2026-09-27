@@ -1,4 +1,4 @@
-using Invector;
+﻿using Invector;
 using Invector.vCamera;
 using Invector.vShooter;
 using Project.Combat;
@@ -8,26 +8,32 @@ using UnityEngine;
 namespace Project.Player.Invector
 {
     /// <summary>
-    /// Pioneer player shot recoil — suppresses Invector camera + animation kick and applies subtle custom camera nudge.
+    /// Pioneer player shot recoil â€” suppresses Invector camera + animation kick and applies subtle custom camera nudge.
     /// </summary>
-    public static class PioneerInvectorRecoilUtility
+        public static class PioneerInvectorRecoilUtility
     {
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsForFastPlay()
+        {
+            _recoilRecoveryVelocity = Vector2.zero;
+        }
+
         /// <summary>Must match PioneerShooterMeleeInput mouse look scale so recoil feels like look input.</summary>
         public const float CameraInputScale = 0.1f;
 
-        /// <summary>Invector Shot layer blend-tree id — 1 is the lightest pistol-style fire clip.</summary>
+        /// <summary>Invector Shot layer blend-tree id â€” 1 is the lightest pistol-style fire clip.</summary>
         public const int MildShotAnimationId = 1;
 
         /// <summary>Shot layer weight while hip-firing / aiming (Invector defaults to 1 = full body flinch).</summary>
         public const float ShotLayerWeight = 0.38f;
 
-        /// <summary>Rifle shot layer — lighter than pistol; stocked two-hand weapons shouldn't flinch hard.</summary>
+        /// <summary>Rifle shot layer â€” lighter than pistol; stocked two-hand weapons shouldn't flinch hard.</summary>
         public const float RifleShotLayerWeight = 0.18f;
 
         /// <summary>Shot layer weight when using scope view.</summary>
         public const float ScopeShotLayerWeight = 0.28f;
 
-        /// <summary>Rifle scope shot layer — barely visible pulse so ADS stays stable.</summary>
+        /// <summary>Rifle scope shot layer â€” barely visible pulse so ADS stays stable.</summary>
         public const float RifleScopeShotLayerWeight = 0.12f;
 
         private const float ScopeWeightScalePistol = ScopeShotLayerWeight / ShotLayerWeight;
@@ -37,7 +43,7 @@ namespace Project.Player.Invector
         private const float MaxPitchRecoilOffset = 10f;
         private const float MaxYawRecoilOffset = 5f;
 
-        /// <summary>Underdamped spring — stiffness high, damping low enough for a slight rebound past aim.</summary>
+        /// <summary>Underdamped spring â€” stiffness high, damping low enough for a slight rebound past aim.</summary>
         private const float RecoilSpringStiffness = 210f;
         private const float RecoilSpringDampingPistol = 13.5f;
         private const float RecoilSpringDampingRifle = 16f;
@@ -91,7 +97,7 @@ namespace Project.Player.Invector
             if (Mathf.Abs(verticalKick) < 0.001f && Mathf.Abs(horizontalKick) < 0.001f)
                 return;
 
-            // Temporary kick on offsetMouse — decays in TickRecoilRecovery so aim baseline (mouseX/Y) is preserved.
+            // Temporary kick on offsetMouse â€” decays in TickRecoilRecovery so aim baseline (mouseX/Y) is preserved.
             Vector2 offset = camera.offsetMouse;
             offset.y -= verticalKick;
             offset.x += horizontalKick;
@@ -230,7 +236,7 @@ namespace Project.Player.Invector
         {
             if (weaponItem != null && weaponItem.isMiningTool)
             {
-                // Continuous mining beam fires many recoil ticks/sec — keep kick tiny to avoid jitter.
+                // Continuous mining beam fires many recoil ticks/sec â€” keep kick tiny to avoid jitter.
                 verticalKick = Random.Range(0.003f, 0.008f);
                 horizontalKick = Random.Range(-0.004f, 0.004f);
                 return;

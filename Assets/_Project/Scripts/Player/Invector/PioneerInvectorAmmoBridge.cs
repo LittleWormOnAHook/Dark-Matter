@@ -1,6 +1,7 @@
 using System.Collections;
 using Invector.vShooter;
 using Project.CameraFx;
+using Project.Combat;
 using Project.Data;
 using Project.Inventory;
 using UnityEngine;
@@ -43,6 +44,11 @@ namespace Project.Player.Invector
         private EquipmentController _equipment;
         private vShooterManager _shooterManager;
         private int _lastSyncedSlot = -1;
+        private vShooterWeapon _lastTimedWeapon;
+        private float _nextTimingPollUnscaled;
+        private float _appliedShootInterval = float.NaN;
+        private float _appliedReloadSeconds = float.NaN;
+        private int _appliedClipSize = int.MinValue;
         private float _nextEmptyReloadDenyTime;
         private float _nextEmptyClickTime;
         private Coroutine _headShakeRoutine;
@@ -103,6 +109,23 @@ namespace Project.Player.Invector
             {
                 _lastSyncedSlot = slot;
                 SyncMagazineFromPioneer();
+                ApplyLiveRangedTiming(force: true);
+            }
+
+            vShooterWeapon weapon = _shooterManager.CurrentWeapon;
+            if (weapon != _lastTimedWeapon)
+            {
+                _lastTimedWeapon = weapon;
+                if (weapon != null)
+                    ApplyLiveRangedTiming(force: true);
+            }
+
+            // Genesis Studio edits ScriptableObject ammo/weapon stats in Play Mode — push to Invector
+            // before the next CanShot gate (not only on hotbar/ammo events).
+            if (weapon != null && Time.unscaledTime >= _nextTimingPollUnscaled)
+            {
+                _nextTimingPollUnscaled = Time.unscaledTime + 0.05f;
+                ApplyLiveRangedTiming(force: false);
             }
         }
 
@@ -126,7 +149,7 @@ namespace Project.Player.Invector
                 _lastSyncedSlot = -1;
         }
 
-        private void ApplyLiveRangedTiming()
+        private void ApplyLiveRangedTiming(bool force = true)
         {
             if (_shooterManager == null || _equipment == null)
                 return;
@@ -139,7 +162,30 @@ namespace Project.Player.Invector
             ItemData ammo = _ammoState != null
                 ? _ammoState.GetLoadedAmmoItem(_equipment.ActiveWeaponHotbarSlot)
                 : null;
+
+            float interval = DMRangedAmmoStats.ResolveShootInterval(item, ammo);
+            float reload = DMRangedAmmoStats.ResolveReloadSeconds(item, ammo);
+            int clip = DMRangedAmmoStats.ResolveMagazineSize(item, ammo);
+            float speed = DMRangedAmmoStats.ResolveProjectileSpeed(item, ammo);
+            float range = DMRangedAmmoStats.ResolveRange(item, ammo);
+
+            if (!force
+                && Mathf.Approximately(interval, _appliedShootInterval)
+                && Mathf.Approximately(reload, _appliedReloadSeconds)
+                && clip == _appliedClipSize
+                && Mathf.Approximately(weapon.shootFrequency, interval)
+                && Mathf.Approximately(weapon.velocity, speed)
+                && Mathf.Approximately(weapon.maxDamageDistance, range)
+                && Mathf.Approximately(weapon.reloadTime, reload)
+                && weapon.clipSize == clip)
+            {
+                return;
+            }
+
             PioneerInvectorRecoilUtility.ApplyRangedTiming(weapon, item, ammo);
+            _appliedShootInterval = interval;
+            _appliedReloadSeconds = reload;
+            _appliedClipSize = clip;
         }
 
         /// <summary>

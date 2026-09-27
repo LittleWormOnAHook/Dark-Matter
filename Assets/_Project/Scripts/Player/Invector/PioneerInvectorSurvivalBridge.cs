@@ -6,6 +6,7 @@ using Project.AI;
 using Project.CameraFx;
 using Project.Combat;
 using Project.Survival;
+using Project.Player;
 using UnityEngine;
 
 namespace Project.Player.Invector
@@ -96,6 +97,7 @@ namespace Project.Player.Invector
             if (_controller.isDead && _controller.currentHealth <= 0f)
                 return;
 
+            _controller.deathBy = vCharacter.DeathBy.Ragdoll;
             _controller.ChangeHealth(0);
         }
 
@@ -173,7 +175,12 @@ namespace Project.Player.Invector
 
         private void HandleSurvivalDamaged(float _) => PushHealthToInvector();
 
-        private void HandleSurvivalPlayerDied() => PushHealthToInvector();
+        private void HandleSurvivalPlayerDied()
+        {
+            // Fall-death presentation before Invector ChangeHealth(0) can play idle death.
+            GetComponent<DMLandingDirector>()?.BeginDeathFlopFromAnyCause();
+            PushHealthToInvector();
+        }
 
         private void HandleSurvivalPlayerRevived() => PushHealthToInvector();
 

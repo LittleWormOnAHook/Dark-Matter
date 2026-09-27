@@ -23,7 +23,7 @@ namespace Project.Building
             if (modelRotation.sqrMagnitude > 0.0001f)
                 instance = WrapRotated(instance, modelRotation);
             CenterPivot(instance);
-            SetTag(instance, ClimbableTag);
+            SetTag(instance, DMBuildingCatalog.IsForceField(pieceId) ? "Untagged" : ClimbableTag); // 0926-force-fields are not climb holds
             DMBuildingLayers.Apply(instance); // 0925-layers
             return instance;
         }

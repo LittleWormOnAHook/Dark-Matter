@@ -96,6 +96,8 @@ namespace Project.EditorTools.Building
 
             List<string> removed = style.styleId == DMBuildingStyles.DefaultId ? DeleteObsolete() : new List<string>();
             UpdateStyleParts(style, built);
+            DMBuildingMeshUpgrades.ApplyToStyle(style, bakeIcons: true); // 0926-mesh-upgrades: keep hand-modelled meshes after a rebuild
+            DMBuildingForceFields.ApplyToStyle(style, bakeIcons: true); // 0926-force-fields: add the plane force field pieces
             AssetDatabase.SaveAssets();
             if (refresh)
                 AssetDatabase.Refresh();

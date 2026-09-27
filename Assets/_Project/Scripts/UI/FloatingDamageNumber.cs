@@ -11,8 +11,8 @@ namespace Project.UI
         [SerializeField] private float floatSpeed = 55f;
         [SerializeField] private float lifetime = 1.6f;
         [SerializeField] private float fadeDuration = 0.55f;
-        [SerializeField] private float startScale = 0.85f;
-        [SerializeField] private float peakScale = 1.15f;
+        [SerializeField] private float startScale = 0.7f;
+        [SerializeField] private float peakScale = 1.55f;
         [SerializeField] private Color damageColor = new Color(0.95f, 0.18f, 0.12f, 1f);
 
         private RectTransform rectTransform;
@@ -81,8 +81,7 @@ namespace Project.UI
             rectTransform.position = screenPoint + (Vector3)screenOffset;
 
             float lifeT = Mathf.Clamp01(elapsed / lifetime);
-            float scaleT = lifeT < 0.18f ? lifeT / 0.18f : 1f - ((lifeT - 0.18f) / 0.82f);
-            float scale = Mathf.Lerp(startScale, peakScale, 1f - scaleT);
+            float scale = Mathf.Lerp(startScale, peakScale, lifeT);
             transform.localScale = Vector3.one * scale;
 
             if (canvasGroup != null)

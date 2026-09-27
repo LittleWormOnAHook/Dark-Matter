@@ -25,6 +25,8 @@ namespace Project.Building
         public const string WallId = "stone_wall_4x4";
         /// <summary>Stone style id. Also the default hotbar.</summary>
         public const string StoneId = DMBuildingStyles.DefaultId;
+        /// <summary>0926: hotbar id of the Equipment Tab entry; parts with the Equipment category go here instead of their style.</summary>
+        public const string EquipmentId = "equipment";
         public const string DoorFrameId = "stone_door_frame_4x4";
         public const float DoorWidth = 2.2f;
         public const float DoorHeight = 3.2f;
@@ -149,7 +151,22 @@ namespace Project.Building
             new KitPartTemplate("gate_8x8", "Gate (8 m)", DMBuildingShape.Gate, 8),
             new KitPartTemplate("foundation_half_4x2", "Half Foundation", DMBuildingShape.HalfFoundation, 2),
             new KitPartTemplate("foundation_quarter_2x2", "Quarter Foundation", DMBuildingShape.QuarterFoundation, 1),
+            // 0926-force-fields: plane force fields that seat in the same frames as the doors. The regular doors stay.
+            new KitPartTemplate(ForceFieldPrefix + "door", "Force Field Door", DMBuildingShape.Door, 2),
+            new KitPartTemplate(ForceFieldPrefix + "door_double", "Double Force Field Door", DMBuildingShape.DoubleDoor, 3),
+            new KitPartTemplate(ForceFieldPrefix + "gate_8x8", "Force Field Gate (8 m)", DMBuildingShape.Gate, 8),
+            new KitPartTemplate(ForceFieldPrefix + "hatch_lid", "Force Field Hatch", DMBuildingShape.HatchLid, 1),
         };
+
+        /// <summary>0926-force-fields: part ids of force field pieces carry this after the style prefix (stone_ff_door).</summary>
+        public const string ForceFieldPrefix = "ff_";
+
+        public static bool IsForceField(string pieceId)
+        {
+            return !string.IsNullOrEmpty(pieceId)
+                && (pieceId.StartsWith(ForceFieldPrefix, StringComparison.Ordinal)
+                    || pieceId.IndexOf("_" + ForceFieldPrefix, StringComparison.Ordinal) >= 0);
+        }
 
         static readonly List<DMBuildingPiece> pieces = new List<DMBuildingPiece>();
         static readonly Dictionary<string, DMBuildingPiece> byId = new Dictionary<string, DMBuildingPiece>();
@@ -218,7 +235,7 @@ namespace Project.Building
 
         static DMBuildingPiece FromPart(DMBuildingStyleLibrary style, DMBuildingPartEntry part)
         {
-            return Make(
+            DMBuildingPiece made = Make(
                 part.id,
                 string.IsNullOrEmpty(part.displayName) ? part.id : part.displayName,
                 style.styleId,
@@ -231,6 +248,11 @@ namespace Project.Building
                 part.applyStyleFinish,
                 part.category,
                 part.modelRotation);
+            ApplyCustomCost(made, part.customCost);
+            made.MaterialOverride = part.materialOverride;
+            if (part.category == DMBuildingCategory.Equipment)
+                made.HotbarId = EquipmentId;
+            return made;
         }
 
         static DMBuildingPiece Make(
@@ -667,6 +689,16 @@ namespace Project.Building
         }
 
         /// <summary>Full or half-cell foundation. Half-cell pieces can hang off any of these.</summary>
+        /// <summary>Every foundation shape: full, triangle, half and quarter.</summary>
+        public static bool IsAnyFoundation(string pieceId)
+        {
+            DMBuildingShape shape = ShapeOf(pieceId);
+            return shape == DMBuildingShape.Foundation
+                || shape == DMBuildingShape.TriFoundation
+                || shape == DMBuildingShape.HalfFoundation
+                || shape == DMBuildingShape.QuarterFoundation;
+        }
+
         public static bool IsFoundationLike(string pieceId)
         {
             return IsFoundation(pieceId) || IsHalfCellFoundation(pieceId);
@@ -928,6 +960,8 @@ namespace Project.Building
 
         public static bool HasCost(DMBuildingPiece piece)
         {
+            if (HasCustomCost(piece))
+                return HasCustomLines(piece);
             return piece != null && (piece.Cost <= 0 || CountCost(piece) >= piece.Cost);
         }
 
@@ -938,6 +972,8 @@ namespace Project.Building
                 return false;
             if (piece.Cost <= 0)
                 return true;
+            if (HasCustomCost(piece))
+                return SpendCustomLines(piece, out paid);
 
             InventorySystem inventory = Inventory(true);
             if (inventory == null)
@@ -974,6 +1010,13 @@ namespace Project.Building
             if (amount <= 0)
                 return;
 
+            DMBuildingPiece customPiece = Find(pieceId);
+            if (HasCustomCost(customPiece))
+            {
+                RefundCustomLines(customPiece);
+                return;
+            }
+
             if (item == null)
                 item = FindCostItemAsset(Find(pieceId));
             if (item == null)
@@ -1003,6 +1046,166 @@ namespace Project.Building
             }
 
             return null;
+        }
+
+        // ---- 0926-storage-crate: parts that cost several items (custom cost lines) ----
+
+        public static bool HasCustomCost(DMBuildingPiece piece)
+        {
+            return piece != null && piece.CustomCost != null && piece.CustomCost.Count > 0;
+        }
+
+        static bool ValidLine(DMBuildingCostLine line)
+        {
+            return line != null && line.item != null && line.amount > 0;
+        }
+
+        static void ApplyCustomCost(DMBuildingPiece piece, List<DMBuildingCostLine> lines)
+        {
+            if (piece == null || lines == null)
+                return;
+            int total = 0;
+            for (int i = 0; i < lines.Count; i++)
+            {
+                if (ValidLine(lines[i]))
+                    total += lines[i].amount;
+            }
+
+            if (total <= 0)
+                return;
+            piece.CustomCost = lines;
+            piece.Cost = total;
+        }
+
+        static string CostLineName(ItemData item)
+        {
+            if (item == null)
+                return string.Empty;
+            return string.IsNullOrEmpty(item.itemName) ? item.name : item.itemName;
+        }
+
+        static Func<ItemData, bool> LineMatcher(ItemData want)
+        {
+            string wantName = CostLineName(want);
+            return item => item != null
+                && (item == want
+                    || (!string.IsNullOrEmpty(wantName) && string.Equals(CostLineName(item), wantName, StringComparison.OrdinalIgnoreCase)));
+        }
+
+        /// <summary>How many of this line's item the player has in the inventory plus every storage crate.</summary>
+        public static int CountLine(DMBuildingCostLine line)
+        {
+            if (!ValidLine(line))
+                return 0;
+            Func<ItemData, bool> match = LineMatcher(line.item);
+            return CountInInventory(match) + DMStorageCrateRuntime.CountMatching(match);
+        }
+
+        static bool HasCustomLines(DMBuildingPiece piece)
+        {
+            for (int i = 0; i < piece.CustomCost.Count; i++)
+            {
+                DMBuildingCostLine line = piece.CustomCost[i];
+                if (ValidLine(line) && CountLine(line) < line.amount)
+                    return false;
+            }
+
+            return true;
+        }
+
+        static bool SpendCustomLines(DMBuildingPiece piece, out ItemData paid)
+        {
+            paid = null;
+            if (!HasCustomLines(piece))
+                return false;
+
+            InventorySystem inventory = Inventory(true);
+            InvalidateCostCounts();
+            bool ok = true;
+            for (int l = 0; l < piece.CustomCost.Count; l++)
+            {
+                DMBuildingCostLine line = piece.CustomCost[l];
+                if (!ValidLine(line))
+                    continue;
+
+                Func<ItemData, bool> match = LineMatcher(line.item);
+                int remaining = line.amount;
+                if (inventory != null && inventory.slots != null)
+                {
+                    for (int i = 0; i < inventory.slots.Count && remaining > 0; i++)
+                    {
+                        InventorySystem.InventorySlot slot = inventory.slots[i];
+                        if (slot == null || slot.item == null || slot.amount <= 0 || !match(slot.item))
+                            continue;
+                        int take = Mathf.Min(remaining, slot.amount);
+                        if (inventory.RemoveItem(slot.item, take))
+                            remaining -= take;
+                    }
+                }
+
+                if (remaining > 0)
+                    remaining -= DMStorageCrateRuntime.RemoveMatching(match, remaining);
+                if (paid == null)
+                    paid = line.item;
+                if (remaining > 0)
+                    ok = false;
+            }
+
+            return ok;
+        }
+
+        static void RefundCustomLines(DMBuildingPiece piece)
+        {
+            InventorySystem inventory = Inventory(true);
+            if (inventory == null)
+                return;
+            InvalidateCostCounts();
+            for (int i = 0; i < piece.CustomCost.Count; i++)
+            {
+                DMBuildingCostLine line = piece.CustomCost[i];
+                if (ValidLine(line))
+                    inventory.AddItem(line.item, line.amount, false);
+            }
+        }
+
+        /// <summary>Hotbar text for a custom cost, e.g. "Iron Ore 4 / 7   Metal Scrap 10 / 3"; short amounts turn soft red.</summary>
+        public static string CustomCostText(DMBuildingPiece piece)
+        {
+            if (!HasCustomCost(piece))
+                return string.Empty;
+            var sb = new System.Text.StringBuilder();
+            for (int i = 0; i < piece.CustomCost.Count; i++)
+            {
+                DMBuildingCostLine line = piece.CustomCost[i];
+                if (!ValidLine(line))
+                    continue;
+                int have = CountLine(line);
+                string need = have < line.amount ? "<color=#FF6B6B>" + line.amount + "</color>" : line.amount.ToString();
+                if (sb.Length > 0)
+                    sb.Append("   ");
+                sb.Append(CostLineName(line.item)).Append(' ').Append(need).Append(" / ").Append(have);
+            }
+
+            return sb.ToString();
+        }
+
+        /// <summary>0926-storage-crate: surface items that only sit on up-facing floors.</summary>
+        public static bool IsFloorOnlyItem(string pieceId)
+        {
+            return !string.IsNullOrEmpty(pieceId)
+                && (pieceId.EndsWith("si_storage_crate", StringComparison.Ordinal) || IsGenerator(pieceId) || IsBuildHub(pieceId));
+        }
+
+        /// <summary>0926-build-hub: the Build Hub Equipment piece; its zone is where everything else may be built.</summary>
+        public static bool IsBuildHub(string pieceId)
+        {
+            return !string.IsNullOrEmpty(pieceId) && pieceId.EndsWith("si_build_hub", StringComparison.Ordinal);
+        }
+
+        /// <summary>0926-generator: the base generator Equipment piece.</summary>
+        public static bool IsGenerator(string pieceId)
+        {
+            return !string.IsNullOrEmpty(pieceId) && pieceId.EndsWith("si_generator", StringComparison.Ordinal);
         }
 
         static bool IsLegacyStoneItem(ItemData item)
@@ -1058,5 +1261,9 @@ namespace Project.Building
         public float SurfaceOffset;
         public bool ApplyStyleFinish = true;
         public Vector3 ModelRotation;
+        /// <summary>0926-material-override: replaces every material on the built piece when set.</summary>
+        public Material MaterialOverride;
+        /// <summary>0926-storage-crate: several items instead of the style cost item. Cost holds their total.</summary>
+        public List<DMBuildingCostLine> CustomCost;
     }
 }

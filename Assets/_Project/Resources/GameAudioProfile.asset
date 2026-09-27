@@ -247,6 +247,7 @@ MonoBehaviour:
   combatVolume: 1
   buttonClickClips:
   - {fileID: 8300000, guid: 7d8511c8ae1b6d94b9b6026858c08853, type: 3}
+  uiDenyClips: []
   inventoryItemClickClips:
   - {fileID: 8300000, guid: 7d8511c8ae1b6d94b9b6026858c08853, type: 3}
   itemUseClips:

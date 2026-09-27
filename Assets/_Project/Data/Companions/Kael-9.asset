@@ -52,10 +52,10 @@ MonoBehaviour:
   overrideDefaultWorldAmbientMode: 0
   behavior:
     followMode: 0
-    followBehaviorMode: 0
+    followBehaviorMode: 1
     worldAmbientMode: 1
     worldIdleJob: 0
-    wanderPaceScale: 0.3
+    wanderPaceScale: 0.652
     walkSpeed: 4.4
     runSpeed: 8.5
     catchUpSpeed: 8.5

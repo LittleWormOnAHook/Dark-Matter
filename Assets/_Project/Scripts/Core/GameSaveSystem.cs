@@ -81,6 +81,12 @@ namespace Project.Core
 
         public static bool TryAutosave(out string message)
         {
+            return TryAutosave(null, out message);
+        }
+
+        /// <summary>Writes autosave slots 1-2; a non-null <paramref name="screenshot"/> becomes each slot's preview (savegame_slot{i}_preview.png).</summary>
+        public static bool TryAutosave(Texture2D screenshot, out string message)
+        {
             if (!GameSession.HasStarted)
             {
                 message = "Autosave skipped — expedition has not started.";
@@ -91,7 +97,7 @@ namespace Project.Core
             string last = "Autosave failed.";
             for (int i = 0; i < AutosaveSlotCount; i++)
             {
-                if (TrySave(i, null, out last))
+                if (TrySave(i, screenshot, out last))
                     any = true;
             }
 

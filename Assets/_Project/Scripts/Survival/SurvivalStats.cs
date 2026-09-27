@@ -23,7 +23,7 @@ namespace Project.Survival
             DashRecovery = 1 << 3
         }
 
-        public const float OxygenCriticalPercent = 15f;
+        public const float OxygenCriticalPercent = 10f;
 
         [Header("Survival Stats")]
         public float maxHealth = 100f;
@@ -621,7 +621,38 @@ namespace Project.Survival
 
         public bool IsOxygenCritical()
         {
-            return GetOxygenNormalized() * 100f <= OxygenCriticalPercent;
+            return GetOxygenNormalized() * 100f <= ResolveOxygenWarningPercent();
+        }
+
+        /// <summary>Live Genesis Studio Survival tab threshold (falls back to <see cref="OxygenCriticalPercent"/>).</summary>
+        public static float ResolveOxygenWarningPercent()
+        {
+            Project.Features.Climb.DM_ClimbDashProfile profile = Project.Features.Climb.DM_ClimbDashProfile.Live;
+            if (profile != null)
+                return Mathf.Clamp(profile.lowOxygenWarningPercent, 1f, 50f);
+            return OxygenCriticalPercent;
+        }
+
+        public static bool ResolveOxygenWarningEnabled()
+        {
+            Project.Features.Climb.DM_ClimbDashProfile profile = Project.Features.Climb.DM_ClimbDashProfile.Live;
+            return profile == null || profile.lowOxygenWarningEnabled;
+        }
+
+        public static float ResolveOxygenFlashPerSecond()
+        {
+            Project.Features.Climb.DM_ClimbDashProfile profile = Project.Features.Climb.DM_ClimbDashProfile.Live;
+            if (profile != null)
+                return Mathf.Max(0.25f, profile.lowOxygenFlashPerSecond);
+            return 1.5f;
+        }
+
+        public static string ResolveOxygenWarningText()
+        {
+            Project.Features.Climb.DM_ClimbDashProfile profile = Project.Features.Climb.DM_ClimbDashProfile.Live;
+            if (profile != null && !string.IsNullOrWhiteSpace(profile.lowOxygenWarningText))
+                return profile.lowOxygenWarningText.Trim();
+            return "Low Oxygen";
         }
 
         public float GetThermalNormalizedSigned()

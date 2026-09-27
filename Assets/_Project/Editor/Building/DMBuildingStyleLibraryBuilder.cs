@@ -285,7 +285,7 @@ namespace Project.EditorTools.Building
                 category = DMBuildingCatalog.DefaultCategory(template.Shape),
                 cost = template.Cost,
                 enabled = true,
-                applyStyleFinish = true,
+                applyStyleFinish = !DMBuildingCatalog.IsForceField(id), // 0926-force-fields keep their own material
             };
         }
 
@@ -463,6 +463,7 @@ namespace Project.EditorTools.Building
             public DMBuildingStyleLibrary Style;
             public int Index;
             public string Folder;
+            public GameObject Source;
         }
 
         static readonly List<IconJob> IconJobs = new List<IconJob>();
@@ -503,8 +504,9 @@ namespace Project.EditorTools.Building
                     already |= IconJobs[j].Style == style && IconJobs[j].Index == i;
                 if (already)
                     continue;
-                AssetPreview.GetAssetPreview(part.prefab);
-                IconJobs.Add(new IconJob { Style = style, Index = i, Folder = folder });
+                GameObject source = IconSource(style, part);
+                AssetPreview.GetAssetPreview(source);
+                IconJobs.Add(new IconJob { Style = style, Index = i, Folder = folder, Source = source });
                 queued++;
             }
 
@@ -516,6 +518,44 @@ namespace Project.EditorTools.Building
             }
 
             return queued;
+        }
+
+        /// <summary>0926-material-override: parts with an override bake their icon from a painted copy of the prefab.</summary>
+        static GameObject IconSource(DMBuildingStyleLibrary style, DMBuildingPartEntry part)
+        {
+            if (part.materialOverride == null)
+                return part.prefab;
+            string folder = StyleRoot(style) + "/Icons/OverridePreviews";
+            EnsureFolder(folder);
+            string safeMat = System.Text.RegularExpressions.Regex.Replace(part.materialOverride.name, "[^A-Za-z0-9_-]", "_");
+            string path = folder + "/" + part.id + "__" + safeMat + ".prefab";
+            GameObject copy = Object.Instantiate(part.prefab);
+            try
+            {
+                copy.name = part.prefab.name;
+                foreach (Renderer r in copy.GetComponentsInChildren<Renderer>(true))
+                {
+                    if (r == null || r is ParticleSystemRenderer)
+                        continue;
+                    if (r.gameObject.name == "GlassPane")
+                    {
+                        if (style.glassMaterial != null)
+                            r.sharedMaterial = style.glassMaterial;
+                        continue;
+                    }
+                    var mats = new Material[Mathf.Max(1, r.sharedMaterials.Length)];
+                    for (int m = 0; m < mats.Length; m++)
+                        mats[m] = part.materialOverride;
+                    r.sharedMaterials = mats;
+                }
+
+                GameObject saved = PrefabUtility.SaveAsPrefabAsset(copy, path);
+                return saved != null ? saved : part.prefab;
+            }
+            finally
+            {
+                Object.DestroyImmediate(copy);
+            }
         }
 
         static void PumpIconJobs()
@@ -533,7 +573,7 @@ namespace Project.EditorTools.Building
                     continue;
                 }
 
-                Texture2D preview = AssetPreview.GetAssetPreview(part.prefab);
+                Texture2D preview = AssetPreview.GetAssetPreview(job.Source != null ? job.Source : part.prefab);
                 if (preview == null)
                 {
                     if (!timedOut)

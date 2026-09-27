@@ -32,6 +32,9 @@ namespace Project.UI
         VisualElement crosshairDot;
         Label costLabel;
         Label nameLabel;
+        // 0926-build-hub: why the ghost is red (build zone / patrol path rules), under the piece name.
+        Label reasonLabel;
+        bool reasonShown;
         InventorySystem inventoryHook;
         bool wheelStopped;
         bool ringPainted;
@@ -82,6 +85,18 @@ namespace Project.UI
             }
             if (nameLabel != null)
                 nameLabel.text = string.Empty;
+            reasonLabel?.RemoveFromHierarchy();
+            reasonLabel = null;
+            reasonShown = false;
+            if (nameLabel != null && nameLabel.parent != null)
+            {
+                reasonLabel = new Label { name = "build-reason", pickingMode = PickingMode.Ignore };
+                reasonLabel.AddToClassList("dmg-build-name");
+                reasonLabel.style.color = new Color(1f, 0.42f, 0.42f, 1f);
+                reasonLabel.style.fontSize = 13f;
+                reasonLabel.style.display = DisplayStyle.None;
+                nameLabel.parent.Insert(nameLabel.parent.IndexOf(nameLabel) + 1, reasonLabel);
+            }
             if (!wheelStopped)
             {
                 hudRoot.RegisterCallback<WheelEvent>(OnBuildWheel, TrickleDown.TrickleDown);
@@ -181,12 +196,34 @@ namespace Project.UI
             if (!show && holdRing != null)
                 holdRing.style.display = DisplayStyle.None;
             UpdateCrosshairDot(show);
+            UpdateBlockedReason(show);
             if (show)
             {
                 HookInventory();
                 PollSelectionKeys();
                 PollHotbarWheel();
             }
+        }
+
+        void UpdateBlockedReason(bool show)
+        {
+            if (reasonLabel == null)
+                return;
+            string reason = show ? DMBuildingPlacementController.BlockedReason : null;
+            string hint = show ? DMBuildingPlacementController.MoveHint : null; // 0926-move
+            bool hasReason = !string.IsNullOrEmpty(reason);
+            bool hasHint = !string.IsNullOrEmpty(hint);
+            string text = hasHint ? (hasReason ? hint + "\n" + reason : hint) : reason;
+            bool visible = hasReason || hasHint;
+            if (visible && reasonLabel.text != text)
+            {
+                reasonLabel.text = text;
+                reasonLabel.style.color = hasReason ? new Color(1f, 0.42f, 0.42f, 1f) : new Color(1f, 0.92f, 0.62f, 1f);
+            }
+            if (visible == reasonShown)
+                return;
+            reasonShown = visible;
+            reasonLabel.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
         void UpdateCrosshairDot(bool show)
@@ -446,6 +483,12 @@ namespace Project.UI
             // 0926: each resource reads in its style's colour; the needed number turns soft red when short.
             DMBuildingStyleLibrary style = DMBuildingCatalog.StyleOf(piece.Id);
             costLabel.style.color = style != null ? style.resourceTextColor : new Color(0.93f, 0.91f, 0.89f, 1f);
+            if (DMBuildingCatalog.HasCustomCost(piece))
+            {
+                costLabel.text = DMBuildingCatalog.CustomCostText(piece); // 0926-storage-crate
+                return;
+            }
+
             int remaining = DMBuildingCatalog.CountCost(piece);
             bool shortOnParts = remaining < piece.Cost;
             string needed = shortOnParts
@@ -473,6 +516,14 @@ namespace Project.UI
 
             if (styles.Count == 0)
                 AddRow("Stone", DMBuildingMode.SelectStone, DMBuildingMode.HotbarId == DMBuildingCatalog.StoneId);
+
+            // 0926: Equipment (storage crate first) gets its own entry once any equipment part exists.
+            if (DMBuildingCatalog.PiecesFor(DMBuildingCatalog.EquipmentId).Count > 0)
+            {
+                AddHeader("Equipment");
+                AddRow("Equipment", () => DMBuildingMode.SelectStyle(DMBuildingCatalog.EquipmentId), DMBuildingMode.HotbarId == DMBuildingCatalog.EquipmentId);
+            }
+
             AddHeader("Buildings");
 
             List<DMBuildingPiece> buildings = DMBuildingCatalog.KnownBuildings();

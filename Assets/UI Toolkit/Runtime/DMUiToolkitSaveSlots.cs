@@ -38,6 +38,7 @@ namespace Project.UI
         private Button confirmCancel;
         private readonly List<Button> slotButtons = new List<Button>();
         private readonly List<VisualElement> slotPreviews = new List<VisualElement>();
+        private readonly List<Texture2D> loadedPreviewTextures = new List<Texture2D>();
         private SaveSlotsPanelController.Mode currentMode;
         private ConfirmKind confirmKind;
         private int contextSlotIndex = -1;
@@ -111,6 +112,7 @@ namespace Project.UI
 
         private void OnDestroy()
         {
+            ClearPreviewTextures();
             if (instance == this)
                 instance = null;
         }
@@ -247,6 +249,7 @@ namespace Project.UI
         private void HideInternal()
         {
             open = false;
+            ClearPreviewTextures();
             HideContext();
             HideConfirm();
             if (root != null)
@@ -255,7 +258,7 @@ namespace Project.UI
 
         private void RefreshSlots()
         {
-            MainMenuController menu = Object.FindAnyObjectByType<MainMenuController>();
+            ClearPreviewTextures();
 
             for (int i = 0; i < GameSaveSystem.SlotCount; i++)
             {
@@ -273,28 +276,43 @@ namespace Project.UI
                     button.SetEnabled(currentMode == SaveSlotsPanelController.Mode.Save || occupied);
                 }
 
-                ApplyPreview(preview, i, info, menu);
+                ApplyPreview(preview, i, info);
             }
         }
 
-        private void ApplyPreview(VisualElement preview, int slotIndex, SaveSlotInfo info, MainMenuController menu)
+        // Each row shows that slot's own saved thumbnail (savegame_slot{i}_preview.png), in both Save and Load mode.
+        // Empty slots show nothing. The pending capture (MainMenuController.PendingSaveScreenshot) is only
+        // written when a slot is picked; it is never painted onto the rows.
+        private void ApplyPreview(VisualElement preview, int slotIndex, SaveSlotInfo info)
         {
             if (preview == null)
                 return;
 
-            preview.style.backgroundImage = StyleKeyword.None;
+            DMUiToolkitStyle.ClearBackgroundImage(preview);
 
-            if (currentMode == SaveSlotsPanelController.Mode.Save && menu != null && menu.PendingSaveScreenshot != null)
-            {
-                DMUiToolkitStyle.TrySetTextureBackground(preview, menu.PendingSaveScreenshot, ScaleMode.ScaleToFit);
-                return;
-            }
-
-            if (!info.HasScreenshot)
+            if (!info.HasData || !info.HasScreenshot)
                 return;
 
             Texture2D texture = SaveSlotScreenshotUtility.LoadScreenshot(slotIndex);
+            if (texture == null)
+                return;
+
+            loadedPreviewTextures.Add(texture);
             DMUiToolkitStyle.TrySetTextureBackground(preview, texture, ScaleMode.ScaleToFit);
+        }
+
+        private void ClearPreviewTextures()
+        {
+            for (int i = 0; i < slotPreviews.Count; i++)
+                DMUiToolkitStyle.ClearBackgroundImage(slotPreviews[i]);
+
+            for (int i = 0; i < loadedPreviewTextures.Count; i++)
+            {
+                if (loadedPreviewTextures[i] != null)
+                    Destroy(loadedPreviewTextures[i]);
+            }
+
+            loadedPreviewTextures.Clear();
         }
 
         private void OnSlotSelected(int slotIndex)

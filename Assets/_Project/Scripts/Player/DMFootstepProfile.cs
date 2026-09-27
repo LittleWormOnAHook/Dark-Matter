@@ -72,7 +72,7 @@ namespace Project.Player
 
         [Tooltip("Ignore a second dust/mark/audio fire on the same foot inside this window (trigger + anim event, or blended clips).")]
         [Min(0.05f)]
-        public float minSecondsBetweenFootVfx = 0.18f;
+        public float minSecondsBetweenFootVfx = 0.28f;
 
         [Tooltip("Log the resolved tag / terrain layer index on each step.")]
         public bool debugTextureName;

@@ -249,6 +249,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3750347220285406125}
   - component: {fileID: 3425028757344432164}
+  - component: {fileID: 8415866428242466164}
   m_Layer: 0
   m_Name: SI_ceiling_light_a
   m_TagString: Untagged
@@ -293,6 +294,18 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.6236255, y: 1.9227378, z: 1.6236227}
   m_Center: {x: -0.0000012218952, y: 0.8785343, z: 0.00000062584877}
+--- !u!114 &8415866428242466164
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9222567173803765752}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 199bec2d7ba002442ab58913f46929b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Building.DMBasePoweredLights
 --- !u!1001 &1627533275864404479
 PrefabInstance:
   m_ObjectHideFlags: 0

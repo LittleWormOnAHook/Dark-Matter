@@ -34,7 +34,7 @@ namespace Project.Player.Invector
                     if (generic == null)
                         continue;
 
-                    int key = MakeKey(input.GetInstanceID(), field.Name);
+                    int key = MakeKey(System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(input), field.Name);
                     if (mute)
                     {
                         if (!SavedUseInput.ContainsKey(key))

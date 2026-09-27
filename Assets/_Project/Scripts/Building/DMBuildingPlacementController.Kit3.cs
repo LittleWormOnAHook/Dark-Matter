@@ -11,6 +11,9 @@ namespace Project.Building
     {
         const float GateSupportTopTolerance = 0.35f;
         const float GateSupportReachMeters = 2.5f;
+        /// <summary>A wall must reach this far past a gate end post into its opening before it counts as inside the span.</summary>
+        const float GateSpanToleranceMeters = 0.5f;
+        const float GateContactEpsilon = 0.02f;
 
         // ---- WideEdge: 8 m gate frame ----
 
@@ -23,7 +26,7 @@ namespace Project.Building
             if (camera == null || !HasBuiltBase())
                 return false;
 
-            Ray ray = camera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+            Ray ray = BuildAimRay(camera);
             bool lookingUp = ray.direction.y > 0.18f || AimIsAboveWallMid(ray);
             ResolveAimPoint(ray, lookingUp, out Vector3 aim, out bool hasHit);
             if (!hasHit && !lookingUp)
@@ -83,7 +86,7 @@ namespace Project.Building
             if (camera == null || !HasBuiltBase())
                 return false;
 
-            Ray ray = camera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+            Ray ray = BuildAimRay(camera);
             bool lookingUp = ray.direction.y > 0.18f || AimIsAboveWallMid(ray);
             ResolveAimPoint(ray, lookingUp, out Vector3 aim, out bool hasHit);
             bool hitBuilt = TryHitBuiltForSnap(ray, out DMBuildingGhost hitGhost, out RaycastHit hit);
@@ -147,7 +150,9 @@ namespace Project.Building
 
             float lift = Mathf.Clamp(instance.heightOffset, -DMBuildingGhostProfile.MaxHeightOffsetMeters, DMBuildingGhostProfile.MaxHeightOffsetMeters);
             position.y = SurfaceTop(anchor) - piece.Size.y * 0.5f + lift;
-            canCommit = DMBuildingCatalog.HasCost(piece) && !Overlaps(position, piece.Size, rotation, piece.Id);
+            canCommit = DMBuildingCatalog.HasCost(piece)
+                && PassesFoundationRule(piece, position, rotation)
+                && !Overlaps(position, piece.Size, rotation, piece.Id);
             return true;
         }
 
@@ -166,12 +171,34 @@ namespace Project.Building
 
             DMBuildingShape placing = DMBuildingCatalog.ShapeOf(pieceId);
             DMBuildingShape existing = DMBuildingCatalog.ShapeOf(other);
+            // 0927-gate-walls: only a wall that really stands in the gate's opening blocks. The frame's trim overhangs
+            // the 8 m span by 0.1 m (more than the overlap padding), so any collider touch used to block the walls on
+            // the next edge along and corner walls at the gate ends.
             if (existing == DMBuildingShape.GateFrame && IsWallRun(placing))
-                return true;
+                return GateSpanBlocks(ghost.transform.position, ghost.transform.rotation, HalfExtents(ghost), center, rotation, size * 0.5f);
             if (placing == DMBuildingShape.GateFrame && IsWallRun(existing))
-                return true;
+                return GateSpanBlocks(center, rotation, size * 0.5f, ghost.transform.position, ghost.transform.rotation, HalfExtents(ghost));
 
             return false;
+        }
+
+        /// <summary>
+        /// True when the other box reaches into the gate's opening: more than GateSpanToleranceMeters inside its end posts
+        /// along the width, more than that inside its top/bottom, and touching its plane. Walls on the neighbouring edge,
+        /// corner walls at the gate ends and walls stacked above the gate pass.
+        /// </summary>
+        static bool GateSpanBlocks(Vector3 gateCenter, Quaternion gateRotation, Vector3 gateHalf, Vector3 otherCenter, Quaternion otherRotation, Vector3 otherHalf)
+        {
+            Quaternion toGate = Quaternion.Inverse(gateRotation);
+            Vector3 local = toGate * (otherCenter - gateCenter);
+            Matrix4x4 m = Matrix4x4.Rotate(toGate * otherRotation);
+            Vector3 extents = new Vector3(
+                Mathf.Abs(m.m00) * otherHalf.x + Mathf.Abs(m.m01) * otherHalf.y + Mathf.Abs(m.m02) * otherHalf.z,
+                Mathf.Abs(m.m10) * otherHalf.x + Mathf.Abs(m.m11) * otherHalf.y + Mathf.Abs(m.m12) * otherHalf.z,
+                Mathf.Abs(m.m20) * otherHalf.x + Mathf.Abs(m.m21) * otherHalf.y + Mathf.Abs(m.m22) * otherHalf.z);
+            return Mathf.Abs(local.x) < gateHalf.x + extents.x - GateSpanToleranceMeters
+                && Mathf.Abs(local.y) < gateHalf.y + extents.y - GateSpanToleranceMeters
+                && Mathf.Abs(local.z) < gateHalf.z + extents.z + GateContactEpsilon;
         }
 
         static bool IsWallRun(DMBuildingShape shape)

@@ -15,7 +15,7 @@ MonoBehaviour:
   itemName: Sulfur Needle Tuft
   icon: {fileID: 21300000, guid: af9fa611a645bcc48841d3e1a5b334b0, type: 3}
   worldPrefab: {fileID: 7776953011026404109, guid: 795a98aa78073974f9ba06791ce942da, type: 3}
-  maxStack: 40
+  maxStack: 500
   stableItemId: 267db052f40152b48ad7de3c8993cb9b
   itemType: 1
   deployedPrefab: {fileID: 0}
@@ -134,7 +134,7 @@ MonoBehaviour:
   staminaRestore: 0
   oxygenRestore: 0
   isAcInfused: 0
-  acValue: 4
+  acValue: 0
   rarity: 0
   canSell: 1
   canBuy: 1

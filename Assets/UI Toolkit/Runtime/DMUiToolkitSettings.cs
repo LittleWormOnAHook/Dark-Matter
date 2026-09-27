@@ -1,3 +1,4 @@
+// force-reimport 2026-09-19-2258
 using System.Collections.Generic;
 using Project.Core;
 using UnityEngine;
@@ -39,6 +40,8 @@ namespace Project.UI
         private Toggle colorGradingToggle;
         private Toggle vignetteToggle;
         private Toggle minimapToggle;
+        private Toggle toggleCrouchStickToggle;
+        private Toggle toggleSprintStickToggle;
         private Toggle fullscreenToggle;
         private Toggle vsyncToggle;
         private Toggle rayTracingToggle;
@@ -163,6 +166,17 @@ namespace Project.UI
             VisualElement videoGrid = AddSection(sections, "VIDEO");
             VisualElement qualityGrid = AddSection(sections, "QUALITY");
             VisualElement postGrid = AddSection(sections, "POST PROCESSING");
+            VisualElement gameOptsGrid = AddSection(sections, "GAME OPTIONS");
+            toggleCrouchStickToggle = AddToggleRow(gameOptsGrid, "Toggle Crouch (RS Click)");
+            toggleSprintStickToggle = AddToggleRow(gameOptsGrid, "Toggle Sprint (LS Click)");
+            toggleCrouchStickToggle.RegisterValueChangedCallback(evt =>
+            {
+                GameSettings.SetToggleCrouchStickClick(evt.newValue);
+            });
+            toggleSprintStickToggle.RegisterValueChangedCallback(evt =>
+            {
+                GameSettings.SetToggleSprintStickClick(evt.newValue);
+            });
 
             masterSlider = AddSliderRow(audioGrid, "Master Volume", 0f, 1f, out masterValue);
             musicSlider = AddSliderRow(audioGrid, "Music Volume", 0f, 1f, out musicValue);
@@ -272,6 +286,8 @@ namespace Project.UI
             colorGradingToggle?.SetValueWithoutNotify(snap.ColorGradingEnabled);
             vignetteToggle?.SetValueWithoutNotify(snap.VignetteEnabled);
             minimapToggle?.SetValueWithoutNotify(snap.MinimapEnabled);
+            toggleCrouchStickToggle?.SetValueWithoutNotify(GameSettings.ToggleCrouchStickClick);
+            toggleSprintStickToggle?.SetValueWithoutNotify(GameSettings.ToggleSprintStickClick);
             fullscreenToggle?.SetValueWithoutNotify(snap.Fullscreen);
             vsyncToggle?.SetValueWithoutNotify(snap.VSync);
             rayTracingToggle?.SetValueWithoutNotify(snap.RayTracingEnabled);
@@ -341,6 +357,7 @@ namespace Project.UI
             if (colorGradingToggle != null) snap.ColorGradingEnabled = colorGradingToggle.value;
             if (vignetteToggle != null) snap.VignetteEnabled = vignetteToggle.value;
             if (minimapToggle != null) snap.MinimapEnabled = minimapToggle.value;
+            // Game Options applied live below via ApplyGameOptionsFromPanel
             if (fullscreenToggle != null) snap.Fullscreen = fullscreenToggle.value;
             if (vsyncToggle != null) snap.VSync = vsyncToggle.value;
             if (rayTracingToggle != null) snap.RayTracingEnabled = rayTracingToggle.value;

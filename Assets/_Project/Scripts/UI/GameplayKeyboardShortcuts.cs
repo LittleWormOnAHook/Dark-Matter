@@ -386,6 +386,9 @@ namespace Project.UI
             if (DMUiToolkitCrate.TryHandleBack())
                 return;
 
+            if (Project.UI.DMUiToolkitGenerator.TryHandleBack())
+                return;
+
             if (DMUiToolkitMenus.TryHideInventoryContextMenu())
                 return;
 
@@ -456,7 +459,7 @@ namespace Project.UI
                 return true;
             if (DMUiToolkitMenuPanels.IsAnySubPanelOpen)
                 return true;
-            if (DMUiToolkitVendor.IsOpen || DMUiToolkitCrate.IsOpen)
+            if (DMUiToolkitVendor.IsOpen || DMUiToolkitCrate.IsOpen || Project.UI.DMUiToolkitGenerator.IsOpen)
                 return true;
             if (DMUiToolkitHotCross.IsAmmoLoadPopupOpen)
                 return true;
@@ -515,6 +518,10 @@ namespace Project.UI
             if (DMUiToolkitLoadingOverlay.IsShowing)
                 return;
 
+            // 0926-move: Esc drops a carried build piece back where it was before anything else.
+            if (Project.Building.DMBuildingPlacementController.TryCancelMove())
+                return;
+
             if (DMUiToolkitDevPanel.HandleBack())
                 return;
 
@@ -522,6 +529,9 @@ namespace Project.UI
                 return;
 
             if (DMUiToolkitCrate.TryHandleBack())
+                return;
+
+            if (Project.UI.DMUiToolkitGenerator.TryHandleBack())
                 return;
 
             if (DMUiToolkitMenus.TryHideInventoryContextMenu())

@@ -14,6 +14,9 @@ namespace Project.Storage
 
         [SerializeField] private string crateId = "camp_storage_01";
         [SerializeField] private int slotCount = 20;
+        [Tooltip("Built crates (building mode): wait for the placed id before registering, so the build preview is not usable.")]
+        [SerializeField] private bool assignIdOnBuild;
+        private bool idAssigned;
         [SerializeField] private float interactRange = 3.5f;
         [SerializeField] private string promptText = "Press E — Storage";
 
@@ -27,6 +30,9 @@ namespace Project.Storage
         public int SlotCount => Mathf.Max(1, slotCount);
         public string DisplayName => "Storage";
         public Collider InteractCollider => interactCollider;
+        /// <summary>0926-storage-crate: true once building mode gave this placed crate its own id.</summary>
+        public bool IsBuiltCrate => assignIdOnBuild && idAssigned;
+        bool WaitsForBuildId => assignIdOnBuild && !idAssigned;
 
         private static readonly List<DMStorageCrate> active = new List<DMStorageCrate>(4);
 
@@ -40,8 +46,28 @@ namespace Project.Storage
         private void OnEnable()
         {
             ResolvePresentation();
+            if (WaitsForBuildId)
+                return;
             if (!active.Contains(this))
                 active.Add(this);
+            WorldUseController.Register(this);
+            DMStorageCrateRuntime.GetOrCreate(CrateId, SlotCount);
+        }
+
+        /// <summary>0926-storage-crate: building mode gives each placed crate its own id so contents save per crate.</summary>
+        public void AssignCrateId(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+                return;
+
+            active.Remove(this);
+            WorldUseController.Unregister(this);
+            crateId = id;
+            idAssigned = true;
+            if (!isActiveAndEnabled)
+                return;
+
+            active.Add(this);
             WorldUseController.Register(this);
             DMStorageCrateRuntime.GetOrCreate(CrateId, SlotCount);
         }

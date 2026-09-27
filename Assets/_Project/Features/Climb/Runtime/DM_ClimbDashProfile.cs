@@ -262,6 +262,74 @@ namespace Project.Features.Climb
         [Min(0.05f)]
         public float shiftDoubleTapWindow = 0.28f;
 
+        [Header("Locomotion - turn lean")]
+        [Tooltip("Use these lean settings instead of Invector's raw lean. Off = stock Invector lean.")]
+        public bool leanOverrideEnabled = true;
+
+        [Tooltip("Lean multiplier while walking (1 = stock Invector). Higher = deeper lean into turns.")]
+        [Range(0f, 4f)]
+        public float leanWalkStrength = 1.6f;
+
+        [Tooltip("Lean multiplier while running / sprinting (1 = stock Invector).")]
+        [Range(0f, 4f)]
+        public float leanRunStrength = 1.8f;
+
+        [Tooltip("Seconds to ease into and out of the lean. Lower = snappier.")]
+        [Range(0.01f, 0.6f)]
+        public float leanSmoothTime = 0.12f;
+
+        [Tooltip("Cap on the lean value sent to the animator (the lean clips top out around 1).")]
+        [Range(0.2f, 2f)]
+        public float leanMaxValue = 1f;
+
+        [Tooltip("Extra procedural upper-body roll (degrees) at full lean, on top of the lean clips. 0 = clips only.")]
+        [Range(0f, 25f)]
+        public float leanSpineRollDegrees = 6f;
+
+        [Tooltip("Also apply the extra spine roll while strafing / aiming.")]
+        public bool leanSpineRollWhileStrafing = false;
+
+        [Header("Steps & slopes (on foot)")]
+        [Tooltip("Master switch for walking up stairs, curbs, rocks and building steps without jumping.")]
+        public bool stepAssistEnabled = true;
+
+        [Tooltip("Tallest step (meters) the player walks up. Pushed to Invector stepOffsetMaxHeight.")]
+        [Range(0.05f, 1.2f)]
+        public float stepMaxHeight = 0.5f;
+
+        [Tooltip("Ledges lower than this (meters) are ignored by the step probe. Invector stepOffsetMinHeight.")]
+        [Range(0f, 0.5f)]
+        public float stepMinHeight = 0f;
+
+        [Tooltip("How far past the capsule edge (meters) the step probe looks ahead. Invector stepOffsetDistance.")]
+        [Range(0.02f, 0.8f)]
+        public float stepProbeDistance = 0.1f;
+
+        [Tooltip("Step onto everything you can stand on (ground layers + Building), not only Default/Climbable. Needed for built stairs.")]
+        public bool stepOnGroundLayers = true;
+
+        [Tooltip("Steepest ground (degrees from flat) you can walk up and stand on. Pushed to Invector slopeLimit.")]
+        [Range(10f, 85f)]
+        public float walkableSlopeDegrees = 75f;
+
+        [Tooltip("Extra lift helper for steps with angled, chamfered or rough front faces, as long as the top of the step is walkable.")]
+        public bool stepLiftHelper = true;
+
+        [Tooltip("A face steeper than this (degrees from flat) counts as a step riser. Gentler faces are left to normal ramp walking.")]
+        [Range(20f, 90f)]
+        public float stepRiserMinAngle = 50f;
+
+        [Tooltip("How fast (m/s) the helper lifts the player onto a step.")]
+        [Range(0.5f, 10f)]
+        public float stepLiftSpeed = 4f;
+
+        [Tooltip("Forward push (m/s) while lifting so the feet land on the step top.")]
+        [Range(0f, 3f)]
+        public float stepLiftForwardPush = 0.8f;
+
+        [Tooltip("Ignore Invector's steep-slope block while a valid step is ahead, so angled riser faces don't stop you.")]
+        public bool stepIgnoreSlopeBlock = true;
+
         [Header("Survival — pools (authority)")]
         public float maxHealth = 100f;
         public float maxEnergy = 100f;

@@ -16,6 +16,16 @@ namespace Project.Building
         public bool Built;
         public Vector3 LocalHalfExtents;
         public string MaterialVariantId;
+        /// <summary>0926-generator: placement order; the lowest built foundation of a base anchors its power square.</summary>
+        public int BuildOrder;
+
+        static int buildOrderCounter;
+
+        /// <summary>Next placement order number (kept above anything restored from a save).</summary>
+        public static int NextBuildOrder()
+        {
+            return ++buildOrderCounter;
+        }
 
         // 0925-layers: live registry so placement never scans the scene for pieces.
         static readonly System.Collections.Generic.List<DMBuildingGhost> registry = new System.Collections.Generic.List<DMBuildingGhost>();
@@ -28,6 +38,7 @@ namespace Project.Building
         {
             registry.Clear();
             RegistryVersion++;
+            buildOrderCounter = 0;
         }
 
         public static DMBuildingGhost[] Snapshot()

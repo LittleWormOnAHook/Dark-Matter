@@ -303,57 +303,9 @@ namespace Project.Environment.Doors
 
         private bool ResolveSingleControllerForDoor()
         {
-            Transform doorRoot = ResolveDoorHierarchyRoot();
-            DMSlidingDoorController[] all =
-                doorRoot.GetComponentsInChildren<DMSlidingDoorController>(true);
-
-            if (all.Length <= 1)
-                return true;
-
-            DMSlidingDoorController keep = null;
-            for (int i = 0; i < all.Length; i++)
-            {
-                DMSlidingDoorController candidate = all[i];
-                if (candidate == null)
-                    continue;
-
-                if (IsApproachTriggerName(candidate.gameObject.name))
-                    continue;
-
-                keep = candidate;
-                break;
-            }
-
-            if (keep == null)
-            {
-                for (int i = 0; i < all.Length; i++)
-                {
-                    if (all[i] != null)
-                    {
-                        keep = all[i];
-                        break;
-                    }
-                }
-            }
-
-            if (keep == null)
-                keep = this;
-
-            if (keep != this)
-            {
-                enabled = false;
-                return false;
-            }
-
-            for (int i = 0; i < all.Length; i++)
-            {
-                DMSlidingDoorController other = all[i];
-                if (other == null || other == this)
-                    continue;
-
-                other.enabled = false;
-            }
-
+            // Do not disable sibling/duplicate DMSlidingDoorController components at runtime.
+            // Walking up to a shared hierarchy root previously GetComponentsInChildren'd every
+            // door under that parent and set enabled=false on all but one — killing working doors.
             return true;
         }
 

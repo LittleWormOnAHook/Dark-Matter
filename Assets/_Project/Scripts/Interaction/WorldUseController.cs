@@ -1429,6 +1429,10 @@ namespace Project.Interaction
             if (!string.IsNullOrEmpty(doorPrompt))
                 return doorPrompt;
 
+            string generatorPrompt = Project.Building.DMBaseGenerator.TryGetPrompt(context);
+            if (!string.IsNullOrEmpty(generatorPrompt))
+                return generatorPrompt;
+
             // Close-range UITK Hold-E chrome owns the prompt; skip duplicate bottom text.
         if (WorldPickupFocus.Item != null
             && WorldPickupFocus.IsWithinClosePromptRange(context.PlayerPosition, WorldPickupFocus.Item.GetIndicatorWorldAnchor()))

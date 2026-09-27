@@ -284,7 +284,7 @@ namespace Project.UI
 
             SyncMapKeyHold();
 
-            if (fullMapOpen && Mouse.current != null)
+            if (fullMapOpen && Mouse.current != null && !Project.Building.DMBuildingMode.IsActive)
             {
                 UpdateFullMapMarkerTooltip();
 
@@ -632,6 +632,8 @@ namespace Project.UI
 
         private void TryMinimapScrollZoom()
         {
+            if (Project.Building.DMBuildingMode.IsActive)
+                return;
             RefreshMinimapScrollZoomActive();
             if (!IsMinimapScrollZoomActive || Mouse.current == null)
                 return;

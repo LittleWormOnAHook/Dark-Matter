@@ -6,6 +6,7 @@ using Project.UI;
 using Invector.vShooter;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Project.Player;
 
 namespace Project.Player.Invector
 {
@@ -209,9 +210,16 @@ namespace Project.Player.Invector
 
         private static bool WasReloadPressedThisFrame()
         {
+            if (DMPlayerInputActions.WasPressedThisFrame("Reload"))
+                return true;
+
             Keyboard keyboard = Keyboard.current;
             if (keyboard != null && keyboard.rKey.wasPressedThisFrame)
                 return true;
+
+            // Legacy fallback only when Reload action is missing from the asset.
+            if (DMPlayerInputActions.Find("Reload") != null)
+                return false;
 
             Gamepad pad = Gamepad.current;
             return pad != null && pad.leftShoulder.wasPressedThisFrame;
@@ -219,9 +227,15 @@ namespace Project.Player.Invector
 
         private static bool IsReloadHeld()
         {
+            if (DMPlayerInputActions.IsPressed("Reload"))
+                return true;
+
             Keyboard keyboard = Keyboard.current;
             if (keyboard != null && keyboard.rKey.isPressed)
                 return true;
+
+            if (DMPlayerInputActions.Find("Reload") != null)
+                return false;
 
             Gamepad pad = Gamepad.current;
             return pad != null && pad.leftShoulder.isPressed;

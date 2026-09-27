@@ -20,6 +20,19 @@ namespace Project.Building
 
         public static DMBuildingPiece SelectedPiece => DMBuildingCatalog.Get(HotbarId, SelectedIndex);
 
+        /// <summary>0927-fast-play: with domain reload off (Fast Play) build mode must not carry over into the next play.</summary>
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics()
+        {
+            IsActive = false;
+            HotbarId = DMBuildingCatalog.StoneId;
+            SelectedIndex = 0;
+            SlotFocus = 0;
+            WindowStart = 0;
+            MaterialsOpen = false;
+            Changed = null;
+        }
+
         public static void Toggle()
         {
             IsActive = !IsActive;

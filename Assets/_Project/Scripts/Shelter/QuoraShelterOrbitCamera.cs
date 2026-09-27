@@ -135,7 +135,7 @@ namespace Project.Shelter
 
         private void HandleScrollZoom()
         {
-            if (Mouse.current == null || player == null)
+            if (Mouse.current == null || player == null || Project.Building.DMBuildingMode.IsActive)
                 return;
 
             if (player.IsInventoryOpen || player.IsJournalOpen || player.IsMapOpen)

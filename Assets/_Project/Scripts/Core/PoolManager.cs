@@ -14,6 +14,7 @@ namespace Project.Core
             new Dictionary<float, WaitForSecondsRealtime>(8);
         private static Transform poolRoot;
         private static CoroutineRunner runner;
+        private static bool appQuitting;
 
         private static Transform PoolRoot
         {
@@ -24,9 +25,31 @@ namespace Project.Core
             }
         }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            PoolsByPrefab.Clear();
+            WaitCache.Clear();
+            poolRoot = null;
+            runner = null;
+            appQuitting = false;
+            Application.quitting -= MarkQuitting;
+            Application.quitting += MarkQuitting;
+        }
+
+        private static void MarkQuitting()
+        {
+            appQuitting = true;
+        }
+
         private static void EnsureRoot()
         {
             if (poolRoot != null)
+                return;
+
+            // Creating PooledObjects during play-mode teardown / OnDestroy spams:
+            // "Some objects were not cleaned up when closing the scene."
+            if (appQuitting || !Application.isPlaying)
                 return;
 
             GameObject rootObject = new GameObject("PooledObjects");
@@ -37,6 +60,16 @@ namespace Project.Core
 
         private class CoroutineRunner : MonoBehaviour
         {
+            private float _nextOrphanSweepUnscaled;
+
+            private void Update()
+            {
+                if (Time.unscaledTime < _nextOrphanSweepUnscaled)
+                    return;
+
+                _nextOrphanSweepUnscaled = Time.unscaledTime + 1.5f;
+                SweepOrphanedCombatVfx();
+            }
         }
 
         public static GameObject Spawn(GameObject prefab, Vector3 position, Quaternion rotation, Transform parent = null)
@@ -56,6 +89,12 @@ namespace Project.Core
             if (instance == null)
                 return;
 
+            if (appQuitting || !Application.isPlaying)
+            {
+                Object.Destroy(instance);
+                return;
+            }
+
             if (instance.TryGetComponent(out PooledInstanceTag tag) && tag.SourcePool != null)
             {
                 tag.SourcePool.Release(instance);
@@ -70,7 +109,19 @@ namespace Project.Core
             if (instance == null)
                 return;
 
+            if (appQuitting || !Application.isPlaying)
+            {
+                Object.Destroy(instance);
+                return;
+            }
+
             EnsureRoot();
+            if (runner == null)
+            {
+                Object.Destroy(instance);
+                return;
+            }
+
             int lease = 0;
             if (instance.TryGetComponent(out PooledInstanceTag tag))
                 lease = tag.LeaseId;
@@ -217,6 +268,65 @@ namespace Project.Core
                 yield break;
 
             Release(instance);
+        }
+
+
+        /// <summary>
+        /// Returns pooled VFX that were disabled outside the pool root, and destroys leftover
+        /// unpooled vendor Instantiates (ProjectileMover flash/hit) left inactive at scene root.
+        /// </summary>
+        private static void SweepOrphanedCombatVfx()
+        {
+            if (poolRoot == null)
+                return;
+
+            PooledInstanceTag[] tags = Object.FindObjectsByType<PooledInstanceTag>(
+                FindObjectsInactive.Include);
+            for (int i = 0; i < tags.Length; i++)
+            {
+                PooledInstanceTag tag = tags[i];
+                if (tag == null || tag.SourcePool == null)
+                    continue;
+
+                GameObject go = tag.gameObject;
+                if (go.activeSelf)
+                    continue;
+                if (go.transform.parent == poolRoot)
+                    continue;
+
+                Release(go);
+            }
+
+            UnityEngine.SceneManagement.Scene scene =
+                UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+            if (!scene.IsValid() || !scene.isLoaded)
+                return;
+
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int i = 0; i < roots.Length; i++)
+            {
+                GameObject root = roots[i];
+                if (root == null || root.activeSelf)
+                    continue;
+                if (root.GetComponent<PooledInstanceTag>() != null)
+                    continue;
+                if (!LooksLikeOrphanCombatVfxName(root.name))
+                    continue;
+
+                Object.Destroy(root);
+            }
+        }
+
+        private static bool LooksLikeOrphanCombatVfxName(string name)
+        {
+            if (string.IsNullOrEmpty(name) || name.IndexOf("(Clone)", System.StringComparison.Ordinal) < 0)
+                return false;
+
+            return name.IndexOf("Muzzle Flash", System.StringComparison.OrdinalIgnoreCase) >= 0
+                || name.IndexOf("WFX_BImpact", System.StringComparison.OrdinalIgnoreCase) >= 0
+                || name.IndexOf("Plasma_Projectile", System.StringComparison.OrdinalIgnoreCase) >= 0
+                || name.IndexOf("Plasma Projectile Tracer", System.StringComparison.OrdinalIgnoreCase) >= 0
+                || name.IndexOf("Tracer VFX", System.StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         public static void Prewarm(GameObject prefab, int count)

@@ -14,7 +14,15 @@ namespace Project.Building
 
         static bool TryAim(out DMBuildingPiece piece, out Vector3 position, out Quaternion rotation, out bool canCommit)
         {
-            piece = DMBuildingMode.SelectedPiece;
+            // 0926-build-hub: every seat also passes the build zone and patrol path rules (BuildZoneRule.cs).
+            bool seated = TryAimRouted(out piece, out position, out rotation, out canCommit);
+            ApplyBuildZoneRules(seated, piece, position, rotation, ref canCommit);
+            return seated;
+        }
+
+        static bool TryAimRouted(out DMBuildingPiece piece, out Vector3 position, out Quaternion rotation, out bool canCommit)
+        {
+            piece = AimPiece(); // 0926-move: the carried piece while moving
             if (piece != null && instance != null)
             {
                 if (IsKit2Snap(piece.Snap))
@@ -48,7 +56,7 @@ namespace Project.Building
             if (camera == null || !HasBuiltBase())
                 return false;
 
-            Ray ray = camera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+            Ray ray = BuildAimRay(camera);
             bool lookingUp = ray.direction.y > 0.18f || AimIsAboveWallMid(ray);
             ResolveAimPoint(ray, lookingUp, out Vector3 aim, out bool hasHit);
             bool hitBuilt = TryHitBuiltForSnap(ray, out DMBuildingGhost hitGhost, out RaycastHit hit);
@@ -317,7 +325,7 @@ namespace Project.Building
             if (camera == null || !HasBuiltBase())
                 return false;
 
-            Ray ray = camera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+            Ray ray = BuildAimRay(camera);
             bool lookingUp = ray.direction.y > 0.18f || AimIsAboveWallMid(ray);
             ResolveAimPoint(ray, lookingUp, out Vector3 aim, out bool hasHit);
             if (!hasHit && !lookingUp)

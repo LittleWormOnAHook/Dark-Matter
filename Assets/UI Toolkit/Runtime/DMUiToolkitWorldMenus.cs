@@ -310,7 +310,8 @@ namespace Project.UI
             return DMUiToolkitHud.IsDriving
                 || DMUiToolkitMenus.IsOpen
                 || DMUiToolkitVendor.IsOpen
-                || DMUiToolkitCrate.IsOpen;
+                || DMUiToolkitCrate.IsOpen
+                || DMUiToolkitGenerator.IsOpen;
         }
 
         public static bool TryShowPioneerRoster(PioneerRosterPanelUI panel, string pioneerId, Vector2 screenPosition)
@@ -1139,7 +1140,7 @@ namespace Project.UI
                 return false;
             if (IsAnyModalOpen)
                 return false;
-            if (DMUiToolkitVendor.IsOpen || DMUiToolkitCrate.IsOpen || DMUiToolkitMenus.IsOpen)
+            if (DMUiToolkitVendor.IsOpen || DMUiToolkitCrate.IsOpen || DMUiToolkitGenerator.IsOpen || DMUiToolkitMenus.IsOpen)
                 return false;
 
             PlayerController player = PlayerLocator.FindPlayerController();

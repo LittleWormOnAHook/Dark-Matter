@@ -137,7 +137,7 @@ namespace Project.Player
             if (ragdoll != null)
             {
                 ragdoll.keepRagdolled = false;
-                ragdoll.ignoreGetUpAnimation = false;
+                ragdoll.ignoreGetUpAnimation = true;
                 ragdoll.removePhysicsAfterDie = false;
                 ragdoll.RestoreRagdoll();
             }
@@ -145,6 +145,7 @@ namespace Project.Player
             if (animator != null)
             {
                 animator.enabled = true;
+                animator.applyRootMotion = false;
                 animator.speed = _savedAnimatorSpeed > 0.01f ? _savedAnimatorSpeed : 1f;
                 if (animator.HasState(0, Locomotion))
                     animator.CrossFadeInFixedTime(Locomotion, 0.08f, 0);
@@ -898,6 +899,9 @@ namespace Project.Player
             return true;
         }
 
+        /// <summary>
+        /// Lethal fall path: kill + fall-death ragdoll flop.
+        /// </summary>
         private void BeginLethalFall()
         {
             if (climb != null && climb.IsClimbing)
@@ -905,6 +909,21 @@ namespace Project.Player
             if (ClearMountedAir())
                 return;
 
+            PlayDeathFlop(killIfAlive: true);
+        }
+
+        /// <summary>
+        /// Same ragdoll death presentation as a lethal fall. Call for every death cause
+        /// (combat, oxygen, etc.) so grounded deaths do not idle-stand.
+        /// Idempotent while already hard-falling / ragdolled.
+        /// </summary>
+        public void BeginDeathFlopFromAnyCause()
+        {
+            PlayDeathFlop(killIfAlive: false);
+        }
+
+        private void PlayDeathFlop(bool killIfAlive)
+        {
             if (_hardFalling)
             {
                 EnsureRagdollKept();
@@ -915,8 +934,17 @@ namespace Project.Player
             MuteInvectorFall();
 
             // Snapshot BEFORE EnableRagdoll/StopCharacter zeroes the capsule.
-            float drop = Mathf.Max(0f, _airApexY - transform.position.y);
-            _flopImpact = SnapshotLethalImpact(drop);
+            bool airborne = _physAir || (motor != null && !motor.isGrounded);
+            if (airborne)
+            {
+                float drop = Mathf.Max(0f, _airApexY - transform.position.y);
+                _flopImpact = SnapshotLethalImpact(drop);
+            }
+            else
+            {
+                _flopImpact = SnapshotStandingDeathImpact();
+            }
+
             _flopBoostUntil = Time.unscaledTime + 0.45f;
 
             if (motor != null)
@@ -924,6 +952,11 @@ namespace Project.Player
                 motor.isJumping = false;
                 motor.input = Vector3.zero;
                 motor.inputMagnitude = 0f;
+                // Force Invector death-by-ragdoll so ChangeHealth(0) cannot idle-stand.
+                vThirdPersonController deathCtrl = motor as vThirdPersonController
+                    ?? GetComponent<vThirdPersonController>();
+                if (deathCtrl != null)
+                    deathCtrl.deathBy = vCharacter.DeathBy.Ragdoll;
             }
 
             PrepareRagdollForFlop();
@@ -940,14 +973,33 @@ namespace Project.Player
             ApplyFallVelocityToBones(_flopImpact);
             EnsureRagdollKept();
 
-            float hipsVy = ReadHipsVelocityY();
-            // silenced 0831 BuildStamp log
-
-            SurvivalStats stats = ResolveSurvivalStats();
-            if (stats != null && !stats.IsDead)
-                stats.KillFromFall();
+            if (killIfAlive)
+            {
+                SurvivalStats stats = ResolveSurvivalStats();
+                if (stats != null && !stats.IsDead)
+                    stats.KillFromFall();
+            }
 
             ResetAirTracking();
+        }
+
+        private Vector3 SnapshotStandingDeathImpact()
+        {
+            Vector3 impact = Vector3.zero;
+            if (body != null && !body.isKinematic)
+                impact = body.linearVelocity;
+
+            Vector3 back = transform.forward;
+            back.y = 0f;
+            if (back.sqrMagnitude < 0.01f)
+                back = -transform.forward;
+            else
+                back = -back.normalized;
+
+            impact += back * 2.75f;
+            if (impact.y > -4f)
+                impact.y = -4f;
+            return impact;
         }
 
         private Vector3 SnapshotLethalImpact(float drop)
@@ -1137,7 +1189,7 @@ namespace Project.Player
         /// </summary>
         private void ProtectShortHopApex()
         {
-            // Intentionally empty — Falling gate is on Base Layer Any State.
+            // Intentionally empty ï¿½ Falling gate is on Base Layer Any State.
         }
 
 

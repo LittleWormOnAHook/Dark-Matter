@@ -43,6 +43,62 @@ namespace Project.Storage
             return total;
         }
 
+        public static int CountMatching(Func<ItemData, bool> match)
+        {
+            if (match == null)
+                return 0;
+
+            int total = 0;
+            foreach (DMStorageCrateState state in States.Values)
+            {
+                if (state == null)
+                    continue;
+                for (int i = 0; i < state.Slots.Count; i++)
+                {
+                    CrateSlot slot = state.Slots[i];
+                    if (slot == null || slot.IsEmpty || !match(slot.item))
+                        continue;
+                    total += slot.amount;
+                }
+            }
+
+            return total;
+        }
+
+        public static int RemoveMatching(Func<ItemData, bool> match, int amount)
+        {
+            if (match == null || amount <= 0)
+                return 0;
+
+            int remaining = amount;
+            foreach (DMStorageCrateState state in States.Values)
+            {
+                if (state == null || remaining <= 0)
+                    continue;
+
+                for (int i = 0; i < state.Slots.Count && remaining > 0; i++)
+                {
+                    CrateSlot slot = state.Slots[i];
+                    if (slot == null || slot.IsEmpty || !match(slot.item))
+                        continue;
+
+                    int take = Mathf.Min(remaining, slot.amount);
+                    slot.amount -= take;
+                    remaining -= take;
+                    if (slot.amount <= 0)
+                    {
+                        slot.item = null;
+                        slot.amount = 0;
+                    }
+                }
+            }
+
+            int removed = amount - remaining;
+            if (removed > 0)
+                NotifyChanged();
+            return removed;
+        }
+
         public static void FillItemCounts(Dictionary<ItemData, int> dest)
         {
             if (dest == null)
@@ -55,6 +111,47 @@ namespace Project.Storage
                     continue;
                 state.AddItemCounts(dest);
             }
+        }
+
+        /// <summary>0926-storage-crate: removes a crate's state and hands back its filled slots (a destroyed built crate).</summary>
+        public static List<CrateSlot> Release(string crateId)
+        {
+            var taken = new List<CrateSlot>();
+            if (string.IsNullOrWhiteSpace(crateId) || !States.TryGetValue(crateId, out DMStorageCrateState state))
+                return taken;
+
+            States.Remove(crateId);
+            if (state != null)
+            {
+                for (int i = 0; i < state.Slots.Count; i++)
+                {
+                    CrateSlot slot = state.Slots[i];
+                    if (slot != null && !slot.IsEmpty)
+                        taken.Add(new CrateSlot { item = slot.item, amount = slot.amount });
+                }
+            }
+
+            NotifyChanged();
+            return taken;
+        }
+
+        /// <summary>
+        /// 0926-move: a built crate moved in build mode gets the id of its new spot (ids are position based),
+        /// so its contents move with it and still match after a save/load. False if the new id is taken.
+        /// </summary>
+        public static bool Rekey(string oldId, string newId)
+        {
+            if (string.IsNullOrWhiteSpace(oldId) || string.IsNullOrWhiteSpace(newId) || string.Equals(oldId, newId, StringComparison.Ordinal))
+                return false;
+            if (States.ContainsKey(newId))
+                return false;
+            if (!States.TryGetValue(oldId, out DMStorageCrateState state) || state == null)
+                return true; // nothing stored yet; the crate simply takes the new id
+            States.Remove(oldId);
+            state.CrateId = newId;
+            States[newId] = state;
+            NotifyChanged();
+            return true;
         }
 
         public static StorageCrateSave[] BuildSave()
