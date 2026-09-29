@@ -47,7 +47,7 @@ namespace Project.Building
         [Tooltip("Edge-to-edge spacing for smaller footprints.")]
         public float smallModuleMeters = 2f;
 
-        [Tooltip("Alt + scroll step for the first foundation. Pieces on the building grid turn in 90 degree steps.")]
+        [Tooltip("Left Alt + scroll step for the first foundation. Pieces on the building grid turn in 90 degree steps.")]
         public float yawStepDegrees = 45f;
         public float heightStepMeters = 0.25f;
         public float maxHeightOffsetMeters = 4f;

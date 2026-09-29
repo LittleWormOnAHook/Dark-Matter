@@ -22,7 +22,10 @@ namespace Project.Building
             Vector3 modelRotation = DMBuildingCatalog.ModelRotationFor(pieceId);
             if (modelRotation.sqrMagnitude > 0.0001f)
                 instance = WrapRotated(instance, modelRotation);
-            CenterPivot(instance);
+            else if (KeepsAuthoredScale(pieceId, instance))
+                instance = WrapScaled(instance); // 0928-foundation-scale: CenterPivot below would reset the prefab's own root scale
+            CenterPivot(instance, pieceId); // 0928-foundation-top: deep foundations seat on their top surface
+            EnsureFoundationCollider(instance, pieceId); // 0928-foundation-collider: a foundation prefab without a collider still gets one
             SetTag(instance, DMBuildingCatalog.IsForceField(pieceId) ? "Untagged" : ClimbableTag); // 0926-force-fields are not climb holds
             DMBuildingLayers.Apply(instance); // 0925-layers
             return instance;
@@ -61,6 +64,68 @@ namespace Project.Building
             if (any)
                 instance.transform.position -= bounds.center;
             return root;
+        }
+
+        /// <summary>
+        /// 0928-foundation-scale: a foundation prefab that carries its size on its root transform (for example a model
+        /// prefab exported with a node scale of 4.55 x 39.3 x 4.55) must keep that scale. CenterPivot resets the root to
+        /// scale 1, which made such a foundation come out about 0.9 x 0.07 x 0.9 m. Only foundation shapes are wrapped, so
+        /// every other piece keeps its current behaviour.
+        /// </summary>
+        static bool KeepsAuthoredScale(string pieceId, GameObject instance)
+        {
+            if (instance == null || !DMBuildingCatalog.IsAnyFoundation(pieceId))
+                return false;
+            return (instance.transform.localScale - Vector3.one).sqrMagnitude > 0.000001f;
+        }
+
+        /// <summary>0928-foundation-scale: parent the prefab under a fresh unit-scale root, keeping its own scale.</summary>
+        static GameObject WrapScaled(GameObject instance)
+        {
+            var root = new GameObject(instance.name);
+            instance.name = "Model";
+            instance.transform.SetParent(root.transform, false);
+            instance.transform.localPosition = Vector3.zero;
+            instance.transform.localRotation = Quaternion.identity;
+            return root;
+        }
+
+        /// <summary>
+        /// 0928-foundation-collider: foundations need a solid collider to stand on and to snap against. A foundation
+        /// prefab that has none gets a box fitted to its renderers (after CenterPivot, so it matches the seated mesh).
+        /// </summary>
+        static void EnsureFoundationCollider(GameObject root, string pieceId)
+        {
+            if (root == null || !DMBuildingCatalog.IsAnyFoundation(pieceId))
+                return;
+            if (root.GetComponentInChildren<Collider>(true) != null)
+                return;
+
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+            bool any = false;
+            Bounds bounds = default;
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                if (renderers[i] == null || renderers[i] is ParticleSystemRenderer)
+                    continue;
+                if (!any)
+                {
+                    bounds = renderers[i].bounds;
+                    any = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(renderers[i].bounds);
+                }
+            }
+
+            if (!any)
+                return;
+
+            // CenterPivot left the root at the origin with no rotation or scale, so world bounds are root-local here.
+            BoxCollider box = root.AddComponent<BoxCollider>();
+            box.center = bounds.center - root.transform.position;
+            box.size = bounds.size;
         }
 
         public static void SetTag(GameObject root, string tag)
@@ -164,6 +229,17 @@ namespace Project.Building
         /// </summary>
         public static void CenterPivot(GameObject root)
         {
+            CenterPivot(root, null);
+        }
+
+        /// <summary>
+        /// 0928-foundation-top: like CenterPivot, but a foundation mesh taller than its catalog slot (the deep 2.59 m
+        /// foundation block) is moved so its TOP sits at +Size.y/2, where the old 0.4 m slab's top was. The extra depth
+        /// hangs below the grid instead of poking 1.1 m above it, so floors, walls and snapping on top line up as before.
+        /// Every other shape, and foundations that fit their slot, still center exactly as before.
+        /// </summary>
+        public static void CenterPivot(GameObject root, string pieceId)
+        {
             if (root == null)
                 return;
 
@@ -182,6 +258,9 @@ namespace Project.Building
             }
 
             Vector3 delta = bounds.center;
+            float slotHalfHeight;
+            if (TallFoundationSlotHalfHeight(pieceId, bounds.size.y, out slotHalfHeight))
+                delta.y = bounds.max.y - slotHalfHeight;
             if (delta.sqrMagnitude < 0.000001f)
                 return;
 
@@ -219,6 +298,25 @@ namespace Project.Building
             MeshFilter rootFilter = root.GetComponent<MeshFilter>();
             if (meshCollider != null && rootFilter != null)
                 meshCollider.sharedMesh = rootFilter.sharedMesh;
+        }
+
+        /// <summary>
+        /// 0928-foundation-top: true for any foundation shape (full, triangle, half, quarter) whose mesh is taller than
+        /// its catalog slot; returns half the slot height so the mesh top can be seated there.
+        /// </summary>
+        static bool TallFoundationSlotHalfHeight(string pieceId, float meshHeight, out float slotHalfHeight)
+        {
+            slotHalfHeight = 0f;
+            if (string.IsNullOrEmpty(pieceId) || !DMBuildingCatalog.IsAnyFoundation(pieceId))
+                return false;
+
+            DMBuildingPiece piece = DMBuildingCatalog.Find(pieceId);
+            float slotHeight = piece != null && piece.Size.y > 0.001f ? piece.Size.y : DMBuildingCatalog.FoundationHeight;
+            if (meshHeight <= slotHeight + 0.01f)
+                return false;
+
+            slotHalfHeight = slotHeight * 0.5f;
+            return true;
         }
     }
 }

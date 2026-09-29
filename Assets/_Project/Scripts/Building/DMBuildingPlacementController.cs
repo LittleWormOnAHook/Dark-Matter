@@ -2266,7 +2266,7 @@ namespace Project.Building
         }
 
         /// <summary>
-        /// M cycles the Stone finish on the built piece under the crosshair, or the nearest built piece.
+        /// Right Alt cycles the Stone finish on the built piece under the crosshair, or the nearest built piece.
         /// </summary>
         static void TryApplyNextMaterial()
         {
@@ -2330,7 +2330,10 @@ namespace Project.Building
             PaintPanes(ghost.gameObject, style != null && style.glassMaterial != null ? style.glassMaterial : GlassMaterial());
         }
 
-        /// <summary>Every submesh gets the override; glass panes keep the style glass.</summary>
+        /// <summary>
+        /// The override paints the main slot (slot 0, plus any slot sharing its material); extra accent slots keep their
+        /// own materials (0928-multi-material). Glass panes keep the style glass.
+        /// </summary>
         static void ApplyOverrideMaterial(GameObject target, Material material)
         {
             DMBuildingStyleLibrary style = null;
@@ -2346,8 +2349,13 @@ namespace Project.Building
                 Material[] mats = r.sharedMaterials;
                 int count = Mathf.Max(1, mats.Length);
                 var next = new Material[count];
+                Material main = mats.Length > 0 ? mats[0] : null;
                 for (int m = 0; m < count; m++)
-                    next[m] = material;
+                {
+                    Material current = m < mats.Length ? mats[m] : null;
+                    next[m] = m == 0 || current == null || current == main ? material : current;
+                }
+
                 r.sharedMaterials = next;
             }
 
@@ -2373,10 +2381,11 @@ namespace Project.Building
             }
         }
 
+        /// <summary>0928-finish-key: Right Alt only (was M). Left Alt stays free for dash and Alt + scroll rotate.</summary>
         static bool WasMaterialKeyPressed()
         {
             Keyboard keyboard = Keyboard.current;
-            return keyboard != null && keyboard.mKey.wasPressedThisFrame;
+            return keyboard != null && keyboard.rightAltKey.wasPressedThisFrame;
         }
 
         static bool TryResolveDestroyTarget(out DMBuildingGhost ghost)
@@ -2525,8 +2534,8 @@ namespace Project.Building
             if (notches == 0)
                 notches = raw > 0f ? 1 : -1;
 
-            bool alt = Keyboard.current != null
-                && (Keyboard.current.leftAltKey.isPressed || Keyboard.current.rightAltKey.isPressed);
+            // 0928-finish-key: Left Alt only; Right Alt now cycles finishes.
+            bool alt = Keyboard.current != null && Keyboard.current.leftAltKey.isPressed;
             if (alt)
             {
                 int turns = Mathf.Max(1, Mathf.RoundToInt(360f / YawStep()));

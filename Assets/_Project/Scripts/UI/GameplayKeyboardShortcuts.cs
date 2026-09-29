@@ -228,7 +228,7 @@ namespace Project.UI
             if (keyboard == null)
                 return;
 
-            bool alt = keyboard.leftAltKey.isPressed || keyboard.rightAltKey.isPressed;
+            bool alt = keyboard.leftAltKey.isPressed; // 0928-finish-key: Left Alt only; Right Alt cycles building finishes
             if (!alt || !keyboard.vKey.wasPressedThisFrame)
                 return;
 

@@ -293,7 +293,7 @@ namespace Project.EditorTools.GenesisStudio
                 DMStudioProfileSectionFilter.BuildingPreviewOnly =>
                     "Valid snap/build and blocked preview holograms on DM_BuildingGhostProfile — optional materials plus color and alpha.",
                 DMStudioProfileSectionFilter.BuildingBuiltTintsOnly =>
-                    "Finished mesh and window glass tints on DM_BuildingGhostProfile. Finishes (M key) live per style in Building > Library — use Building Studio.",
+                    "Finished mesh and window glass tints on DM_BuildingGhostProfile. Finishes (Right Alt) live per style in Building > Library — use Building Studio.",
                 DMStudioProfileSectionFilter.BuildingSnapOnly =>
                     "Module grid, yaw/height steps, edge/top snap, and build look-up on DM_BuildingGhostProfile.",
                 DMStudioProfileSectionFilter.BuildingPlacementOnly =>

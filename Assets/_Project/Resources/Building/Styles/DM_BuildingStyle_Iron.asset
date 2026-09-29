@@ -109,7 +109,7 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
-    materialOverride: {fileID: 2100000, guid: ccfea5a823f8ff142ae7e77fbc82809f, type: 2}
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
@@ -137,7 +137,7 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
-    materialOverride: {fileID: 2100000, guid: ccfea5a823f8ff142ae7e77fbc82809f, type: 2}
+    materialOverride: {fileID: 0}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
@@ -162,6 +162,20 @@ MonoBehaviour:
     category: 1
     prefab: {fileID: 3783473118321638332, guid: e9d1dfd75cffe9b49bd30fbbde95d8cb, type: 3}
     icon: {fileID: 2800000, guid: 89efc4488371b2c498e74e20460b00dd, type: 3}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    materialOverride: {fileID: 2100000, guid: ccfea5a823f8ff142ae7e77fbc82809f, type: 2}
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
+  - id: iron_wall_2_4x4
+    displayName: Wall 2
+    shape: 6
+    category: 1
+    prefab: {fileID: 3783473118321638332, guid: f9f39656f8d5ab543a3353db29b6936f, type: 3}
+    icon: {fileID: 2800000, guid: a23613a2b2703cc439565cfab83e2dd8, type: 3}
     cost: 4
     enabled: 1
     applyStyleFinish: 1
@@ -221,7 +235,7 @@ MonoBehaviour:
     cost: 2
     enabled: 1
     applyStyleFinish: 1
-    materialOverride: {fileID: 0}
+    materialOverride: {fileID: 2100000, guid: da90373243ed09449aa6f0a95e819b21, type: 2}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
@@ -613,7 +627,7 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
-    materialOverride: {fileID: 0}
+    materialOverride: {fileID: 2100000, guid: f783f36af3a75074bbdc6940e48549a8, type: 2}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}

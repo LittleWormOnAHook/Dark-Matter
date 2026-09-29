@@ -67,7 +67,7 @@ namespace Project.EditorTools.Building
             EditorGUI.BeginChangeCheck();
 
             DrawFoldoutSection(ref showStyle, style.displayName + " kit", style.accent, () => DrawStyleSettings(style));
-            DrawFoldoutSection(ref showFinishes, "Finishes (M key)", style.accent, () => DrawFinishes(style));
+            DrawFoldoutSection(ref showFinishes, "Finishes (Right Alt)", style.accent, () => DrawFinishes(style));
             DrawFoldoutSection(ref showKit, "Kit shapes (ProBuilder)", style.accent, () => DrawKitSettings(style));
             DrawFoldoutSection(ref showParts, "Parts (" + (style.parts != null ? style.parts.Count : 0) + ")", style.accent, () => DrawParts(style));
 
@@ -210,7 +210,7 @@ namespace Project.EditorTools.Building
 
         static void DrawFinishes(DMBuildingStyleLibrary style)
         {
-            EditorGUILayout.HelpBox("The first finish is the default for new pieces. M cycles through them on a built piece.", MessageType.None);
+            EditorGUILayout.HelpBox("The first finish is the default for new pieces. Right Alt cycles through them on a built piece.", MessageType.None);
             if (style.finishes == null)
                 style.finishes = new List<DMBuildingMaterialVariant>();
 

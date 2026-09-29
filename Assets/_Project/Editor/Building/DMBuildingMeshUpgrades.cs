@@ -15,6 +15,11 @@ namespace Project.EditorTools.Building
     /// 4 m module, slabs top-aligned to the legacy top), then written onto &lt;prefix&gt;&lt;id&gt; for Stone, Iron and Silicate
     /// with that style's own materials. Window glass (a submesh whose material name contains "glass") becomes the
     /// GlassPane child so the runtime finish and ghost paint keep working. Colliders are refit and icons re-baked.
+    /// 0928-multi-material: every other material slot of the model stays its own submesh. Slot 0 (the model's first
+    /// material) takes the style's main finish (doors: the style door material) and follows finish cycling at runtime.
+    /// Extra slots take the material set on that slot of the upgrade prefab, mapped to the style (Stone glass -> style
+    /// glass, Stone finish N -> style finish N, Stone door -> style door; anything else, e.g. the model's own material,
+    /// is kept as is).
     /// </summary>
     public static class DMBuildingMeshUpgrades
     {
@@ -74,12 +79,12 @@ namespace Project.EditorTools.Building
                 }
 
                 GameObject upgrade = AssetDatabase.LoadAssetAtPath<GameObject>(upgradePath);
-                if (!TryBake(upgrade, part.shape, id, out Mesh shell, out Mesh glass, log))
+                if (!TryBake(upgrade, part.shape, id, out Mesh shell, out Mesh glass, out List<Material> slotSources, log))
                     continue;
 
                 BackupOnce(part);
                 Material shellMaterial = part.shape == DMBuildingShape.Door ? door : solid;
-                if (ApplyToPrefab(style, part, shell, glass, shellMaterial, log))
+                if (ApplyToPrefab(style, part, shell, glass, shellMaterial, slotSources, log))
                     changed.Add(part);
             }
 
@@ -104,10 +109,11 @@ namespace Project.EditorTools.Building
             return changed.Count;
         }
 
-        static bool TryBake(GameObject upgrade, DMBuildingShape shape, string id, out Mesh shell, out Mesh glass, StringBuilder log)
+        static bool TryBake(GameObject upgrade, DMBuildingShape shape, string id, out Mesh shell, out Mesh glass, out List<Material> slotSources, StringBuilder log)
         {
             shell = null;
             glass = null;
+            slotSources = new List<Material>();
             if (upgrade == null)
                 return false;
 
@@ -115,8 +121,11 @@ namespace Project.EditorTools.Building
             var norms = new List<Vector3>();
             var uv0 = new List<Vector2>();
             var uv1 = new List<Vector2>();
-            var shellTris = new List<int>();
             var glassTris = new List<int>();
+            // 0928-multi-material: one triangle list per model material slot, keyed by the model's own material name.
+            var slotKeys = new List<string>();
+            var slotTris = new List<List<int>>();
+            bool splitGlass = IsWindow(shape);
 
             Transform root = upgrade.transform;
             Matrix4x4 rootFix = Matrix4x4.TRS(Vector3.zero, root.localRotation, root.localScale) * root.worldToLocalMatrix;
@@ -128,6 +137,7 @@ namespace Project.EditorTools.Building
                     continue;
                 MeshRenderer renderer = filters[f].GetComponent<MeshRenderer>();
                 Material[] mats = renderer != null ? renderer.sharedMaterials : new Material[0];
+                Material[] modelMats = ModelMaterials(renderer, mats);
                 Matrix4x4 m = rootFix * filters[f].transform.localToWorldMatrix;
                 Matrix4x4 n = m.inverse.transpose;
                 bool flip = m.determinant < 0f;
@@ -145,11 +155,30 @@ namespace Project.EditorTools.Building
                     uv1.Add(b != null && b.Length == v.Length ? b[i] : Vector2.zero);
                 }
 
-                int glassSub = GlassSubmesh(src, mats);
+                int glassSub = splitGlass ? GlassSubmesh(src, mats) : -1;
                 for (int s = 0; s < src.subMeshCount; s++)
                 {
                     int[] tris = src.GetTriangles(s);
-                    List<int> dst = s == glassSub ? glassTris : shellTris;
+                    List<int> dst;
+                    if (s == glassSub)
+                    {
+                        dst = glassTris;
+                    }
+                    else
+                    {
+                        Material model = s < modelMats.Length ? modelMats[s] : null;
+                        string key = model != null ? model.name : "slot" + s;
+                        int slot = slotKeys.IndexOf(key);
+                        if (slot < 0)
+                        {
+                            slot = slotKeys.Count;
+                            slotKeys.Add(key);
+                            slotTris.Add(new List<int>());
+                            slotSources.Add(s < mats.Length && mats[s] != null ? mats[s] : model);
+                        }
+
+                        dst = slotTris[slot];
+                    }
                     for (int t = 0; t + 2 < tris.Length; t += 3)
                     {
                         dst.Add(tris[t] + baseIndex);
@@ -159,7 +188,10 @@ namespace Project.EditorTools.Building
                 }
             }
 
-            if (verts.Count == 0 || shellTris.Count == 0)
+            int shellCount = 0;
+            for (int i = 0; i < slotTris.Count; i++)
+                shellCount += slotTris[i].Count;
+            if (verts.Count == 0 || shellCount == 0)
             {
                 log.Append(" ").Append(id).Append("=empty mesh;");
                 return false;
@@ -214,13 +246,25 @@ namespace Project.EditorTools.Building
             for (int i = 0; i < verts.Count; i++)
                 verts[i] = verts[i] * scale + offset;
 
-            shell = SaveMeshAsset(BuildMesh(verts, norms, uv0, uv1, shellTris), BakedFolder + "/" + id + ".asset", id);
+            // Drop empty slots (keeps slot 0 first) so the submesh and material counts match.
+            for (int i = slotTris.Count - 1; i >= 0; i--)
+            {
+                if (slotTris[i].Count > 0)
+                    continue;
+                slotTris.RemoveAt(i);
+                slotKeys.RemoveAt(i);
+                slotSources.RemoveAt(i);
+            }
+
+            shell = SaveMeshAsset(BuildMesh(verts, norms, uv0, uv1, slotTris), BakedFolder + "/" + id + ".asset", id);
             if (glassTris.Count > 0)
-                glass = SaveMeshAsset(DoubleSided(BuildMesh(verts, norms, uv0, uv1, glassTris)), BakedFolder + "/" + id + "_glass.asset", id + "_glass");
+                glass = SaveMeshAsset(DoubleSided(BuildMesh(verts, norms, uv0, uv1, new List<List<int>> { glassTris })), BakedFolder + "/" + id + "_glass.asset", id + "_glass");
+            if (slotTris.Count > 1)
+                log.Append(" ").Append(id).Append("=").Append(slotTris.Count).Append(" slots (").Append(string.Join(", ", slotKeys)).Append(");");
             return shell != null;
         }
 
-        static bool ApplyToPrefab(DMBuildingStyleLibrary style, DMBuildingPartEntry part, Mesh shell, Mesh glass, Material shellMaterial, StringBuilder log)
+        static bool ApplyToPrefab(DMBuildingStyleLibrary style, DMBuildingPartEntry part, Mesh shell, Mesh glass, Material shellMaterial, List<Material> slotSources, StringBuilder log)
         {
             string path = AssetDatabase.GetAssetPath(part.prefab);
             GameObject root = PrefabUtility.LoadPrefabContents(path);
@@ -237,9 +281,15 @@ namespace Project.EditorTools.Building
                 if (shellMaterial == null)
                     shellMaterial = renderer.sharedMaterial;
                 filter.sharedMesh = shell;
+                // 0928-multi-material: slot 0 = style main finish, extra slots mapped to the style (never left empty).
                 var mats = new Material[Mathf.Max(1, shell.subMeshCount)];
-                for (int i = 0; i < mats.Length; i++)
-                    mats[i] = shellMaterial;
+                mats[0] = shellMaterial;
+                for (int i = 1; i < mats.Length; i++)
+                {
+                    Material source = slotSources != null && i < slotSources.Count ? slotSources[i] : null;
+                    mats[i] = StyleSlotMaterial(style, source, shellMaterial);
+                }
+
                 renderer.sharedMaterials = mats;
 
                 Transform pane = root.transform.Find("GlassPane");
@@ -410,28 +460,36 @@ namespace Project.EditorTools.Building
             }
         }
 
-        static Mesh BuildMesh(List<Vector3> verts, List<Vector3> norms, List<Vector2> uv0, List<Vector2> uv1, List<int> tris)
+        /// <summary>One submesh per triangle list (0928-multi-material); vertices are shared and compacted.</summary>
+        static Mesh BuildMesh(List<Vector3> verts, List<Vector3> norms, List<Vector2> uv0, List<Vector2> uv1, List<List<int>> submeshes)
         {
             var remap = new Dictionary<int, int>();
             var v = new List<Vector3>();
             var n = new List<Vector3>();
             var a = new List<Vector2>();
             var b = new List<Vector2>();
-            var t = new int[tris.Count];
-            for (int i = 0; i < tris.Count; i++)
+            var lists = new List<int[]>();
+            for (int s = 0; s < submeshes.Count; s++)
             {
-                int src = tris[i];
-                if (!remap.TryGetValue(src, out int dst))
+                List<int> tris = submeshes[s];
+                var t = new int[tris.Count];
+                for (int i = 0; i < tris.Count; i++)
                 {
-                    dst = v.Count;
-                    remap[src] = dst;
-                    v.Add(verts[src]);
-                    n.Add(norms[src]);
-                    a.Add(uv0[src]);
-                    b.Add(uv1[src]);
+                    int src = tris[i];
+                    if (!remap.TryGetValue(src, out int dst))
+                    {
+                        dst = v.Count;
+                        remap[src] = dst;
+                        v.Add(verts[src]);
+                        n.Add(norms[src]);
+                        a.Add(uv0[src]);
+                        b.Add(uv1[src]);
+                    }
+
+                    t[i] = dst;
                 }
 
-                t[i] = dst;
+                lists.Add(t);
             }
 
             var mesh = new Mesh();
@@ -440,10 +498,60 @@ namespace Project.EditorTools.Building
             mesh.SetNormals(n);
             mesh.SetUVs(0, a);
             mesh.SetUVs(1, b);
-            mesh.SetTriangles(t, 0);
+            mesh.subMeshCount = Mathf.Max(1, lists.Count);
+            for (int s = 0; s < lists.Count; s++)
+                mesh.SetTriangles(lists[s], s);
             mesh.RecalculateBounds();
             mesh.RecalculateTangents();
             return mesh;
+        }
+
+        /// <summary>Only window pieces split a glass slot into the GlassPane child; elsewhere glass-looking slots stay slots.</summary>
+        static bool IsWindow(DMBuildingShape shape)
+        {
+            return shape == DMBuildingShape.Window || shape == DMBuildingShape.WideWindow || shape == DMBuildingShape.SlitWindow;
+        }
+
+        /// <summary>The model's own (FBX) materials for a renderer of the upgrade prefab, used to name the slots.</summary>
+        static Material[] ModelMaterials(MeshRenderer renderer, Material[] fallback)
+        {
+            if (renderer == null)
+                return fallback;
+            MeshRenderer original = PrefabUtility.GetCorrespondingObjectFromOriginalSource(renderer);
+            return original != null && original != renderer ? original.sharedMaterials : fallback;
+        }
+
+        /// <summary>
+        /// 0928-multi-material: material for an extra slot. The upgrade prefabs are authored with Stone materials, so a
+        /// Stone glass/finish/door material maps to the same role in the target style; anything else (the model's own
+        /// material, a shared accent) is kept. Never returns null.
+        /// </summary>
+        static Material StyleSlotMaterial(DMBuildingStyleLibrary style, Material source, Material fallback)
+        {
+            if (source == null)
+                return fallback;
+            if (source.name.ToLowerInvariant().Contains("glass"))
+                return style.glassMaterial != null ? style.glassMaterial : source;
+
+            DMBuildingStyleLibrary stone = DMBuildingStyles.Find(DMBuildingStyles.DefaultId);
+            if (stone != null && stone != style)
+            {
+                if (source == stone.doorMaterial && style.doorMaterial != null)
+                    return style.doorMaterial;
+                if (stone.finishes != null && style.finishes != null && style.finishes.Count > 0)
+                {
+                    for (int i = 0; i < stone.finishes.Count; i++)
+                    {
+                        if (stone.finishes[i] == null || stone.finishes[i].finishedMaterial != source)
+                            continue;
+                        DMBuildingMaterialVariant match = style.finishes[Mathf.Min(i, style.finishes.Count - 1)];
+                        if (match != null && match.finishedMaterial != null)
+                            return match.finishedMaterial;
+                    }
+                }
+            }
+
+            return source;
         }
 
         static Mesh SaveMeshAsset(Mesh mesh, string path, string name)

@@ -543,9 +543,15 @@ namespace Project.EditorTools.Building
                             r.sharedMaterial = style.glassMaterial;
                         continue;
                     }
-                    var mats = new Material[Mathf.Max(1, r.sharedMaterials.Length)];
+                    // 0928-multi-material: the override paints slot 0 (and slots sharing its material); accent slots stay.
+                    Material[] mats = r.sharedMaterials.Length > 0 ? r.sharedMaterials : new Material[1];
+                    Material main = mats[0];
                     for (int m = 0; m < mats.Length; m++)
-                        mats[m] = part.materialOverride;
+                    {
+                        if (m == 0 || mats[m] == null || mats[m] == main)
+                            mats[m] = part.materialOverride;
+                    }
+
                     r.sharedMaterials = mats;
                 }
 

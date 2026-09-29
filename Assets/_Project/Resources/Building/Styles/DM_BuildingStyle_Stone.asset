@@ -136,7 +136,7 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
-    materialOverride: {fileID: 2100000, guid: db36743aaddc0a9408ba35a903d51b54, type: 2}
+    materialOverride: {fileID: 2100000, guid: 70e0d2c7a154e7b48957c7a0e083f41c, type: 2}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
@@ -164,7 +164,7 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
-    materialOverride: {fileID: 2100000, guid: db36743aaddc0a9408ba35a903d51b54, type: 2}
+    materialOverride: {fileID: 2100000, guid: 70e0d2c7a154e7b48957c7a0e083f41c, type: 2}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
@@ -220,7 +220,21 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
-    materialOverride: {fileID: 2100000, guid: db36743aaddc0a9408ba35a903d51b54, type: 2}
+    materialOverride: {fileID: 2100000, guid: 70e0d2c7a154e7b48957c7a0e083f41c, type: 2}
+    surfaceOffsetMeters: 0.01
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    customCost: []
+  - id: stone_wall_2_4x4
+    displayName: Wall 2
+    shape: 6
+    category: 1
+    prefab: {fileID: 6587126998690137564, guid: 02636a7ee2b28214583ba5000f58af48, type: 3}
+    icon: {fileID: 2800000, guid: 4bbfbd244de466e4dad320879628274b, type: 3}
+    cost: 4
+    enabled: 1
+    applyStyleFinish: 1
+    materialOverride: {fileID: 2100000, guid: 70e0d2c7a154e7b48957c7a0e083f41c, type: 2}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
@@ -248,7 +262,7 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
-    materialOverride: {fileID: 2100000, guid: db36743aaddc0a9408ba35a903d51b54, type: 2}
+    materialOverride: {fileID: 2100000, guid: 70e0d2c7a154e7b48957c7a0e083f41c, type: 2}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
@@ -262,7 +276,7 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
-    materialOverride: {fileID: 0}
+    materialOverride: {fileID: 2100000, guid: 70e0d2c7a154e7b48957c7a0e083f41c, type: 2}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}
@@ -374,7 +388,7 @@ MonoBehaviour:
     cost: 4
     enabled: 1
     applyStyleFinish: 1
-    materialOverride: {fileID: 2100000, guid: db36743aaddc0a9408ba35a903d51b54, type: 2}
+    materialOverride: {fileID: 2100000, guid: 70e0d2c7a154e7b48957c7a0e083f41c, type: 2}
     surfaceOffsetMeters: 0.01
     sizeOverride: {x: 0, y: 0, z: 0}
     modelRotation: {x: 0, y: 0, z: 0}

@@ -80,7 +80,7 @@ namespace Project.Building
         Equipment
     }
 
-    /// <summary>Finished material for built pieces. The first finish of a style is its default; M cycles them.</summary>
+    /// <summary>Finished material for built pieces. The first finish of a style is its default; Right Alt cycles them.</summary>
     [Serializable]
     public sealed class DMBuildingMaterialVariant
     {
