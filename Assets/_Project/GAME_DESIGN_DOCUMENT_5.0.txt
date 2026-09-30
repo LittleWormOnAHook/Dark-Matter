@@ -7,6 +7,13 @@ Revision: July 22, 2026 — disk-status correction: World Engine / Communication
           Features runtime not yet in repo; B4/B5 match on-disk truth. Design docs remain
           the build target. In-game language models are not in the product.
           Gameplay AI is authored logic.
+Status refresh: Sep 30, 2026 — Appendix B synced to the working project
+          (build mode + snap building, Genesis Studio, save v23, streamed
+          terrain tiles) and new B6 Implementation Status.
+          Same day, design answers applied to the locks: economy (0 AC, no
+          inventory), art (full-scale AAA, semi-high-definition), oxygen
+          (needed in most areas; Rebreather auto-off), platforms (PC and Mac
+          first; Xbox and PlayStation later), main scene v1.6.5, no NavMesh.
 
 Audience
 
@@ -38,8 +45,11 @@ Companion doc: GAME_SUMMARY.txt — quick one-page export of PRODUCT IDENTITY be
   canonical copy lives in this GDD only.
 
 LOCKED (do not contradict without an explicit design change)
-  Platforms: PC primary + consoles (PS5 / Xbox) only. No mobile ship target.
-  Economy: Aether Credits (AC) only. Starter 5000 AC → 1 Skilled Companion.
+  Platforms: PC and Mac first; Xbox and PlayStation later. No mobile ship target.
+  Economy: Aether Credits (AC) only. Player starts with 0 AC and no inventory.
+    Optional in-app purchases later would be AC only.
+  Art: Full-scale AAA, semi-high-definition art. Modular pieces with attachments
+    and material swaps where useful.
   Thermal: single cold/heat meter. Pet: fold into Echo/trio (target; pet still live).
   Building Control Panels: in-world E terminal → Overview | Companions | Production |
     Craft | Changes. Journal Craft = recipe library / scroll learning only.
@@ -562,8 +572,8 @@ Platforms (Locked)
 
 TARGET PLATFORMS
 ----------------
-  Primary:  PC (keyboard + mouse, optional gamepad)
-  Secondary: Consoles (PS5 / Xbox) — gamepad-first parity
+  First:  PC and Mac (keyboard + mouse, optional gamepad)
+  Later:  Xbox and PlayStation — gamepad-first parity
   Not a ship target: mobile
 
 Art and systems use efficient modular approaches for polish and console
@@ -577,9 +587,8 @@ Economy (Current Lock)
 AETHER CREDITS ONLY
 -------------------
   Aether Credits (AC) is the only player-facing currency.
-  Starter grant: 5000 AC on new game for 1 starter Skilled Companion choice.
-  Optional IAP later → AC only (if ever enabled).
-  No external wallet, marketplace mint, or third-party crypto loop.
+  Aether Credits (AC) only. Player starts with 0 AC and no inventory.
+  Optional in-app purchases later would be AC only.
 
 
 ================================================================================
@@ -610,11 +619,11 @@ APPENDIX A — Interim Mechanics Lock
 
 Identity recap
 --------------
-Year 2160. Semi-low-poly survival + light base-builder on Io. Lead up to 25
-companions: up to 22 at base, switchable trio of 3 on expeditions. Rescue procedural Neural
+Year 2160. Full-scale AAA survival + light base-builder on Io
+(semi-high-definition art). Lead up to 25 companions: up to 22 at base, switchable trio of 3 on expeditions. Rescue procedural Neural
 Echoes; recover Memory Cores for Kairos → Resonance Events; Lite Building +
-materialization pipeline for base camp; survive O2 norm, four environmental
-pressures, dynamic Io weather (A2b), alien life forms, and AI androids.
+materialization pipeline for base camp; survive O2 (needed in most areas),
+four environmental pressures, dynamic Io weather (A2b), alien life forms, and AI androids.
 
 Classes (locked names)
 ----------------------
@@ -664,21 +673,25 @@ Weapon base stats (prototype lock)
 
 A1. Platforms, art & tech
 -------------------------
-  Primary:  PC (keyboard + mouse, optional gamepad)
-  Secondary: Consoles (PS5 / Xbox) — gamepad-first parity
+  First:  PC and Mac (keyboard + mouse, optional gamepad)
+  Later:  Xbox and PlayStation — gamepad-first parity
   Not a ship target: mobile
-  Art: semi-low-poly modular; 2–3 base meshes + attachments + material swaps
+  Art: Full-scale AAA, semi-high-definition art. Modular pieces with
+       attachments and material swaps where useful.
   Tech: Unity 6 + HDRP; Addressables/LODs as needed; aggregate base sim (no
         NavMesh — no bake, NavMeshSurface, NavMeshAgent, or terrain NavMesh
-        refs; no per-companion pathfinding at 22 scale)
+        refs; no per-companion pathfinding at 22 scale). NavMesh is not used;
+        the legacy NavMesh helper scripts on disk are unused leftovers.
   UI:   UI Toolkit for player-facing HUD, menus, and overlays (uGUI leftovers
         stay on disk until the UITK cutover is finished; do not dual-run forever)
-  Scene: Assets/_Project/Scenes/Dark Matter Genesis v1.6.2.unity
+  Scene: Assets/_Project/Scenes/Dark Matter Genesis v1.6.5.unity — the main
+         scene (latest v1.6). EditorBuildSettings is not changed by docs.
 
 
 A2. Survival — O2 norm & biome pressures
 ----------------------------------------
-  ALWAYS ON: Oxygen (tanks, deprivation FX, health drain when empty)
+  OXYGEN: needed in most areas (tanks, deprivation FX, health drain when
+  empty). In some areas the player's Rebreather mask comes off automatically.
 
   FOUR ENVIRONMENTAL PRESSURES (always-on zone meters — not the same as weather):
     1. Radiation
@@ -939,11 +952,12 @@ A7. Buildings, Lite Building, craft & Building Control Panels
 A8. Economy (current lock)
 --------------------------
   AC — sole gameplay currency.
-    New game starter: 0 AC → load 1 starter Skilled Companion.
+    Aether Credits (AC) only. Player starts with 0 AC and no inventory.
+    New game loads 1 starter Skilled Companion (not bought with AC).
     Earn: XP, Credits, resources, quests, expeditions, Resonance bonuses, base output, loot.
     Spend: vendors (supplies, recruits, gear), workers, rush craft, upgrades,
     heals, inoculations, suits, Lite Building camp modules.
-    Optional IAP later → AC only.
+    Optional in-app purchases later would be AC only.
   Workers: AC recruit/replace. Skilled companions: local roster progression only.
   When touching economy code: prefer AC for all UI/save; remove leftover legacy
   currency naming from player-facing HUD.
@@ -951,7 +965,8 @@ A8. Economy (current lock)
 
 A9. Controls & UI (target)
 --------------------------
-  KBM primary on PC; gamepad required for consoles / optional on PC.
+  KBM primary on PC and Mac; gamepad optional on PC / Mac and required on
+  Xbox and PlayStation (later).
   Journal: Inventory, Map, Companions/Echoes (trios + roster), Skills, Craft,
   Recipes — pet UI folds into Companions/Echoes when migration completes.
   HUD: O2 + four exposure indicators + active weather alert + surface-threat
@@ -961,14 +976,18 @@ A9. Controls & UI (target)
 
 A10. Locked decisions checklist
 -------------------------------
-  [x] PC + consoles only; no mobile ship target
-  [x] AC-only economy; starter 5000 AC → 1 Skilled Companion
+  [x] PC and Mac first; Xbox and PlayStation later; no mobile ship target
+  [x] Aether Credits (AC) only. Player starts with 0 AC and no inventory.
+      Optional in-app purchases later would be AC only.
+  [x] Art: full-scale AAA, semi-high-definition; modular where useful
+  [x] Oxygen needed in most areas; Rebreather mask auto-off in some areas
   [x] Single thermal (cold/heat) meter
   [x] Pet fold into Echo/trio (design); separate pet still prototype debt
   [x] Base 22: sulfur / Resonance Supercell shelter; injury never death from building damage
   [x] Io weather lock — 10 events (A2b); sulfur + supercell = full base pause only
   [x] Building Control Panels tab model (Overview | Companions | Production | Craft | Changes)
-  [x] Lite Building base camp direction (prototype: placement shell / BCP queues)
+  [x] Lite Building base camp direction (prototype: build mode snap pieces +
+      base equipment / BCP queues — see B1)
   [x] Surface threats: alien life + AI androids — design lock (combat AI partial)
   [x] Expedition/full-map random spawns + patrol routes — design lock
       (SurfaceEncounterZone / SurfaceEncounterTable prototype)
@@ -981,13 +1000,17 @@ OPEN (examples)
 
 
 ================================================================================
-APPENDIX B — Current Implementation / Progress (July 2026; refreshed Sept 2026)
+APPENDIX B — Current Implementation / Progress (July 2026; refreshed Sep 30, 2026)
 ================================================================================
 
 Survey basis: Assets/_Project on git (disk audit July 22, 2026; Sept 2026
-refresh for HDRP, UI Toolkit, exposure, and navigation).
-Playable scene: Dark Matter Genesis v1.6.2 (HDRP).
-Flat terrain prototype — Io biomes not shipped. A later underground-passages
+refresh for HDRP, UI Toolkit, exposure, and navigation; Sep 30, 2026 scan of
+branch cursor/wip-clean-20260919 at c48f7464e plus the working tree).
+Playable scene: Dark Matter Genesis v1.6.5 (HDRP) — the main scene (latest
+v1.6).
+Terrain: Gaia 4x4 terrain tiles (Terrain_x_y + content scenes, impostors,
+reflection-probe LOD ring) stream around the player, with Io surface texture
+sets. The designed Io biome world is not shipped. A later underground-passages
 map is planned; the surface map lower-right "?" / Underground box is the teaser.
 GAME_BREAKDOWN.txt may lag; prefer this appendix over stale breakdown notes.
 
@@ -1002,7 +1025,7 @@ target design; Features/*.cs must exist before a checkbox is [x].
 B1. DONE — playable prototype core
 ----------------------------------
   [x] Platforms: PC quality bootstrap (PlatformGraphicsBootstrap /
-      PlatformGraphicsProfile); console parity still in progress
+      PlatformGraphicsProfile); Mac build status TBD; Xbox / PlayStation later
   [x] Player: Invector-bridged third-person move/combat; Pioneer custom recoil
       (PioneerInvectorRecoilUtility / PioneerShooterManager — suppresses Invector
       arcade camera/anim kick; subtle custom camera nudge)
@@ -1015,8 +1038,10 @@ B1. DONE — playable prototype core
   [x] Inventory 5x10 grid (bottom rows locked until unlocked) + hotbar +
       toolbar (scanner / binoculars); crafting + stations
   [x] Journal hub + map + quests (QuestManager); save/load
-  [x] Economy: Aether Credits on roster/UI/save; starter 5000 AC;
-      StarterPioneerSelectUI (1 Skilled Companion choice)
+  [x] Economy: Aether Credits on roster/UI/save; StarterPioneerSelectUI
+      (1 Skilled Companion choice). Lock is 0 AC and no inventory at new
+      game; code still sets a 200 AC starter grant and the pick screen shows
+      an old starter-credit label (code follow-up TBD)
   [x] Roster + expedition trio UI (PioneerRosterManager / PioneerRosterPanelUI)
   [x] Companions: follow, combat, class abilities, Invector bridges
   [x] Echoes: world entities + procedural EchoGenerator / rescue path (local)
@@ -1027,14 +1052,56 @@ B1. DONE — playable prototype core
       base-22 storm factory sim
   [x] Main menu, Shift UI theme, editor tooling under Assets/_Project/Editor
   [x] Rendering: Unity 6 HDRP (not URP)
-  [x] Navigation: no NavMesh (no bake, Surface, Agent, or terrain NavMesh refs)
+  [x] Navigation: no NavMesh (no bake, Surface, Agent, or terrain NavMesh refs);
+      legacy NavMesh helper scripts on disk are unused leftovers
   [x] Settings Apply snapshots the live run and stays on Settings paused;
       Continue restores that snapshot (real saves stay on Continue only)
+  [x] Building — build mode (Sept 2026): Hold B toggles build mode (tap B stays
+      binoculars); UI Toolkit build hotbar (10 slots, side arrows or mouse
+      wheel; up panel picks a style or a known building); 4 m lattice snap
+      with edge, top, and outer-corner snapping; Left Alt + scroll rotates;
+      Right Alt cycles finishes; hold left-click to build (center-screen hold
+      ring / build bar fills, then the cost is paid and the piece appears
+      with creation FX); hold right-click destroys with refund; ghost turns
+      red when the piece is unaffordable (cost drawn from inventory or
+      storage crates); placed pieces save and load (DMBuildingSaveRuntime)
+  [x] Building styles: Stone (paid with Rock), Iron (Iron Ore), Silicate
+      (Silicate Ore) — style libraries in Resources/Building/Styles, prefabs
+      under Prefabs/Buildings/Library; 3 finishes per style; 8-piece mesh
+      upgrade with multi-material slots; creation FX; built tints
+  [x] Base equipment: force-field door / double door / hatch (blocks bullets,
+      enemies, and weather; opens for player + companions; strips red when
+      unpowered, green when powered); Plasma Fuel generator with fuel panel
+      (E); base power square (100 m from the first foundation) for force
+      fields, lights, and equipment; Build Hub zone (50x50 m, +25 m per
+      upgrade level); storage crates; hinged doors; surface items
+  [x] Genesis Studio: unified editor window (player movement, camera,
+      controls, stats, survival, exposure, Io clock, map, ammo + FX, hit
+      catalog, loadouts, crafting, pickups, companions, vendors, UI, skill
+      tree, audio, Building)
+  [x] Movement: walk / Shift jog / double-tap sprint; free-cling climb +
+      mantle; dash; jetpack with fuel; landing director (fall damage, ragdoll)
+  [x] Death overlay: Bio Gel revive / Retry (stand up at the death spot) /
+      End Game
+  [x] Io clock: 30-hour Io day (one real hour = one Io day); saved
+  [x] UI Toolkit HUD + journal + menus; Hot Cross HUD with loaded-ammo readout;
+      journal tabs Quests, Inventory, Map, Pets, Craft, Pioneers, Character,
+      Recipes, Skills, Echoes, Achievements
+  [x] Weapons: 9 ammo types with status effects (Burning, Frozen, Shocked,
+      Corroded, Stabilized); ammo profiles drive fire rate / burst / recoil;
+      grenades; laser burn marks; pooled VFX
+  [x] Progression: hex skill tree (5 ranks), level cap 200, XP from quests,
+      crafting, combat, exploration, building, special items, achievements
+  [x] Vendors: AC vendors with buy log + camp crate; UI Toolkit shop
+  [x] Map + fog of war + scanner discoveries; laser mining; achievements
+  [x] Creatures + vehicles: DMI creature pipeline (Sulfur Hound sulfur spit,
+      Ember Skitter); walker drill; deployable Quora shelter; Pet Manager
+  [x] Terrain: Gaia 4x4 tile streaming + Io surface texture sets (not biomes)
 
 
 B2. PARTIAL — present but incomplete vs lock
 --------------------------------------------
-  [~] Legacy wallet / currency-swap UI leftovers (CharacterPanel, main menu) —
+  [~] Legacy currency-swap UI leftovers (CharacterPanel, main menu) —
       AC is gameplay truth; strip player-facing legacy currency when touching
       economy UI
   [~] Building Control Craft/Changes tabs lighter than full GDD automation
@@ -1045,9 +1112,14 @@ B2. PARTIAL — present but incomplete vs lock
       biome tables and Experience danger-budget director still pending
   [~] Pet/AI follower still a separate live system (Scripts/Pet) — fold into
       Echo/trio not finished
-  [~] Console/gamepad parity: Input System present; PS5/Xbox ship/cert not done
+  [~] Gamepad: Input System present on PC; Xbox / PlayStation are later
+      targets (ship/cert not done)
   [~] Quest/loot rewards display as AC; some legacy currency naming in
       enums/assets
+  [~] Building tiers: Stone / Iron / Silicate live with no skill gates; Steel,
+      Amalgam, skill gates, in-place tier upgrade, and blueprint unlocks (wreck
+      scan / map pickup) not built. Build Hub cost is a placeholder
+  [~] Several v1.x scene files on disk; v1.6.5 is the main scene
   [~] UI Toolkit HUD / menus / overlays own the player-facing UI; leftover
       owned uGUI still on disk until the cutover is finished. Do not hide
       HUD hosts with USS display:none (runtime C# only). Tilde hides gameplay
@@ -1057,20 +1129,24 @@ B2. PARTIAL — present but incomplete vs lock
 
 B3. NOT STARTED — vision systems still planned
 ----------------------------------------------
-  [ ] Full Io biome world (prototype remains flat terrain)
+  [ ] Full Io biome world (prototype: streamed Gaia tiles with Io textures)
   [ ] Second map for underground passages (surface "?" / Underground teaser)
   [ ] Equippable environmental suit gear loop
   [ ] Command Center rooms + aggregate 22 companion shelter/injury sim
   [ ] Live sulfur storm scheduler (WeatherDirector) — crisis HUD exists without scheduler
-  [ ] Building materialization / placement / maintenance pipeline
+  [ ] Building full materialization (ghost commit, per-tick resource drain,
+      cancel refund, reverse dissolve) + maintenance — short hold-to-build
+      with a build bar shipped, see B1
   [ ] Medical Facility / Science Labs as full production buildings
   [ ] Kairos idle machine + 3-part repair quest + awaken / trust arc
   [ ] Memory Core attach + Resonance Events (story + world change)
   [ ] Trust-gated Kairos advisory radio (after awake; Ops until then)
   [ ] Purification Hub Saturation/Strain gameplay depth
-  [ ] Features/GameState, WorldState, Directors, Validation, Experience (C# not in repo)
+  [ ] Features/Experience (C# not in repo; GameState, WorldState, Directors,
+      Validation landed in Run 1 — see B5)
   [ ] Features/Communications Runtime (queue, HUD, ContextBuilder, template dialogue)
   [ ] Features/Generation + world-seed persistence for deterministic Echo / world rolls
+  [ ] Combat & AI overhaul — Combat Plan v2 (planned; see B6)
 
 
 B4. Near-term roadmap priority (order of value)
@@ -1126,7 +1202,9 @@ Run 1 (July 22, 2026) landed Features GameState / WorldState / Directors / Valid
   [x] Scripts/Pioneers/EchoGenerator + EchoChronicleEntry + save round-trip
   [x] BuildingOperationRegistry + FacilityTaskRunner (pauses when crisis HUD active)
   [x] CompanionSystemsBootstrap — Features spine + companions, pet, exposure, facilities
-  [x] GameSaveData v17 — roster, AC, chronicle, building ops, vehicles, power (no world seed yet)
+  [x] GameSaveData v23 — roster, AC, chronicle, building ops, vehicles, power,
+      pets, achievements, fog of war, scans, Io clock; placed pieces and crates
+      via DMBuildingSaveRuntime / DMStorageCrateSave (no world seed yet)
 
   Manual smoke (Play Mode):
     F9 WorldState · F10 Directors · F11 weather phase cycle
@@ -1135,6 +1213,69 @@ Run 1 (July 22, 2026) landed Features GameState / WorldState / Directors / Valid
 
   Status sheet: Documentation/Architecture/World_Engine_Disk_Status.md
   Safe Mode help: Documentation/Architecture/Unity_Safe_Mode_Recovery.md
+
+
+B6. Implementation Status (as of Sep 30, 2026)
+----------------------------------------------
+Source: code, Genesis Studio profiles, and prefab folders on branch
+cursor/wip-clean-20260919 (HEAD c48f7464e, Sep 28, 2026) plus the working tree
+(uncommitted scene / material / prefab edits only; no code changes since
+Sep 28). The editor bridge was offline, so live editor state was not checked.
+
+  SHIPPED
+    - Building: Hold-B build mode, UI Toolkit build hotbar, Stone / Iron /
+      Silicate styles, 4 m lattice snap, Left Alt + scroll rotate, Right Alt
+      finishes, hold-to-build with a build bar (hold ring), hold right-click
+      destroy with refund, save/load of placed pieces
+    - Base equipment: force-field doors, generator + base power, Build Hub
+      zone, storage crates, hinged doors, surface items
+    - Genesis Studio (incl. Building Studio: Library, Placement, Snap & Grid,
+      Preview Ghosts, Creation Effects, Doors, Built Tints)
+    - Save v23: 10 slots (Continue uses slot 0) + 2 autosave slots
+    - Movement (gaits, climb/mantle, dash, jetpack, landing), survival +
+      exposure, death overlay, Io clock
+    - Combat: melee + ranged, 9 ammo types + status effects, grenades,
+      finite-state enemy AI, DMI creatures
+    - UI Toolkit HUD / journal / menus, Hot Cross HUD, vendors + shop
+    - Skill tree + leveling, map + fog of war + scanner, laser mining,
+      achievements, hovercraft, walker drill, deployable shelter, pets
+    - Terrain: 16 streamed Gaia tiles with Io surface textures
+    - World Engine Run 1 spine (GameState, WorldState, Directors, Validation)
+
+  IN PROGRESS / PARTIAL
+    - Building: Steel + Amalgam tiers, skill gates, in-place tier upgrade,
+      blueprint unlocks, full materialization pipeline (not built yet)
+    - Building Control Panels on real facilities; live storm queue pause
+    - Live WeatherDirector scheduler; Command Center base-22 simulation
+    - Pet fold into Echo/trio; UI Toolkit cutover leftovers
+    - Mac build checks; encounter biome tables (Xbox / PlayStation later)
+
+  PLANNED
+    - Combat & AI overhaul — "Combat, AI, Companions & Encounters — Master
+      Plan v2" (Sep 29, 2026). 16 phases: audit → core combat + combat
+      sandbox → unified AI brain → Combat Director → plasma sword →
+      momentum + finishers → Sick Stick → special moves + Overdrive →
+      remaining elements → body damage → companions (1–3, same brain) →
+      remaining skill branches → environment + noise → combat memory →
+      encounters → Studio completion + performance pass. Party design stays
+      ready for a multiplayer DLC of up to 3 players.
+      Pointer: DMG_Combat_Plan_v2.md (kept outside this repo for now; repo
+      location TBD) and the project wiki page "Combat-Plan"
+      (github.com/LittleWormOnAHook/Dark-Matter/wiki/Combat-Plan).
+    - Communications runtime (Run 2), world seed (Run 3), Features/Experience
+      and Features/Generation
+    - Io biome world, underground map, environmental suit gear
+    - Story-system milestones: unchanged, see B3
+    - Force-field "Pentashield" upgrade — requested; no design or code yet (TBD)
+    - Rebreather mask auto-off in some areas (A2) — not found in code yet
+    - Xbox and PlayStation versions (after PC and Mac)
+
+  TBD / CONFLICTS (not resolved here)
+    - Starter AC: lock is 0 AC and no inventory; code still grants 200 AC and
+      the starter pick screen shows an old starter-credit label. Whether any
+      starting items are granted in code: TBD (code follow-up, no code change)
+    - New-game level is a testing value; Build Hub cost is a placeholder
+    - Gamepad build-mode hold (Left Shoulder) not found in build-mode code
 
 
 ================================================================================

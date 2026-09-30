@@ -97,6 +97,6 @@ Use these rows for **defaults, store text, and advisory messages** — not for d
 ## References
 
 - **`Documentation/System_Requirements.md`** — canonical guidance specs and performance-advisory policy (no hard gates)
-- GDD 5.0 — platforms PC + consoles, semi-low-poly Io
+- GDD 5.0 — platforms PC and Mac first, Xbox and PlayStation later; full-scale AAA, semi-high-definition art
 - `World_Engine_Disk_Status.md` — disk truth before claiming shipped features
 - Working scene rule: `.cursor/rules/confirm-before-depot-restore.mdc`

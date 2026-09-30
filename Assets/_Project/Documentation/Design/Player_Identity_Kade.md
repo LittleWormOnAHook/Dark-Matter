@@ -42,12 +42,13 @@ These traits define **Kade** in the locked freelancer spine (V4). Other narrativ
 
 | Trait | Canon |
 |-------|-------|
-| Profession | Freelance space explorer; ex-**terraform director** (started at the bottom, earned the chair) |
+| Profession | **Terraformer, mercenary, jack of all trades, entrepreneur**; freelance space explorer and ex-**terraform director** (started at the bottom, earned the chair) |
+| Personality | A risky **space-cowboy** streak |
 | Combat | Weapons-first mind; high field IQ; reads encounters like survey maps |
 | Drive | Discovery — new terrain, dead signals, organisms that shouldn't exist, machines still running after crews vanish |
-| Mars backstory | Last employer **stranded Kade on Mars** after a budget cut disguised as "phase completion" |
-| Starting AC | **5000 AC = 5% of final Mars director pay** (charter + partial retainer — not generic starter charity) |
-| Io mission | Assess **terraform viability** + document **why prior expeditions disappeared** |
+| Mars backstory | Last employer **abandoned Kade on Mars** after a budget cut disguised as "phase completion". Kade **escaped with 2 survivors**, was **picked up by a freighter**, and **took a new job on Io** |
+| Starting AC | **0 AC and no inventory** (locked 2026-09-30). Aether Credits (AC) only; optional in-app purchases later would be AC only |
+| Io mission | Discover **what happened to the other expeditions**, **survey Io for human survival and terraforming**, and **mine** |
 
 ---
 
@@ -58,7 +59,7 @@ These traits define **Kade** in the locked freelancer spine (V4). Other narrativ
 | Combat | **Reid "Iron" Kael** | Combat Tactician | Old friend; Mars dome security; **max trust day one** |
 | Science | **Dr. Suri Vale** | Science Specialist | Old friend; promoted from microbe-lab tech; **max trust day one** |
 
-V1–V3 packages retain **1 starter Skilled Companion pick** from 5000 AC unless V4 spine is chosen globally.
+V1–V3 packages retain **1 starter Skilled Companion pick** unless V4 spine is chosen globally. The pick is not paid from AC (the player starts with 0 AC); how it is granted is TBD.
 
 ---
 
@@ -86,4 +87,4 @@ Ship **one** truth per build. Do not mix all four AI truths in one release.
 
 ---
 
-*Last updated: Aug 2026 — global Kade + Kairos canon lock.*
+*Last updated: Sep 30, 2026 — premise, background, mission, and 0 AC start (Aug 2026 — global Kade + Kairos canon lock).*

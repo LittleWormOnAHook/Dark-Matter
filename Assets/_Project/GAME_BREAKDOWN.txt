@@ -3,7 +3,11 @@
   Project: Dark Matter: Genesis
   Document generated from codebase and scene assets (Assets/_Project/)
   Note: Prefer GAME_DESIGN_DOCUMENT_5.0.txt Appendix B for current locks.
-  Economy lock: Aether Credits (AC) only. Platforms: PC + consoles.
+  Economy lock: Aether Credits (AC) only. Player starts with 0 AC and no
+  inventory. Platforms: PC and Mac first; Xbox and PlayStation later.
+  Status refresh: Sep 30, 2026 — facts marked [Sep 30] were re-checked against
+  the working project; see section 24 for Shipped / In progress / Planned.
+  Unmarked details may still lag the code (TBD).
 ================================================================================
 
 TABLE OF CONTENTS
@@ -29,6 +33,9 @@ TABLE OF CONTENTS
   19. Main Scene & Content
   20. Editor Tools (Development)
   21. Known Limits / Not Yet Implemented
+  22. Building Mode & Base Equipment
+  23. Genesis Studio
+  24. Implementation Status (as of Sep 30, 2026)
 
 
 ================================================================================
@@ -41,8 +48,9 @@ Unity (GDD 5.0). Year 2160 on Jupiter's moon Io: lead up to 25 companions
 expand your base camp via the Lite Building system, and survive O₂ plus
 radiation, thermal, volcanism, sulfur storms, alien life forms, and AI androids.
 
-The playable prototype is still flat terrain (Io biomes not shipped). Do not
-treat placeholder scene art as forest / Earth wilderness camp fiction.
+[Sep 30] The playable prototype streams Gaia terrain tiles with Io surface
+texture sets; the designed Io biomes are not shipped. Do not treat placeholder
+scene art as forest / Earth wilderness camp fiction.
 
 Core gameplay loops (vision + prototype):
 
@@ -56,11 +64,15 @@ Core gameplay loops (vision + prototype):
 
 Runtime: Dark Matter: Genesis on The World Engine (WoOS) — see GDD 5.0 PRODUCT IDENTITY
 
-Main playable scene: Assets/_Project/Scenes/Pioneer.unity
+Main playable scene [Sep 30]:
+  Assets/_Project/Scenes/Dark Matter Genesis v1.6.5.unity
+  (main scene — the latest v1.6; EditorBuildSettings still lists v1.6 first;
+  Pioneer.unity is still on disk)
 Core project folder: Assets/_Project/
 Authority: Assets/_Project/GAME_DESIGN_DOCUMENT_5.0.txt
 
-Movement is powered by ECM2 (third-person character controller).
+Movement [Sep 30]: Invector-bridged third-person controller (GDD B1); older
+ECM2 references remain in some player scripts.
 UI uses a Shift sci-fi theme with a journal hub for most panels.
 
 
@@ -72,7 +84,7 @@ UI uses a Shift sci-fi theme with a journal hub for most panels.
   Mouse         Look / orbit camera
   Scroll        Camera zoom (optics) / map zoom
   Space         Jump
-  Shift         Sprint (uses stamina)
+  Shift         Jog [Sep 30]; double-tap to sprint (+20%)
   Ctrl          Crouch
 
   E             Interact (pickups, stations, companions, enemy loot, recipes)
@@ -84,7 +96,16 @@ UI uses a Shift sci-fi theme with a journal hub for most panels.
   1, 2          Primary / secondary weapon hotbar slots
   3–0           General hotbar slots
   N             Scanner tool (toolbar)
-  B             Binoculars tool (toolbar)
+  B             Tap: binoculars tool (toolbar); Hold: build mode [Sep 30]
+
+BUILD MODE [Sep 30] (see section 22)
+  Hold B        Enter / exit build mode
+  Wheel / arrows  Cycle pieces on the build hotbar
+  Left Alt + wheel  Rotate piece (free pieces by yaw step, grid pieces 90°)
+  Right Alt     Cycle finishes
+  Hold LMB      Build piece (hold ring / build bar fills, then cost is paid)
+  Hold RMB      Destroy piece (refunds cost)
+  E             Open / close doors; generator fuel panel
 
   LMB           Melee attack (hold for power hit)
   RMB           Block (one-handed weapons) / optics zoom when using tools
@@ -98,6 +119,9 @@ Weapon draw: press the same hotbar key again to draw or holster a weapon.
 
 MOVEMENT & CAMERA
   - Third-person walk, sprint, crouch, jump
+  - [Sep 30] Three gaits (walk / Shift jog / double-tap sprint; L3 jog latch on
+    gamepad); free-cling climb + mantle; dash; jetpack with fuel; landing
+    director (low / high landings, fall damage, lethal bounce → ragdoll)
   - Orbit camera with pitch limits, collision avoidance, terrain clearance
   - Optics mode replaces camera FOV when using scanner or binoculars
   - Movement and combat blocked while UI panels, dialogs, or optics are open
@@ -119,6 +143,8 @@ FOUR VITAL STATS (SurvivalStats.cs)
   - Energy (combined survival need; replaces hunger/thirst)
   - Stamina (sprint resource; regenerates when not sprinting)
   - Oxygen (displayed as MM:SS; 40 min full, drains to empty in 10 min real time)
+    [Sep 30] Design lock: oxygen is needed in most areas; in some areas the
+    player's Rebreather mask comes off automatically (not found in code yet)
 
 MECHANICS
   - Energy and oxygen drain passively over time
@@ -130,6 +156,8 @@ MECHANICS
 DEATH
   - Player death pauses gameplay
   - Death popup with retry / end game options (UIManager)
+  - [Sep 30] Death overlay: Bio Gel revive / Retry (stand up at the death
+    spot) / End Game
   - Respawn restores position and vitals (PlayerDeathHandler)
 
 
@@ -138,7 +166,7 @@ DEATH
 ================================================================================
 
 INVENTORY LAYOUT (InventorySystem.cs)
-  - 24 main inventory slots
+  - [Sep 30] 5x10 main grid (bottom rows locked until unlocked) — was 24 slots
   - 10 hotbar slots (keys 1–0)
   - 2 toolbar slots (scanner, binoculars)
 
@@ -168,6 +196,9 @@ EXAMPLE ITEMS (Assets/_Project/Data/Items/)
   Rock, Mushroom, Red Lilly, Cooked Mushroom, Forest Stew, Pimican, Medpack,
   Wood Axe, Sword of Fear, Spear of Fate, Death Axe, 2 Hander,
   Scanner B44, Binnos 250
+  [Sep 30] 58 item assets in folders: Ammo, Components, Consumables, Melee,
+  Modules, Nodes, Operations, Ranged, Resources, Throwables, Tools, Vehicles,
+  World
 
 
 ================================================================================
@@ -200,6 +231,14 @@ COMBAT FEEDBACK
   - Weapon swing and hit sounds (GameAudioManager.cs)
   - Enemy noise events alert nearby AI (EnemyNoiseEvents.cs)
 
+RANGED [Sep 30]
+  - 9 ammo types: Gunpowder, Plasma, Ice, Electricity, Resonance Stabilizer,
+    Laser, Ion, Fire, Explosive
+  - Status effects: Burning, Frozen, Shocked, Corroded, Stabilized
+  - Ammo profiles drive fire rate, burst, and recoil (Genesis Studio → Ammo
+    Creator / Ammo FX); grenades; laser burn marks; pooled VFX
+  - Loaded-ammo readout on the Hot Cross HUD
+
 TRAINING DUMMY
   - Practice target with high HP (TrainingDummy.cs)
   - Floating health bar and damage numbers (DummyCombatUI.cs)
@@ -216,6 +255,8 @@ ENEMY TYPES
   - Gongo (troll model)
   - The Evil One (humanoid enemy)
   - Definitions: Assets/_Project/Data/Enemies/*.asset (EnemyDefinition.cs)
+    [Sep 30] on disk: corrupt_patrol_android, Humanoid_Enemy, The_Evil_One
+  - [Sep 30] DMI creatures: Sulfur Hound (sulfur spit), Ember Skitter
   - Prefabs: Assets/_Project/Prefabs/Combat/
 
 ENEMY AI (EnemyAiController.cs)
@@ -311,8 +352,10 @@ STATIONS (CraftingStation.cs)
   - Scene prefabs: Prefabs/Crafting/Stations/
 
 RECIPE SYSTEM
-  - RecipeDefinition assets in Data/Crafting/Recipes/
-  - RecipeRegistry (Resources/Crafting/RecipeRegistry.asset)
+  - [Sep 30] Blueprint assets in Data/Crafting/Blueprints/ (Ammo, Consumables,
+    Modules, Resources, Weapons); Data/Crafting/Recipes/ is no longer on disk
+  - RecipeRegistry (Resources/Crafting/RecipeRegistry.asset) — current runtime
+    registry path TBD; Genesis Studio has a Blueprint Registry section
   - CraftingManager tracks discovered recipes and pending scrolls
 
 RECIPE LEARNING FLOW
@@ -327,6 +370,10 @@ CURRENT RECIPES
   stone_salve        Workbench — 3x Rock
   herbal_medpack     Workbench — Healing craft
   Pemican (Pimican)  Workbench — Red Lilly + Rock
+  [Sep 30] Also on disk: 8 ammo blueprints (Standard, Plasma, Ice, Electricity,
+  Ion, Fire, Explosive, Resonance Stabilizer), Bio Gel, Plasma Fuel, Quora
+  Shelter, increase_storage_module, sci-fi pistol, survival rifle, Spear of
+  Fate (stations / ingredients per asset — not re-listed here)
 
 CRAFTING UI
   - CraftingUI.cs — recipe list, ingredient check, craft button
@@ -336,6 +383,10 @@ CRAFTING UI
 
 BUILDING SYSTEM (GDD 5.0 — planned stack; prototype partial)
 -------------------------------------------------------------
+[Sep 30] Build mode, snap pieces, and base equipment are shipped — see
+section 22. The full materialization pipeline (ghost commit, per-tick drain,
+reverse dissolve) is still planned.
+
 Canon flow: spend resources → building MATERIALIZES (scale-up + VFX) → craft /
 maintain over time. Major structures use Building Control Panels (below).
 
@@ -371,8 +422,11 @@ BUILDING CONTROL PANELS (GDD 5.0 Appendix A7 — prototype shell)
     - Editor: Tools/Dark Matter: Genesis/Content/Add Building Control Panel to Selected
   Still TODO:
     - Companion assignment slots, live production queues, sulfur-storm pause wiring
-    - Materialize / placement / maintenance pipeline
+    - Full materialize / maintenance pipeline — snap placement with a short
+      hold-to-build shipped [Sep 30]
     - Attachment module graph (generators, power grid, logistics, defense, mining)
+      — [Sep 30] a standalone generator + base power square ship as build-mode
+      equipment (section 22); not yet a module graph on BCP buildings
     - Wire Science Labs + Medical Facility first; Journal Craft = recipe library only
 
 
@@ -395,6 +449,7 @@ CURRENT QUESTS (Resources/Quests/)
   gather_rocks       — Collect 3 Rocks → AC reward
   guide_supply_run   — Talk to Companion Guide, gather mushrooms for stew recipe
   Get more Rocks     — Collect 10 Rocks → item + AC reward
+  One_More           — [Sep 30] also on disk (details not re-listed)
 
 QUEST GIVER
   - Companion: QuestGiver_PioneerGuide (QuestGiverNpc.cs)
@@ -413,14 +468,16 @@ QUEST HUD
 ================================================================================
 
 Aether Credits (AC) is the only in-game currency (GDD 5.0 lock).
-Starter grant on new game: 5000 AC → choose 1 starter Skilled Companion.
-Legacy save JSON fields (piBalance, piWalletBalance) migrate into AC on load only.
+[Sep 30] Aether Credits (AC) only. Player starts with 0 AC and no inventory.
+Optional in-app purchases later would be AC only.
+Code note: StarterPioneerCatalog.StarterAcGrant is still 200 and the starter
+pick screen shows an old starter-credit label — code follow-up TBD.
+Legacy save JSON currency fields migrate into AC on load only.
 
 DISPLAY
   - HUD balance: `UIManager.currencyHudText` → "AC: {amount}"
 
 SOURCES
-  - New-game starter grant (5000 AC for skilled companion choice)
   - Quest completion rewards
   - Enemy loot rolls (AC drop range on corpses)
   - AC-infused item pickups in the world (`ItemData.isAcInfused` / `acValue`)
@@ -457,6 +514,9 @@ JOURNAL HUB (JournalPanelUI.cs) — key J
     Skills     Placeholder — companion skill trees (future)
     Echoes     Placeholder — neural echo memories (future)
   Navigator stack: FullscreenUiNavigator pushes/pops child windows with header + close.
+  [Sep 30] UI Toolkit journal is the player-facing hub. Tabs: Quests,
+  Inventory, Map, Pets, Craft, Pioneers, Character, Recipes, Skills (hex
+  skill tree, 5 ranks), Echoes, Achievements.
 
 BUILDING CONTROL UI (BuildingControlPanelUI.cs) — in-world terminals only (Milestone C)
   - Opened from BuildingControlPanel interactables (E); NOT from journal
@@ -471,9 +531,12 @@ PEAK SCREENS (GDD Phase E — prototype shells)
     Debug: Tools → Dark Matter: Genesis → Debug → Toggle Sulfur Crisis HUD (Play mode)
   EchoRescueRevealUI.cs — fullscreen Neural Echo rescue reveal
     Debug: Tools → Dark Matter: Genesis → Debug → Show Echo Rescue Reveal (Test)
-  MainMenuWalletPanelController — wallet overlay (Balances / Marketplace / Companions)
+  Legacy main-menu balances overlay — retired from boot surfaces; remove on
+    AC cleanup (see DMG_LoadingScreen_Plan.md)
 
 HUD ELEMENTS
+  - [Sep 30] UI Toolkit HUD; Hot Cross HUD with loaded-ammo readout; build
+    hotbar in build mode
   - Survival stat bars (health, energy, stamina, oxygen)
   - Condensed stats layout option (CondensedSurvivalStatsHud.cs)
   - AC balance text
@@ -497,6 +560,7 @@ INVENTORY UX
 
 SAVE SLOTS (SaveSlotsPanelController.cs)
   - 5 save slots with timestamp, AC, HP summary
+    [Sep 30] now 10 slots (Continue uses slot 0) + 2 autosave slots
   - Slot screenshots (SaveSlotScreenshotUtility.cs)
 
 SETTINGS (SettingsPanelController.cs, GameSettings.cs)
@@ -516,6 +580,7 @@ THEME
   - Full-screen map overlay (M key when journal closed, or Map tab)
   - Runtime-generated terrain top-down texture (WorldMapProvider.cs)
   - Player position marker
+  - [Sep 30] Fog of war + scanner discoveries (saved)
   - Resource location markers (MapMarker.cs)
   - Can be disabled in settings (GameSettings.MapSystemEnabled)
   - Editor setup: Tools > Dark Matter: Genesis > Scene > Map System
@@ -528,6 +593,7 @@ THEME
   - PetController.cs — follow, wander, fetch nearby items
   - PetManager.cs — registry of available pets
   - Default companion: Fox Cub
+  - [Sep 30] Pet definitions on disk: brimmy, fox_cub, probe, ricky
   - Journal Pet tab: PetUI.cs, PetEntryUI.cs
   - Fetch notification via UIManager.ShowPetFetchMessage()
 
@@ -567,9 +633,10 @@ FEATURES
 ================================================================================
 
 SYSTEM (GameSaveSystem.cs)
-  - 5 JSON save slots in Application.persistentDataPath
+  - [Sep 30] 10 JSON save slots (Continue uses slot 0) + 2 autosave slots in
+    Application.persistentDataPath
   - Legacy save migration supported
-  - Save data version 7 (GameSaveData.cs)
+  - [Sep 30] Save data version 23 (GameSaveSystem.CurrentSaveVersion)
 
 PERSISTED DATA
   - Survival stats (health, energy, stamina, oxygen)
@@ -579,6 +646,11 @@ PERSISTED DATA
   - Equipment state (drawn weapon, selected slots)
   - Quest progress per quest ID
   - Discovered recipes and pending recipe scroll IDs
+  - [Sep 30] Vitals + exposure, companion roster + trio, colonist aggregate,
+    Echo chronicle, building operations, pets, achievements, vehicles, power
+    generators, fog of war, scanned discoveries, Io clock (day / hour / minute)
+  - [Sep 30] Placed build pieces (DMBuildingSaveRuntime) and storage crates
+    (DMStorageCrateSave); no world seed yet
 
 ENTRY POINTS
   - Main menu: New Game / Load Game
@@ -590,6 +662,7 @@ ENTRY POINTS
 ================================================================================
 
 SCENE: Assets/_Project/Scenes/Pioneer.unity
+  [Sep 30] Main scene is Dark Matter Genesis v1.6.5.unity (latest v1.6)
 TERRAIN DATA: Assets/_Project/World/Terrain/
 INPUT: Assets/_Project/Settings/Input/ (InputSystem_Actions, input settings)
 BAKED LIGHTING: Assets/_Project/Scenes/Pioneer/
@@ -615,7 +688,9 @@ THIRD-PARTY ASSETS (stay outside _Project — referenced by GUID)
   Scifi Melee Weapons, TooManyCrosshairs, Survival Flat Icons, etc.
 
 ENVIRONMENT
-  - Flat terrain prototype (Io biomes not shipped — GDD 5.0 Appendix B)
+  - [Sep 30] Gaia terrain: 4x4 = 16 tiles (Terrain_x_y + content scenes,
+    impostors, reflection-probe LOD ring) stream around the player, with Io
+    surface texture sets. Io biomes not shipped — GDD 5.0 Appendix B
   - Placeholder third-party nature/town kits may still appear in the scene;
     they are temporary art, NOT forest wilderness camp fiction
   - Clouds, wind, reflection probes, lighting, ambient audio zones
@@ -655,6 +730,9 @@ Menu root: Tools > Dark Matter: Genesis/
 
 TOOLS WINDOW
   - DarkMatterGenesisToolsWindow.cs — hub for common setup actions
+  - [Sep 30] Genesis Studio — unified editor window (section 23)
+  - [Sep 30] Building builders: kits, style libraries, mesh upgrades, force
+    fields, generator, Build Hub, storage crate, surface items, preview cleanup
 
 PROJECT & CONTENT
   - Project structure setup and organizer
@@ -693,8 +771,10 @@ MAINTENANCE
 21. KNOWN LIMITS / NOT YET IMPLEMENTED
 ================================================================================
 
-  - Io biome world (prototype remains flat terrain)
-  - Full building materialization / placement / maintenance pipeline
+  - Io biome world (prototype: streamed Gaia tiles with Io textures)
+  - Building full materialization / maintenance (snap placement with a short
+    hold-to-build shipped); Steel + Amalgam tiers, skill gates, in-place
+    upgrade, blueprint unlocks
   - Attachment modules: generators, power grids, auto gather, logistics,
     communications, defense, mining (see Building System above)
   - Full Building Control production / companion assignment / sulfur-storm sim
@@ -702,12 +782,134 @@ MAINTENANCE
   - Kairos 3-object repair quest + Memory Core attach UX
   - Resonance Event runtime (world change + story unlocks)
   - Trust-gated Kairos advisory radio (Colony Ops handles queries until awake)
-  - Console/gamepad ship parity (Input System present; cert not done)
+  - Xbox / PlayStation versions come later (Input System present; cert not
+    done); Mac build checks TBD
   - Some legacy currency field names remain in code — AC is gameplay truth
   - StatUpgrade quest reward type (logged as placeholder only)
   - No dedicated in-project README (this document + GDD 5.0 serve that role)
   - Some third-party asset packs provide art/animation only; custom logic lives
     under Assets/_Project/Scripts/
+
+
+================================================================================
+22. BUILDING MODE & BASE EQUIPMENT [Sep 30]
+================================================================================
+
+BUILD MODE (Scripts/Building — DMBuildingMode, DMBuildingPlacementController)
+  - Hold B toggles build mode; tap B stays binoculars
+  - UI Toolkit build hotbar (DMUiToolkitBuildingHotbar): 10 visible slots,
+    side arrows or mouse wheel; up panel picks a style or a known building
+  - 4 m lattice snap with edge, top, and outer-corner snapping
+  - Left Alt + scroll rotates (free pieces by yaw step, grid pieces 90°)
+  - Right Alt cycles finishes (was M before Sep 28)
+  - Hold left-click to build: a center-screen hold ring (build bar) fills
+    (DM_BuildingGhostProfile buildSeconds 0.5 s; code default 2 s), then the
+    cost is paid and the piece appears with creation FX
+  - Hold right-click destroys a placed piece and refunds it (0.5 s in profile)
+  - Ghost (DMBuildingGhost + DM_BuildingGhostProfile) turns red when the
+    piece cannot be paid for; cost comes from inventory or storage crates
+  - Not built: ghost commit + per-tick drain + cancel refund + reverse
+    dissolve (scope plan Slice 2)
+  - Placed pieces save and load (DMBuildingSaveRuntime); scene cleaner tool
+
+STYLES (Resources/Building/Styles; prefabs in Prefabs/Buildings/Library/)
+  Stone     69 ids, paid with Rock          finishes stone_cut / stone_rough1 /
+                                            stone_rough
+  Iron      65 ids, paid with Iron Ore      finishes iron_plate / brushed / trim
+  Silicate  65 ids, paid with Silicate Ore  finishes silicate_crystal / smooth /
+                                            trim
+  - Prefab counts: Stone 78, Iron 71, Silicate 68, Equipment 3, SurfaceItems 7
+  - 8-piece mesh upgrade for all styles with multi-material slots, glass
+    handling, and top-aligned foundations (DMBuildingMeshUpgrades)
+  - Built tint material; creation effects profile
+  - Piece families: foundation (incl. half-cell, triangle, steps), floor,
+    ceiling, hatch, walls (full, half, quarter, window, wide window, slit,
+    arch, vent, triangle), door frame, door, double door + frame, passage,
+    railing, stairs (half, spiral), ramps, roofs (corner, inner, steep, ridge,
+    rooftop), pillar, column, beam, brace, balcony, ladder, stairwell, 8 m gate
+  - Steel and Amalgam tiers, skill gates, and in-place tier upgrade: not built
+
+BASE EQUIPMENT
+  - Force fields (DMForceField): ff_door, ff_door_double, ff_hatch_lid. Block
+    bullets, enemies, and weather; open for the player and companions. Corner
+    strips red with no power, green when powered
+  - Generator (DMBaseGenerator, SI_generator): burns Plasma Fuel; E opens the
+    UI Toolkit fuel panel; refuels from inventory, then crates in range; can
+    be switched off
+  - Base power (DMBasePower): 100 m power square from the first foundation;
+    powers force fields, lights, and equipment; each load adds to fuel burn;
+    powered lights dim when unpowered
+  - Build Hub (DMBuildHub, SI_build_hub): build zone 50x50 m, +25 m per upgrade
+    level, anchored where the hub was first placed. Cost placeholder: Iron
+    Ore 15 + Metal Scrap 25
+  - Storage crate (SI_storage_crate): Iron Ore 4 + Metal Scrap 10; saved per
+    crate
+  - Doors swing with E; double doors and gates split into leaves
+  - Surface items: wall light, 3 ceiling lights, banner, poster, sign
+  - Equipment can be moved after placement
+
+
+================================================================================
+23. GENESIS STUDIO [Sep 30]
+================================================================================
+
+Unified editor window (added Sep 11, 2026). Sections include: Player Systems,
+Walk / Run / Sprint, Climb, Dash, Jetpack, Jump / Landing, Footsteps, Camera,
+Controls / Bindings, Stats & Pools, Survival, Exposure Zones, Io Clock, Map
+Calibration, Terrain Layer Render, Sliding Doors, Scanner Highlight, Ammo
+Creator, Ammo FX, Hit Catalog, Loadouts & AI, Crafting Item, Blueprint
+Registry, Pickup Items, Companion Editor, Class Profiles, Vendor Stock, Vendor
+Buy Logs, UI Studio, Skill Tree Lines, Game Audio, Building.
+
+Building Studio (inside Genesis Studio → Building): Library, Placement, Snap &
+Grid, Preview Ghosts, Creation Effects, Doors, Built Tints.
+
+Profile assets include DM_BuildingGhostProfile, DM_BuildingCreationFxProfile,
+DM_ClimbDashProfile, DMLandingProfile, DM_CameraProfile, DM_FootstepProfile,
+DM_PickupProfile, DM_IoClockProfile, jetpack presets (Arcade / Smooth /
+Starfield), 10 ammo FX profiles, and vendor catalogs / profiles.
+
+
+================================================================================
+24. IMPLEMENTATION STATUS (AS OF SEP 30, 2026)
+================================================================================
+
+Source: branch cursor/wip-clean-20260919 (HEAD c48f7464e, Sep 28) plus the
+working tree (asset / scene edits only; no code changes since Sep 28).
+Full list: GDD 5.0 Appendix B6.
+
+SHIPPED
+  - Building mode, build hotbar, hold-to-build bar, Stone / Iron / Silicate
+    styles, finishes, rotate, destroy, save (section 22)
+  - Force-field doors, generator + base power, Build Hub, storage crates
+  - Genesis Studio (section 23)
+  - Save version 23; Io clock (30-hour Io day)
+  - Movement gaits, climb, dash, jetpack, landing; death overlay
+  - Ranged ammo + status effects, grenades; DMI creatures
+  - UI Toolkit HUD / journal / menus, Hot Cross HUD, vendors + shop
+  - Skill tree + leveling (level cap 200), achievements, fog of war
+  - Hovercraft, walker drill, deployable Quora shelter
+  - Streamed Gaia terrain tiles with Io surface textures
+  - World Engine Run 1 spine (Features/GameState, WorldState, Directors,
+    Validation)
+
+IN PROGRESS
+  - Later building tiers, skill gates, blueprint unlocks, full materialization
+  - Building Control Panels on real facilities; live weather scheduler
+  - Pet fold into Echo/trio; UI Toolkit cutover leftovers; Mac build checks
+
+PLANNED
+  - Combat & AI overhaul — Combat Plan v2 (Sep 29, 2026; 16 phases from audit
+    and combat sandbox through unified AI brain, Combat Director, finishers,
+    elements, companions, encounters, and a Studio / performance pass). Plan
+    file DMG_Combat_Plan_v2.md is kept outside this repo for now (location
+    TBD); see GDD 5.0 B6 and the wiki page "Combat-Plan"
+  - Communications runtime, world seed, Io biome world, underground map
+  - Rebreather mask auto-off in some areas; Xbox and PlayStation versions
+
+TBD
+  - Starter AC in code (200) vs the 0 AC / no inventory lock
+  - Sections 7, 11, 13, 19 (placed objects) not fully re-verified
 
 ================================================================================
 END OF DOCUMENT

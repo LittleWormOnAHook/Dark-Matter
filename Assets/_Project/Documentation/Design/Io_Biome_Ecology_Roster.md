@@ -227,7 +227,7 @@ Low profile tread, hop, or crawl — **not** full humanoid rig. Future `EnemyArc
 | M6 | **Vent Capper Bot** | common | Small box | B2 | Seals vent for corporate map; blocks gas harvest |
 | M7 | **Mag-Clamp Drone** | common | Dinner-plate | B5 ore fields | Latches metal gear; drag slow debuff |
 
-**Prototype note:** simple FSM + NavMesh or steering; pool-friendly swarm for M1.
+**Prototype note:** simple FSM + steering (no NavMesh); pool-friendly swarm for M1.
 
 #### M2 Turret Crawler — reference card
 

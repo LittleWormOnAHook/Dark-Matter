@@ -1,10 +1,24 @@
 # Building System — Implementation Tickets
 
 **Parent plan:** [`DMG_Building_System_Scope_Plan.md`](DMG_Building_System_Scope_Plan.md)  
-**Last updated:** 2026-09-24  
+**Last updated:** 2026-09-30 (status sync to the working project; see Status snapshot)  
 **Convention:** `BUILD-###` · status: `backlog` | `ready` | `in_progress` | `done` | `blocked`  
 
 **Global constraints (every ticket):** No NavMesh · palette hologram (not gold) · border fences stay in v1.6 · wrecks in `Terrain_X_Y_Content` · drain mats on hold · reuse multitool/BCP/scanner/reverse dissolve. Component track: UITK build hotbar, ten visible slots, arrow scroll, no scrollbar, Stone before other tiers.
+
+---
+
+## Status snapshot (2026-09-30)
+
+Source: code and prefab folders on `cursor/wip-clean-20260919` (HEAD `c48f7464e`, Sep 28) plus the working tree. Details per ticket under **As built**. Full as-built list: scope plan section 19.
+
+| Status | Tickets |
+|--------|---------|
+| `done` | BUILD-002, 004, 006, 091, 092, 093 |
+| `in_progress` | BUILD-001, 003, 005, 012, 015, 030, 040, 041, 083, 090, 095 |
+| `backlog` | All other tickets (24) |
+
+Shipped outside any ticket: Iron and Silicate styles, three finishes per style (Right Alt), 8-piece mesh upgrade with multi-material slots, force-field door / double door / hatch, Build Hub zone, storage crates, hinged doors, surface items, move equipment. Force-field "Pentashield" upgrade: requested, no ticket yet (TBD).
 
 ---
 
@@ -30,10 +44,12 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | backlog |
+| **Status** | in_progress |
 | **Priority** | P0 |
 | **Depends on** | — |
 | **Story** | — |
+
+**As built (2026-09-30):** No `BuildingDefinition` SO yet. `DMBuildingStyleLibrary` assets (`Resources/Building/Styles`: Stone, Iron, Silicate) plus `DMBuildingCatalog` serve as the piece registry, looked up by id. Duplicate-id validation: TBD.
 
 **Scope**
 - Create `BuildingDefinition` SO under `Assets/_Project/Features/Building/Data/` (or `Scripts/Building/Data/` if no Feature folder yet).
@@ -54,9 +70,11 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | backlog |
+| **Status** | done |
 | **Priority** | P0 |
 | **Depends on** | — |
+
+**As built (2026-09-30):** `DMBuildingGhost` + `DM_BuildingGhostProfile` (Genesis Studio → Building → Preview Ghosts) tint valid vs blocked on one material; glass kept. Palette match vs Shift UI: TBD.
 
 **Scope**
 - One hologram shader/material instance using `DarkMatterGenesisUiPalette` (valid = Rich Fuchsia / off-white glyph feel; invalid = Deep Magenta reject — **not gold**).
@@ -74,9 +92,11 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | backlog |
+| **Status** | in_progress |
 | **Priority** | P0 |
 | **Depends on** | BUILD-001 |
+
+**As built (2026-09-30):** Validity lives in `DMBuildingPlacementController` partials (foundation rule, Build Hub zone rule, affordability from inventory or crates). Slope and v1.6 fence checks: TBD. No NavMesh.
 
 **Scope**
 - `BuildingPlacementValidator` static or service:
@@ -101,9 +121,11 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | backlog |
+| **Status** | done |
 | **Priority** | P0 |
 | **Depends on** | BUILD-001, BUILD-002, BUILD-003 |
+
+**As built (2026-09-30):** Hold B → ghost follows aim; red when blocked or unaffordable. Uses the build hotbar, not the multitool.
 
 **Scope**
 - While build mode is active (Hold B, BUILD-006) and a blueprint is selected: spawn preview mesh at aim ray hit.
@@ -124,9 +146,11 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | backlog |
+| **Status** | in_progress |
 | **Priority** | P0 |
 | **Depends on** | BUILD-004 |
+
+**As built (2026-09-30):** Pieces commit after a short hold (see BUILD-012) with creation FX. BCP on a placed building / first kit def: not wired (TBD).
 
 **Scope**
 - Click (green only) → spawn `finishedPrefab` at pose.
@@ -147,9 +171,11 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | backlog |
+| **Status** | done |
 | **Priority** | P1 |
 | **Depends on** | BUILD-004 |
+
+**As built (2026-09-30):** Keyboard: Hold B toggles build mode (`DMBuildingMode`, 0.4 s hold); tap B stays binoculars. Multitool not used. Gamepad Left Shoulder hold and modal blocking: TBD.
 
 **Scope**
 - Build mode is **Hold B** on keyboard (Input System Hold interaction). Tap B stays `Binoculars` in `InputSystem_Actions` and `GameplayKeyboardShortcuts`.
@@ -210,9 +236,11 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | backlog |
+| **Status** | in_progress |
 | **Priority** | P0 |
 | **Depends on** | BUILD-011 |
+
+**As built (2026-09-30):** Hold left-click fills a center-screen build bar (`build-hold-ring`; profile buildSeconds 0.5 s, code default 2 s), then pays the full cost and places. Releasing early spends nothing. Per-tick drain on a committed ghost: not built.
 
 **Scope**
 - Hold use/fire while aiming at ghost: advance progress over `constructTime`.
@@ -234,6 +262,8 @@
 | **Status** | backlog |
 | **Priority** | P0 |
 | **Depends on** | BUILD-012 |
+
+**As built (2026-09-30):** Not built. Placement plays `DMBuildingCreationFx` (profile-driven creation effect) instead of a reverse dissolve.
 
 **Scope**
 - On ghost mesh: drive `EnemyDisintegrate` / `EnemyDisintegrationEffect` `_DissolveAmount` from 1 → 0 as progress 0 → 1.
@@ -267,9 +297,11 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | backlog |
+| **Status** | in_progress |
 | **Priority** | P1 |
 | **Depends on** | BUILD-006, BUILD-001 |
+
+**As built (2026-09-30):** The build hotbar (BUILD-093) lists pieces for the selected style plus known buildings. Unlock filtering (scan / map / quest) not built.
 
 **Scope**
 - Player-facing picker is the **building hotbar** (BUILD-093), not a new fullscreen builder.
@@ -348,9 +380,11 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | backlog |
+| **Status** | in_progress |
 | **Priority** | P1 |
 | **Depends on** | BUILD-001, BUILD-002 |
+
+**As built (2026-09-30):** Building Studio exists inside Genesis Studio (Library, Placement, Snap & Grid, Preview Ghosts, Creation Effects, Doors, Built Tints) with editor builders. One-pass prefab → `BuildingDefinition` author: not built. Menu path: TBD.
 
 **Scope**
 - Menu: `Tools/Dark Matter Genesis/Buildings/Building Studio` opens Genesis Studio on the **Building** category (BUILD-095).
@@ -388,9 +422,11 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | backlog |
+| **Status** | in_progress |
 | **Priority** | P1 |
 | **Depends on** | BUILD-010, BUILD-011 |
+
+**As built (2026-09-30):** Placed pieces save through `DMBuildingSaveRuntime` and crates through `DMStorageCrateSave` (save v23), not through `BuildingSnapshot`. Ghost / progress fields: n/a until E1.
 
 **Scope**
 - Save: list of `{ definitionId, pos, rot, state: Ghost|Complete, progress, drainedSnapshot? }`
@@ -406,9 +442,11 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | backlog |
+| **Status** | in_progress |
 | **Priority** | P1 |
 | **Depends on** | BUILD-040, BUILD-013 |
+
+**As built (2026-09-30):** Placed pieces restore from the save runtime. Tile-streaming rehydrate and ghost progress: TBD.
 
 **Scope**
 - `BuildingInstanceRunner` or hook on scene/tile load: spawn ghosts or finished prefabs from save.
@@ -683,9 +721,11 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | backlog |
+| **Status** | in_progress |
 | **Priority** | P3 |
 | **Depends on** | BUILD-052, BUILD-060 |
+
+**As built (2026-09-30):** A standalone generator (`DMBaseGenerator`, Plasma Fuel) and base power square (`DMBasePower`, 100 m) ship as build-mode equipment and power force fields, lights, and equipment. Not attached to a CC / BCP power graph.
 
 **Scope**
 - One module def (generator) attaching to CC or power graph.
@@ -705,9 +745,11 @@ Parent: scope plan **section 18**. Starts after BUILD-001–004. Stone only unti
 
 | Field | Value |
 |-------|-------|
-| **Status** | backlog |
+| **Status** | in_progress |
 | **Priority** | P0 |
 | **Depends on** | BUILD-001 |
+
+**As built (2026-09-30):** Style library entries (`DMBuildingPartEntry`, category, shape, cost lines, material variants) cover pieces. `kind` / `upgradeToId` / sockets as specified: not built. Live tiers Stone, Iron, Silicate; Steel and Amalgam absent.
 
 **Scope**
 - Extend `BuildingDefinition` with `kind`, `materialTier`, `section`, `footprintMeters`, `sockets`, `upgradeToId`, `starterUnlocked` (scope §7 and §18).
@@ -725,9 +767,11 @@ Parent: scope plan **section 18**. Starts after BUILD-001–004. Stone only unti
 
 | Field | Value |
 |-------|-------|
-| **Status** | backlog |
+| **Status** | done |
 | **Priority** | P0 |
 | **Depends on** | BUILD-090 |
+
+**As built (2026-09-30):** Superseded and exceeded: `Prefabs/Buildings/Library/` has Stone (78 prefabs), Iron (71), Silicate (68), Equipment (3), SurfaceItems (7), with section folders (Foundations, Walls, Floors, Ceilings, Roofs, DoorFrames, Doors, Windows, Stairs, Ramps, Railings, Structure, ForceFields). No Steel / Amalgam folders.
 
 **Scope**
 - Create `Assets/_Project/Prefabs/Buildings/Library/` as in scope §18.5. Stone section folders only need meshes; other tier folders may be empty.
@@ -746,9 +790,11 @@ Parent: scope plan **section 18**. Starts after BUILD-001–004. Stone only unti
 
 | Field | Value |
 |-------|-------|
-| **Status** | backlog |
+| **Status** | done |
 | **Priority** | P0 |
 | **Depends on** | BUILD-003, BUILD-004, BUILD-090 |
+
+**As built (2026-09-30):** As built: 4 m lattice (not 1 m grid) with edge, top, and outer-corner snapping; Left Alt + scroll rotates (free pieces by yaw step, grid pieces 90°). No NavMesh.
 
 **Scope**
 - 1 m grid, 90° yaw.
@@ -770,9 +816,11 @@ Parent: scope plan **section 18**. Starts after BUILD-001–004. Stone only unti
 
 | Field | Value |
 |-------|-------|
-| **Status** | backlog |
+| **Status** | done |
 | **Priority** | P0 |
 | **Depends on** | BUILD-006, BUILD-090, BUILD-091 |
+
+**As built (2026-09-30):** `DMUiToolkitBuildingHotbar` (10 visible slots, side arrows or mouse wheel, up panel with styles + known buildings) binds from the HUD document; no separate `BuildingHotbar.uxml`. Right Alt cycles finishes.
 
 **Scope**
 - `BuildingHotbar.uxml` on `UITK_Hud`. Runtime `DMUiToolkitBuildingHotbar`.
@@ -817,9 +865,11 @@ Parent: scope plan **section 18**. Starts after BUILD-001–004. Stone only unti
 
 | Field | Value |
 |-------|-------|
-| **Status** | backlog |
+| **Status** | in_progress |
 | **Priority** | P1 |
 | **Depends on** | BUILD-090, BUILD-002 |
+
+**As built (2026-09-30):** Building Studio is live in Genesis Studio (see BUILD-030). Drop-well → definition flow as specified: TBD.
 
 **Scope**
 - Genesis Studio category **Building**, menu `Tools/Dark Matter Genesis/Buildings/Building Studio`.
@@ -889,6 +939,8 @@ Sprint H starts once Sprint A (BUILD-001–004) is in. It does not wait on campa
 | E7 Campaign | 4 | 0 |
 | E8 Components | 7 | 4 |
 | **Total** | **41** | **13** |
+
+Status 2026-09-30: 6 `done` · 11 `in_progress` · 24 `backlog`.
 
 ---
 

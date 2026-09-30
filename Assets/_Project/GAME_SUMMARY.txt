@@ -19,8 +19,13 @@ PLAYER-FACING IDENTITY (locked)
 ================================================================================
 
 Dark Matter: Genesis is a companion-driven survival RPG — a story-driven sci-fi
-RPG with a base camp on Jupiter's moon Io in 2160. You play as **Kade**, leading humanity's push to
-prove a future there—not just scrape by, but rebuild under brutal conditions.
+RPG with a base camp on Jupiter's moon Io in 2160. You play as **Kade**—a
+terraformer, mercenary, jack of all trades, and entrepreneur with a risky
+space-cowboy streak. Abandoned on Mars, Kade escaped with two survivors, was
+picked up by a freighter, and took a new job on Io: discover what happened to
+the other expeditions, survey Io for human survival and terraforming, and mine.
+Kade leads humanity's push to prove a future there—not just scrape by, but
+rebuild under brutal conditions.
 You manage oxygen and environmental pressures (radiation, cold/heat, volcanism,
 sulfur storms, alien life forms, and AI androids), gather and craft, fight on
 the surface, and grow a base camp of up to twenty-two companions while a trio of
@@ -54,5 +59,42 @@ your base camp simulates injury, healing, and production at scale.
 Dark Matter (The World Engine) is the reusable framework. Dark Matter: Genesis is
 its first shipped game—the Io story, AC economy, Echo roster, Lite Building base
 camp, and sulfur-storm companion fantasy layered on top.
+
+================================================================================
+
+IMPLEMENTATION STATUS (as of Sep 30, 2026)
+  Full list: GDD 5.0 Appendix B6. Main scene: Dark Matter Genesis v1.6.5.
+  Locks (Sep 30, 2026): Aether Credits (AC) only. Player starts with 0 AC and
+    no inventory. Optional in-app purchases later would be AC only.
+    Full-scale AAA, semi-high-definition art. Oxygen is needed in most areas;
+    in some areas the Rebreather mask comes off automatically. PC and Mac
+    first; Xbox and PlayStation later.
+
+  Shipped (working build):
+    Building — Hold B build mode, UI Toolkit build hotbar, Stone / Iron /
+      Silicate piece sets with finishes (Right Alt), 4 m snap, Left Alt +
+      scroll rotate, hold-to-build with a build bar; force-field doors,
+      generator + base power, Build Hub zone, storage crates; Building Studio
+      inside Genesis Studio.
+    Genesis Studio editor; save version 23 (10 slots + 2 autosaves); Io clock.
+    Movement (jog / sprint, climb, dash, jetpack, landing), survival +
+      exposure, death overlay, melee + ranged combat with 9 ammo types,
+      UI Toolkit HUD / journal / menus, vendors, skill tree, map + fog of war,
+      achievements, vehicles, pets.
+    Terrain: streamed Gaia tiles with Io surface textures (not the full biome
+      world).
+
+  In progress:
+    Later building tiers (Steel, Amalgam), skill gates, blueprint unlocks and
+      full materialization; Building Control Panels on real facilities; live
+      weather scheduler; base-22 simulation; Mac build checks.
+
+  Planned:
+    Combat & AI overhaul — Combat Plan v2 (Sep 29, 2026, 16 phases; pointer in
+      GDD 5.0 B6 and the wiki page "Combat-Plan"); Communications runtime;
+      world seed; Io biome world; underground map; Rebreather auto-off;
+      Xbox and PlayStation versions.
+
+  TBD: code still grants a 200 AC starter (lock is 0 AC and no inventory).
 
 ================================================================================

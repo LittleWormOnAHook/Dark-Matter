@@ -3,7 +3,7 @@
 Canonical system requirements for **store pages, FAQ, and performance expectations**. Update when certification targets change.
 
 **Ship title:** Dark Matter: Genesis  
-**Ship platforms:** **Windows PC**, **macOS**, PlayStation 5, Xbox (Series X|S)
+**Ship platforms:** **Windows PC** and **macOS** first; **Xbox (Series X|S)** and **PlayStation 5** later
 
 ---
 
@@ -121,4 +121,4 @@ Planned behavior for HDRP migration:
 ## References
 
 - `Documentation/Architecture/HDRP_Migration_Plan.md` — HDRP conversion and settings implementation
-- GDD 5.0 — product identity; update platform appendix when macOS ship is reflected in GDD body text
+- GDD 5.0 — product identity; platforms updated 2026-09-30 (PC and Mac first; Xbox and PlayStation later)

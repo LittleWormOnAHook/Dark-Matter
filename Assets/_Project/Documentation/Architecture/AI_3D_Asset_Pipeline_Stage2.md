@@ -318,7 +318,7 @@ Do not copy this. Genesis already specified DMAE LOD1–3 + Unity `LODGroup` in 
 - Authority / production: **FBX** (`*_production.fbx`, `SM_<Name>` mesh names, `M_<Name>_Body` materials)
 - Sidecar: `*.ue5import.json` (import settings, collision flag, production_reduction block)
 - Ledger: `state.json`, hash-bound receipts, `intake.json`
-- `compile_from_image` default triangle budget **20 000**, target **18 000** (higher than Genesis semi-low-poly ~8–12k GAME_LOW)
+- `compile_from_image` default triangle budget **20 000**, target **18 000** (higher than the Genesis ~8–12k GAME_LOW prop budget, which predates the Sep 30, 2026 full-scale AAA, semi-high-definition art lock — review TBD)
 
 CLI package: `rac` (`pyproject.toml`, Python ≥3.11, deps numpy/Pillow/scipy only — AI is external).
 
@@ -372,7 +372,7 @@ Map RAC stages onto DMAE + Unity ingest:
 - `ue5_import.generate_collision`
 - WSL-only Pixal3D as the default Genesis generator
 - Automation-stamped “production_ready” without a human (their own rule — keep it)
-- Default 18–20k triangle budgets (GDD is semi-low-poly)
+- Default 18–20k triangle budgets (Genesis sets its own budgets; review against the Sep 30, 2026 art lock — TBD)
 - ComfyUI-Hunyuan3DWrapper graph as a hidden second path (RAC itself already bypassed it)
 
 ---

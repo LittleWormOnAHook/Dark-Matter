@@ -96,7 +96,7 @@ Think **stacked biomes**, not one generic “cave” tag.
 
 ## 4. Room grammar (modular underground architecture)
 
-Reuse **semi-low-poly modular kit** — same philosophy as surface camp.
+Reuse the **modular kit** (full-scale AAA, semi-high-definition art; attachments and material swaps where useful) — same philosophy as surface camp.
 
 ### 4.1 Tube modules (connective)
 

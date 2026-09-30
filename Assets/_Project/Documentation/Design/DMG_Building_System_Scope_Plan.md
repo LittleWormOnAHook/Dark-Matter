@@ -2,7 +2,7 @@
 
 **Status:** Scope lock for implementation  
 **Merged from:** GDD 5.0 Appendix A7/A6, `GAME_BREAKDOWN.txt`, prologue/act bibles, asset-mapped plans, `Audit_05_Colony.md`, `World_Engine_Disk_Status.md`, desktop `DMG-building-system-plan.md` (2026-08-27)  
-**Last updated:** 2026-09-24 (component library, material tiers, build hotbar, Building Studio)  
+**Last updated:** 2026-09-30 (as-built status sync, section 19) · 2026-09-24 (component library, material tiers, build hotbar, Building Studio)  
 
 This document is the **single implementation scope** for building. Where the desktop plan and GDD disagree on *feel*, the desktop plan wins for placement/materialization UX. Where GDD locks economy, BCP tabs, storms, colony sim, and story beats, GDD wins. The 2026-09-24 component track is **additive**: wreck scans still unlock blueprints; map finds, crafted pieces, kits, and the Stone snap library sit on the same placement pipeline.
 
@@ -16,7 +16,7 @@ This document is the **single implementation scope** for building. Where the des
 
 **Engineering spine:** Structure slices 1–7 (definition → hold-construct → wrecks → authoring → save → BCP depth → campaign facilities), then the component track (Stone library → snap grid → build hotbar → Building Studio → map blueprints → tier upgrades). Reuse multitool, BCP, scanner, reverse dissolve, inventory resources, and World Engine `BuildingSnapshot`.
 
-**Gap today:** BCP shell + queue registry exist; **no** `BuildingDefinition`, ghost/wreck pipeline, component library, build hotbar, Building Studio, or prologue placement quests on disk.
+**Gap today (updated 2026-09-30):** The component track is largely on disk: Hold-B build mode, UITK build hotbar, Stone / Iron / Silicate style libraries, 4 m lattice snap, short hold-to-build with a build bar, force-field doors, generator + base power, Build Hub zone, storage crates, save/load of placed pieces, and Building Studio inside Genesis Studio. Still **not** on disk: `BuildingDefinition` SO (style libraries stand in for it), wreck scan unlocks, map blueprint pickups, the full Slice 2 materialize path (ghost commit, per-tick drain, reverse dissolve), Steel / Amalgam tiers, skill gates, in-place tier upgrade, and prologue placement quests. See section 19.
 
 ---
 
@@ -131,7 +131,7 @@ Each becomes a `BuildingDefinition` + optional **world wreck** in the target bio
 | System | On disk | Building relevance |
 |--------|---------|-------------------|
 | Player / combat / survival | Invector bridge, `SurvivalStats`, exposure zones | Carry friction for Emergency Cell (quest layer) |
-| Inventory + hotbar + craft | 24-slot inventory, `CraftingUI`, stations | Recipe language for `BuildingDefinition.recipe` |
+| Inventory + hotbar + craft | 5×10 inventory grid (was 24 slots), `CraftingUI`, stations | Recipe language for `BuildingDefinition.recipe` |
 | Journal hub | Quest, Map, Craft library, Companions, Skills | **Not** primary production UI (GDD lock) |
 | Quests | `QuestManager` + 4 live quests (`GatherRocks`, etc.) | Prologue quests **not authored yet** |
 | Economy | AC on save/HUD; starter companion pick | Lite Building costs resources + AC at vendors |
@@ -141,7 +141,7 @@ Each becomes a `BuildingDefinition` + optional **world wreck** in the target bio
 | Crisis HUD | `EnvironmentalCrisisHudMode` | Mini gust + storm queue pause preview |
 | World Engine spine | `Features/GameState`, `WorldState`, `Directors`, `Validation` | `BuildingSnapshot` adapter exists |
 | Gaia terrain | 4×4 tiles + 16 content scenes + impostors | Wrecks/dressing in `Terrain_X_Y_Content` |
-| Active scene | `Dark Matter Genesis v1.6.2.unity` | Border fences in v1.6.x; systems scene |
+| Active scene | `Dark Matter Genesis v1.6.5.unity` (main scene — latest v1.6, 2026-09-30; was v1.6.2) | Border fences in v1.6.x (still used as bounds: TBD, Build Hub zone now gates building); systems scene |
 
 ### Building-specific (partial — GDD B2)
 
@@ -158,9 +158,16 @@ Each becomes a `BuildingDefinition` + optional **world wreck** in the target bio
 | `Shelter_Safe_Zone.prefab` | **Shipped** | Gust safe volume stand-in for Shelter |
 | `Prefabs/Buildings/Command Center Variant.prefab` | **Shipped** | Art reference — not wired to placement pipeline |
 | `Prefabs/Buildings/Science Lab Variant.prefab` | **Shipped** | Art reference |
-| `ItemType.Multitool` | **Enum only** | No placement controller yet |
-| `BuildingDefinition` / `BuildingGhost` / `BuildingWreck` | **Not started** | Core of this plan |
-| Materialization / hold-construct | **Not started** | GDD B3 #7 |
+| `ItemType.Multitool` | **Enum only** | Build mode uses Hold B + the build hotbar, not the multitool (2026-09-30) |
+| `DMBuildingMode` / `DMBuildingPlacementController` (+ partials) | **Shipped** (2026-09-25→28) | Hold-B mode, 4 m lattice snap, Alt+scroll rotate, Right Alt finishes, hold-to-build ring, hold-RMB destroy + refund, move equipment, Build Hub zone rule |
+| `DMBuildingStyleLibrary` / `DMBuildingCatalog` | **Shipped** | Stone / Iron / Silicate libraries in `Resources/Building/Styles`; stands in for `BuildingDefinition` |
+| `DMUiToolkitBuildingHotbar` | **Shipped** | 10 slots, side arrows / wheel, up panel (styles + known buildings) |
+| `DMBuildingGhost` / `DM_BuildingGhostProfile` | **Shipped** | Preview + placed-piece component; red when unaffordable. Not the Slice 2 committed ghost |
+| `DMForceField`, `DMBaseGenerator`, `DMBasePower`, `DMBasePoweredLights`, `DMBuildHub`, `DMStorageCrate` | **Shipped** | Force-field doors, Plasma Fuel generator, 100 m power square, Build Hub zone, crates |
+| `DMBuildingSaveRuntime` / `DMStorageCrateSave` | **Shipped** | Placed pieces + crates save and load (save v23) |
+| `DMBuildingStudioWindow` + editor builders | **Shipped** | Building section inside Genesis Studio |
+| `BuildingDefinition` / `BuildingWreck` | **Not started** | Core of this plan (wreck scans, kits) |
+| Materialization / hold-construct | **Partial** | Short hold-to-build ring + creation FX ship; ghost commit, per-tick drain, cancel refund, reverse dissolve not started (GDD B3) |
 | Prologue building quests | **Not started** | `prologue_01`–`prologue_08` FUTURE |
 | Live `WeatherDirector` storm scheduler | **Partial** | Crisis HUD without full factory sim |
 | Kairos shell + repair quest | **Not started** | Separate from multitool (authored POI) |
@@ -491,9 +498,9 @@ Does not replace kits, wrecks, or BCP. Shares hologram, validity, hold-drain, an
 
 **C1 — Stone blockout.** ProBuilder primitives in the library folders. First basic kit unlocked without a blueprint: foundation 4×4, wall 4×4, floor 4×4, slope 4×4, window wall 4×4, door frame 4×4, basic door.
 
-**C2 — Snap.** 1 m grid, 90° yaw, socket snap to neighbors, same green/red commit rule. Sizes: 4×4 base, plus 1×4, 2×4, 4×8, 8×8, triangle, slope.
+**C2 — Snap.** 1 m grid, 90° yaw, socket snap to neighbors, same green/red commit rule. Sizes: 4×4 base, plus 1×4, 2×4, 4×8, 8×8, triangle, slope. *As built (2026-09-30): 4 m lattice with edge, top, and outer-corner snapping; Left Alt + scroll rotates (free pieces by yaw step, grid pieces 90°). See section 19.*
 
-**C3 — Build hotbar.** UITK. Ten visible slots, side arrows, no scrollbar. Up-arrow on the left opens the material panel. Stone is the only live tier.
+**C3 — Build hotbar.** UITK. Ten visible slots, side arrows, no scrollbar. Up-arrow on the left opens the material panel. Stone is the only live tier. *As built (2026-09-30): Stone, Iron, and Silicate are live; mouse wheel also cycles pieces.*
 
 **C4 — Building Studio.** Genesis Studio **Building** category. Drag-drop prefabs into sections. Workflow to add the next material tier.
 
@@ -570,7 +577,7 @@ Cross-ref `Prologue_Acts_Expanded.md` QA section:
 | BCP tab gating | Overview-only until Act I-D step 4.3 |
 | First author mesh | Scene workbench or `PowerGenerator` |
 | Fabricator ruin | Teaches `craft_station_settlement` or `cc_seed`? → **station** (Scene B craft teach) |
-| Starter AC | GDD says 5000; story Act 0 says 0 — **follow story doc for prologue** when quests land |
+| Starter AC | **Resolved 2026-09-30:** player starts with 0 AC and no inventory (GDD and story agree) |
 | Kairos comms | Ops only until trust gate; building UI unchanged |
 | Build hotbar vs inventory hotbar | Build bar shows **only in build mode**. Inventory hotbar stays the gameplay bar |
 | Enter build mode | **Hold B** (keyboard). Tap B stays binoculars. Hold B again exits. Gamepad: hold Left Shoulder, tap stays binoculars |
@@ -660,6 +667,8 @@ Wall height for a standard wall matches the module: 4 m tall and 4 m wide. Mini 
 
 Live tier at the start of implementation: **Stone** only. The other tiers exist as data so Building Studio can add them without a second system.
 
+*As built (2026-09-30):* **Stone** (paid with Rock), **Iron** (Iron Ore), and **Silicate** (Silicate Ore) are live, with no skill gates yet. Each style has three finishes cycled with Right Alt (a cosmetic material swap, not a tier upgrade). Steel, Amalgam, skill gates, and in-place upgrade are not built.
+
 | Tier | Paid with | Skill gate |
 |------|-----------|------------|
 | **Stone** | Gathered stone | None. First basic kit is known immediately |
@@ -745,6 +754,8 @@ Palette: Dark Navy slots, Slate borders, Deep Magenta arrows, Warm Off-White lab
 
 Files: `Assets/UI Toolkit/Screens/BuildingHotbar.uxml`, styles on the screen USS plus `DarkMatterGenesis.uss`, runtime `DMUiToolkitBuildingHotbar` on the HUD document. Bind with `root.Q`. Do not hide the bar with USS `display: none`.
 
+*As built (2026-09-30):* no separate `BuildingHotbar.uxml` is on disk; `DMUiToolkitBuildingHotbar` (`Assets/UI Toolkit/Runtime/`) binds its elements from the HUD document, including the `build-hold-ring` build bar. Gamepad Left Shoulder hold: TBD (not found in build-mode code).
+
 ### 18.7 Building Studio (tools)
 
 Authoring lives in **Genesis Studio** as a **Building** category, opened from `Tools/Dark Matter Genesis/Buildings/Building Studio`. It is an editor workflow, not a Play-mode slider profile. `playModeSave` stays off.
@@ -766,6 +777,57 @@ Replaces the one-off "Author Building" window as the place new pieces are added.
 ### 18.8 Save
 
 Each placed piece stores the same payload as a kit instance: `definitionId` (the tier actually built), pose, ghost vs complete, construct progress, drained resources. A Stone wall upgraded to Iron saves the Iron id. Blueprint unlocks persist beside the recipe-unlock set (BUILD-042).
+
+---
+
+## 19. Implementation Status (as of Sep 30, 2026)
+
+Source: code, Genesis Studio profiles, and prefab folders on branch `cursor/wip-clean-20260919` (HEAD `c48f7464e`, Sep 28) plus the working tree (asset / scene edits only; no code changes since Sep 28). Ticket status lives in [`DMG_Building_System_Tickets.md`](DMG_Building_System_Tickets.md).
+
+### Shipped
+
+| Area | As built |
+|------|----------|
+| Build mode | Hold B toggles build mode; tap B stays binoculars (`DMBuildingMode`) |
+| Build hotbar | UITK `DMUiToolkitBuildingHotbar`: 10 slots, side arrows or mouse wheel, up panel for styles and known buildings |
+| Placement | 4 m lattice snap with edge, top, and outer-corner snapping. Left Alt + scroll rotates. Ghost red when the piece cannot be paid for (cost from inventory or storage crates) |
+| Build bar | Hold left-click: center-screen hold ring fills (`DM_BuildingGhostProfile` buildSeconds 0.5 s; code default 2 s), then the cost is paid and the piece appears with creation FX |
+| Destroy | Hold right-click (0.5 s in profile) destroys and refunds |
+| Styles | Stone 69 ids (Rock), Iron 65 ids (Iron Ore), Silicate 65 ids (Silicate Ore) in `Resources/Building/Styles`; prefabs in `Prefabs/Buildings/Library/` (Stone 78, Iron 71, Silicate 68, Equipment 3, SurfaceItems 7) |
+| Finishes | Right Alt cycles three finishes per style (was M before Sep 28) |
+| Mesh upgrade | 8-piece mesh upgrade for all styles with multi-material slots, glass handling, top-aligned foundations (`DMBuildingMeshUpgrades`, Sep 28); built tints; creation effects |
+| Force fields | `ff_door`, `ff_door_double`, `ff_hatch_lid` (`DMForceField`): block bullets, enemies, and weather; open for the player and companions; corner strips red unpowered, green powered |
+| Power | Generator (`DMBaseGenerator`) burns Plasma Fuel, E opens the UITK fuel panel, refuels from inventory then crates in range, can be switched off. Base power (`DMBasePower`): 100 m square from the first foundation; each load adds fuel burn; powered lights dim when unpowered |
+| Build Hub | `DMBuildHub`: zone 50×50 m, +25 m per upgrade level, anchored where first placed. Cost placeholder Iron Ore 15 + Metal Scrap 25 |
+| Other equipment | Storage crate (Iron Ore 4 + Metal Scrap 10, saved per crate); hinged doors (E), double doors and gates split into leaves; surface items (wall light, 3 ceiling lights, banner, poster, sign); move equipment; scene cleaner |
+| Save | Placed pieces (`DMBuildingSaveRuntime`) and crates (`DMStorageCrateSave`); save version 23 |
+| Building Studio | Genesis Studio → Building: Library, Placement, Snap & Grid, Preview Ghosts, Creation Effects, Doors, Built Tints. Editor builders for kits, style libraries, mesh upgrades, force fields, generator, hub, crate, surface items |
+
+### In progress / partial
+
+- `BuildingDefinition` SO: style libraries (`DMBuildingStyleLibrary` / `DMBuildingCatalog`) stand in for it; kit / building definitions not on disk.
+- Building Control Panels on placed buildings: BCP shell exists, but wiring to build-mode pieces is TBD.
+- Known-building rows in the hotbar up panel exist; the planned unlock sources (wreck scan, map pickup) are not built, and how a building becomes known today is TBD.
+
+### Planned (not built)
+
+- Slice 2 full materialize: ghost commit, per-tick drain, cancel refund, reverse dissolve.
+- Wrecks + scan unlocks (Slice 3), map blueprint pickups (C5), unlock persistence.
+- Steel and Amalgam tiers, skill gates, in-place tier upgrade (C6).
+- BCP depth (Slice 6) and campaign facilities (Slice 7), attachment module graph.
+- Force-field "Pentashield" upgrade: requested; no design or code yet (TBD).
+- Combat & AI overhaul (Combat Plan v2, Sep 29, 2026, 16 phases) is a separate plan that uses these bases in fights (force fields, power). Pointer: GDD 5.0 Appendix B6 and the wiki page "Combat-Plan". The plan file `DMG_Combat_Plan_v2.md` is not in this repo yet (location TBD).
+
+### As-built deviations from this plan (review)
+
+| Plan says | As built | Status |
+|-----------|----------|--------|
+| 1 m grid, 90° yaw (§18.3) | 4 m lattice, edge / top / outer-corner snap, Alt+scroll rotate by yaw step (free) or 90° (grid) | Deviation; plan text left as design target |
+| Stone only live tier (§11 C3, §18.4) | Stone, Iron, Silicate live; no skill gates | Ahead of plan |
+| Multitool hold on ghost (§5, §18.6) | Hold left-click in build mode; no multitool | Deviation |
+| Drain during hold (§1) | Cost paid when the hold completes; destroy refunds | Deviation |
+| Bounds = v1.6 fences (§18.3) | Build Hub zone rule (`BuildZoneRule`); fence use TBD | TBD |
+| `BuildingHotbar.uxml` (§18.6) | Bar binds from the HUD document | Deviation |
 
 ---
 

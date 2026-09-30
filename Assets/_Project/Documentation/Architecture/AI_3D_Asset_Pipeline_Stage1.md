@@ -43,7 +43,7 @@ Blackwell also rejects older PyTorch CUDA 12.4 wheels (`no kernel image`). Any f
 |------|----------------|-------------|
 | Unity (this project) | **6000.4.11f1** HDRP | MCP `unityMCP` connected; `mcpforunity://project/info` confirms `A:/Dark Matter Genesis` |
 | Unity Hub leftover editors | 2019.2.2f1, 2022.3.25f1, 2023.2.8f1 | Not the live editor. 6000.4.11f1 is running but not under the usual Hub `Editor` folder probed |
-| Playable scenes on disk | `v1.6.2` … **`v1.6.5`** newest | Agent rules still name `v1.6.2`. Confirm which scene Unity has open before ingest tests |
+| Playable scenes on disk | `v1.6.2` … **`v1.6.5`** newest | **`v1.6.5` is the main scene** (confirmed 2026-09-30; agent rules updated) |
 | Blender | **5.2.0 LTS** (`C:\Program Files\Blender Foundation\Blender 5.2\blender.exe`) | Installed |
 | Blender MCP | `uv run --directory C:\Users\Teabagger\.cursor\tools\blender-mcp blender-mcp` | **Disconnected** (127.0.0.1:9876) |
 | 3ds Max | **2022** | Installed; Cursor MCP namespace **error / tools unavailable** |
@@ -72,7 +72,7 @@ Canonical paths live in `Assets/_Project/Editor/ProjectAssetPaths.cs`.
 
 **~94 FBX** under `_Project` (counted via `.fbx.meta`). No dedicated Unity “AI import” folder yet.
 
-GDD art lock: **semi-low-poly**, modular **2–3 base meshes + attachments + material swaps**, HDRP, LODs/Addressables as needed.
+GDD art lock (updated 2026-09-30): **full-scale AAA, semi-high-definition art**; modular pieces with attachments and material swaps where useful; HDRP, LODs/Addressables as needed.
 
 ---
 
@@ -245,7 +245,7 @@ Do **not** start a third generator in the Unity repo. DMAE already owns generate
 
 - Treat Tripo/Meshy melt as **silhouette only**.
 - Rebuild `CLEAN_HIGH` (hard-surface inset/bevel or organic remesh).
-- `GAME_LOW` ~8–12k for props (GDD semi-low-poly); hero weapons up to DMAE Near/Hero tables.
+- `GAME_LOW` ~8–12k for props (budget predates the 2026-09-30 full-scale AAA, semi-high-definition art lock — review TBD); hero weapons up to DMAE Near/Hero tables.
 - UVs: smart project / angle seams (already in `blender-aaa-scifi-pipeline.mdc`).
 - Bake normal + AO; fill metallic/roughness; optional Comfy albedo.
 - Collision: `UCX_*` convex only for gameplay volumes.
@@ -299,7 +299,7 @@ Fail closed (DMAE already does this on export):
 | SD 1.5 only | Concept plates will look generic; Io look needs a later local checkpoint (user-initiated) |
 | Hunyuan license | Community license (MAU / region clauses) — keep `LICENSE_REVIEW` |
 | Meshy duplicates | `Models/` vs `Prefabs/Models/` — ingest must not add a third copy |
-| Scene version drift | Rules say v1.6.2; newest file is v1.6.5 |
+| Scene version | Resolved 2026-09-30: v1.6.5 is the main scene |
 | Blender MCP down | Factory cannot be agent-driven until addon listener is started |
 | Retopo stub | Do not promise Instant Meshes / QuadriFlow quality until that provider is real |
 | Character pipeline | Local Image→3D is a **prop/plant/hard-surface** path first. Meshy remains characters |
