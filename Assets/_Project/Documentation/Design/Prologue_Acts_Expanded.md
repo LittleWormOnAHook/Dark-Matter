@@ -3,7 +3,7 @@
 **Status:** Design draft — August 2026  
 **Parents:** `Prologue_Playthrough_Step_By_Step.md` (checklist) · `Prologue_Playthrough_And_Camp_Bootstrap_Plan.md` (systems/POIs) · `Quests_And_Story_Plan.md` (spine)  
 **Scope:** Mainline Acts **0 → I → II** only (2–5 hours). Act **III+** summarized as handoff.  
-**Locks:** Kade fixed name · 0 AC · free starter companion · Level 5 mining/harvest gate · **10 Memory Cores** post-prologue · rumors until cores prove truth.
+**Locks:** Kade fixed name · 0 AC · level 1 · no inventory · 2 starting companions (Mars survivors) · Level 5 mining/harvest gate · **10 Memory Cores** post-prologue · rumors until cores prove truth.
 
 ---
 
@@ -11,7 +11,7 @@
 
 | Act | Name | Player fantasy | End state |
 |-----|------|----------------|-----------|
-| **0** | Charter | Who is Kade before Io? | Dropship committed; companion chosen |
+| **0** | Charter | Who is Kade before Io? | Dropship committed; 2 starting companions aboard |
 | **I** | Landing & Camp | We survived the crash. We have a foothold. | CC Seed + Shelter + Crafting Station live |
 | **II** | Cert & Machine | We earned the right to dig — and woke something. | Lv5 skills · Aether-9 awake · Echo #1 · 10-core hunt accepted |
 | **III+** | (Post-prologue) | Hunt the ten memories. | Outside 2–5 h budget |
@@ -27,7 +27,7 @@
 ### Purpose
 
 1. Lock Kade identity (background + optional Hard Mode).  
-2. Lock free starter companion (synergy preview if class matches).  
+2. Introduce Kade's 2 starting companions, the Mars survivors (synergy preview if class matches).  
 3. Sell the charter: establish a camp on Basalt Highlands, report to Colony Ops.  
 4. Transition emotionally from menu → crash.
 
@@ -44,10 +44,11 @@
 - Confirm writes `playerBackgroundId` + `hardModeEnabled`.  
 - Do **not** reveal Memory Core count or Aether-9 existence here.
 
-**0.3 Free Starter Companion**  
-- Same flow as today’s starter pick, but **cost 0 AC** (design; code may still show 5000 until fixed).  
-- If companion class matches a synergy row: show Kade stat + free skill-rank preview before confirm.  
-- Companion is present on landing (not “arrive later”).
+**0.3 Starting Companions**  
+- Kade's 2 Mars survivors are already in the crew. No pick screen (the old starter pick is a retired leftover).  
+- No other companions until Echoes are found and restored from ethereal to corporeal form.  
+- If a companion's class matches a synergy row: show Kade stat + free skill-rank preview.  
+- Both companions are present on landing (not “arrive later”).
 
 **0.4 Welcome / controls**  
 - Short KBM + gamepad sheet.  
@@ -60,14 +61,14 @@
 
 ### Failure / skip
 
-- No gameplay fail states. Backing out of background/companion returns to previous panel.  
+- No gameplay fail states. Backing out of background returns to previous panel.  
 - Cinematic skip allowed after first playthrough (settings).
 
 ### Act 0 exit criteria
 
 - [ ] Background + Hard Mode saved  
-- [ ] Starter companion saved  
-- [ ] Player spawned at Landing Scar with hotbar kit and 0 AC  
+- [ ] 2 starting companions saved  
+- [ ] Player spawned at Landing Scar with 0 AC, level 1 and no inventory  
 
 ---
 
@@ -96,8 +97,7 @@ Act I is four scenes. Each scene expands **space, story, systems, combat, fricti
 ### Player start state
 
 - Kade at shuttle nose/side (not inside cockpit).  
-- Hotbar = background kit (Tier-1 weapon + flavor tool).  
-- Inventory nearly empty except kit. **0 AC.**  
+- Hotbar and inventory empty (no starting inventory). **0 AC.**  
 - Survival meters visible; O₂ and thermal may already tick if standing in heat.
 
 ### Step detail

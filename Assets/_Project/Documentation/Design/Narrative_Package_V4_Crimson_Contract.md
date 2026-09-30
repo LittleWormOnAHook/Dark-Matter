@@ -1,5 +1,7 @@
 # Narrative Package V4 — Crimson Contract
 
+> **Global locks (Sep 30, 2026) override this package:** the player starts with **0 AC, level 1 and no inventory** (Aether Credits only). Kade lands on Io with **2 companions**, the survivors of the Mars escape; no other companions until Echoes are found and restored from ethereal to corporeal form. The starter-companion pick is retired.
+
 **Package identity:** V4 Crimson Contract  
 **Game:** Dark Matter: Genesis  
 **Player:** **Kade**  
@@ -10,7 +12,7 @@
 **Ending triad:** Walk Away / Crown the Company / Burn the Ledger  
 **Designed hour target:** 172 hours, exploration excluded
 
-> **V4 narrative deviation note:** GDD baseline allows **1 starter Skilled Companion** from 5000 AC. V4 frames **2 old-friend specialists** (Combat + Science) who **trust the player completely from day one** — not hired strangers, no wary starter loyalty arc for Reid or Suri. 5000 AC is **5% of the player's final Mars terraform-director pay**, covering freelance charter fees and **partial crew retainer** — not a generic starter grant. Lock globally only if V4 becomes canon spine.
+> **V4 narrative note:** The global lock is that Kade lands with **2 companions**, the survivors of the Mars escape. V4 frames them as **2 old-friend specialists** (Combat + Science) who **trust the player completely from day one**, with no wary starter loyalty arc for Reid or Suri. Kade starts with **0 AC** and no inventory; the older Mars-pay AC framing is retired. Names lock globally only if V4 becomes canon spine.
 
 ---
 
@@ -23,10 +25,10 @@ You are **Kade**, a **freelance space explorer**, not a mercenary commander inhe
 - **Weapons-first mind:** Decades of field work made you fluent in ballistics, pressure seals, and when *not* to shoot. High combat IQ; you read encounters like survey maps.
 - **Discovery drive:** You take contracts that let you **find things** — new terrain, dead signals, organisms that shouldn't exist, machines still running after crews vanish.
 - **Terraform pedigree:** You started at the **bottom** of a Mars terraforming directorate — soil tech, vent routing, labor disputes — and **earned the director chair**. You know what "viable" looks like when the math lies.
-- **Mars stranding:** Your last employer **left you stranded on Mars** after a budget cut masquerading as "phase completion." You walked out with reputation, grudges, and **5% of your final pay** in liquid AC: **5000 Aether Credits**.
+- **Mars stranding:** Your last employer **left you stranded on Mars** after a budget cut masquerading as "phase completion." You walked out with reputation, grudges and **0 AC**, escaped with two survivors, and caught a freighter out.
 - **Why Io:** Freelance work pointed here. A charter buyer wants a **viability assessment** — can Io be terraformed, and **why did prior expeditions disappear** without conventional closure? You did not come to get rich. You came to **learn the truth** and get paid enough to never be stranded again.
 
-You arrive with **two old friends** — not a roster pick from five strangers, not hired muscle meeting you for the first time on Io:
+You arrive with **two old friends**, the two survivors of the Mars escape:
 
 | Specialist | Class | Name | Relationship | Hook |
 |------------|-------|------|--------------|------|
@@ -37,7 +39,7 @@ You arrive with **two old friends** — not a roster pick from five strangers, n
 
 - **Reid and Suri baseline loyalty is maxed for narrative purposes** at prologue start. Drama comes from **Io, Kairos, clients, Echo stakes, and mission choices** — not distrust of the player.
 - **No "will they betray me?" starter arc** for these two. Optional bond perks (SQ-20, SQ-23) deepen friendship under pressure; they do not gate basic obedience or field deployment.
-- **Later recruits** (Echoes, faction companions toward 22+trio) use normal loyalty/reputation systems.
+- **Later companions** (restored Echoes, toward 22+trio) use normal loyalty/reputation systems.
 
 Together you grow a base camp of **22 companions** plus a switchable **expedition trio of 3** while Io forces you into **freelance contracts** — escorts, holds, retrievals — that pay for the survey and expose who benefited when prior crews vanished.
 
@@ -73,9 +75,9 @@ Prologue is **progress-triggered**, not quest-giver driven. No NPC assigns the c
 
 | Beat | Trigger | Content | Mystery / Survey Hook |
 |------|---------|---------|------------------------|
-| P-01 | Player completes B6 landing sequence | Brief **Mars stranding** log or playable flashback sting: employer evac without crew; director chair revoked mid-shift | Establishes why 5000 AC is **5% final pay**, not starter charity |
+| P-01 | Player completes B6 landing sequence | Brief **Mars stranding** log or playable flashback sting: employer evac without crew; director chair revoked mid-shift | Establishes why Kade arrives with **0 AC** and only two friends |
 | P-02 | Charter terminal boot | Freelancer contract loads: **assess Io terraform viability**; bonus clause for **documenting expedition disappearance patterns** | Reid and Suri banter like old crew — no introduction handshake; they already know your calls |
-| P-03 | First B6 camp footprint | **5000 AC** displayed as retainer + charter debit (**5% final Mars pay**); **Reid Kael** + **Dr. Suri Vale** active in trio — **old friends, full trust** | BCP shell online; 22 bunk assignments empty; Reid jokes about Mars; Suri opens survey slate |
+| P-03 | First B6 camp footprint | **0 AC** start; **Reid Kael** + **Dr. Suri Vale** active in trio — **old friends, full trust** | BCP shell online; 22 bunk assignments empty; Reid jokes about Mars; Suri opens survey slate |
 | P-04 | Survey probe uplink | First viability scan returns **impossible rescue pings** from erased crews; Beacon Hopper mimic behavior [ecology] | Suri flags "missing expedition" anomaly cluster |
 | P-05 | Annex approach | Expedition camp without bodies — equipment arranged like aborted terraform grid | Missing-expedition mystery visible before combat spike |
 | P-06 | **Prologue end** — dormant shell contact | Player restores minimal probe power to buried **liaison shell**; machine speaks auth fragment; UI decodes true name | **Player learns the name Kairos** — first time name appears in package |
@@ -89,7 +91,7 @@ Prologue is **progress-triggered**, not quest-giver driven. No NPC assigns the c
 | Lock | V4 Crimson Contract Rule |
 |------|--------------------------|
 | Setting | Io, 2160 |
-| Economy | AC-only. **5000 AC = 5% of player's final Mars terraform-director pay**; covers freelance charter + partial retainer for 2 specialists (V4 narrative framing). No wallet, minting, marketplace, or third-party crypto loop |
+| Economy | AC-only. Player starts with **0 AC** and no inventory (global lock) |
 | Roster | 25 companions max: 22 base camp + 3 expedition trio; **V4 starts with old friends Reid Kael + Dr. Suri Vale (baseline max loyalty, no starter trust arc)** |
 | Kairos spine | Repair Kairos (pre-prologue: liaison shell), recover 6 Memory Cores, earn trust, trigger Resonance Events |
 | Biome order | B6 -> B1 -> B2 -> B3 -> B5 -> B4 -> B7 |
@@ -155,7 +157,7 @@ Ecology visual source: Life Sheet set under `ArtReference/LifeSheets_RayTraced/`
 
 | System | Status | V4 Crimson Contract Use |
 |--------|--------|-------------------------|
-| Aether Credits economy | [SHIPPED] | Contract payouts, bid wars, escrow penalties, gear purchases; **5000 AC framed as 5% Mars final pay** |
+| Aether Credits economy | [SHIPPED] | Contract payouts, bid wars, escrow penalties, gear purchases; **0 AC start** |
 | Building Control Panels | [SHIPPED] | Freelancer HQ terminal: **Overview \| Companions \| Production \| Craft \| Changes** + contract board tab hooks |
 | Echo chronicle / EchoGenerator | [SHIPPED] | Crew drama, missing-expedition Echo rescue, permanent fail consequence; Reid/Suri starter loyalty exempt from wary arc |
 | Exposure / oxygen / pressure | [SHIPPED] | B5 cold-chain jobs, B4 heat sieges, B1 storm convoys, terraform viability stress tests |
@@ -193,7 +195,7 @@ Ecology visual source: Life Sheet set under `ArtReference/LifeSheets_RayTraced/`
 
 ### Application Rules
 
-- **Prologue / ML-01:** 5000 AC spend is **narrative retainer + charter**, not a generic grant; UI copy references **5% final Mars pay**.
+- **Prologue / ML-01:** Kade starts at **0 AC**; early contract payouts fund the survey.
 - **Mainline:** Milestone payouts unlock cores, modules, and survey auth — not quest-giver dialogue trees.
 - **Side quests:** Contract-board and crew-drama jobs scale T1-T4; often pay AC plus named gear or rep.
 - **Puzzles:** Access Gate minority (~8). Loot/Cache/Weapon and Optional Mastery carry higher AC and kit.
@@ -222,7 +224,7 @@ Mainline uses **progress triggers, not quest givers**. Contract NPCs and rival c
 
 | ID | Mainline Beat | Trigger | Biome / Site | Core / Repair | AC / Gear Reward | Est. | Status |
 |----|---------------|---------|--------------|---------------|------------------|------|--------|
-| ML-01 | **Prologue: Freelancer Arrival** | B6 landing + charter boot + `KairosNamed` flag | B6 Survey HQ | Liaison shell ping | 5000 AC retainer spend (5% final pay); **Survey Sidearm**; Reid + Suri active | 2.0h | [PLANNED] narrative |
+| ML-01 | **Prologue: Freelancer Arrival** | B6 landing + charter boot + `KairosNamed` flag | B6 Survey HQ | Liaison shell ping | 0 AC start; **Survey Sidearm**; Reid + Suri active | 2.0h | [PLANNED] narrative |
 | ML-02 | Ledger Shell | Scan buried liaison casing under basalt ash (post-name) | B6 annex | Kairos shell found | 300 AC; **Ledger Lens Mk I** | 2.0h | [PLANNED] |
 | ML-03 | Escrow Auth Spindle | Enter first Contract Lock annex | B6 Lock Annex | Repair part 1 | **Escrow Spike Module** | 2.0h | [PLANNED] |
 | ML-04 | Convoy Capacitor Bank | Complete first B1 sulfur storm escort window | B1 Sulfur Plains | Repair part 2 | 450 AC; **Storm Filter Module** | 2.5h | [PARTIAL] ecology via Sulfur Hound |
@@ -572,7 +574,7 @@ Exploration/free roam is excluded from the designed total.
 
 ## 13. Package Summary
 
-V4 Crimson Contract centers a **freelance terraform surveyor** stranded by Mars corporate betrayal, arriving on Io with **5000 AC (5% final pay)**, **old friends Reid Kael and Dr. Suri Vale** (complete trust from day one — no starter loyalty arc), and a charter to assess **terraform viability** and **missing expeditions**. Off-beat contract-board spectacle funds the survey while **Kairos** — named only at **prologue end** — reveals a black-box mercenary ledger tying clients to disappeared crews. Mainline progression remains trigger-driven through repair parts, Memory Cores, building unlocks, Resonance Events, and final doctrine choice.
+V4 Crimson Contract centers a **freelance terraform surveyor** stranded by Mars corporate betrayal, arriving on Io with **0 AC**, **old friends Reid Kael and Dr. Suri Vale** (complete trust from day one — no starter loyalty arc), and a charter to assess **terraform viability** and **missing expeditions**. Off-beat contract-board spectacle funds the survey while **Kairos** — named only at **prologue end** — reveals a black-box mercenary ledger tying clients to disappeared crews. Mainline progression remains trigger-driven through repair parts, Memory Cores, building unlocks, Resonance Events, and final doctrine choice.
 
 **Designed total:** 172 hours, exploration excluded.  
 **Core fantasy:** Discover why Io eats expeditions. Survive the contracts that pay for the truth. Choose what your report — and your company — become when Kairos opens the vault.

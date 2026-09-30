@@ -1,5 +1,7 @@
 # Narrative Packages — Compare & Pick
 
+> **Global locks (Sep 30, 2026) override this package:** the player starts with **0 AC, level 1 and no inventory** (Aether Credits only). Kade lands on Io with **2 companions**, the survivors of the Mars escape; no other companions until Echoes are found and restored from ethereal to corporeal form. The starter-companion pick is retired.
+
 **Dark Matter: Genesis** | Choose one package (or cherry-pick systems)  
 **Designed content target:** ≥150 hours each (**exploration excluded**)  
 **Rebuild pass:** Aug 2026 — mixed-purpose puzzles, AC progress curve, weapon rewards, progress-triggered mainline, ecology + systems roadmap tags  
@@ -18,7 +20,7 @@
 | Mainline delivery | **Progress triggers** — not quest givers | Same; BCP / storm / colony flags | Same; Claim Barriers + Compact votes on **sides** | Same; **Contract Locks + board jobs** on **sides** |
 | Friction emphasis | Silence, Resonance Shelves, Still Hunter, Ash Barrier | Weather windows, Building gates, Colony Barrier | Claim Barriers, Smuggler Seals, Compact Summit | **Contract Locks, Escrow Seals, Siege Timers, Rival Crew ambushes, Client Override** |
 | Player fantasy | Survive a hostile moon that might be alive | Prove a colony deserves a future | Own the table; write the Compact | **Freelance terraform surveyor** — assess Io viability, find missing expeditions, survive contract-board spectacle |
-| Starter setup | 5000 AC · 1 skilled companion pick | 5000 AC · 1 skilled companion pick | 5000 AC · 1 skilled companion pick | **5000 AC = 5% Mars final pay** · **2 old-friend specialists** (Reid Kael + Dr. Suri Vale, **max trust day one**) |
+| Starter setup | 0 AC · 2 starting companions (Mars survivors) | 0 AC · 2 starting companions (Mars survivors) | 0 AC · 2 starting companions (Mars survivors) | 0 AC · **2 old-friend specialists** (Reid Kael + Dr. Suri Vale, **max trust day one**) |
 | Designed hours | **165h** | **170h** | **174h** | **172h** |
 | Exploration | ~25–40h bonus (untracked) | Same | Same | Same |
 
@@ -34,7 +36,7 @@ Io 2160 · **Player Kade** · AC-only · 22+trio · repair **Kairos** → 6 Memo
 |---------|---------|
 | Player | **Kade** — freelance space explorer; ex-**terraform director** who started from the bottom; weapons-fluent, high IQ, discovery-driven |
 | Mars backstory | Former employer **stranded player on Mars** → chose freelance → Io charter |
-| 5000 AC | **5% of final Mars director pay** — charter + partial retainer, not generic starter grant |
+| Starting AC | **0 AC** and no inventory (global lock, Sep 30, 2026) |
 | Mission | Assess **Io terraform viability** + discover **why past expeditions disappeared** |
 | Starter crew | **Reid "Iron" Kael** (Combat Tactician) + **Dr. Suri Vale** (Science Specialist) — **old friends, complete trust from day one**; no wary starter loyalty arc |
 | Drama source | Io, Kairos, clients, Echo stakes, mission ethics — **not distrust of the player** by Reid/Suri |

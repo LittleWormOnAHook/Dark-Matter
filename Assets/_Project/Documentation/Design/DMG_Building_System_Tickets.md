@@ -508,7 +508,7 @@ Shipped outside any ticket: Iron and Silicate styles, three finishes per style (
 - Persist assign via existing `BuildingOperationRegistry` save path.
 
 **Acceptance**
-- [ ] Assign starter companion at shelter/CC
+- [ ] Assign one of Kade's 2 starting companions at shelter/CC
 - [ ] Save/load keeps assignment
 
 ---

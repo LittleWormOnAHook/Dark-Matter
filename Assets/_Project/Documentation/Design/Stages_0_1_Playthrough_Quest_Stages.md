@@ -32,7 +32,7 @@ Each **quest** is broken into:
 Main Menu
   -> [Q0.1] New Game / slot
   -> [Q0.2] Kade Background Select (+ Hard Mode)
-  -> [Q0.3] Free Starter Companion Select
+  -> [Q0.3] Starting Companions (no pick)
   -> [Q0.4] Controls / Welcome acknowledge
   -> [Q0.5] Shuttle descent cinematic
   -> SPAWN Stage 1 Scene A (Landing Scar)
@@ -51,7 +51,7 @@ Main Menu
 |-------|-------------|---------------|-------------|
 | S1 | Choose **New Game** / New Expedition | Enter charter pipeline | Return main menu |
 | S2 | Pick save slot (if multi-slot) | Slot reserved | Cancel → menu |
-| S3 | Init empty save | `aetherCredits=0`, no cores, `aether9Awakened=false`, starter unset | — |
+| S3 | Init empty save | `aetherCredits=0`, no cores, `aether9Awakened=false`, level 1, no inventory | — |
 
 ### UI / VO
 
@@ -63,7 +63,7 @@ Main Menu
 | Tag | Asset |
 |-----|--------|
 | CURRENT | `MainMenuController`, `GameSession`, `GameSaveSystem` |
-| EXTEND | Ensure new game does **not** grant 5000 AC |
+| EXTEND | New game ships at 0 AC, level 1, no inventory (the code's 200 AC, level 5 and starting items are testing values; reset before release) |
 | FUTURE | Optional charter splash (“Basalt Highlands Charter”) |
 
 ### Exit
@@ -93,7 +93,7 @@ Show 6 background cards
 |-------|-------------|------------------|-------|
 | S1 | Browse backgrounds | Hover/focus each card; read tagline | Gamepad: d-pad / stick |
 | S2 | (Optional) Open rumor panel | Expand body text | Rumor-safe Io lines only |
-| S3 | Review grants | Stats / skills / kit summary visible | Power band equal across BGs |
+| S3 | Review grants | Stats / skills summary visible (no starting kit) | Power band equal across BGs |
 | S4 | Set Hard Mode | Off default; On = −20% Kade damage | Same kit, same 0 AC |
 | S5 | Confirm background | Hold confirm or double-confirm if Hard Mode on | Writes `playerBackgroundId`, `hardModeEnabled` |
 
@@ -113,51 +113,52 @@ Show 6 background cards
 
 ### Exit
 
-→ Q0.3; companion list may highlight synergies for chosen BG.
+→ Q0.3; the starting companions may highlight synergies for chosen BG.
 
 ---
 
-## Q0.3 — Free Starter Companion
+## Q0.3 — Starting Companions
 
-**Id:** `charter_03_starter_companion`  
-**Type:** Choice (EXTEND existing UI)
+**Id:** `charter_03_starter_companion` (id kept; the old starter pick is retired)  
+**Type:** System (no choice)
+
+Kade lands on Io with **2 companions**, the 2 survivors of the Mars escape. There is no pick screen. No other companions are available until Echoes are found and restored from ethereal to corporeal form.
 
 ### Flow
 
 ```
-Show starter offers (CURRENT catalog)
+Load Kade's 2 starting companions (the Mars survivors)
   -> Highlight synergy matches from Q0.2
   -> Preview Kade bonus if match
-  -> Recruit at 0 AC
-  -> Companion flagged for Landing Scar spawn
+  -> Both companions flagged for Landing Scar spawn
 ```
 
 ### Task stages
 
 | Stage | Player task | Detail |
 |-------|-------------|--------|
-| S1 | View offers | CURRENT: Kael-9 and other `StarterPioneerCatalog` entries |
-| S2 | Read class / traits | CombatTactician, etc. |
-| S3 | See synergy badge | If class ∈ background `companionSynergies` → gold badge + bonus preview |
-| S4 | Confirm recruit | **Cost 0**; no “not enough AC” |
-| S5 | Apply synergy | If matched: apply stat bonuses + 1 free skill rank (**FUTURE** apply hook; until then show preview only) |
+| S1 | View crew card | The 2 starting companions (class / traits) |
+| S2 | See synergy badge | If class ∈ background `companionSynergies` → gold badge + bonus preview |
+| S3 | Continue | Both companions added to the roster |
+| S4 | Apply synergy | If matched: apply stat bonuses + 1 free skill rank (**FUTURE** apply hook; until then show preview only) |
 
 ### UI / VO
 
-- Header: **“Choose your first Skilled Companion — Charter covers the cost.”**  
-- Strike through any 5000 AC label (EXTEND).
+- Crew card copy TBD (no cost or credit label).  
+- The old starter-pick UI and its credit label are a retired leftover.
 
 ### Assets
 
 | Tag | Asset |
 |-----|--------|
-| CURRENT | `StarterPioneerSelectUI`, `StarterPioneerCatalog`, `PioneerRosterManager` |
-| EXTEND | `StarterAcGrant = 0`, `acCost = 0`, flow order after background |
+| CURRENT | `PioneerRosterManager` |
+| RETIRED | `StarterPioneerSelectUI`, `StarterPioneerCatalog` (old starter pick; leftover) |
+| EXTEND | New-game setup loads the 2 starting companions; `StarterAcGrant` (200 in code) is a testing value, reset to 0 before release |
 | FUTURE | Synergy apply on `PlayerProgressionManager` / `SurvivalStats` |
 
 ### Exit
 
-→ Q0.4; `StarterPioneerSelected = true`.
+→ Q0.4; both starting companions in roster.
 
 ---
 
@@ -213,9 +214,9 @@ Show starter offers (CURRENT catalog)
 ### Stage 0 exit checklist
 
 - [ ] Background + Hard Mode saved  
-- [ ] Companion free-recruited  
+- [ ] 2 starting companions in roster  
 - [ ] Controls acknowledged  
-- [ ] Player + companion exist at Landing Scar  
+- [ ] Player + 2 companions exist at Landing Scar  
 - [ ] Credits = 0  
 - [ ] `prologue_01_touchdown` → **Available**
 
@@ -735,7 +736,7 @@ charter_01_new_game
   -> prologue_05_field_cert   (Stage 2 — not detailed here)
 ```
 
-No branching required for mainline. Background only changes VO flavor lines and starting kit ids inside the same stages.
+No branching required for mainline. Background only changes VO flavor lines inside the same stages (no starting kit; the player starts with no inventory).
 
 ---
 

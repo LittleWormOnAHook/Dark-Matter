@@ -1,5 +1,7 @@
 # Narrative Package V3 — Fracture Compact
 
+> **Global locks (Sep 30, 2026) override this package:** the player starts with **0 AC, level 1 and no inventory** (Aether Credits only). Kade lands on Io with **2 companions**, the survivors of the Mars escape; no other companions until Echoes are found and restored from ethereal to corporeal form. The starter-companion pick is retired.
+
 **Package identity:** V3 Fracture Compact  
 **Game:** Dark Matter: Genesis  
 **Player:** **Kade**  
@@ -14,7 +16,7 @@
 
 ## 1. Premise, Tone, And Corporate Truth
 
-Io is not an empty moon. It is a table where everyone arrived with a knife, a contract, or a dying friend. **Kade** begins with **5000 Aether Credits (AC)** and one starter Skilled Companion, then grows a base camp of **22 companions** plus a switchable **expedition trio of 3** while the factions around them learn that survival is only the first negotiation.
+Io is not an empty moon. It is a table where everyone arrived with a knife, a contract, or a dying friend. **Kade** begins with **0 Aether Credits (AC)**, no inventory and the **2 companions** who escaped Mars with him, then grows a base camp of **22 companions** plus a switchable **expedition trio of 3** while the factions around them learn that survival is only the first negotiation.
 
 The political fantasy is direct: **own the table, write the Compact, and decide who gets to stand behind the Barrier Fields**.
 
@@ -43,7 +45,7 @@ Repairing Kairos requires restoring its shell, recovering **6 Memory Cores**, an
 | Lock | V3 Fracture Compact Rule |
 |------|--------------------------|
 | Setting | Io, 2160 |
-| Economy | AC-only. Starter 5000 AC buys 1 starter Skilled Companion. No wallet, minting, marketplace, or third-party crypto loop |
+| Economy | AC-only. Player starts with 0 AC and no inventory; Kade lands with 2 companions (the Mars survivors) |
 | Roster | 25 companions max: 22 base camp + 3 expedition trio |
 | Kairos spine | Repair Kairos, recover 6 Memory Cores, earn trust, trigger Resonance Events |
 | Biome order | B6 -> B1 -> B2 -> B3 -> B5 -> B4 -> B7 |
@@ -175,7 +177,7 @@ Mainline uses **progress triggers, not quest givers**. NPCs, faction votes, and 
 
 | ID | Mainline Beat | Trigger | Biome / Site | Core / Repair | AC / Gear Reward | Est. | Status |
 |----|---------------|---------|--------------|---------------|------------------|------|--------|
-| ML-01 | Compact Zero | First B6 base camp boot + starter companion purchase | B6 Command Center | Kairos shell ping | 5000 AC starter spend; **Pioneer Sidearm** | 2.0h | [PLANNED] narrative |
+| ML-01 | Compact Zero | First B6 base camp boot with Kade's 2 starting companions | B6 Command Center | Kairos shell ping | 0 AC start; **Pioneer Sidearm** | 2.0h | [PLANNED] narrative |
 | ML-02 | Black-Box Shell | Scan buried black-box casing under basalt ash | B6 annex | Kairos shell found | 300 AC; **Archive Lens Mk I** | 2.0h | [PLANNED] |
 | ML-03 | Redacted Auth Spindle | Enter first Claim Barrier annex | B6 Claim Annex | Repair part 1 | **Barrier Spike Module** | 2.0h | [PLANNED] |
 | ML-04 | Sync Capacitor Bank | Survive first B1 sulfur storm window at isotope camp | B1 Sulfur Plains | Repair part 2 | 450 AC; **Storm Filter Module** | 2.5h | [PARTIAL] ecology hook via Sulfur Hound |

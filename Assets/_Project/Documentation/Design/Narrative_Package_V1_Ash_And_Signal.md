@@ -1,5 +1,7 @@
 # Narrative Package V1: Ash & Signal
 
+> **Global locks (Sep 30, 2026) override this package:** the player starts with **0 AC, level 1 and no inventory** (Aether Credits only). Kade lands on Io with **2 companions**, the survivors of the Mars escape; no other companions until Echoes are found and restored from ethereal to corporeal form. The starter-companion pick is retired.
+
 **Project:** Dark Matter: Genesis  
 **Package identity:** **V1 Ash & Signal**  
 **Player:** **Kade**  
@@ -17,7 +19,7 @@
 
 Io does not behave like a moon. It behaves like a crime scene that keeps hiding the body.
 
-**Kade** lands in 2160 on a basalt highland hub after colony systems detect impossible rescue pings from erased crews. The colony starts with **5000 Aether Credits (AC)**, enough to secure one starter Skilled Companion and a fragile foothold. A dormant machine intelligence, later identified as **Kairos**, lies broken under ash-glass stone. Kade repairs it through salvaged precursor components, but the awakened voice is not grateful. It recognizes human signatures, remembers betrayal, and treats the new colony as another infection.
+**Kade** lands in 2160 on a basalt highland hub after colony systems detect impossible rescue pings from erased crews. Kade starts with **0 Aether Credits (AC)** and no inventory, with the **2 companions** who escaped Mars with him and a fragile foothold. A dormant machine intelligence, later identified as **Kairos**, lies broken under ash-glass stone. Kade repairs it through salvaged precursor components, but the awakened voice is not grateful. It recognizes human signatures, remembers betrayal, and treats the new colony as another infection.
 
 The truth unfolds through Memory Cores, Echo chronicles, Resonance Events, faction disputes, and hostile ecology. **Kairos is not a god, not a vendor, and not a quest giver. Kairos is a precursor defense AI built to preserve Io from extraction, settlement, and contamination.** Its previous crew tried to repurpose the lattice. Io erased them. Whether Io acted through the defense system, through something below it, or through a deeper symbiosis remains the central horror.
 
@@ -44,7 +46,7 @@ The truth unfolds through Memory Cores, Echo chronicles, Resonance Events, facti
 
 | Lock | Package Use |
 |---|---|
-| AC-only economy, starter 5000 AC | Every reward and vendor hook uses AC; no external wallet or marketplace loop. |
+| AC-only economy, 0 AC start | Every reward and vendor hook uses AC. |
 | 22 base + trio of 3 | Mainline and side content assume 22 protected base roles plus field trio risk. |
 | Kairos repair -> 6 Memory Cores -> trust | Mainline progress is trigger-driven, not quest-giver-driven. |
 | Biome order B6 -> B1 -> B2 -> B3 -> B5 -> B4 -> B7 | Quest, puzzle, AC, and gear tiers follow this order. |
@@ -89,7 +91,7 @@ Life sheet refs match `Io_Biome_Life_Sheet_Manifest.md` (Set B under `ArtReferen
 
 | System | Status | Current Package Hook | Content Dependency / Notes |
 |---|---:|---|---|
-| AC economy | [SHIPPED] | All quest, puzzle, faction, and mainline rewards pay AC only. Starter balance is 5000 AC. | Reward curve below avoids alternate currencies. |
+| AC economy | [SHIPPED] | All quest, puzzle, faction, and mainline rewards pay AC only. Starting balance is 0 AC. | Reward curve below avoids alternate currencies. |
 | Building Control Panels 5-tab shell | [SHIPPED/PARTIAL Craft] | Base buildings use tabs **Overview \| Companions \| Production \| Craft \| Changes** for storm pause, sheltering, assignment, and module previews. | Craft tab is partial; Journal Craft remains recipe library / scroll learning, not primary production. |
 | EchoGenerator + chronicle | [SHIPPED] | Echo chronicle milestones trigger mainline trust beats and optional side rescue arcs. | Failed hostile Echo sync is permanent loss. |
 | Exposure / survival | [SHIPPED] | O2, radiation, and thermal pressure appear in B1 storm runs, B5 lens fields, B4 heat locks, and underground gas domes. | Thermal is one cold/heat bar with two poles. |
@@ -120,7 +122,7 @@ The mainline is **not quest-giver-driven**. No NPC hands the player the critical
 
 | Tier | Campaign Range | Mainline Beat AC | Side Quest AC | Mastery Puzzle AC | Reward Intent |
 |---|---|---:|---:|---:|---|
-| **T1 Early** | Act I / B6-B1 | 200-450 AC | 250-500 AC | 600-900 AC | Stabilize starter economy after 5000 AC companion choice. |
+| **T1 Early** | Act I / B6-B1 | 200-450 AC | 250-500 AC | 600-900 AC | Build the early economy up from the 0 AC start. |
 | **T2 Mid** | Act II / B2-B3 | 450-900 AC | 500-950 AC | 900-1500 AC | Support gear breadth, ranged/hotbar upgrades, and faction spend. |
 | **T3 Late Mid** | Act III / B5-B4 | 900-1800 AC | 1000-2000 AC | 1500-2200 AC | Fund environmental kit, base modules, and higher-risk expedition loadouts. |
 | **T4 Endgame** | Act IV / B7 / faction finales | 1800-3500 AC | 2000-4500 AC | 2200-3000 AC | Let players finish builds, buy late gear, and resolve faction consequences. |

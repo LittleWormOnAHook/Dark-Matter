@@ -14,6 +14,11 @@ Status refresh: Sep 30, 2026 — Appendix B synced to the working project
           inventory), art (full-scale AAA, semi-high-definition), oxygen
           (needed in most areas; Rebreather auto-off), platforms (PC and Mac
           first; Xbox and PlayStation later), main scene v1.6.5, no NavMesh.
+          Later the same day: shipping start is 0 AC, level 1 and no inventory
+          (the code's 200 AC, level 5 and starting items are testing values,
+          to be reset before release); Kade lands with 2 companions (the Mars
+          survivors) and the starter-companion pick is retired; the Rebreather
+          is script and effects only for now.
 
 Audience
 
@@ -48,6 +53,11 @@ LOCKED (do not contradict without an explicit design change)
   Platforms: PC and Mac first; Xbox and PlayStation later. No mobile ship target.
   Economy: Aether Credits (AC) only. Player starts with 0 AC and no inventory.
     Optional in-app purchases later would be AC only.
+  Start: level 1, 0 AC, no inventory. Testing values in code; to be reset
+    before release (the code currently starts at 200 AC, level 5, with items).
+  Companions: Kade lands on Io with 2 companions (the 2 survivors from the Mars
+    escape). No other companions until Echoes (Ethers) are found and reverted
+    from ethereal back to corporeal form.
   Art: Full-scale AAA, semi-high-definition art. Modular pieces with attachments
     and material swaps where useful.
   Thermal: single cold/heat meter. Pet: fold into Echo/trio (target; pet still live).
@@ -69,6 +79,8 @@ weather (sulfur storms, ion lightning, ash gales, dust spouts, lava flows, geyse
 surges, eruptions, tremors), alien life forms, and AI androids, gather and craft,
 fight on the surface, and grow a base camp of up to twenty-two companions while a
 trio of three skilled companions can be switched and run expeditions with the player.
+Kade lands with two companions, the survivors of the Mars escape; every other
+companion is a Neural Echo found in ethereal form and restored to corporeal form.
 You rescue procedural Neural Echoes, spend Aether Credits at vendors, and operate
 major structures through in-world Building Control Panels. A Lite Building system
 supports expanding your base camp.
@@ -589,6 +601,8 @@ AETHER CREDITS ONLY
   Aether Credits (AC) is the only player-facing currency.
   Aether Credits (AC) only. Player starts with 0 AC and no inventory.
   Optional in-app purchases later would be AC only.
+  Shipping start: 0 AC, level 1, no inventory. The code's 200 AC, level 5 and
+  starting items are testing values in code; to be reset before release.
 
 
 ================================================================================
@@ -620,8 +634,9 @@ APPENDIX A — Interim Mechanics Lock
 Identity recap
 --------------
 Year 2160. Full-scale AAA survival + light base-builder on Io
-(semi-high-definition art). Lead up to 25 companions: up to 22 at base, switchable trio of 3 on expeditions. Rescue procedural Neural
-Echoes; recover Memory Cores for Kairos → Resonance Events; Lite Building +
+(semi-high-definition art). Lead up to 25 companions: up to 22 at base, switchable trio of 3 on expeditions. Kade lands with 2 companions (the Mars
+survivors); every other companion is a rescued procedural Neural Echo, restored
+from ethereal to corporeal form; recover Memory Cores for Kairos → Resonance Events; Lite Building +
 materialization pipeline for base camp; survive O2 (needed in most areas),
 four environmental pressures, dynamic Io weather (A2b), alien life forms, and AI androids.
 
@@ -692,6 +707,8 @@ A2. Survival — O2 norm & biome pressures
 ----------------------------------------
   OXYGEN: needed in most areas (tanks, deprivation FX, health drain when
   empty). In some areas the player's Rebreather mask comes off automatically.
+  Rebreather: script and effects only for now; the auto mask-off is planned
+  as script + VFX/audio (no model work yet).
 
   FOUR ENVIRONMENTAL PRESSURES (always-on zone meters — not the same as weather):
     1. Radiation
@@ -842,6 +859,10 @@ PLAYER-FACING COMMS (Kairos / Colony Ops)
 
 A3. Companion roster (25 cap)
 ---------------------------
+  START: Kade lands on Io with 2 companions (the 2 survivors from the Mars
+  escape). No other companions until Echoes (Ethers) are found and reverted
+  from ethereal back to corporeal form. The old starter-companion pick is
+  retired.
   ~12–13 workers (labor pool; collective Strain meter)
   ~12–13 skilled Echoes / Special companions (named, upgradable)
   TRIO (3 skilled companions) on surface with player — player SWITCHES which
@@ -874,7 +895,9 @@ A4. Base 22 & Command Center
 
 A5. Neural Echoes & procedural generation
 -----------------------------------------
-  Rescue and reintegrate — do not hire from a shop menu as primary path.
+  Rescue and restore — Echoes (Ethers) are found in ethereal form and reverted
+  to corporeal form. This is the only way to gain companions beyond Kade's
+  starting two.
   Echoes are imprints of failed Io expeditions / prior inhabitants.
   Failure can lose Echo permanently.
   Procedural: name format [Io Prefix] [Core Name] [Designation], class, stats,
@@ -953,12 +976,16 @@ A8. Economy (current lock)
 --------------------------
   AC — sole gameplay currency.
     Aether Credits (AC) only. Player starts with 0 AC and no inventory.
-    New game loads 1 starter Skilled Companion (not bought with AC).
+    Shipping start: level 1, 0 AC, no inventory. The code's 200 AC, level 5
+    and starting items are testing values in code; to be reset before release.
+    Kade lands with 2 companions (the Mars survivors); the old starter-
+    companion pick is retired.
     Earn: XP, Credits, resources, quests, expeditions, Resonance bonuses, base output, loot.
-    Spend: vendors (supplies, recruits, gear), workers, rush craft, upgrades,
+    Spend: vendors (supplies, gear), rush craft, upgrades,
     heals, inoculations, suits, Lite Building camp modules.
     Optional in-app purchases later would be AC only.
-  Workers: AC recruit/replace. Skilled companions: local roster progression only.
+  Companions (workers and skilled): only Kade's starting two plus restored
+  Echoes; progression is local roster / save only.
   When touching economy code: prefer AC for all UI/save; remove leftover legacy
   currency naming from player-facing HUD.
 
@@ -979,6 +1006,10 @@ A10. Locked decisions checklist
   [x] PC and Mac first; Xbox and PlayStation later; no mobile ship target
   [x] Aether Credits (AC) only. Player starts with 0 AC and no inventory.
       Optional in-app purchases later would be AC only.
+  [x] Shipping start: level 1, 0 AC, no inventory (code values are testing
+      values; to be reset before release)
+  [x] Kade lands with 2 companions (the Mars survivors); more only by
+      restoring Echoes; starter-companion pick retired
   [x] Art: full-scale AAA, semi-high-definition; modular where useful
   [x] Oxygen needed in most areas; Rebreather mask auto-off in some areas
   [x] Single thermal (cold/heat) meter
@@ -995,7 +1026,6 @@ A10. Locked decisions checklist
 
 OPEN (examples)
   Flat terrain → Io scene strategy
-  Exact starter Skilled Companion offer list
   Science Specialist and Med Tech ability kit polish
 
 
@@ -1038,10 +1068,12 @@ B1. DONE — playable prototype core
   [x] Inventory 5x10 grid (bottom rows locked until unlocked) + hotbar +
       toolbar (scanner / binoculars); crafting + stations
   [x] Journal hub + map + quests (QuestManager); save/load
-  [x] Economy: Aether Credits on roster/UI/save; StarterPioneerSelectUI
-      (1 Skilled Companion choice). Lock is 0 AC and no inventory at new
-      game; code still sets a 200 AC starter grant and the pick screen shows
-      an old starter-credit label (code follow-up TBD)
+  [x] Economy: Aether Credits on roster/UI/save. Shipping start is 0 AC,
+      level 1 and no inventory; the code's 200 AC, level 5 and starting items
+      are testing values in code, to be reset before release.
+      StarterPioneerSelectUI (the old starter-companion pick screen and its
+      credit label) is a retired leftover; the design start is Kade plus 2
+      companions (the Mars survivors)
   [x] Roster + expedition trio UI (PioneerRosterManager / PioneerRosterPanelUI)
   [x] Companions: follow, combat, class abilities, Invector bridges
   [x] Echoes: world entities + procedural EchoGenerator / rescue path (local)
@@ -1267,14 +1299,18 @@ Sep 28). The editor bridge was offline, so live editor state was not checked.
     - Io biome world, underground map, environmental suit gear
     - Story-system milestones: unchanged, see B3
     - Force-field "Pentashield" upgrade — requested; no design or code yet (TBD)
-    - Rebreather mask auto-off in some areas (A2) — not found in code yet
+    - Rebreather mask auto-off in some areas (A2) — planned as script +
+      VFX/audio only (no model work yet); not in code yet
     - Xbox and PlayStation versions (after PC and Mac)
 
+  TESTING VALUES IN CODE (to be reset before release)
+    - New game: 200 AC, level 5 and starting items (PlayerProgressionManager
+      NewGameStartLevel, StarterPioneerCatalog.StarterAcGrant, SimpleGameManager
+      startingItems). Shipping start: 0 AC, level 1, no inventory.
+    - StarterPioneerSelectUI: retired leftover (old starter-companion pick)
+
   TBD / CONFLICTS (not resolved here)
-    - Starter AC: lock is 0 AC and no inventory; code still grants 200 AC and
-      the starter pick screen shows an old starter-credit label. Whether any
-      starting items are granted in code: TBD (code follow-up, no code change)
-    - New-game level is a testing value; Build Hub cost is a placeholder
+    - Build Hub cost is a placeholder
     - Gamepad build-mode hold (Left Shoulder) not found in build-mode code
 
 

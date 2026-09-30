@@ -47,19 +47,22 @@ These traits define **Kade** in the locked freelancer spine (V4). Other narrativ
 | Combat | Weapons-first mind; high field IQ; reads encounters like survey maps |
 | Drive | Discovery — new terrain, dead signals, organisms that shouldn't exist, machines still running after crews vanish |
 | Mars backstory | Last employer **abandoned Kade on Mars** after a budget cut disguised as "phase completion". Kade **escaped with 2 survivors**, was **picked up by a freighter**, and **took a new job on Io** |
-| Starting AC | **0 AC and no inventory** (locked 2026-09-30). Aether Credits (AC) only; optional in-app purchases later would be AC only |
+| Starting state | **0 AC, level 1, no inventory** (locked 2026-09-30). Aether Credits (AC) only; optional in-app purchases later would be AC only. The code's 200 AC, level 5 and starting items are testing values in code; to be reset before release |
+| Starting companions | Kade lands on Io with **2 companions**: the **2 survivors** of the Mars escape. No other companions until Echoes (Ethers) are found and reverted from ethereal back to corporeal form |
 | Io mission | Discover **what happened to the other expeditions**, **survey Io for human survival and terraforming**, and **mine** |
 
 ---
 
-## Starter Crew (V4 package lock)
+## Starting Companions (locked 2026-09-30)
+
+Kade lands on Io with **2 companions**, the 2 survivors of the Mars escape. This applies to every narrative package. The old starter-companion pick is retired. The V4 package names two old friends:
 
 | Specialist | Name | Class | Relationship |
 |------------|------|-------|--------------|
 | Combat | **Reid "Iron" Kael** | Combat Tactician | Old friend; Mars dome security; **max trust day one** |
 | Science | **Dr. Suri Vale** | Science Specialist | Old friend; promoted from microbe-lab tech; **max trust day one** |
 
-V1–V3 packages retain **1 starter Skilled Companion pick** unless V4 spine is chosen globally. The pick is not paid from AC (the player starts with 0 AC); how it is granted is TBD.
+Whether these two are the canonical Mars survivors depends on the package pick (TBD).
 
 ---
 
@@ -87,4 +90,4 @@ Ship **one** truth per build. Do not mix all four AI truths in one release.
 
 ---
 
-*Last updated: Sep 30, 2026 — premise, background, mission, and 0 AC start (Aug 2026 — global Kade + Kairos canon lock).*
+*Last updated: Sep 30, 2026 — premise, background, mission, starting state (0 AC, level 1, no inventory) and 2 starting companions (Aug 2026 — global Kade + Kairos canon lock).*

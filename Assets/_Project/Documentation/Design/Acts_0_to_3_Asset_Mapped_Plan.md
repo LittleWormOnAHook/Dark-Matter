@@ -2,7 +2,7 @@
 
 **Status:** Design draft — August 2026  
 **Authority:** `Quests_And_Story_Plan.md` · `Prologue_Acts_Expanded.md` · `Prologue_Playthrough_Step_By_Step.md` · GDD 5.0  
-**Player:** Kade · 0 AC · free starter companion · Hard Mode optional · **10 Memory Cores**  
+**Player:** Kade · 0 AC · level 1 · no inventory · 2 starting companions (Mars survivors) · Hard Mode optional · **10 Memory Cores**  
 **Legend**
 
 | Tag | Meaning |
@@ -17,7 +17,7 @@
 
 | Act | Name | Time band | End state |
 |-----|------|-----------|-----------|
-| **0** | Charter | 5–10 min | Background + companion locked; drop committed |
+| **0** | Charter | 5–10 min | Background locked; 2 starting companions aboard; drop committed |
 | **1** | Landing & Camp | ~1.5–2.75 h | CC Seed + Shelter + Craft Station live |
 | **2** | Cert & Machine | ~1.0–2.25 h | Lv5 skills · Aether-9 awake · Echo #1 · 10-core hunt **accepted** |
 | **3** | Ten Memories | Multi-session (post-prologue) | Cores **1–10** attached; Resonance cadence; trust climbing |
@@ -37,7 +37,7 @@ Acts **0–2** = timed prologue (2–5 h mainline). Act **3** = campaign Memory 
 |------|------|--------|
 | 0.1 | New Game | Create save; credits **0**; no cores; Aether-9 flag false |
 | 0.2 | Background select | Six Kade backgrounds + Hard Mode (−20% Kade damage) |
-| 0.3 | Free companion | Cost **0 AC**; synergy preview if class matches |
+| 0.3 | Starting companions | Kade's 2 Mars survivors are already in the crew (no pick); synergy preview if class matches |
 | 0.4 | Controls popup | KBM + gamepad sheet; GameSession gate |
 | 0.5 | Shuttle cinematic | Descent → hard landing → Landing Scar spawn |
 
@@ -49,9 +49,9 @@ Acts **0–2** = timed prologue (2–5 h mainline). Act **3** = campaign Memory 
 |-------|-------------|----------------|
 | Main menu / New Game | `MainMenuController.cs` | Entry |
 | Game session phases | `GameSession.cs` (`StarterPioneerSelect`, etc.) | Flow gating |
-| Starter companion UI | `StarterPioneerSelectUI.cs` | Companion pick |
-| Starter catalog | `StarterPioneerCatalog.cs` (offers Kael-9, etc.) | Offer data |
-| Roster + credits | `PioneerRosterManager.cs` | Persist pick |
+| Old starter pick UI | `StarterPioneerSelectUI.cs` | **Retired leftover** (old starter-companion pick); not in the new flow |
+| Starter catalog | `StarterPioneerCatalog.cs` (offers Kael-9, etc.) | **Retired leftover** offer data |
+| Roster + credits | `PioneerRosterManager.cs` | Holds the 2 starting companions |
 | Welcome / controls | `GameStartPopup.cs` | 0.4 |
 | Loading overlay | `LoadingOverlayController.cs` + `Resources/UI/DMLoadingStarfield.mat` | Transition veil |
 | UI theme / palette | `ShiftUiTheme`, `DarkMatterGenesisUiPalette` | Card chrome |
@@ -62,10 +62,11 @@ Acts **0–2** = timed prologue (2–5 h mainline). Act **3** = campaign Memory 
 
 | Asset | Change needed |
 |-------|----------------|
-| `StarterPioneerCatalog.StarterAcGrant` | **5000 → 0**; `acCost` free |
-| `PioneerRosterManager` new-game credit grant | Stop granting 5000; keep free recruit |
+| `StarterPioneerCatalog.StarterAcGrant` | 200 in code is a testing value; reset to **0** before release |
+| `PioneerRosterManager` new-game setup | Load Kade's 2 starting companions; no credit grant |
+| New-game level / items | Level 5 and starting items in code are testing values; ship at **level 1** with **no inventory** |
 | `GameSaveData` | Add `playerBackgroundId`, `hardModeEnabled` |
-| `GameStartPopup` / flow order | Insert background select **before** starter companion |
+| `GameStartPopup` / flow order | Insert background select; drop the retired starter-companion pick |
 | Hard Mode damage | Hook −20% on Kade outgoing damage only |
 
 ### FUTURE (create)
@@ -82,7 +83,7 @@ Acts **0–2** = timed prologue (2–5 h mainline). Act **3** = campaign Memory 
 ### Act 0 exit checklist
 
 - [ ] Background + Hard Mode saved  
-- [ ] Companion free-recruited  
+- [ ] 2 starting companions in roster  
 - [ ] Spawn ready at Landing Scar (or interim Genesis spawn until map ships)
 
 ---
@@ -499,7 +500,7 @@ After Core 10 attach: Act IV trust/advisor handoff + path to campaign capstone (
 
 ```
 Act0 FUTURE KadeBackgroundSelectUI
-  -> EXTEND StarterPioneerCatalog (0 AC)
+  -> EXTEND PioneerRosterManager (2 starting companions; 0 AC)
   -> CURRENT MainMenu / GameSession
   -> FUTURE Shuttle Timeline
        ->

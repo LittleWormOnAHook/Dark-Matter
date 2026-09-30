@@ -30,7 +30,9 @@ You manage oxygen and environmental pressures (radiation, cold/heat, volcanism,
 sulfur storms, alien life forms, and AI androids), gather and craft, fight on
 the surface, and grow a base camp of up to twenty-two companions while a trio of
 three skilled companions can be switched and run expeditions with the player.
-You rescue procedural Neural Echoes, spend Aether Credits at vendors, and
+Kade lands with two companions, the survivors of the Mars escape; every other
+companion is a Neural Echo found in ethereal form and restored to corporeal
+form. You rescue procedural Neural Echoes, spend Aether Credits at vendors, and
 operate major structures through in-world Building Control Panels. A Lite
 Building system supports expanding your base camp.
 
@@ -69,6 +71,11 @@ IMPLEMENTATION STATUS (as of Sep 30, 2026)
     Full-scale AAA, semi-high-definition art. Oxygen is needed in most areas;
     in some areas the Rebreather mask comes off automatically. PC and Mac
     first; Xbox and PlayStation later.
+    Shipping start: 0 AC, level 1, no inventory. Kade lands on Io with 2
+    companions (the 2 Mars survivors); no other companions until Echoes are
+    found and restored from ethereal to corporeal form.
+    Testing values in code; to be reset before release: 200 AC, level 5 and
+    starting items at new game.
 
   Shipped (working build):
     Building — Hold B build mode, UI Toolkit build hotbar, Stone / Iron /
@@ -92,9 +99,8 @@ IMPLEMENTATION STATUS (as of Sep 30, 2026)
   Planned:
     Combat & AI overhaul — Combat Plan v2 (Sep 29, 2026, 16 phases; pointer in
       GDD 5.0 B6 and the wiki page "Combat-Plan"); Communications runtime;
-      world seed; Io biome world; underground map; Rebreather auto-off;
+      world seed; Io biome world; underground map; Rebreather auto-off
+      (script + VFX/audio, no model work yet);
       Xbox and PlayStation versions.
-
-  TBD: code still grants a 200 AC starter (lock is 0 AC and no inventory).
 
 ================================================================================

@@ -58,8 +58,8 @@ This document is the **single implementation scope** for building. Where the des
 
 ### Act 0 — Charter (no building)
 
-- Kade background, free starter companion, 0 AC, shuttle cinematic → Landing Scar.
-- **Building scope:** none. Establishes companion who later appears on BCP Companions tab.
+- Kade background, Kade's 2 starting companions (the Mars survivors), 0 AC, level 1, no inventory, shuttle cinematic → Landing Scar.
+- **Building scope:** none. Establishes the companions who later appear on BCP Companions tab.
 
 ### Act I — Landing & Camp (building is the act climax)
 
@@ -134,7 +134,7 @@ Each becomes a `BuildingDefinition` + optional **world wreck** in the target bio
 | Inventory + hotbar + craft | 5×10 inventory grid (was 24 slots), `CraftingUI`, stations | Recipe language for `BuildingDefinition.recipe` |
 | Journal hub | Quest, Map, Craft library, Companions, Skills | **Not** primary production UI (GDD lock) |
 | Quests | `QuestManager` + 4 live quests (`GatherRocks`, etc.) | Prologue quests **not authored yet** |
-| Economy | AC on save/HUD; starter companion pick | Lite Building costs resources + AC at vendors |
+| Economy | AC on save/HUD; the old starter-companion pick screen is a retired leftover | Lite Building costs resources + AC at vendors |
 | Roster / trio | `PioneerRosterManager`, expedition UI | BCP Companions tab assigns base-22 |
 | Echoes | `EchoGenerator`, world entities, rescue path | Parallel to building; chronicle hooks |
 | Scanner / optics | `ScannableTarget`, `OpticsController`, scanner sweep | **Wreck → blueprint unlock** |
@@ -577,7 +577,8 @@ Cross-ref `Prologue_Acts_Expanded.md` QA section:
 | BCP tab gating | Overview-only until Act I-D step 4.3 |
 | First author mesh | Scene workbench or `PowerGenerator` |
 | Fabricator ruin | Teaches `craft_station_settlement` or `cc_seed`? → **station** (Scene B craft teach) |
-| Starter AC | **Resolved 2026-09-30:** player starts with 0 AC and no inventory (GDD and story agree) |
+| Starter AC | **Resolved 2026-09-30:** player starts with 0 AC, level 1 and no inventory (GDD and story agree). The code's 200 AC, level 5 and starting items are testing values in code; to be reset before release |
+| Starting companions | **Resolved 2026-09-30:** Kade lands on Io with 2 companions (the 2 Mars survivors); no other companions until Echoes are found and restored from ethereal to corporeal form. The starter-companion pick is retired |
 | Kairos comms | Ops only until trust gate; building UI unchanged |
 | Build hotbar vs inventory hotbar | Build bar shows **only in build mode**. Inventory hotbar stays the gameplay bar |
 | Enter build mode | **Hold B** (keyboard). Tap B stays binoculars. Hold B again exits. Gamepad: hold Left Shoulder, tap stays binoculars |

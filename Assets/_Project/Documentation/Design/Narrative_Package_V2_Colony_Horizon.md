@@ -1,11 +1,13 @@
 # Narrative Package V2 - Colony Horizon
 
+> **Global locks (Sep 30, 2026) override this package:** the player starts with **0 AC, level 1 and no inventory** (Aether Credits only). Kade lands on Io with **2 companions**, the survivors of the Mars escape; no other companions until Echoes are found and restored from ethereal to corporeal form. The starter-companion pick is retired.
+
 **Project:** Dark Matter: Genesis  
 **Package identity:** **V2 Colony Horizon**  
 **Player:** **Kade**  
 **Tone:** Hope / colony-builder / competent survival / earned legacy  
 **Designed hour target:** **170 hours** excluding exploration, free roam, harvesting drift, build decoration, and post-ending sandbox  
-**Canon locks:** Io 2160, Aether Credits only, starter **5000 AC**, 22 base companions + expedition trio, Kairos repair -> 6 Memory Cores -> trust, biome order **B6 -> B1 -> B2 -> B3 -> B5 -> B4 -> B7**, Echo fail permanent, base injury-not-death.
+**Canon locks:** Io 2160, Aether Credits only, **0 AC** start, Kade lands with **2 companions** (Mars survivors), 22 base companions + expedition trio, Kairos repair -> 6 Memory Cores -> trust, biome order **B6 -> B1 -> B2 -> B3 -> B5 -> B4 -> B7**, Echo fail permanent, base injury-not-death.
 
 ---
 
@@ -80,7 +82,7 @@ V2 uses them as ecology vocabulary and encounter composition references.
 
 | System | Status | V2 Content Hook |
 |---|---|---|
-| Aether Credits (AC) | [SHIPPED] | Starter **5000 AC**; all quest, puzzle, vendor, upgrade, and faction rewards use AC only. |
+| Aether Credits (AC) | [SHIPPED] | Start at **0 AC**; all quest, puzzle, vendor, upgrade, and faction rewards use AC only. |
 | Building Control Panel shell | [SHIPPED] | Every major colony structure has an in-world E terminal with Overview, Companions, Production, Craft, Changes tabs. |
 | BCP Craft / Changes tabs | [PARTIAL] | V2 quests teach production queues, module changes, and repair schedules through BCP tasks. |
 | EchoGenerator / chronicle | [SHIPPED] | Echo names, core memories, trust dialogue, and permanent fail stakes. |
@@ -149,7 +151,7 @@ Mainline beats advance through **progress triggers**, not quest givers. Triggers
 
 | Beat | Act | Trigger | Biome | Content | AC | Weapon / Kit | Core / Resonance | Trust Dialogue |
 |---|---|---|---|---|---:|---|---|---|
-| ML-01 First Horizon | I | Player reaches B6 landing ridge and activates first BCP Overview. | B6 | Establish hab shell, starter 5000 AC noted, assign first base worker. | 200 | Field Mk I kit | None | "One panel lit. That is how a horizon starts." |
+| ML-01 First Horizon | I | Player reaches B6 landing ridge and activates first BCP Overview. | B6 | Establish hab shell, 0 AC start noted, assign first base worker. | 200 | Field Mk I kit | None | "One panel lit. That is how a horizon starts." |
 | ML-02 Shelter Law | I | Command Center storm shelter comes online. | B6 -> B1 | Storm shelter tutorial, base injury-not-death rule, B1 access. | 250 | Shelter Flare | None | "People bend in storms. Buildings must bend first." |
 | ML-03 Coupler Repair | I | Habitat Power Coupler installed through BCP Changes. | B6 | Repair object 1; Horizon Barrier pattern introduced. | 300 | Rivet Gun | Kairos stirs | "Do not build on their graves." |
 | ML-04 Gyro Recovery | I | Storm Shelter Gyro recovered during B1 weather window. | B1 | Repair object 2; Sulfur Hound pressure around shelter. | 350 | Horizon Shield | Kairos hostile night | "You came back before the peak. That matters." |

@@ -3,8 +3,9 @@
   Project: Dark Matter: Genesis
   Document generated from codebase and scene assets (Assets/_Project/)
   Note: Prefer GAME_DESIGN_DOCUMENT_5.0.txt Appendix B for current locks.
-  Economy lock: Aether Credits (AC) only. Player starts with 0 AC and no
-  inventory. Platforms: PC and Mac first; Xbox and PlayStation later.
+  Economy lock: Aether Credits (AC) only. Player starts with 0 AC, level 1 and
+  no inventory (code start values are testing values). Kade lands with 2
+  companions (the Mars survivors). Platforms: PC and Mac first; Xbox and PlayStation later.
   Status refresh: Sep 30, 2026 — facts marked [Sep 30] were re-checked against
   the working project; see section 24 for Shipped / In progress / Planned.
   Unmarked details may still lag the code (TBD).
@@ -144,7 +145,8 @@ FOUR VITAL STATS (SurvivalStats.cs)
   - Stamina (sprint resource; regenerates when not sprinting)
   - Oxygen (displayed as MM:SS; 40 min full, drains to empty in 10 min real time)
     [Sep 30] Design lock: oxygen is needed in most areas; in some areas the
-    player's Rebreather mask comes off automatically (not found in code yet)
+    player's Rebreather mask comes off automatically (not in code yet; planned
+    as script + VFX/audio only, no model work yet)
 
 MECHANICS
   - Energy and oxygen drain passively over time
@@ -470,8 +472,11 @@ QUEST HUD
 Aether Credits (AC) is the only in-game currency (GDD 5.0 lock).
 [Sep 30] Aether Credits (AC) only. Player starts with 0 AC and no inventory.
 Optional in-app purchases later would be AC only.
-Code note: StarterPioneerCatalog.StarterAcGrant is still 200 and the starter
-pick screen shows an old starter-credit label — code follow-up TBD.
+Shipping start: 0 AC, level 1, no inventory. Testing values in code; to be
+reset before release: StarterPioneerCatalog.StarterAcGrant = 200,
+PlayerProgressionManager.NewGameStartLevel = 5, and SimpleGameManager
+starting items. The old starter-pick screen and its credit label are a
+retired leftover.
 Legacy save JSON currency fields migrate into AC on load only.
 
 DISPLAY
@@ -550,7 +555,7 @@ HUD ELEMENTS
 DIALOGS (fullscreen shells — Milestone B)
   - QuestGiverDialogUI.cs  — companion quest board / conversation (fullscreen over dim overlay)
   - EnemyLootDialogUI.cs   — Corpse loot menu (fullscreen over dim overlay)
-  - StarterPioneerSelectUI — New-game starter companion recruit (required screen; header close hidden)
+  - StarterPioneerSelectUI — retired leftover (old new-game starter-companion pick). Design: Kade lands with 2 companions (the Mars survivors); no pick screen
 
 INVENTORY UX
   - Drag/drop (UIDragHandler.cs)
@@ -905,10 +910,14 @@ PLANNED
     file DMG_Combat_Plan_v2.md is kept outside this repo for now (location
     TBD); see GDD 5.0 B6 and the wiki page "Combat-Plan"
   - Communications runtime, world seed, Io biome world, underground map
-  - Rebreather mask auto-off in some areas; Xbox and PlayStation versions
+  - Rebreather mask auto-off in some areas (script + VFX/audio, no model
+    work yet); Xbox and PlayStation versions
+
+TESTING VALUES IN CODE (to be reset before release)
+  - New game: 200 AC, level 5, starting items (shipping: 0 AC, level 1, no
+    inventory)
 
 TBD
-  - Starter AC in code (200) vs the 0 AC / no inventory lock
   - Sections 7, 11, 13, 19 (placed objects) not fully re-verified
 
 ================================================================================

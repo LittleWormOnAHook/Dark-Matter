@@ -2,7 +2,7 @@
 
 **Status:** Design draft — August 2026  
 **Authority:** Extends `Quests_And_Story_Plan.md` + GDD 5.0 Appendix A6/A7; B6 Basalt Highlands hub.  
-**Player:** **Kade** (fixed name) + free starter companion (0 AC).  
+**Player:** **Kade** (fixed name) + 2 starting companions (the Mars survivors); 0 AC, level 1, no inventory.  
 **Scope:** **Main quest line only** — target **2–5 hours**. Side quests, open exploration, and pet hunts are **out of band** (optional after prologue).
 
 ### Locked for this plan
@@ -57,7 +57,7 @@ Soft fail: if a player is under Level 5 at P5, quest holds on a **training loop*
 ### P0 — Charter (menu / pre-world)
 
 1. New Game → **Kade Background** (+ optional Hard Mode −20% Kade damage).  
-2. Free **starter Skilled Companion** pick (synergy preview if class matches).  
+2. Kade's **2 starting companions** (the Mars survivors) are introduced; no pick (synergy preview if class matches).  
 3. Colony Ops brief (radio): *“Charter drop to Basalt Highlands. Establish camp. Report.”*  
 4. Cutscene / loading: **shuttle descent through Io sulfur haze** → hard landing.
 
@@ -68,7 +68,7 @@ Soft fail: if a player is under Level 5 at P5, quest holds on a **training loop*
 
 ### P1 — Landing scar (Story Scene A)
 
-**Where Kade starts:** beside the **downed charter shuttle** on a basalt shelf (**Landing Scar**), south of the future camp plateau. Starter companion stands near cargo hatch. Hotbar = background kit. **0 AC**.
+**Where Kade starts:** beside the **downed charter shuttle** on a basalt shelf (**Landing Scar**), south of the future camp plateau. Both starting companions stand near the cargo hatch. Hotbar and inventory empty. **0 AC**.
 
 **Objectives (quest `prologue_01_touchdown`):**
 
@@ -132,7 +132,7 @@ Soft fail: if a player is under Level 5 at P5, quest holds on a **training loop*
 
 1. Build / materialize **Survival Shelter** module (Lite Building).  
 2. Build **Crafting Station** (or attach Craft tab module).  
-3. Assign starter companion to **Overview → Companions** on BCP (teach assignment).  
+3. Assign a starting companion to **Overview → Companions** on BCP (teach assignment).  
 4. Craft **Reinforced Framing ×4** + **Oxygen Scrubber Parts ×1** from plateau nodes.  
 5. Optional mainline beat: survive **Mini Sulfur Gust** (60–90 s soft crisis — queues pause tutorial, retract HUD).  
 

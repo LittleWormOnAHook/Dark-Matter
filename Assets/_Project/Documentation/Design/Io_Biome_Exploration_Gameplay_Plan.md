@@ -216,7 +216,7 @@ Different gear **loadouts** — not one suit for both. Player prepares at colony
 |---------------|---------|-------------|
 | **Recuperate** | O₂ refill (limited), stamina, minor Saturation soothe | Full medical bay |
 | **Stock inventory** | Small stash / shared crate for expedition loot | Production queues |
-| **NPC scrapper** | **Far-out instances only** — buys junk, sells basics, rumor hooks | Full vendor / roster recruit |
+| **NPC scrapper** | **Far-out instances only** — buys junk, sells basics, rumor hooks | Full vendor |
 
 - Colony Command Center remains the **main** base.  
 - Instance camps are **forward operating rest stops** — especially in deep B4/B5/B7 instances.  

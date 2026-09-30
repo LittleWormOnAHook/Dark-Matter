@@ -82,7 +82,7 @@ flowchart TD
 | Do not use | Notes |
 |------------|--------|
 | Pi logo / Pi Network marks | Exists at `Assets/_Project/Art/Pi Logo.png` — **do not reference** |
-| Wallet / crypto UI | Retired from the boot surfaces entirely — `MainMenuWalletPreviewWidget` (AC / Echoes / CONNECTED) is no longer built by `MainMenuController` |
+| Legacy balance preview UI | Retired from the boot surfaces entirely — `MainMenuWalletPreviewWidget` (AC / Echoes / CONNECTED) is no longer built by `MainMenuController` |
 | Invector branding | No Invector names, logos, or copy |
 | “Pioneer Survivor” / legacy product names | Superseded identity |
 | Legacy cyan accent `#63C6FF` | Do not reintroduce |
@@ -172,7 +172,7 @@ Use `DarkMatterGenesisUiPalette` / `ShiftUiTheme` — not hardcoded one-offs:
 | File | Action |
 |------|--------|
 | `Assets/_Project/Scripts/UI/LoadingOverlayController.cs` | **Done** — overlay, UI stack, 6s progress window, Z-spin logo, ambience, fade, readiness gate, expedition pass |
-| `Assets/_Project/Scripts/UI/MainMenuController.cs` | **Done** — boot gate, wallet chrome removed, `LoadIntoExpedition()` replaces the popup step |
+| `Assets/_Project/Scripts/UI/MainMenuController.cs` | **Done** — boot gate, legacy preview chrome removed, `LoadIntoExpedition()` replaces the popup step |
 | `Assets/_Project/Scripts/Audio/GameAudioManager.cs` + `GameAudioProfile` | **Done** — loading ambience with fade, unaffected by `timeScale` 0 |
 | `ProjectSettings/EditorBuildSettings.asset` | **Done** — `Assets/Pioneer v1.5.5.unity` is the only enabled scene |
 
@@ -186,7 +186,7 @@ Reuse `MenuUiBuilder` + palette helpers where practical so the loader matches ma
 2. `AfterSceneLoad` → gameplay cameras are blacked out (`cullingMask = 0`, solid black clear); full overlay canvas at sorting order 32000: **SolidBlackVeil** → LoadingContent (SolidBackdrop → BackgroundArt → glow + spinning logo → progress).
 3. Ambience starts; bar fills over the 6s window, holding at 92% if bootstrap checkpoints (theme, audio, menu, `UIManager`) are unmet.
 4. Branded content fades to the black veil (not to the world) → handoff `MainCanvasFlow.Refresh()` under opaque black → cameras restored → **fade in from black** → overlay destroyed.
-5. **New Expedition** → `EnsureOpaqueCover()` before menu chrome hides → starter pick if needed → phase `StartPopup`, expedition loader for 6s.
+5. **New Expedition** → `EnsureOpaqueCover()` before menu chrome hides → starter pick if needed (retired leftover: the old starter-companion pick; the design has Kade land with 2 companions) → phase `StartPopup`, expedition loader for 6s.
 6. Same black-veil handoff → `GameStartPopup.OnStartGameClicked()` starts gameplay under black → fade in from black.
 
 ---
@@ -195,7 +195,7 @@ Reuse `MenuUiBuilder` + palette helpers where practical so the loader matches ma
 
 - Addressables / multi-scene streaming world loads  
 - Replacing Features bootstrap with true async asset loads  
-- Pi / wallet / Invector / legacy branding on the loader  
+- Pi / Invector / legacy branding on the loader  
 - Tips / lore rotator copy on the loading surface  
 
 ---
@@ -206,7 +206,7 @@ Reuse `MenuUiBuilder` + palette helpers where practical so the loader matches ma
 - [ ] Handoff fades **in from black** after destination is ready (menu or gameplay) — never fades branded overlay straight onto the world camera  
 
 - [ ] Background: Dark Navy + `news-1.jpg` at default ~50% alpha; inspector clamps 0.30–0.75  
-- [ ] Branding: Dark Matter: Genesis / Loading Genesis only — no Pi, wallet, Invector, Pioneer Survivor, cyan accent  
+- [ ] Branding: Dark Matter: Genesis / Loading Genesis only — no Pi, Invector, Pioneer Survivor, cyan accent  
 - [ ] Transparent gold DMI mark slow Z-spins with no box or halo edge around it  
 - [ ] Bar fills across the full 6s window on both passes; no snap from 0% to 100%  
 - [ ] No start-screen popup: New Expedition → loader → gameplay  
