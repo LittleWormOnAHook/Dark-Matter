@@ -21,7 +21,8 @@ namespace Project.EditorTools.GenesisStudio
         LandingCombined = 12,
         ControlsInputEditor = 13,
         PickupItemsCombined = 14,
-        BuildingLibrary = 15
+        BuildingLibrary = 15,
+        EnvironmentStrata = 16
     }
 
     public readonly struct DMStudioSubtab
@@ -293,10 +294,24 @@ new DMStudioSubtab(
                             playModeSave: true)
                     }),
                 new DMStudioCategory(
+                    "environment",
+                    "Environment",
+                    "▲",
+                    "Procedural environment authoring: strata, rocks and cliffs.",
+                    FromHex("#FF8A2A"),
+                    new[]
+                    {
+                        new DMStudioSubtab(
+                            "strata",
+                            "Strata",
+                            "Rocks and Cliffs: drop base prefabs, pick profile / style, preview at 512, save prefabs and library items (Genesis PCG Rock Creation).",
+                            DMStudioPanelMode.EnvironmentStrata)
+                    }),
+                new DMStudioCategory(
                     "combat",
                     "Combat",
                     "✦",
-                    "Ammo FX profiles and surface hit catalog.",
+                    "Ammo FX profiles, surface hit catalog, and surface damage (rock carving).",
                     FromHex("#8F1E5E"),
                     new[]
                     {
@@ -314,7 +329,20 @@ new DMStudioSubtab(
                             "Hit Catalog",
                             "Surface tag → hit mark mapping for ranged combat.",
                             DMStudioPanelMode.SingletonAsset,
-                            "Assets/_Project/Data/Items/Ammo/DMAmmoFxCatalog.asset")
+                            "Assets/_Project/Data/Items/Ammo/DMAmmoFxCatalog.asset"),
+                        new DMStudioSubtab(
+                            "surface-damage",
+                            "Surface Damage",
+                            "Rock carving from ammo hits: global switch, cut-face / rim look, debris, limits. Per-ammo carve lives on each Ammo FX profile.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Carve/DMCarveSettings.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "carve-tool",
+                            "Carve Tool",
+                            "Edit Mode brush: click = one cut, hold + drag = continuous. Fracture / Erosion / Blast presets.",
+                            DMStudioPanelMode.ExternalTool,
+                            externalMenuPath: Project.EditorTools.SurfaceCarve.DMCarveToolWindow.MenuPath)
                     }),
                 new DMStudioCategory(
                     "companions",

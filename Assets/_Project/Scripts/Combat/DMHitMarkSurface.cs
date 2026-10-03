@@ -1,4 +1,5 @@
 using System;
+using Project.SurfaceCarve;
 using UnityEngine;
 
 namespace Project.Combat
@@ -20,6 +21,9 @@ namespace Project.Combat
 
         [Tooltip("Sparks / burst for this ammo on this tag.")]
         public GameObject[] hitEffects;
+
+        [Tooltip("Surface damage (carve) for this ammo on this tag. Inherit = the ammo's own setting.")]
+        public DMSurfaceDamageOverride surfaceDamage = new DMSurfaceDamageOverride();
 
         public GameObject PickDecal()
         {

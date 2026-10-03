@@ -203,7 +203,8 @@ namespace Project.EditorTools.GenesisStudio
             "defaultHitEffects",
             "surfaces",
             "fallBackToCatalog",
-            "catalog"
+            "catalog",
+            "surfaceDamage"
         };
 
         private static readonly string[] DashFields =

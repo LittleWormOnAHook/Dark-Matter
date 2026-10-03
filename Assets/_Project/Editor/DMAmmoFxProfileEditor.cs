@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Project.EditorTools
 {
     [CustomEditor(typeof(DMAmmoFxProfile))]
-    public sealed class DMAmmoFxProfileEditor : Editor
+    public sealed class DMAmmoFxProfileEditor : Project.EditorTools.Theme.GenesisImguiEditor
     {
         public override void OnInspectorGUI()
         {
@@ -59,6 +59,9 @@ namespace Project.EditorTools
             float height = EditorGUIUtility.singleLineHeight * 3f + EditorGUIUtility.standardVerticalSpacing * 3f;
             height += EditorGUI.GetPropertyHeight(property.FindPropertyRelative("decals"), true);
             height += EditorGUI.GetPropertyHeight(property.FindPropertyRelative("hitEffects"), true);
+            SerializedProperty surfaceDamage = property.FindPropertyRelative("surfaceDamage");
+            if (surfaceDamage != null)
+                height += EditorGUIUtility.standardVerticalSpacing + EditorGUI.GetPropertyHeight(surfaceDamage, true);
             return height;
         }
 
@@ -93,6 +96,14 @@ namespace Project.EditorTools
             SerializedProperty hitEffects = property.FindPropertyRelative("hitEffects");
             float effectHeight = EditorGUI.GetPropertyHeight(hitEffects, true);
             EditorGUI.PropertyField(new Rect(position.x, y, position.width, effectHeight), hitEffects, true);
+            y += effectHeight + EditorGUIUtility.standardVerticalSpacing;
+
+            SerializedProperty surfaceDamage = property.FindPropertyRelative("surfaceDamage");
+            if (surfaceDamage != null)
+            {
+                float damageHeight = EditorGUI.GetPropertyHeight(surfaceDamage, true);
+                EditorGUI.PropertyField(new Rect(position.x, y, position.width, damageHeight), surfaceDamage, new GUIContent("Surface Damage"), true);
+            }
 
             EditorGUI.indentLevel--;
             EditorGUI.EndProperty();

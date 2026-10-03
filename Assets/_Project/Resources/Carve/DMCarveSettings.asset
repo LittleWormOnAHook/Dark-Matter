@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c396da38cfd401baa7eef35393e6a16, type: 3}
+  m_Name: DMCarveSettings
+  m_EditorClassIdentifier: 
+  enableAmmoCarving: 1
+  ammoRadiusScale: 0.171
+  autoCarvableTags:
+  - Rock
+  - Climable
+  - Concrete
+  - Wood
+  - Metal
+  - Glass
+  - Dirt
+  - Default
+  - Untagged
+  autoCarvableNameContains:
+  - rock
+  - boulder
+  - cliff
+  - stone
+  - outcrop
+  maxTrianglesPerObject: 300000
+  ammoDeformsMeshes: 0
+  debrisWithoutDeform: 1
+  cutterSubdivisions: 3
+  smallCutterSubdivisions: 2
+  smallCutterRadius: 0.5
+  surfaceSplitEdge: 0.3
+  fractureTint: {r: 0.2679245, g: 0.2679245, b: 0.2679245, a: 1}
+  rimTint: {r: 1, g: 0.3623143, b: 0, a: 1}
+  rimWidth: 0.14
+  rimJitter: 0.65
+  cutUvTileMeters: 1.5
+  materialOverrides:
+  - source: {fileID: 2100000, guid: e3680359ab8c8ae4b8fc942f3a4e651f, type: 2}
+    fracture: {fileID: 2100000, guid: 33fb25abf15a1974a949afebc01739b5, type: 2}
+    rim: {fileID: 2100000, guid: cd8002f70c22e4840bffd510c84d3c10, type: 2}
+  spawnDebris: 1
+  debrisLifetime: 6
+  debrisImpulse: 2.5
+  maxLiveDebris: 40
+  debrisSizeScale: 3
+  dragStampSpacing: 0.35
+  runtimeColliderRefresh: 0.12
+  keepDedicatedColliderInPlay: 1

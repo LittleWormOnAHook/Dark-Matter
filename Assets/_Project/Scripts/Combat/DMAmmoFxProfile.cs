@@ -1,4 +1,5 @@
 using Project.Data;
+using Project.SurfaceCarve;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -28,6 +29,10 @@ namespace Project.Combat
         [Tooltip("If this ammo has no row/default, use the shared catalog.")]
         public bool fallBackToCatalog = true;
         public DMAmmoFxCatalog catalog;
+
+        [Header("Surface Damage (carve)")]
+        [Tooltip("How this ammo carves rocks / carvable surfaces. Auto = built-in preset for the ammo type. Per-tag rows above can override it.")]
+        public DMAmmoSurfaceDamage surfaceDamage = new DMAmmoSurfaceDamage();
 
         private void OnEnable()
         {
@@ -75,6 +80,34 @@ namespace Project.Combat
             }
 
             return false;
+        }
+
+        /// <summary>Carve settings for a hit on this tag. Tag row override wins, else this ammo's surface damage.</summary>
+        public bool TryResolveSurfaceDamage(string tag, out DMSurfaceDamageSettings settings)
+        {
+            settings = null;
+            if (surfaces != null)
+            {
+                for (int i = 0; i < surfaces.Length; i++)
+                {
+                    DMHitMarkSurface row = surfaces[i];
+                    if (row == null || row.surfaceDamage == null || !string.Equals(row.tag, tag, System.StringComparison.Ordinal))
+                        continue;
+                    if (row.surfaceDamage.mode == DMSurfaceDamageRowMode.Off)
+                        return false;
+                    if (row.surfaceDamage.mode == DMSurfaceDamageRowMode.Custom && row.surfaceDamage.custom != null)
+                    {
+                        settings = row.surfaceDamage.custom;
+                        return true;
+                    }
+
+                    break;
+                }
+            }
+
+            if (surfaceDamage == null)
+                surfaceDamage = new DMAmmoSurfaceDamage();
+            return surfaceDamage.TryResolve(ammoType, itemName, out settings);
         }
 
         public void CopyFrom(DMAmmoFxProfile source)
