@@ -70,3 +70,30 @@ Assets/LocalAgent_*.txt.meta
 
 # Local splat backups (moved out of Assets so Unity does not import them)
 /_TerrainSplatBackups/
+
+# Asset Store packs - local install only (listed in Vendor_Install_Manifest.md, Oct 3 2026)
+/Assets/Rock and Boulders3/
+/Assets/Rock and Boulders3.meta
+/Assets/_DLNK/
+/Assets/_DLNK.meta
+/Assets/Sci-Fi Collection/
+/Assets/Sci-Fi Collection.meta
+/Assets/Desert Rock Formations/
+/Assets/Desert Rock Formations.meta
+/Assets/UMS_LODs/
+/Assets/UMS_LODs.meta
+
+# Genesis PCG Rock Creation: regenerable texture arrays / atlases (rebuilt by a rock bake; files exceed 100 MB)
+/Assets/Genesis PCG Rock Creation/Generated/TextureArrays/
+/Assets/Genesis PCG Rock Creation/Generated/TextureArrays.meta
+/Assets/Genesis PCG Rock Creation/Generated/Atlases/
+/Assets/Genesis PCG Rock Creation/Generated/Atlases.meta
+# Genesis PCG Rock Creation: test bakes
+/Assets/Genesis PCG Rock Creation/Generated/Baked/__ProcPlacerTest/
+/Assets/Genesis PCG Rock Creation/Generated/Baked/__ProcPlacerTest.meta
+/Assets/Genesis PCG Rock Creation/Generated/Test/
+/Assets/Genesis PCG Rock Creation/Generated/Test.meta
+
+# Agent backups and IDE state
+/_agent_backups/
+/.vs/
