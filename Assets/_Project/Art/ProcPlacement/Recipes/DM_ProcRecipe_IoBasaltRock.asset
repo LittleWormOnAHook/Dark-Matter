@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6253de33f375b24eac168f4471deb03, type: 3}
+  m_Name: DM_ProcRecipe_IoBasaltRock
+  m_EditorClassIdentifier: Assembly-CSharp::Project.World.ProcPlacement.DmProcRecipe
+  generator: 0
+  material: {fileID: 2100000, guid: 956d482d376cad24399dcd1df49dee30, type: 2}
+  addMeshCollider: 1
+  sizeMin: {x: 1.6, y: 3.17, z: 1.6}
+  sizeMax: {x: 3.6, y: 3.17, z: 3.2}
+  uniformScaleBias: 0.742
+  tiltJitter: 22.3
+  subdivisions: 4
+  noiseFrequency: 1
+  noiseAmplitude: 0.484
+  octaves: 3
+  lacunarity: 2.37
+  gain: 0.5
+  ridgeAmplitude: 0.121
+  bottomFlatten: 0.223
+  strataSteps: 6
+  strataStrength: 0.22
+  uvScale: 0.5
