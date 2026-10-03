@@ -29,6 +29,7 @@ namespace Project.EditorTools
 
         private void OnGUI()
         {
+            using var genesisTheme = Project.EditorTools.Theme.GenesisImgui.Window(this);
             tab = (Tab)GUILayout.Toolbar((int)tab, new[] { "Electrical line", "Object placer", "Scatter" });
 
             EditorGUILayout.Space(6f);

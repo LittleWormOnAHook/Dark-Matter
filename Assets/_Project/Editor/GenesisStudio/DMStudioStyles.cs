@@ -1,4 +1,6 @@
 #if UNITY_EDITOR
+using System.Collections.Generic;
+using Project.EditorTools.Theme;
 using Project.UI;
 using UnityEditor;
 using UnityEngine;
@@ -6,7 +8,9 @@ using UnityEngine;
 namespace Project.EditorTools.GenesisStudio
 {
     /// <summary>
-    /// Shift-theme editor chrome for Genesis Studio (Dark Matter palette).
+    /// Editor chrome for Genesis Studio and the other Genesis tool windows.
+    /// When the Genesis Theme is on (Tools > Dark Matter Genesis > Theme) it uses the "Frontier" palette and
+    /// Chakra Petch headers; when it is off it falls back to the original Dark Matter palette.
     /// </summary>
     public static class DMStudioStyles
     {
@@ -35,47 +39,102 @@ namespace Project.EditorTools.GenesisStudio
         private static Texture2D listBtnTex;
         private static Texture2D listBtnSelectedTex;
         private static Texture2D accentLineTex;
+        private static bool? builtThemed;
+        private static readonly Dictionary<Color, Texture2D> themedSolids = new Dictionary<Color, Texture2D>();
 
-        public static GUIStyle HeaderPanel => headerPanel ??= CreatePanel(ref headerTex, DarkMatterGenesisUiPalette.DarkNavy, 10, 12);
-        public static GUIStyle SidebarPanel => sidebarPanel ??= CreatePanel(ref sidebarTex, DarkMatterGenesisUiPalette.CharcoalGray, 8, 8);
-        public static GUIStyle ContentPanel => contentPanel ??= CreatePanel(ref contentTex, DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.97f), 10, 10);
-        public static GUIStyle FooterPanel => footerPanel ??= CreatePanel(ref footerTex, DarkMatterGenesisUiPalette.CharcoalGray, 6, 6);
+        /// <summary>True when the Genesis "Frontier" theme is active.</summary>
+        public static bool Themed => GenesisTheme.Enabled;
 
-        public static GUIStyle HeroTitle => heroTitle ??= new GUIStyle(EditorStyles.boldLabel)
+        public static GUIStyle HeaderPanel { get { Sync(); return headerPanel ??= Themed ? ThemedPanel(GenesisTheme.Bg2, 10, 10) : CreatePanel(ref headerTex, DarkMatterGenesisUiPalette.DarkNavy, 10, 12); } }
+        public static GUIStyle SidebarPanel { get { Sync(); return sidebarPanel ??= Themed ? ThemedPanel(GenesisTheme.Bg1, 8, 8) : CreatePanel(ref sidebarTex, DarkMatterGenesisUiPalette.CharcoalGray, 8, 8); } }
+        public static GUIStyle ContentPanel { get { Sync(); return contentPanel ??= Themed ? ThemedPanel(GenesisTheme.Bg2, 10, 10) : CreatePanel(ref contentTex, DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.97f), 10, 10); } }
+        public static GUIStyle FooterPanel { get { Sync(); return footerPanel ??= Themed ? ThemedPanel(GenesisTheme.Bg1, 6, 6) : CreatePanel(ref footerTex, DarkMatterGenesisUiPalette.CharcoalGray, 6, 6); } }
+
+        public static GUIStyle HeroTitle
         {
-            fontSize = 15,
-            normal = { textColor = DarkMatterGenesisUiPalette.WarmOffWhite },
-            margin = new RectOffset(0, 0, 0, 2)
-        };
+            get
+            {
+                Sync();
+                if (heroTitle != null) return heroTitle;
+                heroTitle = new GUIStyle(EditorStyles.boldLabel)
+                {
+                    fontSize = Themed ? 14 : 15,
+                    normal = { textColor = Themed ? GenesisTheme.Text : DarkMatterGenesisUiPalette.WarmOffWhite },
+                    margin = new RectOffset(0, 0, 0, 2)
+                };
+                ApplyHeaderFont(heroTitle);
+                return heroTitle;
+            }
+        }
 
-        public static GUIStyle HeroSubtitle => heroSubtitle ??= new GUIStyle(EditorStyles.miniLabel)
+        public static GUIStyle HeroSubtitle
         {
-            normal = { textColor = DarkMatterGenesisUiPalette.SoftBeigeGray },
-            wordWrap = true
-        };
+            get
+            {
+                Sync();
+                return heroSubtitle ??= new GUIStyle(EditorStyles.miniLabel)
+                {
+                    normal = { textColor = Themed ? GenesisTheme.Dim : DarkMatterGenesisUiPalette.SoftBeigeGray },
+                    wordWrap = true
+                };
+            }
+        }
 
-        public static GUIStyle SectionTitle => sectionTitle ??= new GUIStyle(EditorStyles.boldLabel)
+        public static GUIStyle SectionTitle
         {
-            normal = { textColor = DarkMatterGenesisUiPalette.WarmOffWhite }
-        };
+            get
+            {
+                Sync();
+                if (sectionTitle != null) return sectionTitle;
+                sectionTitle = new GUIStyle(EditorStyles.boldLabel)
+                {
+                    normal = { textColor = Themed ? GenesisTheme.Text : DarkMatterGenesisUiPalette.WarmOffWhite }
+                };
+                if (Themed)
+                {
+                    sectionTitle.fontSize = 11;
+                    sectionTitle.fontStyle = FontStyle.Normal;
+                    sectionTitle.alignment = TextAnchor.MiddleLeft;
+                }
+                ApplyHeaderFont(sectionTitle);
+                return sectionTitle;
+            }
+        }
 
-        public static GUIStyle CategoryTabActive => categoryTabActive ??= CreateTab(ref tabActiveTex, DarkMatterGenesisUiPalette.RichFuchsia, true, 13);
-        public static GUIStyle CategoryTabInactive => categoryTabInactive ??= CreateTab(ref tabInactiveTex, DarkMatterGenesisUiPalette.SlateGray, false, 13);
-        public static GUIStyle SubTabActive => subTabActive ??= CreateTab(ref subTabActiveTex, DarkMatterGenesisUiPalette.DeepMagenta, true, 11);
-        public static GUIStyle SubTabInactive => subTabInactive ??= CreateTab(ref subTabInactiveTex, DarkMatterGenesisUiPalette.CharcoalGray, false, 11);
+        public static GUIStyle CategoryTabActive { get { Sync(); return categoryTabActive ??= Themed ? ThemedTab(true, 12) : CreateTab(ref tabActiveTex, DarkMatterGenesisUiPalette.RichFuchsia, true, 13); } }
+        public static GUIStyle CategoryTabInactive { get { Sync(); return categoryTabInactive ??= Themed ? ThemedTab(false, 12) : CreateTab(ref tabInactiveTex, DarkMatterGenesisUiPalette.SlateGray, false, 13); } }
+        public static GUIStyle SubTabActive { get { Sync(); return subTabActive ??= Themed ? ThemedTab(true, 11) : CreateTab(ref subTabActiveTex, DarkMatterGenesisUiPalette.DeepMagenta, true, 11); } }
+        public static GUIStyle SubTabInactive { get { Sync(); return subTabInactive ??= Themed ? ThemedTab(false, 11) : CreateTab(ref subTabInactiveTex, DarkMatterGenesisUiPalette.CharcoalGray, false, 11); } }
 
-        public static GUIStyle ListButton => listButton ??= CreateListButton(ref listBtnTex, false);
-        public static GUIStyle ListButtonSelected => listButtonSelected ??= CreateListButton(ref listBtnSelectedTex, true);
+        public static GUIStyle ListButton { get { Sync(); return listButton ??= Themed ? ThemedListButton(false) : CreateListButton(ref listBtnTex, false); } }
+        public static GUIStyle ListButtonSelected { get { Sync(); return listButtonSelected ??= Themed ? ThemedListButton(true) : CreateListButton(ref listBtnSelectedTex, true); } }
 
-        public static GUIStyle Badge => badge ??= new GUIStyle(EditorStyles.miniLabel)
+        public static GUIStyle Badge
         {
-            alignment = TextAnchor.MiddleCenter,
-            padding = new RectOffset(6, 6, 2, 2),
-            normal = { textColor = DarkMatterGenesisUiPalette.WarmOffWhite }
-        };
+            get
+            {
+                Sync();
+                if (badge != null) return badge;
+                badge = new GUIStyle(EditorStyles.miniLabel)
+                {
+                    alignment = TextAnchor.MiddleCenter,
+                    padding = new RectOffset(6, 6, 2, 2),
+                    normal = { textColor = Themed ? GenesisTheme.Text : DarkMatterGenesisUiPalette.WarmOffWhite }
+                };
+                if (Themed) { badge.fontSize = 9; ApplyHeaderFont(badge); }
+                return badge;
+            }
+        }
 
         public static void DrawAccentLine(Rect rect, Color color, float height = 2f)
         {
+            if (Themed)
+            {
+                if (Event.current.type == EventType.Repaint)
+                    EditorGUI.DrawRect(new Rect(rect.x, rect.yMax - height, rect.width, height), GenesisTheme.Accent);
+                return;
+            }
+
             if (accentLineTex == null)
             {
                 accentLineTex = new Texture2D(1, 1, TextureFormat.RGBA32, false)
@@ -95,8 +154,21 @@ namespace Project.EditorTools.GenesisStudio
             if (!string.IsNullOrEmpty(title))
             {
                 Rect r = GUILayoutUtility.GetRect(0f, 22f, GUILayout.ExpandWidth(true));
-                EditorGUI.LabelField(r, title, SectionTitle);
-                DrawAccentLine(r, accent ?? DarkMatterGenesisUiPalette.RichFuchsia, 1.5f);
+                if (Themed)
+                {
+                    EditorGUI.LabelField(r, title.ToUpperInvariant(), SectionTitle);
+                    if (Event.current.type == EventType.Repaint)
+                    {
+                        EditorGUI.DrawRect(new Rect(r.x, r.yMax - 1f, r.width, 1f), GenesisTheme.Line);
+                        EditorGUI.DrawRect(new Rect(r.x, r.yMax - 2f, 36f, 2f), GenesisTheme.Accent);
+                    }
+                    GUILayout.Space(4f);
+                }
+                else
+                {
+                    EditorGUI.LabelField(r, title, SectionTitle);
+                    DrawAccentLine(r, accent ?? DarkMatterGenesisUiPalette.RichFuchsia, 1.5f);
+                }
             }
 
             drawContent?.Invoke();
@@ -105,7 +177,8 @@ namespace Project.EditorTools.GenesisStudio
 
         public static bool DrawCategoryTab(string label, bool selected, Color accent, string icon = null)
         {
-            string text = string.IsNullOrEmpty(icon) ? label : icon + "  " + label;
+            string text = string.IsNullOrEmpty(icon) || Themed ? label : icon + "  " + label;
+            if (Themed) text = text.ToUpperInvariant();
             GUIStyle style = selected ? CategoryTabActive : CategoryTabInactive;
             bool next = GUILayout.Toggle(selected, text, style, GUILayout.MinHeight(30f), GUILayout.MinWidth(88f));
             if (selected)
@@ -120,7 +193,10 @@ namespace Project.EditorTools.GenesisStudio
         public static bool DrawSubTab(string label, bool selected)
         {
             GUIStyle style = selected ? SubTabActive : SubTabInactive;
-            return GUILayout.Toggle(selected, label, style, GUILayout.MinHeight(24f), GUILayout.MinWidth(64f));
+            bool next = GUILayout.Toggle(selected, Themed ? label.ToUpperInvariant() : label, style, GUILayout.MinHeight(24f), GUILayout.MinWidth(64f));
+            if (selected && Themed)
+                DrawAccentLine(GUILayoutUtility.GetLastRect(), GenesisTheme.Accent, 2f);
+            return next;
         }
 
         public static void DrawBadge(string text, Color background, float minWidth = 0f)
@@ -128,6 +204,26 @@ namespace Project.EditorTools.GenesisStudio
             Rect r = minWidth > 0f
                 ? GUILayoutUtility.GetRect(minWidth, 18f, GUILayout.Width(minWidth))
                 : GUILayoutUtility.GetRect(GUIContent.none, Badge, GUILayout.MinWidth(text.Length * 7f + 12f));
+
+            if (Themed)
+            {
+                // Outline pill: dark well, 1px edge and text in the badge colour.
+                Color c = background;
+                c.a = 1f;
+                if (Event.current.type == EventType.Repaint)
+                {
+                    EditorGUI.DrawRect(r, GenesisTheme.Bg0);
+                    EditorGUI.DrawRect(new Rect(r.x, r.y, r.width, 1f), c);
+                    EditorGUI.DrawRect(new Rect(r.x, r.yMax - 1f, r.width, 1f), c);
+                    EditorGUI.DrawRect(new Rect(r.x, r.y, 1f, r.height), c);
+                    EditorGUI.DrawRect(new Rect(r.xMax - 1f, r.y, 1f, r.height), c);
+                }
+                Color oldText = Badge.normal.textColor;
+                Badge.normal.textColor = c;
+                EditorGUI.LabelField(r, text.ToUpperInvariant(), Badge);
+                Badge.normal.textColor = oldText;
+                return;
+            }
 
             Color old = GUI.color;
             GUI.color = background;
@@ -141,7 +237,7 @@ namespace Project.EditorTools.GenesisStudio
             EditorGUILayout.BeginVertical(HeaderPanel);
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.BeginVertical();
-            EditorGUILayout.LabelField(title, HeroTitle);
+            EditorGUILayout.LabelField(Themed ? title.ToUpperInvariant() : title, HeroTitle);
             if (!string.IsNullOrEmpty(subtitle))
                 EditorGUILayout.LabelField(subtitle, HeroSubtitle);
             EditorGUILayout.EndVertical();
@@ -159,6 +255,108 @@ namespace Project.EditorTools.GenesisStudio
                 DarkMatterGenesisUiPalette.Gold, 1f);
             EditorGUILayout.EndVertical();
         }
+
+        // ---------- Theme switching ----------
+
+        private static void Sync()
+        {
+            bool themed = Themed;
+            if (builtThemed == themed)
+                return;
+
+            builtThemed = themed;
+            headerPanel = sidebarPanel = contentPanel = footerPanel = null;
+            categoryTabActive = categoryTabInactive = subTabActive = subTabInactive = null;
+            heroTitle = heroSubtitle = sectionTitle = listButton = listButtonSelected = badge = null;
+        }
+
+        private static void ApplyHeaderFont(GUIStyle style)
+        {
+            if (!Themed) return;
+            Font f = GenesisTheme.HeaderFont;
+            if (f != null) style.font = f;
+        }
+
+        private static GUIStyle ThemedPanel(Color color, int padH, int padV)
+        {
+            GUIStyle style = new GUIStyle
+            {
+                padding = new RectOffset(padH, padH, padV, padV),
+                margin = new RectOffset(4, 4, 4, 4)
+            };
+            style.normal.background = Solid(color);
+            return style;
+        }
+
+        private static GUIStyle ThemedTab(bool active, int fontSize)
+        {
+            GUIStyle style = new GUIStyle(GUI.skin.button)
+            {
+                fontSize = fontSize,
+                fontStyle = FontStyle.Normal,
+                alignment = TextAnchor.MiddleCenter,
+                padding = new RectOffset(12, 12, 4, 4),
+                margin = new RectOffset(0, 2, 0, 0),
+                border = new RectOffset(0, 0, 0, 0)
+            };
+            ApplyHeaderFont(style);
+            SetState(style.normal, Solid(active ? GenesisTheme.Bg3 : GenesisTheme.Bg2), active ? GenesisTheme.Text : GenesisTheme.Dim);
+            SetState(style.hover, Solid(GenesisTheme.Bg3), active ? GenesisTheme.Text : GenesisTheme.Accent);
+            SetState(style.active, Solid(GenesisTheme.AccentDark), Color.white);
+            CopyState(style.normal, style.onNormal);
+            CopyState(style.hover, style.onHover);
+            CopyState(style.active, style.onActive);
+            return style;
+        }
+
+        private static GUIStyle ThemedListButton(bool selected)
+        {
+            GUIStyle style = new GUIStyle(GUI.skin.button)
+            {
+                alignment = TextAnchor.MiddleLeft,
+                padding = new RectOffset(10, 6, 4, 4),
+                margin = new RectOffset(0, 0, 1, 1),
+                border = new RectOffset(0, 0, 0, 0),
+                fontSize = 11,
+                fontStyle = selected ? FontStyle.Bold : FontStyle.Normal
+            };
+            Color selectedFill = Color.Lerp(GenesisTheme.Bg2, GenesisTheme.Accent, 0.2f);
+            SetState(style.normal, Solid(selected ? selectedFill : GenesisTheme.Bg2), selected ? GenesisTheme.Text : GenesisTheme.Dim);
+            SetState(style.hover, Solid(selected ? selectedFill : GenesisTheme.Bg3), GenesisTheme.Text);
+            SetState(style.active, Solid(GenesisTheme.AccentDark), Color.white);
+            CopyState(style.normal, style.onNormal);
+            CopyState(style.hover, style.onHover);
+            CopyState(style.active, style.onActive);
+            return style;
+        }
+
+        private static void SetState(GUIStyleState state, Texture2D bg, Color text)
+        {
+            state.background = bg;
+            state.scaledBackgrounds = new Texture2D[0];
+            state.textColor = text;
+        }
+
+        private static void CopyState(GUIStyleState from, GUIStyleState to)
+        {
+            to.background = from.background;
+            to.scaledBackgrounds = new Texture2D[0];
+            to.textColor = from.textColor;
+        }
+
+        private static Texture2D Solid(Color color)
+        {
+            if (themedSolids.TryGetValue(color, out Texture2D tex) && tex != null)
+                return tex;
+
+            tex = new Texture2D(1, 1, TextureFormat.RGBA32, false) { hideFlags = HideFlags.HideAndDontSave };
+            tex.SetPixel(0, 0, color);
+            tex.Apply();
+            themedSolids[color] = tex;
+            return tex;
+        }
+
+        // ---------- Original Dark Matter palette (theme off) ----------
 
         private static GUIStyle CreatePanel(ref Texture2D tex, Color color, int padH, int padV)
         {

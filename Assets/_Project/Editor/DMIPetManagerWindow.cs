@@ -81,6 +81,7 @@ namespace Project.EditorTools
 
         private void OnGUI()
         {
+            using var genesisTheme = Project.EditorTools.Theme.GenesisImgui.Window(this);
             scroll = EditorGUILayout.BeginScrollView(scroll);
 
             EditorGUILayout.LabelField("Pet Manager", EditorStyles.boldLabel);

@@ -20,6 +20,7 @@ namespace Project.EditorTools.Invector
 
         private void OnGUI()
         {
+            using var genesisTheme = Project.EditorTools.Theme.GenesisImgui.Window(this);
             scroll = EditorGUILayout.BeginScrollView(scroll);
 
             EditorGUILayout.LabelField("Invector Weapon Grip Baker", EditorStyles.boldLabel);

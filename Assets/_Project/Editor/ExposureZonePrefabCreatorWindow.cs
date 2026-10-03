@@ -22,6 +22,7 @@ namespace Project.EditorTools
 
         private void OnGUI()
         {
+            using var genesisTheme = Project.EditorTools.Theme.GenesisImgui.Window(this);
             EditorGUILayout.LabelField("Exposure Zone Prefab Creator", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
                 "Creates an ExposureZoneProfile asset and a trigger volume prefab with optional pulse timing, " +

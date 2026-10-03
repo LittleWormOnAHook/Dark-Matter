@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Project.EditorTools
 {
     [CustomEditor(typeof(DMSplineScatterPlacer))]
-    public class DMSplineScatterPlacerEditor : Editor
+    public class DMSplineScatterPlacerEditor : Project.EditorTools.Theme.GenesisImguiEditor
     {
         public override void OnInspectorGUI()
         {

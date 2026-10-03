@@ -177,6 +177,7 @@ namespace Project.EditorTools.UiLayout
 
         private void OnGUI()
         {
+            using var genesisTheme = Project.EditorTools.Theme.GenesisImgui.Window(this);
             DrawStudioHeader();
             UiLayoutEditorStyles.DrawSection("Canvas & Actions", UiLayoutEditorStyles.ToolbarPanel, DrawCanvasBar);
             DrawPreviewToolbar();

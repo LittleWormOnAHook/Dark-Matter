@@ -335,6 +335,7 @@ namespace Project.EditorTools
 
         private void OnGUI()
         {
+            using var genesisTheme = Project.EditorTools.Theme.GenesisImgui.Window(this);
             EditorGUILayout.LabelField("Quest Creator", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
                 "Author quests with objectives (collect, craft, talk, location, custom activity) and rewards (AC, items). " +

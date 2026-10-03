@@ -17,7 +17,7 @@ namespace Project.EditorTools
     }
 
     [CustomEditor(typeof(DMHotCrossIconRegistry))]
-    public class DMHotCrossIconRegistryEditor : Editor
+    public class DMHotCrossIconRegistryEditor : Project.EditorTools.Theme.GenesisImguiEditor
     {
         public override void OnInspectorGUI()
         {

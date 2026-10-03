@@ -1,0 +1,241 @@
+/* Genesis Theme - control restyles. Scoped to .genesis-root so Unity's own windows are untouched. */
+
+/* ---------- Typography ---------- */
+.genesis-root Label { color: var(--g-text); }
+.genesis-root .unity-base-field__label { color: var(--g-dim); min-width: 120px; }
+.genesis-root .unity-base-field:focus > .unity-base-field__label { color: var(--g-accent); }
+.genesis-root .g-h {
+    -unity-font-definition: url("../Fonts/ChakraPetch-SemiBold.ttf");
+    -unity-font-style: normal;
+    letter-spacing: 1.6px;
+    color: var(--g-text);
+}
+.genesis-root .g-dim { color: var(--g-dim); }
+
+/* ---------- Layout helpers ---------- */
+.genesis-root .g-row { flex-direction: row; align-items: center; margin: 3px 0; }
+.genesis-root .g-grow { flex-grow: 1; }
+.genesis-root .g-gap { width: 8px; }
+
+/* ---------- Header bar / footer ---------- */
+.genesis-root .g-header {
+    flex-direction: row; align-items: center; height: 36px; padding: 0 12px;
+    background-color: var(--g-bg2); border-bottom-width: 1px; border-bottom-color: var(--g-line);
+}
+.genesis-root .g-header__logo {
+    width: 12px; height: 12px; margin-right: 10px; rotate: 45deg;
+    border-width: 2px; border-color: var(--g-accent);
+}
+.genesis-root .g-header__title { font-size: 13px; }
+.genesis-root .g-header__sub { margin-left: auto; color: var(--g-dim); font-size: 10px; letter-spacing: 1px; }
+.genesis-root .g-footer {
+    flex-direction: row; align-items: center; height: 24px; padding: 0 12px;
+    background-color: var(--g-bg1); border-top-width: 1px; border-top-color: var(--g-line);
+}
+.genesis-root .g-footer Label { color: var(--g-dim); font-size: 10px; margin-right: 16px; }
+.genesis-root .g-dot { width: 7px; height: 7px; border-radius: 4px; background-color: var(--g-ok); margin-right: 6px; }
+
+/* ---------- Side nav ---------- */
+.genesis-root .g-nav { width: 180px; padding: 10px 6px; background-color: var(--g-bg1); border-right-width: 1px; border-right-color: var(--g-line); }
+.genesis-root .g-nav__item {
+    flex-direction: row; align-items: center; padding: 6px 10px; margin-bottom: 2px; color: var(--g-dim);
+    border-left-width: 2px; border-left-color: rgba(0,0,0,0);
+    transition-property: background-color, color; transition-duration: 0.12s;
+}
+.genesis-root .g-nav__item:hover { background-color: var(--g-bg2); color: var(--g-text); }
+.genesis-root .g-nav__item--on { background-color: var(--g-bg3); color: var(--g-text); border-left-color: var(--g-accent); }
+.genesis-root .g-nav__pip { width: 6px; height: 6px; rotate: 45deg; margin-right: 8px; background-color: var(--g-line); }
+.genesis-root .g-nav__item--on .g-nav__pip { background-color: var(--g-accent); }
+
+/* ---------- Chamfer panel (drawn by GChamferPanel; these feed its painter) ---------- */
+.genesis-root .g-chamfer {
+    --g-fill: var(--g-bg2);
+    --g-stroke: var(--g-line);
+    --g-strip: var(--g-accent);
+    --g-cut: 8;
+    background-color: rgba(0,0,0,0);
+    padding: 12px 14px; margin: 6px;
+}
+.genesis-root .g-panel__title { font-size: 11px; margin-bottom: 8px; }
+
+/* ---------- Buttons ---------- */
+.genesis-root Button, .genesis-root .unity-button {
+    background-color: var(--g-bg3); color: var(--g-text);
+    border-width: 1px; border-color: var(--g-line); border-radius: var(--g-radius);
+    padding: 4px 14px; margin: 2px 4px 2px 0; min-height: 24px;
+    -unity-font-definition: url("../Fonts/ChakraPetch-SemiBold.ttf");
+    letter-spacing: 1.2px; font-size: 11px;
+    transition-property: background-color, border-color, color; transition-duration: 0.12s;
+}
+.genesis-root Button:hover { border-color: var(--g-accent); background-color: #332e27; }
+.genesis-root Button:active { background-color: var(--g-accent-dark); color: #fff; }
+.genesis-root Button:disabled { opacity: 0.45; }
+.genesis-root Button.g-primary { background-color: var(--g-primary); border-color: var(--g-primary); color: var(--g-primary-text); }
+.genesis-root Button.g-primary:hover { background-color: var(--g-primary-hover); border-color: var(--g-primary-hover); }
+.genesis-root Button.g-danger { background-color: rgba(0,0,0,0); border-color: var(--g-bad); color: var(--g-bad); }
+.genesis-root Button.g-danger:hover { background-color: rgba(255, 75, 58, 0.15); }
+
+/* ---------- Text / number fields ---------- */
+.genesis-root .unity-base-text-field__input,
+.genesis-root .unity-text-field__input,
+.genesis-root .unity-base-field__input.unity-base-text-field__input {
+    background-color: var(--g-bg0); color: var(--g-text);
+    border-width: 1px; border-color: var(--g-line); border-radius: var(--g-radius);
+    min-height: var(--g-field-height); padding: 0 6px;
+    transition-property: border-color; transition-duration: 0.12s;
+}
+.genesis-root .unity-base-text-field__input:hover { border-color: #5a5044; }
+.genesis-root .unity-base-text-field:focus .unity-base-text-field__input,
+.genesis-root .unity-base-text-field__input:focus { border-color: var(--g-accent); }
+
+/* ---------- Dropdowns / enum popups ---------- */
+.genesis-root .unity-base-popup-field__input,
+.genesis-root .unity-enum-field__input,
+.genesis-root .unity-popup-field__input {
+    background-color: var(--g-bg0); color: var(--g-text);
+    border-width: 1px; border-color: var(--g-line); border-radius: var(--g-radius);
+    min-height: var(--g-field-height);
+}
+.genesis-root .unity-base-popup-field__input:hover,
+.genesis-root .unity-enum-field__input:hover { border-color: var(--g-accent); }
+.genesis-root .unity-base-popup-field__arrow,
+.genesis-root .unity-enum-field__arrow { -unity-background-image-tint-color: var(--g-accent); }
+.genesis-root .unity-base-popup-field__text,
+.genesis-root .unity-enum-field__text { color: var(--g-text); }
+
+/* ---------- Toggles (tick boxes) ---------- */
+.genesis-root .unity-toggle__checkmark {
+    background-color: var(--g-bg0); border-width: 1px; border-color: var(--g-line); border-radius: var(--g-radius);
+    -unity-background-image-tint-color: #ffffff;
+}
+.genesis-root .unity-toggle:hover .unity-toggle__checkmark { border-color: var(--g-accent); }
+.genesis-root .unity-toggle:checked .unity-toggle__checkmark { background-color: var(--g-accent-dark); border-color: var(--g-accent); }
+
+/* ---------- Pill switch (GSwitch) ---------- */
+.genesis-root .g-switch .unity-toggle__checkmark {
+    width: 30px; height: 15px; border-radius: 8px; background-image: none;
+    background-color: var(--g-bg0); border-color: var(--g-line);
+}
+.genesis-root .g-switch__knob {
+    position: absolute; top: 2px; left: 2px; width: 9px; height: 9px; border-radius: 5px;
+    background-color: var(--g-dim);
+    transition-property: left, background-color; transition-duration: 0.12s;
+}
+.genesis-root .g-switch:checked .unity-toggle__checkmark { background-color: var(--g-accent-dark); border-color: var(--g-accent); }
+.genesis-root .g-switch:checked .g-switch__knob { left: 17px; background-color: #ffffff; }
+
+/* ---------- Standard sliders (not scrollbars) ---------- */
+.genesis-root .unity-slider .unity-base-slider__tracker,
+.genesis-root .unity-slider-int .unity-base-slider__tracker {
+    background-color: var(--g-bg0); border-width: 1px; border-color: var(--g-line); border-radius: 0; height: 6px; margin-top: -3px;
+}
+.genesis-root .unity-slider .unity-base-slider__dragger,
+.genesis-root .unity-slider-int .unity-base-slider__dragger {
+    background-color: var(--g-accent); border-width: 0; border-radius: 1px; width: 8px; height: 14px; margin-top: -7px;
+}
+.genesis-root .unity-slider .unity-base-slider__dragger-border,
+.genesis-root .unity-slider-int .unity-base-slider__dragger-border { display: none; }
+.genesis-root .unity-min-max-slider__tracker { background-color: var(--g-bg0); border-color: var(--g-line); }
+.genesis-root .unity-min-max-slider__dragger { background-color: var(--g-accent-soft); border-color: var(--g-accent); }
+
+/* ---------- Segmented slider (GSegmentSlider) ---------- */
+.genesis-root .g-seg__bar {
+    --g-seg-on: var(--g-accent);
+    --g-seg-off: var(--g-bg0);
+    --g-seg-line: var(--g-line);
+    --g-seg-count: 12;
+    flex-grow: 1; height: 10px; margin: 0 8px;
+}
+.genesis-root .g-seg__value { width: 64px; }
+
+/* ---------- Foldouts ---------- */
+.genesis-root .unity-foldout__toggle { margin-top: 4px; }
+.genesis-root .unity-foldout__text {
+    -unity-font-definition: url("../Fonts/ChakraPetch-SemiBold.ttf"); letter-spacing: 1.2px; color: var(--g-text);
+}
+.genesis-root .unity-foldout__toggle .unity-toggle__checkmark { background-color: rgba(0,0,0,0); border-width: 0; -unity-background-image-tint-color: var(--g-accent); }
+.genesis-root .unity-foldout__content { border-left-width: 1px; border-left-color: var(--g-line); padding-left: 8px; margin-left: 6px; }
+
+/* ---------- Tabs (TabView) ---------- */
+.genesis-root .unity-tab-view__header-container { background-color: var(--g-bg1); border-bottom-width: 1px; border-bottom-color: var(--g-line); padding: 6px 10px 0 10px; }
+.genesis-root .unity-tab__header {
+    background-color: var(--g-bg2); margin-right: 2px; padding: 6px 14px;
+    transition-property: background-color; transition-duration: 0.12s;
+}
+.genesis-root .unity-tab__header:hover { background-color: var(--g-bg3); }
+.genesis-root .unity-tab__header:checked { background-color: var(--g-bg3); }
+.genesis-root .unity-tab__header-label {
+    -unity-font-definition: url("../Fonts/ChakraPetch-SemiBold.ttf"); letter-spacing: 1.4px; font-size: 11px; color: var(--g-dim);
+}
+.genesis-root .unity-tab__header:checked .unity-tab__header-label { color: var(--g-text); }
+.genesis-root .unity-tab__header-underline { background-color: rgba(0,0,0,0); height: 2px; }
+.genesis-root .unity-tab__header:checked .unity-tab__header-underline { background-color: var(--g-accent); }
+.genesis-root .unity-tab-view__content-container { background-color: var(--g-bg0); }
+
+/* ---------- Lists ---------- */
+.genesis-root .unity-collection-view { background-color: var(--g-bg2); border-width: 1px; border-color: var(--g-line); }
+.genesis-root .unity-collection-view__item { color: var(--g-dim); border-bottom-width: 1px; border-bottom-color: var(--g-line); padding: 0 8px; }
+.genesis-root .unity-collection-view__item:hover { background-color: var(--g-bg3); }
+.genesis-root .unity-collection-view__item--selected,
+.genesis-root .unity-collection-view:focus .unity-collection-view__item--selected {
+    background-color: var(--g-bg3); color: var(--g-text); border-left-width: 2px; border-left-color: var(--g-accent);
+}
+
+/* ---------- Status pills ---------- */
+.genesis-root .g-pill { font-size: 9px; padding: 1px 6px; border-width: 1px; border-radius: 1px; letter-spacing: 1px; -unity-font-definition: url("../Fonts/ChakraPetch-SemiBold.ttf"); }
+.genesis-root .g-pill--ok { color: var(--g-ok); border-color: var(--g-ok); }
+.genesis-root .g-pill--warn { color: var(--g-warn); border-color: var(--g-warn); }
+.genesis-root .g-pill--bad { color: var(--g-bad); border-color: var(--g-bad); }
+
+/* ---------- Progress bar ---------- */
+.genesis-root .unity-progress-bar__background { background-color: var(--g-bg0); border-width: 1px; border-color: var(--g-line); }
+.genesis-root .unity-progress-bar__progress { background-color: var(--g-accent); }
+.genesis-root .unity-progress-bar__title { color: var(--g-text); }
+
+/* ---------- Help boxes ---------- */
+.genesis-root .unity-help-box { background-color: var(--g-bg2); border-width: 1px; border-color: var(--g-line); border-left-width: 2px; border-left-color: var(--g-accent); color: var(--g-text); }
+
+/* ---------- Scroll bars ---------- */
+.genesis-root .unity-scroller { background-color: var(--g-bg1); }
+.genesis-root .unity-scroller .unity-base-slider__tracker { background-color: var(--g-bg1); border-width: 0; }
+.genesis-root .unity-scroller .unity-base-slider__dragger { background-color: var(--g-bg3); border-width: 1px; border-color: var(--g-line); border-radius: 3px; }
+.genesis-root .unity-scroller .unity-base-slider__dragger:hover { background-color: #3a342b; border-color: var(--g-accent); }
+.genesis-root .unity-scroller .unity-repeat-button { background-color: var(--g-bg1); border-width: 0; }
+
+/* ---------- Toast ---------- */
+.genesis-root .g-toast {
+    position: absolute; right: 16px; bottom: 34px; padding: 8px 14px;
+    background-color: var(--g-bg3); border-width: 1px; border-color: var(--g-accent); color: var(--g-text);
+    opacity: 1; transition-property: opacity; transition-duration: 0.25s;
+}
+.genesis-root .g-toast--hide { opacity: 0; }
+
+/* ---------- Genesis Studio shell ---------- */
+.genesis-root .g-nav__title { color: var(--g-dim); margin: 0 0 8px 10px; }
+.genesis-root .g-studio__body { flex-direction: row; flex-grow: 1; }
+.genesis-root .g-studio__main { flex-grow: 1; flex-shrink: 1; flex-direction: column; background-color: var(--g-bg0); }
+.genesis-root .g-studio__subtitle { color: var(--g-dim); font-size: 10px; margin-left: 14px; flex-shrink: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.genesis-root .g-studio__header-right { flex-direction: row; align-items: center; margin-left: auto; flex-shrink: 0; }
+.genesis-root .g-studio__header-right .g-pill { margin-right: 6px; }
+.genesis-root .g-subtabs {
+    flex-direction: row; flex-wrap: wrap; padding: 6px 10px 0 10px;
+    background-color: var(--g-bg1); border-bottom-width: 1px; border-bottom-color: var(--g-line);
+}
+.genesis-root Button.g-subtab {
+    background-color: var(--g-bg2); color: var(--g-dim);
+    border-width: 0; border-bottom-width: 2px; border-bottom-color: rgba(0,0,0,0); border-radius: 0;
+    margin: 0 2px 0 0; padding: 6px 14px;
+}
+.genesis-root Button.g-subtab:hover { background-color: var(--g-bg3); color: var(--g-text); border-bottom-color: var(--g-line); }
+.genesis-root Button.g-subtab--on, .genesis-root Button.g-subtab--on:hover { background-color: var(--g-bg3); color: var(--g-text); border-bottom-color: var(--g-accent); }
+.genesis-root .g-studio__desc { color: var(--g-dim); font-size: 11px; padding: 6px 12px; white-space: normal; background-color: var(--g-bg1); }
+.genesis-root .g-studio__content { flex-grow: 1; background-color: var(--g-bg0); padding: 6px 8px; }
+.genesis-root .g-studio__footer { height: 32px; }
+.genesis-root .g-studio__footer .g-studio__tip { flex-grow: 1; flex-shrink: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- Inspectors ---------- */
+.genesis-root.g-inspector { background-color: var(--g-bg1); padding: 4px 4px 6px 0; border-left-width: 2px; border-left-color: var(--g-accent); }
+.genesis-root.g-inspector .unity-property-field { margin: 1px 0; }
+.genesis-root.g-inspector .unity-base-field__label { min-width: 150px; }
+.genesis-root.g-inspector .unity-foldout__content { margin-left: 4px; }
+.genesis-root .g-inspector__imgui { background-color: var(--g-bg1); }

@@ -50,6 +50,7 @@ namespace Project.EditorTools.Companions
 
         private void OnGUI()
         {
+            using var genesisTheme = Project.EditorTools.Theme.GenesisImgui.Window(this);
             DrawToolBody();
         }
 

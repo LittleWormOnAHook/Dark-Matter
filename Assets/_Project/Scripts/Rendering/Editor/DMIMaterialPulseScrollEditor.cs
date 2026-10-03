@@ -5,7 +5,7 @@ using Project.Rendering;
 namespace Project.Rendering.Editor
 {
     [CustomEditor(typeof(DMIMaterialPulseScroll))]
-    public class DMIMaterialPulseScrollEditor : UnityEditor.Editor
+    public class DMIMaterialPulseScrollEditor : Project.EditorTools.Theme.GenesisImguiEditor
     {
         public override void OnInspectorGUI()
         {

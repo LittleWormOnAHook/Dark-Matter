@@ -28,6 +28,7 @@ namespace Project.EditorTools
 
         private void OnGUI()
         {
+            using var genesisTheme = Project.EditorTools.Theme.GenesisImgui.Window(this);
             EditorGUILayout.LabelField("Grenade / Throwable Item Creator", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
                 "Creates Consumable ItemData under Data/Items/Throwables with identity fields only.\n" +

@@ -104,6 +104,7 @@ namespace Project.Features.Climb.Editor
 
         private void OnGUI()
         {
+            using var genesisTheme = Project.EditorTools.Theme.GenesisImgui.Window(this);
             _scroll = EditorGUILayout.BeginScrollView(_scroll);
             EditorGUILayout.LabelField("Climb Probe Baker", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(

@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Project.EditorTools
 {
     [CustomEditor(typeof(DMSplineCreator))]
-    public class DMSplineCreatorEditor : Editor
+    public class DMSplineCreatorEditor : Project.EditorTools.Theme.GenesisImguiEditor
     {
         private enum SceneEditMode
         {

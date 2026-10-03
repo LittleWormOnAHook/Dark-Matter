@@ -85,6 +85,7 @@ public class WeaponPrefabCreatorWindow : EditorWindow
 
     private void OnGUI()
     {
+        using var genesisTheme = Project.EditorTools.Theme.GenesisImgui.Window(this);
         EditorGUILayout.LabelField("Weapon Prefab Creator", EditorStyles.boldLabel);
         EditorGUILayout.HelpBox(
             "Build world pickup and held weapon prefabs from a mesh or model. " +

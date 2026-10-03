@@ -9,7 +9,7 @@ namespace Project.EditorTools
     /// <see cref="MineHarvestItemData"/> keeps <see cref="MineHarvestItemDataEditor"/>.
     /// </summary>
     [CustomEditor(typeof(ItemData))]
-    public class ItemDataEditor : Editor
+    public class ItemDataEditor : Project.EditorTools.Theme.GenesisImguiEditor
     {
         private SerializedProperty itemName;
         private SerializedProperty icon;

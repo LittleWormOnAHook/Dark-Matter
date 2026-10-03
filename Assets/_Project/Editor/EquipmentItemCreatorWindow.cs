@@ -89,6 +89,7 @@ public class EquipmentItemCreatorWindow : EditorWindow
 
     private void OnGUI()
     {
+        using var genesisTheme = Project.EditorTools.Theme.GenesisImgui.Window(this);
         EditorGUILayout.LabelField("Create Weapon or Tool", EditorStyles.boldLabel);
         EditorGUILayout.HelpBox(
             "Pick a mesh/model prefab, configure stats, then create an ItemData asset " +

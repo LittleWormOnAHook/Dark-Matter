@@ -197,6 +197,7 @@ namespace Project.EditorTools.Creatures
 
         private void OnGUI()
         {
+            using var genesisTheme = Project.EditorTools.Theme.GenesisImgui.Window(this);
             EditorGUILayout.LabelField("DMI Creatures Manager", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
                 "Default: any rigged model (biped / quadruped / custom) + Idle/Walk/Run/Attack/Death clips " +

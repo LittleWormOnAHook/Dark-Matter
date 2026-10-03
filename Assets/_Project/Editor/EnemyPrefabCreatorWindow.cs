@@ -67,6 +67,7 @@ namespace Project.EditorTools
 
         private void OnGUI()
         {
+            using var genesisTheme = Project.EditorTools.Theme.GenesisImgui.Window(this);
             EnsureWorkingDefinition();
 
             EditorGUILayout.LabelField("Enemy Prefab Creator", EditorStyles.boldLabel);

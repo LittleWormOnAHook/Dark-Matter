@@ -121,6 +121,7 @@ namespace Project.EditorTools
 
         private void OnGUI()
         {
+            using var genesisTheme = Project.EditorTools.Theme.GenesisImgui.Window(this);
             EnsureWorkingDefinition();
 
             EditorGUILayout.LabelField("Player Prefab Creator", EditorStyles.boldLabel);

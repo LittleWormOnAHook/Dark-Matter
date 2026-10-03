@@ -10,7 +10,7 @@ namespace Project.World.Editor
     /// Path Creator's <c>PathEditor</c> owns Scene bezier handles.
     /// </summary>
     [CustomEditor(typeof(DMIPathFollowProvider))]
-    public class DMIPathFollowProviderEditor : UnityEditor.Editor
+    public class DMIPathFollowProviderEditor : Project.EditorTools.Theme.GenesisImguiEditor
     {
         public override void OnInspectorGUI()
         {

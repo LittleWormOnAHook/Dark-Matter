@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Project.EditorTools
 {
     [CustomEditor(typeof(MapMarker))]
-    public class MapMarkerEditor : UnityEditor.Editor
+    public class MapMarkerEditor : Project.EditorTools.Theme.GenesisImguiEditor
     {
         public override void OnInspectorGUI()
         {

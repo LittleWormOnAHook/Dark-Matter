@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Project.EditorTools.Optics
 {
     [CustomEditor(typeof(OpticsCrosshairLibrary))]
-    public class OpticsCrosshairLibraryEditor : UnityEditor.Editor
+    public class OpticsCrosshairLibraryEditor : Project.EditorTools.Theme.GenesisImguiEditor
     {
         public override void OnInspectorGUI()
         {

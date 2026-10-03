@@ -105,6 +105,7 @@ public class LocalAgentWindow : EditorWindow
 
     private void OnGUI()
     {
+        using var genesisTheme = Project.EditorTools.Theme.GenesisImgui.Window(this);
         InitStyles();
 
         EditorGUILayout.LabelField("Local Agent — Unity Bridge", EditorStyles.boldLabel);

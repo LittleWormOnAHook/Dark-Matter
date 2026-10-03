@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Project.Audio.Editor
 {
     [CustomEditor(typeof(AmbientAudioZone))]
-    public class AmbientAudioZoneEditor : UnityEditor.Editor
+    public class AmbientAudioZoneEditor : Project.EditorTools.Theme.GenesisImguiEditor
     {
         public override void OnInspectorGUI()
         {

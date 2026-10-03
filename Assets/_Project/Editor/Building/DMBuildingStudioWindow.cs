@@ -34,6 +34,7 @@ namespace Project.EditorTools.Building
 
         void OnGUI()
         {
+            using var genesisTheme = Project.EditorTools.Theme.GenesisImgui.Window(this);
             if (profile == null)
                 profile = LoadOrCreate();
 

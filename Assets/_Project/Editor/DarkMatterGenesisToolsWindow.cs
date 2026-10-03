@@ -34,6 +34,7 @@ namespace Project.EditorTools
 
         private void OnGUI()
         {
+            using var genesisTheme = Project.EditorTools.Theme.GenesisImgui.Window(this);
             DrawHeader();
             DrawSearchBar();
             DrawSectionTabs();

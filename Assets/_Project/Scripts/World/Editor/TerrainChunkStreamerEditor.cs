@@ -6,7 +6,7 @@ using Project.World;
 namespace Project.World.Editor
 {
     [CustomEditor(typeof(TerrainChunkStreamer))]
-    public class TerrainChunkStreamerEditor : UnityEditor.Editor
+    public class TerrainChunkStreamerEditor : Project.EditorTools.Theme.GenesisImguiEditor
     {
         public override void OnInspectorGUI()
         {

@@ -45,6 +45,7 @@ namespace Project.EditorTools
 
         private void OnGUI()
         {
+            using var genesisTheme = Project.EditorTools.Theme.GenesisImgui.Window(this);
             EditorGUILayout.LabelField("Play Mode Saver", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
                 "Save while playing: scenes, tags, runtime UI, and changed Assets/_Project data. " +

@@ -48,6 +48,7 @@ public class CameraShakeEmitterCreatorWindow : EditorWindow
 
     private void OnGUI()
     {
+        using var genesisTheme = Project.EditorTools.Theme.GenesisImgui.Window(this);
         scroll = EditorGUILayout.BeginScrollView(scroll);
 
         GUILayout.Label("Camera Shake Emitter Prefab", EditorStyles.boldLabel);

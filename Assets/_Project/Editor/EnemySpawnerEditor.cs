@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Project.EditorTools
 {
     [CustomEditor(typeof(EnemySpawner))]
-    public class EnemySpawnerEditor : UnityEditor.Editor
+    public class EnemySpawnerEditor : Project.EditorTools.Theme.GenesisImguiEditor
     {
         public override void OnInspectorGUI()
         {

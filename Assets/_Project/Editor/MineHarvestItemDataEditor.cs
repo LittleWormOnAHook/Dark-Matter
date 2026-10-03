@@ -9,7 +9,7 @@ namespace Project.EditorTools
     /// loot-attract / harvest audio, tooltip, and optional XP.
     /// </summary>
     [CustomEditor(typeof(MineHarvestItemData))]
-    public class MineHarvestItemDataEditor : Editor
+    public class MineHarvestItemDataEditor : Project.EditorTools.Theme.GenesisImguiEditor
     {
         private SerializedProperty itemName;
         private SerializedProperty icon;

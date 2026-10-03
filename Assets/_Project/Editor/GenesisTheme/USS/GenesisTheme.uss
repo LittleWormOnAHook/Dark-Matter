@@ -1,0 +1,24 @@
+/* Genesis Theme - "Frontier" palette. Variables only: change a value here and every Genesis window/inspector follows. */
+.genesis-root {
+    --g-bg0: #0f0e0c;          /* deepest: fields, wells */
+    --g-bg1: #171512;          /* window / nav background */
+    --g-bg2: #201d19;          /* panels */
+    --g-bg3: #2a2620;          /* raised: tabs, selected rows, buttons */
+    --g-line: #3d372e;         /* 1px edges */
+    --g-text: #ece4d6;
+    --g-dim: #a09582;
+    --g-accent: #ff8a2a;       /* focus, selection, active tab */
+    --g-accent-dark: #c25d12;
+    --g-accent-soft: rgba(255, 138, 42, 0.18);
+    --g-primary: #ffc23d;      /* primary action buttons */
+    --g-primary-hover: #ffd36e;
+    --g-primary-text: #1e1402;
+    --g-ok: #8bd450;
+    --g-warn: #ffb02e;
+    --g-bad: #ff4b3a;
+    --g-radius: 2px;
+    --g-field-height: 22px;
+
+    background-color: var(--g-bg0);
+    color: var(--g-text);
+}

@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Project.EditorTools
 {
     [CustomEditor(typeof(DMWorldMapCalibrationProfile))]
-    public sealed class DMWorldMapCalibrationProfileEditor : Editor
+    public sealed class DMWorldMapCalibrationProfileEditor : Project.EditorTools.Theme.GenesisImguiEditor
     {
         public override void OnInspectorGUI()
         {

@@ -107,6 +107,7 @@ namespace Project.EditorTools
 
         private void OnGUI()
         {
+            using var genesisTheme = Project.EditorTools.Theme.GenesisImgui.Window(this);
             EditorGUILayout.LabelField("Blueprint and Crafting Manager", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
                 "Create and edit DM blueprints, link craftable equipment, build world pickup prefabs, " +

@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Project.Audio.Editor
 {
     [CustomEditor(typeof(GameAudioProfile))]
-    public class GameAudioProfileEditor : UnityEditor.Editor
+    public class GameAudioProfileEditor : Project.EditorTools.Theme.GenesisImguiEditor
     {
         public override void OnInspectorGUI()
         {

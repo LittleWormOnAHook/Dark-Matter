@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Project.EditorTools
 {
     [CustomEditor(typeof(QuestGiverNpc))]
-    public class QuestGiverNpcEditor : UnityEditor.Editor
+    public class QuestGiverNpcEditor : Project.EditorTools.Theme.GenesisImguiEditor
     {
         private SerializedProperty questOffersProperty;
 
