@@ -1,0 +1,70 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 72ec7c446f713cb49ba0363c0af7116b, type: 3}
+  m_Name: RockCombineRecipe_Formation
+  m_EditorClassIdentifier: GenesisPCG.RockCreation::GenesisPCG.RockCreation.DmRockCombineRecipe
+  kit: {fileID: 11400000, guid: e5f4953c4721aa747a00226978c90a6a, type: 2}
+  addMeshCollider: 1
+  sizeMin: {x: 1.6, y: 3.17, z: 1.6}
+  sizeMax: {x: 3.6, y: 3.17, z: 3.2}
+  uniformScaleBias: 0.476
+  tiltJitter: 18
+  maxAxisStretch: 1.35
+  bottomFlatten: 0.463
+  snap:
+    snapToSurface: 1
+    alignToNormal: 1
+    alignStrength: 0.25
+    maxAlignAngle: 8
+    surfaceLayerMask:
+      serializedVersion: 2
+      m_Bits: 4294967295
+    excludeOwnLayer: 0
+    snapOntoOtherProcRocks: 0
+    sinkDepth: 0.02
+    rayStartHeight: 50
+    conformBaseToSurface: 1
+    conformHeight: 0
+    conformHeightInMeters: 0
+    conformFalloff: 1.5
+    maxConformDistance: 1.5
+    extraSink: 0.05
+    conformLiftBuried: 0
+    conformUndersideFully: 1
+    guaranteeContact: 1
+    contactReach: 0.35
+    contactDepth: 0.04
+    bottomBlendHeight: 0.5
+  bake:
+    atlasSize: 8192
+    atlasPadding: 32
+    textureMode: 0
+    arraySliceSize: 0
+    arrayHalfResMask: 1
+    generateLods: 1
+    lodTransitions:
+    - 0.6
+    - 0.45
+    - 0.25
+    - 0.13
+    crossFade: 1
+    lod0Quality: 0.7
+    lastLodsWithoutShadows: 1
+    cullBelowGround: 1
+    groundCut: 0
+    groundCutOffset: -0.02
+    cullBelowGroundMargin: 0.1
+    cullInterior: 1
+    interiorInset: 0.02
+    bakeOnShiftDragCopyPaste: 1
+    autoRebakeOnMove: 1
+    rebakeAfterEdit: 1

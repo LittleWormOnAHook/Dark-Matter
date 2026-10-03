@@ -1,0 +1,515 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bd58c159b3c15340b85a6899883e925, type: 3}
+  m_Name: RockKit_ProcRock
+  m_EditorClassIdentifier: GenesisPCG.RockCreation::GenesisPCG.RockCreation.DmRockKit
+  scanFolder: Assets/Rock and Boulders3/Proc Rock
+  scanSubfolders: 1
+  baseNameContains: group
+  baseMinExtent: 1.9
+  tallAspect: 1.5
+  slabFlatness: 0.42
+  smallExtent: 1.45
+  baseCandidates:
+  - {fileID: 107128, guid: d680017a584d18f4492ab632015f8f53, type: 3}
+  - {fileID: 110246, guid: e434fab9aae453948b84099c16d535af, type: 3}
+  - {fileID: 147812, guid: da039b242c02204498663a46768be980, type: 3}
+  - {fileID: 160060, guid: cf55461d991205647af1fdde7c34f6aa, type: 3}
+  - {fileID: 160382, guid: 2ef11fcea39724a4c94fed0c235e194b, type: 3}
+  - {fileID: 115396, guid: 587e933e00f27ed44854e24f04d9da5c, type: 3}
+  - {fileID: 102286, guid: f88527df1e55075428931ff18a4242f3, type: 3}
+  - {fileID: 163932, guid: f89670d6d9fb7924dbde6454fb7c4353, type: 3}
+  - {fileID: 100508, guid: d2cabed54b36d3e449e7adb8febeb496, type: 3}
+  - {fileID: 102252, guid: 841d4ec560345324584a49a2e45b1960, type: 3}
+  - {fileID: 180188, guid: aa35d7da8db1b9d4dba8d9a867f6c5f4, type: 3}
+  - {fileID: 123478, guid: f99be94ed284e124e918a6bc494a3456, type: 3}
+  - {fileID: 165810, guid: 0d16732e9cd8eeb42801c9011525361b, type: 3}
+  - {fileID: 190452, guid: b83c5ba2bcf129947963861dbdb839d8, type: 3}
+  - {fileID: 121832, guid: bc504a6a4be25794d8a121e542d31221, type: 3}
+  - {fileID: 134040, guid: 70bfb9ab1763b2745b26ddb28db199cc, type: 3}
+  - {fileID: 101984, guid: e460dedb7dfdcc5458492348a26b05b0, type: 3}
+  - {fileID: 190474, guid: f355cd8928549e945b07a57759d8137b, type: 3}
+  - {fileID: 107600, guid: 8bd14eaf93b89664cb77700f4679ee1e, type: 3}
+  - {fileID: 164374, guid: f99e4fc8b811b734e8530f87c979d1a2, type: 3}
+  - {fileID: 136520, guid: 7c289cef41ae1434998f2f04df942439, type: 3}
+  - {fileID: 190462, guid: 702ffaaf7c76c2440afa961f61d28a49, type: 3}
+  - {fileID: 124306, guid: b079207489beefc4b8c1f988a5564f6c, type: 3}
+  - {fileID: 119988, guid: 9ac7d65b2a7019941ae954cd967cac80, type: 3}
+  - {fileID: 191930, guid: 1cb7a723750897f4e844ca476218e42f, type: 3}
+  - {fileID: 180344, guid: 4d25b5bb8a3b2a84cb054f3f722f1abe, type: 3}
+  - {fileID: 164998, guid: e5d8184e67019454e84b15bdba98fc43, type: 3}
+  - {fileID: 107712, guid: 74e6dd32b31913a47aedb2a12fea56dc, type: 3}
+  - {fileID: 163424, guid: 7bfe01d43c7674544a53ee54858a6300, type: 3}
+  - {fileID: 168754, guid: c0b9b1b2cbe732243a45e428dfbbd1b2, type: 3}
+  - {fileID: 167186, guid: d9426d97d45ad7041a893a4ee219ec40, type: 3}
+  addOnCandidates:
+  - {fileID: 107128, guid: d680017a584d18f4492ab632015f8f53, type: 3}
+  - {fileID: 166836, guid: ae52fd314165b6147b380655df801158, type: 3}
+  - {fileID: 105866, guid: 0997ff00e2e62fd41ae7d348f5d897ed, type: 3}
+  - {fileID: 110246, guid: e434fab9aae453948b84099c16d535af, type: 3}
+  - {fileID: 147812, guid: da039b242c02204498663a46768be980, type: 3}
+  - {fileID: 160060, guid: cf55461d991205647af1fdde7c34f6aa, type: 3}
+  - {fileID: 160382, guid: 2ef11fcea39724a4c94fed0c235e194b, type: 3}
+  - {fileID: 129778, guid: a7ee6e3d99bb7854eafe63ce3b24e69d, type: 3}
+  - {fileID: 193226, guid: b002f705e4a155d4eb5f344d658afd8a, type: 3}
+  - {fileID: 115396, guid: 587e933e00f27ed44854e24f04d9da5c, type: 3}
+  - {fileID: 102286, guid: f88527df1e55075428931ff18a4242f3, type: 3}
+  - {fileID: 163932, guid: f89670d6d9fb7924dbde6454fb7c4353, type: 3}
+  - {fileID: 100508, guid: d2cabed54b36d3e449e7adb8febeb496, type: 3}
+  - {fileID: 146536, guid: 5a6bd09f84158d0499e148aa283213b1, type: 3}
+  - {fileID: 102252, guid: 841d4ec560345324584a49a2e45b1960, type: 3}
+  - {fileID: 113560, guid: 2dc07daa62918dc459e486417c0747c3, type: 3}
+  pieces:
+  - prefab: {fileID: 107128, guid: d680017a584d18f4492ab632015f8f53, type: 3}
+    pieceClass: 1
+    frame: {x: -0.32650557, y: 0.6272114, z: 0.6272114, w: 0.32650557}
+    center: {x: 0.122314915, y: -0.08938569, z: 0.05594439}
+    size: {x: 1.9459153, y: 2.1646857, z: 1.5728196}
+    longAxis: {x: -0.81915206, y: 0, z: 0.57357645}
+    topWidth: 0.98631895
+    bottomWidth: 1.2201738
+    sharpness: 0.21106648
+    authoredUpright: 0
+    vertexCount: 819
+    triangleCount: 1494
+  - prefab: {fileID: 110246, guid: e434fab9aae453948b84099c16d535af, type: 3}
+    pieceClass: 1
+    frame: {x: 0, y: 0.819152, z: 0, w: 0.57357645}
+    center: {x: 0.08582256, y: 0.09091866, z: -0.0138058895}
+    size: {x: 1.675775, y: 2.122364, z: 1.4937723}
+    longAxis: {x: 0, y: 1, z: 0}
+    topWidth: 1.1421964
+    bottomWidth: 0.9437008
+    sharpness: 0.269437
+    authoredUpright: 1
+    vertexCount: 845
+    triangleCount: 1493
+  - prefab: {fileID: 147812, guid: da039b242c02204498663a46768be980, type: 3}
+    pieceClass: 1
+    frame: {x: 0, y: 0.21643963, z: 0, w: 0.976296}
+    center: {x: 0.050856035, y: 0.063627064, z: -0.037253145}
+    size: {x: 1.5807261, y: 2.0004292, z: 1.441184}
+    longAxis: {x: 0, y: 1, z: 0}
+    topWidth: 1.0379298
+    bottomWidth: 1.1726532
+    sharpness: 0.2248996
+    authoredUpright: 1
+    vertexCount: 843
+    triangleCount: 1494
+  - prefab: {fileID: 160060, guid: cf55461d991205647af1fdde7c34f6aa, type: 3}
+    pieceClass: 1
+    frame: {x: 0, y: 0.3007058, z: 0, w: 0.953717}
+    center: {x: -0.08127918, y: 0.016219348, z: -0.06419543}
+    size: {x: 1.5859861, y: 1.9702821, z: 1.4511688}
+    longAxis: {x: 0, y: 1, z: 0}
+    topWidth: 1.2200078
+    bottomWidth: 1.1842351
+    sharpness: 0.29451138
+    authoredUpright: 1
+    vertexCount: 851
+    triangleCount: 1494
+  - prefab: {fileID: 160382, guid: 2ef11fcea39724a4c94fed0c235e194b, type: 3}
+    pieceClass: 1
+    frame: {x: -0.32650557, y: 0.6272114, z: 0.6272114, w: 0.32650557}
+    center: {x: -0.01992936, y: -0.034864545, z: -0.059248466}
+    size: {x: 1.8332167, y: 2.1968467, z: 1.0748293}
+    longAxis: {x: -0.81915206, y: 0, z: 0.57357645}
+    topWidth: 0.7652294
+    bottomWidth: 1.0506248
+    sharpness: 0.22132976
+    authoredUpright: 0
+    vertexCount: 826
+    triangleCount: 1494
+  - prefab: {fileID: 115396, guid: 587e933e00f27ed44854e24f04d9da5c, type: 3}
+    pieceClass: 2
+    frame: {x: 0.27059805, y: 0.6532815, z: 0.6532815, w: -0.27059805}
+    center: {x: -0.11421184, y: 0.0101558035, z: 0.02012611}
+    size: {x: 1.8954479, y: 2.1265817, z: 0.77361596}
+    longAxis: {x: 0.70710677, y: 0, z: 0.70710677}
+    topWidth: 1.1488632
+    bottomWidth: 0.844677
+    sharpness: 0.18214446
+    authoredUpright: 0
+    vertexCount: 812
+    triangleCount: 1486
+  - prefab: {fileID: 102286, guid: f88527df1e55075428931ff18a4242f3, type: 3}
+    pieceClass: 1
+    frame: {x: 0.21263109, y: 0.67437977, z: 0.6743797, w: -0.21263109}
+    center: {x: -0.019380778, y: -0.15154596, z: 0.10695736}
+    size: {x: 2.2975233, y: 2.4982448, z: 1.210201}
+    longAxis: {x: 0.57357645, y: 0, z: 0.81915206}
+    topWidth: 1.2695003
+    bottomWidth: 1.2124162
+    sharpness: 0.18718989
+    authoredUpright: 0
+    vertexCount: 810
+    triangleCount: 1478
+  - prefab: {fileID: 163932, guid: f89670d6d9fb7924dbde6454fb7c4353, type: 3}
+    pieceClass: 2
+    frame: {x: -0.29883623, y: 0.6408564, z: 0.64085644, w: 0.29883623}
+    center: {x: -0.027274085, y: 0.004739055, z: -0.0944699}
+    size: {x: 1.987416, y: 2.353592, z: 0.5784668}
+    longAxis: {x: -0.76604444, y: 0, z: 0.64278764}
+    topWidth: 1.1956468
+    bottomWidth: 0.8990623
+    sharpness: 0.21789709
+    authoredUpright: 0
+    vertexCount: 822
+    triangleCount: 1490
+  - prefab: {fileID: 100508, guid: d2cabed54b36d3e449e7adb8febeb496, type: 3}
+    pieceClass: 2
+    frame: {x: -0.32650557, y: 0.6272114, z: 0.6272114, w: 0.32650557}
+    center: {x: 0.037147686, y: 0.11977509, z: -0.01926611}
+    size: {x: 2.2457652, y: 2.5046387, z: 0.5103203}
+    longAxis: {x: -0.81915206, y: 0, z: 0.57357645}
+    topWidth: 1.2168031
+    bottomWidth: 1.2134459
+    sharpness: 0.19053994
+    authoredUpright: 0
+    vertexCount: 822
+    triangleCount: 1494
+  - prefab: {fileID: 102252, guid: 841d4ec560345324584a49a2e45b1960, type: 3}
+    pieceClass: 1
+    frame: {x: 0.32650557, y: 0.6272114, z: 0.6272114, w: -0.32650557}
+    center: {x: 0.04736509, y: 0.10041458, z: -0.050823223}
+    size: {x: 1.9789509, y: 2.0228455, z: 1.2165658}
+    longAxis: {x: 0.81915206, y: 0, z: 0.57357645}
+    topWidth: 1.2349081
+    bottomWidth: 0.88355565
+    sharpness: 0.18508536
+    authoredUpright: 0
+    vertexCount: 814
+    triangleCount: 1484
+  - prefab: {fileID: 180188, guid: aa35d7da8db1b9d4dba8d9a867f6c5f4, type: 3}
+    pieceClass: 1
+    frame: {x: 0.24184479, y: 0.664463, z: 0.66446304, w: -0.24184479}
+    center: {x: -0.017803082, y: 0.3492763, z: 0.15808898}
+    size: {x: 3.3184185, y: 3.575972, z: 2.376739}
+    longAxis: {x: 0.64278764, y: 0, z: 0.76604444}
+    topWidth: 1.6212399
+    bottomWidth: 2.169011
+    sharpness: 0.2559905
+    authoredUpright: 0
+    vertexCount: 1602
+    triangleCount: 2810
+  - prefab: {fileID: 123478, guid: f99be94ed284e124e918a6bc494a3456, type: 3}
+    pieceClass: 1
+    frame: {x: -0.45451942, y: 0.54167527, z: 0.54167527, w: 0.45451942}
+    center: {x: 0.04745246, y: 0.35866544, z: -0.027925959}
+    size: {x: 3.6514592, y: 4.0609055, z: 2.179237}
+    longAxis: {x: -0.9848077, y: 0, z: 0.1736483}
+    topWidth: 2.2096548
+    bottomWidth: 1.6394002
+    sharpness: 0.26295623
+    authoredUpright: 0
+    vertexCount: 2041
+    triangleCount: 3306
+  - prefab: {fileID: 165810, guid: 0d16732e9cd8eeb42801c9011525361b, type: 3}
+    pieceClass: 1
+    frame: {x: -0.061628427, y: 0.70441604, z: 0.70441604, w: 0.061628427}
+    center: {x: -0.28692365, y: 0.5876725, z: -0.01978611}
+    size: {x: 3.6991944, y: 4.3454375, z: 2.579579}
+    longAxis: {x: -0.1736482, y: 0, z: 0.9848077}
+    topWidth: 2.1236036
+    bottomWidth: 2.6391423
+    sharpness: 0.27926323
+    authoredUpright: 0
+    vertexCount: 2069
+    triangleCount: 3366
+  - prefab: {fileID: 190452, guid: b83c5ba2bcf129947963861dbdb839d8, type: 3}
+    pieceClass: 1
+    frame: {x: 0, y: 0.9914449, z: 0, w: 0.1305262}
+    center: {x: 0.23260528, y: 0.4479605, z: 0.07164166}
+    size: {x: 3.0693722, y: 3.9311464, z: 2.0755816}
+    longAxis: {x: 0, y: 1, z: 0}
+    topWidth: 1.4381905
+    bottomWidth: 2.437045
+    sharpness: 0.27866447
+    authoredUpright: 1
+    vertexCount: 2119
+    triangleCount: 3634
+  - prefab: {fileID: 121832, guid: bc504a6a4be25794d8a121e542d31221, type: 3}
+    pieceClass: 0
+    frame: {x: 0, y: 0.21643963, z: 0, w: 0.976296}
+    center: {x: -0.10760889, y: 2.8639596, z: 0.19192095}
+    size: {x: 3.23501, y: 6.682548, z: 2.9861133}
+    longAxis: {x: 0, y: 1, z: 0}
+    topWidth: 1.3746264
+    bottomWidth: 3.1614947
+    sharpness: 0.2776387
+    authoredUpright: 1
+    vertexCount: 1825
+    triangleCount: 3196
+  - prefab: {fileID: 134040, guid: 70bfb9ab1763b2745b26ddb28db199cc, type: 3}
+    pieceClass: 0
+    frame: {x: 0, y: 0.13052623, z: 0, w: 0.9914449}
+    center: {x: 0.15495303, y: 3.1866467, z: -0.04966936}
+    size: {x: 3.5893552, y: 8.757353, z: 3.1636665}
+    longAxis: {x: 0, y: 1, z: 0}
+    topWidth: 2.4690142
+    bottomWidth: 3.5155468
+    sharpness: 0.2888889
+    authoredUpright: 1
+    vertexCount: 2013
+    triangleCount: 3480
+  - prefab: {fileID: 101984, guid: e460dedb7dfdcc5458492348a26b05b0, type: 3}
+    pieceClass: 0
+    frame: {x: 0, y: 0.42261827, z: 0, w: 0.9063078}
+    center: {x: 0.05734879, y: 2.0998824, z: -0.032506768}
+    size: {x: 2.5019426, y: 7.1757646, z: 2.415227}
+    longAxis: {x: 0, y: 1, z: 0}
+    topWidth: 1.6708492
+    bottomWidth: 2.0544014
+    sharpness: 0.25334096
+    authoredUpright: 1
+    vertexCount: 1981
+    triangleCount: 3492
+  - prefab: {fileID: 190474, guid: f355cd8928549e945b07a57759d8137b, type: 3}
+    pieceClass: 0
+    frame: {x: 0, y: 0.34202015, z: 0, w: 0.9396926}
+    center: {x: 0.031000204, y: 2.8136272, z: -0.1042487}
+    size: {x: 2.6981015, y: 7.4217434, z: 2.6396189}
+    longAxis: {x: 0, y: 1, z: 0}
+    topWidth: 1.4832888
+    bottomWidth: 2.5033398
+    sharpness: 0.23036031
+    authoredUpright: 1
+    vertexCount: 1955
+    triangleCount: 3386
+  - prefab: {fileID: 107600, guid: 8bd14eaf93b89664cb77700f4679ee1e, type: 3}
+    pieceClass: 1
+    frame: {x: -0.041045148, y: 0.010239207, z: -0.7779812, w: 0.6268618}
+    center: {x: 0.07163027, y: 0.6815722, z: 0.26768014}
+    size: {x: 6.066098, y: 8.062432, z: 3.9711223}
+    longAxis: {x: 0.9745329, y: -0.21387884, z: -0.0673911}
+    topWidth: 4.436799
+    bottomWidth: 5.3767023
+    sharpness: 0.34538847
+    authoredUpright: 0
+    vertexCount: 2351
+    triangleCount: 3854
+  - prefab: {fileID: 164374, guid: f99e4fc8b811b734e8530f87c979d1a2, type: 3}
+    pieceClass: 0
+    frame: {x: 0, y: 1, z: 0, w: 0}
+    center: {x: -0.21581054, y: 2.6318464, z: -0.14664638}
+    size: {x: 4.322535, y: 6.934211, z: 2.8784084}
+    longAxis: {x: 0, y: 1, z: 0}
+    topWidth: 1.6133978
+    bottomWidth: 4.2892
+    sharpness: 0.30299786
+    authoredUpright: 1
+    vertexCount: 2217
+    triangleCount: 3736
+  - prefab: {fileID: 136520, guid: 7c289cef41ae1434998f2f04df942439, type: 3}
+    pieceClass: 0
+    frame: {x: 0, y: 1, z: 0, w: 0}
+    center: {x: 0.23648882, y: 1.1478467, z: -0.15158367}
+    size: {x: 6.002545, y: 9.376718, z: 4.89499}
+    longAxis: {x: 0, y: 1, z: 0}
+    topWidth: 3.725999
+    bottomWidth: 2.9763803
+    sharpness: 0.2775486
+    authoredUpright: 1
+    vertexCount: 2111
+    triangleCount: 3394
+  - prefab: {fileID: 190462, guid: 702ffaaf7c76c2440afa961f61d28a49, type: 3}
+    pieceClass: 1
+    frame: {x: -0.3535534, y: 0.6123725, z: 0.61237246, w: 0.3535534}
+    center: {x: -0.11701621, y: 0.42053604, z: -0.060296413}
+    size: {x: 4.9677, y: 5.3457303, z: 2.273518}
+    longAxis: {x: -0.8660254, y: 0, z: 0.50000006}
+    topWidth: 2.0439923
+    bottomWidth: 2.8849778
+    sharpness: 0.2785008
+    authoredUpright: 0
+    vertexCount: 2308
+    triangleCount: 3877
+  - prefab: {fileID: 124306, guid: b079207489beefc4b8c1f988a5564f6c, type: 3}
+    pieceClass: 0
+    frame: {x: 0, y: 0.9914449, z: 0, w: 0.1305262}
+    center: {x: -0.024226334, y: 2.023846, z: -0.030752877}
+    size: {x: 4.0322456, y: 7.3667216, z: 2.6389341}
+    longAxis: {x: 0, y: 1, z: 0}
+    topWidth: 3.120191
+    bottomWidth: 3.7746077
+    sharpness: 0.26623267
+    authoredUpright: 1
+    vertexCount: 2523
+    triangleCount: 3994
+  - prefab: {fileID: 119988, guid: 9ac7d65b2a7019941ae954cd967cac80, type: 3}
+    pieceClass: 1
+    frame: {x: -0.49558496, y: -0.20271017, z: -0.22943144, w: 0.8128132}
+    center: {x: 0.033838887, y: 0.52862114, z: -0.2274812}
+    size: {x: 4.4206605, y: 5.0613966, z: 3.221117}
+    longAxis: {x: 0.57389003, y: 0.40351352, z: -0.71261984}
+    topWidth: 2.5237994
+    bottomWidth: 2.4991531
+    sharpness: 0.30304027
+    authoredUpright: 0
+    vertexCount: 2609
+    triangleCount: 4082
+  - prefab: {fileID: 191930, guid: 1cb7a723750897f4e844ca476218e42f, type: 3}
+    pieceClass: 1
+    frame: {x: -0.21263114, y: 0.67437977, z: 0.67437977, w: 0.21263114}
+    center: {x: 0.031881645, y: -0.0009205464, z: -0.158345}
+    size: {x: 3.3419096, y: 3.862245, z: 1.6927505}
+    longAxis: {x: -0.57357645, y: 0, z: 0.819152}
+    topWidth: 1.9840236
+    bottomWidth: 1.7085345
+    sharpness: 0.23804034
+    authoredUpright: 0
+    vertexCount: 2085
+    triangleCount: 3470
+  - prefab: {fileID: 180344, guid: 4d25b5bb8a3b2a84cb054f3f722f1abe, type: 3}
+    pieceClass: 1
+    frame: {x: -0.4304593, y: 0.56098557, z: 0.5609855, w: 0.4304593}
+    center: {x: 0.048985403, y: 0.030902226, z: -0.045159575}
+    size: {x: 2.7018242, y: 3.5046551, z: 1.7586145}
+    longAxis: {x: -0.9659258, y: 0, z: 0.25881913}
+    topWidth: 2.0074906
+    bottomWidth: 1.807219
+    sharpness: 0.2575357
+    authoredUpright: 0
+    vertexCount: 2319
+    triangleCount: 3782
+  - prefab: {fileID: 164998, guid: e5d8184e67019454e84b15bdba98fc43, type: 3}
+    pieceClass: 1
+    frame: {x: 0, y: 0.99904823, z: 0, w: 0.043619387}
+    center: {x: -0.057361964, y: 2.1056864, z: 0.26493627}
+    size: {x: 3.818512, y: 5.4505944, z: 3.288869}
+    longAxis: {x: 0, y: 1, z: 0}
+    topWidth: 0.6083355
+    bottomWidth: 3.7656631
+    sharpness: 0.25832915
+    authoredUpright: 1
+    vertexCount: 2438
+    triangleCount: 3982
+  - prefab: {fileID: 107712, guid: 74e6dd32b31913a47aedb2a12fea56dc, type: 3}
+    pieceClass: 0
+    frame: {x: 0, y: 0.3007058, z: 0, w: 0.953717}
+    center: {x: -0.006327499, y: 2.2283244, z: -0.016032957}
+    size: {x: 3.432582, y: 6.2409267, z: 3.3994303}
+    longAxis: {x: 0, y: 1, z: 0}
+    topWidth: 0.9538733
+    bottomWidth: 2.8722508
+    sharpness: 0.25391793
+    authoredUpright: 1
+    vertexCount: 2334
+    triangleCount: 3786
+  - prefab: {fileID: 163424, guid: 7bfe01d43c7674544a53ee54858a6300, type: 3}
+    pieceClass: 0
+    frame: {x: 0, y: 0.9396927, z: 0, w: 0.34202015}
+    center: {x: -0.09868041, y: 1.3378303, z: -0.061704013}
+    size: {x: 2.6689095, y: 5.044132, z: 2.2124097}
+    longAxis: {x: 0, y: 1, z: 0}
+    topWidth: 0.8741555
+    bottomWidth: 1.9347119
+    sharpness: 0.2638889
+    authoredUpright: 1
+    vertexCount: 2326
+    triangleCount: 3792
+  - prefab: {fileID: 168754, guid: c0b9b1b2cbe732243a45e428dfbbd1b2, type: 3}
+    pieceClass: 1
+    frame: {x: -0.4777144, y: 0.5213339, z: 0.5213338, w: 0.4777144}
+    center: {x: 0.02453994, y: 0.054630183, z: 0.3275872}
+    size: {x: 5.9461126, y: 7.2485595, z: 4.5159874}
+    longAxis: {x: -0.99619466, y: 0, z: 0.08715588}
+    topWidth: 3.281141
+    bottomWidth: 3.261139
+    sharpness: 0.28827322
+    authoredUpright: 0
+    vertexCount: 3624
+    triangleCount: 5622
+  - prefab: {fileID: 167186, guid: d9426d97d45ad7041a893a4ee219ec40, type: 3}
+    pieceClass: 1
+    frame: {x: 0, y: 0.97629607, z: 0, w: 0.21643962}
+    center: {x: 0.37964562, y: 1.47395, z: 0.04933104}
+    size: {x: 4.1115675, y: 5.75558, z: 3.5644863}
+    longAxis: {x: 0, y: 1, z: 0}
+    topWidth: 2.5948062
+    bottomWidth: 2.7021747
+    sharpness: 0.2559653
+    authoredUpright: 1
+    vertexCount: 2190
+    triangleCount: 3688
+  - prefab: {fileID: 166836, guid: ae52fd314165b6147b380655df801158, type: 3}
+    pieceClass: 1
+    frame: {x: 0.21263109, y: 0.67437977, z: 0.6743797, w: -0.21263109}
+    center: {x: -0.17936708, y: 0.13532071, z: 0.1286364}
+    size: {x: 1.7032714, y: 1.9808933, z: 1.3066578}
+    longAxis: {x: 0.57357645, y: 0, z: 0.81915206}
+    topWidth: 0.86223745
+    bottomWidth: 0.9878224
+    sharpness: 0.20613441
+    authoredUpright: 0
+    vertexCount: 808
+    triangleCount: 1478
+  - prefab: {fileID: 105866, guid: 0997ff00e2e62fd41ae7d348f5d897ed, type: 3}
+    pieceClass: 1
+    frame: {x: 0.21263109, y: 0.67437977, z: 0.6743797, w: -0.21263109}
+    center: {x: 0.03992654, y: 0.17733721, z: -0.028113177}
+    size: {x: 1.4109793, y: 1.8411325, z: 1.1259949}
+    longAxis: {x: 0.57357645, y: 0, z: 0.81915206}
+    topWidth: 0.9397086
+    bottomWidth: 1.066122
+    sharpness: 0.20530099
+    authoredUpright: 0
+    vertexCount: 808
+    triangleCount: 1484
+  - prefab: {fileID: 129778, guid: a7ee6e3d99bb7854eafe63ce3b24e69d, type: 3}
+    pieceClass: 1
+    frame: {x: -0.29883623, y: 0.6408564, z: 0.64085644, w: 0.29883623}
+    center: {x: -0.077471755, y: -0.01667797, z: 0.008498369}
+    size: {x: 1.2365407, y: 1.522939, z: 0.7160269}
+    longAxis: {x: -0.76604444, y: 0, z: 0.64278764}
+    topWidth: 0.62887216
+    bottomWidth: 0.85987294
+    sharpness: 0.19222072
+    authoredUpright: 0
+    vertexCount: 825
+    triangleCount: 1474
+  - prefab: {fileID: 193226, guid: b002f705e4a155d4eb5f344d658afd8a, type: 3}
+    pieceClass: 1
+    frame: {x: 0.21263109, y: 0.67437977, z: 0.6743797, w: -0.21263109}
+    center: {x: -0.0052656657, y: -0.005829255, z: 0.09740939}
+    size: {x: 1.1880255, y: 1.5667629, z: 0.57025266}
+    longAxis: {x: 0.57357645, y: 0, z: 0.81915206}
+    topWidth: 0.48735952
+    bottomWidth: 0.79363704
+    sharpness: 0.15885766
+    authoredUpright: 0
+    vertexCount: 820
+    triangleCount: 1494
+  - prefab: {fileID: 146536, guid: 5a6bd09f84158d0499e148aa283213b1, type: 3}
+    pieceClass: 0
+    frame: {x: 0, y: 0.21643963, z: 0, w: 0.976296}
+    center: {x: 0.0032625298, y: 0.055429786, z: 0.058097176}
+    size: {x: 1.1031787, y: 1.6818783, z: 0.984347}
+    longAxis: {x: 0, y: 1, z: 0}
+    topWidth: 1.0056362
+    bottomWidth: 0.9751928
+    sharpness: 0.23481953
+    authoredUpright: 1
+    vertexCount: 902
+    triangleCount: 1570
+  - prefab: {fileID: 113560, guid: 2dc07daa62918dc459e486417c0747c3, type: 3}
+    pieceClass: 1
+    frame: {x: -0.053951748, y: -0.40135315, z: 0.24826865, w: 0.8799816}
+    center: {x: -0.014134927, y: 0.01098409, z: -0.0848786}
+    size: {x: 1.6234416, y: 1.6731725, z: 1.6059394}
+    longAxis: {x: -0.39363623, y: 0.87090373, z: -0.29423988}
+    topWidth: 0.75625587
+    bottomWidth: 1.0105066
+    sharpness: 0.24441205
+    authoredUpright: 0
+    vertexCount: 757
+    triangleCount: 1372

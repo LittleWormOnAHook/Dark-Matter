@@ -1,0 +1,113 @@
+/* Genesis PCG Rock Creation - Rocks and Cliffs studio. Neutral defaults; a host theme overrides the variables
+   (and may switch on cut corners with --pcg-cut / --pcg-cut-fill / --pcg-cut-line / --pcg-cut-line-width). */
+.pcg-studio {
+    --pcg-bg-0: #1d1d1d;
+    --pcg-bg-1: #242424;
+    --pcg-bg-2: #2c2c2c;
+    --pcg-bg-3: #373737;
+    --pcg-line: #474747;
+    --pcg-accent: #4c9bff;
+    --pcg-primary: #4c9bff;
+    --pcg-primary-text: #ffffff;
+    --pcg-text: #dcdcdc;
+    --pcg-text-dim: #9a9a9a;
+    flex-grow: 1;
+    background-color: var(--pcg-bg-0);
+    color: var(--pcg-text);
+}
+.pcg-studio__scroll { flex-grow: 1; }
+.pcg-studio__scroll > .unity-scroll-view__content-viewport > .unity-scroll-view__content-container { padding: 8px 10px 12px 10px; }
+
+.pcg-studio__header { padding: 4px 2px 6px 2px; }
+.pcg-title { font-size: 18px; -unity-font-style: bold; color: var(--pcg-text); letter-spacing: 2px; }
+.pcg-subtitle { color: var(--pcg-text-dim); white-space: normal; margin-top: 2px; }
+.pcg-header { -unity-font-style: bold; letter-spacing: 1px; }
+
+.pcg-tabs { flex-direction: row; margin: 4px 0 8px 0; border-bottom-width: 1px; border-bottom-color: var(--pcg-line); padding-bottom: 6px; }
+.pcg-tab {
+    min-width: 110px; height: 26px; margin: 0 6px 0 0; padding: 0 14px;
+    background-color: var(--pcg-bg-2); color: var(--pcg-text-dim);
+    border-width: 1px; border-color: var(--pcg-line); border-radius: 0;
+    -unity-font-style: bold; letter-spacing: 1px;
+}
+.pcg-tab:hover { color: var(--pcg-text); background-color: var(--pcg-bg-3); }
+.pcg-tab--selected { color: var(--pcg-accent); border-bottom-width: 2px; border-bottom-color: var(--pcg-accent); }
+
+.pcg-body { flex-direction: row; align-items: flex-start; flex-wrap: wrap; }
+.pcg-col-left { width: 360px; min-width: 300px; flex-shrink: 1; flex-grow: 0; margin-right: 10px; }
+.pcg-col-right { flex-shrink: 0; }
+
+.pcg-card {
+    background-color: var(--pcg-bg-1); border-width: 1px; border-color: var(--pcg-line);
+    padding: 8px 10px 10px 10px; margin-bottom: 8px;
+}
+.pcg-card__title { color: var(--pcg-accent); font-size: 11px; margin-bottom: 6px; }
+.pcg-row { flex-direction: row; align-items: center; margin-top: 4px; flex-wrap: wrap; }
+.pcg-grow { flex-grow: 1; }
+.pcg-wrap { white-space: normal; }
+.pcg-label-dim { color: var(--pcg-text-dim); font-size: 11px; white-space: normal; }
+.pcg-field { margin: 2px 0; }
+.pcg-field > .unity-base-field__label, .pcg-toggle > .unity-base-field__label { min-width: 130px; color: var(--pcg-text-dim); }
+.pcg-toggle { margin: 2px 0; }
+
+.pcg-btn {
+    height: 24px; margin: 2px 6px 2px 0; padding: 0 10px;
+    background-color: var(--pcg-bg-3); color: var(--pcg-text);
+    border-width: 1px; border-color: var(--pcg-line); border-radius: 0;
+}
+.pcg-btn:hover { border-color: var(--pcg-accent); color: var(--pcg-accent); }
+.pcg-btn:active { background-color: var(--pcg-bg-2); }
+.pcg-btn-primary { background-color: var(--pcg-primary); color: var(--pcg-primary-text); border-color: var(--pcg-primary); -unity-font-style: bold; }
+.pcg-btn-primary:hover { color: var(--pcg-primary-text); }
+.pcg-actions { margin-top: 8px; }
+.pcg-actions > .pcg-btn { height: 30px; flex-grow: 1; -unity-font-style: bold; }
+
+.pcg-dropzone {
+    min-height: 64px; padding: 10px; margin-bottom: 6px; justify-content: center; align-items: center;
+    border-width: 1px; border-color: var(--pcg-line); background-color: var(--pcg-bg-0);
+}
+.pcg-dropzone--hover { border-color: var(--pcg-accent); background-color: var(--pcg-bg-3); }
+.pcg-dropzone__label { -unity-font-style: bold; color: var(--pcg-text); }
+.pcg-dropzone .pcg-label-dim { -unity-text-align: middle-center; }
+
+.pcg-sourcelist { margin-bottom: 4px; }
+.pcg-source { flex-direction: row; align-items: center; height: 24px; padding: 0 4px; border-bottom-width: 1px; border-bottom-color: var(--pcg-bg-3); }
+.pcg-source--base { background-color: var(--pcg-bg-2); border-left-width: 2px; border-left-color: var(--pcg-accent); }
+.pcg-source__base { margin: 0 4px 0 0; }
+.pcg-source__icon { width: 16px; height: 16px; margin-right: 4px; }
+.pcg-source__name { flex-grow: 1; overflow: hidden; -unity-text-overflow-position: end; text-overflow: ellipsis; }
+.pcg-source__kind { color: var(--pcg-text-dim); font-size: 10px; margin-right: 4px; }
+.pcg-source__remove { width: 20px; height: 18px; padding: 0; margin: 0; border-width: 0; background-color: rgba(0,0,0,0); color: var(--pcg-text-dim); }
+.pcg-source__remove:hover { color: var(--pcg-accent); }
+
+.pcg-iconview { background-color: var(--pcg-bg-2); border-width: 1px; border-color: var(--pcg-line); margin-top: 6px; overflow: hidden; }
+.pcg-iconview:focus { border-color: var(--pcg-accent); }
+.pcg-iconview__empty { position: absolute; left: 0; right: 0; top: 240px; -unity-text-align: middle-center; color: var(--pcg-text-dim); }
+.pcg-iconview__hint { position: absolute; left: 8px; top: 6px; font-size: 10px; color: var(--pcg-text-dim); }
+.pcg-iconview__info { position: absolute; right: 8px; bottom: 6px; font-size: 10px; color: var(--pcg-text-dim); }
+
+.pcg-status { color: var(--pcg-accent); margin: 2px 0 6px 2px; white-space: normal; min-height: 16px; }
+
+.pcg-library__bar { flex-direction: row; align-items: center; flex-wrap: wrap; margin-bottom: 6px; }
+.pcg-library__search { width: 200px; margin-right: 6px; }
+.pcg-library__filter { width: 130px; margin-right: 6px; }
+.pcg-library__size { width: 130px; margin-right: 10px; }
+.pcg-library__scroll { min-height: 160px; max-height: 460px; }
+.pcg-library__grid { flex-direction: row; flex-wrap: wrap; }
+.pcg-library__empty { color: var(--pcg-text-dim); padding: 20px; -unity-text-align: middle-center; }
+.pcg-tile {
+    padding: 6px; margin: 0 8px 8px 0; align-items: center;
+    background-color: var(--pcg-bg-2); border-width: 1px; border-color: var(--pcg-line);
+}
+.pcg-tile:hover { border-color: var(--pcg-accent); }
+.pcg-tile--selected { border-color: var(--pcg-accent); background-color: var(--pcg-bg-3); }
+.pcg-tile--missing { opacity: 0.5; }
+.pcg-tile__icon { background-color: var(--pcg-bg-0); }
+.pcg-tile__name { margin-top: 4px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; -unity-text-align: middle-center; font-size: 11px; }
+.pcg-tile__meta { color: var(--pcg-text-dim); font-size: 10px; }
+.pcg-tile__rename { max-width: 100%; }
+
+.pcg-card--placeholder { border-color: var(--pcg-accent); }
+.pcg-placeholder__title { font-size: 14px; -unity-font-style: bold; color: var(--pcg-accent); margin-bottom: 4px; }
+
+.pcg-cut__label { -unity-text-align: middle-center; white-space: nowrap; }

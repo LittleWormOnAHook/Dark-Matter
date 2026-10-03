@@ -1,0 +1,73 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 78ce05db7d8f8b246ab8c5d03c00f8c1, type: 3}
+  m_Name: DM_RockStyle_ErodedMesa
+  m_EditorClassIdentifier: GenesisPCG.RockCreation::GenesisPCG.RockCreation.DmRockStyle
+  kind: 9
+  notes: 1-3 big bodies + flat caprock; full 34-37 deg rubble skirt; sink 30-50%;
+    gullies (medium).
+  height: {x: 3.5, y: 5.5}
+  footprintRadius: {x: 3.5, y: 5.5}
+  pieceCount: {x: 1, y: 3}
+  heroCount: 1
+  midScale: {x: 0.5, y: 0.7}
+  fillScale: {x: 0.2, y: 0.4}
+  midShare: 0.35
+  heroClasses: 6
+  midClasses: 4
+  fillClasses: 10
+  debrisClasses: 14
+  preferSharp: 0
+  leanDegrees: {x: 0, y: 3}
+  grainJitter: 2
+  beddingAlign: 0.8
+  overlap: {x: 0.1, y: 0.3}
+  sink: {x: 0.3, y: 0.5}
+  maxTiers: 1
+  upperMaxRatio: 0.6
+  sizeAtTop: 0.45
+  comShrink: 0.15
+  maxWidthOverSupport: 1.2
+  maxContactSlope: 35
+  allowCaps: 0
+  capWidthRatio: {x: 1, y: 1.5}
+  apronCount: {x: 14, y: 24}
+  apronScale: {x: 0.04, y: 0.13}
+  reposeDegrees: 35
+  apronReach: 1
+  downhillBias: 0.2
+  rockfallChance: 0.3
+  passageChance: 0.35
+  nookChance: 0.4
+  columnCount: {x: 10, y: 24}
+  columnStep: {x: 0.2, y: 1.5}
+  columnFan: 8
+  missingColumnChance: 0.12
+  archSpan: {x: 2.6, y: 4}
+  archHeight: {x: 3, y: 4.2}
+  lintelThicknessRatio: 0.3
+  ejectaFanDegrees: 360
+  ridgeCount: {x: 3, y: 7}
+  maxStretch: 1.5
+  planeCutChance: 0.6
+  planeCutMaxAngle: 25
+  alignmentDegrees: 3
+  shardSeeds: {x: 1, y: 3}
+  shardsPerSeed: {x: 3, y: 6}
+  shardLean: {x: 10, y: 35}
+  shardCurve: {x: 5, y: 20}
+  shardTipScale: 0.12
+  shardTaperPower: 1.6
+  shardStretch: {x: 1.3, y: 1.8}
+  hover: {x: 3, y: 8}
+  satellites: {x: 3, y: 8}
+  materialOverride: {fileID: 0}

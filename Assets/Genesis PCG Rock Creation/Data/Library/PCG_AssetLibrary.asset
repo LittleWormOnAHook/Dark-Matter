@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d2e0d3b88e924f349b4fb998283d659f, type: 3}
+  m_Name: PCG_AssetLibrary
+  m_EditorClassIdentifier: GenesisPCG.RockCreation::GenesisPCG.RockCreation.PcgAssetLibrary
+  entries:
+  - id: 16afb4583f1e46d08e0253fde9b73683
+    displayName: TMS_Studio_3src
+    category: Rocks
+    prefab: {fileID: 7331509243731761971, guid: 80c8b65ae7455d843ab812921e7fdc6b, type: 3}
+    preset: {fileID: 0}
+    style: {fileID: 11400000, guid: dd7ee3d50226b6d48b69b0552d53aeee, type: 2}
+    seed: 1514669580
+    icon: {fileID: 2800000, guid: d23d6b99b97cede41a573765075e4c0f, type: 3}
+    iconYaw: 250
+    iconPitch: 14
+    iconZoom: 0.9
+    createdUtc: 2026-10-03T04:07:02.9231548Z
+  - id: a13540beddc94d7786a4dfc65c739bd5
+    displayName: Rock_OutcropShelf_537A
+    category: Rocks
+    prefab: {fileID: 6838475791854804763, guid: 0ad35cdc9a283ad469ff92a02339a0ce, type: 3}
+    preset: {fileID: 11400000, guid: 303fad1caf065ba4581fd802612ec755, type: 2}
+    style: {fileID: 11400000, guid: 1b39e2c6879cb0d41ba626f0af2ff35a, type: 2}
+    seed: 232543098
+    icon: {fileID: 2800000, guid: 1562647ae405c0740899265413ccf486, type: 3}
+    iconYaw: 35
+    iconPitch: 22
+    iconZoom: 1
+    createdUtc: 2026-10-03T04:07:41.1164160Z

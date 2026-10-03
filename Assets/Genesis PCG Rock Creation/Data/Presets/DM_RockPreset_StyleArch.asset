@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d91779c7b923fe74eb97a39c85ec17d5, type: 3}
+  m_Name: DM_RockPreset_StyleArch
+  m_EditorClassIdentifier: GenesisPCG.RockCreation::GenesisPCG.RockCreation.DmRockPreset
+  kit: {fileID: 11400000, guid: e5f4953c4721aa747a00226978c90a6a, type: 2}
+  style: {fileID: 11400000, guid: 29426316d3477754b8b3df015d51f40c, type: 2}
+  recipe: {fileID: 11400000, guid: a6a17bc31eb5d5843a4667bb1b4ec0a1, type: 2}
+  materialOverride: {fileID: 0}
+  features:
+    useStyleChances: 1
+    passageChance: 0
+    nookChance: 0
+    passageWidth: 1.6
+    passageHeadroom: 2.5
+    crateSize: 0.9
+    nookPrefabs: []
+    nookSpawnChance: 0.5
+  description: 2 tall legs + lintel (thickness >= 0.25 x span); fin aligned to strike;
+    legs sink 25-40%; passage 80% (span >= 2.5 m, clear >= 3 m); blocks off the walk
+    line.
