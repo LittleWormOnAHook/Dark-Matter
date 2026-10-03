@@ -512,9 +512,9 @@ Material:
     - baseColorTexture_texCoord: 0
     m_Colors:
     - White: {r: 1, g: 1, b: 1, a: 1}
-    - _BaseColor: {r: 0, g: 0.81349206, b: 1, a: 0.40392157}
+    - _BaseColor: {r: 1, g: 0, b: 0.022731185, a: 0.40392157}
     - _CameraFadeParams: {r: 0, g: Infinity, b: 0, a: 0}
-    - _Color: {r: 0, g: 0.81349206, b: 1, a: 0.40392157}
+    - _Color: {r: 1, g: 0, b: 0.022731185, a: 0.40392157}
     - _Colour_Emissive: {r: 0.31617647, g: 0.28362888, b: 0.28362888, a: 0}
     - _Colour_Hair: {r: 0.30980387, g: 0.25490198, b: 0.18039218, a: 0}
     - _Colour_Primary: {r: 0.31617647, g: 0.28362888, b: 0.28362888, a: 0}
@@ -525,7 +525,7 @@ Material:
     - _DoubleSidedConstants: {r: 1, g: 1, b: -1, a: 0}
     - _Emission: {r: 0, g: 0, b: 0, a: 0}
     - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}
-    - _EmissiveColor: {r: 45.877888, g: 113.07833, b: 236.07077, a: 1.866065}
+    - _EmissiveColor: {r: 102.75575, g: 56.887352, b: 20.443548, a: 1}
     - _EmissiveColorLDR: {r: 0.41763416, g: 0.6332799, b: 0.88031507, a: 1}
     - _EndColor: {r: 1, g: 1, b: 0, a: 1}
     - _FlickerSpeed: {r: 0.1, g: 0.1, b: 0, a: 0}

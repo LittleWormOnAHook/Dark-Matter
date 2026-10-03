@@ -7,16 +7,17 @@ TerrainLayer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: layer_RockwallRockwall_Normal2023054508611406
-  m_DiffuseTexture: {fileID: 2800000, guid: 66bfffbfc1446e24dbf6081d20fc9daa, type: 3}
-  m_NormalMapTexture: {fileID: 2800000, guid: ad5ab704b4310e6488aba63332144846, type: 3}
-  m_MaskMapTexture: {fileID: 0}
+  m_DiffuseTexture: {fileID: 2800000, guid: 759bfeb88459d4b429a77f21dadd9f4a, type: 3}
+  m_NormalMapTexture: {fileID: 2800000, guid: 43a30339ffb9c6a4a9d1959734d0bd43, type: 3}
+  m_MaskMapTexture: {fileID: 2800000, guid: 7f6c7fdb7bf8699488c9f85aa5743f0c, type: 3}
   m_TileSize: {x: 5, y: 5}
   m_TileOffset: {x: 0, y: 0}
   m_Specular: {r: 0, g: 0, b: 0, a: 0}
   m_Metallic: 0
   m_Smoothness: 0
   m_NormalScale: 1
-  m_DiffuseRemapMin: {x: 0, y: 0, z: 0, w: 0}
+  m_DiffuseRemapMin: {x: 0, y: 0, z: 0, w: 1}
   m_DiffuseRemapMax: {x: 1, y: 1, z: 1, w: 1}
   m_MaskMapRemapMin: {x: 0, y: 0, z: 0, w: 0}
-  m_MaskMapRemapMax: {x: 1, y: 1, z: 1, w: 1}
+  m_MaskMapRemapMax: {x: 1, y: 1, z: 1, w: 0.22165388}
+  m_SmoothnessSource: 1

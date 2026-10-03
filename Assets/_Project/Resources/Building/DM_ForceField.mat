@@ -27,7 +27,7 @@ Material:
     m_Floats:
     - _EdgeGlow: 1.5
     - _EdgeWidth: 0.06
-    - _Opacity: 0.25
+    - _Opacity: 0.1
     - _PatternScale: 1.2
     - _Pulse: 0
     - _RippleLife: 0.6
@@ -35,8 +35,8 @@ Material:
     - _RippleWidth: 0.35
     - _ScrollSpeed: 0.35
     m_Colors:
-    - _Color: {r: 0.25, g: 0.75, b: 1.6, a: 1}
-    - _EdgeColor: {r: 0.0039215535, g: 0.5396425, b: 0.8784314, a: 1}
+    - _Color: {r: 2.1481304, g: 3.1392465, b: 11.984315, a: 0.5411765}
+    - _EdgeColor: {r: 0.6, g: 1.2, b: 2.4, a: 0.5686275}
     - _Ripple0: {r: 0, g: 0, b: 0, a: -100}
     - _Ripple1: {r: 0, g: 0, b: 0, a: -100}
     - _Ripple2: {r: 0, g: 0, b: 0, a: -100}

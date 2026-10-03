@@ -99,6 +99,7 @@ Material:
     m_Floats:
     - _Alpha: 0.422
     - _BumpScale: 1
+    - _Cull: 2
     - _Cutoff: 0.5
     - _DepthDistance: 0
     - _DepthFadeExp: 5.316663
@@ -149,6 +150,6 @@ Material:
     - _NoiseSpeed: {r: 0.2, g: 0, b: 0, a: 0}
     - _SmokeSpeed1: {r: 0.2, g: 0.2, b: 0, a: 0}
     - _SmokeSpeed2: {r: -0.2, g: 0.2, b: 0, a: 0}
-    - _TintColor: {r: 19.69831, g: 0, b: 0.118153125, a: 1}
+    - _TintColor: {r: 23.968628, g: 0, b: 0.14376706, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

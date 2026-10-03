@@ -102,7 +102,7 @@ MonoBehaviour:
   lowOxygenWarningEnabled: 1
   healthDrainPerSecond: 10
   lowStatThresholdPercent: 13.1
-  oxygenDepletedHealthDrainMultiplier: 5
+  oxygenDepletedHealthDrainMultiplier: 10
   enableHealthRegen: 1
   healthRegenPerSecond: 5
   healthRegenDelayAfterDamage: 5
