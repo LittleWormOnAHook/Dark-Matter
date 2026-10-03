@@ -4049,6 +4049,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: R_ForearmTwist02
       objectReference: {fileID: 0}
+    - target: {fileID: 7684091887045404743, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
+      propertyPath: antialiasing
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 7684693720678691999, guid: 1b1fb3e56f4a35645bf48922b87bbb07, type: 3}
       propertyPath: far clip plane
       value: 20000
