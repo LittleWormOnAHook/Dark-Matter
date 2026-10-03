@@ -7,17 +7,17 @@ TerrainLayer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: layer_SandGrassHigherDetail_normals2023054508611406
-  m_DiffuseTexture: {fileID: 2800000, guid: 1e25fb5e387a58b40aeb63b73bec28d8, type: 3}
-  m_NormalMapTexture: {fileID: 2800000, guid: 8e802539e24fd8f4f87f1bce59ee8eb8, type: 3}
-  m_MaskMapTexture: {fileID: 2800000, guid: c27522797ec28094c924147b1b90ae8a, type: 3}
+  m_DiffuseTexture: {fileID: 2800000, guid: dc1e8a8812a1a7c4a92efd2bb5e3583c, type: 3}
+  m_NormalMapTexture: {fileID: 2800000, guid: d165069a7126234469bdda87e7d19cf3, type: 3}
+  m_MaskMapTexture: {fileID: 2800000, guid: 53212d86492d73745b1d597ff00e1893, type: 3}
   m_TileSize: {x: 5, y: 5}
   m_TileOffset: {x: 0, y: 0}
   m_Specular: {r: 0, g: 0, b: 0, a: 0}
-  m_Metallic: 0
+  m_Metallic: 0.414
   m_Smoothness: 0
   m_NormalScale: 1
   m_DiffuseRemapMin: {x: 0, y: 0, z: 0, w: 0}
-  m_DiffuseRemapMax: {x: 0.07924521, y: 0, z: 0, w: 1}
+  m_DiffuseRemapMax: {x: 0.29803923, y: 0.050980397, z: 0.07893498, w: 1}
   m_MaskMapRemapMin: {x: 0, y: 0, z: 0, w: 0}
   m_MaskMapRemapMax: {x: 1, y: 1, z: 1, w: 1}
   m_SmoothnessSource: 1
