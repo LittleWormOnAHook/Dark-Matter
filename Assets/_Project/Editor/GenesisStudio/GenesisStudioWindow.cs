@@ -1,20 +1,27 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
+using Project.EditorTools.Theme;
 using Project.EditorTools.UiLayout;
 using Project.Player;
 using Project.UI;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace Project.EditorTools.GenesisStudio
 {
     /// <summary>
-    /// Unified profile studio: Shift-themed tabs for player, world, combat, crafting, UI, and audio.
+    /// Unified profile studio for player, world, combat, crafting, UI, and audio.
+    /// With the Genesis Theme on, the window chrome (header, category nav, subtabs, footer) is UI Toolkit in the
+    /// "Frontier" style and each panel's IMGUI content is hosted inside it. With the theme off it draws the
+    /// original IMGUI layout.
     /// </summary>
     public sealed class GenesisStudioWindow : EditorWindow
     {
-        private int categoryIndex;
-        private int subtabIndex;
+        private const string TipText = "Tip: tune profiles in Play mode. Profile Save keeps climb, jetpack, map, and jump/landing edits when you stop.";
+
+        [SerializeField] private int categoryIndex;
+        [SerializeField] private int subtabIndex;
         private Vector2 contentScroll;
         private readonly DMStudioAssetPanel assetPanel = new DMStudioAssetPanel();
         private readonly DMStudioSectionProfilePanel sectionProfilePanel = new DMStudioSectionProfilePanel();
@@ -29,8 +36,16 @@ namespace Project.EditorTools.GenesisStudio
         private readonly CraftingItemCreatorPanel craftingItemPanel = new CraftingItemCreatorPanel();
         private readonly DMStudioPickupItemsPanel pickupItemsPanel = new DMStudioPickupItemsPanel();
         private readonly Project.EditorTools.Building.DMBuildingLibraryPanel buildingLibraryPanel = new Project.EditorTools.Building.DMBuildingLibraryPanel();
+        private readonly DMStudioStrataPanel strataPanel = new DMStudioStrataPanel();
         private UnityEditor.Editor playerSystemsEditor;
         private DMPlayerSystemsProfile playerSystemsTarget;
+
+        // Themed (UI Toolkit) chrome
+        private VisualElement subtabBar;
+        private Label subtabDescription;
+        private IMGUIContainer contentHost;
+        private Label modePill;
+        private Label savePill;
 
         [MenuItem(DarkMatterGenesisEditorMenus.GenesisStudio, false, 5)]
         public static void Open()
@@ -40,23 +55,235 @@ namespace Project.EditorTools.GenesisStudio
             window.Show();
         }
 
+        private void OnEnable()
+        {
+            GenesisTheme.Changed += RebuildChrome;
+        }
+
         private void OnDisable()
         {
+            GenesisTheme.Changed -= RebuildChrome;
             assetPanel.Dispose();
             controlsPanel.Dispose();
             companionEditorPanel.Dispose();
             companionSystemsPanel.Dispose();
             pickupItemsPanel.Dispose();
+            strataPanel.Dispose();
             DestroyPlayerSystemsEditor();
         }
 
-        private void OnGUI()
+        // ------------------------------------------------------------------ Build
+
+        public void CreateGUI()
         {
+            VisualElement root = rootVisualElement;
+            root.Clear();
+            subtabBar = null;
+            subtabDescription = null;
+            contentHost = null;
+            modePill = null;
+            savePill = null;
+            ClampIndices();
+
+            if (!GenesisTheme.Apply(root))
+            {
+                IMGUIContainer legacy = new IMGUIContainer(DrawLegacy);
+                legacy.style.flexGrow = 1f;
+                root.Add(legacy);
+                return;
+            }
+
+            root.style.flexDirection = FlexDirection.Column;
+            root.Add(BuildHeader());
+
+            VisualElement body = new VisualElement();
+            body.AddToClassList("g-studio__body");
+            body.Add(BuildNav());
+
+            VisualElement main = new VisualElement();
+            main.AddToClassList("g-studio__main");
+
+            subtabBar = new VisualElement();
+            subtabBar.AddToClassList("g-subtabs");
+            main.Add(subtabBar);
+
+            subtabDescription = new Label();
+            subtabDescription.AddToClassList("g-studio__desc");
+            main.Add(subtabDescription);
+
+            contentHost = new IMGUIContainer(DrawThemedContent);
+            contentHost.AddToClassList("g-studio__content");
+            main.Add(contentHost);
+
+            body.Add(main);
+            root.Add(body);
+            root.Add(BuildFooter());
+
+            RefreshSubtabs();
+            RefreshStatus();
+            root.schedule.Execute(RefreshStatus).Every(500);
+        }
+
+        private void RebuildChrome()
+        {
+            CreateGUI();
+            Repaint();
+        }
+
+        private VisualElement BuildHeader()
+        {
+            VisualElement header = GWidgets.HeaderBar("Genesis Studio");
+
+            Label subtitle = new Label("Survival profiles, map calibration, ammo FX, companions, crafting, UI and audio");
+            subtitle.AddToClassList("g-studio__subtitle");
+            header.Add(subtitle);
+
+            VisualElement right = new VisualElement();
+            right.AddToClassList("g-studio__header-right");
+            modePill = GWidgets.Pill("Edit mode", GWidgets.PillKind.Ok);
+            savePill = GWidgets.Pill("Profile save off", GWidgets.PillKind.Warn);
+            right.Add(modePill);
+            right.Add(savePill);
+            right.Add(GWidgets.ActionButton("Toggle Profile Save", () =>
+            {
+                DMProfilePlayModeSaver.Enabled = !DMProfilePlayModeSaver.Enabled;
+                RefreshStatus();
+            }));
+            header.Add(right);
+            return header;
+        }
+
+        private VisualElement BuildNav()
+        {
+            ScrollView nav = new ScrollView(ScrollViewMode.Vertical);
+            nav.AddToClassList("g-nav");
+
+            Label title = GenesisTheme.HeaderLabel("Categories", 10f);
+            title.AddToClassList("g-nav__title");
+            nav.Add(title);
+
+            IReadOnlyList<DMStudioCategory> cats = DMStudioRegistry.Categories;
+            for (int i = 0; i < cats.Count; i++)
+            {
+                int index = i;
+                nav.Add(GWidgets.NavItem(cats[i].Label, i == categoryIndex, () => SelectCategory(index)));
+            }
+
+            return nav;
+        }
+
+        private VisualElement BuildFooter()
+        {
+            VisualElement footer = GWidgets.Footer(out Label tip, TipText);
+            footer.AddToClassList("g-studio__footer");
+            tip.AddToClassList("g-studio__tip");
+            footer.Add(GWidgets.ActionButton("Genesis Tools", () => DarkMatterGenesisToolsWindow.Open()));
+            footer.Add(GWidgets.ActionButton("UI Studio", () => UiStudioWindow.ShowWindow()));
+            return footer;
+        }
+
+        private void SelectCategory(int index)
+        {
+            if (index == categoryIndex)
+                return;
+
+            categoryIndex = index;
+            subtabIndex = 0;
+            contentScroll = Vector2.zero;
+            GUI.FocusControl(null);
+            RefreshSubtabs();
+        }
+
+        private void SelectSubtab(int index)
+        {
+            if (index == subtabIndex)
+                return;
+
+            subtabIndex = index;
+            contentScroll = Vector2.zero;
+            GUI.FocusControl(null);
+            RefreshSubtabs();
+        }
+
+        private void RefreshSubtabs()
+        {
+            if (subtabBar == null)
+                return;
+
+            ClampIndices();
+            DMStudioCategory category = DMStudioRegistry.Categories[categoryIndex];
+            subtabBar.Clear();
+            for (int i = 0; i < category.Subtabs.Length; i++)
+            {
+                int index = i;
+                Button tab = GWidgets.ActionButton(category.Subtabs[i].Label, () => SelectSubtab(index));
+                tab.AddToClassList("g-subtab");
+                if (i == subtabIndex)
+                    tab.AddToClassList("g-subtab--on");
+                subtabBar.Add(tab);
+            }
+
+            subtabBar.style.display = category.Subtabs.Length > 0 ? DisplayStyle.Flex : DisplayStyle.None;
+
+            string description = category.Subtabs.Length > 0 ? category.Subtabs[subtabIndex].Description : null;
+            if (string.IsNullOrEmpty(description))
+                description = category.Description;
+            subtabDescription.text = description ?? string.Empty;
+            subtabDescription.style.display = string.IsNullOrEmpty(description) ? DisplayStyle.None : DisplayStyle.Flex;
+
+            contentHost?.MarkDirtyRepaint();
+        }
+
+        private void RefreshStatus()
+        {
+            if (modePill == null || savePill == null)
+                return;
+
+            SetPill(modePill, Application.isPlaying ? "Play mode" : "Edit mode", Application.isPlaying ? GWidgets.PillKind.Warn : GWidgets.PillKind.Ok);
+            bool saverOn = DMProfilePlayModeSaver.Enabled;
+            SetPill(savePill, saverOn ? "Profile save on" : "Profile save off", saverOn ? GWidgets.PillKind.Ok : GWidgets.PillKind.Bad);
+        }
+
+        private static void SetPill(Label pill, string text, GWidgets.PillKind kind)
+        {
+            pill.text = text.ToUpperInvariant();
+            pill.EnableInClassList("g-pill--ok", kind == GWidgets.PillKind.Ok);
+            pill.EnableInClassList("g-pill--warn", kind == GWidgets.PillKind.Warn);
+            pill.EnableInClassList("g-pill--bad", kind == GWidgets.PillKind.Bad);
+        }
+
+        private void ClampIndices()
+        {
+            IReadOnlyList<DMStudioCategory> cats = DMStudioRegistry.Categories;
+            if (categoryIndex < 0 || categoryIndex >= cats.Count)
+                categoryIndex = 0;
+            if (subtabIndex < 0 || subtabIndex >= cats[categoryIndex].Subtabs.Length)
+                subtabIndex = 0;
+        }
+
+        private void DrawThemedContent()
+        {
+            using var genesisImgui = Project.EditorTools.Theme.GenesisImgui.Begin();
+            ClampIndices();
+            DMStudioCategory category = DMStudioRegistry.Categories[categoryIndex];
+            if (category.Subtabs.Length == 0)
+                return;
+
+            DrawContentBody(category.Subtabs[subtabIndex], false);
+            strataPanel.EndGUI();
+        }
+
+        // ------------------------------------------------------------------ Legacy IMGUI layout (theme off)
+
+        private void DrawLegacy()
+        {
+            ClampIndices();
             DrawHeader();
             DrawCategoryBar();
             DrawSubtabBar();
             DrawContentArea();
             DrawFooter();
+            strataPanel.EndGUI();
         }
 
         private void DrawHeader()
@@ -142,97 +369,125 @@ namespace Project.EditorTools.GenesisStudio
 
         private void DrawContentArea()
         {
-            DMStudioSubtab sub = DMStudioRegistry.Categories[categoryIndex].Subtabs[subtabIndex];
+            DMStudioCategory category = DMStudioRegistry.Categories[categoryIndex];
+            if (category.Subtabs.Length == 0)
+                return;
 
-            DMStudioStyles.DrawSection(sub.Label, DMStudioStyles.ContentPanel, () =>
+            DMStudioSubtab sub = category.Subtabs[subtabIndex];
+            DMStudioStyles.DrawSection(sub.Label, DMStudioStyles.ContentPanel, () => DrawContentBody(sub, true), category.Accent);
+        }
+
+        private void DrawFooter()
+        {
+            DMStudioStyles.DrawSection(string.Empty, DMStudioStyles.FooterPanel, () =>
             {
-                contentScroll = EditorGUILayout.BeginScrollView(contentScroll, GUILayout.ExpandHeight(true));
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField(TipText, DMStudioStyles.HeroSubtitle);
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button("Genesis Tools", GUILayout.Width(100f)))
+                    DarkMatterGenesisToolsWindow.Open();
+                if (GUILayout.Button("UI Studio", GUILayout.Width(80f)))
+                    UiStudioWindow.ShowWindow();
+                EditorGUILayout.EndHorizontal();
+            });
+        }
 
-                if (!string.IsNullOrEmpty(sub.Description))
-                {
-                    EditorGUILayout.LabelField(sub.Description, DMStudioStyles.HeroSubtitle);
-                    EditorGUILayout.Space(6f);
-                }
+        // ------------------------------------------------------------------ Shared panel content
 
-                switch (sub.Mode)
-                {
-                    case DMStudioPanelMode.SingletonAsset:
-                        if (sub.SectionFilter != DMStudioProfileSectionFilter.None)
-                        {
-                            sectionProfilePanel.Draw(
-                                sub.AssetPath,
-                                sub.SectionFilter,
-                                DMStudioProfileSections.GetSectionNote(sub.SectionFilter));
-                        }
-                        else
-                        {
-                            assetPanel.DrawSingleton(sub.AssetPath, null);
-                        }
+        private void DrawContentBody(DMStudioSubtab sub, bool showDescription)
+        {
+            contentScroll = EditorGUILayout.BeginScrollView(contentScroll, GUILayout.ExpandHeight(true));
 
-                        break;
-                    case DMStudioPanelMode.AssetFolder:
-                        contentScroll = Vector2.zero;
-                        EditorGUILayout.EndScrollView();
-                        assetPanel.DrawFolder(
-                            sub.SearchFolder,
-                            sub.TypeFilter,
-                            null,
-                            sub.SectionFilter);
-                        contentScroll = Vector2.zero;
-                        EditorGUILayout.BeginScrollView(contentScroll, GUILayout.ExpandHeight(true));
-                        break;
-                    case DMStudioPanelMode.EmbeddedItemData:
-                        itemDataPanel.Draw();
-                        break;
-                    case DMStudioPanelMode.EmbeddedAmmo:
-                        ammoPanel.Draw();
-                        break;
-                    case DMStudioPanelMode.EmbeddedCraftingItem:
-                        craftingItemPanel.Draw();
-                        break;
-                    case DMStudioPanelMode.PickupItemsCombined:
-                        pickupItemsPanel.Draw();
-                        break;
-                    case DMStudioPanelMode.BuildingLibrary:
-                        buildingLibraryPanel.Draw();
-                        break;
-                    case DMStudioPanelMode.ExternalBlueprintTab:
-                        DrawExternalBlueprint(sub);
-                        break;
-                    case DMStudioPanelMode.ExternalTool:
-                        DrawExternalTool(sub);
-                        break;
-                    case DMStudioPanelMode.PlayerSystemsLink:
-                        DrawPlayerSystemsLink();
-                        break;
-                    case DMStudioPanelMode.LandingCombined:
-                        landingPanel.Draw();
-                        break;
-                    case DMStudioPanelMode.ControlsInputEditor:
-                        controlsPanel.Draw();
-                        break;
-                    case DMStudioPanelMode.FootstepsCombined:
-                        footstepsPanel.Draw();
-                        break;
-                    case DMStudioPanelMode.CameraCombined:
-                        cameraPanel.Draw();
-                        break;
-                    case DMStudioPanelMode.EmbeddedCompanionEditor:
-                        contentScroll = Vector2.zero;
-                        EditorGUILayout.EndScrollView();
-                        companionEditorPanel.Draw();
-                        EditorGUILayout.BeginScrollView(contentScroll, GUILayout.ExpandHeight(true));
-                        break;
-                    case DMStudioPanelMode.EmbeddedCompanionSystems:
-                        contentScroll = Vector2.zero;
-                        EditorGUILayout.EndScrollView();
-                        companionSystemsPanel.Draw();
-                        EditorGUILayout.BeginScrollView(contentScroll, GUILayout.ExpandHeight(true));
-                        break;
-                }
+            if (showDescription && !string.IsNullOrEmpty(sub.Description))
+            {
+                EditorGUILayout.LabelField(sub.Description, DMStudioStyles.HeroSubtitle);
+                EditorGUILayout.Space(6f);
+            }
 
-                EditorGUILayout.EndScrollView();
-            }, DMStudioRegistry.Categories[categoryIndex].Accent);
+            switch (sub.Mode)
+            {
+                case DMStudioPanelMode.SingletonAsset:
+                    if (sub.SectionFilter != DMStudioProfileSectionFilter.None)
+                    {
+                        sectionProfilePanel.Draw(
+                            sub.AssetPath,
+                            sub.SectionFilter,
+                            DMStudioProfileSections.GetSectionNote(sub.SectionFilter));
+                    }
+                    else
+                    {
+                        assetPanel.DrawSingleton(sub.AssetPath, null);
+                    }
+
+                    break;
+                case DMStudioPanelMode.AssetFolder:
+                    contentScroll = Vector2.zero;
+                    EditorGUILayout.EndScrollView();
+                    assetPanel.DrawFolder(
+                        sub.SearchFolder,
+                        sub.TypeFilter,
+                        null,
+                        sub.SectionFilter);
+                    contentScroll = Vector2.zero;
+                    EditorGUILayout.BeginScrollView(contentScroll, GUILayout.ExpandHeight(true));
+                    break;
+                case DMStudioPanelMode.EmbeddedItemData:
+                    itemDataPanel.Draw();
+                    break;
+                case DMStudioPanelMode.EmbeddedAmmo:
+                    ammoPanel.Draw();
+                    break;
+                case DMStudioPanelMode.EmbeddedCraftingItem:
+                    craftingItemPanel.Draw();
+                    break;
+                case DMStudioPanelMode.PickupItemsCombined:
+                    pickupItemsPanel.Draw();
+                    break;
+                case DMStudioPanelMode.BuildingLibrary:
+                    buildingLibraryPanel.Draw();
+                    break;
+                case DMStudioPanelMode.EnvironmentStrata:
+                    contentScroll = Vector2.zero;
+                    EditorGUILayout.EndScrollView();
+                    strataPanel.Draw(this);
+                    EditorGUILayout.BeginScrollView(contentScroll, GUILayout.ExpandHeight(true));
+                    break;
+                case DMStudioPanelMode.ExternalBlueprintTab:
+                    DrawExternalBlueprint(sub);
+                    break;
+                case DMStudioPanelMode.ExternalTool:
+                    DrawExternalTool(sub);
+                    break;
+                case DMStudioPanelMode.PlayerSystemsLink:
+                    DrawPlayerSystemsLink();
+                    break;
+                case DMStudioPanelMode.LandingCombined:
+                    landingPanel.Draw();
+                    break;
+                case DMStudioPanelMode.ControlsInputEditor:
+                    controlsPanel.Draw();
+                    break;
+                case DMStudioPanelMode.FootstepsCombined:
+                    footstepsPanel.Draw();
+                    break;
+                case DMStudioPanelMode.CameraCombined:
+                    cameraPanel.Draw();
+                    break;
+                case DMStudioPanelMode.EmbeddedCompanionEditor:
+                    contentScroll = Vector2.zero;
+                    EditorGUILayout.EndScrollView();
+                    companionEditorPanel.Draw();
+                    EditorGUILayout.BeginScrollView(contentScroll, GUILayout.ExpandHeight(true));
+                    break;
+                case DMStudioPanelMode.EmbeddedCompanionSystems:
+                    contentScroll = Vector2.zero;
+                    EditorGUILayout.EndScrollView();
+                    companionSystemsPanel.Draw();
+                    EditorGUILayout.BeginScrollView(contentScroll, GUILayout.ExpandHeight(true));
+                    break;
+            }
+
+            EditorGUILayout.EndScrollView();
         }
 
         private static void DrawExternalBlueprint(DMStudioSubtab sub)
@@ -267,7 +522,7 @@ namespace Project.EditorTools.GenesisStudio
         private void DrawPlayerSystemsLink()
         {
             EditorGUILayout.HelpBox(
-                "DMPlayerSystemsProfile is a MonoBehaviour on the player prefab — enable/disable climb, jetpack, jump/landing, and related modules.",
+                "DMPlayerSystemsProfile is a MonoBehaviour on the player prefab. Enable or disable climb, jetpack, jump/landing, and related modules.",
                 MessageType.Info);
 
             const string variantPath = "Assets/_Project/Prefabs/Players/Player_v7 Variant.prefab";
@@ -322,23 +577,6 @@ namespace Project.EditorTools.GenesisStudio
             }
 
             playerSystemsTarget = null;
-        }
-
-        private void DrawFooter()
-        {
-            DMStudioStyles.DrawSection(string.Empty, DMStudioStyles.FooterPanel, () =>
-            {
-                EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField(
-                    "Tip: tune profiles in Play — Profile Save keeps climb, jetpack, map, and jump/landing edits when you stop.",
-                    DMStudioStyles.HeroSubtitle);
-                GUILayout.FlexibleSpace();
-                if (GUILayout.Button("Genesis Tools", GUILayout.Width(100f)))
-                    DarkMatterGenesisToolsWindow.Open();
-                if (GUILayout.Button("UI Studio", GUILayout.Width(80f)))
-                    UiStudioWindow.ShowWindow();
-                EditorGUILayout.EndHorizontal();
-            });
         }
     }
 }
