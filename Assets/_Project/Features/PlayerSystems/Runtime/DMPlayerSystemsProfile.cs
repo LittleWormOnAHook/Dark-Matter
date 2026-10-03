@@ -32,15 +32,21 @@ namespace Project.Player
         [Tooltip("When on, Climb / Dash / Jetpack require the matching Journal system anchor (Tier 0).")]
         public bool requireSkillTreeUnlocks = true;
 
+        [Header("World")]
+        [Tooltip("Gaia terrain tile streaming around the player (play mode). Off pauses the Terrain Loader Manager: no tiles load or unload, and tiles already loaded stay.")]
+        public bool terrainLoading = true;
+
         private bool _appliedClimb = true;
         private bool _appliedDash = true;
         private bool _appliedJetpack = true;
         private bool _appliedHeroLand = true;
+        private bool _appliedTerrainLoading = true;
 
         public bool ClimbEnabled => isActiveAndEnabled && climb && PassesSkillGate(DMSkillMovementSystemGates.IsClimbUnlockedBySkills);
         public bool DashEnabled => isActiveAndEnabled && dash && PassesSkillGate(DMSkillMovementSystemGates.IsDashUnlockedBySkills);
         public bool JetpackEnabled => isActiveAndEnabled && jetpack && PassesSkillGate(DMSkillMovementSystemGates.IsJetpackUnlockedBySkills);
         public bool HeroLandEnabled => isActiveAndEnabled && heroLand;
+        public bool TerrainLoadingEnabled => terrainLoading;
 
         private bool PassesSkillGate(System.Func<bool> unlocked) =>
             !requireSkillTreeUnlocks || unlocked();
@@ -82,11 +88,13 @@ namespace Project.Player
             bool dashOn = DashEnabled;
             bool jetOn = JetpackEnabled;
             bool heroOn = HeroLandEnabled;
+            bool terrainOn = TerrainLoadingEnabled;
             if (!force &&
                 climbOn == _appliedClimb &&
                 dashOn == _appliedDash &&
                 jetOn == _appliedJetpack &&
-                heroOn == _appliedHeroLand)
+                heroOn == _appliedHeroLand &&
+                terrainOn == _appliedTerrainLoading)
                 return;
 
             SetEnabled<DMClimbController>(climbOn);
@@ -108,6 +116,25 @@ namespace Project.Player
             _appliedDash = dashOn;
             _appliedJetpack = jetOn;
             _appliedHeroLand = heroOn;
+
+            // Retry next frame if loading should be off but the loader isn't in the scene yet.
+            _appliedTerrainLoading = ApplyTerrainLoading(terrainOn) ? terrainOn : !terrainOn;
+        }
+
+        /// <summary>Pauses or resumes Gaia's Terrain Loader Manager. Play mode only, so the scene is never dirtied.</summary>
+        private static bool ApplyTerrainLoading(bool on)
+        {
+            if (!Application.isPlaying)
+                return true;
+
+            GameObject host = Gaia.GaiaUtils.GetTerrainLoaderManagerObject(false);
+            Gaia.TerrainLoaderManager loader = host != null ? host.GetComponent<Gaia.TerrainLoaderManager>() : null;
+            if (loader == null)
+                return on;
+
+            if (loader.enabled != on)
+                loader.enabled = on;
+            return true;
         }
 
         private void SetEnabled<T>(bool on) where T : Behaviour
