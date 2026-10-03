@@ -147,6 +147,15 @@ namespace GenesisPCG.RockCreation
         /// </summary>
         public static Action<DmRockCombiner> BlendCheckHook;
 
+        /// <summary>
+        /// Editor hook: called when a bake is dropped (move, scale, edit) with the materials it drew, before they are released,
+        /// so values edited on those materials stay in the rock's own blend. Null in players.
+        /// </summary>
+        public static Action<DmRockCombiner, Material[]> BakedMaterialsReleasedHook;
+
+        /// <summary>Materials of the bake this rock last dropped (editor session only; null once baked again).</summary>
+        public Material[] LastBakedMaterials { get; private set; }
+
         private Material[] LiveMaterials(Material[] m)
         {
             if (BlendCheckHook != null)
@@ -1008,6 +1017,7 @@ namespace GenesisPCG.RockCreation
             state.settingsHash = SettingsHash();
             state.contentStamp = contentStamp;
             bake = state;
+            LastBakedMaterials = null;
             ApplyBakedPresentation(true);
 
             // The DontSave preview mesh is no longer drawn by anything.
@@ -1035,6 +1045,15 @@ namespace GenesisPCG.RockCreation
             if (!IsBaked)
                 return;
             Mesh old = bake.mesh;
+            if (bake.materials != null && bake.materials.Length > 0)
+            {
+                LastBakedMaterials = (Material[])bake.materials.Clone();
+                if (BakedMaterialsReleasedHook != null)
+                {
+                    try { BakedMaterialsReleasedHook(this, LastBakedMaterials); }
+                    catch (Exception e) { Debug.LogException(e, this); }
+                }
+            }
             LastBakedPosition = bake.position;
             HasLastBakedPose = true;
             RemoveBakedPresentation(deferDestroy);
@@ -1263,7 +1282,8 @@ namespace GenesisPCG.RockCreation
         private static bool SameMaterials(Material[] a, Material[] b)
         {
             if (a == null || a.Length != b.Length) return false;
-            for (int i = 0; i < a.Length; i++) if (a[i] != b[i]) return false;
+            // Play Mode runtime copies (shared or split off by an edit) stand for their source: a copy of a rock keeps them.
+            for (int i = 0; i < a.Length; i++) if (a[i] != b[i] && !PcgTerrainSplat.IsRuntimeCopyOf(a[i], b[i])) return false;
             return true;
         }
 

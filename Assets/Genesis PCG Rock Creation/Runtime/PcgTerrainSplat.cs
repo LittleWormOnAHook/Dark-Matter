@@ -85,6 +85,9 @@ namespace GenesisPCG.RockCreation
         private static readonly Dictionary<string, Material> s_runtime = new Dictionary<string, Material>();
         private static readonly Dictionary<Material, Material> s_sourceOf = new Dictionary<Material, Material>();
         private static readonly Dictionary<Material, string> s_hash = new Dictionary<Material, string>();
+        private static readonly Dictionary<Material, Terrain> s_terrainOf = new Dictionary<Material, Terrain>();
+        private static readonly Dictionary<Material, Material> s_originOf = new Dictionary<Material, Material>();
+        private static int s_splits;
         /// <summary>Shared runtime materials alive this Play session.</summary>
         public static int RuntimeMaterialCount => s_runtime.Count;
 
@@ -97,6 +100,8 @@ namespace GenesisPCG.RockCreation
             s_runtime.Clear();
             s_sourceOf.Clear();
             s_hash.Clear();
+            s_terrainOf.Clear();
+            s_originOf.Clear();
 #if UNITY_EDITOR
             s_dirty.Clear();
 #endif
@@ -183,6 +188,12 @@ namespace GenesisPCG.RockCreation
 
         private static Material RuntimeVariant(Material src, Terrain t)
         {
+            if (s_sourceOf.TryGetValue(src, out Material self) && self == src)
+            {
+                // A copy split off by a Play Mode edit (Diverge) is its own source: keep it, follow the terrain.
+                if (!s_terrainOf.TryGetValue(src, out Terrain st) || st != t) { Fill(src, t); s_terrainOf[src] = t; }
+                return src;
+            }
             if (!s_hash.TryGetValue(src, out string h)) s_hash[src] = h = ContentHash(src);
             string key = h + "#" + (t != null ? t.GetHashCode() : 0);
             if (s_runtime.TryGetValue(key, out Material v) && v != null) return v;
@@ -190,10 +201,82 @@ namespace GenesisPCG.RockCreation
             Fill(v, t);
             s_runtime[key] = v;
             s_sourceOf[v] = src;
+            s_terrainOf[v] = t;
+            s_originOf[v] = src;
 #if UNITY_EDITOR
             WatchSource(src);
 #endif
             return v;
+        }
+
+        /// <summary>Play Mode runtime copies alive now, each with the asset material it was made from (edits on them are kept on exit).</summary>
+        public static List<KeyValuePair<Material, Material>> RuntimeCopies()
+        {
+            var l = new List<KeyValuePair<Material, Material>>();
+            foreach (var kv in s_originOf)
+                if (kv.Key != null && kv.Value != null) l.Add(new KeyValuePair<Material, Material>(kv.Key, kv.Value));
+            return l;
+        }
+
+        /// <summary>True for a Play Mode runtime copy of a rock material (shared, or split off by an edit).</summary>
+        public static bool IsRuntimeCopy(Material m) => m != null && s_sourceOf.ContainsKey(m);
+
+        /// <summary>
+        /// Play Mode: <paramref name="copy"/> is a runtime copy made from <paramref name="source"/> or from a material with the
+        /// same content (shared copies are keyed by content, so one copy stands for every identical source).
+        /// </summary>
+        public static bool IsRuntimeCopyOf(Material copy, Material source)
+        {
+            if (!Application.isPlaying || copy == null || source == null || !s_originOf.TryGetValue(copy, out Material o) || o == null) return false;
+            if (o == source) return true;
+            if (!s_hash.TryGetValue(o, out string ho)) s_hash[o] = ho = ContentHash(o);
+            if (!s_hash.TryGetValue(source, out string hs)) s_hash[source] = hs = ContentHash(source);
+            return ho == hs;
+        }
+
+        /// <summary>
+        /// Play Mode: a shared runtime copy was edited for some of the rocks drawing it (<paramref name="roots"/>). The edited
+        /// values move to a new copy used by those rocks only (copies of them share it), and the shared copy goes back to its
+        /// source's values for the other rocks (or <paramref name="restore"/>'s: the shared copy before this edit, so earlier
+        /// Play Mode edits made for every rock stay). Returns the new copy (null: not a runtime copy).
+        /// </summary>
+        public static Material Diverge(Material shared, IEnumerable<GameObject> roots, Material restore = null)
+        {
+            if (shared == null || roots == null || !s_sourceOf.TryGetValue(shared, out Material src) || src == null) return null;
+            var split = new Material(shared) { name = src.name.Replace(" (Play edited)", "") + " (Play edited)", hideFlags = HideFlags.DontSave };
+            s_sourceOf[split] = split;
+            s_originOf[split] = s_originOf.TryGetValue(shared, out Material o) && o != null ? o : src;
+            s_terrainOf[split] = s_terrainOf.TryGetValue(shared, out Terrain st) ? st : null;
+            s_runtime["split#" + (++s_splits)] = split;
+            var rs = new List<Renderer>();
+            foreach (GameObject root in roots)
+            {
+                if (root == null) continue;
+                root.GetComponentsInChildren(true, rs);
+                foreach (Renderer r in rs)
+                {
+                    Material[] mats = r.sharedMaterials;
+                    bool changed = false;
+                    for (int i = 0; i < mats.Length; i++)
+                        if (mats[i] == shared) { mats[i] = split; changed = true; }
+                    if (!changed) continue;
+#if UNITY_EDITOR
+                    // Same undo step as the material edit: undoing it puts the rocks back on the shared copy.
+                    UnityEditor.Undo.RecordObject(r, "Play Mode material edit");
+#endif
+                    r.sharedMaterials = mats;
+                }
+            }
+            Material back = restore != null ? restore : src;
+            if (back != shared)
+            {
+                if (shared.shader != back.shader) shared.shader = back.shader;
+                shared.CopyPropertiesFromMaterial(back);
+                shared.shaderKeywords = back.shaderKeywords;
+                shared.renderQueue = back.renderQueue;
+                Fill(shared, s_terrainOf.TryGetValue(shared, out Terrain t) ? t : null);
+            }
+            return split;
         }
 
         /// <summary>Shader + keywords + queue + every property value: equal hashes render identically.</summary>

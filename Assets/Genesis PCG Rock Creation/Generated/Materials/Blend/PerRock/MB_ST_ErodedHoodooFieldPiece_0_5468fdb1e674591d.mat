@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: MB_ST_ErodedHoodooFieldPiece_0_5468fdb1e674591d
-  m_Shader: {fileID: 4800000, guid: f645f4af1d0d2664aab0864a41632bf5, type: 3}
+  m_Shader: {fileID: 4800000, guid: 877342c425e832e4c8d6c84eebe7c69e, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
@@ -86,11 +86,123 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _GRB_TAlb0:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TAlb1:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TAlb2:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TAlb3:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TAlb4:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TAlb5:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TAlb6:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TAlb7:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TControl0:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TControl1:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_THeightMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TMsk0:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TMsk1:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TMsk2:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TMsk3:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TMsk4:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TMsk5:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TMsk6:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TMsk7:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TNrm0:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TNrm1:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TNrm2:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TNrm3:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TNrm4:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TNrm5:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TNrm6:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TNrm7:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _GRB_TerrainBaseMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _GRB_TerrainNormalMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TopAOMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
@@ -100,6 +212,10 @@ Material:
         m_Offset: {x: 0, y: 0}
     - _GRB_TopHeightMap:
         m_Texture: {fileID: 2800000, guid: a19924d93acc32a40b969e590cf0be7e, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TopMaskMap:
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _GRB_TopNormalMap:
@@ -234,19 +350,20 @@ Material:
     - _GRB_BottomThroughMin: 0.17
     - _GRB_BottomThroughNoiseScale: 1
     - _GRB_BottomUpBias: 0.5
-    - _GRB_ContactAOKeep: 1
+    - _GRB_ContactAOKeep: 0.3
     - _GRB_ContactAOWidth: 2.6
+    - _GRB_FadeClip: 1
     - _GRB_FadeEnable: 1
-    - _GRB_FadeHeight: 0.1
+    - _GRB_FadeHeight: 0.049
     - _GRB_FadeNoiseScale: 6
-    - _GRB_FadeNoiseStrength: 0.35
-    - _GRB_FadeNormalUp: 0.597
-    - _GRB_FadeSoftness: 0.6
-    - _GRB_FadeTerrainColor: 1
+    - _GRB_FadeNoiseStrength: 0
+    - _GRB_FadeNormalUp: 0.198
+    - _GRB_FadeSoftness: 0.961
+    - _GRB_FadeTerrainColor: 0.989
     - _GRB_ForwardOnly: 0
     - _GRB_HeightRange: 4
     - _GRB_MacroScale: 6
-    - _GRB_MacroStrength: 0
+    - _GRB_MacroStrength: 0.25
     - _GRB_SizeRange: 8
     - _GRB_StrataAzimuth: 30
     - _GRB_StrataDetail: 0.7
@@ -266,22 +383,30 @@ Material:
     - _GRB_TerrainPerPixel: 1
     - _GRB_TerrainSmoothness: 0.15
     - _GRB_TerrainTiling: 0.5
+    - _GRB_TopAOOn: 0
+    - _GRB_TopAOStrength: 1
     - _GRB_TopBrightness: 1
     - _GRB_TopCoverage: 0.45
     - _GRB_TopCreviceBias: 0.5
     - _GRB_TopEnable: 1
     - _GRB_TopFromTerrain: 1
     - _GRB_TopHeightContrast: 0.6
+    - _GRB_TopMaskOn: 0
     - _GRB_TopMaxWeight: 1
+    - _GRB_TopMetallicMax: 1
+    - _GRB_TopMetallicMin: 0
     - _GRB_TopMinPieceSize: 0
     - _GRB_TopNoiseScale: 0.6
     - _GRB_TopNoiseStrength: 0.35
     - _GRB_TopNormalBlend: 0.6
     - _GRB_TopNormalScale: 0.8
+    - _GRB_TopParallax: 0
     - _GRB_TopSaturation: 1
     - _GRB_TopSharpness: 8
     - _GRB_TopSlopeEnd: 0.8
     - _GRB_TopSlopeStart: 0.45
+    - _GRB_TopSmoothMax: 1
+    - _GRB_TopSmoothMin: 0
     - _GRB_TopSmoothness: 0.2
     - _GRB_TopThroughContrast: 2.5
     - _GRB_TopThroughMax: 1
@@ -375,8 +500,54 @@ Material:
     - _EmissiveColorLDR: {r: 0, g: 0, b: 0, a: 1}
     - _GRB_StrataColorA: {r: 0.29999995, g: 0.26999992, b: 0.23999992, a: 1}
     - _GRB_StrataColorB: {r: 0.5499999, g: 0.49, b: 0.40999994, a: 1}
+    - _GRB_TControlTS: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TDiff0: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TDiff1: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TDiff2: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TDiff3: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TDiff4: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TDiff5: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TDiff6: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TDiff7: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_THeightP: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_THeightTS: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TLayer0: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TLayer1: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TLayer2: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TLayer3: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TLayer4: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TLayer5: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TLayer6: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TLayer7: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskOff0: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskOff1: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskOff2: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskOff3: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskOff4: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskOff5: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskOff6: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskOff7: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskScale0: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskScale1: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskScale2: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskScale3: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskScale4: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskScale5: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskScale6: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskScale7: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TParams: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TRect: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TST0: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TST1: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TST2: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TST3: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TST4: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TST5: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TST6: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TST7: {r: 0, g: 0, b: 0, a: 0}
     - _GRB_TerrainTint: {r: 1, g: 1, b: 1, a: 1}
     - _GRB_TerrainUVOffset: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TopColor: {r: 1, g: 1, b: 1, a: 1}
     - _GRB_TopTint: {r: 1, g: 1, b: 1, a: 1}
     - _GRB_TopTint2: {r: 1, g: 1, b: 1, a: 1}
     - _InvPrimScale: {r: 1, g: 1, b: 0, a: 0}

@@ -34,11 +34,11 @@ MonoBehaviour:
     rayStartHeight: 50
     conformBaseToSurface: 1
     conformHeight: 0
-    conformHeightInMeters: 0
+    conformHeightInMeters: 1
     conformFalloff: 1.5
     maxConformDistance: 1.5
     extraSink: 0.05
-    conformLiftBuried: 0
+    conformLiftBuried: 1
     conformUndersideFully: 1
     guaranteeContact: 1
     contactReach: 0.35

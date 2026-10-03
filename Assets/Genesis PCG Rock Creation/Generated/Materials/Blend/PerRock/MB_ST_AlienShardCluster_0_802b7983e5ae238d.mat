@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: MB_ST_AlienShardCluster_0_802b7983e5ae238d
-  m_Shader: {fileID: 4800000, guid: f645f4af1d0d2664aab0864a41632bf5, type: 3}
+  m_Shader: {fileID: 4800000, guid: 877342c425e832e4c8d6c84eebe7c69e, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
@@ -335,19 +335,19 @@ Material:
     - _EnableGeometricSpecularAA: 0
     - _EnergyConservingSpecularColor: 1
     - _GRB_BaseLumRef: 0.08
-    - _GRB_BottomEdgeNoise: 0.05
+    - _GRB_BottomEdgeNoise: 0.019
     - _GRB_BottomEdgeNoiseScale: 7
     - _GRB_BottomEnable: 1
     - _GRB_BottomFalloff: 0.445
-    - _GRB_BottomHeight: 0.15
-    - _GRB_BottomMaxWeight: 0.434
+    - _GRB_BottomHeight: 0.14
+    - _GRB_BottomMaxWeight: 0.788
     - _GRB_BottomNoiseScale: 1.5
     - _GRB_BottomNoiseStrength: 0.5
-    - _GRB_BottomPieceScale: 0.25
-    - _GRB_BottomSharpness: 3
-    - _GRB_BottomThroughContrast: 2.5
+    - _GRB_BottomPieceScale: 0.403
+    - _GRB_BottomSharpness: 9.73
+    - _GRB_BottomThroughContrast: 2.62
     - _GRB_BottomThroughMax: 0.75
-    - _GRB_BottomThroughMin: 0.15
+    - _GRB_BottomThroughMin: 0.095
     - _GRB_BottomThroughNoiseScale: 1
     - _GRB_BottomUpBias: 0.5
     - _GRB_ContactAOKeep: 0.3
@@ -363,7 +363,7 @@ Material:
     - _GRB_ForwardOnly: 0
     - _GRB_HeightRange: 4
     - _GRB_MacroScale: 6
-    - _GRB_MacroStrength: 0
+    - _GRB_MacroStrength: 0.25
     - _GRB_SizeRange: 8
     - _GRB_StrataAzimuth: 30
     - _GRB_StrataDetail: 0.7
@@ -379,7 +379,7 @@ Material:
     - _GRB_StrataThickVar: 0.5
     - _GRB_StrataTilt: 6
     - _GRB_TerrainAuto: 1
-    - _GRB_TerrainNormalScale: 1
+    - _GRB_TerrainNormalScale: 1.618
     - _GRB_TerrainPerPixel: 1
     - _GRB_TerrainSmoothness: 0.15
     - _GRB_TerrainTiling: 0.5

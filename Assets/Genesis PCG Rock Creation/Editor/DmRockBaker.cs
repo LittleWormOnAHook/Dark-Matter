@@ -56,11 +56,15 @@ namespace GenesisPCG.RockCreation.Editor
                 return false;
             // Terrain match on and no blend (or a copy still pointing at the original's per-rock blend): give the rock its own
             // blend first, so the content stamp / settings hash below already include it.
+            Material shownFrom = c.BlendMaterial;
             if (DmRockBlendMaterials.NeedsOwnBlend(c))
             {
                 DmRockBlendMaterials.EnsureOwnBlend(c);
                 force = true;
             }
+            // Values edited on the materials the rock showed (its bake variants: this bake regenerates them) stay the rock's.
+            if (DmRockBlendMaterials.KeepShownEdits(c, c.IsBaked ? c.BakeData.materials : c.LastBakedMaterials, shownFrom, null))
+                force = true;
             string staleWhy = c.IsBakeCurrent ? StaleReason(c) : null;
             if (!force && c.IsBakeCurrent && staleWhy == null)
             {
@@ -161,6 +165,7 @@ namespace GenesisPCG.RockCreation.Editor
                 Mesh savedCollider = subs.First(x => x.name == colliderName);
 
                 c.ApplyBake(lod0, savedLods, heights, savedCollider, materials, atlas, bs.crossFade, stamp);
+                DmRockBlendMaterials.NoteBaked(c);
                 report.saveMs = sw.Elapsed.TotalMilliseconds - tS;
 
                 if (!string.IsNullOrEmpty(oldPath) && oldPath != path)

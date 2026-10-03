@@ -14,7 +14,7 @@ namespace GenesisPCG.RockCreation.Editor
     /// (Generated/Materials/Blend): template settings + the rock's base maps (atlas or override material) + the terrain
     /// layer under the rock.
     /// </summary>
-    public static class DmRockBlendMaterials
+    public static partial class DmRockBlendMaterials
     {
         public const string ShaderName = "Genesis PCG/Rock Blend Lit";
         /// <summary>Same material, forward-only passes (lets Contact AO Keep fade SSAO on the rock).</summary>
@@ -501,6 +501,14 @@ namespace GenesisPCG.RockCreation.Editor
             string path = VariantFolder + "/" + Safe(template.name) + "__" + baseKey + (IsPerRock(template) ? "" : TerrainKey(tl)) + ".mat";
             if (!s_variants.TryGetValue(path, out Material m) || m == null)
                 m = AssetDatabase.LoadAssetAtPath<Material>(path);
+            // A shared variant edited by hand is still what the other rocks baked with it show: leave it to them (they keep
+            // the edit in their own blend on their next bake) and use the next free / unedited slot.
+            for (int n = 2; m != null && !IsPerRock(template) && n < 100 && VariantEdits(m, template, false).Count > 0; n++)
+            {
+                path = VariantFolder + "/" + Safe(template.name) + "__" + baseKey + TerrainKey(tl) + "__" + n + ".mat";
+                if (!s_variants.TryGetValue(path, out m) || m == null)
+                    m = AssetDatabase.LoadAssetAtPath<Material>(path);
+            }
             bool isNew = m == null;
             if (isNew) { EnsureFolder(VariantFolder); m = new Material(template) { name = Path.GetFileNameWithoutExtension(path) }; }
             ConfigureVariant(m, template, baseMat, tl);
@@ -573,6 +581,7 @@ namespace GenesisPCG.RockCreation.Editor
                 m.SetFloat("_GRB_BaseLumRef", AverageLuminance(bt, bc));
             }
             GenesisRockBlendGUI.Validate(m);
+            StampBakeBase(m); // what it was made from: later edits on it are told apart from blend changes (kept on move / copy)
         }
 
         // ------------------------------------------------------------------------------------------------
@@ -657,6 +666,21 @@ namespace GenesisPCG.RockCreation.Editor
         public static void OnBlendEdited(IEnumerable<Material> edited)
         {
             var set = new HashSet<Material>(edited.Where(m => m != null));
+            if (Application.isPlaying)
+            {
+                foreach (Material m in set)
+                {
+                    if (EditorUtility.IsPersistent(m)) s_editedInPlay.Add(m); // rebaked after Play
+                    else DivergePlayEdit(m);
+                }
+            }
+            else
+            {
+                // Edited the material a rock draws (bake variant / live preview): it is regenerated from the rock's blend on
+                // the next bake (move, scale, copy), so the values go into that blend now.
+                foreach (Material m in set.ToList())
+                    foreach (Material own in WriteBackGeneratedEdits(m)) set.Add(own);
+            }
             foreach (Material m in set) RefreshPreviews(m);
             foreach (DmRockCombiner c in Object.FindObjectsByType<DmRockCombiner>(FindObjectsInactive.Exclude))
             {

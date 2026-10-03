@@ -300,8 +300,8 @@ namespace GenesisPCG.RockCreation.Editor
                 else if (path.Contains("/Generated/TextureArrays/")) arrays++;
             }
             if (variants > 0)
-                EditorGUILayout.HelpBox("Bake output (variant): regenerated from the rock's blend material on every bake, so edits here are lost. " +
-                                        "Edit the rock's blend in the DM PCG Creator inspector (or its per-rock MB_ material).", MessageType.Warning);
+                EditorGUILayout.HelpBox("Bake output (variant): regenerated from the rock's blend material on every bake. Edits here are copied into " +
+                                        "the rock's own blend (per-rock MB_ material; a rock on a shared template gets one) and kept on moves, scaling and copies.", MessageType.Info);
             if (arrays > 0)
                 EditorGUILayout.HelpBox("Kit texture-array material: shared by every baked rock of the kit that has no blend material, and not used " +
                                         "for terrain matching. Use the DM PCG Creator inspector (per-rock blend) instead.", MessageType.Warning);

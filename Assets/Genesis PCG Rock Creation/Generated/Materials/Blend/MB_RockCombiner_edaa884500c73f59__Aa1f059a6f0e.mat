@@ -21,6 +21,7 @@ Material:
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: 2475
   stringTagMap:
+    GRB_BakeBase: '#shader=9ed81647;f_Cutoff=5480b4d2;f_ZTestGBuffer=360caa42;f_SrcBlend=340ca71c;f_DstBlend=350ca8af;f_StencilWriteMask=330ca589;f_ZWrite=340ca71c;f_CullMode=370cabd5;f_StencilWriteMaskGBuffer=18eb258b;f_StencilRefGBuffer=1beb2a44;f_AlphaCutoffEnable=340ca71c;f_StencilWriteMaskDepth=3c0cb3b4;f_StencilRefDepth=3d0cb547;f_StencilWriteMaskMV=88e38716;f_StencilRefMV=89e388a9;f_AlphaSrcBlend=340ca71c;f_AlphaDstBlend=350ca8af;f_ZTestTransparent=310ca263;f_DstBlend2=350ca8af;f_ZTestDepthEqualForOpaque=360caa42;f_CullModeForward=370cabd5;f_StencilRef=350ca8af;f_AlphaRemapMin=350ca8af;f_AlphaRemapMax=340ca71c;f_HeightAmplitude=789553b1;f_HeightCenter=5480b4d2;f_HeightMapParametrization=350ca8af;f_HeightOffset=350ca8af;f_HeightMin=14cd0a2b;f_HeightMax=340ca71c;f_HeightTessAmplitude=370cabd5;f_HeightTessCenter=5480b4d2;f_HeightPoMAmplitude=370cabd5;f_DetailAlbedoScale=340ca71c;f_DetailNormalScale=340ca71c;f_DetailSmoothnessScale=340ca71c;f_Anisotropy=350ca8af;f_SubsurfaceMask=340ca71c;f_TransmissionMask=340ca71c;f_Thickness=340ca71c;f_IridescenceThickness=340ca71c;f_IridescenceMask=340ca71c;f_CoatMask=350ca8af;f_EnergyConservingSpecularColor=340ca71c;f_SpecularOcclusionMode=340ca71c;f_AlbedoAffectEmissive=350ca8af;f_EmissiveIntensityUnit=350ca8af;f_UseEmissiveIntensity=350ca8af;f_EmissiveIntensity=340ca71c;f_EmissiveExposureWeight=340ca71c;f_UseShadowThreshold=350ca8af;f_AlphaCutoff=5480b4d2;f_AlphaCutoffShadow=5480b4d2;f_AlphaCutoffPrepass=5480b4d2;f_AlphaCutoffPostpass=5480b4d2;f_TransparentDepthPrepassEnable=350ca8af;f_TransparentBackfaceEnable=350ca8af;f_TransparentDepthPostpassEnable=350ca8af;f_TransparentSortPriority=350ca8af;f_RefractionModel=350ca8af;f_Ior=e8421739;f_ATDistance=340ca71c;f_TransparentWritingMotionVec=350ca8af;f_PerPixelSorting=350ca8af;f_SurfaceType=350ca8af;f_BlendMode=350ca8af;f_TransparentZWrite=350ca8af;f_TransparentCullMode=370cabd5;f_OpaqueCullMode=370cabd5;f_EnableFogOnTransparent=340ca71c;f_EnableBlendModePreserveSpecularLighting=340ca71c;f_DoubleSidedEnable=350ca8af;f_DoubleSidedNormalMode=340ca71c;f_DoubleSidedGIMode=350ca8af;f_UVBase=350ca8af;f_ObjectSpaceUVMapping=350ca8af;f_TexWorldScale=340ca71c;f_InvTilingScale=340ca71c;f_NormalMapSpace=350ca8af;f_MaterialID=340ca71c;f_TransmissionEnable=340ca71c;f_DisplacementMode=350ca8af;f_DisplacementLockObjectScale=340ca71c;f_DisplacementLockTilingScale=340ca71c;f_DepthOffsetEnable=350ca8af;f_EnableGeometricSpecularAA=350ca8af;f_SpecularAAScreenSpaceVariance=5080ae86;f_SpecularAAThreshold=4f80acf3;f_PPDMinSamples=300ca0d0;f_PPDMaxSamples=18eb258b;f_PPDLodThreshold=300ca0d0;f_PPDPrimitiveLength=340ca71c;f_PPDPrimitiveWidth=340ca71c;f_UVDetail=350ca8af;f_LinkDetailsWithBase=340ca71c;f_EmissiveColorMode=340ca71c;f_UVEmissive=350ca8af;f_ObjectSpaceUVMappingEmissive=350ca8af;f_TexWorldScaleEmissive=340ca71c;f_SupportDecals=340ca71c;f_ReceivesSSR=340ca71c;f_ReceivesSSRTransparent=350ca8af;f_AddPrecomputedVelocity=350ca8af;f_RayTracing=350ca8af;f_DiffusionProfile=350ca8af;f_DiffusionProfileHash=350ca8af;f_GRB_VColorRange=5480b4d2;f_GRB_TopEnable=350ca8af;f_GRB_TopFromTerrain=350ca8af;f_GRB_TopNormalScale=340ca71c;f_GRB_TopParallax=350ca8af;f_GRB_TopMetallicMin=350ca8af;f_GRB_TopMetallicMax=340ca71c;f_GRB_TopSmoothMin=350ca8af;f_GRB_TopSmoothMax=340ca71c;f_GRB_TopAOStrength=340ca71c;f_GRB_TopVarScale=5280b1ac;f_GRB_TopValueVar=6d9303c9;f_GRB_TopSaturation=340ca71c;f_GRB_TopBrightness=340ca71c;f_GRB_TopTiling=5480b4d2;f_GRB_TopSmoothness=4e80ab60;f_GRB_TopCoverage=350ca8af;f_GRB_TopSharpness=3d0cb547;f_GRB_TopSlopeStart=e99efff0;f_GRB_TopSlopeEnd=5980bcb1;f_GRB_TopCreviceBias=5480b4d2;f_GRB_TopHeightContrast=5380b33f;f_GRB_TopVertexWeight=5480b4d2;f_GRB_TopNoiseScale=5380b33f;f_GRB_TopNoiseStrength=e98db6cf;f_GRB_TopNormalBlend=5380b33f;f_GRB_TopThroughMin=e98db6cf;f_GRB_TopThroughMax=340ca71c;f_GRB_TopThroughNoiseScale=5280b1ac;f_GRB_TopThroughContrast=2b1e137c;f_GRB_TopMaxWeight=340ca71c;f_GRB_TopMinPieceSize=350ca8af;f_GRB_BottomEnable=340ca71c;f_GRB_TerrainAuto=340ca71c;f_GRB_TerrainPerPixel=340ca71c;f_GRB_BottomThroughMin=6d9303c9;f_GRB_BottomThroughMax=799793db;f_GRB_BottomThroughNoiseScale=340ca71c;f_GRB_BottomThroughContrast=2b1e137c;f_GRB_BottomHeight=ed8ffbb2;f_GRB_BottomFalloff=6e9543f3;f_GRB_BottomSharpness=360caa42;f_GRB_BottomNoiseScale=e8421739;f_GRB_BottomNoiseStrength=5480b4d2;f_GRB_BottomEdgeNoiseScale=320ca3f6;f_GRB_BottomEdgeNoise=79955544;f_GRB_BottomUpBias=5480b4d2;f_GRB_BottomMaxWeight=5880bb1e;f_GRB_BottomPieceScale=a5bf29be;f_GRB_StrataEnable=350ca8af;f_GRB_StrataDetail=5280b1ac;f_GRB_StrataStrength=5380b33f;f_GRB_StrataSpacing=5380b33f;f_GRB_StrataThickVar=5480b4d2;f_GRB_StrataTilt=330ca589;f_GRB_StrataAzimuth=87f05176;f_GRB_StrataNoiseScale=ed8ffbb2;f_GRB_StrataNoiseAmp=e98db6cf;f_GRB_StrataLineDarken=e98db6cf;f_GRB_StrataLineWidth=7795521e;f_GRB_StrataLedge=5480b4d2;f_GRB_StrataSmoothVar=6d9303c9;f_GRB_MacroStrength=4f80acf3;f_GRB_MacroScale=330ca589;f_GRB_FadeEnable=340ca71c;f_GRB_FadeClip=350ca8af;f_GRB_FadeHeight=5080ae86;f_GRB_FadeSoftness=5380b33f;f_GRB_FadeNoiseScale=330ca589;f_GRB_FadeNoiseStrength=e98db6cf;f_GRB_FadeTerrainColor=340ca71c;f_GRB_FadeNormalUp=5480b4d2;f_GRB_ContactAOKeep=4e80ab60;f_GRB_ContactAOWidth=370cabd5;f_GRB_ForwardOnly=350ca8af;v_Color=9b4a98bb;v_EmissionColor=9b4a98bb;v_ThicknessRemap=0cfb95d8;v_IridescenceThicknessRemap=0cfb95d8;v_SpecularColor=9b4a98bb;v_EmissiveColor=43a34058;v_EmissiveColorLDR=43a34058;v_TransmittanceColor=9b4a98bb;v_DoubleSidedConstants=b041f3b7;v_UVMappingMask=18b4f240;v_InvPrimScale=f9cf4d93;v_UVDetailsMappingMask=18b4f240;v_UVMappingMaskEmissive=18b4f240;v_DiffusionProfileAsset=44a341eb;v_GRB_TopColor=9b4a98bb;v_GRB_TopTint=9b4a98bb;v_GRB_TopTint2=9b4a98bb;v_GRB_StrataColorA=59c7c19f;v_GRB_StrataColorB=654086dd;t_NormalMapOS=8fb2e96f;t_BentNormalMap=8fb2e96f;t_BentNormalMapOS=8fb2e96f;t_HeightMap=8fb2e96f;t_DetailMap=8fb2e96f;t_TangentMap=8fb2e96f;t_TangentMapOS=8fb2e96f;t_AnisotropyMap=8fb2e96f;t_SubsurfaceMaskMap=8fb2e96f;t_TransmissionMaskMap=8fb2e96f;t_ThicknessMap=8fb2e96f;t_IridescenceThicknessMap=8fb2e96f;t_IridescenceMaskMap=8fb2e96f;t_CoatMaskMap=8fb2e96f;t_SpecularColorMap=8fb2e96f;t_EmissiveColorMap=8fb2e96f;t_TransmittanceColorMap=8fb2e96f;t_GRB_TopBaseMap=8fb2e96f;t_GRB_TopNormalMap=8fb2e96f;t_GRB_TopHeightMap=8fb2e96f;t_GRB_TopMaskMap=8fb2e96f;t_GRB_TopAOMap=8fb2e96f;'
     GRB_FadeAlphaClip: 1
     GRB_SourceTemplate: M_RockBlend_Default
     RenderType: TransparentCutout
@@ -86,6 +87,114 @@ Material:
         m_Texture: {fileID: 18700000, guid: e12c149add6814145a54008a37eab5d4, type: 2}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _GRB_TAlb0:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TAlb1:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TAlb2:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TAlb3:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TAlb4:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TAlb5:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TAlb6:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TAlb7:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TControl0:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TControl1:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_THeightMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TMsk0:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TMsk1:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TMsk2:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TMsk3:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TMsk4:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TMsk5:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TMsk6:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TMsk7:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TNrm0:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TNrm1:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TNrm2:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TNrm3:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TNrm4:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TNrm5:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TNrm6:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TNrm7:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _GRB_TerrainBaseMap:
         m_Texture: {fileID: 2800000, guid: c17c17abd34221a4e829b6d8e161685f, type: 3}
         m_Scale: {x: 1, y: 1}
@@ -94,11 +203,19 @@ Material:
         m_Texture: {fileID: 2800000, guid: 15e3223350d6e684ab4f433e31fc7255, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _GRB_TopAOMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _GRB_TopBaseMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _GRB_TopHeightMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GRB_TopMaskMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
@@ -267,22 +384,30 @@ Material:
     - _GRB_TerrainPerPixel: 1
     - _GRB_TerrainSmoothness: 0.35383904
     - _GRB_TerrainTiling: 0.5
+    - _GRB_TopAOOn: 0
+    - _GRB_TopAOStrength: 1
     - _GRB_TopBrightness: 1
     - _GRB_TopCoverage: 0
     - _GRB_TopCreviceBias: 0.5
     - _GRB_TopEnable: 0
     - _GRB_TopFromTerrain: 0
     - _GRB_TopHeightContrast: 0.6
+    - _GRB_TopMaskOn: 0
     - _GRB_TopMaxWeight: 1
+    - _GRB_TopMetallicMax: 1
+    - _GRB_TopMetallicMin: 0
     - _GRB_TopMinPieceSize: 0
     - _GRB_TopNoiseScale: 0.6
     - _GRB_TopNoiseStrength: 0.35
     - _GRB_TopNormalBlend: 0.6
     - _GRB_TopNormalScale: 1
+    - _GRB_TopParallax: 0
     - _GRB_TopSaturation: 1
     - _GRB_TopSharpness: 8
     - _GRB_TopSlopeEnd: 0.8
     - _GRB_TopSlopeStart: 0.45
+    - _GRB_TopSmoothMax: 1
+    - _GRB_TopSmoothMin: 0
     - _GRB_TopSmoothness: 0.3
     - _GRB_TopThroughContrast: 2.5
     - _GRB_TopThroughMax: 1
@@ -376,8 +501,54 @@ Material:
     - _EmissiveColorLDR: {r: 0, g: 0, b: 0, a: 1}
     - _GRB_StrataColorA: {r: 0.41999996, g: 0.39999998, b: 0.37999994, a: 1}
     - _GRB_StrataColorB: {r: 0.56, g: 0.53, b: 0.47999996, a: 1}
+    - _GRB_TControlTS: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TDiff0: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TDiff1: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TDiff2: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TDiff3: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TDiff4: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TDiff5: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TDiff6: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TDiff7: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_THeightP: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_THeightTS: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TLayer0: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TLayer1: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TLayer2: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TLayer3: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TLayer4: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TLayer5: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TLayer6: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TLayer7: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskOff0: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskOff1: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskOff2: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskOff3: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskOff4: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskOff5: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskOff6: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskOff7: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskScale0: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskScale1: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskScale2: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskScale3: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskScale4: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskScale5: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskScale6: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TMaskScale7: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TParams: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TRect: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TST0: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TST1: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TST2: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TST3: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TST4: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TST5: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TST6: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TST7: {r: 0, g: 0, b: 0, a: 0}
     - _GRB_TerrainTint: {r: 1, g: 1, b: 1, a: 1}
     - _GRB_TerrainUVOffset: {r: 0, g: 0, b: 0, a: 0}
+    - _GRB_TopColor: {r: 1, g: 1, b: 1, a: 1}
     - _GRB_TopTint: {r: 1, g: 1, b: 1, a: 1}
     - _GRB_TopTint2: {r: 1, g: 1, b: 1, a: 1}
     - _InvPrimScale: {r: 1, g: 1, b: 0, a: 0}

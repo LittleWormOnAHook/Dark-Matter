@@ -116,11 +116,18 @@ namespace GenesisPCG.RockCreation.Editor
             EditorUtility.SetDirty(c);
         }
 
-        /// <summary>A copy must not edit the original's per-rock blend: give it its own (cloned from the original's).</summary>
+        /// <summary>
+        /// A copy must not edit the original's per-rock blend: give it its own (cloned from the original's), with every value
+        /// the original showed (also values edited on its baked material), so the copy starts with the original's settings.
+        /// </summary>
         private static void CloneBlendForCopy(Component c, string undoName)
         {
-            if (c is DmRockCombiner rc && DmRockBlendMaterials.NeedsOwnBlend(rc))
+            if (!(c is DmRockCombiner rc)) return;
+            Material from = rc.BlendMaterial;
+            Material[] shown = rc.IsBaked ? rc.BakeData.materials : rc.LastBakedMaterials;
+            if (DmRockBlendMaterials.NeedsOwnBlend(rc))
                 DmRockBlendMaterials.EnsureOwnBlend(rc, undoName);
+            DmRockBlendMaterials.KeepShownEdits(rc, shown, from, undoName);
         }
 
         public static bool SnapWithUndo(Transform t, PcgSurfaceSnapSettings settings, IList<Transform> ignore, string undoName)
