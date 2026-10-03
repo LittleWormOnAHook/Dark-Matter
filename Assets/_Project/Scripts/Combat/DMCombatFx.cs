@@ -141,6 +141,12 @@ namespace Project.Combat
             GameObject impactVfxOverride = null)
         {
             DMAmmoFxProfile profile = ResolveProfile(ammoItem, weapon);
+            bool skipDecal = ShouldSkipImpactDecal(receiver);
+            // Carve first so hit marks / burns land on the crater floor instead of the surface that was just removed.
+            if (!skipDecal && Project.SurfaceCarve.DMCarveImpacts.TryCarveFromAmmo(ammoItem, profile, point, normal, receiver, out Vector3 carvedPoint))
+                point = carvedPoint;
+            if (!skipDecal)
+                DMMoltenImpacts.Play(ammoItem, profile, point, normal, receiver);
             bool spawnedMark = false;
             bool splash = HasSplashImpact(ammoItem, profile);
 
@@ -165,7 +171,6 @@ namespace Project.Combat
                     SpawnPooled(impact, point, LookAlongNormal(normal), attach, HitEffectLifeSeconds);
             }
 
-            bool skipDecal = ShouldSkipImpactDecal(receiver);
             bool burn = !skipDecal && (profile != null
                 ? profile.spawnLaserBurn
                 : DMILaserBurnMarkSpawner.ShouldSpawnForLaserAmmo(ammoItem, weapon));

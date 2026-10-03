@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cef1fb5b41d9165488155e2de819fd8f, type: 3}
+  m_Name: Molten_Rock
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.DMMoltenImpactProfile
+  glow: 1
+  hotColor: {r: 1, g: 0.32, b: 0.05, a: 1}
+  coolColor: {r: 0.3, g: 0.025, b: 0.005, a: 1}
+  glowIntensity: 2.2
+  glowRadius: 0.075
+  coolSeconds: 1.4
+  fadeSeconds: 1.2
+  glowNoise: 0.6
+  dripBurst: 2
+  dripRate: 0
+  dripRunSeconds: 0
+  dripSize: {x: 0.008, y: 0.016}
+  dripSpeed: {x: 0.3, y: 1.1}
+  dripGravity: 1
+  dripMaxSpeed: 3
+  dripLifetime: 1.8
+  dripIntensity: 4
+  dripStretch: 0.03
+  dripsCollide: 1

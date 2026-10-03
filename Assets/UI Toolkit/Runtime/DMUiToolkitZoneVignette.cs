@@ -204,7 +204,13 @@ namespace Project.UI
                 survivalStats = player.GetComponent<SurvivalStats>();
             if (exposure == null)
                 exposure = player.GetComponent<ExposureController>();
-            SubscribeDamage();
+
+            // Subscribe directly here; calling SubscribeDamage() looped forever when the player had no ExposureController.
+            if (survivalStats != null)
+            {
+                survivalStats.OnDamaged -= HandleDamaged;
+                survivalStats.OnDamaged += HandleDamaged;
+            }
         }
 
         private void SubscribeDamage()

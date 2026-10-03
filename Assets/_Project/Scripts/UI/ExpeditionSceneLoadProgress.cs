@@ -8,22 +8,30 @@ namespace Project.UI
     /// <summary>
     /// Real New Expedition load progress: the 4 live Gaia tiles around the player
     /// plus each tile's content scene. Used by Loading Genesis instead of a fake timer.
+    /// Tiles Gaia never requests at full detail (impostor-only, e.g. the far tile of the window, or a player
+    /// outside the terrain grid) are dropped once streaming has settled, so progress does not stall at 75%.
     /// </summary>
     public static class ExpeditionSceneLoadProgress
     {
         private const float ReadyTimeoutSeconds = 45f;
         private const float TerrainWeight = 0.72f;
         private const float ContentWeight = 0.28f;
+        // After every tile Gaia requested has loaded, wait this long for further requests before dropping the rest.
+        private const float SettleSeconds = 3f;
 
         private static readonly List<Vector2Int> LiveTiles = new List<Vector2Int>(4);
         private static float startedAt = -1f;
         private static bool begun;
+        private static float settledSince = -1f;
+        private static int lastRequested = -1;
 
         public static void Reset()
         {
             begun = false;
             startedAt = -1f;
             LiveTiles.Clear();
+            settledSince = -1f;
+            lastRequested = -1;
         }
 
         public static void Begin()
@@ -31,6 +39,8 @@ namespace Project.UI
             begun = true;
             startedAt = Time.realtimeSinceStartup;
             LiveTiles.Clear();
+            settledSince = -1f;
+            lastRequested = -1;
             CollectLiveTiles(LiveTiles);
         }
 
@@ -44,6 +54,8 @@ namespace Project.UI
 
             if (LiveTiles.Count == 0)
                 return 1f;
+
+            DropUnrequestedTilesWhenSettled();
 
             float terrain = 0f;
             float content = 0f;
@@ -73,6 +85,8 @@ namespace Project.UI
             if (LiveTiles.Count == 0)
                 return true;
 
+            DropUnrequestedTilesWhenSettled();
+
             for (int i = 0; i < LiveTiles.Count; i++)
             {
                 Vector2Int tile = LiveTiles[i];
@@ -83,6 +97,44 @@ namespace Project.UI
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Gaia streams terrain by distance: a window tile can stay impostor-only (its regular scene is never requested),
+        /// which used to hold progress at 3/4 = 75% until the 45 s timeout. Once at least one window tile is loaded, every
+        /// requested tile is loaded, and no new request arrived for SettleSeconds, unrequested tiles stop counting.
+        /// </summary>
+        private static void DropUnrequestedTilesWhenSettled()
+        {
+            int requested = 0, loaded = 0;
+            for (int i = 0; i < LiveTiles.Count; i++)
+            {
+                float credit = TerrainCredit(LiveTiles[i].x, LiveTiles[i].y);
+                if (credit > 0f) requested++;
+                if (credit >= 0.999f) loaded++;
+            }
+
+            if (loaded == 0 || loaded < requested || requested == LiveTiles.Count)
+            {
+                settledSince = -1f;
+                lastRequested = requested;
+                return;
+            }
+
+            float now = Time.realtimeSinceStartup;
+            if (settledSince < 0f || requested != lastRequested)
+            {
+                settledSince = now;
+                lastRequested = requested;
+                return;
+            }
+
+            if (now - settledSince < SettleSeconds)
+                return;
+
+            for (int i = LiveTiles.Count - 1; i >= 0; i--)
+                if (TerrainCredit(LiveTiles[i].x, LiveTiles[i].y) <= 0f)
+                    LiveTiles.RemoveAt(i);
         }
 
         private static void CollectLiveTiles(List<Vector2Int> into)
@@ -130,7 +182,12 @@ namespace Project.UI
 
         private static Vector3 ResolveOrigin()
         {
+            // The scene object is usually the prefab variant instance ("Player_v7 Variant"), not "Player_v7".
             GameObject player = GameObject.Find("Player_v7");
+            if (player == null)
+                player = GameObject.Find("Player_v7 Variant");
+            if (player == null)
+                player = GameObject.FindWithTag("Player");
             if (player != null)
                 return player.transform.position;
 
