@@ -713,20 +713,19 @@ namespace Project.Player.Invector
                 return;
             }
 
-            if (item.itemType == ItemType.MeleeWeapon)
+            if (item.itemType == ItemType.MeleeWeapon
+                && TryGetMeleeSlot(item, out MeleeWeaponSlot slot)
+                && slot.drawnInstance != null)
             {
-                if (TryGetMeleeSlot(item, out MeleeWeaponSlot slot) && slot.drawnInstance != null)
-                    ShowMeleeDrawnSlot(item, slot);
-                else
-                    Debug.LogWarning($"PioneerInvectorWeaponBridge: missing Drawn_ slot for '{item.name}'.");
+                ShowMeleeDrawnSlot(item, slot);
                 return;
             }
 
             if (item.IsRangedWeapon)
             {
-                if (TryGetRangedSlot(item, out RangedWeaponSlot slot) && slot.drawnInstance != null)
+                if (TryGetRangedSlot(item, out RangedWeaponSlot rangedSlot) && rangedSlot.drawnInstance != null)
                 {
-                    ShowRangedDrawnSlot(item, slot);
+                    ShowRangedDrawnSlot(item, rangedSlot);
                 }
                 else
                 {
@@ -2421,8 +2420,57 @@ namespace Project.Player.Invector
             if (_shooterManager != null)
                 _shooterManager.SetRightWeapon((GameObject)null);
 
-            if (_meleeManager != null)
-                _meleeManager.SetRightWeapon(instance);
+            if (_meleeManager == null || instance == null)
+                return;
+
+            // SetRightWeapon(GameObject) only GetComponent on the root. Sword components
+            // often sit on a child, which left rightWeapon null and swing hitboxes off.
+            vMeleeWeapon weapon = instance.GetComponent<vMeleeWeapon>();
+            if (weapon == null)
+                weapon = instance.GetComponentInChildren<vMeleeWeapon>(true);
+            if (weapon == null)
+                return;
+
+            weapon.useStrongAttack = true;
+            if (weapon.attackID <= 0)
+                weapon.attackID = 1;
+            if (weapon.movesetID <= 0)
+                weapon.movesetID = 1;
+
+            EnsureMeleeHitBoxes(weapon);
+            weapon.enabled = true;
+            _meleeManager.SetRightWeapon(weapon);
+        }
+
+        private static void EnsureMeleeHitBoxes(vMeleeWeapon weapon)
+        {
+            if (weapon == null)
+                return;
+
+            if (weapon.hitBoxes == null)
+                weapon.hitBoxes = new List<vHitBox>();
+            if (weapon.damage == null)
+                weapon.damage = new vDamage();
+
+            vHitBox[] boxes = weapon.GetComponentsInChildren<vHitBox>(true);
+            for (int i = 0; i < boxes.Length; i++)
+            {
+                vHitBox box = boxes[i];
+                if (box == null)
+                    continue;
+
+                box.enabled = true;
+                box.attackObject = weapon;
+                if (box.damagePercentage <= 0)
+                    box.damagePercentage = 100;
+
+                Collider trigger = box.GetComponent<Collider>();
+                if (trigger != null)
+                    trigger.isTrigger = true;
+
+                if (!weapon.hitBoxes.Contains(box))
+                    weapon.hitBoxes.Add(box);
+            }
         }
 
         private void ShowHolsteredWeaponIfNeeded()
@@ -2621,9 +2669,12 @@ namespace Project.Player.Invector
                 PioneerInvectorRecoilUtility.ApplyRangedTiming(shooterWeapon, item, ammoItem);
             }
 
-            vMeleeWeapon meleeWeapon = instance.GetComponent<vMeleeWeapon>();
+            vMeleeWeapon meleeWeapon = instance.GetComponentInChildren<vMeleeWeapon>(true);
             if (meleeWeapon != null)
             {
+                if (meleeWeapon.damage == null)
+                    meleeWeapon.damage = new vDamage();
+
                 meleeWeapon.damage.damageValue = Mathf.RoundToInt(item.GetAverageMeleeDamage());
             }
         }

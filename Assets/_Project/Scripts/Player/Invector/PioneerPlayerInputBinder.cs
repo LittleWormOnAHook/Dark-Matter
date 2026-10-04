@@ -1,6 +1,7 @@
 using System.Collections;
 using Invector.vCharacterController;
 using Project.Building;
+using Project.Combat;
 using Project.Core;
 using Project.Data;
 using Project.Interaction;
@@ -284,6 +285,18 @@ namespace Project.Player.Invector
             }
 
             cc.Roll();
+            GrantDodgeIFrames();
+        }
+
+        private void GrantDodgeIFrames()
+        {
+            DMCombatIFrameController frames = GetComponent<DMCombatIFrameController>();
+            if (frames == null)
+                frames = GetComponentInChildren<DMCombatIFrameController>();
+
+            DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
+            float seconds = profile != null ? profile.dodgeIFrameSeconds : 0.25f;
+            frames?.GrantInvulnerability(seconds);
         }
 
         private void TryDashFromInput()

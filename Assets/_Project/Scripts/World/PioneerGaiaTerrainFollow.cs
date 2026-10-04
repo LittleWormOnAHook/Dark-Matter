@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Project.Core;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -40,6 +41,10 @@ public class PioneerGaiaTerrainFollow : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void EnsureOnPlayer()
     {
+        // TEMP COMBAT FOCUS — do not attach the Gaia neighbor-quality follower.
+        if (DmTempCombatFocus.SkipWorldStreaming)
+            return;
+
         if (!Application.isPlaying)
         {
             return;
@@ -56,6 +61,10 @@ public class PioneerGaiaTerrainFollow : MonoBehaviour
 
     void LateUpdate()
     {
+        // TEMP COMBAT FOCUS — skip neighbor-tile quality walks.
+        if (DmTempCombatFocus.SkipWorldStreaming)
+            return;
+
         // TLM owns play-mode streaming. Do not call UpdateTerrainLoadState here.
         if (!Application.isPlaying || Project.Core.GameplayWorldSimulation.IsFrozen)
         {

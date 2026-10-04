@@ -5,6 +5,7 @@ using Project.Data;
 using Project.Player.Invector;
 using System;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Project.AI.Invector
 {
@@ -36,11 +37,6 @@ namespace Project.AI.Invector
             _shooterManager = GetComponent<vShooterManager>();
             _meleeManager = GetComponent<vMeleeManager>();
             _controller = GetComponent<vThirdPersonController>();
-        }
-
-        private void Start()
-        {
-            EquipStartingWeapon();
         }
 
         public void ConfigureFromDefinition(EnemyDefinition definition)
@@ -290,6 +286,8 @@ namespace Project.AI.Invector
 
         private void EquipWeapon(ItemData weapon)
         {
+            EnemyInvectorCombatShutdown.SanitizeStaleHitBoxes(gameObject);
+
             _activeItem = weapon;
             ClearInvectorWeapons();
             DeactivateAllWeaponVisuals();
@@ -319,19 +317,26 @@ namespace Project.AI.Invector
 
             drawn.SetActive(true);
             RestoreDrawnWeaponVisuals(drawn);
-            PioneerInvectorWeaponBridge.ApplyItemStatsToInstance(weapon, drawn);
             _activeDrawnInstance = drawn;
 
             if (weapon.itemType == ItemType.MeleeWeapon)
-                EquipMelee(drawn);
+            {
+                EquipMelee(drawn, weapon);
+                PioneerInvectorWeaponBridge.ApplyItemStatsToInstance(weapon, drawn);
+            }
             else if (weapon.IsRangedWeapon)
+            {
+                PioneerInvectorWeaponBridge.ApplyItemStatsToInstance(weapon, drawn);
                 EquipRanged(drawn);
+            }
 
             SyncAnimatorWeaponState(weapon);
         }
 
         private void DeactivateAllWeaponVisuals()
         {
+            EnemyInvectorCombatShutdown.DisableMeleeBeforeAnimatorEvents(gameObject);
+
             vShooterWeapon[] ranged = GetComponentsInChildren<vShooterWeapon>(true);
             for (int i = 0; i < ranged.Length; i++)
             {
@@ -342,19 +347,102 @@ namespace Project.AI.Invector
             vMeleeWeapon[] melee = GetComponentsInChildren<vMeleeWeapon>(true);
             for (int i = 0; i < melee.Length; i++)
             {
-                if (melee[i] != null)
-                    melee[i].gameObject.SetActive(false);
+                if (melee[i] == null)
+                    continue;
+
+                melee[i].enabled = false;
+
+                // Hide unused Drawn_ roots only. Never deactivate a nested vMeleeWeapon —
+                // GetAttackID / GetMoveSetID require activeInHierarchy, and drawn.SetActive(true)
+                // will not re-enable a child that was turned off here.
+                Transform drawnRoot = FindDrawnSlotRoot(melee[i].transform);
+                if (drawnRoot != null)
+                    drawnRoot.gameObject.SetActive(false);
             }
         }
 
-        private void EquipMelee(GameObject drawn)
+        private void EquipMelee(GameObject drawn, ItemData item)
         {
             if (_meleeManager == null || drawn == null)
                 return;
 
             vMeleeWeapon weapon = drawn.GetComponentInChildren<vMeleeWeapon>(true);
-            if (weapon != null)
-                _meleeManager.SetRightWeapon(weapon.gameObject);
+            if (weapon == null)
+                weapon = drawn.AddComponent<vMeleeWeapon>();
+
+            ActivateDrawnWeaponHierarchy(weapon.transform, drawn.transform);
+            ApplyMeleeAnimatorIds(weapon, item);
+            CollectAndEnableWeaponHitBoxes(weapon);
+            weapon.enabled = true;
+            EnemyInvectorCombatShutdown.SanitizeMeleeDamageEvents(weapon);
+            _meleeManager.SetRightWeapon(weapon);
+        }
+
+        private static Transform FindDrawnSlotRoot(Transform node)
+        {
+            Transform current = node;
+            while (current != null)
+            {
+                if (current.name.StartsWith("Drawn_", StringComparison.Ordinal))
+                    return current;
+                current = current.parent;
+            }
+
+            return null;
+        }
+
+        private static void ActivateDrawnWeaponHierarchy(Transform weapon, Transform drawnRoot)
+        {
+            if (weapon == null)
+                return;
+
+            Transform current = weapon;
+            while (current != null)
+            {
+                if (!current.gameObject.activeSelf)
+                    current.gameObject.SetActive(true);
+
+                if (drawnRoot != null && current == drawnRoot)
+                    break;
+
+                current = current.parent;
+            }
+        }
+
+        private static void ApplyMeleeAnimatorIds(vMeleeWeapon weapon, ItemData item)
+        {
+            if (weapon == null)
+                return;
+
+            bool twoHanded = item != null && item.weaponGrip == WeaponGrip.TwoHanded;
+            if (weapon.attackID <= 0)
+                weapon.attackID = twoHanded ? 2 : 1;
+            if (weapon.movesetID <= 0)
+                weapon.movesetID = twoHanded ? 2 : 1;
+        }
+
+        private static void CollectAndEnableWeaponHitBoxes(vMeleeWeapon weapon)
+        {
+            if (weapon == null)
+                return;
+
+            EnsureMeleeDamageEvents(weapon);
+
+            if (weapon.hitBoxes == null)
+                weapon.hitBoxes = new System.Collections.Generic.List<vHitBox>();
+
+            vHitBox[] boxes = weapon.GetComponentsInChildren<vHitBox>(true);
+            for (int i = 0; i < boxes.Length; i++)
+            {
+                vHitBox box = boxes[i];
+                if (box == null)
+                    continue;
+
+                box.enabled = true;
+                box.attackObject = weapon;
+                if (!weapon.hitBoxes.Contains(box))
+                    weapon.hitBoxes.Add(box);
+            }
         }
 
         /// <summary>
@@ -478,6 +566,11 @@ namespace Project.AI.Invector
 
             _controller.animator.SetFloat("MoveSet_ID", 0f);
             _controller.animator.SetFloat("UpperBody_ID", 0f);
+        }
+
+        private static void EnsureMeleeDamageEvents(vMeleeAttackObject attackObject)
+        {
+            EnemyInvectorCombatShutdown.SanitizeMeleeDamageEvents(attackObject);
         }
     }
 }

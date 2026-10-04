@@ -1,7 +1,10 @@
 using Invector.vCharacterController;
 using InvInputDevice = Invector.vCharacterController.InputDevice;
+using Invector.vEventSystems;
+using Invector.vMelee;
 using Invector.vShooter;
 using Invector;
+using Project.Combat;
 using Invector.IK;
 using Project.Building;
 using Project.Core;
@@ -57,7 +60,9 @@ namespace Project.Player.Invector
         private PioneerInvectorInputBridge _inputBridge;
         private DMJetpackInputBridge _jetpackInputBridge;
         private DMClimbController _climb;
+        private DMLandingDirector _landingDirector;
         private DMLocomotionGaitController _locomotionGait;
+        private float _jumpHeightBeforeOverride = float.NaN;
         private EquipmentController _equipment;
         private PlayerController _playerController;
         private PlayerInput _playerInput; // stamp: controller-compile-fix 0920
@@ -67,6 +72,32 @@ namespace Project.Player.Invector
         private float _preferredCameraZoom = -1f;
         private bool _wasAimingCameraLastFrame;
         private bool _wasUiBlockingLastFrame;
+        private bool _wasBlockHeldLastFrame;
+        private float _lastBlockPressTime = float.NegativeInfinity;
+        private Coroutine _guardImpactRoutine;
+        private const float BlockGuardPoseSeconds = 0.12f;
+        private const float StrongAttackBlockSuppressSeconds = 0.2f;
+        private const float StrongDamageWindowSeconds = 1.75f;
+        /// <summary>
+        /// FullBody path. The controller has no charge/hold clip, so the wind-up is a local weapon pose.
+        /// StrongAttacks/SwordAttack/A plays on release.
+        /// </summary>
+        private const string StrongSwordStatePath = "Attacks.StrongAttacks.SwordAttack.A";
+        private static readonly int StrongSwordStateHash = Animator.StringToHash(StrongSwordStatePath);
+        private static readonly Vector3 StrongChargeLocalOffset = new Vector3(0.02f, 0.05f, -0.07f);
+        private static readonly Vector3 StrongChargeEuler = new Vector3(-36f, 16f, 6f);
+        private bool _lightAttackHeldLast;
+        private float _lightAttackHoldStart = float.NegativeInfinity;
+        private bool _strongChargeArmed;
+        private float _chargeArmedTime;
+        private float _suppressBlockUntil;
+        private bool _strongDamageArmed;
+        private bool _strongDamageSawSwing;
+        private float _strongDamageUntil;
+        private Transform _chargePoseTransform;
+        private Vector3 _chargePoseRestPosition;
+        private Quaternion _chargePoseRestRotation;
+        private bool _chargePoseCaptured;
         private bool _wasSprintingLastFrame;
         private int _uiZoomRestoreFramesRemaining;
         private float _lockedAimZoom = -1f;
@@ -159,6 +190,7 @@ namespace Project.Player.Invector
             if (GameplayWorldSimulation.IsFrozen)
                 return;
 
+            TrackBlockPress();
             TryDrawWeaponOnAimPress();
 
             // Pad LT can be missed if AimInput runs while Player map was left disabled — nudge ADS early.
@@ -175,6 +207,7 @@ namespace Project.Player.Invector
             if (_locomotionGait == null)
                 _locomotionGait = GetComponent<DMLocomotionGaitController>();
             _locomotionGait?.TickLocomotion();
+            RestoreJumpHeightIfJumpFinished();
         }
 
         /// <summary>
@@ -271,11 +304,13 @@ namespace Project.Player.Invector
 
             bool opticsOpen = _playerController != null && _playerController.IsOpticsOpen;
             bool weaponDrawn = _equipment == null || _equipment.IsWeaponDrawn;
+            bool drawnMeleeOnly = IsDrawnMeleeWeaponActive();
             bool rmbAimHeld = !opticsOpen
+                && !drawnMeleeOnly
                 && Mouse.current != null
                 && Mouse.current.rightButton.isPressed
                 && weaponDrawn;
-            bool ltAimHeld = !opticsOpen && ReadAimHeld();
+            bool ltAimHeld = !opticsOpen && !drawnMeleeOnly && ReadAimHeld();
             // LT held while sheathed: draw so ADS can engage (press helper only sees wasPressed).
             if (ltAimHeld && !weaponDrawn && _equipment != null)
             {
@@ -416,6 +451,7 @@ namespace Project.Player.Invector
             base.LateUpdate();
             SyncPioneerCursorState();
             PinAimFollowDistance();
+            ApplyStrongMeleeChargePose();
         }
 
         protected override void CheckAimConditions()
@@ -623,8 +659,509 @@ namespace Project.Player.Invector
             if (!ReadJumpPressedThisFrame())
                 return;
 
-            if (JumpConditions())
-                cc.Jump(true);
+            if (_landingDirector == null)
+                _landingDirector = GetComponent<DMLandingDirector>();
+            if (_landingDirector != null && _landingDirector.SuppressJumpStart)
+                return;
+
+            if (!JumpConditions())
+                return;
+
+            ApplyGaitJumpHeightForThisJump();
+            bool movingJump = cc.input.sqrMagnitude >= 0.01f;
+            cc.Jump(true);
+            if (movingJump)
+                ApplyMoveJumpTakeoffImpulse();
+        }
+
+        private void ApplyGaitJumpHeightForThisJump()
+        {
+            DM_ClimbDashProfile profile = DM_ClimbDashProfile.Resolve(null);
+            if (profile == null || cc == null)
+                return;
+
+            if (_locomotionGait == null)
+                _locomotionGait = GetComponent<DMLocomotionGaitController>();
+
+            bool moving = cc.input.sqrMagnitude >= 0.01f;
+            DMLocomotionGaitController.Gait gait = _locomotionGait != null
+                ? _locomotionGait.CurrentGait
+                : DMLocomotionGaitController.Gait.SlowWalk;
+
+            float speed01 = 0f;
+            if (moving && cc.freeSpeed.sprintSpeed > 0.01f)
+                speed01 = Mathf.Clamp01(cc.moveSpeed / cc.freeSpeed.sprintSpeed);
+
+            float target = profile.ResolveJumpHeight(gait, moving, speed01);
+            if (float.IsNaN(_jumpHeightBeforeOverride))
+                _jumpHeightBeforeOverride = cc.jumpHeight;
+
+            cc.jumpHeight = target;
+        }
+
+        private void RestoreJumpHeightIfJumpFinished()
+        {
+            if (cc == null || float.IsNaN(_jumpHeightBeforeOverride))
+                return;
+            if (cc.isJumping || cc.inJumpStarted)
+                return;
+
+            cc.jumpHeight = _jumpHeightBeforeOverride;
+            _jumpHeightBeforeOverride = float.NaN;
+        }
+
+        /// <summary>JumpMove sets isJumping before the first FixedUpdate; ensure lift same frame (landing director must not cancel isJumping).</summary>
+        private void ApplyMoveJumpTakeoffImpulse()
+        {
+            if (cc == null || !cc.isJumping)
+                return;
+
+            Rigidbody rb = cc.GetComponent<Rigidbody>();
+            if (rb == null || rb.isKinematic)
+                return;
+
+            float targetY = cc.jumpHeight * cc.jumpMultiplier;
+            if (targetY <= 0.01f)
+                return;
+
+            Vector3 vel = rb.linearVelocity;
+            if (vel.y < targetY)
+            {
+                vel.y = targetY;
+                rb.linearVelocity = vel;
+            }
+        }
+
+        public override void InputHandle()
+        {
+            // Before melee conditions. BlockingInput is skipped while the base layer blends,
+            // and a tap in that window never opened the parry timer.
+            TrackBlockPress();
+            base.InputHandle();
+            ApplyDrawnMeleeBlockInput();
+            UpdateDrawnMeleeCharge();
+        }
+
+        /// <summary>
+        /// Drawn sword: left mouse / Attack is a tap-or-hold. Press does not swing.
+        /// Release before the charge threshold is the light attack. Release after it is the strong sword swing.
+        /// Once the threshold is reached the charge pose holds until release. There is no max hold and no auto-swing.
+        /// Right mouse is unchanged and stays block / parry.
+        /// </summary>
+        public override void MeleeWeakAttackInput()
+        {
+            if (IsDrawnMeleeWeaponActive())
+                return;
+
+            base.MeleeWeakAttackInput();
+        }
+
+        public bool IsStrongMeleeDamageActive =>
+            _strongDamageArmed && Time.time <= _strongDamageUntil;
+
+        public override void BlockingInput()
+        {
+            if (animator == null || cc == null)
+                return;
+
+            if (Time.time < _suppressBlockUntil)
+            {
+                isBlocking = false;
+                return;
+            }
+
+            isBlocking = ReadBlockHeld() && cc.currentStamina > 0 && !cc.customAction && !isAttacking;
+        }
+
+        private void UpdateDrawnMeleeCharge()
+        {
+            TickStrongDamageWindow();
+
+            if (!CanTrackDrawnMeleeCharge())
+            {
+                _lightAttackHeldLast = false;
+                _strongChargeArmed = false;
+                return;
+            }
+
+            bool held = ReadLightAttackHeld();
+            bool pressed = ReadLightAttackPressedThisFrame() || (held && !_lightAttackHeldLast);
+            bool released = !held && _lightAttackHeldLast;
+            float chargeSeconds = ResolveStrongChargeSeconds();
+
+            // A click that goes down and up inside one frame never shows a held sample.
+            if (pressed && !held)
+            {
+                _strongChargeArmed = false;
+                _lightAttackHeldLast = false;
+                TryReleaseLightMelee();
+                return;
+            }
+
+            if (pressed)
+            {
+                _lightAttackHoldStart = Time.time;
+                _strongChargeArmed = false;
+            }
+
+            if (held && Time.time - _lightAttackHoldStart >= chargeSeconds)
+            {
+                if (!_strongChargeArmed)
+                    _chargeArmedTime = Time.time;
+                _strongChargeArmed = true;
+            }
+
+            if (released)
+            {
+                if (_strongChargeArmed)
+                    TryReleaseStrongMelee();
+                else
+                    TryReleaseLightMelee();
+                _strongChargeArmed = false;
+            }
+
+            _lightAttackHeldLast = held;
+        }
+
+        private bool CanTrackDrawnMeleeCharge()
+        {
+            if (cc == null || cc.isDead || lockInput || lockMeleeInput)
+                return false;
+            if (!IsDrawnMeleeWeaponActive())
+                return false;
+            if (IsAiming || isReloading)
+                return false;
+            return true;
+        }
+
+        private void TryReleaseLightMelee()
+        {
+            if (!CanReleaseDrawnMelee())
+                return;
+
+            RestoreStrongChargePose();
+            if (!_strongDamageSawSwing)
+                _strongDamageArmed = false;
+            animator.ResetTrigger(vAnimatorParameters.StrongAttack);
+            TriggerWeakAttack();
+        }
+
+        private void TryReleaseStrongMelee()
+        {
+            if (!CanReleaseDrawnMelee())
+                return;
+
+            // A held block keeps FullBody in Defense, and StrongAttack is only wired from Null.
+            // The sword strong clips also referenced a missing FBX, so a trigger into that state showed nothing.
+            RestoreStrongChargePose();
+            isBlocking = false;
+            animator.SetBool(vAnimatorParameters.IsBlocking, false);
+            _suppressBlockUntil = Time.time + StrongAttackBlockSuppressSeconds;
+            PlayStrongSwordSwing();
+            _strongDamageArmed = true;
+            _strongDamageSawSwing = false;
+            _strongDamageUntil = Time.time + StrongDamageWindowSeconds;
+        }
+
+        /// <summary>
+        /// CrossFades FullBody into the sword strong swing. A StrongAttack trigger only leaves Null,
+        /// so a block pose or an in-progress full-body transition ate it and the swing never started.
+        /// </summary>
+        private void PlayStrongSwordSwing()
+        {
+            int layer = cc != null ? cc.fullbodyLayer : -1;
+            if (layer < 0)
+                layer = animator.GetLayerIndex("FullBody");
+
+            animator.ResetTrigger(vAnimatorParameters.WeakAttack);
+            animator.ResetTrigger(vAnimatorParameters.StrongAttack);
+            int attackId = AttackID;
+            if (attackId <= 0)
+                attackId = 1;
+            animator.SetInteger(vAnimatorParameters.AttackID, attackId);
+
+            if (layer >= 0 && animator.HasState(layer, StrongSwordStateHash))
+            {
+                animator.SetLayerWeight(layer, 1f);
+                animator.CrossFadeInFixedTime(StrongSwordStateHash, 0.08f, layer, 0f);
+                return;
+            }
+
+            TriggerStrongAttack();
+        }
+
+        /// <summary>
+        /// Invector@ShooterMelee_Jetpack has no charge or ready clip. After the charge threshold,
+        /// ease the drawn weapon back in the hand and keep that pose until release.
+        /// </summary>
+        private void ApplyStrongMeleeChargePose()
+        {
+            bool holding = _strongChargeArmed
+                && CanTrackDrawnMeleeCharge()
+                && ReadLightAttackHeld()
+                && !isAttacking;
+            if (!holding)
+            {
+                RestoreStrongChargePose();
+                return;
+            }
+
+            Transform weapon = meleeManager != null && meleeManager.rightWeapon != null
+                ? meleeManager.rightWeapon.transform
+                : null;
+            if (weapon == null)
+            {
+                RestoreStrongChargePose();
+                return;
+            }
+
+            if (!_chargePoseCaptured || _chargePoseTransform != weapon)
+            {
+                _chargePoseTransform = weapon;
+                _chargePoseRestPosition = weapon.localPosition;
+                _chargePoseRestRotation = weapon.localRotation;
+                _chargePoseCaptured = true;
+            }
+
+            float ease = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((Time.time - _chargeArmedTime) / 0.12f));
+            weapon.localPosition = _chargePoseRestPosition + StrongChargeLocalOffset * ease;
+            weapon.localRotation = Quaternion.Slerp(
+                _chargePoseRestRotation,
+                _chargePoseRestRotation * Quaternion.Euler(StrongChargeEuler),
+                ease);
+        }
+
+        private void RestoreStrongChargePose()
+        {
+            if (_chargePoseCaptured && _chargePoseTransform != null)
+            {
+                _chargePoseTransform.localPosition = _chargePoseRestPosition;
+                _chargePoseTransform.localRotation = _chargePoseRestRotation;
+            }
+
+            _chargePoseCaptured = false;
+            _chargePoseTransform = null;
+        }
+
+        private bool CanReleaseDrawnMelee()
+        {
+            if (animator == null || meleeManager == null)
+                return false;
+            if (!MeleeAttackStaminaConditions())
+                return false;
+            if (!cc.isGrounded || cc.customAction || cc.isJumping || cc.isCrouching || cc.isRolling || isEquipping)
+                return false;
+            return true;
+        }
+
+        private void TickStrongDamageWindow()
+        {
+            if (!_strongDamageArmed)
+                return;
+
+            if (isAttacking)
+                _strongDamageSawSwing = true;
+
+            if ((_strongDamageSawSwing && !isAttacking) || Time.time > _strongDamageUntil)
+                _strongDamageArmed = false;
+        }
+
+        private static float ResolveStrongChargeSeconds()
+        {
+            DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
+            float seconds = profile != null ? profile.strongMeleeChargeSeconds : 0.4f;
+            return Mathf.Clamp(seconds, 0.2f, 0.8f);
+        }
+
+        private static bool ReadLightAttackHeld()
+        {
+            if (DMPlayerInputActions.IsPressed("Attack"))
+                return true;
+            if (Mouse.current != null && Mouse.current.leftButton.isPressed)
+                return true;
+            if (Gamepad.current != null && Gamepad.current.rightShoulder.isPressed)
+                return true;
+            return false;
+        }
+
+        private static bool ReadLightAttackPressedThisFrame()
+        {
+            if (DMPlayerInputActions.WasPressedThisFrame("Attack"))
+                return true;
+            if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+                return true;
+            if (Gamepad.current != null && Gamepad.current.rightShoulder.wasPressedThisFrame)
+                return true;
+            return false;
+        }
+
+        /// <summary>
+        /// Records the block press every InputHandle, including animator transitions.
+        /// BlockingInput itself is skipped while the base layer blends.
+        /// </summary>
+        private void TrackBlockPress()
+        {
+            bool blockHeld = ReadBlockHeld();
+            if (ReadBlockPressedThisFrame() || (blockHeld && !_wasBlockHeldLastFrame))
+                _lastBlockPressTime = Time.time;
+            _wasBlockHeldLastFrame = blockHeld;
+        }
+
+        private bool IsParryWindowOpen()
+        {
+            DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
+            float parryWindow = profile != null ? profile.parryWindowSeconds : 0.2f;
+            if (parryWindow <= 0f)
+                return false;
+
+            // Same-frame taps: the hit can land in physics before Update records the press.
+            if (ReadBlockPressedThisFrame())
+                return true;
+
+            return Time.time - _lastBlockPressTime <= parryWindow;
+        }
+
+        private bool IsSuccessfulMeleeBlock(vDamage damage)
+        {
+            return damage != null
+                && !damage.ignoreDefense
+                && isBlocking
+                && meleeManager != null
+                && damage.sender != null
+                && meleeManager.CanBlockAttack(damage.sender.position);
+        }
+
+        /// <summary>
+        /// A successful block or parry clears the hit. GetDefenseRate is 0 for OnlyAttack
+        /// weapons, and Invector only reduces when the rate is above 0, so SurvivalStats
+        /// was copying the full damageValue from onStartReceiveDamage.
+        /// </summary>
+        public bool TryAbsorbBlockedMelee(vDamage damage)
+        {
+            if (damage == null || damage.damageValue <= 0f)
+                return false;
+            if (!IsSuccessfulMeleeBlock(damage))
+                return false;
+
+            // GetDefenseRate() skips OnlyAttack weapons (returns 0), and Invector only
+            // calls ReduceDamage when the rate is above 0. A non-zero rate still left
+            // chip damage in SurvivalStats. A landed block or parry negates the hit.
+            damage.damageValue = 0f;
+            damage.hitReaction = false;
+            return true;
+        }
+
+        public override void OnReceiveAttack(vDamage damage, vIMeleeFighter attacker)
+        {
+            bool successfulBlock = IsSuccessfulMeleeBlock(damage);
+            bool isParry = successfulBlock && IsParryWindowOpen();
+            Transform damageSender = damage != null ? damage.sender : null;
+            if (successfulBlock)
+                TryAbsorbBlockedMelee(damage);
+
+            base.OnReceiveAttack(damage, attacker);
+
+            if (!successfulBlock)
+                return;
+
+            PlayGuardImpactReaction();
+            DMEnemyGuardBreakStagger.TryApplyFromBlock(attacker, transform, isParry, damageSender);
+        }
+
+        /// <summary>
+        /// Short guard-impact pose. Block and parry use the same mild pose.
+        /// Does not call OnRecoil — that fires ResetState and can drop the block.
+        /// RecoilID 1 is the mild unarmed recoil. RecoilID 2 is the stronger low recoil
+        /// and is not used here. RecoilID above 2 is recoil_hard, tagged CustomAction,
+        /// which clears isBlocking. This path does not freeze animator speed.
+        /// </summary>
+        private void PlayGuardImpactReaction()
+        {
+            if (animator == null)
+                return;
+
+            animator.SetBool(vAnimatorParameters.IsBlocking, true);
+            animator.SetInteger(vAnimatorParameters.DefenseID, DefenseID);
+            animator.SetInteger(vAnimatorParameters.RecoilID, 1);
+            animator.ResetTrigger(vAnimatorParameters.TriggerRecoil);
+            animator.SetTrigger(vAnimatorParameters.TriggerRecoil);
+
+            if (_guardImpactRoutine != null)
+                StopCoroutine(_guardImpactRoutine);
+
+            _guardImpactRoutine = StartCoroutine(ReleaseGuardImpactRoutine(BlockGuardPoseSeconds));
+        }
+
+        private IEnumerator ReleaseGuardImpactRoutine(float holdSeconds)
+        {
+            yield return new WaitForSeconds(holdSeconds);
+            _guardImpactRoutine = null;
+
+            if (animator == null || !isBlocking)
+                yield break;
+
+            int layer = cc != null ? cc.fullbodyLayer : animator.GetLayerIndex("FullBody");
+            if (layer >= 0)
+                animator.CrossFadeInFixedTime("Null", 0.06f, layer, 0f);
+
+            animator.SetBool(vAnimatorParameters.IsBlocking, true);
+        }
+
+        private void ApplyDrawnMeleeBlockInput()
+        {
+            if (cc == null || cc.isDead || cc.ragdolled || lockInput || lockMeleeInput)
+                return;
+            if (!IsDrawnMeleeWeaponActive())
+                return;
+            // MeleeAttackConditions also rejects base-layer blends. A parry tap lands in that
+            // blend, so block state has to update here or the hit stays a late regular block.
+            if (meleeManager == null || !cc.isGrounded || cc.customAction || cc.isJumping || cc.isCrouching || cc.isRolling || isEquipping)
+                return;
+
+            BlockingInput();
+        }
+
+        private bool IsDrawnMeleeWeaponActive()
+        {
+            if (_equipment == null || !_equipment.IsWeaponDrawn)
+                return false;
+
+            ItemData drawn = _equipment.DrawnWeaponItem;
+            return drawn != null && drawn.itemType == ItemType.MeleeWeapon;
+        }
+
+        private static bool ReadBlockHeld()
+        {
+            if (DMPlayerInputActions.IsPressed("Block"))
+                return true;
+            if (Mouse.current != null && Mouse.current.rightButton.isPressed)
+                return true;
+            if (Gamepad.current != null)
+            {
+                if (Gamepad.current.leftTrigger.ReadValue() >= 0.2f)
+                    return true;
+                if (Gamepad.current.leftShoulder.isPressed)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool ReadBlockPressedThisFrame()
+        {
+            if (DMPlayerInputActions.WasPressedThisFrame("Block"))
+                return true;
+            if (Mouse.current != null && Mouse.current.rightButton.wasPressedThisFrame)
+                return true;
+            if (Gamepad.current != null)
+            {
+                if (Gamepad.current.leftShoulder.wasPressedThisFrame)
+                    return true;
+                if (Gamepad.current.leftTrigger.wasPressedThisFrame)
+                    return true;
+            }
+
+            return false;
         }
 
         private static bool ReadJumpPressedThisFrame()

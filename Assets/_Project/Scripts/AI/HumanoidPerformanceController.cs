@@ -26,6 +26,7 @@ namespace Project.AI
         private bool[] _rendererWasEnabled;
         private bool[] _protectFromCull;
         private float _nextCheckTime;
+        private float _spawnVisibleUntil;
         private bool _culled;
         private int _perfPhase;
 
@@ -89,8 +90,7 @@ namespace Project.AI
         {
             ApplyPlatformDefaults();
             _culled = false;
-            EnsureProtectedBodyVisible();
-            SetCulled(false);
+            ForceVisibleForSpawn();
 
             if (_health != null)
             {
@@ -138,10 +138,48 @@ namespace Project.AI
             SetCulled(false);
         }
 
+        /// <summary>
+        /// Living spawn must be visible immediately: un-cull, keep the animator on, and
+        /// force skinned bounds to update so frustum culling cannot hide a T-pose / offscreen AABB.
+        /// </summary>
+        public static void ForceSpawnVisible(GameObject instance)
+        {
+            if (instance == null)
+                return;
+
+            HumanoidPerformanceController controller = instance.GetComponent<HumanoidPerformanceController>();
+            if (controller == null)
+                controller = instance.AddComponent<HumanoidPerformanceController>();
+
+            controller.ForceVisibleForSpawn();
+        }
+
+        public void ForceVisibleForSpawn()
+        {
+            if (_skinnedRenderers == null || _skinnedRenderers.Length == 0)
+                CacheSkinnedRenderers();
+
+            _culled = false;
+            _spawnVisibleUntil = Time.time + 2.5f;
+            _nextCheckTime = _spawnVisibleUntil;
+            EnsureLivingAnimatorOn();
+            EnsureProtectedBodyVisible();
+            ForceBodyRenderersVisible();
+            SetCulled(false);
+        }
+
         private void Update()
         {
             if (_health != null && _health.IsDead)
                 return;
+
+            if (Time.time < _spawnVisibleUntil)
+            {
+                EnsureLivingAnimatorOn();
+                EnsureProtectedBodyVisible();
+                ForceBodyRenderersVisible();
+                return;
+            }
 
             // Ragdoll / hit stagger owns the animator — do not fight it with cull LOD.
             if (IsRagdollOrStaggerBlocking())
@@ -232,20 +270,87 @@ namespace Project.AI
 
             for (int i = 0; i < _skinnedRenderers.Length; i++)
             {
-                if (!_protectFromCull[i])
-                    continue;
-
                 SkinnedMeshRenderer renderer = _skinnedRenderers[i];
                 if (renderer == null)
+                    continue;
+
+                if (!renderer.updateWhenOffscreen)
+                    renderer.updateWhenOffscreen = true;
+
+                if (_protectFromCull != null && i < _protectFromCull.Length && !_protectFromCull[i])
                     continue;
 
                 if (!renderer.enabled)
                     renderer.enabled = true;
                 if (!renderer.gameObject.activeSelf)
                     renderer.gameObject.SetActive(true);
-
-                renderer.updateWhenOffscreen = true;
             }
+        }
+
+        private void ForceBodyRenderersVisible()
+        {
+            if (_skinnedRenderers == null)
+                return;
+
+            for (int i = 0; i < _skinnedRenderers.Length; i++)
+            {
+                SkinnedMeshRenderer renderer = _skinnedRenderers[i];
+                if (renderer == null || IsWeaponVisualRenderer(renderer))
+                    continue;
+
+                bool authoredOn = _rendererWasEnabled != null &&
+                                  i < _rendererWasEnabled.Length &&
+                                  _rendererWasEnabled[i];
+                bool protect = _protectFromCull != null &&
+                               i < _protectFromCull.Length &&
+                               _protectFromCull[i];
+                if (!authoredOn && !protect)
+                    continue;
+
+                renderer.enabled = true;
+                if (!renderer.gameObject.activeSelf)
+                    renderer.gameObject.SetActive(true);
+                if (!renderer.updateWhenOffscreen)
+                    renderer.updateWhenOffscreen = true;
+            }
+        }
+
+        private static bool IsWeaponVisualRenderer(SkinnedMeshRenderer renderer)
+        {
+            if (renderer == null)
+                return false;
+
+            Transform t = renderer.transform;
+            while (t != null)
+            {
+                string n = t.name;
+                if (n.StartsWith("Drawn_", System.StringComparison.Ordinal) ||
+                    n.StartsWith("Holstered_", System.StringComparison.Ordinal) ||
+                    n.StartsWith("PioneerVisual_", System.StringComparison.Ordinal) ||
+                    n.Equals("WeaponHolders", System.StringComparison.Ordinal))
+                    return true;
+
+                t = t.parent;
+            }
+
+            return false;
+        }
+
+        private void EnsureLivingAnimatorOn()
+        {
+            if (_health != null && _health.IsDead)
+                return;
+            if (IsRagdollOrStaggerBlocking())
+                return;
+
+            if (_animator == null)
+                _animator = GetComponentInChildren<Animator>(true);
+            if (_animator == null)
+                return;
+
+            if (!_animator.enabled)
+                _animator.enabled = true;
+            _animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
         }
 
         private void SetCulled(bool culled)
@@ -254,9 +359,19 @@ namespace Project.AI
 
             if (_animator != null && !IsRagdollOrStaggerBlocking())
             {
-                _animator.enabled = !culled;
-                if (!culled && _animator.cullingMode != AnimatorCullingMode.AlwaysAnimate)
+                // Living enemies keep the animator on — disabling it freezes bind-pose
+                // bounds and can hide the mesh until something re-enables it.
+                if (_health == null || !_health.IsDead)
+                {
+                    _animator.enabled = true;
                     _animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+                }
+                else
+                {
+                    _animator.enabled = !culled;
+                    if (!culled && _animator.cullingMode != AnimatorCullingMode.AlwaysAnimate)
+                        _animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+                }
             }
 
             if (_skinnedRenderers != null)

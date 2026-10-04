@@ -37,6 +37,10 @@ namespace Project.World
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureExists()
         {
+            // TEMP COMBAT FOCUS — skip world probe ring (needs streamed terrain tiles).
+            if (DmTempCombatFocus.SkipWorldStreaming)
+                return;
+
             if (!Application.isPlaying || _instance != null)
                 return;
 

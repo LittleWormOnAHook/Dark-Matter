@@ -33,7 +33,7 @@ namespace Project.Combat
                 case AmmoType.Electricity:
                     return StatusEffectType.Shocked;
                 case AmmoType.Plasma:
-                    return StatusEffectType.Corroded;
+                    return StatusEffectType.Burning;
                 case AmmoType.ResonanceStabilizer:
                     return StatusEffectType.Stabilized;
                 default:

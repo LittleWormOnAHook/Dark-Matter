@@ -1,3 +1,4 @@
+using Project.Features.Locomotion;
 using Project.Survival;
 using UnityEngine;
 
@@ -262,6 +263,27 @@ namespace Project.Features.Climb
         [Min(0.05f)]
         public float shiftDoubleTapWindow = 0.28f;
 
+        [Header("Locomotion — jump height (gait)")]
+        [Tooltip("Standing still and slow-walk jumps (Invector jumpHeight for this hop).")]
+        [Min(0.35f)]
+        public float standingJumpHeight = 2.5f;
+
+        [Tooltip("Slow-walk + move uses standingJumpHeight × this (1 = same as standing hop).")]
+        [Min(0.5f)]
+        public float walkJumpHeightMultiplier = 1f;
+
+        [Tooltip("Shift-hold jog jump = standingJumpHeight × this.")]
+        [Min(1f)]
+        public float jogJumpHeightMultiplier = 1.4f;
+
+        [Tooltip("Double-tap Shift sprint burst jump = standingJumpHeight × this.")]
+        [Min(1f)]
+        public float sprintJumpHeightMultiplier = 1.9f;
+
+        [Tooltip("Extra scale from horizontal speed: mult *= exp(exponent × speed01) / exp(exponent). 0 = gait tiers only.")]
+        [Min(0f)]
+        public float jumpHeightSpeedExponent = 1.35f;
+
         [Header("Locomotion - turn lean")]
         [Tooltip("Use these lean settings instead of Invector's raw lean. Off = stock Invector lean.")]
         public bool leanOverrideEnabled = true;
@@ -488,6 +510,30 @@ namespace Project.Features.Climb
         [Tooltip("Max step between neighboring stance pairs while climbing (WASD). Auto-raises to nearest neighbor if bake spacing is wider. Runtime also caps at 0.85m.")]
         [Range(0.35f, 3.5f)]
         public float probeStepMax = 1.6f;
+
+        /// <summary>Jump height for the current on-foot gait (Genesis Studio → Survival → Walk / Run / Sprint).</summary>
+        public float ResolveJumpHeight(DMLocomotionGaitController.Gait gait, bool moving, float horizontalSpeed01 = 0f)
+        {
+            float h = Mathf.Max(0.35f, standingJumpHeight);
+            if (!moving)
+                return h;
+
+            float mult = gait switch
+            {
+                DMLocomotionGaitController.Gait.SprintBurst => sprintJumpHeightMultiplier,
+                DMLocomotionGaitController.Gait.Jog => jogJumpHeightMultiplier,
+                _ => walkJumpHeightMultiplier
+            };
+
+            if (jumpHeightSpeedExponent > 0.001f)
+            {
+                float t = Mathf.Clamp01(horizontalSpeed01);
+                float maxBoost = Mathf.Exp(jumpHeightSpeedExponent);
+                mult *= Mathf.Pow(maxBoost, t);
+            }
+
+            return h * mult;
+        }
 
         /// <summary>Overwrites live <see cref="SurvivalStats"/> tuning from this profile (pools, drains, regen).</summary>
         public void ApplyToSurvivalStats(SurvivalStats stats)

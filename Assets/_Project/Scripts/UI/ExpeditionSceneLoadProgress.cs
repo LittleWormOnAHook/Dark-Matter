@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Project.Core;
 using Project.World;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -17,7 +18,7 @@ namespace Project.UI
         private const float TerrainWeight = 0.72f;
         private const float ContentWeight = 0.28f;
         // After every tile Gaia requested has loaded, wait this long for further requests before dropping the rest.
-        private const float SettleSeconds = 3f;
+        private const float SettleSeconds = 1.5f;
 
         private static readonly List<Vector2Int> LiveTiles = new List<Vector2Int>(4);
         private static float startedAt = -1f;
@@ -46,6 +47,10 @@ namespace Project.UI
 
         public static float GetProgress()
         {
+            // TEMP COMBAT FOCUS — skip Gaia tile + content-scene wait.
+            if (DmTempCombatFocus.SkipWorldStreaming)
+                return 1f;
+
             if (!begun)
                 Begin();
 
@@ -73,6 +78,10 @@ namespace Project.UI
 
         public static bool IsReady()
         {
+            // TEMP COMBAT FOCUS — skip Gaia tile + content-scene wait.
+            if (DmTempCombatFocus.SkipWorldStreaming)
+                return true;
+
             if (!begun)
                 Begin();
 

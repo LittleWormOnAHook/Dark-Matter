@@ -67,6 +67,7 @@ namespace Project.Player
         private float _airApexY;
         private float _airVerticalVelocity;
         private bool _wasGrounded = true;
+        private bool _awaitingJumpLandRecover;
         private bool _physAir;
         private float _ignoreLandsUntil;
         private float _groundedFor;
@@ -78,6 +79,7 @@ namespace Project.Player
         private Vector3 _flopImpact;
         private float _flopBoostUntil = -1f;
         private float _unmuteAt = -1f;
+        private float _suppressJumpUntil;
         private int _flopBoneCount;
 
         private bool _hasVerticalVelocity;
@@ -85,6 +87,8 @@ namespace Project.Player
         private bool _hasLandHigh;
         private bool _hasIsGrounded;
         private bool _hasGroundDistance;
+        private bool _hasJumpTrigger;
+        private bool _hasIsJumping;
 
         private static readonly RaycastHit[] ProbeHits = new RaycastHit[16];
         private static readonly int VerticalVelocity = Animator.StringToHash("VerticalVelocity");
@@ -97,9 +101,13 @@ namespace Project.Player
         private static readonly int LandHighState = Animator.StringToHash("LandHigh");
         private static readonly int BounceState = Animator.StringToHash("Bounce");
         private static readonly int Locomotion = Animator.StringToHash("Locomotion");
+        private static readonly int FreeMovementState = Animator.StringToHash("Free Movement");
+        private static readonly int StrafingMovementState = Animator.StringToHash("Strafing Movement");
+        private static readonly int FreeCrouchState = Animator.StringToHash("Free Crouch");
         private static readonly int JumpState = Animator.StringToHash("Jump");
         private static readonly int JumpMoveState = Animator.StringToHash("JumpMove");
-        private static readonly int FallingState = Animator.StringToHash("Falling");
+        private static readonly int JumpTrigger = Animator.StringToHash("Jump");
+        private static readonly int IsJumpingParam = Animator.StringToHash("IsJumping");
         private static readonly int[] StolenGetUpStates =
         {
             Animator.StringToHash("Falling"),
@@ -115,6 +123,7 @@ namespace Project.Player
 
         public bool IsLandingLocked => _landing;
         public bool IsHardFalling => _hardFalling;
+        public bool SuppressJumpStart => Time.unscaledTime < _suppressJumpUntil;
 
         public void ResetForRespawn()
         {
@@ -126,6 +135,7 @@ namespace Project.Player
             _ownedLandState = 0;
             _ownedLandSharpExit = false;
             _physAir = false;
+            _awaitingJumpLandRecover = false;
             _fallTime = 0f;
             _flopBoostUntil = -1f;
             _flopBoneCount = 0;
@@ -147,8 +157,7 @@ namespace Project.Player
                 animator.enabled = true;
                 animator.applyRootMotion = false;
                 animator.speed = _savedAnimatorSpeed > 0.01f ? _savedAnimatorSpeed : 1f;
-                if (animator.HasState(0, Locomotion))
-                    animator.CrossFadeInFixedTime(Locomotion, 0.08f, 0);
+                ForceLocomotionState(0.08f);
             }
 
             if (motor != null)
@@ -204,9 +213,23 @@ namespace Project.Player
             if (!Application.isPlaying)
                 return;
 
+            DMPlayerSystemsProfile[] profiles = Object.FindObjectsByType<DMPlayerSystemsProfile>(
+                FindObjectsInactive.Exclude);
+            for (int i = 0; i < profiles.Length; i++)
+            {
+                DMPlayerSystemsProfile profile = profiles[i];
+                if (profile != null && profile.GetComponent<DMLandingDirector>() == null)
+                    profile.gameObject.AddComponent<DMLandingDirector>();
+            }
+
+            if (profiles.Length > 0)
+                return;
+
             GameObject player = GameObject.Find("Player_v7");
             if (player == null)
                 player = GameObject.Find("Player_v7 Variant");
+            if (player == null)
+                player = GameObject.Find("Player_v7 Combat Variant");
             if (player == null || player.GetComponent<DMLandingDirector>() != null)
                 return;
 
@@ -275,8 +298,7 @@ namespace Project.Player
             if (animator.speed <= 0.01f)
                 animator.speed = 1f;
 
-            if (animator.HasState(0, Locomotion))
-                animator.CrossFadeInFixedTime(Locomotion, 0.1f, 0, 0f);
+            ForceLocomotionState(0f);
         }
 
         private void Start()
@@ -284,7 +306,6 @@ namespace Project.Player
             if (_loggedBuild)
                 return;
             _loggedBuild = true;
-            // Startup stamp silenced.
         }
 
         private void OnDisable()
@@ -299,12 +320,15 @@ namespace Project.Player
             _hasLandHigh = false;
             _hasIsGrounded = false;
             _hasGroundDistance = false;
+            _hasJumpTrigger = false;
+            _hasIsJumping = false;
             if (animator == null)
                 return;
 
             for (int i = 0; i < animator.parameterCount; i++)
             {
-                int hash = animator.GetParameter(i).nameHash;
+                AnimatorControllerParameter parameter = animator.GetParameter(i);
+                int hash = parameter.nameHash;
                 if (hash == VerticalVelocity)
                     _hasVerticalVelocity = true;
                 else if (hash == JetpackLand)
@@ -315,6 +339,10 @@ namespace Project.Player
                     _hasIsGrounded = true;
                 else if (hash == GroundDistance)
                     _hasGroundDistance = true;
+                else if (hash == JumpTrigger && parameter.type == AnimatorControllerParameterType.Trigger)
+                    _hasJumpTrigger = true;
+                else if (hash == IsJumpingParam && parameter.type == AnimatorControllerParameterType.Bool)
+                    _hasIsJumping = true;
             }
         }
 
@@ -458,6 +486,8 @@ namespace Project.Player
                     bool shortHop = !JetpackHeroThisAir()
                         && (_shortHopArmed || IsInvectorRegularJump());
                     bool commitOk = !shortHop || (motor.isGrounded && vy <= 0.05f);
+                    if (IsRegularJumpTakeoffCommitted())
+                        commitOk = false;
                     if (commitOk
                         && !_landing
                         && !_hardFalling
@@ -488,6 +518,8 @@ namespace Project.Player
                 UnmuteInvectorFall();
                 _unmuteAt = -1f;
             }
+
+            TryRecoverRegularJumpLocomotion();
         }
 
         private void LateUpdate()
@@ -498,6 +530,8 @@ namespace Project.Player
                 return;
 
             TrackShortHopSession();
+            if (!_landing && !_hardFalling)
+                TryRecoverRegularJumpLocomotion();
             ProtectShortHopApex();
             // Soft bounce sets _landing but must not mute/zero VerticalVelocity — that fought LandLow on regular jumps.
             bool hardLandOrAir = _physAir || (_landing && _lockDuringLand) || _unmuteAt > Time.unscaledTime;
@@ -821,6 +855,7 @@ namespace Project.Player
             _ownedLandSharpExit = sharpExit;
             _ownedLandState = stateHash;
             _shortHopArmed = false;
+            _awaitingJumpLandRecover = false;
             if (motor != null)
             {
                 _heldLockMovement = motor.lockMovement && !IsDashing;
@@ -1171,8 +1206,12 @@ namespace Project.Player
 
             if (motor.isJumping && !JetpackHeroThisAir())
             {
-                if (!_shortHopArmed)
-                    _shortHopArmed = true;
+                _shortHopArmed = true;
+                _awaitingJumpLandRecover = true;
+            }
+            else if (IsInJumpAnimatorState() && !JetpackHeroThisAir())
+            {
+                _awaitingJumpLandRecover = true;
             }
             else if (_shortHopArmed && motor.isGrounded && !_physAir)
             {
@@ -1217,6 +1256,177 @@ namespace Project.Player
             if (_shortHopArmed && _physAir)
                 return (_airApexY - transform.position.y) < HeroMin;
             return false;
+        }
+
+        private void TryRecoverRegularJumpLocomotion()
+        {
+            if (!_awaitingJumpLandRecover || _landing || _hardFalling)
+                return;
+            if (IsDashing || JetpackHeroThisAir())
+                return;
+            if (climb != null && climb.IsClimbing)
+                return;
+            if (motor == null || animator == null)
+                return;
+            if (!motor.isGrounded)
+                return;
+            if (_groundedFor < GroundCommitSeconds)
+                return;
+            if (IsRegularJumpTakeoffCommitted())
+                return;
+            if (ReadFallVelocity() > 0.05f && (motor.isJumping || motor.inJumpStarted))
+                return;
+
+            if (IsInLocomotionLeaf())
+            {
+                RestoreRegularJumpMotor();
+                _awaitingJumpLandRecover = false;
+                _shortHopArmed = false;
+                return;
+            }
+
+            RecoverRegularJumpLocomotion();
+        }
+
+        private bool IsInJumpAnimatorState()
+        {
+            if (animator == null)
+                return false;
+
+            int current = animator.GetCurrentAnimatorStateInfo(0).shortNameHash;
+            if (current == JumpState || current == JumpMoveState)
+                return true;
+
+            if (!animator.IsInTransition(0))
+                return false;
+
+            int next = animator.GetNextAnimatorStateInfo(0).shortNameHash;
+            return next == JumpState || next == JumpMoveState;
+        }
+
+        /// <summary>Do not land-recover or short-hop land while Invector jump impulse is active.</summary>
+        private bool IsRegularJumpTakeoffCommitted()
+        {
+            if (motor == null || JetpackHeroThisAir())
+                return false;
+            if (motor.inJumpStarted)
+                return true;
+            if (!motor.isJumping)
+                return false;
+            // Move jump: isJumping is true on ground until FixedUpdate lifts the body.
+            if (motor.isGrounded && ReadFallVelocity() <= 0.35f)
+                return true;
+            return false;
+        }
+
+        private bool IsInLocomotionLeaf()
+        {
+            if (animator == null)
+                return false;
+
+            int current = animator.GetCurrentAnimatorStateInfo(0).shortNameHash;
+            if (IsLocomotionLeafHash(current))
+                return true;
+
+            if (!animator.IsInTransition(0))
+                return false;
+
+            return IsLocomotionLeafHash(animator.GetNextAnimatorStateInfo(0).shortNameHash);
+        }
+
+        private static bool IsLocomotionLeafHash(int hash)
+        {
+            return hash == FreeMovementState
+                || hash == StrafingMovementState
+                || hash == FreeCrouchState;
+        }
+
+        private int ResolveLocomotionLeafState()
+        {
+            if (animator == null)
+                return 0;
+
+            if (motor != null && motor.isStrafing && animator.HasState(0, StrafingMovementState))
+                return StrafingMovementState;
+            if (animator.HasState(0, FreeMovementState))
+                return FreeMovementState;
+            if (animator.HasState(0, Locomotion))
+                return Locomotion;
+            return 0;
+        }
+
+        private void ForceLocomotionState(float blendSeconds)
+        {
+            if (animator == null)
+                return;
+
+            int state = ResolveLocomotionLeafState();
+            if (state == 0)
+                return;
+
+            if (blendSeconds <= 0.001f)
+                animator.Play(state, 0, 0f);
+            else
+                animator.CrossFadeInFixedTime(state, blendSeconds, 0, 0f);
+        }
+
+        private void RecoverRegularJumpLocomotion()
+        {
+            RestoreRegularJumpMotor();
+            _suppressJumpUntil = Time.unscaledTime + 0.2f;
+
+            if (animator != null)
+            {
+                if (!animator.enabled)
+                    animator.enabled = true;
+                if (animator.speed <= 0.01f)
+                    animator.speed = 1f;
+
+                if (_hasJumpTrigger)
+                    animator.ResetTrigger(JumpTrigger);
+                if (_hasIsJumping)
+                    animator.SetBool(IsJumpingParam, false);
+                if (_hasIsGrounded)
+                    animator.SetBool(IsGrounded, true);
+                if (_hasGroundDistance)
+                    animator.SetFloat(GroundDistance, 0.05f);
+
+                ForceLocomotionState(0f);
+            }
+
+            UnmuteInvectorFall();
+        }
+
+        private void RestoreRegularJumpMotor()
+        {
+            if (motor == null)
+                return;
+
+            if (motor is vThirdPersonController controller)
+                controller.CancelPendingJumpStart();
+
+            motor.isJumping = false;
+            motor.inJumpStarted = false;
+            motor.disableAnimations = false;
+            motor.disableCheckGround = false;
+
+            if (!IsDashing && (climb == null || !climb.IsClimbing))
+            {
+                motor.lockMovement = false;
+                motor.lockAnimMovement = false;
+            }
+
+            if (body != null && (climb == null || !climb.IsClimbing) && !motor.ragdolled)
+            {
+                if (body.isKinematic)
+                    body.isKinematic = false;
+                body.useGravity = true;
+                if (capsule != null)
+                {
+                    capsule.enabled = true;
+                    capsule.isTrigger = false;
+                }
+            }
         }
 
         private Transform ResolveHips()
@@ -1644,13 +1854,9 @@ namespace Project.Player
 
             if (animator != null)
             {
-                animator.speed = _savedAnimatorSpeed;
-                if (animator.HasState(0, Locomotion))
-                {
-                    // Hero: snap out - the 0.35 blend was the tail cushion. Soft jetpack absorb keeps a light blend.
-                    float exitBlend = sharpExit ? LandCrossFadeSeconds : 0.18f;
-                    animator.CrossFadeInFixedTime(Locomotion, exitBlend, 0);
-                }
+                animator.speed = _savedAnimatorSpeed > 0.01f ? _savedAnimatorSpeed : 1f;
+                float exitBlend = sharpExit ? LandCrossFadeSeconds : 0.18f;
+                ForceLocomotionState(exitBlend);
             }
 
             if (restoreLocks && motor != null)
@@ -1669,6 +1875,8 @@ namespace Project.Player
             }
 
             ResetAirTracking();
+            _awaitingJumpLandRecover = false;
+            RestoreRegularJumpMotor();
             float endGrace = LiveLanding != null ? LiveLanding.landGroundedEndGraceSeconds : 0.25f;
             _ignoreLandsUntil = Mathf.Max(_ignoreLandsUntil, Time.unscaledTime + endGrace);
             // Soft bounce: do not keep muting Invector after � that made regular-jump recovery look wrong.

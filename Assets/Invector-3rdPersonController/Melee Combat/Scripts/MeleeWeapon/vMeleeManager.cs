@@ -65,15 +65,22 @@ namespace Invector.vMelee
                 {
                     var attackObjects = GetComponentsInChildren<vMeleeAttackObject>();
                     if (attackObjects.Length > 0)
-                        member.attackObject = System.Array.Find(attackObjects, a => a.attackObjectName.Equals(member.bodyPart));
+                        member.attackObject = System.Array.Find(
+                            attackObjects,
+                            a => a != null &&
+                                 !string.IsNullOrEmpty(a.attackObjectName) &&
+                                 a.attackObjectName.Equals(member.bodyPart));
 
                     if (member.attackObject == null)
                     {
-                        Debug.LogWarning("Can't find the attack Object " + member.bodyPart);
+                        // Weapon-only / sandbox copies have no unarmed body hit boxes.
                         continue;
                     }
                 }
-                member.attackObject.damage.damageValue = defaultDamage.damageValue;
+                if (member.attackObject.damage == null)
+                    member.attackObject.damage = new vDamage(defaultDamage);
+                else
+                    member.attackObject.damage.damageValue = defaultDamage.damageValue;
                 if (member.bodyPart == HumanBodyBones.LeftLowerArm.ToString())
                 {
                     var weapon = member.attackObject.GetComponentInChildren<vMeleeWeapon>(true);
@@ -501,6 +508,9 @@ namespace Invector.vMelee
         public bool isHuman;
         public void SetActiveDamage(bool active)
         {
+            if (attackObject == null)
+                return;
+
             attackObject.SetActiveDamage(active);
         }
     }

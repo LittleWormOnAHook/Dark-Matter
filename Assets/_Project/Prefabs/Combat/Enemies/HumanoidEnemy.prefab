@@ -38971,8 +38971,9 @@ GameObject:
   - component: {fileID: 8246110398454078016}
   - component: {fileID: 2921688952400493967}
   - component: {fileID: 3066074561020570906}
+  - component: {fileID: 6465512738650557702}
   m_Layer: 9
-  m_Name: HumanoidEnemy_Invector
+  m_Name: HumanoidEnemy
   m_TagString: Enemy
   m_Icon: {fileID: 2800000, guid: 983f3b6c8ae1ee64ba6639d19c71e12c, type: 3}
   m_NavMeshLayer: 0
@@ -39497,7 +39498,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91835fbe7d801a446b373f5c1976ee7f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.AI.EnemyHealth
-  maxHealth: 100
+  maxHealth: 500
   destroyOnDeath: 1
   destroyDelay: 3
   respawnTime: 0
@@ -39583,7 +39584,7 @@ MonoBehaviour:
   idleDuration: 3
   aggroOnDamaged: 1
   aggroOnHeardHit: 1
-  hearingAggroChance: 0.45
+  hearingAggroChance: 0.716
   hearingCooldown: 0.75
   loseTargetDelay: 4
   maxChaseDuration: 6
@@ -39600,9 +39601,9 @@ MonoBehaviour:
   pioneerRetargetRadius: 4
   pioneerRetargetRollIntervalMin: 0.75
   pioneerRetargetRollIntervalMax: 1.35
-  playerThreatRange: 3
+  playerThreatRange: 6
   minCombatSeparation: 1.35
-  attackStandoffFraction: 0.78
+  attackStandoffFraction: 0.67
   playerStandoffBonus: 0.35
   pioneerChaseRangeMultiplier: 1.45
   defensivePauseMin: 0.35
@@ -39856,13 +39857,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.AI.Invector.EnemyInvectorRagdollBridge
   enableHitStagger: 1
-  defaultStaggerSeconds: 0.28
+  defaultStaggerSeconds: 0.6
   staggerOnCritical: 1
   preferAnimatorSoftHits: 1
+  enableEnemyDirectionalHits: 1
   knockdownImpulse: 0.28
   softStaggerImpulse: 0.12
-  baseReactionChance: 0.25
-  criticalReactionChanceMultiplier: 1.5
+  baseReactionChance: 0.414
+  criticalReactionChanceMultiplier: 2.243
   criticalReactionKnocksDown: 1
   knockdownDownSeconds: 1.65
   knockdownGetUpTimeout: 2.75
@@ -39908,6 +39910,20 @@ MonoBehaviour:
   fullDetailDistance: 32
   cullDistance: 64
   checkInterval: 0.25
+--- !u!114 &6465512738650557702
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5302866109626297033}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56360308cdc8e18459be91300acb64de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.CombatPoise
+  maxPoise: 80
+  useProfileDefaults: 1
 --- !u!1 &5359619123608783030
 GameObject:
   m_ObjectHideFlags: 0

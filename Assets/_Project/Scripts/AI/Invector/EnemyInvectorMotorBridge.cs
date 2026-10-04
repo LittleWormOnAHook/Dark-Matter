@@ -22,6 +22,7 @@ namespace Project.AI.Invector
         private EnemyInvectorBootstrap _bootstrap;
         private EnemyHealth _health;
         private EnemyInvectorRagdollBridge _ragdollBridge;
+        private DMSpawnPhysicsStabilizer _stabilizer;
         private UnityEngine.AI.NavMeshAgent _navAgent;
         private Transform _playerTransform;
         private bool _initialized;
@@ -40,6 +41,7 @@ namespace Project.AI.Invector
             _bootstrap = GetComponent<EnemyInvectorBootstrap>();
             _health = GetComponent<EnemyHealth>();
             _ragdollBridge = GetComponent<EnemyInvectorRagdollBridge>();
+            _stabilizer = GetComponent<DMSpawnPhysicsStabilizer>();
             _navAgent = GetComponent<UnityEngine.AI.NavMeshAgent>();
         }
 
@@ -58,6 +60,11 @@ namespace Project.AI.Invector
             if (_health != null && _health.IsDead)
                 return;
 
+            if (_stabilizer == null)
+                _stabilizer = GetComponent<DMSpawnPhysicsStabilizer>();
+            if (_stabilizer != null && _stabilizer.IsSpawnSettleActive)
+                return;
+
             if (IsMotorBlocked)
                 return;
 
@@ -72,11 +79,15 @@ namespace Project.AI.Invector
             EnsureAnimatorReady();
             SyncRigidbodyToTransform();
             ApplyAiLocomotionMotor();
+            DMSpawnPhysicsStabilizer.KeepLivingRootKinematic(gameObject);
         }
 
         private void LateUpdate()
         {
             if (_health != null && _health.IsDead)
+                return;
+
+            if (_stabilizer != null && _stabilizer.IsSpawnSettleActive)
                 return;
 
             if (IsMotorBlocked)
@@ -162,9 +173,13 @@ namespace Project.AI.Invector
             if (_initialized)
                 return;
 
-            _controller.lockMovement = true;
+            _controller.lockMovement = _stabilizer != null && _stabilizer.IsSpawnSettleActive;
             _controller.useRootMotion = false;
             _controller.isGrounded = true;
+            _controller.extraGravity = 0f;
+            _controller.verticalVelocity = 0f;
+            if (_controller.animator != null)
+                _controller.animator.applyRootMotion = false;
             _initialized = true;
         }
 

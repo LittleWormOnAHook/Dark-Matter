@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Project.AI.Invector;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -192,6 +193,9 @@ namespace Project.AI
             instance.name = prefab.name;
             EnemyDefinition definition = ResolveDefinition(prefab);
             EnemySpawnConfigurator.Apply(instance, spawnSettings, definition);
+            EnemyGroundUtility.SnapCreatureToGround(instance.transform, instance.transform.position);
+            HumanoidPerformanceController.ForceSpawnVisible(instance);
+            DMSpawnPhysicsStabilizer.EnsureOn(instance);
             ConfigureSpawnerRespawn(instance);
             return instance;
         }

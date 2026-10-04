@@ -273,7 +273,8 @@ namespace Invector.vCharacterController
             // trigger jump animations
             if (input.sqrMagnitude < 0.1f)
             {
-                StartCoroutine(DelayToJump());
+                CancelPendingJumpStart();
+                _delayToJumpRoutine = StartCoroutine(DelayToJump());
                 animator.CrossFadeInFixedTime("Jump", 0.1f);
             }
             else
@@ -290,12 +291,30 @@ namespace Invector.vCharacterController
             }
         }
 
+        private Coroutine _delayToJumpRoutine;
+
+        /// <summary>
+        /// Standing jump waits <see cref="jumpStandingDelay"/> before <see cref="isJumping"/>.
+        /// Cancel on land / jetpack so the delayed set cannot leave the motor in a dead jump.
+        /// </summary>
+        public virtual void CancelPendingJumpStart()
+        {
+            if (_delayToJumpRoutine != null)
+            {
+                StopCoroutine(_delayToJumpRoutine);
+                _delayToJumpRoutine = null;
+            }
+
+            inJumpStarted = false;
+        }
+
         protected IEnumerator DelayToJump()
         {
             inJumpStarted = true;
             yield return new WaitForSeconds(jumpStandingDelay);
             isJumping = true;
             inJumpStarted = false;
+            _delayToJumpRoutine = null;
         }
 
         /// <summary>

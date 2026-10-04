@@ -202,6 +202,8 @@ namespace Project.Features.Jetpack
                 return;
 
             motor.isJumping = false;
+            if (motor is vThirdPersonController controller)
+                controller.CancelPendingJumpStart();
         }
 
         public void NotifyLanded()

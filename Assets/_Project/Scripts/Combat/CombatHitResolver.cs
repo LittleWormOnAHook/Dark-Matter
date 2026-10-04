@@ -74,7 +74,8 @@ namespace Project.Combat
             Vector3 travelDirection,
             float damage,
             bool isCritical,
-            GameObject owner)
+            GameObject owner,
+            ItemData ammoItem = null)
         {
             IDamageable damageable = DamageableUtility.GetDamageable(collider);
             if (damageable == null)
@@ -99,7 +100,15 @@ namespace Project.Combat
                     damageSource != null ? damageSource.transform : null);
             }
 
-            damageable.TakeDamage(damage, damageSource, isCritical);
+            DamageInfo info = DamageInfo.FromHit(damage, isCritical, damageSource, hitPoint, ammoItem);
+            bool applied = CombatDamageApplicator.ApplyToDamageable(
+                damageable,
+                collider.transform.root.gameObject,
+                in info);
+
+            if (!applied)
+                return;
+
             NotifyEnemyProjectileHitOnAlly(damageSource, damageable, collider.transform, damage);
 
             if (ragdollBridge != null && enemyHealth != null && !enemyHealth.IsDead)
@@ -277,7 +286,11 @@ namespace Project.Combat
                         owner != null ? owner.transform : null);
                 }
 
-                damageable.TakeDamage(falloffDamage, owner, false);
+                DamageInfo splashInfo = DamageInfo.FromHit(falloffDamage, false, owner, closest, ammoItem);
+                CombatDamageApplicator.ApplyToDamageable(
+                    damageable,
+                    hitCollider.transform.root.gameObject,
+                    in splashInfo);
                 if (!SelfReportsDamageUi(damageable))
                     CombatUiSpawner.ShowDamage(falloffDamage, closest, false);
                 ApplyStatusEffect(ammoItem, hitCollider, owner, dotDurationScale, forceResidue, falloffDamage * 0.08f);

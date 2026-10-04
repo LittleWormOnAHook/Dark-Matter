@@ -258,17 +258,25 @@ namespace Project.AI.Invector
             if (target == null)
                 return false;
 
+            EnemyInvectorRagdollBridge ragdollBridge = GetComponent<EnemyInvectorRagdollBridge>();
+            if (ragdollBridge != null && ragdollBridge.IsHitStaggerActive)
+                return false;
+
+            DMSpawnPhysicsStabilizer stabilizer = GetComponent<DMSpawnPhysicsStabilizer>();
+            if (stabilizer != null && stabilizer.IsSpawnSettleActive)
+                return false;
+
             ItemData weapon = ResolveWeaponForTarget(target);
-            if (weapon == null)
-                return TryBeginUnarmedMeleeAttack(out duration);
+            if (weapon == null && _loadoutBridge != null)
+                weapon = _loadoutBridge.ActiveItem ?? _loadoutBridge.ResolvePreferredWeapon();
 
-            if (weapon.IsRangedWeapon)
-                return TryBeginRangedAttack(target, weapon, out duration);
-
-            if (weapon.itemType == ItemType.MeleeWeapon)
+            if (weapon != null && weapon.itemType == ItemType.MeleeWeapon)
                 return TryBeginMeleeAttack(weapon, out duration);
 
-            return false;
+            if (weapon != null && weapon.IsRangedWeapon)
+                return TryBeginRangedAttack(target, weapon, out duration);
+
+            return TryBeginUnarmedMeleeAttack(out duration);
         }
 
         private ItemData ResolveWeaponForTarget(Transform target)
@@ -301,9 +309,16 @@ namespace Project.AI.Invector
                 return false;
 
             LastAttackWasRanged = false;
-            _loadoutBridge?.EquipSpecificWeapon(weapon);
-            SyncMeleeAnimatorParams(useWeaponMoveSet: true);
-            _animator.SetInteger(AttackIdHash, _meleeManager.GetAttackID());
+            if (_loadoutBridge != null &&
+                (_loadoutBridge.ActiveItem != weapon || _loadoutBridge.ActiveDrawnInstance == null))
+            {
+                _loadoutBridge.EquipSpecificWeapon(weapon);
+            }
+
+            ApplyMeleeAnimatorIds(weapon);
+            EnemyInvectorCombatShutdown.EnableMeleeIfSafe(gameObject);
+            if (_meleeManager != null && !_meleeManager.enabled)
+                _meleeManager.enabled = true;
             _animator.SetTrigger(WeakAttackHash);
             duration = ResolveMeleeDuration(weapon);
             EnemyNoiseEvents.RaiseNoise(transform.position, 5f, gameObject);
@@ -542,10 +557,54 @@ namespace Project.AI.Invector
 
         private void SyncMeleeAnimatorParams(bool useWeaponMoveSet)
         {
-            if (_animator == null || _meleeManager == null)
+            if (_animator == null)
                 return;
 
-            float moveSetId = useWeaponMoveSet ? _meleeManager.GetMoveSetID() : 0f;
+            if (!useWeaponMoveSet)
+            {
+                _animator.SetInteger(AttackIdHash, 0);
+                _animator.SetFloat(MoveSetIdHash, 0f);
+                return;
+            }
+
+            ApplyMeleeAnimatorIds(null);
+        }
+
+        /// <summary>
+        /// Invector WeakAttacks: AttackID 0 = unarmed punch, 1 = one-hand sword, 2 = two-hand.
+        /// GetAttackID returns 0 when the weapon GO is inactive or its attackID was never authored.
+        /// </summary>
+        private void ApplyMeleeAnimatorIds(ItemData weapon)
+        {
+            if (_animator == null)
+                return;
+
+            int attackId = 0;
+            int moveSetId = 0;
+            vMeleeWeapon rightWeapon = _meleeManager != null ? _meleeManager.rightWeapon : null;
+            if (rightWeapon != null)
+            {
+                attackId = rightWeapon.attackID;
+                moveSetId = rightWeapon.movesetID;
+            }
+
+            if (attackId <= 0 && _meleeManager != null)
+                attackId = _meleeManager.GetAttackID();
+            if (moveSetId <= 0 && _meleeManager != null)
+                moveSetId = _meleeManager.GetMoveSetID();
+
+            if (attackId <= 0 && weapon != null)
+                attackId = weapon.weaponGrip == WeaponGrip.TwoHanded ? 2 : 1;
+            if (moveSetId <= 0 && weapon != null)
+                moveSetId = weapon.weaponGrip == WeaponGrip.TwoHanded ? 2 : 1;
+
+            // Equipped melee must never fall through to AttackID 0 (unarmed punch SMBs).
+            if (weapon != null && weapon.itemType == ItemType.MeleeWeapon && attackId <= 0)
+                attackId = 1;
+            if (weapon != null && weapon.itemType == ItemType.MeleeWeapon && moveSetId <= 0)
+                moveSetId = 1;
+
+            _animator.SetInteger(AttackIdHash, attackId);
             _animator.SetFloat(MoveSetIdHash, moveSetId);
         }
 

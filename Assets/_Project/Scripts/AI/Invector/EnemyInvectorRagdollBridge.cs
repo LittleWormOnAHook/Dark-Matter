@@ -2,6 +2,7 @@ using System.Collections;
 using Invector;
 using Invector.vCharacterController;
 using Project.AI;
+using Project.Combat;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -54,6 +55,8 @@ namespace Project.AI.Invector
         private Coroutine _staggerRoutine;
         private bool _isHitStaggerActive;
         private bool _isKnockdownActive;
+        private bool _animatorHitstopActive;
+        private float _animatorSpeedBeforeHitstop = 1f;
         private vDamage _pendingCorpseDamage;
 
         public vRagdoll Ragdoll => _ragdoll;
@@ -86,6 +89,11 @@ namespace Project.AI.Invector
             EnemyInvectorRagdollRigRepair.TryRemountOrphanRagdollOntoAvatar(gameObject);
             _ragdoll = EnemyInvectorRagdollSetup.EnsurePresent(gameObject);
             EnemyInvectorRagdollSetup.ConfigureForCorpse(_ragdoll);
+            if (_ragdoll != null)
+            {
+                _ragdoll.startRagdolled = false;
+                _ragdoll.CancelInvoke("ActivateRagdoll");
+            }
             _physicsCache?.Refresh();
         }
 
@@ -160,6 +168,33 @@ namespace Project.AI.Invector
         /// <summary>
         /// Ranged-friendly entry: builds a light vDamage from shot data then runs the shared stagger roll.
         /// </summary>
+        /// <summary>
+        /// Player block/parry guard-break: guaranteed reaction, locomotion + attack lockout for <paramref name="staggerSeconds"/>.
+        /// </summary>
+        public void TryGuardBreakStagger(vDamage sourceDamage, float staggerSeconds, bool isParry)
+        {
+            if (staggerSeconds <= 0f)
+                return;
+
+            InterruptEnemyCombatForStagger(staggerSeconds);
+
+            DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
+            float hitstop = 0f;
+            if (profile != null)
+            {
+                // Normal blocks stay at 0 — no animator pause. Parry holds the pose briefly.
+                hitstop = isParry ? profile.parryStaggerHitstopSeconds : profile.blockStaggerHitstopSeconds;
+            }
+
+            TryHitStagger(
+                sourceDamage,
+                pioneerDamage: 0f,
+                isCritical: isParry,
+                weaponRequestsStagger: true,
+                weaponStaggerSeconds: staggerSeconds,
+                animatorHitstopSeconds: Mathf.Max(0f, hitstop));
+        }
+
         public void TryHitStaggerFromRanged(
             Vector3 hitPoint,
             Vector3 hitDirection,
@@ -191,51 +226,83 @@ namespace Project.AI.Invector
             float pioneerDamage,
             bool isCritical,
             bool weaponRequestsStagger,
-            float weaponStaggerSeconds)
+            float weaponStaggerSeconds,
+            float animatorHitstopSeconds = 0f)
         {
-            if (!enableHitStagger || _controller == null)
-                return;
+            bool poiseBreak = weaponRequestsStagger;
 
             if (_health != null && _health.IsDead)
+            {
+                LogStaggerDev(poiseBreak, "target dead");
                 return;
+            }
 
-            if (_controller.isDead || IsCorpseRagdolled)
+            if (_controller != null && (_controller.isDead || IsCorpseRagdolled))
+            {
+                LogStaggerDev(poiseBreak, "controller dead or corpse ragdolled");
                 return;
+            }
 
-            // Already reacting / knocked down — damage still applies via bone proxies; skip stacking.
-            if (_staggerRoutine != null)
+            if (!poiseBreak && !enableHitStagger)
+            {
+                LogStaggerDev(false, "enableHitStagger off");
                 return;
+            }
+
+            DMSpawnPhysicsStabilizer stabilizer = GetComponent<DMSpawnPhysicsStabilizer>();
+            bool groundedLongEnough = stabilizer != null && stabilizer.HasConfirmedGrounded;
+            // Soft hits wait for spawn settle (ragdoll get-up can launch the root). Poise uses animator flinch only.
+            if (stabilizer != null && stabilizer.IsSpawnSettleActive && !poiseBreak)
+            {
+                LogStaggerDev(false, "spawn settle active");
+                return;
+            }
+
+            // Chance-roll hits skip if already reacting. Poise-break always restarts a visible stagger.
+            if (!poiseBreak && _staggerRoutine != null)
+            {
+                LogStaggerDev(false, "already in stagger routine");
+                return;
+            }
 
             if (!ShouldTriggerHitReaction(isCritical, weaponRequestsStagger))
+            {
+                LogStaggerDev(false, "reaction chance failed");
                 return;
+            }
 
-            bool knockDown = criticalReactionKnocksDown && isCritical && staggerOnCritical;
-            bool canRagdoll = _ragdoll != null && HasUsableRagdollRig && EnsureBodyPartsLoaded();
+            bool knockDown = !poiseBreak && criticalReactionKnocksDown && isCritical && staggerOnCritical;
+            bool canRagdoll = groundedLongEnough &&
+                             _ragdoll != null &&
+                             HasUsableRagdollRig &&
+                             EnsureBodyPartsLoaded();
 
-            // Soft hits: animator flinch by default (no ActiveRagdoll snap/flop).
+            // Until feet have been grounded 1s, never ActivateRagdoll — get-up calls ResetRagdoll
+            // which wakes the root rigidbody and launches the enemy.
+            if (!groundedLongEnough || (poiseBreak && preferAnimatorSoftHits) || (!knockDown && (preferAnimatorSoftHits || !canRagdoll)))
+            {
+                PlayVisibleAnimatorStagger(sourceDamage, isCritical, weaponStaggerSeconds, poiseBreak, animatorHitstopSeconds);
+                LogStaggerDev(poiseBreak, poiseBreak ? "poise animator stagger" : "soft animator stagger", played: true);
+                return;
+            }
+
             if (!knockDown)
             {
-                if (preferAnimatorSoftHits || !canRagdoll)
-                {
-                    PlayAnimatorHitReaction(sourceDamage, isCritical);
-                    return;
-                }
-
                 float duration = weaponStaggerSeconds > 0f ? weaponStaggerSeconds : defaultStaggerSeconds;
                 duration = Mathf.Clamp(duration, 0.18f, 0.4f);
                 vDamage staggerDamage = BuildStaggerDamage(sourceDamage, softStaggerImpulse);
-                _staggerRoutine = StartCoroutine(HitStaggerRoutine(staggerDamage, duration));
+                RestartStaggerRoutine(HitStaggerRoutine(staggerDamage, duration));
                 return;
             }
 
             if (!canRagdoll)
             {
-                PlayAnimatorHitReaction(sourceDamage, isCritical);
+                PlayVisibleAnimatorStagger(sourceDamage, isCritical, weaponStaggerSeconds, poiseBreak, animatorHitstopSeconds);
                 return;
             }
 
             vDamage knockdownDamage = BuildStaggerDamage(sourceDamage, knockdownImpulse);
-            _staggerRoutine = StartCoroutine(HitKnockdownRoutine(knockdownDamage, knockdownDownSeconds));
+            RestartStaggerRoutine(HitKnockdownRoutine(knockdownDamage, knockdownDownSeconds));
         }
 
         /// <summary>
@@ -245,8 +312,14 @@ namespace Project.AI.Invector
         private void PlayAnimatorHitReaction(vDamage sourceDamage, bool isCritical)
         {
             Animator animator = _controller != null ? _controller.animator : GetComponentInChildren<Animator>(true);
-            if (animator == null || !animator.enabled)
+            if (animator == null)
+            {
+                LogStaggerDev(true, "no animator");
                 return;
+            }
+
+            if (!animator.enabled)
+                animator.enabled = true;
 
             if (sourceDamage != null && sourceDamage.sender != null && HasAnimatorParam(animator, "HitDirection"))
             {
@@ -276,12 +349,148 @@ namespace Project.AI.Invector
                 animator.ResetTrigger("TriggerReaction");
                 animator.SetTrigger("TriggerReaction");
             }
-
-            if (HasAnimatorParam(animator, "ResetState"))
+            else if (HasAnimatorParam(animator, "TriggerRecoil"))
             {
-                animator.ResetTrigger("ResetState");
-                animator.SetTrigger("ResetState");
+                animator.ResetTrigger("TriggerRecoil");
+                animator.SetTrigger("TriggerRecoil");
             }
+            else
+            {
+                LogStaggerDev(true, "animator missing TriggerReaction/TriggerRecoil");
+            }
+
+            // Do not fire ResetState here — that exits the reaction on the same frame
+            // and makes animator staggers look like a silent no-op.
+        }
+
+        private void PlayVisibleAnimatorStagger(
+            vDamage sourceDamage,
+            bool isCritical,
+            float weaponStaggerSeconds,
+            bool poiseBreak,
+            float hitstopSeconds)
+        {
+            float duration = weaponStaggerSeconds > 0f ? weaponStaggerSeconds : defaultStaggerSeconds;
+            if (poiseBreak)
+                duration = Mathf.Clamp(duration, 0.22f, 1.5f);
+
+            RestartStaggerRoutine(AnimatorStaggerRoutine(
+                sourceDamage,
+                isCritical,
+                duration,
+                poiseBreak,
+                hitstopSeconds));
+        }
+
+        private IEnumerator AnimatorStaggerRoutine(
+            vDamage sourceDamage,
+            bool isCritical,
+            float duration,
+            bool pauseLocomotion,
+            float hitstopSeconds)
+        {
+            _isHitStaggerActive = true;
+            _isKnockdownActive = false;
+            if (pauseLocomotion)
+            {
+                PauseAiLocomotion(true);
+                EnemyInvectorCombatShutdown.DisableMeleeBeforeAnimatorEvents(gameObject);
+            }
+
+            PlayAnimatorHitReaction(sourceDamage, isCritical);
+
+            float elapsed = 0f;
+            if (hitstopSeconds > 0.001f)
+            {
+                // Enter the flinch, then hold that pose. A block passes 0 and skips this.
+                yield return null;
+                elapsed += Time.deltaTime;
+                BeginAnimatorHitstop();
+                while (elapsed < hitstopSeconds && elapsed < duration)
+                {
+                    if (_health != null && _health.IsDead)
+                        break;
+
+                    elapsed += Time.deltaTime;
+                    yield return null;
+                }
+
+                EndAnimatorHitstop();
+            }
+
+            while (elapsed < duration)
+            {
+                if (_health != null && _health.IsDead)
+                    break;
+
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            _staggerRoutine = null;
+            _isHitStaggerActive = false;
+            EndAnimatorHitstop();
+            if (pauseLocomotion)
+                PauseAiLocomotion(false);
+        }
+
+        private Animator ResolveStaggerAnimator()
+        {
+            if (_controller != null && _controller.animator != null)
+                return _controller.animator;
+
+            return GetComponentInChildren<Animator>(true);
+        }
+
+        private void BeginAnimatorHitstop()
+        {
+            Animator animator = ResolveStaggerAnimator();
+            if (animator == null)
+                return;
+
+            if (!_animatorHitstopActive)
+            {
+                _animatorSpeedBeforeHitstop = animator.speed;
+                _animatorHitstopActive = true;
+            }
+
+            animator.speed = 0f;
+        }
+
+        private void EndAnimatorHitstop()
+        {
+            if (!_animatorHitstopActive)
+                return;
+
+            Animator animator = ResolveStaggerAnimator();
+            if (animator != null)
+                animator.speed = _animatorSpeedBeforeHitstop > 0.01f ? _animatorSpeedBeforeHitstop : 1f;
+
+            _animatorHitstopActive = false;
+        }
+
+        private void RestartStaggerRoutine(IEnumerator routine)
+        {
+            if (_staggerRoutine != null)
+            {
+                bool hadRagdollStagger = _isHitStaggerActive && HasActiveRagdoll;
+                EndAnimatorHitstop();
+                StopCoroutine(_staggerRoutine);
+                _staggerRoutine = null;
+                _isHitStaggerActive = false;
+                _isKnockdownActive = false;
+                if (hadRagdollStagger && (_health == null || !_health.IsDead))
+                    RestoreFromHitStagger();
+                PauseAiLocomotion(false);
+            }
+
+            if (!isActiveAndEnabled)
+            {
+                PlayAnimatorHitReaction(null, false);
+                return;
+            }
+
+            _staggerRoutine = StartCoroutine(routine);
         }
 
         private static bool HasAnimatorParam(Animator animator, string parameterName)
@@ -471,14 +680,9 @@ namespace Project.AI.Invector
             _pendingCorpseDamage = null;
 
             if (_ragdoll != null)
-            {
-                _ragdoll.keepRagdolled = false;
                 _ragdoll.ignoreGetUpAnimation = false;
-                _ragdoll.RestoreRagdoll();
-            }
 
-            if (_controller != null && _controller.ragdolled)
-                _controller.ResetRagdoll();
+            EnemyInvectorRagdollStateUtility.RestoreAnimatedPhysics(gameObject);
 
             Collider rootCollider = GetComponent<CapsuleCollider>();
             if (rootCollider != null)
@@ -625,14 +829,9 @@ namespace Project.AI.Invector
             if (_health != null && _health.IsDead)
                 return;
             if (_ragdoll != null)
-            {
-                _ragdoll.keepRagdolled = false;
                 _ragdoll.ignoreGetUpAnimation = true;
-                _ragdoll.RestoreRagdoll();
-            }
 
-            if (_controller != null && _controller.ragdolled)
-                _controller.ResetRagdoll();
+            EnemyInvectorRagdollStateUtility.RestoreAnimatedPhysics(gameObject);
 
             FinalizeAfterGetUp();
         }
@@ -678,6 +877,7 @@ namespace Project.AI.Invector
 
         private void AbortHitStaggerCoroutine()
         {
+            EndAnimatorHitstop();
             if (_staggerRoutine == null)
                 return;
 
@@ -690,6 +890,35 @@ namespace Project.AI.Invector
             EnemyAiController aiController = GetComponent<EnemyAiController>();
             if (aiController != null)
                 aiController.SetLocomotionPaused(paused);
+        }
+
+        private void InterruptEnemyCombatForStagger(float attackLockoutSeconds)
+        {
+            EnemyInvectorCombatShutdown.DisableMeleeBeforeAnimatorEvents(gameObject);
+
+            EnemyCombat combat = GetComponent<EnemyCombat>();
+            if (combat != null)
+                combat.InterruptAttackForStagger(attackLockoutSeconds);
+
+            if (_controller != null)
+            {
+                _controller.moveDirection = Vector3.zero;
+                _controller.input = Vector3.zero;
+            }
+        }
+
+        private static void LogStaggerDev(bool poiseBreak, string reason, bool played = false)
+        {
+            DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
+            if (profile == null || !profile.logCombatEventsInPlay)
+                return;
+
+            if (!poiseBreak && !played)
+                return;
+
+            string prefix = poiseBreak ? "[CombatStagger] Poise" : "[CombatStagger]";
+            string verb = played ? "played" : "skipped visual";
+            Debug.Log($"{prefix} {verb}: {reason}");
         }
 
         private IEnumerator FinalizeListenerAfterRagdollStart()
@@ -837,6 +1066,9 @@ namespace Project.AI.Invector
 
         private void OnActiveRagdollRequested(vDamage damage)
         {
+            if (_health == null || !_health.IsDead)
+                return;
+
             ActivateCorpseRagdoll(damage);
         }
 

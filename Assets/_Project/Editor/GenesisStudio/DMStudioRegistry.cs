@@ -316,6 +316,21 @@ new DMStudioSubtab(
                     new[]
                     {
                         new DMStudioSubtab(
+                            "combat-core",
+                            "Combat Core",
+                            "Poise, humanoid stagger, i-frames, status immunity/stacks, hitstop and parry hooks.",
+                            DMStudioPanelMode.AssetFolder,
+                            searchFolder: "Assets/_Project/Resources/Combat",
+                            typeFilter: "t:DM_CombatCoreProfile",
+                            playModeSave: true,
+                            sectionFilter: DMStudioProfileSectionFilter.CombatCoreOnly),
+                        new DMStudioSubtab(
+                            "combat-studio",
+                            "Combat Studio",
+                            "Standalone combat tuning window — core profile, sandbox scene, debug links.",
+                            DMStudioPanelMode.ExternalTool,
+                            externalMenuPath: "Tools/Dark Matter Genesis/Combat/Combat Studio"),
+                        new DMStudioSubtab(
                             "ammo-fx",
                             "Ammo FX",
                             "Per-type projectile / impact profiles (ItemData + combat FX).",

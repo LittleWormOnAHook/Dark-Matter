@@ -143,6 +143,13 @@ namespace Project.UI
                 return;
             }
 
+            // TEMP COMBAT FOCUS — Combat_Sandbox Play should not sit on the branded boot veil.
+            if (DmTempCombatFocus.SkipBootOverlay)
+            {
+                bootPending = false;
+                return;
+            }
+
             bootPending = true;
             // Kill world SFX immediately — Invector footsteps/reloads ignore timeScale and will
             // otherwise leak under the loader before GameAudioManager awakens.
@@ -173,6 +180,15 @@ namespace Project.UI
                 // Settings Apply reload skips the branded boot loader. If the reloader
                 // runner is missing, still land on the main menu instead of a gated void.
                 SettingsSceneReloader.EnsureMenuRestoreAfterReload();
+                return;
+            }
+
+            // TEMP COMBAT FOCUS — skip boot overlay; leave cameras live.
+            if (DmTempCombatFocus.SkipBootOverlay)
+            {
+                bootPending = false;
+                DestroyEarlyBlackout();
+                RestoreGatedCameras();
                 return;
             }
 
@@ -974,6 +990,13 @@ namespace Project.UI
 
         private IEnumerator RunGameStartSceneLoad()
         {
+            // TEMP COMBAT FOCUS — New Expedition must not wait on Gaia tiles.
+            if (DmTempCombatFocus.SkipWorldStreaming)
+            {
+                ApplyProgress(1f);
+                yield break;
+            }
+
             ExpeditionSceneLoadProgress.Begin();
             float shown = 0f;
 
@@ -1141,6 +1164,9 @@ namespace Project.UI
                 DMUiToolkitLoadingOverlay.SetVeilOpacity(0f);
             else if (blackVeilGroup != null)
                 blackVeilGroup.alpha = 0f;
+
+            if (mode == LoadingMode.GameStart)
+                GameAudioManager.Instance?.FlushDeferredGameplayMusic();
         }
 
         private void HandOffDestination()
@@ -1151,6 +1177,12 @@ namespace Project.UI
             // ShowMainMenu sees IsBlockingMenu and hides chrome again under the veil.
             bootPending = false;
             activeInstance = null;
+
+            if (mode == LoadingMode.GameStart)
+                GameAudioManager.SetDeferGameplayMusicUntilLoaderReveal(true);
+
+            // Stop Invector/world loopers before MarkStarted lifts AudioListener.pause (avoids screech on unpause).
+            GameAudioManager.PrepareGameplayAudioHandoff();
             // Stay muted through the main menu; MarkStarted() releases the gate for gameplay.
             GameAudioManager.SyncWorldAudioGate();
 

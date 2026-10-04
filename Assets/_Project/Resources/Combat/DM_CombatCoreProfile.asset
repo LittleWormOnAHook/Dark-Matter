@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c020fc916b735ac458b44637689fe6c0, type: 3}
+  m_Name: DM_CombatCoreProfile
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.DM_CombatCoreProfile
+  trainingDummyPoiseMax: 20
+  poiseDamageFromHealthMultiplier: 0.44
+  maxPoiseDamageFractionPerHit: 0.4
+  poiseRegenPerSecond: 1
+  poiseRegenDelayAfterHit: 5
+  humanoidPoiseMax: 80
+  humanoidPoiseStaggerSeconds: 0.6
+  blockStaggerSeconds: 0.4
+  parryStaggerSeconds: 1.5
+  blockParryStaggerImpulseScale: 0.85
+  parryStaggerImpulseBonus: 1.75
+  blockStaggerHitstopSeconds: 0
+  parryStaggerHitstopSeconds: 0.12
+  trainingDummyPositionSpring: 20
+  trainingDummyPositionDamping: 2.73
+  trainingDummyRotationSpring: 8.1
+  trainingDummyRotationDamping: 8
+  trainingDummyHitImpulse: 2.359
+  trainingDummyHitTorque: 106.1
+  trainingDummyMaxPositionOffset: 0.45
+  trainingDummyMaxRotationOffset: 52.6
+  trainingDummyPoiseStaggerImpulseScale: 3.019
+  dodgeIFrameSeconds: 0.25
+  dashIFrameSeconds: 0.25
+  statusMaxStacks: 3
+  statusImmunityWindowSeconds: 2
+  statusBossMultiplier: 0.5
+  hitstopLightFrames: 2
+  hitstopHeavyFrames: 6
+  parryWindowSeconds: 0.2
+  strongMeleeChargeSeconds: 0.4
+  strongMeleeDamageMultiplier: 1.8
+  logCombatEventsInPlay: 0

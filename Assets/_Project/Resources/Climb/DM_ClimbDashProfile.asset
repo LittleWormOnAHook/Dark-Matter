@@ -70,6 +70,11 @@ MonoBehaviour:
   jogSpeedMultiplier: 1
   sprintBurstSpeedMultiplier: 1.2
   shiftDoubleTapWindow: 0.28
+  standingJumpHeight: 2.5
+  walkJumpHeightMultiplier: 1
+  jogJumpHeightMultiplier: 1.4
+  sprintJumpHeightMultiplier: 1.9
+  jumpHeightSpeedExponent: 1.35
   leanOverrideEnabled: 1
   leanWalkStrength: 1.6
   leanRunStrength: 1.8
@@ -88,7 +93,7 @@ MonoBehaviour:
   stepLiftSpeed: 3.01
   stepLiftForwardPush: 1.191
   stepIgnoreSlopeBlock: 1
-  maxHealth: 100
+  maxHealth: 1000
   maxEnergy: 100
   maxStamina: 100
   maxOxygen: 2400

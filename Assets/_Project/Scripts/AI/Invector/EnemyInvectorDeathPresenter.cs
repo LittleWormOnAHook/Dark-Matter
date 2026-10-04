@@ -325,6 +325,7 @@ namespace Project.AI.Invector
                 _controller.isDead = false;
             }
 
+            DMSpawnPhysicsStabilizer.KeepLivingRootKinematic(gameObject);
             _controller.disableAnimations = false;
 
             if (_controller.animator != null)

@@ -1,4 +1,6 @@
 using System;
+using Project.AI.Invector;
+using Project.Combat;
 using Project.Interaction;
 using Project.Map;
 using Project.Progression;
@@ -7,7 +9,7 @@ using UnityEngine;
 
 namespace Project.AI
 {
-    public class EnemyHealth : MonoBehaviour, IDamageable
+    public class EnemyHealth : MonoBehaviour, IDamageable, IEngagedHealthHudTarget
     {
         [Header("Health")]
         [SerializeField] private float maxHealth = 60f;
@@ -44,6 +46,7 @@ namespace Project.AI
             CaptureSpawnPoint();
             if (GetComponent<EnemyProgressionXp>() == null)
                 gameObject.AddComponent<EnemyProgressionXp>();
+            EnsureCombatPoise();
             MapMarker.EnsureForEnemy(this);
         }
 
@@ -51,6 +54,7 @@ namespace Project.AI
         {
             currentHealth = maxHealth;
             isDead = false;
+            ResetCombatPoise();
             NotifyHealthChanged();
         }
 
@@ -74,6 +78,7 @@ namespace Project.AI
 
             Vector3 feedbackPosition = transform.position + Vector3.up * 1.5f;
             CombatUiSpawner.ShowDamage(damage, feedbackPosition, isCritical);
+            ApplyPoiseFromHealthDamage(damage, source, isCritical, feedbackPosition);
 
             if (currentHealth <= 0f)
                 HandleDeath();
@@ -86,6 +91,7 @@ namespace Project.AI
 
             isDead = true;
             Died?.Invoke();
+            EnemyInvectorCombatShutdown.Apply(gameObject);
 
             EnemyAiController ai = GetComponent<EnemyAiController>();
             if (ai != null)
@@ -173,7 +179,9 @@ namespace Project.AI
 
             isDead = false;
             currentHealth = maxHealth;
+            ResetCombatPoise();
             NotifyHealthChanged();
+            Project.AI.Invector.DMSpawnPhysicsStabilizer.EnsureOn(gameObject);
 
             Collider collider = GetComponent<Collider>();
             if (collider != null)
@@ -205,6 +213,35 @@ namespace Project.AI
             spawnPosition = transform.position;
             spawnRotation = transform.rotation;
             spawnCaptured = true;
+        }
+
+        /// <summary>
+        /// World / melee / companion / grenade hits often skip
+        /// <see cref="CombatDamageApplicator"/> and only call <see cref="TakeDamage"/>.
+        /// Poise (and the stagger bell) must still apply on this path.
+        /// </summary>
+        private void EnsureCombatPoise()
+        {
+            if (GetComponent<CombatPoise>() != null || GetComponentInChildren<CombatPoise>() != null)
+                return;
+
+            gameObject.AddComponent<CombatPoise>();
+        }
+
+        private void ResetCombatPoise()
+        {
+            CombatPoise poise = GetComponent<CombatPoise>() ?? GetComponentInChildren<CombatPoise>();
+            poise?.ResetPoise();
+        }
+
+        private void ApplyPoiseFromHealthDamage(float damage, GameObject source, bool isCritical, Vector3 hitPoint)
+        {
+            CombatPoise poise = GetComponent<CombatPoise>() ?? GetComponentInChildren<CombatPoise>();
+            if (poise == null)
+                return;
+
+            DamageInfo info = DamageInfo.FromHit(damage, isCritical, source, hitPoint);
+            poise.ApplyPoiseDamage(info.PoiseDamage, in info);
         }
 
         private void NotifyHealthChanged()

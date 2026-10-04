@@ -27,10 +27,14 @@ namespace Project.AI
         }
 
         // Returns which attack state to enter based on current distance.
-        // Ranged enemy within ranged range but beyond melee → Attack directly.
-        // Within melee standoff → Defensive. Anything else → Chase.
+        // Melee already inside weapon reach attacks immediately (standing in front is enough).
+        // Ranged inside engage range but outside melee → Attack. Edge spacing → Defensive. Else Chase.
         private AiState ResolveAttackEntryState(Transform candidate, float distance)
         {
+            bool melee = combatBridge == null || !combatBridge.IsArmedRangedPreferred();
+            if (melee && combat != null && distance <= combat.ResolveEffectiveAttackRange(candidate))
+                return AiState.Attack;
+
             if (distance <= ResolveCombatStandoffFor(candidate) * 1.05f)
                 return AiState.Defensive;
 
@@ -235,6 +239,17 @@ namespace Project.AI
                 return;
             }
 
+            // A player standing in melee range should be swung at, not held in a guard pause.
+            bool meleeThreat = combatBridge == null || !combatBridge.IsArmedRangedPreferred();
+            if (meleeThreat && combat != null && combat.IsInAttackRange(target) && Time.time >= defensiveActionUntil)
+            {
+                combatBridge?.EndBlock();
+                defensiveActionPending = false;
+                defensiveActionUntil = 0f;
+                EnterState(AiState.Attack);
+                return;
+            }
+
             if (defensiveActionUntil > 0f && Time.time >= defensiveActionUntil)
             {
                 GetComponent<Invector.EnemyInvectorCombatBridge>()?.EndBlock();
@@ -386,7 +401,20 @@ namespace Project.AI
                 && distanceToTarget <= combatBridge.RangedEngageRange;
             bool inStrikeRange = combat.IsInAttackRange(target) || inRangedEngagement;
 
-            // Too close — back off instead of clipping through / pushing the target.
+            // Weapon reach wins over the comfort ring. Standing against the enemy is still a swing.
+            bool meleeInRange = combat.IsInAttackRange(target)
+                && (combatBridge == null || !combatBridge.IsArmedRangedPreferred());
+            if (meleeInRange)
+            {
+                StopNavMeshMovement();
+                currentLocomotionSpeed = 0f;
+                currentLocalMoveDirection = Vector3.zero;
+                FaceTowards(target.position);
+                combat.TryAttack();
+                return;
+            }
+
+            // Too close for a ranged shot — back off instead of clipping through the target.
             if (distanceToTarget < standoff * 0.88f)
             {
                 MoveTowardsCombatRing(target, walkSpeed * 0.75f, standoff);

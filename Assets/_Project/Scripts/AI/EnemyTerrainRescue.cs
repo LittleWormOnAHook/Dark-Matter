@@ -37,12 +37,7 @@ namespace Project.AI
 
             Vector3 snapped = EnemyGroundUtility.SnapPositionToGround(transform.position, groundOffset);
             transform.position = snapped;
-
-            if (_body != null && !_body.isKinematic)
-            {
-                _body.linearVelocity = Vector3.zero;
-                _body.angularVelocity = Vector3.zero;
-            }
+            Project.AI.Invector.DMSpawnPhysicsStabilizer.KeepLivingRootKinematic(gameObject);
         }
     }
 }

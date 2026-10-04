@@ -1,3 +1,4 @@
+using Project.Core;
 using Project.Features.Climb;
 using Project.Features.Dash;
 using Project.Features.Jetpack;
@@ -46,7 +47,9 @@ namespace Project.Player
         public bool DashEnabled => isActiveAndEnabled && dash && PassesSkillGate(DMSkillMovementSystemGates.IsDashUnlockedBySkills);
         public bool JetpackEnabled => isActiveAndEnabled && jetpack && PassesSkillGate(DMSkillMovementSystemGates.IsJetpackUnlockedBySkills);
         public bool HeroLandEnabled => isActiveAndEnabled && heroLand;
-        public bool TerrainLoadingEnabled => terrainLoading;
+        // TEMP COMBAT FOCUS — keep the serialized prefab field intact; gate at runtime only.
+        public bool TerrainLoadingEnabled =>
+            terrainLoading && !DmTempCombatFocus.SkipWorldStreaming;
 
         private bool PassesSkillGate(System.Func<bool> unlocked) =>
             !requireSkillTreeUnlocks || unlocked();
@@ -107,6 +110,7 @@ namespace Project.Player
 
             EnsureComponent<DMDashController>();
             EnsureComponent<DMHangLegOverlay>();
+            EnsureComponent<DMLandingDirector>();
             SetEnabled<DMDashController>(dashOn);
             SetEnabled<DMJetpackController>(jetOn);
             SetEnabled<DMJetpackInputBridge>(jetOn);
@@ -146,8 +150,12 @@ namespace Project.Player
 
         private void EnsureComponent<T>() where T : Component
         {
-            if (GetComponent<T>() == null)
-                gameObject.AddComponent<T>();
+            if (GetComponent<T>() != null)
+                return;
+            // AddComponent SendMessages OnDidAddComponent; Unity forbids that in OnValidate.
+            if (!Application.isPlaying)
+                return;
+            gameObject.AddComponent<T>();
         }
     }
 }

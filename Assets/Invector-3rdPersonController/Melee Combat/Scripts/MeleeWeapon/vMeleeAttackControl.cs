@@ -97,9 +97,22 @@ namespace Invector.vMelee
 
         void ActiveDamage(Animator animator, bool value)
         {
+            if (animator == null)
+                return;
+
             var meleeManager = animator.GetComponent<vMeleeManager>();
-            if (meleeManager)
-                meleeManager.SetActiveAttack(bodyParts, meleeAttackType, value, damageMultiplier, recoilID, reactionID, ignoreDefense, activeRagdoll,senselessTime, damageType);
+            if (meleeManager == null || !meleeManager.enabled)
+                return;
+
+            vAttackType attackType = meleeAttackType;
+            if (attackType == vAttackType.Unarmed &&
+                meleeManager.rightWeapon != null &&
+                meleeManager.rightWeapon.gameObject.activeInHierarchy)
+            {
+                attackType = vAttackType.MeleeWeapon;
+            }
+
+            meleeManager.SetActiveAttack(bodyParts, attackType, value, damageMultiplier, recoilID, reactionID, ignoreDefense, activeRagdoll,senselessTime, damageType);
         }
     }
 }

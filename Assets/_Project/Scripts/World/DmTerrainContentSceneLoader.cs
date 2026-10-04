@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Project.Core;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -21,6 +22,10 @@ namespace Project.World
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureExists()
         {
+            // TEMP COMBAT FOCUS — do not spawn or stream Terrain_X_Y_Content scenes.
+            if (DmTempCombatFocus.SkipWorldStreaming)
+                return;
+
             if (!Application.isPlaying || _instance != null)
                 return;
 

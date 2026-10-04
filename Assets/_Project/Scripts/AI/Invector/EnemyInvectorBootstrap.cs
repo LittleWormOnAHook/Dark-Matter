@@ -2,6 +2,7 @@ using Invector;
 using Invector.vCharacterController;
 using Invector.vMelee;
 using Invector.vShooter;
+using Project.AI;
 using Project.Combat;
 using Project.Player.Invector;
 using UnityEngine;
@@ -36,6 +37,7 @@ namespace Project.AI.Invector
             ThirdPersonController = GetComponent<vThirdPersonController>();
             ShooterManager = GetComponent<vShooterManager>();
             MeleeManager = GetComponent<vMeleeManager>();
+            EnemyInvectorCombatShutdown.DisableMeleeBeforeAnimatorEvents(gameObject);
 
             if (ShooterManager != null)
             {
@@ -90,6 +92,8 @@ namespace Project.AI.Invector
                 gameObject.AddComponent<EnemyTerrainRescue>();
             if (GetComponent<EnemyInvectorRagdollBridge>() == null)
                 gameObject.AddComponent<EnemyInvectorRagdollBridge>();
+            if (GetComponent<CombatPoise>() == null)
+                gameObject.AddComponent<CombatPoise>();
             if (GetComponent<EnemyInvectorDeathPresenter>() == null)
                 gameObject.AddComponent<EnemyInvectorDeathPresenter>();
             if (GetComponent<EnemyDeathSequence>() == null)
@@ -100,6 +104,9 @@ namespace Project.AI.Invector
             EnemyInvectorLoadoutBridge loadout = GetComponent<EnemyInvectorLoadoutBridge>();
             if (loadout != null && enemyDefinition != null)
                 loadout.ConfigureFromDefinition(enemyDefinition);
+
+            // After strip/equip wiring so vMeleeManager.Start never hits stale UnityEvent listeners.
+            EnemyInvectorCombatShutdown.SanitizeStaleHitBoxes(gameObject);
         }
 
         private void Start()
@@ -120,6 +127,14 @@ namespace Project.AI.Invector
             EnemyInvectorLoadoutBridge loadout = GetComponent<EnemyInvectorLoadoutBridge>();
             EnemyInvectorBodySnapSetup.ApplyRuntime(gameObject);
             loadout?.EquipStartingWeapon();
+            EnemyInvectorCombatShutdown.SanitizeStaleHitBoxes(gameObject);
+            EnemyInvectorCombatShutdown.EnableMeleeIfSafe(gameObject);
+            float minY = transform.position.y;
+            if (EnemyGroundUtility.TryGetGroundY(transform.position, out float groundY, 0f, transform, float.NegativeInfinity))
+                minY = groundY;
+            EnemyGroundUtility.SnapCreatureToGround(transform, transform.position, minY);
+            HumanoidPerformanceController.ForceSpawnVisible(gameObject);
+            DMSpawnPhysicsStabilizer.KeepLivingRootKinematic(gameObject);
         }
 
         private void OnDestroy()
@@ -151,6 +166,11 @@ namespace Project.AI.Invector
             ThirdPersonController.isGrounded = true;
             ThirdPersonController.fallDamage = 0f;
             ThirdPersonController.ragdollVelocity = 0f;
+            ThirdPersonController.extraGravity = 0f;
+            ThirdPersonController.verticalVelocity = 0f;
+            if (ThirdPersonController.animator != null)
+                ThirdPersonController.animator.applyRootMotion = false;
+            DMSpawnPhysicsStabilizer.KeepLivingRootKinematic(gameObject);
             _invectorInitialized = true;
         }
 
@@ -195,6 +215,7 @@ namespace Project.AI.Invector
             }
 
             EnsureVisualMeshesUpdateOffscreen();
+            HumanoidPerformanceController.ForceSpawnVisible(gameObject);
 
             if (ThirdPersonController != null)
             {
@@ -204,6 +225,8 @@ namespace Project.AI.Invector
                 ThirdPersonController.isGrounded = true;
                 ConfigureTransformDrivenMotor();
             }
+
+            DMSpawnPhysicsStabilizer.KeepLivingRootKinematic(gameObject);
         }
 
         private void ConfigureTransformDrivenMotor()
@@ -226,11 +249,15 @@ namespace Project.AI.Invector
             for (int i = 0; i < renderers.Length; i++)
             {
                 SkinnedMeshRenderer renderer = renderers[i];
-                if (renderer == null || !renderer.enabled)
+                if (renderer == null)
                     continue;
 
-                // Enabled Meshy body only — keep stock VBOT / props untouched.
                 renderer.updateWhenOffscreen = true;
+                if (!renderer.enabled)
+                    continue;
+
+                if (!renderer.gameObject.activeSelf)
+                    renderer.gameObject.SetActive(true);
             }
         }
 
@@ -254,6 +281,9 @@ namespace Project.AI.Invector
                 healthController.ResetHealth();
                 healthController.isImmortal = true;
             }
+
+            // isDead=false wakes the root RB (isKinematic=false, gravity on). Re-lock immediately.
+            DMSpawnPhysicsStabilizer.KeepLivingRootKinematic(gameObject);
         }
 
         private static void SetLayerRecursive(Transform root, int layer)

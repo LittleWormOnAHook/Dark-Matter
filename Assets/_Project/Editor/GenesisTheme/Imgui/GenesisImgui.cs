@@ -74,12 +74,13 @@ namespace Project.EditorTools.Theme
             Theme(EditorStyles.popup, PopupLook);
             Theme(GUI.skin.horizontalSlider, SliderTrackLook);
             Theme(GUI.skin.horizontalSliderThumb, SliderThumbLook);
+            Theme(SkinSliderThumbExtent(), SliderThumbExtentLook);
             Theme(EditorStyles.helpBox, HelpBoxLook);
             Theme(GUI.skin.box, PanelLook);
-            Theme(EditorStyles.label, s => TextOnly(s, GenesisTheme.Text));
-            Theme(EditorStyles.miniLabel, s => TextOnly(s, GenesisTheme.Dim));
+            Theme(EditorStyles.label, (s, _) => TextOnly(s, GenesisTheme.Text));
+            Theme(EditorStyles.miniLabel, (s, _) => TextOnly(s, GenesisTheme.Dim));
             Theme(EditorStyles.boldLabel, HeaderLabelLook);
-            Theme(EditorStyles.foldout, s => TextOnly(s, GenesisTheme.Text));
+            Theme(EditorStyles.foldout, (s, _) => TextOnly(s, GenesisTheme.Text));
         }
 
         static void Pop()
@@ -95,7 +96,7 @@ namespace Project.EditorTools.Theme
             s_Applied.Clear();
         }
 
-        static void Theme(GUIStyle style, Action<GUIStyle> look)
+        static void Theme(GUIStyle style, Action<GUIStyle, GUIStyle> look)
         {
             if (style == null) return;
             if (!s_Original.TryGetValue(style, out GUIStyle original) || !s_Themed.TryGetValue(style, out GUIStyle themed) || NeedsRebuild(themed))
@@ -103,7 +104,7 @@ namespace Project.EditorTools.Theme
                 original = new GUIStyle(style);
                 s_Original[style] = original;
                 themed = new GUIStyle(original);
-                look(themed);
+                look(themed, original);
                 s_Themed[style] = themed;
             }
             CopyLook(themed, style);
@@ -123,14 +124,46 @@ namespace Project.EditorTools.Theme
             to.onHover = from.onHover;
             to.onActive = from.onActive;
             to.onFocused = from.onFocused;
-            to.border = new RectOffset(from.border.left, from.border.right, from.border.top, from.border.bottom);
+            CopyLayout(from, to);
             to.font = from.font;
             to.fontStyle = from.fontStyle;
         }
 
+        static void CopyLayout(GUIStyle from, GUIStyle to)
+        {
+            to.border = new RectOffset(from.border.left, from.border.right, from.border.top, from.border.bottom);
+            to.padding = new RectOffset(from.padding.left, from.padding.right, from.padding.top, from.padding.bottom);
+            to.margin = new RectOffset(from.margin.left, from.margin.right, from.margin.top, from.margin.bottom);
+            to.overflow = new RectOffset(from.overflow.left, from.overflow.right, from.overflow.top, from.overflow.bottom);
+            to.fixedWidth = from.fixedWidth;
+            to.fixedHeight = from.fixedHeight;
+            to.stretchWidth = from.stretchWidth;
+            to.stretchHeight = from.stretchHeight;
+            to.alignment = from.alignment;
+            to.clipping = from.clipping;
+        }
+
+        /// <summary>Unity 6 keeps the thumb hit/hover extent on an internal GUISkin property.</summary>
+        static GUIStyle SkinSliderThumbExtent()
+        {
+            var prop = typeof(GUISkin).GetProperty(
+                "horizontalSliderThumbExtent",
+                System.Reflection.BindingFlags.Instance
+                | System.Reflection.BindingFlags.Public
+                | System.Reflection.BindingFlags.NonPublic);
+            if (prop != null)
+            {
+                var style = prop.GetValue(GUI.skin) as GUIStyle;
+                if (style != null) return style;
+            }
+
+            return GUI.skin.FindStyle("HorizontalSliderThumbExtent")
+                ?? GUI.skin.FindStyle("horizontalSliderThumbExtent");
+        }
+
         // ---------------------------------------------------------------- looks
 
-        static void ButtonLook(GUIStyle s)
+        static void ButtonLook(GUIStyle s, GUIStyle _)
         {
             s.border = new RectOffset(2, 2, 2, 2);
             Texture2D normal = Frame("btn", GenesisTheme.Bg3, GenesisTheme.Line);
@@ -148,9 +181,12 @@ namespace Project.EditorTools.Theme
             State(s.onFocused, on, GenesisTheme.Accent);
         }
 
-        static void FieldLook(GUIStyle s)
+        static void FieldLook(GUIStyle s, GUIStyle original)
         {
+            CopyLayout(original, s);
             s.border = new RectOffset(2, 2, 2, 2);
+            if (s.fixedHeight <= 0f)
+                s.fixedHeight = 18f;
             Texture2D normal = Frame("fld", GenesisTheme.Bg0, GenesisTheme.Line);
             Texture2D hover = Frame("fld-h", GenesisTheme.Bg0, GenesisTheme.Hex("#5a5044"));
             Texture2D focus = Frame("fld-f", GenesisTheme.Bg0, GenesisTheme.Accent);
@@ -164,7 +200,7 @@ namespace Project.EditorTools.Theme
             State(s.onFocused, focus, GenesisTheme.Text);
         }
 
-        static void PopupLook(GUIStyle s)
+        static void PopupLook(GUIStyle s, GUIStyle _)
         {
             // 9-slice with the orange arrow baked into the fixed right border, so the arrow never disappears.
             s.border = new RectOffset(2, 18, 8, 8);
@@ -180,41 +216,67 @@ namespace Project.EditorTools.Theme
             State(s.onFocused, hover, GenesisTheme.Text);
         }
 
-        static void SliderTrackLook(GUIStyle s)
+        static void SliderTrackLook(GUIStyle s, GUIStyle original)
         {
-            s.border = new RectOffset(2, 2, 2, 2);
-            Texture2D t = Frame("trk", GenesisTheme.Bg0, GenesisTheme.Line);
+            // Keep Unity's 18px line (margin/padding/fixedHeight) so EditorGUI.Slider + the
+            // number field stay on one row. Stock overflow (~t:-6 b:-7) shrinks the draw rect to ~5px,
+            // which crushed our 12px groove. Symmetric -3/-3 yields an ~12px draw band (18-6) so the
+            // thumb and the float field stay vertically centered on the same row.
+            CopyLayout(original, s);
+            if (s.fixedHeight <= 0f)
+                s.fixedHeight = 18f;
+            s.overflow = new RectOffset(0, 0, -3, -3);
+            s.border = new RectOffset(3, 3, 2, 2);
+
+            Texture2D t = SliderTrackTex("trk-groove");
             State(s.normal, t, GenesisTheme.Text);
             State(s.hover, t, GenesisTheme.Text);
             State(s.active, t, GenesisTheme.Text);
             State(s.focused, t, GenesisTheme.Text);
         }
 
-        static void SliderThumbLook(GUIStyle s)
+        static void SliderThumbLook(GUIStyle s, GUIStyle original)
         {
-            s.border = new RectOffset(1, 1, 1, 1);
-            Texture2D t = Frame("thm", GenesisTheme.Accent, GenesisTheme.AccentDark);
-            Texture2D h = Frame("thm-h", GenesisTheme.Primary, GenesisTheme.Accent);
+            CopyLayout(original, s);
+            if (s.fixedWidth <= 0f)
+                s.fixedWidth = 10f;
+            if (s.fixedHeight <= 0f)
+                s.fixedHeight = 12f;
+            // Keep Unity's vertical thumb overflow (typically t:-3 b:3) so the knob centers on the track.
+            s.border = new RectOffset(2, 2, 2, 2);
+
+            Texture2D t = SliderThumbTex("thm-knob", false);
+            Texture2D h = SliderThumbTex("thm-knob-h", true);
             State(s.normal, t, GenesisTheme.Text);
             State(s.hover, h, GenesisTheme.Text);
             State(s.active, h, GenesisTheme.Text);
             State(s.focused, h, GenesisTheme.Text);
         }
 
-        static void HelpBoxLook(GUIStyle s)
+        static void SliderThumbExtentLook(GUIStyle s, GUIStyle original)
+        {
+            // Hit / hover extent only — keep the 20px target, do not paint a second knob.
+            CopyLayout(original, s);
+            if (s.fixedWidth <= 0f)
+                s.fixedWidth = 20f;
+            if (s.fixedHeight <= 0f)
+                s.fixedHeight = 20f;
+        }
+
+        static void HelpBoxLook(GUIStyle s, GUIStyle _)
         {
             s.border = new RectOffset(3, 2, 2, 2);
             Texture2D t = LeftStrip("help", GenesisTheme.Bg2, GenesisTheme.Line, GenesisTheme.Accent);
             State(s.normal, t, GenesisTheme.Text);
         }
 
-        static void PanelLook(GUIStyle s)
+        static void PanelLook(GUIStyle s, GUIStyle _)
         {
             s.border = new RectOffset(2, 2, 2, 2);
             State(s.normal, Frame("box", GenesisTheme.Bg2, GenesisTheme.Line), GenesisTheme.Text);
         }
 
-        static void HeaderLabelLook(GUIStyle s)
+        static void HeaderLabelLook(GUIStyle s, GUIStyle _)
         {
             TextOnly(s, GenesisTheme.Text);
             Font f = GenesisTheme.HeaderFont;
@@ -243,6 +305,69 @@ namespace Project.EditorTools.Theme
         }
 
         // ---------------------------------------------------------------- textures
+
+        static Texture2D SliderTrackTex(string key)
+        {
+            if (s_Tex.TryGetValue(key, out Texture2D t) && t != null) return t;
+            // Texture IS the groove (Unity stock is 17x5). 9-slice keeps 2px bevels and 3px end caps.
+            const int w = 16;
+            const int h = 12;
+            t = NewTex(w, h);
+            Color fill = GenesisTheme.Bg3;
+            Color rim = GenesisTheme.Line;
+            Color hi = GenesisTheme.Hex("#4a453c");
+            Color lo = GenesisTheme.Bg0;
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    bool rimPx = x == 0 || x == w - 1 || y == 0 || y == h - 1;
+                    Color c;
+                    if (rimPx)
+                        c = rim;
+                    else if (y == h - 2)
+                        c = hi;
+                    else if (y == 1)
+                        c = lo;
+                    else
+                        c = fill;
+                    t.SetPixel(x, y, c);
+                }
+            }
+
+            t.Apply();
+            s_Tex[key] = t;
+            return t;
+        }
+
+        static Texture2D SliderThumbTex(string key, bool hover)
+        {
+            if (s_Tex.TryGetValue(key, out Texture2D t) && t != null) return t;
+            const int n = 12;
+            t = NewTex(n, n);
+            Color fill = hover ? GenesisTheme.Primary : GenesisTheme.Accent;
+            Color edge = hover ? GenesisTheme.Accent : GenesisTheme.AccentDark;
+            Color hi = hover ? Color.white : GenesisTheme.Primary;
+            for (int y = 0; y < n; y++)
+            {
+                for (int x = 0; x < n; x++)
+                {
+                    bool rimPx = x == 0 || x == n - 1 || y == 0 || y == n - 1;
+                    Color c;
+                    if (rimPx)
+                        c = edge;
+                    else if (y >= n - 3 && x <= 2)
+                        c = hi;
+                    else
+                        c = fill;
+                    t.SetPixel(x, y, c);
+                }
+            }
+
+            t.Apply();
+            s_Tex[key] = t;
+            return t;
+        }
 
         static Texture2D Frame(string key, Color fill, Color edge)
         {

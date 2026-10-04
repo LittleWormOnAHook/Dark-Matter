@@ -15,35 +15,34 @@ namespace Project.AI
 
         private static readonly RaycastHit[] HitBuffer = new RaycastHit[HitBufferSize];
         private static int _terrainLayer = int.MinValue;
+        private static int _enemyLayer = int.MinValue;
+        private static int _playerLayer = int.MinValue;
+        private static int _companionLayer = int.MinValue;
+        private static int _bodyPartLayer = int.MinValue;
 
         public static bool TryGetGroundY(Vector3 worldPosition, out float groundY, float groundOffset = 0f)
+        {
+            return TryGetGroundY(worldPosition, out groundY, groundOffset, null, float.NegativeInfinity);
+        }
+
+        public static bool TryGetGroundY(
+            Vector3 worldPosition,
+            out float groundY,
+            float groundOffset,
+            Transform ignoreRoot,
+            float minAcceptedY)
         {
             groundY = worldPosition.y;
 
             float originY = worldPosition.y + DefaultRaycastUp;
-            if (TrySampleContainingTerrain(worldPosition, out float sampleY))
+            if (TrySampleContainingTerrain(worldPosition, minAcceptedY, worldPosition.y, out float sampleY))
                 originY = Mathf.Max(originY, sampleY + CreatureProbeUp);
 
-            if (TryRaycastTerrain(worldPosition, originY, out float rayY))
-            {
-                groundY = rayY + groundOffset;
-                return true;
-            }
+            if (!TryPickClosestGroundY(worldPosition, originY, ignoreRoot, minAcceptedY, out float pickedY))
+                return false;
 
-            if (TrySampleContainingTerrain(worldPosition, out sampleY))
-            {
-                groundY = sampleY + groundOffset;
-                return true;
-            }
-
-            Vector3 origin = new Vector3(worldPosition.x, worldPosition.y + DefaultRaycastUp, worldPosition.z);
-            if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit, DefaultRaycastDown, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
-            {
-                groundY = hit.point.y + groundOffset;
-                return true;
-            }
-
-            return false;
+            groundY = pickedY + groundOffset;
+            return true;
         }
 
         public static Vector3 SnapPositionToGround(Vector3 worldPosition, float groundOffset = 0f)
@@ -63,7 +62,12 @@ namespace Project.AI
         /// </summary>
         public static Vector3 SnapCreatureToGround(Transform t, Vector3 xz)
         {
-            Vector3 snapped = ComputeCreatureGroundPosition(t, xz);
+            return SnapCreatureToGround(t, xz, float.NegativeInfinity);
+        }
+
+        public static Vector3 SnapCreatureToGround(Transform t, Vector3 xz, float minAcceptedY)
+        {
+            Vector3 snapped = ComputeCreatureGroundPosition(t, xz, minAcceptedY);
             if (t != null)
                 t.position = snapped;
             return snapped;
@@ -72,34 +76,60 @@ namespace Project.AI
         /// <summary>Ground + foot-offset position without writing the transform (wander / patrol targets).</summary>
         public static Vector3 ComputeCreatureGroundPosition(Transform t, Vector3 xz)
         {
+            return ComputeCreatureGroundPosition(t, xz, float.NegativeInfinity);
+        }
+
+        public static Vector3 ComputeCreatureGroundPosition(Transform t, Vector3 xz, float minAcceptedY)
+        {
             Vector3 pos = xz;
             if (t == null)
                 return SnapPositionToGround(pos);
 
-            if (!TryGetCreatureGroundY(pos, t, out float groundY))
+            if (!TryGetCreatureGroundY(pos, t, minAcceptedY, out float groundY))
             {
-                pos.y = t.position.y;
+                pos.y = Mathf.Max(t.position.y, minAcceptedY);
                 return pos;
             }
 
             float footOffset = MeasureFootOffset(t);
-            pos.y = groundY + footOffset + CreatureSkin;
+            pos.y = Mathf.Max(minAcceptedY, groundY + footOffset + CreatureSkin);
             return pos;
         }
 
         public static bool TrySnapCreatureToGround(Transform t, Vector3 xz)
         {
+            return TrySnapCreatureToGround(t, xz, float.NegativeInfinity);
+        }
+
+        public static bool TrySnapCreatureToGround(Transform t, Vector3 xz, float minAcceptedY)
+        {
             if (t == null)
                 return false;
 
-            if (!TryGetCreatureGroundY(xz, t, out float groundY))
+            if (!TryGetCreatureGroundY(xz, t, minAcceptedY, out float groundY))
                 return false;
 
             float footOffset = MeasureFootOffset(t);
             Vector3 pos = xz;
-            pos.y = groundY + footOffset + CreatureSkin;
+            pos.y = Mathf.Max(minAcceptedY, groundY + footOffset + CreatureSkin);
             t.position = pos;
             return true;
+        }
+
+        /// <summary>
+        /// Pivot lift so the root capsule sits on the ground instead of a tiny 8cm skin
+        /// that buries center-pivot humanoids.
+        /// </summary>
+        public static float ResolveCapsuleStandLift(GameObject instanceOrPrefab)
+        {
+            CapsuleCollider capsule = instanceOrPrefab != null
+                ? instanceOrPrefab.GetComponent<CapsuleCollider>()
+                : null;
+            if (capsule == null)
+                return 1.08f;
+
+            float bottomLocal = capsule.center.y - capsule.height * 0.5f;
+            return Mathf.Max(0.15f, -bottomLocal + 0.08f);
         }
 
         /// <summary>
@@ -116,6 +146,10 @@ namespace Project.AI
             CharacterController controller = t.GetComponent<CharacterController>();
             if (controller != null)
                 minY = Mathf.Min(minY, controller.bounds.min.y);
+
+            CapsuleCollider rootCapsule = t.GetComponent<CapsuleCollider>();
+            if (rootCapsule != null && rootCapsule.enabled && !rootCapsule.isTrigger)
+                minY = Mathf.Min(minY, rootCapsule.bounds.min.y);
 
             Collider[] colliders = t.GetComponentsInChildren<Collider>(true);
             for (int i = 0; i < colliders.Length; i++)
@@ -190,32 +224,60 @@ namespace Project.AI
             return worldPosition.y > groundY + maxAboveGround;
         }
 
-        private static bool TryGetCreatureGroundY(Vector3 worldPosition, Transform self, out float groundY)
+        private static bool TryGetCreatureGroundY(
+            Vector3 worldPosition,
+            Transform self,
+            float minAcceptedY,
+            out float groundY)
         {
             groundY = worldPosition.y;
             float originY = Mathf.Max(worldPosition.y + CreatureProbeUp, worldPosition.y + 2f);
-            if (TrySampleContainingTerrain(worldPosition, out float sampleY))
+            if (TrySampleContainingTerrain(worldPosition, minAcceptedY, worldPosition.y, out float sampleY))
                 originY = Mathf.Max(originY, sampleY + CreatureProbeUp);
 
-            if (TryRaycastTerrain(worldPosition, originY, out float rayY, self))
-            {
-                groundY = rayY;
-                return true;
-            }
-
-            if (TrySampleContainingTerrain(worldPosition, out sampleY))
-            {
-                groundY = sampleY;
-                return true;
-            }
-
-            // No Gaia tile / TerrainCollider yet — leave the creature where it is.
-            return false;
+            return TryPickClosestGroundY(worldPosition, originY, self, minAcceptedY, out groundY);
         }
 
-        private static bool TryRaycastTerrain(Vector3 worldPosition, float originY, out float groundY, Transform ignoreRoot = null)
+        private static bool TryPickClosestGroundY(
+            Vector3 worldPosition,
+            float originY,
+            Transform ignoreRoot,
+            float minAcceptedY,
+            out float groundY)
         {
             groundY = worldPosition.y;
+            float queryY = worldPosition.y;
+            float bestY = float.NaN;
+            float bestDelta = float.MaxValue;
+
+            CollectRaycastGroundCandidates(
+                worldPosition,
+                originY,
+                ignoreRoot,
+                minAcceptedY,
+                queryY,
+                ref bestY,
+                ref bestDelta);
+
+            if (TrySampleContainingTerrain(worldPosition, minAcceptedY, queryY, out float sampleY))
+                ConsiderCandidate(sampleY, minAcceptedY, queryY, ref bestY, ref bestDelta);
+
+            if (float.IsNaN(bestY))
+                return false;
+
+            groundY = bestY;
+            return true;
+        }
+
+        private static void CollectRaycastGroundCandidates(
+            Vector3 worldPosition,
+            float originY,
+            Transform ignoreRoot,
+            float minAcceptedY,
+            float queryY,
+            ref float bestY,
+            ref float bestDelta)
+        {
             Vector3 origin = new Vector3(worldPosition.x, originY, worldPosition.z);
             float distance = originY - worldPosition.y + DefaultRaycastDown;
             if (distance < 1f)
@@ -234,8 +296,6 @@ namespace Project.AI
                 mask,
                 QueryTriggerInteraction.Ignore);
 
-            float bestY = float.NaN;
-            float bestDist = float.MaxValue;
             for (int i = 0; i < count; i++)
             {
                 RaycastHit hit = HitBuffer[i];
@@ -244,28 +304,46 @@ namespace Project.AI
                     continue;
                 if (ignoreRoot != null && col.transform != null && col.transform.IsChildOf(ignoreRoot))
                     continue;
-                if (!IsTerrainHit(col))
+                if (IsCharacterOrDummyCollider(col, ignoreRoot))
                     continue;
-                if (hit.distance >= bestDist)
+                if (!IsGroundCollider(col))
                     continue;
-                bestDist = hit.distance;
-                bestY = hit.point.y;
+
+                ConsiderCandidate(hit.point.y, minAcceptedY, queryY, ref bestY, ref bestDelta);
             }
-
-            if (float.IsNaN(bestY))
-                return false;
-
-            groundY = bestY;
-            return true;
         }
 
-        private static bool TrySampleContainingTerrain(Vector3 worldPosition, out float groundY)
+        private static void ConsiderCandidate(
+            float candidateY,
+            float minAcceptedY,
+            float queryY,
+            ref float bestY,
+            ref float bestDelta)
+        {
+            if (candidateY < minAcceptedY - 0.02f)
+                return;
+
+            float delta = Mathf.Abs(candidateY - queryY);
+            if (delta >= bestDelta)
+                return;
+
+            bestDelta = delta;
+            bestY = candidateY;
+        }
+
+        private static bool TrySampleContainingTerrain(
+            Vector3 worldPosition,
+            float minAcceptedY,
+            float queryY,
+            out float groundY)
         {
             groundY = worldPosition.y;
             Terrain[] terrains = Terrain.activeTerrains;
             if (terrains == null || terrains.Length == 0)
                 return false;
 
+            float bestY = float.NaN;
+            float bestDelta = float.MaxValue;
             for (int i = 0; i < terrains.Length; i++)
             {
                 Terrain terrain = terrains[i];
@@ -279,15 +357,78 @@ namespace Project.AI
                 if (worldPosition.z < origin.z || worldPosition.z > origin.z + size.z)
                     continue;
 
-                groundY = terrain.SampleHeight(worldPosition) + origin.y;
-                return true;
+                float sampleY = terrain.SampleHeight(worldPosition) + origin.y;
+                if (sampleY < minAcceptedY - 0.02f)
+                    continue;
+
+                float delta = Mathf.Abs(sampleY - queryY);
+                if (delta >= bestDelta)
+                    continue;
+
+                bestDelta = delta;
+                bestY = sampleY;
             }
+
+            if (float.IsNaN(bestY))
+                return false;
+
+            groundY = bestY;
+            return true;
+        }
+
+        private static bool IsGroundCollider(Collider col)
+        {
+            if (col is TerrainCollider)
+                return true;
+            if (col.CompareTag("Terrain"))
+                return true;
+
+            int terrainLayer = TerrainLayer();
+            if (terrainLayer >= 0 && col.gameObject.layer == terrainLayer)
+                return true;
+
+            // Combat sandbox / prototype floors are MeshCollider planes, not Terrain.
+            return col is MeshCollider;
+        }
+
+        private static bool IsCharacterOrDummyCollider(Collider col, Transform ignoreRoot)
+        {
+            if (col == null)
+                return true;
+
+            Transform t = col.transform;
+            if (ignoreRoot != null && t != null && t.IsChildOf(ignoreRoot))
+                return true;
+
+            int layer = col.gameObject.layer;
+            if (layer == CachedLayer(ref _enemyLayer, "Enemy") && layer >= 0)
+                return true;
+            if (layer == CachedLayer(ref _playerLayer, "Player") && layer >= 0)
+                return true;
+            if (layer == CachedLayer(ref _companionLayer, "CompanionAI") && layer >= 0)
+                return true;
+            if (layer == CachedLayer(ref _bodyPartLayer, "BodyPart") && layer >= 0)
+                return true;
+
+            if (col.GetComponentInParent<EnemyHealth>() != null)
+                return true;
+            if (col.GetComponentInParent<CharacterController>() != null)
+                return true;
+
+            string n = col.gameObject.name;
+            if (n.IndexOf("Dummy", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+            if (t != null && t.root != null &&
+                t.root.name.IndexOf("Dummy", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
 
             return false;
         }
 
         private static bool IsTerrainHit(Collider col)
         {
+            if (col == null)
+                return false;
             if (col is TerrainCollider)
                 return true;
             if (col.CompareTag("Terrain"))
@@ -298,9 +439,14 @@ namespace Project.AI
 
         private static int TerrainLayer()
         {
-            if (_terrainLayer == int.MinValue)
-                _terrainLayer = LayerMask.NameToLayer("Terrain");
-            return _terrainLayer;
+            return CachedLayer(ref _terrainLayer, "Terrain");
+        }
+
+        private static int CachedLayer(ref int cache, string name)
+        {
+            if (cache == int.MinValue)
+                cache = LayerMask.NameToLayer(name);
+            return cache;
         }
     }
 }

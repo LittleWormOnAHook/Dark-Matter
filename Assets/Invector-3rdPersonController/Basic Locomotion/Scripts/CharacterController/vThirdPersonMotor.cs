@@ -715,7 +715,19 @@ namespace Invector.vCharacterController
                 }
                 else if (!ragdolled)
                 {
-                    if (_rigidbody) _rigidbody.isKinematic = false;
+                    if (CompareTag("Enemy"))
+                    {
+                        if (_rigidbody)
+                        {
+                            _rigidbody.isKinematic = true;
+                            _rigidbody.useGravity = false;
+                        }
+                    }
+                    else if (_rigidbody)
+                    {
+                        _rigidbody.isKinematic = false;
+                    }
+
                     if (_capsuleCollider) _capsuleCollider.enabled = true;
                 }
             }
@@ -1624,6 +1636,33 @@ namespace Invector.vCharacterController
             onDisableRagdoll.Invoke();
             verticalVelocity = 0f;
             ragdolled = false;
+
+            // Enemy get-up must not wake the root RB — gravity + depenetration launches them.
+            if (CompareTag("Enemy"))
+            {
+                extraGravity = 0f;
+                useRootMotion = false;
+                if (_rigidbody != null)
+                {
+                    if (!_rigidbody.isKinematic)
+                    {
+                        _rigidbody.linearVelocity = Vector3.zero;
+                        _rigidbody.angularVelocity = Vector3.zero;
+                    }
+
+                    _rigidbody.isKinematic = true;
+                    _rigidbody.useGravity = false;
+                }
+
+                if (_capsuleCollider != null)
+                {
+                    _capsuleCollider.isTrigger = false;
+                    _capsuleCollider.enabled = true;
+                }
+
+                return;
+            }
+
             _rigidbody.WakeUp();
             _rigidbody.useGravity = true;
             _rigidbody.isKinematic = false;

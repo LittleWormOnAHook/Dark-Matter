@@ -12,7 +12,7 @@ namespace Project.Combat
     /// <summary>
     /// Practice target using the Blink DummyTarget model. Springs on hit and shows combat UI.
     /// </summary>
-    public class TrainingDummy : MonoBehaviour, IDamageable
+    public class TrainingDummy : MonoBehaviour, IDamageable, IEngagedHealthHudTarget
     {
         private const string DummyTargetAssetPath =
             "Assets/Blink/Art/NPCs/Stylized/DummyTarget/DummyTarget.prefab";
@@ -45,6 +45,7 @@ namespace Project.Combat
         [SerializeField] private float hitTorque = 32f;
         [SerializeField] private float maxPositionOffset = 0.45f;
         [SerializeField] private float maxRotationOffset = 24f;
+        [SerializeField] private float poiseStaggerImpulseScale = 1f;
 
         private float currentHealth;
         private float lastDamageTime = float.NegativeInfinity;
@@ -56,9 +57,10 @@ namespace Project.Combat
         private Vector3 springRotation;
         private Vector3 springAngularVelocity;
         private BoxCollider hitCollider;
-        private DummyCombatUI combatUi;
+        private TrainingDummyEngagedHudPresenter engagedHudPresenter;
 
         public event Action<float, float> HealthChanged;
+        public event Action Died;
 
         public Transform DamageNumberAnchor =>
             damageNumberAnchor != null ? damageNumberAnchor : transform;
@@ -68,14 +70,20 @@ namespace Project.Combat
 
         public float CurrentHealth => currentHealth;
         public float MaxHealth => maxHealth;
+        public bool IsDead => isDead;
 
         private void Awake()
         {
+            DummyCombatUI legacyUi = GetComponent<DummyCombatUI>();
+            if (legacyUi != null)
+                Destroy(legacyUi);
+
             EnsureDummyTargetPrefabLoaded();
             AdoptNearbySceneDummyTarget();
             EnsureDummyTargetVisual();
             ResolveAnchors();
             EnsureHitCollider();
+            EnsureMeleeDamageReceiver();
         }
 
         private void OnEnable()
@@ -89,7 +97,7 @@ namespace Project.Combat
 
         private void Start()
         {
-            EnsureCombatUi();
+            EnsureEngagedHudPresenter();
             NotifyHealthChanged();
         }
 
@@ -109,6 +117,7 @@ namespace Project.Combat
             ApplyHitReaction(source);
             NotifyHealthChanged();
             ShowDamageFeedback(damage, isCritical);
+            engagedHudPresenter?.NotifyDamagedByPlayer(source);
 
             if (currentHealth <= 0f)
                 HandleDeath();
@@ -119,10 +128,12 @@ namespace Project.Combat
             if (!resetOnDeath)
             {
                 isDead = true;
+                Died?.Invoke();
                 return;
             }
 
             isDead = true;
+            Died?.Invoke();
             pendingReset = true;
             deathTime = Time.time;
         }
@@ -158,12 +169,24 @@ namespace Project.Combat
             currentHealth = maxHealth;
             ResetSpring();
             NotifyHealthChanged();
+            EngagedEnemyHealthHud.Instance?.ClearIf(this);
         }
 
         public void ShowDamageFeedback(float damage, bool isCritical = false)
         {
-            EnsureCombatUi();
-            combatUi?.ShowDamage(damage, isCritical);
+            if (damage <= 0f)
+                return;
+
+            CombatUiSpawner.ShowDamage(damage, DamageNumberAnchor.position, isCritical);
+        }
+
+        /// <summary>Visual-only stagger when poise breaks (no extra health loss).</summary>
+        public void ApplyPoiseStaggerReaction(GameObject source)
+        {
+            if (isDead)
+                return;
+
+            ApplyHitReaction(source, ResolvePoiseStaggerImpulseScale());
         }
 
         private void EnsureDummyTargetPrefabLoaded()
@@ -271,19 +294,28 @@ namespace Project.Combat
             if (hitCollider == null)
                 hitCollider = gameObject.AddComponent<BoxCollider>();
 
+            hitCollider.isTrigger = false;
+            hitCollider.enabled = true;
             FitBoxColliderFromRenderers(hitCollider);
         }
 
-        private void EnsureCombatUi()
+        private void EnsureMeleeDamageReceiver()
         {
-            if (combatUi != null)
+            if (CompareTag("Untagged"))
+                gameObject.tag = "Enemy";
+
+            if (GetComponent<PioneerInvectorDamageReceiver>() == null)
+                gameObject.AddComponent<PioneerInvectorDamageReceiver>();
+        }
+
+        private void EnsureEngagedHudPresenter()
+        {
+            if (engagedHudPresenter != null)
                 return;
 
-            combatUi = GetComponent<DummyCombatUI>();
-            if (combatUi == null)
-                combatUi = gameObject.AddComponent<DummyCombatUI>();
-
-            combatUi.Initialize(this);
+            engagedHudPresenter = GetComponent<TrainingDummyEngagedHudPresenter>();
+            if (engagedHudPresenter == null)
+                engagedHudPresenter = gameObject.AddComponent<TrainingDummyEngagedHudPresenter>();
         }
 
         public static void FitBoxColliderFromRenderers(BoxCollider boxCollider)
@@ -349,10 +381,20 @@ namespace Project.Combat
                 Destroy(visual.gameObject);
         }
 
-        private void ApplyHitReaction(GameObject source)
+        private void ApplyHitReaction(GameObject source, float impulseScale = 1f)
         {
             if (source == null)
                 return;
+
+            ResolveSpringTuning(
+                out _,
+                out _,
+                out _,
+                out _,
+                out float resolvedHitImpulse,
+                out float resolvedHitTorque,
+                out _,
+                out _);
 
             Vector3 hitDirection = transform.position - source.transform.position;
             hitDirection.y = 0f;
@@ -361,8 +403,8 @@ namespace Project.Combat
                 hitDirection = -transform.forward;
 
             hitDirection.Normalize();
-            springVelocity += hitDirection * hitImpulse;
-            springAngularVelocity += Vector3.Cross(Vector3.up, hitDirection) * hitTorque;
+            springVelocity += hitDirection * (resolvedHitImpulse * impulseScale);
+            springAngularVelocity += Vector3.Cross(Vector3.up, hitDirection) * (resolvedHitTorque * impulseScale);
         }
 
         private void LateUpdate()
@@ -370,22 +412,72 @@ namespace Project.Combat
             if (visualRoot == null)
                 return;
 
+            ResolveSpringTuning(
+                out float resolvedPositionSpring,
+                out float resolvedPositionDamping,
+                out float resolvedRotationSpring,
+                out float resolvedRotationDamping,
+                out _,
+                out _,
+                out float resolvedMaxPositionOffset,
+                out float resolvedMaxRotationOffset);
+
             float deltaTime = Time.deltaTime;
 
-            springVelocity += (-springOffset * positionSpring) * deltaTime;
-            springVelocity *= Mathf.Exp(-positionDamping * deltaTime);
+            springVelocity += (-springOffset * resolvedPositionSpring) * deltaTime;
+            springVelocity *= Mathf.Exp(-resolvedPositionDamping * deltaTime);
             springOffset += springVelocity * deltaTime;
-            springOffset = Vector3.ClampMagnitude(springOffset, maxPositionOffset);
+            springOffset = Vector3.ClampMagnitude(springOffset, resolvedMaxPositionOffset);
 
-            springAngularVelocity += (-springRotation * rotationSpring) * deltaTime;
-            springAngularVelocity *= Mathf.Exp(-rotationDamping * deltaTime);
+            springAngularVelocity += (-springRotation * resolvedRotationSpring) * deltaTime;
+            springAngularVelocity *= Mathf.Exp(-resolvedRotationDamping * deltaTime);
             springRotation += springAngularVelocity * deltaTime;
-            springRotation.x = Mathf.Clamp(springRotation.x, -maxRotationOffset, maxRotationOffset);
-            springRotation.y = Mathf.Clamp(springRotation.y, -maxRotationOffset, maxRotationOffset);
-            springRotation.z = Mathf.Clamp(springRotation.z, -maxRotationOffset, maxRotationOffset);
+            springRotation.x = Mathf.Clamp(springRotation.x, -resolvedMaxRotationOffset, resolvedMaxRotationOffset);
+            springRotation.y = Mathf.Clamp(springRotation.y, -resolvedMaxRotationOffset, resolvedMaxRotationOffset);
+            springRotation.z = Mathf.Clamp(springRotation.z, -resolvedMaxRotationOffset, resolvedMaxRotationOffset);
 
             visualRoot.localPosition = springOffset;
             visualRoot.localRotation = Quaternion.Euler(springRotation);
+        }
+
+        private void ResolveSpringTuning(
+            out float resolvedPositionSpring,
+            out float resolvedPositionDamping,
+            out float resolvedRotationSpring,
+            out float resolvedRotationDamping,
+            out float resolvedHitImpulse,
+            out float resolvedHitTorque,
+            out float resolvedMaxPositionOffset,
+            out float resolvedMaxRotationOffset)
+        {
+            DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
+            if (profile == null)
+            {
+                resolvedPositionSpring = positionSpring;
+                resolvedPositionDamping = positionDamping;
+                resolvedRotationSpring = rotationSpring;
+                resolvedRotationDamping = rotationDamping;
+                resolvedHitImpulse = hitImpulse;
+                resolvedHitTorque = hitTorque;
+                resolvedMaxPositionOffset = maxPositionOffset;
+                resolvedMaxRotationOffset = maxRotationOffset;
+                return;
+            }
+
+            resolvedPositionSpring = profile.trainingDummyPositionSpring;
+            resolvedPositionDamping = profile.trainingDummyPositionDamping;
+            resolvedRotationSpring = profile.trainingDummyRotationSpring;
+            resolvedRotationDamping = profile.trainingDummyRotationDamping;
+            resolvedHitImpulse = profile.trainingDummyHitImpulse;
+            resolvedHitTorque = profile.trainingDummyHitTorque;
+            resolvedMaxPositionOffset = profile.trainingDummyMaxPositionOffset;
+            resolvedMaxRotationOffset = profile.trainingDummyMaxRotationOffset;
+        }
+
+        private float ResolvePoiseStaggerImpulseScale()
+        {
+            DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
+            return profile != null ? profile.trainingDummyPoiseStaggerImpulseScale : poiseStaggerImpulseScale;
         }
 
         private void ResetSpring()
@@ -405,7 +497,6 @@ namespace Project.Combat
         private void NotifyHealthChanged()
         {
             HealthChanged?.Invoke(currentHealth, maxHealth);
-            combatUi?.RefreshHealth(currentHealth, maxHealth);
         }
     }
 }

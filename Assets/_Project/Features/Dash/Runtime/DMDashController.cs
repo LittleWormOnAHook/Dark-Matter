@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Invector;
 using Invector.vCharacterController;
+using Project.Combat;
 using Project.Core;
 using Project.Player;
 using Project.Progression;
@@ -73,6 +74,9 @@ namespace Project.Features.Dash
 
             if (player.GetComponent<DMDashController>() == null)
                 player.AddComponent<DMDashController>();
+
+            if (player.GetComponent<DMCombatIFrameController>() == null)
+                player.AddComponent<DMCombatIFrameController>();
         }
 
         private static GameObject ResolvePlayerObject()
@@ -372,6 +376,7 @@ namespace Project.Features.Dash
 
             float speed = ScaledDashSpeed();
             _dashing = true;
+            GrantDashIFrames();
             _dashDir = dir;
             _dashStartedAt = Time.unscaledTime;
             _dashEndsAt = _dashStartedAt + ScaledDashDuration(speed);
@@ -889,6 +894,17 @@ namespace Project.Features.Dash
                 if (systems[i] != null)
                     systems[i].Stop(true, ParticleSystemStopBehavior.StopEmitting);
             }
+        }
+
+        private void GrantDashIFrames()
+        {
+            DMCombatIFrameController frames = GetComponent<DMCombatIFrameController>();
+            if (frames == null)
+                frames = gameObject.AddComponent<DMCombatIFrameController>();
+
+            DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
+            float seconds = profile != null ? profile.dashIFrameSeconds : 0.25f;
+            frames.GrantInvulnerability(seconds);
         }
     }
 }

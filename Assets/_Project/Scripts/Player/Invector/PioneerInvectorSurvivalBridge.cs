@@ -189,6 +189,12 @@ namespace Project.Player.Invector
             if (_forwardingInvectorDamage || _pushingToInvector || damage == null || _survivalStats == null)
                 return;
 
+            // onStartReceiveDamage runs with the hit's damageValue. A block that only
+            // plays the guard pose still landed here at full (or chip) damage.
+            PioneerShooterMeleeInput melee = GetComponent<PioneerShooterMeleeInput>();
+            if (melee != null && melee.TryAbsorbBlockedMelee(damage))
+                return;
+
             if (_survivalStats.IsDead || damage.damageValue <= 0f)
                 return;
 

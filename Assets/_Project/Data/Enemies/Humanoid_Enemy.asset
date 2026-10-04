@@ -20,7 +20,7 @@ MonoBehaviour:
   meleeWeaponItem: {fileID: 11400000, guid: b4c5d6e7f8094a1b8c7d6e5f4a3b2c10, type: 2}
   rangedWeaponItem: {fileID: 11400000, guid: 5791b1d40c5dda44abe9a9770f6cd1e2, type: 2}
   preferRangedWeapon: 0
-  maxHealth: 100
+  maxHealth: 500
   destroyOnDeath: 1
   destroyDelay: 3
   respawnTime: 0
@@ -31,12 +31,24 @@ MonoBehaviour:
   visionRange: 16
   visionFov: 110
   eyeHeight: 1.4
+  senseHearingEnabled: 1
   hearingRange: 18
   proximityRange: 2.5
+  hearingAggroChance: 0.45
+  hearingCooldown: 0.75
+  aggroOnDamaged: 1
+  aggroOnHeardHit: 1
   attackRange: 1.8
   attackDamage: 12
   attackCooldown: 1.4
   attackWindup: 0.35
+  meleeDuration: 0.85
+  unarmedDuration: 0.55
+  rangedEngageRange: 12
+  rangedAttackCooldown: 1.2
+  rangedDuration: 0.35
+  aimHoldDuration: 1.5
+  missRate: 0.25
   movementMode: 2
   patrolMode: 0
   investigateNoise: 1
@@ -76,10 +88,13 @@ MonoBehaviour:
   lockVisualRootPosition: 0
   visualChildName: Visual
   enableLoot: 1
-  piCoinsMin: 1
-  piCoinsMax: 4
+  acDropMin: 1
+  acDropMax: 4
   randomLootCountMin: 0
   randomLootCountMax: 1
   lootItemPool: []
   lootRespawnDelay: 20
   lootInteractRange: 2.75
+  lootBagPrefab: {fileID: 0}
+  lootBagMesh: {fileID: 0}
+  lootBagTexture: {fileID: 0}

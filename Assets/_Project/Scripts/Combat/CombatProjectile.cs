@@ -361,7 +361,7 @@ namespace Project.Combat
                     appliedDamage = Mathf.Max(1f, damage * 0.15f);
             }
 
-            CombatHitResolver.ApplyDirectHit(collider, hitPoint, velocity, appliedDamage, isCritical, owner);
+            CombatHitResolver.ApplyDirectHit(collider, hitPoint, velocity, appliedDamage, isCritical, owner, ammoItem);
 
             if (ammoItem != null && ammoItem.HasSplashDamage)
                 CombatHitResolver.ApplySplash(ammoItem, hitPoint, appliedDamage, owner, collider);

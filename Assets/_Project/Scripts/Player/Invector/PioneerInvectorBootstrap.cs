@@ -2,6 +2,7 @@ using System.Collections;
 using System.Reflection;
 using Invector;
 using Invector.vCharacterController;
+using Project.Combat;
 using Invector.vMelee;
 using Invector.vShooter;
 using Project.Audio;
@@ -107,6 +108,9 @@ namespace Project.Player.Invector
 
             if (GetComponent<WeaponModeSwitchController>() == null)
                 gameObject.AddComponent<WeaponModeSwitchController>();
+
+            if (GetComponent<DMCombatIFrameController>() == null)
+                gameObject.AddComponent<DMCombatIFrameController>();
 
             if (!disableLegacyCombatComponents)
                 return;

@@ -63,23 +63,74 @@ namespace Invector.vMelee
         /// <param name="value"> active value</param>  
         public virtual void SetActiveDamage(bool value)
         {
+            try
+            {
+                SetActiveDamageInternal(value);
+            }
+            catch (System.ArgumentOutOfRangeException)
+            {
+                canApplyDamage = value;
+            }
+        }
+
+        private void SetActiveDamageInternal(bool value)
+        {
             canApplyDamage = value;
-            for (int i = 0; i < hitBoxes.Count; i++)
+            if (hitBoxes == null)
+                return;
+
+            if (targetColliders == null)
+            {
+                targetColliders = new Dictionary<vHitBox, List<GameObject>>();
+                for (int i = 0; i < hitBoxes.Count; i++)
+                {
+                    vHitBox hitBox = hitBoxes[i];
+                    if (hitBox != null && !targetColliders.ContainsKey(hitBox))
+                        targetColliders.Add(hitBox, new List<GameObject>());
+                }
+            }
+
+            for (int i = hitBoxes.Count - 1; i >= 0; i--)
             {
                 var hitCollider = hitBoxes[i];
-                hitCollider.trigger.enabled = value;
-                if (value == false && targetColliders != null)
+                if (hitCollider == null)
+                {
+                    hitBoxes.RemoveAt(i);
+                    continue;
+                }
+
+                Collider trigger = hitCollider.trigger;
+                if (trigger == null)
+                    continue;
+
+                trigger.enabled = value;
+                if (value == false && targetColliders != null && targetColliders.ContainsKey(hitCollider))
                 {
                     targetColliders[hitCollider].Clear();
                 }
             }
             if (value)
-            {
-                onEnableDamage.Invoke();
-            }
+                InvokeDamageEvent(onEnableDamage);
             else
+                InvokeDamageEvent(onDisableDamage);
+        }
+
+        /// <summary>
+        /// Enemy armature strips leave serialized UnityEvent listeners pointing at destroyed objects;
+        /// Invoke() then throws ArgumentOutOfRangeException inside Unity's persistent callback list.
+        /// </summary>
+        private static void InvokeDamageEvent(UnityEvent evt)
+        {
+            if (evt == null)
+                return;
+
+            try
             {
-                onDisableDamage.Invoke();
+                evt.Invoke();
+            }
+            catch (System.ArgumentOutOfRangeException)
+            {
+                // Ignore broken persistent targets — combat hitboxes do not rely on these events.
             }
         }
 
@@ -90,6 +141,14 @@ namespace Invector.vMelee
         /// <param name="other">target Collider</param>
         public virtual void OnHit(vHitBox hitBox, Collider other)
         {
+            if (hitBox == null || other == null)
+                return;
+
+            if (targetColliders == null)
+                targetColliders = new Dictionary<vHitBox, List<GameObject>>();
+            if (!targetColliders.ContainsKey(hitBox))
+                targetColliders.Add(hitBox, new List<GameObject>());
+
             // check first condition for hit 
             // Pioneer patch: ignore trigger volumes (ambience/quest/interaction zones) and ALL
             // colliders under the attacker — prevents phantom hits on zones the player stands in.
@@ -111,7 +170,7 @@ namespace Invector.vMelee
                 {
                     inDamage = true;
                 }
-                else if (((hitBox.triggerType & vHitBoxType.Damage) != 0) && _hitProperties.hitDamageTags.Contains(other.tag))
+                else if (((hitBox.triggerType & vHitBoxType.Damage) != 0) && MatchesDamageTag(other, _hitProperties.hitDamageTags))
                 {
                     inDamage = true;
                 }
@@ -172,17 +231,51 @@ namespace Invector.vMelee
         /// <param name="damage"> damage</param>
         public virtual bool ApplyDamage(vHitBox hitBox, Collider other, vDamage damage)
         {
+            if (hitBox == null || other == null || damage == null)
+                return false;
+
             vDamage _damage = new vDamage(damage);
             _damage.receiver = other.transform;
             _damage.damageValue = Mathf.RoundToInt(((damage.damageValue + damageModifier) * (hitBox.damagePercentage * 0.01f)));
             _damage.hitPosition = hitBox.transform.position;
-            other.gameObject.ApplyDamage(_damage, meleeManager.fighter);
-            if (_damage.hitReaction && _damage.damageValue > 0)
-            {                
+            vIMeleeFighter attacker = meleeManager != null ? meleeManager.fighter : null;
+            ResolveDamageReceiver(other).ApplyDamage(_damage, attacker);
+            if (_damage.hitReaction && _damage.damageValue > 0 && onPassDamage != null)
+            {
                 onPassDamage.Invoke(_damage);
-            }            
+            }
 
             return _damage.hitReaction;
+        }
+
+        /// <summary>
+        /// Hit colliders on a dummy or enemy are often a child mesh. Invector only
+        /// queries receivers on the hit GameObject, so walk up to the root receiver.
+        /// </summary>
+        private static GameObject ResolveDamageReceiver(Collider other)
+        {
+            GameObject hitObject = other.gameObject;
+            if (hitObject.GetComponent<vIAttackReceiver>() != null || hitObject.GetComponent<vIDamageReceiver>() != null)
+                return hitObject;
+
+            vIDamageReceiver parentReceiver = other.GetComponentInParent<vIDamageReceiver>();
+            return parentReceiver != null ? parentReceiver.gameObject : hitObject;
+        }
+
+        private static bool MatchesDamageTag(Collider other, List<string> tags)
+        {
+            if (other == null || tags == null || tags.Count == 0)
+                return false;
+
+            Transform node = other.transform;
+            while (node != null)
+            {
+                if (tags.Contains(node.tag))
+                    return true;
+                node = node.parent;
+            }
+
+            return false;
         }
     }
 }

@@ -29,6 +29,7 @@ namespace Project.AI
         private bool reporting;
         private bool wasEngagedLastFrame;
         private Transform _canvasRoot;
+        private Transform _cachedPlayerRoot;
 
         private void Awake()
         {
@@ -167,24 +168,36 @@ namespace Project.AI
 
         private bool IsEngagedWithPlayer()
         {
-            if (combat != null && combat.CurrentTarget != null)
-            {
-                if (combat.CurrentTarget.GetComponentInParent<SurvivalStats>() != null &&
-                    combat.CurrentTarget.GetComponentInParent<PlayerController>() != null)
-                    return true;
+            if (combat != null && IsPlayerTarget(combat.CurrentTarget))
+                return true;
 
-                // SurvivalStats alone marks the player body in this project.
-                if (combat.CurrentTarget.GetComponentInParent<SurvivalStats>() != null &&
-                    combat.CurrentTarget.GetComponentInParent<CompanionHealth>() == null)
-                    return true;
+            if (creatureBridge != null && IsPlayerTarget(creatureBridge.CurrentThreat))
+                return true;
+
+            return false;
+        }
+
+        private bool IsPlayerTarget(Transform target)
+        {
+            if (target == null)
+                return false;
+
+            if (_cachedPlayerRoot != null &&
+                (target == _cachedPlayerRoot || target.IsChildOf(_cachedPlayerRoot)))
+                return true;
+
+            PlayerController player = target.GetComponentInParent<PlayerController>();
+            if (player != null)
+            {
+                _cachedPlayerRoot = player.transform;
+                return true;
             }
 
-            if (creatureBridge != null && creatureBridge.CurrentThreat != null)
+            SurvivalStats stats = target.GetComponentInParent<SurvivalStats>();
+            if (stats != null && target.GetComponentInParent<CompanionHealth>() == null)
             {
-                Transform threat = creatureBridge.CurrentThreat;
-                if (threat.GetComponentInParent<SurvivalStats>() != null &&
-                    threat.GetComponentInParent<CompanionHealth>() == null)
-                    return true;
+                _cachedPlayerRoot = stats.transform;
+                return true;
             }
 
             return false;

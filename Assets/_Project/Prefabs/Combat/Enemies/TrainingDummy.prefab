@@ -90,6 +90,7 @@ MonoBehaviour:
   hitTorque: 32
   maxPositionOffset: 0.45
   maxRotationOffset: 24
+  poiseStaggerImpulseScale: 1
 --- !u!114 &3494430680233957371
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -124,6 +125,8 @@ MonoBehaviour:
   requiresScanDiscovery: 1
   discoveryId: 
   requiresFogReveal: 1
+  useLiveWorldPosition: 1
+  requiresCombatAggro: 0
 --- !u!1 &799122672810519144
 GameObject:
   m_ObjectHideFlags: 0

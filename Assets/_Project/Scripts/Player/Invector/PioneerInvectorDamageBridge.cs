@@ -47,7 +47,16 @@ namespace Project.Player.Invector
             {
                 isCritical = item.RollCriticalHit();
                 TrySpendMeleeStamina(item);
-                return item.RollMeleeDamage(isCritical);
+                float rolled = item.RollMeleeDamage(isCritical);
+                PioneerShooterMeleeInput meleeInput = GetComponent<PioneerShooterMeleeInput>();
+                if (meleeInput != null && meleeInput.IsStrongMeleeDamageActive)
+                {
+                    DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
+                    float scale = profile != null ? profile.strongMeleeDamageMultiplier : 1.8f;
+                    rolled *= Mathf.Max(1f, scale);
+                }
+
+                return rolled;
             }
 
             return damage != null ? damage.damageValue : 0f;
@@ -83,7 +92,11 @@ namespace Project.Player.Invector
                 ? (hitPoint - source.transform.position).normalized
                 : Vector3.forward;
 
-            damageable.TakeDamage(damage, source, isCritical);
+            DamageInfo info = DamageInfo.FromHit(damage, isCritical, source, hitPoint);
+            CombatDamageApplicator.ApplyToDamageable(
+                damageable,
+                hitCollider.transform.root.gameObject,
+                in info);
             CombatHitVfx.SpawnBloodSplatter(hitPoint, direction, -direction, damage);
             EnemyNoiseEvents.RaiseNoise(hitPoint, 12f, source);
         }

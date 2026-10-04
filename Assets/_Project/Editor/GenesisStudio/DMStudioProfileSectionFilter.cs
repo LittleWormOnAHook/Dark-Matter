@@ -18,7 +18,8 @@ namespace Project.EditorTools.GenesisStudio
         BuildingSnapOnly = 9,
         BuildingPlacementOnly = 10,
         BuildingDoorOnly = 11,
-        BuildingBuiltTintsOnly = 12
+        BuildingBuiltTintsOnly = 12,
+        CombatCoreOnly = 13
     }
 
     internal static class DMStudioProfileSections
@@ -36,6 +37,11 @@ namespace Project.EditorTools.GenesisStudio
             "jogSpeedMultiplier",
             "sprintBurstSpeedMultiplier",
             "shiftDoubleTapWindow",
+            "standingJumpHeight",
+            "walkJumpHeightMultiplier",
+            "jogJumpHeightMultiplier",
+            "sprintJumpHeightMultiplier",
+            "jumpHeightSpeedExponent",
             "leanOverrideEnabled",
             "leanWalkStrength",
             "leanRunStrength",
@@ -155,6 +161,43 @@ namespace Project.EditorTools.GenesisStudio
             "thermalRecoveryPerSecond"
         };
 
+        private static readonly string[] CombatCoreFields =
+        {
+            "trainingDummyPoiseMax",
+            "humanoidPoiseMax",
+            "humanoidPoiseStaggerSeconds",
+            "blockStaggerSeconds",
+            "parryStaggerSeconds",
+            "blockParryStaggerImpulseScale",
+            "parryStaggerImpulseBonus",
+            "blockStaggerHitstopSeconds",
+            "parryStaggerHitstopSeconds",
+            "poiseDamageFromHealthMultiplier",
+            "maxPoiseDamageFractionPerHit",
+            "poiseRegenPerSecond",
+            "poiseRegenDelayAfterHit",
+            "trainingDummyPositionSpring",
+            "trainingDummyPositionDamping",
+            "trainingDummyRotationSpring",
+            "trainingDummyRotationDamping",
+            "trainingDummyHitImpulse",
+            "trainingDummyHitTorque",
+            "trainingDummyMaxPositionOffset",
+            "trainingDummyMaxRotationOffset",
+            "trainingDummyPoiseStaggerImpulseScale",
+            "dodgeIFrameSeconds",
+            "dashIFrameSeconds",
+            "statusMaxStacks",
+            "statusImmunityWindowSeconds",
+            "statusBossMultiplier",
+            "hitstopLightFrames",
+            "hitstopHeavyFrames",
+            "parryWindowSeconds",
+            "strongMeleeChargeSeconds",
+            "strongMeleeDamageMultiplier",
+            "logCombatEventsInPlay"
+        };
+
         private static readonly string[] CombatAmmoFields =
         {
             "itemName",
@@ -263,6 +306,7 @@ namespace Project.EditorTools.GenesisStudio
                     && !IsLandingHeightField(propertyPath),
                 DMStudioProfileSectionFilter.FootstepsAudioOnly => IsFootstepsAudioField(propertyPath),
                 DMStudioProfileSectionFilter.CombatAmmoOnly => IsCombatAmmoField(propertyPath),
+                DMStudioProfileSectionFilter.CombatCoreOnly => IsCombatCoreField(propertyPath),
                 DMStudioProfileSectionFilter.LandingHeightsOnly => IsLandingHeightField(propertyPath),
                 DMStudioProfileSectionFilter.BuildingPreviewOnly => IsBuildingPreviewField(propertyPath),
                 DMStudioProfileSectionFilter.BuildingBuiltTintsOnly => IsBuildingBuiltTintField(propertyPath),
@@ -289,6 +333,8 @@ namespace Project.EditorTools.GenesisStudio
                     "Default fallback, Unity-tag, and terrain-layer 0-10 clip libraries on GameAudioProfile.",
                 DMStudioProfileSectionFilter.CombatAmmoOnly =>
                     "Live ammo combat fields (Play Mode edits push to the drawn weapon each tick). Fire Rate / burst / reload / mag on the loaded ammo profile win when greater than zero; else the weapon ItemData is used. Recoil Vertical/Horizontal are camera kick; rifle column on Ammo Recoil Profile still overrides two-hand weapons. Invector weapon recoilUp does nothing.",
+                DMStudioProfileSectionFilter.CombatCoreOnly =>
+                    "Poise, block vs parry guard-break (mild block, no block hitstop, parry pose-hold and triple ring), dummy spring, i-frames, strong melee charge, and status rules on DM_CombatCoreProfile (Resources/Combat).",
                 DMStudioProfileSectionFilter.LandingHeightsOnly =>
                     "Jump/Landing 3-tier height band on DM_ClimbDashProfile (bounce / hero / hero+damage + jetpack grace) - same asset as Climb/Dash; Play-mode edits persist via Profile Save.",
                 DMStudioProfileSectionFilter.BuildingPreviewOnly =>
@@ -352,6 +398,11 @@ namespace Project.EditorTools.GenesisStudio
         private static bool IsCombatAmmoField(string propertyPath)
         {
             return MatchesField(propertyPath, CombatAmmoFields);
+        }
+
+        private static bool IsCombatCoreField(string propertyPath)
+        {
+            return MatchesField(propertyPath, CombatCoreFields);
         }
 
         private static bool MatchesField(string propertyPath, string[] fields)

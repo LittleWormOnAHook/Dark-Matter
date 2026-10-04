@@ -9,8 +9,7 @@ namespace Project.Combat
     /// Generic elemental damage-over-time controller. Auto-attached (via <see cref="Apply"/>) to
     /// whichever GameObject carries the IDamageable component that was hit, so burning/shocked/
     /// corroded/etc. ticks work identically for the player, companions, and enemies without each
-    /// health class needing its own DoT bookkeeping. Re-applying the same effect type refreshes
-    /// the duration instead of stacking multiple ticking instances.
+    /// health class needing its own DoT bookkeeping.
     /// </summary>
     public class CombatStatusEffectController : MonoBehaviour
     {
@@ -24,16 +23,13 @@ namespace Project.Combat
             public GameObject source;
             public GameObject vfxInstance;
             public Transform vfxFollow;
+            public int stacks;
         }
 
         private readonly List<ActiveEffect> activeEffects = new List<ActiveEffect>(4);
+        private readonly Dictionary<StatusEffectType, float> immunityUntil = new Dictionary<StatusEffectType, float>(4);
         private IDamageable damageable;
 
-        /// <summary>
-        /// Applies (or refreshes) a status effect on the given target. targetRoot must be the exact
-        /// GameObject the IDamageable component lives on — CombatProjectile resolves this from the
-        /// hit collider before calling in.
-        /// </summary>
         public static void Apply(
             GameObject targetRoot,
             StatusEffectType type,
@@ -77,17 +73,26 @@ namespace Project.Combat
             GameObject source,
             GameObject vfxPrefab)
         {
+            if (IsImmune(type))
+                return;
+
+            DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
+            int maxStacks = profile != null ? profile.statusMaxStacks : 3;
+            duration *= GetBossDurationMultiplier();
+
             for (int i = 0; i < activeEffects.Count; i++)
             {
                 ActiveEffect existing = activeEffects[i];
                 if (existing.type != type)
                     continue;
 
+                existing.stacks = Mathf.Min(maxStacks, existing.stacks + 1);
                 existing.remainingDuration = duration;
                 existing.damagePerTick = damagePerTick;
                 existing.tickInterval = tickInterval;
                 existing.source = source;
                 existing.vfxFollow = transform;
+                CombatEvents.RaiseStatusApplied(default, type, gameObject);
                 return;
             }
 
@@ -100,12 +105,11 @@ namespace Project.Combat
                 nextTickTime = Time.time + tickInterval,
                 source = source,
                 vfxFollow = transform,
+                stacks = 1
             };
 
             if (vfxPrefab != null)
             {
-                // Keep DOT VFX in world space (no SetParent onto this host). Parenting under a
-                // TrainingDummy/enemy while it enables/disables throws Unity console errors.
                 effect.vfxInstance = PoolManager.Spawn(
                     vfxPrefab,
                     transform.position,
@@ -114,6 +118,35 @@ namespace Project.Combat
             }
 
             activeEffects.Add(effect);
+            CombatEvents.RaiseStatusApplied(default, type, gameObject);
+        }
+
+        private bool IsImmune(StatusEffectType type)
+        {
+            if (!immunityUntil.TryGetValue(type, out float until))
+                return false;
+
+            if (Time.time >= until)
+            {
+                immunityUntil.Remove(type);
+                return false;
+            }
+
+            return true;
+        }
+
+        private float GetBossDurationMultiplier()
+        {
+            CombatBossStatusModifier boss = GetComponent<CombatBossStatusModifier>();
+            if (boss == null)
+                boss = GetComponentInParent<CombatBossStatusModifier>();
+
+            if (boss == null)
+                return 1f;
+
+            DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
+            float global = profile != null ? profile.statusBossMultiplier : 0.5f;
+            return Mathf.Clamp(boss.StatusDurationMultiplier * global, 0.05f, 1f);
         }
 
         private void Update()
@@ -132,6 +165,9 @@ namespace Project.Combat
                 }
             }
 
+            DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
+            float immunityWindow = profile != null ? profile.statusImmunityWindowSeconds : 2f;
+
             for (int i = activeEffects.Count - 1; i >= 0; i--)
             {
                 ActiveEffect effect = activeEffects[i];
@@ -142,6 +178,7 @@ namespace Project.Combat
 
                 if (effect.remainingDuration <= 0f)
                 {
+                    immunityUntil[effect.type] = Time.time + immunityWindow;
                     ReleaseVfx(effect);
                     activeEffects.RemoveAt(i);
                     continue;
@@ -152,13 +189,12 @@ namespace Project.Combat
 
                 effect.nextTickTime = Time.time + effect.tickInterval;
                 if (effect.damagePerTick > 0f)
-                    damageable.TakeDamage(effect.damagePerTick, effect.source, false);
+                    damageable.TakeDamage(effect.damagePerTick * effect.stacks, effect.source, false);
             }
         }
 
         private void OnDisable()
         {
-            // Host is deactivating — never SetParent back through the pool while we are the parent.
             ReleaseAllVfx();
             activeEffects.Clear();
         }
@@ -178,7 +214,6 @@ namespace Project.Combat
             effect.vfxInstance = null;
             effect.vfxFollow = null;
 
-            // Detach first so GameObjectPool.Release does not reparent while this host disables.
             if (vfx.transform.parent != null)
                 vfx.transform.SetParent(null, true);
 

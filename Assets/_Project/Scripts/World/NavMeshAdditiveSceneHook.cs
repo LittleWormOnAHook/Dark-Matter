@@ -1,3 +1,4 @@
+using Project.Core;
 using Unity.AI.Navigation;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -16,6 +17,10 @@ namespace Project.World
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureExists()
         {
+            // TEMP COMBAT FOCUS — do not register additive terrain NavMesh surfaces.
+            if (DmTempCombatFocus.SkipWorldStreaming)
+                return;
+
             if (!Application.isPlaying || _instance != null)
                 return;
 

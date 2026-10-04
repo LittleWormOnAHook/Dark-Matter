@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Project.AI.Invector;
 using UnityEngine;
 
 namespace Project.AI
@@ -164,6 +165,8 @@ namespace Project.AI
 
             EnemyDefinition definition = ResolveDefinition(slot.Entry);
             EnemySpawnConfigurator.Apply(instance, spawnSettings, definition);
+            EnemyGroundUtility.SnapCreatureToGround(instance.transform, instance.transform.position);
+            DMSpawnPhysicsStabilizer.EnsureOn(instance);
             ConfigureRespawn(instance);
             SurfaceEncounterPatrolBinder.Apply(instance, slot.Anchor.PatrolRoute);
             combatZone?.TryRegisterHumanoid(instance);

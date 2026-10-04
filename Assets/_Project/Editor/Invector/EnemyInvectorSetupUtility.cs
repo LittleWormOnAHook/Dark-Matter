@@ -556,6 +556,8 @@ namespace Project.EditorTools.Invector
             EnemyInvectorRagdollSetup.EnsurePresent(root);
             if (root.GetComponent<EnemyInvectorRagdollBridge>() == null)
                 root.AddComponent<EnemyInvectorRagdollBridge>();
+            if (root.GetComponent<CombatPoise>() == null)
+                root.AddComponent<CombatPoise>();
             if (root.GetComponent<EnemyInvectorDeathPresenter>() == null)
                 root.AddComponent<EnemyInvectorDeathPresenter>();
             if (root.GetComponent<EnemyInvectorPhysicsCache>() == null)

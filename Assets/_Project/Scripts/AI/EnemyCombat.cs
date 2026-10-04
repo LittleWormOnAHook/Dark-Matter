@@ -13,6 +13,9 @@ namespace Project.AI
         [SerializeField] private float attackRange = 1.8f;
         [SerializeField] private float attackDamage = 12f;
         [SerializeField] private float attackCooldown = 1.4f;
+        [Tooltip("Extra wait after a melee swing ends so attacks are not a constant loop. Randomized per swing. Standing in range still starts the next swing on its own.")]
+        [SerializeField] private float meleeRecoveryPauseMin = 0.6f;
+        [SerializeField] private float meleeRecoveryPauseMax = 1.8f;
         [SerializeField] private float attackWindup = 0.35f;
         [Tooltip("Extra reach tolerance when the target is a pioneer (they shuffle during windup).")]
         [SerializeField] private float pioneerRangeGraceMultiplier = 1.3f;
@@ -25,6 +28,7 @@ namespace Project.AI
         private float nextAttackTime;
         private float windupEndTime;
         private bool attackPending;
+        private bool pendingMeleeRecovery;
 
         public float AttackRange => attackRange;
         public float AttackDamage => attackDamage;
@@ -33,6 +37,18 @@ namespace Project.AI
         public bool IsTargetingPioneer => targetCompanionHealth != null;
 
         private bool pendingInvectorAttack;
+
+        /// <summary>
+        /// Clears in-flight swings and pushes the next attack attempt until stagger ends.
+        /// </summary>
+        public void InterruptAttackForStagger(float lockoutSeconds)
+        {
+            attackPending = false;
+            pendingInvectorAttack = false;
+            pendingMeleeRecovery = false;
+            if (lockoutSeconds > 0f)
+                nextAttackTime = Mathf.Max(nextAttackTime, Time.time + lockoutSeconds);
+        }
 
         private void Awake()
         {
@@ -51,6 +67,7 @@ namespace Project.AI
             {
                 attackPending = false;
                 pendingInvectorAttack = false;
+                pendingMeleeRecovery = false;
             }
 
             target = newTarget;
@@ -103,12 +120,17 @@ namespace Project.AI
             if (!HasLivingTarget())
                 return;
 
+            EnemyInvectorRagdollBridge ragdollBridge = GetComponent<EnemyInvectorRagdollBridge>();
+            if (ragdollBridge != null && ragdollBridge.IsHitStaggerActive)
+                return;
+
             if (!IsTargetInEffectiveRange())
                 return;
 
             if (aiController != null && !aiController.AllowsCombatTarget(target))
             {
                 attackPending = false;
+                pendingMeleeRecovery = false;
                 return;
             }
 
@@ -122,12 +144,36 @@ namespace Project.AI
                 attackPending = true;
                 pendingInvectorAttack = true;
                 windupEndTime = Time.time + invectorDuration;
+                pendingMeleeRecovery = !invectorCombat.LastAttackWasRanged;
                 return;
             }
 
             pendingInvectorAttack = false;
+            pendingMeleeRecovery = true;
             attackPending = true;
             windupEndTime = Time.time + attackWindup;
+        }
+
+        /// <summary>
+        /// After the swing's active window, wait a random extra beat before the next melee.
+        /// The existing attackCooldown still starts when the swing begins; this extends the gap once it ends.
+        /// </summary>
+        private void ApplyMeleeRecoveryPause()
+        {
+            if (!pendingMeleeRecovery)
+                return;
+
+            pendingMeleeRecovery = false;
+            float extra = SampleMeleeRecoveryPause();
+            if (extra > 0f)
+                nextAttackTime = Mathf.Max(nextAttackTime, Time.time + extra);
+        }
+
+        private float SampleMeleeRecoveryPause()
+        {
+            float min = Mathf.Max(0f, meleeRecoveryPauseMin);
+            float max = Mathf.Max(min, meleeRecoveryPauseMax);
+            return Random.Range(min, max);
         }
 
         private void Update()
@@ -139,6 +185,7 @@ namespace Project.AI
                 return;
 
             attackPending = false;
+            ApplyMeleeRecoveryPause();
 
             if (pendingInvectorAttack && invectorCombat != null && invectorCombat.UsesInvectorDamageApplication)
             {

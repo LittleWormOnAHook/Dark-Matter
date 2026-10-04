@@ -1,4 +1,3 @@
-using Project.AI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -26,8 +25,8 @@ namespace Project.UI
         private TextMeshProUGUI nameLabel;
         private Image backgroundImage;
         private Image fillImage;
-        private EnemyHealth boundHealth;
-        private EnemyHealth engagementCandidate;
+        private IEngagedHealthHudTarget boundHealth;
+        private IEngagedHealthHudTarget engagementCandidate;
         private float engagementCandidateTime = float.PositiveInfinity;
         private bool built;
 
@@ -142,7 +141,7 @@ namespace Project.UI
 
         /// <summary>Player damage always takes over the HUD from any other enemy.</summary>
         public void ShowFromPlayerDamage(
-            EnemyHealth health,
+            IEngagedHealthHudTarget health,
             string displayName,
             float current,
             float max)
@@ -162,7 +161,7 @@ namespace Project.UI
         /// Engagement is sticky: first enemy to aggro claims the bar until the player damages another.
         /// </summary>
         public void UpdateFromEngagement(
-            EnemyHealth health,
+            IEngagedHealthHudTarget health,
             string displayName,
             float current,
             float max,
@@ -203,7 +202,7 @@ namespace Project.UI
             BindAndPresent(health, displayName, current, max);
         }
 
-        public void UpdateHealthIfBound(EnemyHealth health, float current, float max)
+        public void UpdateHealthIfBound(IEngagedHealthHudTarget health, float current, float max)
         {
             if (health == null || boundHealth != health)
                 return;
@@ -211,7 +210,7 @@ namespace Project.UI
             ApplyHealth(current, max);
         }
 
-        public void ReleaseEngagementCandidate(EnemyHealth health)
+        public void ReleaseEngagementCandidate(IEngagedHealthHudTarget health)
         {
             if (health == null || engagementCandidate != health)
                 return;
@@ -220,7 +219,7 @@ namespace Project.UI
             engagementCandidateTime = float.PositiveInfinity;
         }
 
-        public void ClearIf(EnemyHealth health)
+        public void ClearIf(IEngagedHealthHudTarget health)
         {
             if (health != null && boundHealth != health)
             {
@@ -241,7 +240,7 @@ namespace Project.UI
         }
 
         private void BindAndPresent(
-            EnemyHealth health,
+            IEngagedHealthHudTarget health,
             string displayName,
             float current,
             float max)
