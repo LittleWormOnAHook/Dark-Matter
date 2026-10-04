@@ -41,12 +41,9 @@ namespace Project.EditorTools.GenesisStudio
                 serialized = new SerializedObject(asset);
 
             serialized.Update();
-            float labelWidth = DMStudioStyles.MeasureInspectorLabelWidth(
-                serialized,
-                path => DMStudioProfileSections.IncludesField(path, section));
 
             scroll = EditorGUILayout.BeginScrollView(scroll);
-            using (DMStudioStyles.PushLabelWidth(labelWidth))
+            using (DMStudioStyles.BeginProfileInspector(serialized, path => DMStudioProfileSections.IncludesField(path, section)))
             {
                 SerializedProperty iterator = serialized.GetIterator();
                 bool enterChildren = true;

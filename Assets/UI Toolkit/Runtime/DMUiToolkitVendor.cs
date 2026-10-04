@@ -230,7 +230,7 @@ namespace Project.UI
         {
             BindTree();
             npc = vendor;
-            inventory = FindAnyObjectByType<InventorySystem>();
+            inventory = PlayerLocator.FindLiveInventory();
             itemActions = inventory != null
                 ? inventory.GetComponent<InventoryItemActions>()
                 : FindAnyObjectByType<InventoryItemActions>();

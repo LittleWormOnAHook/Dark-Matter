@@ -157,9 +157,9 @@ namespace Project.World
                 return;
             }
 
-            GameObject v7 = GameObject.Find("Player_v7");
-            if (v7 != null)
-                player = v7.transform;
+            GameObject live = PlayerLocator.FindPlayerObject();
+            if (live != null)
+                player = live.transform;
         }
 
         private void RefreshActiveChunks()

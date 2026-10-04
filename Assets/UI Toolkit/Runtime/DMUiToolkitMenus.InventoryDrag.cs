@@ -1,4 +1,5 @@
 using Project.Audio;
+using Project.Core;
 using Project.Inventory;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -67,7 +68,7 @@ namespace Project.UI
         private void RefreshInventoryStorage()
         {
             if (boundInventory == null)
-                boundInventory = FindAnyObjectByType<InventorySystem>();
+                boundInventory = PlayerLocator.FindLiveInventory();
             boundItemActions ??= EnsureBoundItemActions();
 
             int unlocked = boundInventory != null ? boundInventory.unlockedMainSlots : 0;
@@ -140,7 +141,7 @@ namespace Project.UI
         private bool DropOnInventorySlot(Vector2 screenPosition, int sourceAbsoluteIndex)
         {
             if (boundInventory == null)
-                boundInventory = FindAnyObjectByType<InventorySystem>();
+                boundInventory = PlayerLocator.FindLiveInventory();
             if (boundInventory == null)
                 return false;
 
@@ -291,7 +292,7 @@ namespace Project.UI
         private void BeginInvDrag(int slotIndex, Vector2 panelPos)
         {
             if (boundInventory == null)
-                boundInventory = FindAnyObjectByType<InventorySystem>();
+                boundInventory = PlayerLocator.FindLiveInventory();
             if (boundInventory == null)
                 return;
             if (slotIndex < 0 || slotIndex >= boundInventory.slots.Count)
@@ -394,7 +395,7 @@ namespace Project.UI
             if (boundInventory == null || source < 0)
                 return;
 
-            boundInventory ??= FindAnyObjectByType<InventorySystem>();
+            boundInventory ??= PlayerLocator.FindLiveInventory();
             if (boundInventory == null)
                 return;
 
@@ -459,7 +460,7 @@ namespace Project.UI
         private InventoryItemActions EnsureBoundItemActions()
         {
             if (boundInventory == null)
-                boundInventory = FindAnyObjectByType<InventorySystem>();
+                boundInventory = PlayerLocator.FindLiveInventory();
             if (boundInventory == null)
                 return null;
 
@@ -474,7 +475,7 @@ namespace Project.UI
         public void HandleInvClick(int slotIndex, int button, Vector2 pointerPanelPosition)
         {
             if (boundInventory == null)
-                boundInventory = FindAnyObjectByType<InventorySystem>();
+                boundInventory = PlayerLocator.FindLiveInventory();
             if (boundInventory == null || slotIndex < 0 || slotIndex >= boundInventory.slots.Count)
                 return;
             if (slotIndex < boundInventory.inventorySize && !boundInventory.IsMainSlotUnlocked(slotIndex))
@@ -516,7 +517,7 @@ namespace Project.UI
             if (evt.currentTarget is not VisualElement slot || slot.userData is not int index)
                 return;
             if (boundInventory == null)
-                boundInventory = FindAnyObjectByType<InventorySystem>();
+                boundInventory = PlayerLocator.FindLiveInventory();
             if (boundInventory == null || index < 0 || index >= boundInventory.slots.Count)
                 return;
             if (index < boundInventory.inventorySize && !boundInventory.IsMainSlotUnlocked(index))

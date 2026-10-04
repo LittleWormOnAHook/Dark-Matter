@@ -33,7 +33,7 @@ MonoBehaviour:
     sinkDepth: 0.02
     rayStartHeight: 50
     conformBaseToSurface: 1
-    conformHeight: 0
+    conformHeight: 2
     conformHeightInMeters: 1
     conformFalloff: 1.5
     maxConformDistance: 1.5

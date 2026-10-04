@@ -140,11 +140,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d6f7b2a3a0c3c2248b6e34f3890da87e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Map.MapMarker
-  label: Claude
-  color: {r: 1, g: 0, b: 0.8748214, a: 0.65}
+  label: Pioneer Guide
+  color: {r: 0, g: 0, b: 1, a: 1}
   iconSprite: {fileID: 0}
   showOnMinimap: 1
   showOnFullMap: 1
+  keepRegisteredWhenDisabled: 0
+  requiresScanDiscovery: 0
+  discoveryId: 
+  requiresFogReveal: 1
+  useLiveWorldPosition: 1
+  requiresCombatAggro: 0
 --- !u!1001 &7331252493489145514
 PrefabInstance:
   m_ObjectHideFlags: 0

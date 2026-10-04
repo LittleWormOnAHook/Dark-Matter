@@ -134,15 +134,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Map.MapMarker
   label: Iron Ore
-  color: {r: 1, g: 0.5264092, b: 0, a: 1}
-  iconSprite: {fileID: 21300000, guid: b2966203c0d5cc84cb3725aa98b577eb, type: 3}
+  color: {r: 0, g: 1, b: 0, a: 1}
+  iconSprite: {fileID: 21300000, guid: 8b9234d12915391499f4cc258a0d7ad4, type: 3}
   showOnMinimap: 1
   showOnFullMap: 1
   keepRegisteredWhenDisabled: 0
   requiresScanDiscovery: 1
   discoveryId: 
   requiresFogReveal: 1
-  useLiveWorldPosition: 0
+  useLiveWorldPosition: 1
   requiresCombatAggro: 0
 --- !u!114 &6993951324317885324
 MonoBehaviour:

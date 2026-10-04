@@ -198,6 +198,8 @@ MonoBehaviour:
   requiresScanDiscovery: 1
   discoveryId: 
   requiresFogReveal: 1
+  useLiveWorldPosition: 1
+  requiresCombatAggro: 0
 --- !u!65 &5584260322584404869
 BoxCollider:
   m_ObjectHideFlags: 0

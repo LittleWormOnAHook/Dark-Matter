@@ -359,6 +359,8 @@ Material:
     - _GRB_FadeNoiseScale: 6
     - _GRB_FadeNoiseStrength: 0.016
     - _GRB_FadeNormalUp: 0.5
+    - _GRB_FadeShadowLift: 1
+    - _GRB_FadeShadowLiftMargin: 0.1
     - _GRB_FadeSoftness: 0.983
     - _GRB_FadeTerrainColor: 1
     - _GRB_ForwardOnly: 0

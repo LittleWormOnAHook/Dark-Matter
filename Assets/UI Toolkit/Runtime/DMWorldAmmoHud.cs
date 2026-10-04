@@ -875,7 +875,7 @@ namespace Project.UI
         private void CacheCombatRefs()
         {
             if (equipment == null)
-                equipment = FindAnyObjectByType<EquipmentController>();
+                equipment = PlayerLocator.FindLiveEquipment();
             if (equipment != null)
             {
                 if (ammoState == null)

@@ -4,8 +4,7 @@ using System.Collections;
 
 using Invector.vCharacterController;
 
-
-
+using Project.Core;
 using Project.Survival;
 
 
@@ -615,7 +614,7 @@ namespace Project.Player.Invector
 
 
 
-            GameObject player = gameObject.name == "Player_v7" ? gameObject : GameObject.Find("Player_v7");
+            GameObject player = PlayerLocator.FindPlayerObject() ?? gameObject;
 
 
 
@@ -667,7 +666,7 @@ namespace Project.Player.Invector
 
 
 
-            GameObject player = gameObject.name == "Player_v7" ? gameObject : GameObject.Find("Player_v7");
+            GameObject player = PlayerLocator.FindPlayerObject() ?? gameObject;
 
 
 

@@ -338,8 +338,8 @@ Material:
     - _GRB_BottomEdgeNoise: 0.05
     - _GRB_BottomEdgeNoiseScale: 7
     - _GRB_BottomEnable: 1
-    - _GRB_BottomFalloff: 0.1
-    - _GRB_BottomHeight: 0.14
+    - _GRB_BottomFalloff: 0.348
+    - _GRB_BottomHeight: 0.6
     - _GRB_BottomMaxWeight: 0.9
     - _GRB_BottomNoiseScale: 0.78
     - _GRB_BottomNoiseStrength: 0.5
@@ -358,7 +358,9 @@ Material:
     - _GRB_FadeNoiseScale: 6
     - _GRB_FadeNoiseStrength: 0
     - _GRB_FadeNormalUp: 0.198
-    - _GRB_FadeSoftness: 0.961
+    - _GRB_FadeShadowLift: 1
+    - _GRB_FadeShadowLiftMargin: 0.1
+    - _GRB_FadeSoftness: 0.443
     - _GRB_FadeTerrainColor: 0.989
     - _GRB_ForwardOnly: 0
     - _GRB_HeightRange: 4

@@ -127,11 +127,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Map.MapMarker
   label: Silicate Ore
-  color: {r: 1, g: 0.5023018, b: 0, a: 1}
-  iconSprite: {fileID: 21300000, guid: b2966203c0d5cc84cb3725aa98b577eb, type: 3}
+  color: {r: 0, g: 1, b: 0, a: 1}
+  iconSprite: {fileID: 21300000, guid: b68e32a2fd97e3a479f19dfa0bfa3318, type: 3}
   showOnMinimap: 1
   showOnFullMap: 1
   keepRegisteredWhenDisabled: 0
   requiresScanDiscovery: 1
   discoveryId: 
   requiresFogReveal: 1
+  useLiveWorldPosition: 1
+  requiresCombatAggro: 0

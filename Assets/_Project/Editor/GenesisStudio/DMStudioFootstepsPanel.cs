@@ -94,7 +94,7 @@ namespace Project.EditorTools.GenesisStudio
 
         private static void DrawAllVisible(SerializedObject serialized)
         {
-            using (DMStudioStyles.PushLabelWidth(280f))
+            using (DMStudioStyles.BeginProfileInspector(serialized))
             {
                 SerializedProperty iterator = serialized.GetIterator();
                 bool enterChildren = true;
@@ -115,7 +115,7 @@ namespace Project.EditorTools.GenesisStudio
 
         private static void DrawFiltered(SerializedObject serialized, DMStudioProfileSectionFilter filter)
         {
-            using (DMStudioStyles.PushLabelWidth(280f))
+            using (DMStudioStyles.BeginProfileInspector(serialized, path => DMStudioProfileSections.IncludesField(path, filter)))
             {
                 SerializedProperty iterator = serialized.GetIterator();
                 bool enterChildren = true;

@@ -50,7 +50,7 @@ public class PioneerGaiaTerrainFollow : MonoBehaviour
             return;
         }
 
-        GameObject player = GameObject.Find("Player_v7");
+        GameObject player = PlayerLocator.FindPlayerObject();
         if (player == null || player.GetComponent<PioneerGaiaTerrainFollow>() != null)
         {
             return;

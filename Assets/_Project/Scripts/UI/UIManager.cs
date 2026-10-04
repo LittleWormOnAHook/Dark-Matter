@@ -320,7 +320,7 @@ namespace Project.UI
         {
             UnbindJournalInputActions();
 
-            PlayerInput playerInput = FindAnyObjectByType<PlayerInput>(FindObjectsInactive.Include);
+            PlayerInput playerInput = PlayerLocator.FindLivePlayerInput();
             if (playerInput == null || playerInput.actions == null)
                 return;
 

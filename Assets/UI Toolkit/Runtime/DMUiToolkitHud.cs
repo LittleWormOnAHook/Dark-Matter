@@ -1092,7 +1092,7 @@ namespace Project.UI
         private void BindInventoryEvents()
         {
             // Already wired ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â avoid Find spam and double-subscribe.
-            if (inventorySystem != null && equipmentController != null)
+            if (PlayerLocator.IsLive(inventorySystem) && PlayerLocator.IsLive(equipmentController))
                 return;
 
             bool hunting = inventorySystem == null && equipmentController == null;
@@ -1100,22 +1100,22 @@ namespace Project.UI
                 return;
 
             UnbindInventoryEvents();
-            inventorySystem = FindAnyObjectByType<InventorySystem>();
+            inventorySystem = PlayerLocator.FindLiveInventory();
             if (inventorySystem != null)
             {
                 equipmentController = inventorySystem.GetComponent<EquipmentController>()
-                    ?? inventorySystem.GetComponentInChildren<EquipmentController>(true)
+                    ?? inventorySystem.GetComponentInChildren<EquipmentController>()
                     ?? inventorySystem.GetComponentInParent<EquipmentController>();
                 itemActions = inventorySystem.GetComponent<InventoryItemActions>()
-                    ?? inventorySystem.GetComponentInChildren<InventoryItemActions>(true);
+                    ?? inventorySystem.GetComponentInChildren<InventoryItemActions>();
                 inventorySystem.OnInventoryChanged += RefreshSlotIcons;
                 nextInventoryBindFrame = 0;
             }
 
             if (equipmentController == null)
-                equipmentController = FindAnyObjectByType<EquipmentController>();
+                equipmentController = PlayerLocator.FindLiveEquipment();
             if (itemActions == null)
-                itemActions = FindAnyObjectByType<InventoryItemActions>();
+                itemActions = PlayerLocator.FindOnLivePlayer<InventoryItemActions>();
 
             if (equipmentController == null && inventorySystem == null)
                 nextInventoryBindFrame = Time.frameCount + 30;

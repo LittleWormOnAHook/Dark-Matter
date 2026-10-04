@@ -156,7 +156,7 @@ namespace Project.EditorTools.GenesisStudio
             SerializedObject serialized = new SerializedObject(asset);
             serialized.Update();
             inspectorScroll = EditorGUILayout.BeginScrollView(inspectorScroll);
-            using (DMStudioStyles.PushLabelWidth(280f))
+            using (DMStudioStyles.BeginProfileInspector(serialized, path => DMStudioProfileSections.IncludesField(path, section)))
             {
                 SerializedProperty iterator = serialized.GetIterator();
                 bool enterChildren = true;
@@ -232,7 +232,7 @@ namespace Project.EditorTools.GenesisStudio
                 return;
 
             inspectorScroll = EditorGUILayout.BeginScrollView(inspectorScroll);
-            using (DMStudioStyles.PushLabelWidth(280f))
+            using (DMStudioStyles.BeginProfileInspector(280f))
                 GetOrCreateEditor(target)?.OnInspectorGUI();
             EditorGUILayout.EndScrollView();
 

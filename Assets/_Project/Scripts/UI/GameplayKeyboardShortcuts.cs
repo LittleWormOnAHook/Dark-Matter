@@ -780,22 +780,11 @@ namespace Project.UI
             out EquipmentController equipment,
             out InventoryItemActions itemActions)
         {
-            if (cachedInventory == null || cachedEquipment == null)
+            if (!PlayerLocator.IsLive(cachedInventory) || !PlayerLocator.IsLive(cachedEquipment))
             {
-                cachedInventory = Object.FindAnyObjectByType<InventorySystem>(FindObjectsInactive.Include);
-                cachedEquipment = null;
-                cachedItemActions = null;
-                if (cachedInventory != null)
-                {
-                    cachedEquipment = cachedInventory.GetComponent<EquipmentController>()
-                        ?? cachedInventory.GetComponentInChildren<EquipmentController>(true)
-                        ?? cachedInventory.GetComponentInParent<EquipmentController>();
-                    cachedItemActions = cachedInventory.GetComponent<InventoryItemActions>()
-                        ?? cachedInventory.GetComponentInChildren<InventoryItemActions>(true);
-                }
-
-                if (cachedEquipment == null)
-                    cachedEquipment = Object.FindAnyObjectByType<EquipmentController>(FindObjectsInactive.Include);
+                cachedInventory = PlayerLocator.FindLiveInventory();
+                cachedEquipment = PlayerLocator.FindLiveEquipment();
+                cachedItemActions = PlayerLocator.FindOnLivePlayer<InventoryItemActions>();
             }
 
             inventory = cachedInventory;
@@ -1114,7 +1103,7 @@ namespace Project.UI
 
             if (keyHeld && (released || lostKey))
             {
-                if (released && !holdUsed)
+                if (!holdUsed)
                     TryCycleHotCrossConsumableFocus();
 
                 keyHeld = false;
@@ -1263,16 +1252,16 @@ namespace Project.UI
             toolHotkeyHandledFrame = Time.frameCount;
             toolHotkeyHandledType = toolType;
 
-            InventorySystem inventory = Object.FindAnyObjectByType<InventorySystem>();
+            InventorySystem inventory = PlayerLocator.FindLiveInventory();
             EquipmentController equipment = inventory != null
                 ? inventory.GetComponent<EquipmentController>()
-                : Object.FindAnyObjectByType<EquipmentController>();
+                : PlayerLocator.FindLiveEquipment();
             if (equipment == null)
                 return;
 
             OpticsController optics = inventory != null
                 ? inventory.GetComponent<OpticsController>()
-                : Object.FindAnyObjectByType<OpticsController>();
+                : PlayerLocator.FindOnLivePlayer<OpticsController>();
             if (optics != null)
             {
                 optics.HandleToolHotkey(toolType);

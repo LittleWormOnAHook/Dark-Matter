@@ -99,14 +99,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Map.MapMarker
   label: Web Plant
-  color: {r: 0.75, g: 0.82, b: 0.28, a: 1}
-  iconSprite: {fileID: 21300000, guid: 1ddfa7fda707b0946b8d98b7456cba88, type: 3}
+  color: {r: 0, g: 1, b: 0, a: 1}
+  iconSprite: {fileID: 21300000, guid: a8357be6c2c0a9e43a4f3cda45ef26d7, type: 3}
   showOnMinimap: 1
   showOnFullMap: 1
   keepRegisteredWhenDisabled: 0
   requiresScanDiscovery: 1
   discoveryId: 
   requiresFogReveal: 1
+  useLiveWorldPosition: 1
+  requiresCombatAggro: 0
 --- !u!1001 &6637307471838296092
 PrefabInstance:
   m_ObjectHideFlags: 0

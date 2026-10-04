@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Project.Core;
 using Project.Data;
 using Project.Inventory;
 using Project.Storage;
@@ -906,7 +907,7 @@ namespace Project.Building
                 return null;
 
             nextInventorySearch = now + 0.5f;
-            cachedInventory = UnityEngine.Object.FindAnyObjectByType<InventorySystem>();
+            cachedInventory = PlayerLocator.FindLiveInventory();
             return cachedInventory;
         }
 

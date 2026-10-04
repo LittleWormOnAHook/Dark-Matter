@@ -25,7 +25,7 @@ MonoBehaviour:
   scanRevealEdgeSoftnessMeters: 50
   fogOverlayAlpha: 0.97
   revealThreshold: 0.835
-  landMaskGreenThreshold: 0.609
+  landMaskGreenThreshold: 0.649
   fogColor: {r: 0.90188676, g: 0.6975656, b: 0.46115336, a: 1}
   terrainMask: {fileID: 0}
   mapPlayerIconBaseDegrees: 0

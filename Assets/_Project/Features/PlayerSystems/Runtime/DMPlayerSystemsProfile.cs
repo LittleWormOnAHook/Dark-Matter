@@ -60,9 +60,7 @@ namespace Project.Player
             if (!Application.isPlaying)
                 return;
 
-            GameObject player = GameObject.Find("Player_v7");
-            if (player == null)
-                player = GameObject.Find("Player_v7 Variant");
+            GameObject player = PlayerLocator.FindPlayerObject();
             if (player == null || player.GetComponent<DMPlayerSystemsProfile>() != null)
                 return;
 

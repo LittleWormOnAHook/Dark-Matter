@@ -85,7 +85,7 @@ namespace Project.UI
             if (deathPanel != null)
                 deathPanel.gameObject.SetActive(false);
 
-            PlayerController playerController = FindAnyObjectByType<PlayerController>();
+            PlayerController playerController = PlayerLocator.FindPlayerController();
             if (playerController != null)
             {
                 playerController.SetInventoryOpen(false);
@@ -230,7 +230,7 @@ namespace Project.UI
             UnityEngine.Cursor.lockState = CursorLockMode.None;
             UnityEngine.Cursor.visible = true;
 
-            PlayerController pc = FindAnyObjectByType<PlayerController>();
+            PlayerController pc = PlayerLocator.FindPlayerController();
             if (pc != null) pc.SetInventoryOpen(true);
 
             CameraController cam = FindAnyObjectByType<CameraController>();

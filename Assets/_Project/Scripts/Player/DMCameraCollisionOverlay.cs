@@ -1,6 +1,7 @@
 using System;
 using System.Reflection;
 using Invector.vCamera;
+using Project.Core;
 using UnityEngine;
 
 namespace Project.Player
@@ -127,7 +128,7 @@ namespace Project.Player
             if (!Application.isPlaying)
                 return;
 
-            EnsureOnCamera(GameObject.Find("Player_v7"));
+            EnsureOnCamera(PlayerLocator.FindPlayerObject());
         }
 
         public static DMCameraCollisionOverlay EnsureOnCamera(GameObject playerRoot)
@@ -744,7 +745,7 @@ namespace Project.Player
                     playerRoot = tpCamera.mainTarget.root;
                 else
                 {
-                    GameObject player = GameObject.Find("Player_v7");
+                    GameObject player = PlayerLocator.FindPlayerObject();
                     if (player != null)
                         playerRoot = player.transform;
                 }

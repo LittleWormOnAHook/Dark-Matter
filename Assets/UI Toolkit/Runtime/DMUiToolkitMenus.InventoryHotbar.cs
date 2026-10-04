@@ -1,3 +1,4 @@
+using Project.Core;
 using Project.Data;
 using Project.Inventory;
 using UnityEngine;
@@ -64,7 +65,7 @@ namespace Project.UI
                 return;
 
             if (boundInventory == null)
-                boundInventory = FindAnyObjectByType<InventorySystem>();
+                boundInventory = PlayerLocator.FindLiveInventory();
             if (boundInventory == null)
                 return;
 
@@ -124,7 +125,7 @@ namespace Project.UI
                 return;
 
             if (boundInventory == null)
-                boundInventory = FindAnyObjectByType<InventorySystem>();
+                boundInventory = PlayerLocator.FindLiveInventory();
             if (boundInventory == null)
                 return;
 
@@ -174,7 +175,7 @@ namespace Project.UI
         private bool DropOnInventoryHotbar(Vector2 screenPosition, int sourceAbsoluteIndex)
         {
             if (boundInventory == null)
-                boundInventory = FindAnyObjectByType<InventorySystem>();
+                boundInventory = PlayerLocator.FindLiveInventory();
             if (boundInventory == null)
                 return false;
 

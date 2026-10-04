@@ -422,16 +422,16 @@ namespace Project.UI
 
         private void ResolveInventory()
         {
-            if (inventory == null)
-                inventory = FindAnyObjectByType<InventorySystem>(FindObjectsInactive.Include);
-            if (inventory != null && equipment == null)
+            if (!PlayerLocator.IsLive(inventory))
+                inventory = PlayerLocator.FindLiveInventory();
+            if (inventory != null && !PlayerLocator.IsLive(equipment))
             {
                 equipment = inventory.GetComponent<EquipmentController>()
-                    ?? inventory.GetComponentInChildren<EquipmentController>(true);
+                    ?? inventory.GetComponentInChildren<EquipmentController>();
             }
 
-            if (equipment == null)
-                equipment = FindAnyObjectByType<EquipmentController>(FindObjectsInactive.Include);
+            if (!PlayerLocator.IsLive(equipment))
+                equipment = PlayerLocator.FindLiveEquipment();
 
             ResolveAmmoState();
         }
@@ -446,7 +446,7 @@ namespace Project.UI
             if (ammoState == null && inventory != null)
                 ammoState = inventory.GetComponent<WeaponAmmoState>();
             if (ammoState == null)
-                ammoState = FindAnyObjectByType<WeaponAmmoState>(FindObjectsInactive.Include);
+                ammoState = PlayerLocator.FindOnLivePlayer<WeaponAmmoState>();
         }
 
         private void Refresh()

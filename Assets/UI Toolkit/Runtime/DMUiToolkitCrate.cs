@@ -163,7 +163,7 @@ namespace Project.UI
         {
             BindTree();
             crate = storageCrate;
-            inventory = Object.FindAnyObjectByType<InventorySystem>();
+            inventory = PlayerLocator.FindLiveInventory();
             itemActions = inventory != null
                 ? inventory.GetComponent<InventoryItemActions>()
                 : Object.FindAnyObjectByType<InventoryItemActions>();

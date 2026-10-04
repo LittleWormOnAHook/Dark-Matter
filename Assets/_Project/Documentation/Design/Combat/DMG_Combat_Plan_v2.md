@@ -1,0 +1,399 @@
+# Dark Matter: Genesis — Combat, AI, Companions & Encounters
+## Master Plan v2.1 (Sep 29, 2026; code-status sync Sep 30, 2026)
+
+Items marked *(fill-in)* are proposals added beyond Anthony's spec. All numbers are starting values exposed in Genesis Studio, never hardcoded.
+
+Status markers come from the Phase 1 code audit (Sep 30, 2026; `DMG_Combat_Audit_Phase1.md`): **[Built]** works today, **[Partial]** part exists, **[Missing]** not started, **[Conflicts]** the code does it differently and needs a decision. Each section ends with a *Current build* block; design targets are unchanged unless a line says otherwise.
+
+
+## 0. Current build status (code audit, Sep 30, 2026)
+68 systems checked: **8 Built, 28 Partial, 25 Missing, 7 Conflicts**. Built through Invector today: melee (light/heavy/combos/block), ranged aim/fire, crits (10%, x2), stamina, dodge roll, dash, 9 ammo types, 5 statuses, Hot Cross, hex skill tree, 3-companion trio, death/loot. Not started: utility brain, Combat Director/tokens, poise, parry, i-frames, Momentum, finishers, Sick Stick, body damage, factions.
+
+Systems outside the numbered sections:
+- **[Partial] Combat HUD**: UI Toolkit HUD, ranged crosshair HUD, health HUD for the engaged enemy, enemy health bars and damage numbers. Gap: No Momentum bar, Sick Stick ready icon, awareness icons or finisher prompt.
+- **[Built] Hot Cross (quick-select)**: A gold cross with 4 quadrants. Top-left: 4 weapon slots, cycled with Tab / Y. Top-right: consumables (slots 4-9). Bottom-left: tools (binoculars, scanner). Includes an ammo-load popup. A code comment notes that element specials may share this face later.
+- **[Built] Ammo system**: 9 ammo types across 16 ammo items. Ammo cycles on D-Pad right / X and reloads on R / Select. Ammo FX profiles.
+- **[Partial] Combat bindings**: Attack RT/LMB. Aim/Block LT/RMB. Dodge B/Q. Dash B double-tap+hold / L-Alt. SwitchWeapon Y/Tab. AmmoCycle D-Pad right/X. Reload R/Select. Binoculars LB press / B key. Scanner LB hold / N. Journal D-Pad up / J. Crouch RS/Ctrl. Sprint LS/Shift. Use X/E. Jump A/Space. Gap: Sick Stick, finisher, special, Overdrive, parry and the companion radial have no bindings. D-Pad up and right are already taken, which affects the plan's D-Pad companion commands.
+- **[Built] Lock-on / combat focus**: CombatFocusController: 3.5 m focus range with break-lock rules. Not in the plan.
+- **[Built] Death + loot workflow**: Player death, death overlay, respawn, enemy death sequence, loot bag and loot dialog. Gap: Downed/revive should hook into this workflow.
+- **[Partial] Enemy + creature roster**: Humanoid EnemyDefinitions: corrupt_patrol_android, Humanoid_Enemy, The_Evil_One. Non-human: Enemy, Gongo. DMI creatures have 4 brain profiles. Gap: Nothing is tagged by archetype. There's no body profile.
+
+**Phase 1 closed Oct 3, 2026** — decisions recorded in audit section 4 and `combat_master_plan_handoff.md`. Plasma default status = **Burning**; element display mapping and resource model locked.
+
+---
+
+## 1. Goal
+One modular, data-driven combat and AI framework for enemies, elites, bosses, creatures, androids, companions (Pioneers), and later multiplayer party members. Combat should feel like a simulation that creates stories: the same enemy behaves differently depending on personality, equipment, objective, faction, environment, damage state, allies and the player's own habits.
+
+Design question to optimise for: "How many different experiences can the player have from the same systems?", not "How many enemy types can we make?"
+
+## 2. Non-negotiable rules
+- Audit first. Do not delete or replace working systems during the audit.
+- Every replacement documents: existing system, problem, replacement, dependencies, migration steps, rollback.
+- Composition over inheritance: no EnemyBase / AndroidBase / BossBase chains. An enemy is assembled from Body + Brain + Archetype + Personality + Equipment + Abilities + Perception + Objective + Faction + Reactions.
+- Smallest working version first, one enemy first, one weapon pipeline first.
+- Per stage: inspect, find reusable code, explain the change, implement smallest version, compile (Anthony presses Ctrl+R), test in editor via the MCP bridge / `dm`, fix errors, document changed files, then move on.
+- Backups before edits; no git stash/checkout/reset; scoped commits only with approval.
+- Future-proof: new elements, weapons, statuses, body parts, archetypes and objectives are added as data, not rewrites.
+
+*Current build (audit Sep 30, 2026):*
+- **[Partial] Composition (Body + Brain + profiles)**: Enemies are assembled from components, with no inheritance chain: an EnemyDefinition asset plus EnemySenses, EnemyCombat and EnemyHealth, and Invector body bridges. Gap: The decision logic is one hard-coded state machine.
+
+## 3. Performance principles
+Avoid per-frame raycasts per NPC, constant NavMesh recalculation, excess Animator writes, allocations/GC spikes, one Update per component, and full simulation of distant NPCs.
+Use event-driven systems, cached references, pooling, tick-based AI, a shared perception scheduler with a fixed per-frame budget *(fill-in: e.g. 8 perception checks per frame)*, physics layers, animation events, ScriptableObject config, seeded randomness, and LOD-style simulation.
+
+Tiered perception *(fill-in)*: cheap overlap/distance test every few ticks, raycasts only for NPCs that pass it.
+
+*Current build (audit Sep 30, 2026):*
+- **[Partial] Performance principles**: Vision checks refresh every 0.12 s, not every frame. Gap: Every enemy runs its own Update.
+
+## 4. AI simulation levels
+- **L0 Dormant**: position, objective, high-level state only. No perception.
+- **L1 Background**: movement, schedule, major world events at low frequency.
+- **L2 Active**: perception, tactical decisions, navigation, combat prep.
+- **L3 Full Combat**: full perception, attack selection, hit reactions, coordination, memory, detailed animation.
+Distances and tick rates are Studio values.
+
+*Current build (audit Sep 30, 2026):*
+- **[Missing] AI simulation levels L0-L3**: Only render/animator LOD exists (HumanoidPerformanceController). Gap: No Dormant/Background/Active/Full Combat simulation tiers.
+
+## 5. Modular AI Brain
+Brain = Archetype + Personality + Tactical Traits + Perception + Combat + Movement + Ability + Objective + Faction/Relationship + Memory profiles.
+
+**Decision layer: utility scoring** *(fill-in)*. Every possible action gets a score:
+`archetype base x personality modifiers x tactical traits x combat memory x Combat Director permission`, plus small randomness. Highest score wins. Personality becomes tunable numbers instead of new code.
+
+**Invector decision** *(fill-in)*: the audit must decide early whether the new brain wraps Invector's AI/controllers or replaces them, since this drives animation and hit-reaction work. **Audit result:** the code already wraps Invector for the player, enemies and companions (motor, melee, shooter, ragdoll, hit reactions via project bridges). Recommended: wrap Invector as the Body and replace only the decision layer (awaiting Anthony's confirmation).
+
+*Current build (audit Sep 30, 2026):*
+- **[Conflicts] Unified utility-scoring brain**: There are three separate hard-coded brains. Gap: The plan wants one utility-scored brain shared by enemies, creatures and companions.
+- **[Partial] Invector decision (wrap vs replace)**: In practice the code already wraps Invector: project bridges drive Invector's motor, melee, shooter, ragdoll and damage for the player, enemies and companions. Gap: The decision still needs to be confirmed and written down.
+
+## 6. Archetypes (behaviour templates, not classes)
+Code note: the code's `EnemyArchetype` enum is a rig type (LegacyCreature / HumanoidInvector), not a behaviour archetype. Current behaviour presets: Custom, AggressiveHunter, Guard, PatrolInvestigator, Ambush.
+- Melee: Rusher, Duelist, Berserker, Flanker, Ambusher
+- Ranged: Shooter, Kiter, Sniper, Suppressor
+- Defensive: Tank, Guardian, Shield, Bodyguard
+- Support: Medic, Buffer, Spotter, Engineer, Summoner/Controller
+- Group: Swarmer, Pack Hunter, Tactical Squad
+- Special: Stalker, Assassin, Disruptor, Desperation attacker, Boss
+
+*Current build (audit Sep 30, 2026):*
+- **[Partial] Archetypes**: EnemyBehaviorPreset offers Custom, AggressiveHunter, Guard, PatrolInvestigator and Ambush. Gap: Only 4 presets exist, against 24 archetypes in the plan.
+
+## 7. Personality
+Aggressive, Cautious, Cowardly, Brave, Curious, Territorial, Opportunistic, Protective, Reckless, Calculating, Vengeful, Defensive, Predatory. Traits adjust weights, never fully override. Example: Aggressive Rusher attack +30%; Cautious Rusher attack +5%, retreat +20%, flank +15%.
+
+*Current build (audit Sep 30, 2026):*
+- **[Missing] Personality**: None. Gap: No personality weights anywhere (0 code hits).
+
+## 8. Tactical traits
+Flank, retreat, take cover, protect ally/objective, focus wounded, target healer/companion/player, disarm, destroy equipment, call reinforcements, investigate noise, search last-known position, coordinate, surround, keep distance, push, hold, escape, loot, revive. All configurable in Studio.
+
+*Current build (audit Sep 30, 2026):*
+- **[Partial] Tactical traits**: Behaviours exist for investigating noise, searching the last known position, returning home (leash), Defensive state and combat positioning. Gap: No flank, cover, protect, focus-wounded, call-reinforcements or surround traits, and nothing is configurable per trait.
+
+## 9. Perception, awareness and noise (merged)
+- **Vision**: range, horizontal/vertical FOV, obstruction, darkness, movement, crouch and camouflage modifiers.
+- **Hearing**: range, threshold, direction accuracy, decay.
+- **Noise events**: position, intensity, type, source, timestamp. Walking, sprinting, gunfire, explosions, heavy melee, vehicles, destruction, screams, alarms, party size.
+- **Future sensors**: thermal, electrical, motion, radio, chemical, biological, psychic.
+- **Awareness meter** *(fill-in)*: Unaware, Suspicious, Alert, Combat, shown as a small icon over the enemy. Knife backstab and stealth bonuses only apply while Unaware.
+- **Last known position**: confirmed target, last known position, confidence, direction, movement estimate. On losing the target: investigate, search, call allies, split up, guard exits, return to objective, or retreat.
+
+*Current build (audit Sep 30, 2026):*
+- **[Partial] Vision and hearing**: Vision is 16 m with a 110° FOV and raycast obstruction. Gap: No vertical FOV, darkness, crouch or camouflage modifiers.
+- **[Partial] Noise events**: EnemyNoiseEvents has two kinds, Generic and CombatImpact. Gap: No typed intensity table (walk, sprint, explosion, vehicle, party size, and so on).
+- **[Missing] Awareness meter + icon**: None. Gap: No Unaware/Suspicious/Alert/Combat meter and no icon.
+- **[Partial] Last known position**: Enemies store the last known position and investigate or search it. Gap: No confidence, direction or movement estimate.
+
+## 10. Combat Director
+Manages the encounter, not individual swings: intensity, attack slots, coordination, overcrowding, flank opportunities, reinforcements, retreat, escalation, encounter objectives.
+
+**Attack tokens** (Studio values): 1v1 = 1 attacker; 2-4 enemies = 1-2; 5-8 = 2-3; large fights scale dynamically. Others circle, reposition, flank, guard, recover, prepare or protect. Companions share the player side's token pool.
+
+**Group morale** *(fill-in)*: shared per group. Leader death, half the group down, or a gruesome kill nearby lowers it. Low morale triggers retreat, flight or surrender, weighted by personality.
+
+*Current build (audit Sep 30, 2026):*
+- **[Missing] Combat Director + attack tokens**: None for enemies. Gap: No encounter director, no attack tokens, and no shared token pool.
+- **[Missing] Group morale**: None.
+
+## 11. Combat memory (lightweight weights, not ML)
+Tracks: player blocks often, favours melee/ranged, uses an element, attacks from behind, targets limbs, kills leaders first, uses companions aggressively, uses hazards. Example: frequent backstabs raise rear defence; frequent blocking brings guard-break attacks. Temporary per encounter unless designed to persist.
+
+*Current build (audit Sep 30, 2026):*
+- **[Missing] Combat memory**: None.
+
+## 12. States (merged)
+**Behaviour states**: Idle, Patrol, Investigate, Alert, Search, Approach, Engage, Flank, Defend, Retreat, Recover, Objective, Flee, Dead.
+**Condition states** (separate layer): Healthy, Injured, Severely injured, Critical, Stunned, Disabled, Dismembered, Dying.
+Thresholds are Studio values. States are shared, never enemy-specific.
+
+**Desperation at Critical**: retreat, flee, berserk, call allies, special attack, protect objective, escape, take cover, turtle, chosen by personality.
+
+*Current build (audit Sep 30, 2026):*
+- **[Partial] Behaviour states**: Enemies use Idle, Wander, Patrol, Investigate, ReturnHome, Chase, Defensive, Attack and Search. Gap: Missing states: Alert, Flank, Retreat, Recover, Objective and Flee.
+- **[Missing] Condition states + desperation**: Health only. Gap: No Injured/Critical/Stunned/Disabled layer and no desperation behaviour.
+
+## 13. Objectives
+Guard, protect, retrieve, transport, repair, destroy equipment, hunt, capture, investigate, loot, gather, rescue, escape, patrol, faction activity. Encounters exist without the player.
+
+*Current build (audit Sep 30, 2026):*
+- **[Partial] Objectives**: Guard and patrol presets plus SurfacePatrolRoute. Gap: No objective system (protect, retrieve, repair, hunt, loot, and so on).
+
+## 14. Core combat rules
+**Weapon interface**: damage, speed, reach, resource cost, light/heavy/combo, block, parry, finisher set, status effects, element, dismemberment profile.
+
+**Poise and stamina** *(fill-in)*: hits drain poise; at zero the target staggers. Bosses have more poise instead of special rules. Blocking costs stamina; heavy/guard-break attacks go through blocks; unblockable attacks flash red.
+
+**Parry and dodge** *(fill-in)*: parry window about 0.2 s; perfect parry deals heavy poise damage and opens a counter. The existing dodge roll (gamepad B press / keyboard Q, Invector roll, costs stamina) and dash (B double-tap + hold / Left Alt; 4.5 m, 0.55 s cooldown, 22 stamina, `DM_ClimbDashProfile`) get invulnerability frames (about 0.25 s); neither has them yet.
+
+**Damage Profile**: base damage, type, element, crit modifier, status, duration, area, dismemberment behaviour, environmental interaction, resource cost. Current contract is `IDamageable.TakeDamage(float, GameObject, bool isCritical)`; add the profile beside it with an adapter so existing callers keep working.
+
+**Status framework** *(fill-in)*: each status has max stacks, duration, and an immunity window after it ends; bosses use a separate multiplier.
+
+**Resistances** *(fill-in)*: per-element resistance on each body profile (e.g. androids weak to Energy and resist Cryo, creatures weak to Plasma, armoured humans weak to Laser at weak points).
+
+**Feedback**: hitstop (2-4 frames light, 6 heavy, more on crit) *(fill-in)*, hit colours (Plasma orange, Cryo cyan, Energy violet, Laser red, Ion white-blue) *(fill-in)*, audio, VFX, UI, light camera feedback. No screen clutter.
+
+*Current build (audit Sep 30, 2026):*
+- **[Partial] Weapon interface / data**: ItemData holds melee damage, range, cooldown, stamina cost, knockback, crit chance 0.1 and multiplier x2, invectorWeaponId and grip. Gap: No light/heavy/combo definitions, parry, finisher set, dismemberment profile, or element separate from ammo.
+- **[Partial] Melee light / heavy / combos / block**: Built through Invector: vShooterMeleeInput drives vMeleeManager attacks, and combos come from the Invector animator. Gap: Combo strings aren't data-driven.
+- **[Built] Ranged aim / fire**: ADS on LT/RMB, fire on RT/LMB, hip-fire spread, custom recoil (Invector recoil suppressed), burst fire, projectiles, hitscan beams and grenades. Gap: Nothing blocking.
+- **[Built] Critical hits**: Crits are a random roll per weapon (ItemData.RollCriticalHit, 10% for x2). Gap: No element crit effects and no consecutive-crit tracking (the Sick Stick needs it).
+- **[Built] Stamina costs**: Invector stamina, with stamina costs for melee, roll and dash. Gap: Block stamina is left to Invector defaults.
+- **[Missing] Poise**: None. Gap: No poise meter.
+- **[Partial] Stagger**: Ranged hits and crits trigger a ragdoll hit-stagger (0.28 s by default). Gap: Stagger isn't driven by poise.
+- **[Missing] Parry**: None. Gap: No parry window and no counter.
+- **[Partial] Dodge roll + dash**: Dodge roll (gamepad B press / keyboard Q) uses Invector Roll with a stamina cost. Gap: Neither has invulnerability frames.
+- **[Conflicts] Damage Profile / damage events**: IDamageable.TakeDamage(float, GameObject, bool isCritical) is the only damage contract. Gap: The call carries no type, element, poise, status or dismemberment data, so it conflicts with the plan's Damage Profile.
+- **[Partial] Status framework**: Statuses: Burning, Frozen, Shocked, Corroded, Stabilized. Gap: No max stacks, no immunity window, no boss multiplier.
+- **[Missing] Resistances**: None on enemies. Gap: No per-element resistance by body profile.
+- **[Partial] Feedback (hitstop, colours, VFX, audio, camera, rumble)**: Impact VFX and audio per ammo (DMAmmoFxProfile x9, DMAmmoFxCatalog), floating damage numbers, CameraShakeService and laser burn marks. Gap: No hitstop.
+
+## 15. Melee weapons
+- **Knife**: fastest, short reach, backstab bonus, high crit vs unaware, quick execution, later throw/recall.
+- **Sword**: balanced, combos, cleave, parry, dismemberment; the only type that can cut bodies in half.
+- **Baton**: high stagger and poise damage, knockdown, interrupt, disarm, shield break. No cutting.
+- **Sick Stick**: the signature control weapon (see section 18).
+
+Ranged weapons use the same interface and damage profiles.
+
+*Current build (audit Sep 30, 2026):*
+- **[Partial] Melee weapon set**: 8 melee items: swords, axes, a spear and a two-hander. Gap: No knife, baton or Sick Stick.
+
+## 16. Elements
+- **Plasma** (plasma fuel): standard damage; crits burn with small area damage; can ignite and overheat machinery.
+- **Cryo** (plasma fuel): damage; crits chill; chill stacks into a brief freeze; freeze water/surfaces, slow machinery, temporary paths.
+- **Energy** (power): higher base than Plasma, chain arcs, area burst on crit, disrupts androids and electronics, conducts through water and metal.
+- **Laser** (power): high damage and limb damage, cauterised glowing cuts with no blood, precision weak-point damage, no area damage; cuts cables, doors, weapons.
+- **Ion** (power): very high damage, dismemberment and disintegration with blood splatter, clean cuts, no burning; leaves ash or a scorched skeleton *(fill-in)*. Costs 33% of power per major hit (Studio value, reduced by upgrades).
+- **Out of resource** *(fill-in)*: any powered weapon does a weak unpowered strike.
+
+**Code names and current build**: elements live on ammo (`AmmoType`), not on weapons. **Cryo is `Ice` and Energy is `Electricity` in code**; keep enum values and map display names. Gunpowder, Fire, Explosive and ResonanceStabilizer are damage types, not elements. **Locked Oct 3, 2026:** Plasma default status = **Burning** (Corroded → later acid/bio). Fire → Burning, Ice → Frozen, Electricity → Shocked, Laser/Ion → none. Resources today are ammo items with reload; plasma-fuel / power-cell mapping is design-locked, implementation follows C16.
+
+**Combinations** (framework, add more as data): Cryo then Energy (frozen targets take about 1.5x energy and become chain points, the first combo to build); Plasma then Cryo (thermal shock weakens armour); Laser then Ion (exposed internals destroyed); Energy then Water (spreads through water).
+
+*Current build (audit Sep 30, 2026):*
+- **[Conflicts] Elements**: AmmoType has Gunpowder, Plasma, Ice, Electricity, ResonanceStabilizer, Laser, Ion, Fire and Explosive. Gap: Names differ: Cryo = code Ice, Energy = code Electricity.
+- **[Conflicts] Element resources (plasma fuel / power, Ion 33%)**: Weapons use ammo items (16 ammo assets) with reload. Gap: No plasma-fuel or power resource, no Ion 33% cost and no unpowered strike.
+- **[Missing] Element combinations**: None.
+
+## 17. Momentum meter, finishers and special moves (NEW)
+**Momentum builds from damage** *(fill-in name)*:
+- Fills from damage dealt, crits, parries, perfect dodges, and combo length.
+- Drains slowly out of combat; taking heavy damage knocks some off.
+- Shown as a segmented bar under the health/power HUD (3 segments *(fill-in)*).
+
+**Spending it**:
+- **1 segment: Finisher.** Available on any enemy below the finisher threshold (20%, Studio value), or on a staggered, stunned, frozen or puking enemy. Prompt appears over the target.
+- **2 segments: Special move.** A weapon/element signature strike (see skill tree), e.g. Plasma fire ring, Cryo frost nova, Energy chain lightning, Laser precision thrust, Ion overcharge.
+- **3 segments: Overdrive** *(fill-in)*. A timed state (about 8-12 s): faster attacks, stronger element effects, no resource cost, and finishers cost nothing. Ends with a short cooldown so it can't be chained.
+
+**Unique finisher signal** (must never be confused with any other cue):
+- **Visual**: the target gets a distinct Genesis-only mark, a slow-rotating gold/white fractured "dark matter" sigil over the chest with a thin rim glow on the body outline. No other effect in the game uses that shape or colour.
+- **Audio**: a short signature sting (low resonant hum plus a crystalline ping) played once when the window opens, and a soft heartbeat-style pulse while it stays open.
+- **Enemy tell**: the enemy plays a unique vulnerable pose (staggered knee-buckle, head down) so it reads without UI.
+- **HUD**: the Momentum segment that will be spent flashes in the same gold, and the button prompt appears inside the sigil.
+- **Controller**: a distinct double-pulse rumble.
+- **Kept separate** from the Sick Stick ready icon (green, HUD corner), crit flashes, element hit colours, and the red unblockable-attack flash.
+- Colour, shape, sound and rumble are Studio values, with a colour-blind-safe option.
+
+**Finisher selection**: each finisher is a data entry (weapon type, element, enemy body type, player position front/back/above/ground, required state). Best match wins, random among ties. Element decides the ending: Plasma burns, Cryo shatters, Energy fries, Laser takes limbs, Ion disintegrates, Baton knockdown/control, Sword + Laser from behind = rear execution. Synced player/enemy animations aligned to an anchor, brief invulnerability, optional close camera (toggle in settings). One finisher at a time; nearby enemies take a morale hit. Environmental finishers (hazards, walls, ledges) later.
+
+*Current build (audit Sep 30, 2026):*
+- **[Missing] Momentum meter**: None (0 code hits).
+- **[Missing] Finishers + unique signal**: One finisher-like clip exists (Human_SwordOneHand_Finisher1.fbx). Gap: No finisher data, sigil, sting or rumble.
+- **[Missing] Special moves + Overdrive**: None.
+
+## 18. Sick Stick: the signature move (NEW)
+The laugh-out-loud signature of Genesis combat.
+
+**Trigger**: available at any time once conditions are met, with any weapon equipped *(fill-in: a quick swap-strike with the holstered stick)*. Conditions (Studio list, any one works):
+- 2 crits in a row
+- a specific combo string (e.g. light, light, heavy) *(fill-in)*
+- a perfect parry *(fill-in)*
+- a target already staggered *(fill-in)*
+When ready, a small green icon pulses on the HUD and the next Sick Stick input fires it. Using the Sick Stick as your main weapon makes the conditions easier (e.g. 1 crit) *(fill-in)*.
+
+**Effect**:
+- Normal enemy: bends over, pukes, stunned 3-6 s (skill rank + stick upgrade).
+- Large enemy: stagger. Boss: brief stagger only.
+- Puking enemies are finisher-eligible; finishing a puking enemy gives bonus Momentum *(fill-in)*.
+- Anti-chain: 8 s Sick Stick resistance on that target (general status immunity system).
+- Nearby enemies may gag/hesitate briefly (upgrade) *(fill-in)*.
+- Players are valid targets for future PvP/co-op mishaps.
+
+**Upgrades**: stun length, easier trigger conditions, splash gag radius, cooldown, and cosmetic puke variants (colours per element) *(fill-in)*.
+
+*Current build (audit Sep 30, 2026):*
+- **[Missing] Sick Stick**: None. Gap: No weapon, trigger, stun or immunity.
+
+## 19. Player skill tree (NEW)
+Four branches, about 12-15 nodes each, top tier needs points in that branch, every node shows its numbers.
+**Current build**: a live hex tree with 5 categories (Melee 6, Pistols 6, Rifles 12, Survival 9, Player 18 = 51 nodes), 5 ranks per node, branch-depth costs, saved allocations. Nodes are stat modifiers only. Proposed mapping: Blade = Melee; Marksman = Pistols + Rifles; Survival = Survival + Player (movement/defence); Control = new. Start level 5 / 25 points are testing values.
+1. **Blade (melee)**: longer combos, lunge gap-closer, spin cleave, knife throw/recall, bigger parry window, counter after parry, finisher unlocks.
+2. **Control (melee utility)**: baton knockdown/disarm, Sick Stick stun length and easier triggers, splash gag, poise damage, guard break, shoulder charge.
+3. **Marksman (ranged)**: aim stability, reload speed, weak-point bonus, charged shot, quick-draw sidearm, piercing rounds, melee/ranged swap bonus.
+4. **Survival (defence/mobility)**: dodge i-frames, cheaper dash, slow-motion after perfect dodge, stamina/power regen, block damage reduction.
+
+**Momentum nodes** spread across branches: faster build, longer Overdrive, cheaper finishers.
+**Elemental mastery** side panel: 3 nodes per element (stronger effect, cheaper cost, signature special move), unlocked by owning that element.
+**Points**: 1 per level from the existing level-up system, bonus points from rare blueprints and bosses. Free respec at a Terminal/Build Hub (maybe small resource cost). Skills change moves; weapon upgrades stay separate as gear.
+
+**Animations**: the audit lists and tags Anthony's animation library (light, heavy, combo, finisher, dodge, hit react, idle, special, puke, etc.). Skill nodes point at clips through the same animation profiles the enemies use, so clips can be swapped or edited without code.
+
+*Current build (audit Sep 30, 2026):*
+- **[Conflicts] Skill tree**: A hex skill tree is live with 5 categories: Melee 6, Pistols 6, Rifles 12, Survival 9, Player 18 (51 nodes). Gap: The plan has 4 branches (Blade, Control, Marksman, Survival).
+- **[Partial] Animation library + profiles**: About 11,156 .anim/.fbx files. Gap: The clips aren't tagged and there are no animation profiles.
+
+## 20. Weapon upgrades
+Blueprint/recipe framework. Universal Mk I to Mk V: Damage, Attack Speed, Resource Efficiency.
+Element-specific: Plasma burn duration/damage/crit/area; Cryo chill duration, freeze threshold, freeze duration; Energy arc count/range, burst radius; Laser limb damage, dismember chance, precision; Ion power efficiency (33% down toward 25%), disintegration chance, damage. Costs stay placeholders.
+
+*Current build (audit Sep 30, 2026):*
+- **[Missing] Weapon upgrades Mk I-V**: A crafting, recipe and blueprint pipeline exists (CraftingManager, RecipeCreator, BlueprintCraftingManager) that upgrades could reuse. Gap: No weapon upgrade tracks.
+
+## 21. Body components and dismemberment
+Functional parts per body profile: head, torso/core, each arm, each leg, plus special parts (android sensors, shield arm, weapon arm). Losing a weapon arm switches to sidearm or melee; legs make it crawl or stationary; sensors cut accuracy; shield loss changes defence; core destroyed kills. Headshots lethal unless helmeted *(fill-in)*.
+
+Dismemberment phase 1: pre-split meshes with stump caps, bone/part swap, detached part with physics, element VFX. No real-time slicing. One enemy first proving head, arm, leg and torso split. (Biggest art cost; stays on one enemy for a while.)
+
+Visual damage via material properties: armour damage, burn marks, frost, electrical scorch, cauterised cuts, missing limbs, broken gear.
+
+*Current build (audit Sep 30, 2026):*
+- **[Missing] Body components + dismemberment**: Ragdoll death and a disintegration dissolve on death exist. Gap: No functional body parts and no dismemberment.
+- **[Partial] Visual damage**: Laser burn marks and the death dissolve. Gap: No frost, scorch, armour damage or missing-limb visuals.
+
+## 22. Environmental combat
+Explosives, electrical gear, flammables, toxic areas, water, ice, steam, lava, doors, machinery, turrets, power systems, structural hazards. Fights can be won through the environment.
+
+*Current build (audit Sep 30, 2026):*
+- **[Partial] Environmental combat**: Grenades, explosive ammo, AOE bubbles, splash damage and exposure hazard zones. Gap: No explosive barrels, electrical or water conduction, flammables or interactive machinery.
+
+## 23. Factions and emergent encounters
+Relationships: Friendly, Allied, Neutral, Suspicious, Hostile, Fearful, Territorial. Factions fight each other; the player can join, avoid, exploit, attack both, wait, or investigate.
+
+**Encounter definitions** from location, faction, enemy pool, objective, leader, support units, wildlife, weather, time, resources, world events, reputation, seed.
+**Encounter types**: Ambush, Hunt, Defence, Crossfire, Faction Battle, Predator, Retreat, Escalation, Investigation, Empty (evidence only). Not every POI is a fight.
+**Escalation** depends on noise, location, faction activity, world state, chance and nearby entities; never mandatory.
+**Survivor memory** *(fill-in)*: escaped enemies go into a small "known survivors" save list (faction, event note, scar) and can reappear.
+
+*Current build (audit Sep 30, 2026):*
+- **[Missing] Factions + relationships**: SurfaceThreatKind (Any, Alien, Lifeform, Android) is a spawn filter only. Gap: No factions (0 code hits).
+- **[Partial] Encounters**: SurfaceEncounterZone, a weighted SurfaceEncounterTable and SurfacePatrolRoute. Gap: None of the plan's encounter types (Ambush, Hunt, Crossfire and so on).
+- **[Missing] Survivor memory**: None.
+
+## 24. Companions: 1 to 3, same brain (NEW)
+- Companions use the same brain as enemies, set friendly, with a role: Tactician, Infiltrator, Medic, Tank, Engineer, Marksman. Personality, perception, memory and relationships come for free.
+- **Current build**: companions run their own controllers (`CompanionFollowController`, `CompanionCombatController`, `CompanionCombatCoordinator` turn scheduling) and use 9 pioneer classes. Proposed role mapping: Tactician = CombatTactician, Infiltrator = InfiltratorScout, Medic = MedTech, Engineer = ArchitectEngineer / SalvageEngineer; Tank and Marksman are new roles. Existing group buffs: radiation resistance, expedition efficiency, combat synergy, move speed, debuff resistance.
+- Share the player side's attack tokens.
+- **Party buffs** by role *(fill-in examples)*: Tactician +10% party damage and weak-point marking; Medic health regen and revives; Tank +15% poise and draws attention; Infiltrator +20% backstab/crit and quieter movement; Engineer +15% power/plasma regen and a turret; Marksman long-range highlights and weak-point damage. Same buff doesn't stack twice.
+- **Party debuffs**: each companion adds noise; clashing personalities (e.g. Reckless + Cautious) cost a little effectiveness until bond rises; companions draw some shared ammo/plasma.
+- **Commands** on a radial / D-Pad: follow, hold, attack my target, fall back, use ability. One unique signature action each (later). Current build: keyboard H = hold, G = follow only; D-Pad up (Journal) and right (Ammo cycle) are already bound.
+- **Downed, not dead**: revivable by player or Medic; dies only if left down too long; ties into the existing death workflow. Current build: a fallen companion is sent to the Science Lab as injured (`CompanionInjuryHandler`).
+- **Bond level**: rises by fighting together; unlocks stronger buffs and combo moves (e.g. Tank staggers, player finishes). Companions can build Momentum toward team finishers *(fill-in, later)*.
+
+*Current build (audit Sep 30, 2026):*
+- **[Built] Companion trio (1-3)**: Up to 3 expedition companions (expeditionTrioIds in the save), managed by PioneerRosterManager and CompanionRosterBridge.
+- **[Conflicts] Companions use the same brain**: Companions have their own brain: CompanionFollowController, CompanionCombatController, CompanionSenseController, CompanionThreatSensor and CompanionCombatCoordinator. Gap: The plan wants companions on the enemy brain, set friendly.
+- **[Conflicts] Roles + party buffs**: 9 SkilledPioneerClass values: ArchitectEngineer, ScienceSpecialist, CombatTactician, InfiltratorScout, IoHybrid, MedTech, LogisticsOfficer, SalvageEngineer, CommunicationsOfficer. Gap: The plan has 6 roles (Tactician, Infiltrator, Medic, Tank, Engineer, Marksman) with different buffs.
+- **[Missing] Party debuffs**: None.
+- **[Partial] Companion commands**: Keyboard H holds and G follows (hard-coded keys, not in the action map). Gap: No radial or D-Pad, and no attack-my-target, fall-back or use-ability commands.
+- **[Missing] Downed / revive**: A fallen companion is sent to the Science Lab as injured (CompanionInjuryHandler). Gap: No in-field downed state and no revive.
+- **[Missing] Bond**: None.
+
+## 25. Multiplayer DLC readiness (up to 3 party members)
+- A party is a list of slots; each slot holds a companion or a human player.
+- All combat goes through data profiles and events, never direct calls, so it can be networked later.
+- Sick Stick, stuns and finishers already work on players.
+- No networking now, only the slot-based party design.
+
+*Current build (audit Sep 30, 2026):*
+- **[Missing] Multiplayer readiness (party slots, events)**: A few static events only. Gap: No party-slot abstraction.
+
+## 26. Genesis Studio
+Grows every phase. Profiles for: AI (archetype, personality, traits, perception, aggro, leash, memory), combat (damage, speed, reach, poise, attack priority, tokens), elements (status, duration, cost, crit effect, upgrade scaling, combos), Momentum/finishers/specials/Overdrive, Sick Stick triggers, skill tree, body (components, weak points, dismemberment, functional damage), companions (roles, buffs, debuffs, bond), encounters (composition, objectives, reinforcements, escalation, environment), difficulty *(fill-in: scales tokens, detection speed, reaction time and poise damage rather than health)*.
+
+*Current build (audit Sep 30, 2026):*
+- **[Partial] Genesis Studio combat knobs**: Combat group: Ammo FX and Hit Catalog. Gap: No AI, combat-core, element, Momentum, finisher, Sick Stick, skill-data, body, encounter or difficulty profiles.
+
+## 27. Combat sandbox (built in Phase 2)
+Start from the existing `TrainingDummy` (+ DummyCombatUI).
+Spawn any enemy, weapon, element, archetype, personality, status, body configuration, companion, encounter. Debug: god mode, infinite stamina/power/plasma/Momentum, force stagger/dismember/status/Sick Stick, spawn/reset encounter. Visualise vision cones, hearing radius, aggro, leash, target, last known position, token, state, objective, personality modifiers, utility scores.
+
+*Current build (audit Sep 30, 2026):*
+- **[Partial] Combat sandbox**: A TrainingDummy exists. Gap: No sandbox scene, spawner or debug toggles.
+
+## 28. Debugging
+Readable reports, e.g. "AI Brain 042, State: Search, Target: Player, Last Known: X/Y/Z, Reason: lost behind obstruction, Next: Investigate, Confidence: 61%". Hold a dev key and look at an enemy to see it *(fill-in)*. Stripped from release builds.
+
+*Current build (audit Sep 30, 2026):*
+- **[Missing] AI debug readout**: None.
+
+## 29. Save/load
+Save what persists: enemy state where needed, objectives, faction state, world encounter state, persistent damage, survivor list, skill tree, bond levels, companion roster. Temporary combat memory and Momentum don't persist. Bump the save version and keep current saves loading.
+
+*Current build (audit Sep 30, 2026):*
+- **[Partial] Save/load**: Save v23 stores skills, roster, trio and injured companions. Gap: No enemy, faction, encounter, survivor or bond state.
+
+## 30. Testing
+Each phase: hit detection, damage, stagger, death, finishers, dismemberment, target acquisition/loss, search, flank, retreat, objectives. Performance at 1, 10, 25, 50 enemies and 100 simulated entities; measure CPU, GPU, GC, frame time, AI tick cost.
+
+*Current build (audit Sep 30, 2026):*
+- **[Missing] Combat testing**: EditMode tests exist for Directors, GameState, Validation and WorldState only. Gap: No combat tests and no performance harness.
+
+## 31. Implementation order
+1. **Audit** **[In progress (this audit)]**: architecture and dependency maps; enemy, weapon, damage and animation library inventory (tagged); reuse vs replace candidates; Invector decision; migration table.
+2. **Core combat** **[Partial]**: damage profiles, weapon and element interfaces, hit detection, poise/stamina, status framework with immunity, health/damage events, **combat sandbox scene**.
+3. **Unified brain** **[Missing]**: utility scoring, archetype, personality, traits, perception/awareness, states. Migrate one enemy.
+4. **Combat Director** **[Missing]**: tokens, coordination, flanking, intensity, morale, reinforcement hooks. Test with 5 identical enemies.
+5. **Plasma sword template** **[Partial]**: attack, damage, hit react, crit, burn, resource use, upgrade. Start Blade and Survival skill branches.
+6. **Momentum meter and finishers** **[Missing]**: build-up, finisher selection, first finishers on the migrated enemy.
+7. **Sick Stick signature** **[Missing]**: trigger conditions, puke/stun, boss stagger, immunity, upgrades, VFX/audio.
+8. **Special moves and Overdrive** **[Missing]**.
+9. **Remaining elements** **[Conflicts]**: Cryo, Energy, Laser, Ion, then the Cryo-to-Energy combo. Elemental mastery panel.
+10. **Body damage and dismemberment** **[Missing]** on one enemy, element-specific finishers.
+11. **Companions** **[Partial]**: roles, buffs/debuffs, commands, downed/revive, bond. Slot-based party.
+12. **Remaining skill branches** **[Partial]** (Control, Marksman) and ranged polish.
+13. **Environment and noise escalation** **[Partial]**.
+14. **Combat memory** **[Missing]**.
+15. **Encounters** **[Partial]**: 15a authored definitions with random picks, 15b faction battles, 15c noise escalation chains, 15d world events, survivor memory.
+16. **Studio completion and performance pass** **[Partial]**.
+
+## 32. Success criteria
+- New enemy mostly created through Studio profiles.
+- Same model, different behaviour.
+- Enemies don't all attack at once; they flank, retreat, search, defend and coordinate, and react to player habits.
+- Body components matter; elements are distinct and interact with the environment.
+- Momentum, finishers, specials and the Sick Stick feel rewarding and readable.
+- Skill tree creates distinct builds.
+- Companions use the same brain and change fights through buffs, debuffs and commands.
+- Party design is ready for 3-player multiplayer.
+- Encounters emerge rather than being scripted; performance holds in large fights.
+
+## 33. Final target
+Three scavengers guard a ruin. One retreats; the player follows. It calls its faction. Gunfire draws wildlife, which attacks both sides. The player freezes a creature, then chains Energy through it. Two crits in a row: the Sick Stick flashes ready, and the scavenger leader is puking in the dirt. Momentum is full; Overdrive. A Laser strike takes the leader's weapon arm and he switches to melee, then falls to a finisher. Morale breaks, the rest retreat, one escapes, and later that survivor's faction shows up somewhere else.
+
+Combat that creates stories, not damage numbers.

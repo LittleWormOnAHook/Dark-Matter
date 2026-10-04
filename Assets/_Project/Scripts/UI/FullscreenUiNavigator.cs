@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Project.Core;
 using Project.Player;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -211,7 +212,7 @@ namespace Project.UI
         {
             OnPauseGameplayChanged?.Invoke(paused);
 
-            PlayerController player = FindAnyObjectByType<PlayerController>();
+            PlayerController player = PlayerLocator.FindPlayerController();
             if (player != null)
                 player.SetJournalOpen(paused);
 

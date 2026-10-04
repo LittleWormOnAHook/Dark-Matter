@@ -678,7 +678,7 @@ namespace Project.Quests
                     return onPlayer;
             }
 
-            return FindAnyObjectByType<InventorySystem>();
+            return PlayerLocator.FindLiveInventory();
         }
 
         private void UnbindInventorySystem()

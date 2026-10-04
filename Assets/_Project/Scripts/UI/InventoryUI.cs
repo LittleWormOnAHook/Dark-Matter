@@ -77,13 +77,13 @@ namespace Project.UI
                 return;
 
             DmUiRuntimeRefs.Register(this);
-            inventorySystem = FindAnyObjectByType<InventorySystem>();
+            inventorySystem = PlayerLocator.FindLiveInventory();
             equipmentController = inventorySystem != null
                 ? inventorySystem.GetComponent<EquipmentController>()
-                : FindAnyObjectByType<EquipmentController>();
+                : PlayerLocator.FindLiveEquipment();
             ammoState = inventorySystem != null
                 ? inventorySystem.GetComponent<WeaponAmmoState>()
-                : FindAnyObjectByType<WeaponAmmoState>();
+                : PlayerLocator.FindOnLivePlayer<WeaponAmmoState>();
 
             if (inventorySystem != null)
             {
@@ -395,7 +395,7 @@ namespace Project.UI
             bool panelWasOpen = inventoryPanel != null && inventoryPanel.activeSelf;
             RestoreInventoryPanel();
 
-            PlayerController pc = FindAnyObjectByType<PlayerController>();
+            PlayerController pc = PlayerLocator.FindPlayerController();
             if (pc != null && (panelWasOpen || pc.IsInventoryOpen))
                 pc.SetInventoryOpen(false);
 

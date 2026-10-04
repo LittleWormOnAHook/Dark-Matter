@@ -14,6 +14,15 @@ namespace Project.EditorTools.GenesisStudio
     /// </summary>
     public static class DMStudioStyles
     {
+        /// <summary>Minimum label column width for profile / PropertyField rows in studio windows.</summary>
+        public const float ProfileMinLabelWidth = 240f;
+
+        /// <summary>Maximum auto-measured label column width.</summary>
+        public const float ProfileMaxLabelWidth = 400f;
+
+        /// <summary>Fixed width for float/int boxes at the end of slider rows.</summary>
+        public const float ProfileFloatFieldWidth = 56f;
+
         private static GUIStyle headerPanel;
         private static GUIStyle sidebarPanel;
         private static GUIStyle contentPanel;
@@ -188,6 +197,18 @@ namespace Project.EditorTools.GenesisStudio
             }
 
             return next;
+        }
+
+        /// <summary>Category tab row with the same padding as content sections (Genesis Tools / studio windows).</summary>
+        public static void DrawHorizontalTabBar(System.Action drawTabs)
+        {
+            DrawSection(string.Empty, SidebarPanel, () =>
+            {
+                EditorGUILayout.BeginHorizontal();
+                drawTabs?.Invoke();
+                GUILayout.FlexibleSpace();
+                EditorGUILayout.EndHorizontal();
+            });
         }
 
         public static bool DrawSubTab(string label, bool selected)
@@ -444,27 +465,70 @@ namespace Project.EditorTools.GenesisStudio
                     widest = width;
             }
 
-            return Mathf.Clamp(widest + 24f, 200f, 420f);
+            return Mathf.Clamp(widest + 24f, ProfileMinLabelWidth, ProfileMaxLabelWidth);
+        }
+
+        public static float ResolveProfileLabelWidth(SerializedObject serialized, System.Func<string, bool> include = null)
+        {
+            if (serialized == null || serialized.targetObject == null)
+                return ProfileMinLabelWidth;
+
+            return MeasureInspectorLabelWidth(serialized, include);
+        }
+
+        /// <summary>Label + slider + float field column layout for studio profile inspectors.</summary>
+        public static System.IDisposable BeginProfileInspector(SerializedObject serialized, System.Func<string, bool> include = null)
+        {
+            return new ProfileInspectorLayoutScope(ResolveProfileLabelWidth(serialized, include), ProfileFloatFieldWidth);
+        }
+
+        public static System.IDisposable BeginProfileInspector(float labelWidth)
+        {
+            float width = Mathf.Clamp(labelWidth, ProfileMinLabelWidth, ProfileMaxLabelWidth);
+            return new ProfileInspectorLayoutScope(width, ProfileFloatFieldWidth);
+        }
+
+        public static void DrawPropertyFields(SerializedObject serialized, params string[] propertyPaths)
+        {
+            if (serialized == null || propertyPaths == null)
+                return;
+
+            for (int i = 0; i < propertyPaths.Length; i++)
+            {
+                SerializedProperty property = serialized.FindProperty(propertyPaths[i]);
+                if (property != null)
+                    EditorGUILayout.PropertyField(property, includeChildren: true);
+            }
         }
 
         public static System.IDisposable PushLabelWidth(float width)
         {
-            return new LabelWidthScope(width);
+            return new ProfileInspectorLayoutScope(
+                Mathf.Clamp(width, ProfileMinLabelWidth, ProfileMaxLabelWidth),
+                ProfileFloatFieldWidth);
         }
 
-        private sealed class LabelWidthScope : System.IDisposable
+        private sealed class ProfileInspectorLayoutScope : System.IDisposable
         {
-            private readonly float previous;
+            private readonly float previousLabelWidth;
+            private readonly float previousFieldWidth;
+            private readonly bool previousWideMode;
 
-            public LabelWidthScope(float width)
+            public ProfileInspectorLayoutScope(float labelWidth, float fieldWidth)
             {
-                previous = EditorGUIUtility.labelWidth;
-                EditorGUIUtility.labelWidth = width;
+                previousLabelWidth = EditorGUIUtility.labelWidth;
+                previousFieldWidth = EditorGUIUtility.fieldWidth;
+                previousWideMode = EditorGUIUtility.wideMode;
+                EditorGUIUtility.labelWidth = labelWidth;
+                EditorGUIUtility.fieldWidth = fieldWidth;
+                EditorGUIUtility.wideMode = false;
             }
 
             public void Dispose()
             {
-                EditorGUIUtility.labelWidth = previous;
+                EditorGUIUtility.labelWidth = previousLabelWidth;
+                EditorGUIUtility.fieldWidth = previousFieldWidth;
+                EditorGUIUtility.wideMode = previousWideMode;
             }
         }
 

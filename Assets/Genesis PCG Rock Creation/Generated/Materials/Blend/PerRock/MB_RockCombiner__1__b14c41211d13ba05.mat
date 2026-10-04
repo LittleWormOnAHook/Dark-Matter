@@ -352,12 +352,14 @@ Material:
     - _GRB_BottomUpBias: 0.5
     - _GRB_ContactAOKeep: 0.3
     - _GRB_ContactAOWidth: 2
-    - _GRB_FadeClip: 0
+    - _GRB_FadeClip: 1
     - _GRB_FadeEnable: 1
     - _GRB_FadeHeight: 0.1
     - _GRB_FadeNoiseScale: 6
     - _GRB_FadeNoiseStrength: 0.35
     - _GRB_FadeNormalUp: 0.5
+    - _GRB_FadeShadowLift: 1
+    - _GRB_FadeShadowLiftMargin: 0.1
     - _GRB_FadeSoftness: 0.6
     - _GRB_FadeTerrainColor: 1
     - _GRB_ForwardOnly: 0

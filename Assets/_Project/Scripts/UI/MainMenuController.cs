@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Project.Audio;
@@ -90,7 +90,7 @@ namespace Project.UI
                 GameSession.ResetSession();
 
             gameStartPopup = FindStartPopup();
-            playerInput = FindAnyObjectByType<PlayerInput>();
+            playerInput = PlayerLocator.FindLivePlayerInput();
             BuildMainMenu();
             UiSoundHelper.BindButtonsInHierarchy(transform);
 
@@ -923,7 +923,7 @@ namespace Project.UI
                 scaler.CaptureBaseMaxValues();
                 scaler.ApplyLevelScaling();
             }
-            EquipmentController equipment = UnityEngine.Object.FindAnyObjectByType<EquipmentController>(FindObjectsInactive.Include);
+            EquipmentController equipment = PlayerLocator.FindLiveEquipment();
             equipment?.HolsterWeapon();
 
             pauseOverlayActive = false;

@@ -241,24 +241,30 @@ namespace Project.EditorTools.GenesisStudio
 
         private static void DrawAllVisible(SerializedObject serialized)
         {
-            SerializedProperty iterator = serialized.GetIterator();
-            bool enterChildren = true;
-            while (iterator.NextVisible(enterChildren))
+            using (DMStudioStyles.BeginProfileInspector(serialized))
             {
-                enterChildren = false;
-                if (iterator.name == "m_Script")
-                    continue;
-                EditorGUILayout.PropertyField(iterator, true);
+                SerializedProperty iterator = serialized.GetIterator();
+                bool enterChildren = true;
+                while (iterator.NextVisible(enterChildren))
+                {
+                    enterChildren = false;
+                    if (iterator.name == "m_Script")
+                        continue;
+                    EditorGUILayout.PropertyField(iterator, true);
+                }
             }
         }
 
         private static void DrawFilteredProperties(SerializedObject serialized, params string[] names)
         {
-            for (int i = 0; i < names.Length; i++)
+            using (DMStudioStyles.BeginProfileInspector(serialized))
             {
-                SerializedProperty prop = serialized.FindProperty(names[i]);
-                if (prop != null)
-                    EditorGUILayout.PropertyField(prop, true);
+                for (int i = 0; i < names.Length; i++)
+                {
+                    SerializedProperty prop = serialized.FindProperty(names[i]);
+                    if (prop != null)
+                        EditorGUILayout.PropertyField(prop, true);
+                }
             }
         }
     }

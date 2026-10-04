@@ -1,22 +1,15 @@
 namespace Project.Core
 {
     /// <summary>
-    /// TEMP COMBAT FOCUS — flip <see cref="Enabled"/> to false to restore full world/expedition load.
+    /// TEMP COMBAT FOCUS — <see cref="Enabled"/> is false, so world / expedition load stays on.
     ///
-    /// Why: pause Gaia tile streaming, content scenes, and New Expedition tile-wait so Combat_Sandbox
-    /// iteration is faster. Does not edit Player_v7 / enemy prefabs.
-    ///
-    /// Restore checklist:
-    /// 1. Set <see cref="Enabled"/> to false (this file).
-    /// 2. Copy the combat-scene player instance back onto Dark Matter Genesis v1.6.5
-    ///    (do not treat this flag as a prefab change).
-    /// 3. Ctrl+R. New Expedition waits for Gaia tiles + content scenes again.
-    /// 4. Leave dirty PCG/shader files alone unless you explicitly want that work compiled.
+    /// Set <see cref="Enabled"/> true only to pause Gaia tile streaming, content scenes, and the
+    /// New Expedition tile-wait while iterating in Combat_Sandbox. Does not edit Player_v7 / enemy prefabs.
     /// </summary>
     public static class DmTempCombatFocus
     {
-        // TEMP COMBAT FOCUS — set false to restore terrain / expedition streaming.
-        public const bool Enabled = true;
+        // World / expedition streaming is on. Set true only while iterating in Combat_Sandbox.
+        public const bool Enabled = false;
 
         public static bool SkipWorldStreaming => Enabled;
 

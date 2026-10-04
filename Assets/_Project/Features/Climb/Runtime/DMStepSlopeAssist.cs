@@ -35,8 +35,6 @@ namespace Project.Features.Climb
                 return;
 
             GameObject player = PlayerLocator.FindPlayerObject();
-            if (player == null)
-                player = GameObject.Find("Player_v7") ?? GameObject.Find("Player_v7 Variant");
             if (player == null || player.GetComponent<DMStepSlopeAssist>() != null)
                 return;
             if (player.GetComponent<vThirdPersonMotor>() == null)

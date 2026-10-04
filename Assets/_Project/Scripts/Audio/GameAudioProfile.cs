@@ -40,6 +40,10 @@ namespace Project.Audio
         public AudioClip[] punchHitClips;
         public AudioClip[] punchCriticalHitClips;
         public AudioClip[] resourceHitClips;
+        [Tooltip("Short ding played three times (rising pitch) when poise breaks / stagger triggers.")]
+        public AudioClip[] poiseStaggerDingClips;
+        [Range(0.04f, 0.2f)] public float poiseStaggerDingSpacing = 0.075f;
+        [Range(0f, 1f)] public float poiseStaggerDingVolume = 0.92f;
         [Range(0f, 1f)] public float combatVolume = 1f;
 
         [Header("UI")]

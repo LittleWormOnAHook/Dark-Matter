@@ -69,7 +69,7 @@ namespace Project.UI
 
             ApplyPopupFonts();
 
-            playerInput = FindAnyObjectByType<PlayerInput>();
+            playerInput = PlayerLocator.FindLivePlayerInput();
             MainMenuController.EnsureExists();
 
             if (FindAnyObjectByType<MainMenuController>() == null && showOnStart)
@@ -355,7 +355,7 @@ namespace Project.UI
 
         private void RefreshGameplayCamera()
         {
-            PlayerController playerController = FindAnyObjectByType<PlayerController>();
+            PlayerController playerController = PlayerLocator.FindPlayerController();
             if (playerController != null)
                 playerController.RefreshCameraFollow();
         }
@@ -363,7 +363,7 @@ namespace Project.UI
         private void SetGameplayPaused(bool paused)
         {
             if (playerInput == null)
-                playerInput = FindAnyObjectByType<PlayerInput>();
+                playerInput = PlayerLocator.FindLivePlayerInput();
 
             Cursor.lockState = paused ? CursorLockMode.None : CursorLockMode.Locked;
             Cursor.visible = paused;
@@ -371,7 +371,7 @@ namespace Project.UI
             if (playerInput != null)
                 playerInput.enabled = !paused;
 
-            PlayerController playerController = FindAnyObjectByType<PlayerController>();
+            PlayerController playerController = PlayerLocator.FindPlayerController();
             if (playerController != null)
                 playerController.SetGameplayPaused(paused);
         }

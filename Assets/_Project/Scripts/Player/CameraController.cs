@@ -1,3 +1,4 @@
+using Project.Core;
 using UnityEngine;
 
 namespace Project.Player
@@ -12,14 +13,14 @@ namespace Project.Player
 
         public void SetInventoryOpen(bool open)
         {
-            PlayerController player = FindAnyObjectByType<PlayerController>();
+            PlayerController player = PlayerLocator.FindPlayerController();
             if (player != null)
                 player.SetInventoryOpen(open);
         }
 
         public void SetJournalOpen(bool open)
         {
-            PlayerController player = FindAnyObjectByType<PlayerController>();
+            PlayerController player = PlayerLocator.FindPlayerController();
             if (player != null)
                 player.SetJournalOpen(open);
         }

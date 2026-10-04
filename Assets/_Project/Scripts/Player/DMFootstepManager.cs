@@ -21,8 +21,6 @@ namespace Project.Player
                 return;
 
             GameObject player = PlayerLocator.FindPlayerObject();
-            if (player == null)
-                player = GameObject.Find("Player_v7 Variant") ?? GameObject.Find("Player_v7");
             if (player == null || player.GetComponent<DMFootstepManager>() != null)
                 return;
 

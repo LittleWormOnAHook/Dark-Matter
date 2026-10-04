@@ -19,7 +19,7 @@ MonoBehaviour:
   poiseRegenDelayAfterHit: 5
   humanoidPoiseMax: 80
   humanoidPoiseStaggerSeconds: 0.6
-  blockStaggerSeconds: 0.4
+  blockStaggerSeconds: 0.6
   parryStaggerSeconds: 1.5
   blockParryStaggerImpulseScale: 0.85
   parryStaggerImpulseBonus: 1.75
@@ -39,9 +39,9 @@ MonoBehaviour:
   statusMaxStacks: 3
   statusImmunityWindowSeconds: 2
   statusBossMultiplier: 0.5
+  strongMeleeChargeSeconds: 0.4
+  strongMeleeDamageMultiplier: 1.8
   hitstopLightFrames: 2
   hitstopHeavyFrames: 6
   parryWindowSeconds: 0.2
-  strongMeleeChargeSeconds: 0.4
-  strongMeleeDamageMultiplier: 1.8
   logCombatEventsInPlay: 0

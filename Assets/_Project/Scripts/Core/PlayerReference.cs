@@ -12,7 +12,6 @@ namespace Project.Core
         public static Camera Camera { get; private set; }
 
         private static PlayerController cachedController;
-        private static float nextResolveTime;
 
         public static void Register(Transform playerTransform, Camera gameplayCamera = null)
         {
@@ -39,9 +38,10 @@ namespace Project.Core
 
         public static PlayerController ResolvePlayerController()
         {
-            if (cachedController != null)
+            if (cachedController != null && cachedController.gameObject.activeInHierarchy)
                 return cachedController;
 
+            cachedController = null;
             Transform player = ResolveTransform();
             if (player == null)
                 return null;
@@ -52,31 +52,14 @@ namespace Project.Core
 
         public static Transform ResolveTransform()
         {
+            if (Transform != null && Transform.gameObject.activeInHierarchy)
+                return Transform;
+
             if (Transform != null)
-                return Transform;
+                Unregister(Transform);
 
-            if (Time.unscaledTime < nextResolveTime)
-                return null;
-
-            nextResolveTime = Time.unscaledTime + 0.5f;
-
-            GameObject tagged = GameObject.FindWithTag("Player");
-            if (tagged != null)
-            {
-                Register(tagged.transform);
-                cachedController = tagged.GetComponent<PlayerController>();
-                return Transform;
-            }
-
-            PlayerController controller = Object.FindAnyObjectByType<PlayerController>();
-            if (controller != null)
-            {
-                Register(controller.transform, controller.GameplayCamera);
-                cachedController = controller;
-                return Transform;
-            }
-
-            return null;
+            GameObject live = PlayerLocator.FindPlayerObject();
+            return live != null ? live.transform : null;
         }
 
         public static Camera ResolveCamera()

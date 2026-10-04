@@ -42,7 +42,11 @@ namespace Project.Core
 
             Phase = GamePhase.Playing;
             if (Application.isPlaying)
+            {
+                GameAudioManager.PrepareGameplayAudioHandoff();
                 GameAudioManager.SyncWorldAudioGate();
+            }
+
             GameStarted?.Invoke();
         }
 

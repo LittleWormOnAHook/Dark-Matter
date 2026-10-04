@@ -81,15 +81,7 @@ namespace Project.Features.Dash
 
         private static GameObject ResolvePlayerObject()
         {
-            GameObject player = PlayerLocator.FindPlayerObject();
-            if (player != null)
-                return player;
-
-            player = GameObject.Find("Player_v7");
-            if (player != null)
-                return player;
-
-            return GameObject.Find("Player_v7 Variant");
+            return PlayerLocator.FindPlayerObject();
         }
 
         private void Awake()

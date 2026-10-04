@@ -289,7 +289,7 @@ namespace Project.Data
         public AudioClip miningScanDeniedSound;
 
         [Header("Elemental Effect")]
-        [Tooltip("Status effect applied on hit. None uses the ammo type's sensible default (Fire->Burning, Ice->Frozen, Electricity->Shocked, Plasma->Corroded).")]
+        [Tooltip("Status effect applied on hit. None uses the ammo type's sensible default (Fire->Burning, Ice->Frozen, Electricity->Shocked, Plasma->Burning).")]
         public StatusEffectType statusEffectOverride = StatusEffectType.None;
         [Tooltip("Damage dealt per tick while the status effect is active. 0 disables damage-over-time (effect can still be used for pure crowd control later).")]
         public float statusEffectDamagePerTick = 0f;

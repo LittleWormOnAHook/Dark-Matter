@@ -497,7 +497,7 @@ namespace Project.Crafting
             if (inventorySystem != null)
                 return;
 
-            inventorySystem = GetComponent<InventorySystem>() ?? FindAnyObjectByType<InventorySystem>();
+            inventorySystem = GetComponent<InventorySystem>() ?? PlayerLocator.FindLiveInventory();
         }
 
         private void UnbindInventorySystem()

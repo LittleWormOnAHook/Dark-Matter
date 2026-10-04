@@ -85,7 +85,7 @@ namespace Project.Managers
             if (inventory == null)
                 inventory = player.GetComponentInChildren<InventorySystem>(true);
             if (inventory == null)
-                inventory = FindAnyObjectByType<InventorySystem>(FindObjectsInactive.Include);
+                inventory = PlayerLocator.FindLiveInventory();
             if (inventory == null)
             {
                 Debug.LogWarning("[GameManager] New game: the player has no InventorySystem, so no starting items were given.");

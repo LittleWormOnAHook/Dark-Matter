@@ -1,3 +1,4 @@
+using System.Collections;
 using Project.Core;
 using UnityEngine;
 
@@ -17,8 +18,17 @@ namespace Project.Audio
         private AudioSource[] sfxPool;
         private int sfxPoolIndex;
         private int lastMusicTrackIndex = -1;
+        private Coroutine poiseStaggerDingRoutine;
+        private static bool deferGameplayMusicUntilLoaderReveal;
+        private bool pendingGameplayMusic;
 
         public GameAudioProfile Profile => profile;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticAudioHandoffState()
+        {
+            deferGameplayMusicUntilLoaderReveal = false;
+        }
 
         private void Awake()
         {
@@ -86,7 +96,42 @@ namespace Project.Audio
                 musicSource.volume = GameSettings.MusicVolume * profile.musicVolume;
         }
 
+        public static void SetDeferGameplayMusicUntilLoaderReveal(bool defer)
+        {
+            deferGameplayMusicUntilLoaderReveal = defer;
+            if (!defer)
+                return;
+
+            if (Instance != null)
+                Instance.pendingGameplayMusic = false;
+        }
+
         public void StartGameplayMusic()
+        {
+            if (!playMusicOnGameStart || profile == null || profile.musicTracks == null || profile.musicTracks.Length == 0)
+                return;
+
+            if (deferGameplayMusicUntilLoaderReveal)
+            {
+                pendingGameplayMusic = true;
+                return;
+            }
+
+            PlayGameplayMusicInternal();
+        }
+
+        /// <summary>Called when the post-expedition black veil finishes fading in.</summary>
+        public void FlushDeferredGameplayMusic()
+        {
+            deferGameplayMusicUntilLoaderReveal = false;
+            if (!pendingGameplayMusic)
+                return;
+
+            pendingGameplayMusic = false;
+            PlayGameplayMusicInternal();
+        }
+
+        private void PlayGameplayMusicInternal()
         {
             if (!playMusicOnGameStart || profile == null || profile.musicTracks == null || profile.musicTracks.Length == 0)
                 return;
@@ -94,6 +139,10 @@ namespace Project.Audio
             AudioClip track = PickMusicTrack();
             if (track == null)
                 return;
+
+            StopLoadingAmbience();
+            if (musicSource.isPlaying)
+                musicSource.Stop();
 
             musicSource.clip = track;
             musicSource.loop = profile.loopCurrentTrack;
@@ -146,6 +195,41 @@ namespace Project.Audio
 
             // Pre-expedition (boot loader, main menu, starter select, expedition loader).
             AudioListener.pause = !GameSession.HasStarted;
+        }
+
+        /// <summary>
+        /// Clears paused world loopers before AudioListener.pause lifts at expedition start
+        /// (avoids screeching Invector/footstep clips that were mid-play under the loader).
+        /// </summary>
+        public static void PrepareGameplayAudioHandoff()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            GameAudioManager manager = Instance;
+            manager?.StopLoadingAmbience();
+
+            AudioSource[] sources = Object.FindObjectsByType<AudioSource>();
+            Transform managerRoot = manager != null ? manager.transform : null;
+            for (int i = 0; i < sources.Length; i++)
+            {
+                AudioSource source = sources[i];
+                if (source == null)
+                    continue;
+
+                if (managerRoot != null && source.transform.IsChildOf(managerRoot))
+                {
+                    // Manager ui clicks may still be needed before MarkStarted; everything else is silenced.
+                    if (manager.uiSource != null && source == manager.uiSource && !GameSession.HasStarted)
+                        continue;
+                    if (manager.musicSource != null && source == manager.musicSource)
+                        continue;
+                    source.Stop();
+                    continue;
+                }
+
+                source.Stop();
+            }
         }
 
         public void PlayFootstep(Vector3 position, string surfaceTag, bool isRunning, int terrainLayerIndex = -1)
@@ -291,6 +375,91 @@ namespace Project.Audio
                 clips = profile?.achievementUnlockClips;
 
             PlayUiClip(PickClip(clips), profile != null ? profile.uiVolume * 1.1f : 0.95f);
+        }
+
+        /// <summary>
+        /// One quieter bell for a normal block. Parry and poise break keep the triple ring.
+        /// Uses the SFX pool so this does not retune the UI source during a triple ding.
+        /// </summary>
+        public void PlayGuardBlockSoftDing()
+        {
+            if (!isActiveAndEnabled)
+                return;
+
+            AudioClip clip = ResolvePoiseStaggerDingClip();
+            if (clip == null)
+                return;
+
+            float volumeScale = profile != null ? profile.poiseStaggerDingVolume : 0.92f;
+            float uiScale = profile != null ? profile.uiVolume : 0.85f;
+            AudioSource source = GetNextSfxSource();
+            if (source == null)
+            {
+                PlayUiClip(clip, uiScale * volumeScale * 0.55f);
+                return;
+            }
+
+            source.transform.SetParent(transform, false);
+            source.spatialBlend = 0f;
+            source.pitch = 0.94f;
+            source.clip = clip;
+            source.volume = GameSettings.SfxVolume * uiScale * volumeScale * 0.55f;
+            source.Play();
+        }
+
+        /// <summary>Three rising dings when poise breaks, and on a parry.</summary>
+        public void PlayPoiseStaggerTripleDing()
+        {
+            if (!isActiveAndEnabled)
+                return;
+
+            if (poiseStaggerDingRoutine != null)
+                StopCoroutine(poiseStaggerDingRoutine);
+
+            poiseStaggerDingRoutine = StartCoroutine(PlayPoiseStaggerTripleDingRoutine());
+        }
+
+        private IEnumerator PlayPoiseStaggerTripleDingRoutine()
+        {
+            AudioClip clip = ResolvePoiseStaggerDingClip();
+            if (clip == null || uiSource == null)
+            {
+                poiseStaggerDingRoutine = null;
+                yield break;
+            }
+
+            float spacing = profile != null ? profile.poiseStaggerDingSpacing : 0.075f;
+            float volumeScale = profile != null ? profile.poiseStaggerDingVolume : 0.92f;
+            float uiScale = profile != null ? profile.uiVolume : 0.85f;
+            float[] pitchSteps = { 1f, 1.14f, 1.28f };
+            float[] volumeSteps = { 0.82f, 0.92f, 1f };
+
+            for (int i = 0; i < 3; i++)
+            {
+                if (i > 0)
+                    yield return new WaitForSecondsRealtime(spacing);
+
+                uiSource.pitch = pitchSteps[i];
+                uiSource.PlayOneShot(
+                    clip,
+                    GameSettings.SfxVolume * uiScale * volumeScale * volumeSteps[i]);
+            }
+
+            uiSource.pitch = 1f;
+            poiseStaggerDingRoutine = null;
+        }
+
+        private AudioClip ResolvePoiseStaggerDingClip()
+        {
+            AudioClip clip = PickClip(profile?.poiseStaggerDingClips);
+            if (clip != null)
+                return clip;
+
+            clip = PickClip(profile?.levelUpClips);
+            if (clip != null)
+                return clip;
+
+            return PickClip(profile?.achievementUnlockClips);
         }
 
         private void PlayUiClip(AudioClip clip, float volumeScale)

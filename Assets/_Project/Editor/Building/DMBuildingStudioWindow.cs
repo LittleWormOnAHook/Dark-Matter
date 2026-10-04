@@ -39,19 +39,18 @@ namespace Project.EditorTools.Building
                 profile = LoadOrCreate();
 
             DMStudioStyles.DrawHeroHeader("Building Studio", "Stone, Iron and Silicate build kits - placement, snap, and the part library.");
-            EditorGUILayout.BeginHorizontal(DMStudioStyles.SidebarPanel);
-            for (int i = 0; i < Tabs.Length; i++)
+            DMStudioStyles.DrawHorizontalTabBar(() =>
             {
-                if (DMStudioStyles.DrawCategoryTab(Tabs[i], tab == i, new Color(0.75f, 0.18f, 0.48f, 1f)) && tab != i)
+                for (int i = 0; i < Tabs.Length; i++)
                 {
-                    tab = i;
-                    EditorPrefs.SetInt("DM.BuildingStudio.Tab", tab);
-                    GUI.FocusControl(null);
+                    if (DMStudioStyles.DrawCategoryTab(Tabs[i], tab == i, new Color(0.75f, 0.18f, 0.48f, 1f)) && tab != i)
+                    {
+                        tab = i;
+                        EditorPrefs.SetInt("DM.BuildingStudio.Tab", tab);
+                        GUI.FocusControl(null);
+                    }
                 }
-            }
-
-            GUILayout.FlexibleSpace();
-            EditorGUILayout.EndHorizontal();
+            });
 
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
             if (tab == 1)
@@ -77,11 +76,14 @@ namespace Project.EditorTools.Building
 
             EditorGUI.BeginChangeCheck();
             Undo.RecordObject(profile, "Edit Building Profile");
-            DMStudioStyles.DrawSection(null, DMStudioStyles.ContentPanel, DrawPreviewGhostSection);
-            DMStudioStyles.DrawSection(null, DMStudioStyles.ContentPanel, DrawBuiltTintSection);
-            DMStudioStyles.DrawSection(null, DMStudioStyles.ContentPanel, DrawSnapSection);
-            DMStudioStyles.DrawSection(null, DMStudioStyles.ContentPanel, DrawPlacementSection);
-            DMStudioStyles.DrawSection(null, DMStudioStyles.ContentPanel, DrawDoorSection);
+            using (DMStudioStyles.BeginProfileInspector(DMStudioStyles.ProfileMinLabelWidth + 40f))
+            {
+                DMStudioStyles.DrawSection(null, DMStudioStyles.ContentPanel, DrawPreviewGhostSection);
+                DMStudioStyles.DrawSection(null, DMStudioStyles.ContentPanel, DrawBuiltTintSection);
+                DMStudioStyles.DrawSection(null, DMStudioStyles.ContentPanel, DrawSnapSection);
+                DMStudioStyles.DrawSection(null, DMStudioStyles.ContentPanel, DrawPlacementSection);
+                DMStudioStyles.DrawSection(null, DMStudioStyles.ContentPanel, DrawDoorSection);
+            }
 
             if (EditorGUI.EndChangeCheck())
             {
@@ -283,6 +285,8 @@ namespace Project.EditorTools.Building
             });
 
             fxSerialized.Update();
+            using (DMStudioStyles.BeginProfileInspector(fxSerialized))
+            {
             DMStudioStyles.DrawSection(null, DMStudioStyles.ContentPanel, () =>
             {
                 Prop("enabled", "Enabled");
@@ -323,6 +327,7 @@ namespace Project.EditorTools.Building
                 }
             });
             DrawForceFields();
+            }
 
             if (fxSerialized.ApplyModifiedProperties())
             {

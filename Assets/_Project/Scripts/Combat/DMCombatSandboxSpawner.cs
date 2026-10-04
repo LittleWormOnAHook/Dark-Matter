@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Project.AI;
 using Project.AI.Invector;
 using UnityEngine;
@@ -16,6 +17,7 @@ namespace Project.Combat
         [SerializeField] private LayerMask groundMask = ~0;
 
         private float nextSpawnTime;
+        private readonly List<EnemyHealth> spawnedEnemies = new List<EnemyHealth>();
 
         private void Update()
         {
@@ -74,6 +76,10 @@ namespace Project.Combat
             EnemyGroundUtility.SnapCreatureToGround(instance.transform, instance.transform.position, minAcceptedY);
             HumanoidPerformanceController.ForceSpawnVisible(instance);
             DMSpawnPhysicsStabilizer.EnsureOn(instance);
+
+            EnemyHealth health = instance.GetComponent<EnemyHealth>();
+            if (health != null)
+                spawnedEnemies.Add(health);
         }
 
         private LayerMask ResolveTerrainMask()
@@ -126,15 +132,26 @@ namespace Project.Combat
 
         private int CountAlive()
         {
-            EnemyHealth[] enemies = FindObjectsByType<EnemyHealth>(FindObjectsInactive.Exclude);
+            PruneSpawnedList();
             int count = 0;
-            for (int i = 0; i < enemies.Length; i++)
+            for (int i = 0; i < spawnedEnemies.Count; i++)
             {
-                if (enemies[i] != null && !enemies[i].IsDead)
+                EnemyHealth health = spawnedEnemies[i];
+                if (health != null && health.gameObject.activeInHierarchy && !health.IsDead)
                     count++;
             }
 
             return count;
+        }
+
+        private void PruneSpawnedList()
+        {
+            for (int i = spawnedEnemies.Count - 1; i >= 0; i--)
+            {
+                EnemyHealth health = spawnedEnemies[i];
+                if (health == null || health.IsDead)
+                    spawnedEnemies.RemoveAt(i);
+            }
         }
     }
 }

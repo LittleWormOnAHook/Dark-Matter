@@ -107,7 +107,7 @@ namespace Project.EditorTools.GenesisStudio
 
         private static void DrawAllVisible(SerializedObject serialized)
         {
-            using (DMStudioStyles.PushLabelWidth(ProfileLabelWidth))
+            using (DMStudioStyles.BeginProfileInspector(ProfileLabelWidth))
             {
                 SerializedProperty iterator = serialized.GetIterator();
                 bool enterChildren = true;

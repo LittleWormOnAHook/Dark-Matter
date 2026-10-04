@@ -174,7 +174,7 @@ namespace Project.UI
             if (Time.timeScale <= 0f)
                 Time.timeScale = 1f;
 
-            PlayerInput playerInput = Object.FindAnyObjectByType<PlayerInput>();
+            PlayerInput playerInput = PlayerLocator.FindLivePlayerInput();
             if (playerInput != null)
             {
                 playerInput.enabled = true;

@@ -1,4 +1,5 @@
 using Invector.vCharacterController;
+using Project.Core;
 using Project.Features.Climb;
 using Project.Features.Dash;
 using Project.Features.Jetpack;
@@ -225,11 +226,7 @@ namespace Project.Player
             if (profiles.Length > 0)
                 return;
 
-            GameObject player = GameObject.Find("Player_v7");
-            if (player == null)
-                player = GameObject.Find("Player_v7 Variant");
-            if (player == null)
-                player = GameObject.Find("Player_v7 Combat Variant");
+            GameObject player = PlayerLocator.FindPlayerObject();
             if (player == null || player.GetComponent<DMLandingDirector>() != null)
                 return;
 

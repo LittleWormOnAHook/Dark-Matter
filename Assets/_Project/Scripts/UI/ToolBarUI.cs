@@ -51,7 +51,7 @@ namespace Project.UI
             if (slotPrefabOverride != null)
                 slotPrefab = slotPrefabOverride;
 
-            inventorySystem = FindAnyObjectByType<InventorySystem>();
+            inventorySystem = PlayerLocator.FindLiveInventory();
             if (inventorySystem != null)
             {
                 equipmentController = inventorySystem.GetComponent<EquipmentController>();

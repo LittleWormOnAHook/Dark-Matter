@@ -137,7 +137,18 @@ namespace GenesisPCG.RockCreation
             pieceCount.y = Mathf.Max(pieceCount.x, pieceCount.y);
             apronCount.y = Mathf.Max(apronCount.x, apronCount.y);
             Version++;
+#if UNITY_EDITOR
+            // Raised on the next editor tick: listeners rebuild rocks (AddComponent), which Unity forbids during OnValidate.
+            UnityEditor.EditorApplication.delayCall -= DeferredChanged;
+            UnityEditor.EditorApplication.delayCall += DeferredChanged;
+#else
             Changed?.Invoke(this);
+#endif
+        }
+
+        private void DeferredChanged()
+        {
+            if (this != null) Changed?.Invoke(this);
         }
     }
 

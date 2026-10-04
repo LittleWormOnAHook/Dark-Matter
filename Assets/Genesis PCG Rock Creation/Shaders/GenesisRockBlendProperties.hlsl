@@ -400,6 +400,8 @@ float _GRB_ContactAOKeep;
 float _GRB_ContactAOWidth;
 float _GRB_ForwardOnly;
 float _GRB_FadeNormalUp;
+float _GRB_FadeShadowLift;
+float _GRB_FadeShadowLiftMargin;
 float _GRB_TopThroughMin;
 float _GRB_TopThroughMax;
 float _GRB_TopThroughNoiseScale;

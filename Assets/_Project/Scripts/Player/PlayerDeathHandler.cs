@@ -150,7 +150,7 @@ namespace Project.Player
 
             // cannot re-arm ragdoll on the same body.
 
-            GameObject player = gameObject.name == "Player_v7" ? gameObject : GameObject.Find("Player_v7");
+            GameObject player = PlayerLocator.FindPlayerObject() ?? gameObject;
 
             if (player == null)
 
@@ -264,7 +264,7 @@ namespace Project.Player
 
             CleanupDeathState();
 
-            GameObject player = gameObject.name == "Player_v7" ? gameObject : GameObject.Find("Player_v7");
+            GameObject player = PlayerLocator.FindPlayerObject() ?? gameObject;
 
             if (player == null)
 
@@ -460,7 +460,7 @@ namespace Project.Player
 
                 return;
 
-            GameObject player = gameObject.name == "Player_v7" ? gameObject : GameObject.Find("Player_v7");
+            GameObject player = PlayerLocator.FindPlayerObject() ?? gameObject;
 
             if (player == null || player == gameObject)
 

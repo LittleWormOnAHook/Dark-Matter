@@ -72,8 +72,8 @@ MonoBehaviour:
   shiftDoubleTapWindow: 0.28
   standingJumpHeight: 2.5
   walkJumpHeightMultiplier: 1
-  jogJumpHeightMultiplier: 1.4
-  sprintJumpHeightMultiplier: 1.9
+  jogJumpHeightMultiplier: 1.2
+  sprintJumpHeightMultiplier: 1.3
   jumpHeightSpeedExponent: 1.35
   leanOverrideEnabled: 1
   leanWalkStrength: 1.6

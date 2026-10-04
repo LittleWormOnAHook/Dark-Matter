@@ -111,7 +111,7 @@ namespace Project.Quests
                     return onPlayer;
             }
 
-            return Object.FindAnyObjectByType<InventorySystem>();
+            return PlayerLocator.FindLiveInventory();
         }
     }
 }

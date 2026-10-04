@@ -37,3 +37,15 @@ MonoBehaviour:
     iconPitch: 22
     iconZoom: 1
     createdUtc: 2026-10-03T04:07:41.1164160Z
+  - id: 210acf0e62b147388033426f0905271f
+    displayName: Rock_SharpClean_E82D
+    category: Rocks
+    prefab: {fileID: 1357917226187005904, guid: c99632a8f81e6c64396060962b498de7, type: 3}
+    preset: {fileID: 11400000, guid: 2778dfe8db4615e4c96d753bfcf2f6d3, type: 2}
+    style: {fileID: 11400000, guid: eaa53a93713b7c54b91e01e03c0b11e7, type: 2}
+    seed: 169994285
+    icon: {fileID: 2800000, guid: 65efa5824bcde2f45bed3ffba33845a0, type: 3}
+    iconYaw: 125.71968
+    iconPitch: 21.279942
+    iconZoom: 0.9856
+    createdUtc: 2026-10-03T23:04:15.7675779Z

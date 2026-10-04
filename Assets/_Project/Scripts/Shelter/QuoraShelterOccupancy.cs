@@ -154,7 +154,7 @@ namespace Project.Shelter
                     disabledBehaviours[i].enabled = true;
             }
 
-            if (player.TryGetComponent(out Rigidbody body))
+            if (player.TryGetComponent(out Rigidbody body) && !body.isKinematic)
             {
                 body.linearVelocity = Vector3.zero;
                 body.angularVelocity = Vector3.zero;

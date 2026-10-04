@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Project.Achievements;
 using Project.Audio;
 using Project.Companions;
+using Project.Core;
 using Project.Crafting;
 using Project.Data;
 using Project.Echoes;
@@ -438,7 +439,7 @@ namespace Project.UI
 
             if (boundEquipment == null)
             {
-                EquipmentController equipment = FindAnyObjectByType<EquipmentController>();
+                EquipmentController equipment = PlayerLocator.FindLiveEquipment();
                 if (equipment != null)
                 {
                     boundEquipment = equipment;
@@ -807,7 +808,7 @@ namespace Project.UI
 
             boundProgression ??= PlayerProgressionManager.EnsureExists();
             boundSurvival ??= FindAnyObjectByType<SurvivalStats>();
-            boundEquipment ??= FindAnyObjectByType<EquipmentController>();
+            boundEquipment ??= PlayerLocator.FindLiveEquipment();
             if (boundEquipment != null && (boundAmmo == null || boundAmmo.gameObject != boundEquipment.gameObject))
                 boundAmmo = boundEquipment.GetComponent<WeaponAmmoState>();
             boundRoster ??= PioneerRosterManager.EnsureExists();

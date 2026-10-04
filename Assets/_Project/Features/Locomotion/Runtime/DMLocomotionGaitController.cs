@@ -186,14 +186,6 @@ namespace Project.Features.Locomotion
 
             GameObject player = PlayerLocator.FindPlayerObject();
 
-            if (player == null)
-
-                player = GameObject.Find("Player_v7 Variant");
-
-            if (player == null)
-
-                player = GameObject.Find("Player_v7");
-
             if (player == null || player.GetComponent<DMLocomotionGaitController>() != null)
 
                 return;

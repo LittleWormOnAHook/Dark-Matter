@@ -177,6 +177,8 @@ Shader "Genesis PCG/Rock Blend Lit"
         _GRB_FadeNoiseStrength("Fade Noise Strength", Range(0, 1)) = 0.35
         _GRB_FadeTerrainColor("Terrain Colour in Fade Zone", Range(0, 1)) = 1
         _GRB_FadeNormalUp("Fade Zone Normal Toward Up", Range(0, 1)) = 0.5
+        [ToggleUI] _GRB_FadeShadowLift("Fade Shadow Lift (no self-shadow under the dithered band)", Float) = 1
+        _GRB_FadeShadowLiftMargin("Fade Shadow Lift Margin (m above the fade band)", Range(0, 1)) = 0.1
         _GRB_ContactAOKeep("Contact AO Keep (0 = none in fade zone, 1 = unchanged)", Range(0, 1)) = 0.3
         _GRB_ContactAOWidth("Contact AO Zone Width (x fade height)", Range(1, 4)) = 2
         [HideInInspector] _GRB_ForwardOnly("Forward-only variant (set by the shader)", Float) = 0

@@ -46,7 +46,7 @@ namespace Project.UI
 
         private static InputActionMap ResolvePlayerMap()
         {
-            PlayerInput pi = Object.FindAnyObjectByType<PlayerInput>();
+            PlayerInput pi = PlayerLocator.FindLivePlayerInput();
             if (pi == null || pi.actions == null)
             {
                 _playerMap = null;

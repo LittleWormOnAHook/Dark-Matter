@@ -352,7 +352,7 @@ Material:
     - _GRB_BottomUpBias: 0.5
     - _GRB_ContactAOKeep: 1
     - _GRB_ContactAOWidth: 2.6
-    - _GRB_FadeClip: 0
+    - _GRB_FadeClip: 1
     - _GRB_FadeEnable: 1
     - _GRB_FadeHeight: 0.1
     - _GRB_FadeNoiseScale: 6
@@ -363,7 +363,7 @@ Material:
     - _GRB_ForwardOnly: 0
     - _GRB_HeightRange: 4
     - _GRB_MacroScale: 6
-    - _GRB_MacroStrength: 0
+    - _GRB_MacroStrength: 0.25
     - _GRB_SizeRange: 8
     - _GRB_StrataAzimuth: 30
     - _GRB_StrataDetail: 0.7

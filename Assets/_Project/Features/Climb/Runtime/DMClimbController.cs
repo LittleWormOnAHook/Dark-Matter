@@ -250,7 +250,7 @@ namespace Project.Features.Climb
             if (!Application.isPlaying)
                 return;
 
-            GameObject player = GameObject.Find("Player_v7");
+            GameObject player = PlayerLocator.FindPlayerObject();
             if (player == null || player.GetComponent<DMClimbController>() != null)
                 return;
 

@@ -191,12 +191,7 @@ namespace Project.UI
 
         private static Vector3 ResolveOrigin()
         {
-            // The scene object is usually the prefab variant instance ("Player_v7 Variant"), not "Player_v7".
-            GameObject player = GameObject.Find("Player_v7");
-            if (player == null)
-                player = GameObject.Find("Player_v7 Variant");
-            if (player == null)
-                player = GameObject.FindWithTag("Player");
+            GameObject player = PlayerLocator.FindPlayerObject();
             if (player != null)
                 return player.transform.position;
 

@@ -79,13 +79,18 @@ namespace Project.Player.Invector
         private const float StrongAttackBlockSuppressSeconds = 0.2f;
         private const float StrongDamageWindowSeconds = 1.75f;
         /// <summary>
-        /// FullBody path. The controller has no charge/hold clip, so the wind-up is a local weapon pose.
-        /// StrongAttacks/SwordAttack/A plays on release.
+        /// FullBody path. The controller has no charge/hold clip, so the wind-up is a modest
+        /// hand/forearm cock. StrongAttacks/SwordAttack/A (WeakAttack_SwordB) plays on release.
+        /// That clip's retarget folds the right hand behind the chest after the opening strike,
+        /// so the swing is cut back to Null before the blade spins through the back.
         /// </summary>
         private const string StrongSwordStatePath = "Attacks.StrongAttacks.SwordAttack.A";
         private static readonly int StrongSwordStateHash = Animator.StringToHash(StrongSwordStatePath);
-        private static readonly Vector3 StrongChargeLocalOffset = new Vector3(0.02f, 0.05f, -0.07f);
-        private static readonly Vector3 StrongChargeEuler = new Vector3(-36f, 16f, 6f);
+        private const float StrongWindupDegrees = 24f;
+        private const float StrongForearmWindupDegrees = 10f;
+        private const float StrongWindupEaseSeconds = 0.14f;
+        private const float StrongSwingMinSeconds = 0.1f;
+        private const float StrongSwingMaxSeconds = 0.2f;
         private bool _lightAttackHeldLast;
         private float _lightAttackHoldStart = float.NegativeInfinity;
         private bool _strongChargeArmed;
@@ -94,10 +99,7 @@ namespace Project.Player.Invector
         private bool _strongDamageArmed;
         private bool _strongDamageSawSwing;
         private float _strongDamageUntil;
-        private Transform _chargePoseTransform;
-        private Vector3 _chargePoseRestPosition;
-        private Quaternion _chargePoseRestRotation;
-        private bool _chargePoseCaptured;
+        private float _strongSwingStartedAt = float.NegativeInfinity;
         private bool _wasSprintingLastFrame;
         private int _uiZoomRestoreFramesRemaining;
         private float _lockedAimZoom = -1f;
@@ -839,7 +841,6 @@ namespace Project.Player.Invector
             if (!CanReleaseDrawnMelee())
                 return;
 
-            RestoreStrongChargePose();
             if (!_strongDamageSawSwing)
                 _strongDamageArmed = false;
             animator.ResetTrigger(vAnimatorParameters.StrongAttack);
@@ -852,8 +853,6 @@ namespace Project.Player.Invector
                 return;
 
             // A held block keeps FullBody in Defense, and StrongAttack is only wired from Null.
-            // The sword strong clips also referenced a missing FBX, so a trigger into that state showed nothing.
-            RestoreStrongChargePose();
             isBlocking = false;
             animator.SetBool(vAnimatorParameters.IsBlocking, false);
             _suppressBlockUntil = Time.time + StrongAttackBlockSuppressSeconds;
@@ -883,7 +882,8 @@ namespace Project.Player.Invector
             if (layer >= 0 && animator.HasState(layer, StrongSwordStateHash))
             {
                 animator.SetLayerWeight(layer, 1f);
-                animator.CrossFadeInFixedTime(StrongSwordStateHash, 0.08f, layer, 0f);
+                animator.CrossFadeInFixedTime(StrongSwordStateHash, 0.06f, layer, 0f);
+                _strongSwingStartedAt = Time.time;
                 return;
             }
 
@@ -891,56 +891,232 @@ namespace Project.Player.Invector
         }
 
         /// <summary>
-        /// Invector@ShooterMelee_Jetpack has no charge or ready clip. After the charge threshold,
-        /// ease the drawn weapon back in the hand and keep that pose until release.
+        /// Invector@ShooterMelee_Jetpack has no charge clip. After the hold threshold, cock the
+        /// right hand and forearm so the blade draws back on the sword side and stay there until release.
+        /// The offset is applied in character space on top of the animated pose, so it cannot roll the
+        /// weapon around its own grip axis or leave a stuck local rotation into the swing.
         /// </summary>
         private void ApplyStrongMeleeChargePose()
         {
+            ExitStrongSwingIfArmFoldsBack();
+
             bool holding = _strongChargeArmed
                 && CanTrackDrawnMeleeCharge()
                 && ReadLightAttackHeld()
-                && !isAttacking;
-            if (!holding)
+                && !isAttacking
+                && !isBlocking;
+            if (!holding || animator == null)
+                return;
+
+            float ease = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((Time.time - _chargeArmedTime) / StrongWindupEaseSeconds));
+            ApplySwordWindup(ease);
+        }
+
+        /// <summary>
+        /// WeakAttack_SwordB stays in front of the chest for the opening strike, then the retarget
+        /// parks the right hand behind the torso. Leave FullBody before that fold reads as a spin.
+        /// </summary>
+        private void ExitStrongSwingIfArmFoldsBack()
+        {
+            if (_strongSwingStartedAt < 0f || animator == null)
+                return;
+
+            int layer = cc != null ? cc.fullbodyLayer : animator.GetLayerIndex("FullBody");
+            if (layer < 0)
             {
-                RestoreStrongChargePose();
+                _strongSwingStartedAt = float.NegativeInfinity;
                 return;
             }
+
+            bool inSwing = IsStrongSwordState(animator.GetCurrentAnimatorStateInfo(layer));
+            bool blendingIn = animator.IsInTransition(layer)
+                && IsStrongSwordState(animator.GetNextAnimatorStateInfo(layer));
+            if (!inSwing && !blendingIn)
+            {
+                _strongSwingStartedAt = float.NegativeInfinity;
+                return;
+            }
+
+            float elapsed = Time.time - _strongSwingStartedAt;
+            if (elapsed < StrongSwingMinSeconds)
+                return;
+
+            bool handBehind = TryGetRightHandAhead(out float ahead) && ahead < -0.18f;
+            if (!handBehind && elapsed < StrongSwingMaxSeconds)
+                return;
+
+            animator.CrossFadeInFixedTime("Null", 0.1f, layer, 0f);
+            _strongSwingStartedAt = float.NegativeInfinity;
+        }
+
+        private static bool IsStrongSwordState(AnimatorStateInfo info)
+        {
+            return info.fullPathHash == StrongSwordStateHash || info.IsName(StrongSwordStatePath);
+        }
+
+        private void ApplySwordWindup(float ease)
+        {
+            if (ease <= 0.001f)
+                return;
+
+            Transform hand = animator.GetBoneTransform(HumanBodyBones.RightHand);
+            Transform lower = animator.GetBoneTransform(HumanBodyBones.RightLowerArm);
+            if (hand == null)
+                return;
 
             Transform weapon = meleeManager != null && meleeManager.rightWeapon != null
                 ? meleeManager.rightWeapon.transform
                 : null;
-            if (weapon == null)
-            {
-                RestoreStrongChargePose();
+            Vector3 grip = weapon != null ? weapon.position : hand.position;
+            if (weapon == null || !TryGetBladeTip(weapon, grip, out Vector3 tip))
+                tip = grip - transform.up * 0.8f + transform.right * 0.12f;
+
+            if (!TryChooseWindup(grip, tip, lower != null ? lower.position : hand.position, hand.position, out Quaternion forearmDelta, out Quaternion handDelta))
                 return;
-            }
 
-            if (!_chargePoseCaptured || _chargePoseTransform != weapon)
-            {
-                _chargePoseTransform = weapon;
-                _chargePoseRestPosition = weapon.localPosition;
-                _chargePoseRestRotation = weapon.localRotation;
-                _chargePoseCaptured = true;
-            }
-
-            float ease = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((Time.time - _chargeArmedTime) / 0.12f));
-            weapon.localPosition = _chargePoseRestPosition + StrongChargeLocalOffset * ease;
-            weapon.localRotation = Quaternion.Slerp(
-                _chargePoseRestRotation,
-                _chargePoseRestRotation * Quaternion.Euler(StrongChargeEuler),
-                ease);
+            AddWorldRotation(lower, forearmDelta, ease);
+            AddWorldRotation(hand, handDelta, ease);
         }
 
-        private void RestoreStrongChargePose()
+        private bool TryChooseWindup(Vector3 grip, Vector3 tip, Vector3 elbow, Vector3 handPosition, out Quaternion forearmDelta, out Quaternion handDelta)
         {
-            if (_chargePoseCaptured && _chargePoseTransform != null)
+            forearmDelta = Quaternion.identity;
+            handDelta = Quaternion.identity;
+            Vector3 blade = tip - grip;
+            if (blade.sqrMagnitude < 0.0001f)
+                return false;
+
+            Vector3 chest = ChestPosition();
+            Vector3[] axes = { transform.right, transform.forward, Vector3.Cross(transform.up, blade.normalized) };
+            float bestScore = float.NegativeInfinity;
+            bool found = false;
+            for (int a = 0; a < axes.Length; a++)
             {
-                _chargePoseTransform.localPosition = _chargePoseRestPosition;
-                _chargePoseTransform.localRotation = _chargePoseRestRotation;
+                Vector3 axis = axes[a];
+                if (axis.sqrMagnitude < 0.01f)
+                    continue;
+                axis.Normalize();
+                for (int s = -1; s <= 1; s += 2)
+                {
+                    Quaternion wrist = Quaternion.AngleAxis(s * StrongWindupDegrees, axis);
+                    Quaternion forearm = Quaternion.AngleAxis(s * StrongForearmWindupDegrees, axis);
+                    Vector3 newHand = elbow + forearm * (handPosition - elbow);
+                    Vector3 cockedGrip = newHand + (grip - handPosition);
+                    Vector3 newTip = cockedGrip + wrist * (forearm * blade);
+                    Vector3 fromChest = newTip - chest;
+                    float right = Vector3.Dot(fromChest, transform.right);
+                    float handAhead = Vector3.Dot(newHand - chest, transform.forward);
+                    float handRight = Vector3.Dot(newHand - chest, transform.right);
+                    if (right < 0.05f || handRight < 0.02f || handAhead < -0.12f)
+                        continue;
+
+                    float raised = Vector3.Dot(newTip - tip, transform.up);
+                    float pulledBack = -Vector3.Dot(newTip - tip, transform.forward);
+                    if (raised < 0.02f && pulledBack < 0.02f)
+                        continue;
+
+                    float score = raised * 1.1f + pulledBack * 1.25f + handRight * 0.2f;
+                    if (score <= bestScore)
+                        continue;
+
+                    bestScore = score;
+                    forearmDelta = forearm;
+                    handDelta = wrist;
+                    found = true;
+                }
             }
 
-            _chargePoseCaptured = false;
-            _chargePoseTransform = null;
+            return found;
+        }
+
+        private Vector3 ChestPosition()
+        {
+            if (animator != null)
+            {
+                Transform chest = animator.GetBoneTransform(HumanBodyBones.Chest);
+                if (chest != null)
+                    return chest.position;
+            }
+
+            return transform.position + transform.up * 1.2f;
+        }
+
+        private bool TryGetRightHandAhead(out float ahead)
+        {
+            ahead = 0f;
+            if (animator == null)
+                return false;
+
+            Transform hand = animator.GetBoneTransform(HumanBodyBones.RightHand);
+            if (hand == null)
+                return false;
+
+            ahead = Vector3.Dot(hand.position - ChestPosition(), transform.forward);
+            return true;
+        }
+
+        private static void AddWorldRotation(Transform bone, Quaternion delta, float weight)
+        {
+            if (bone == null || weight <= 0.001f)
+                return;
+
+            bone.rotation = Quaternion.Slerp(Quaternion.identity, delta, Mathf.Clamp01(weight)) * bone.rotation;
+        }
+
+        private static bool TryGetBladeTip(Transform weapon, Vector3 grip, out Vector3 tipWorld)
+        {
+            tipWorld = grip;
+            float bestDistance = 0f;
+            bool found = false;
+            bool bestIsVisual = false;
+            MeshFilter[] filters = weapon.GetComponentsInChildren<MeshFilter>(false);
+            for (int i = 0; i < filters.Length; i++)
+            {
+                MeshFilter filter = filters[i];
+                if (filter == null || filter.sharedMesh == null)
+                    continue;
+
+                Renderer renderer = filter.GetComponent<Renderer>();
+                if (renderer != null && !renderer.enabled)
+                    continue;
+
+                Bounds bounds = filter.sharedMesh.bounds;
+                Vector3 extents = bounds.extents;
+                int axis = 0;
+                float length = extents.x;
+                if (extents.y > length)
+                {
+                    length = extents.y;
+                    axis = 1;
+                }
+
+                if (extents.z > length)
+                {
+                    length = extents.z;
+                    axis = 2;
+                }
+
+                if (length < 0.2f)
+                    continue;
+
+                Vector3 localAxis = axis == 0 ? Vector3.right : axis == 1 ? Vector3.up : Vector3.forward;
+                Vector3 endA = filter.transform.TransformPoint(bounds.center + localAxis * length);
+                Vector3 endB = filter.transform.TransformPoint(bounds.center - localAxis * length);
+                Vector3 far = (endA - grip).sqrMagnitude >= (endB - grip).sqrMagnitude ? endA : endB;
+                float distance = (far - grip).magnitude;
+                bool visual = filter.name.IndexOf("Visual", System.StringComparison.OrdinalIgnoreCase) >= 0
+                    || filter.name.IndexOf("Pioneer", System.StringComparison.OrdinalIgnoreCase) >= 0;
+                bool better = !found || (visual && !bestIsVisual) || (visual == bestIsVisual && distance > bestDistance);
+                if (!better)
+                    continue;
+
+                bestDistance = distance;
+                bestIsVisual = visual;
+                tipWorld = far;
+                found = true;
+            }
+
+            return found;
         }
 
         private bool CanReleaseDrawnMelee()

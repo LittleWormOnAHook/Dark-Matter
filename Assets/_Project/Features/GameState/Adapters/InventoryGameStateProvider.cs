@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Project.Core;
 using Project.Features.GameState;
 using Project.Inventory;
 using UnityEngine;
@@ -54,7 +55,7 @@ namespace Project.Features.GameState.Adapters
             if (cachedInventory != null)
                 return cachedInventory;
 
-            cachedInventory = Object.FindAnyObjectByType<InventorySystem>();
+            cachedInventory = PlayerLocator.FindLiveInventory();
             return cachedInventory;
         }
     }

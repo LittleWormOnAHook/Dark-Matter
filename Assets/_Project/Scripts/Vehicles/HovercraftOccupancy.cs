@@ -4,6 +4,7 @@ using Invector.vCharacterController;
 using Invector.vMelee;
 using Invector.vShooter;
 using Project.Companions;
+using Project.Core;
 using Project.Inventory;
 using Project.Player;
 using Project.UI;
@@ -196,8 +197,11 @@ namespace Project.Vehicles
             {
                 _mountedBody.isKinematic = _mountedBodyWasKinematic;
                 _mountedBody.detectCollisions = _mountedBodyDetectCollisions;
-                _mountedBody.linearVelocity = Vector3.zero;
-                _mountedBody.angularVelocity = Vector3.zero;
+                if (!_mountedBody.isKinematic)
+                {
+                    _mountedBody.linearVelocity = Vector3.zero;
+                    _mountedBody.angularVelocity = Vector3.zero;
+                }
             }
 
             Transform root = _mountedRoot != null ? _mountedRoot : player.transform;
@@ -223,7 +227,7 @@ namespace Project.Vehicles
                     _disabledBehaviours[i].enabled = true;
             }
 
-            if (player.TryGetComponent(out Rigidbody body) && body != _mountedBody)
+            if (player.TryGetComponent(out Rigidbody body) && body != _mountedBody && !body.isKinematic)
             {
                 body.linearVelocity = Vector3.zero;
                 body.angularVelocity = Vector3.zero;
@@ -275,9 +279,9 @@ namespace Project.Vehicles
 
         private static Transform ResolveRideRoot(PlayerController player)
         {
-            GameObject named = GameObject.Find("Player_v7");
-            if (named != null)
-                return named.transform;
+            GameObject live = PlayerLocator.FindPlayerObject();
+            if (live != null)
+                return live.transform;
 
             Transform t = player.transform;
             if (t.root != null && t.root.CompareTag("Player"))

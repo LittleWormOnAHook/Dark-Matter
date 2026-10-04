@@ -256,6 +256,19 @@ void GetSurfaceAndBuiltinData(FragInputs input, float3 V, inout PositionInputs p
     GENERIC_ALPHA_TEST(alphaValue, alphaCutoff);
 #endif
 
+#if (SHADERPASS == SHADERPASS_SHADOWS) && defined(_ALPHATEST_ON) && !defined(SHADER_STAGE_RAY_TRACING)
+    // Genesis Rock Blend: Fade Shadow Lift. With the dithered fade, the terrain under the rock shows through the dither holes
+    // and sat in the rock's own shadow (a dark speckled ring at the cut). The shadow pass alone skips the rock from the ground
+    // up to the fade band (+ margin), so the ground seen through the holes is lit like the ground beside it. Everything above
+    // still casts; the outside shadow only loses that thin strip at the base.
+    if (_GRB_FadeEnable > 0.5 && _GRB_FadeClip > 0.5 && _GRB_FadeShadowLift > 0.5)
+    {
+        float3 grbLiftP = GetAbsolutePositionWS(posInput.positionWS);
+        float grbLiftH = GRB_FadeHeightFor(GRB_PieceSize(input.color)) * (1.0 + _GRB_FadeNoiseStrength) + _GRB_FadeShadowLiftMargin;
+        clip(GRB_HeightAboveGround(grbLiftP, input.color) - grbLiftH);
+    }
+#endif
+
     // We perform the conversion to world of the normalTS outside of the GetSurfaceData
     // so it allow us to correctly deal with detail normal map and optimize the code for the layered shaders
     float3 normalTS;

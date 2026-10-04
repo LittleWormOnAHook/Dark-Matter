@@ -1,3 +1,4 @@
+using Project.Core;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -89,7 +90,7 @@ namespace Project.UI
 
         private static InputActionAsset ResolveActionsAsset()
         {
-            PlayerInput pi = Object.FindAnyObjectByType<PlayerInput>();
+            PlayerInput pi = PlayerLocator.FindLivePlayerInput();
             if (pi != null && pi.actions != null)
                 return pi.actions;
 

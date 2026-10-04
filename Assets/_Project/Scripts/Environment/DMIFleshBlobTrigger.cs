@@ -68,6 +68,11 @@ namespace Project.Environment
             DestroyPlayables();
         }
 
+        private void OnApplicationQuit()
+        {
+            DestroyPlayables();
+        }
+
         private void Update()
         {
             if (exploded)
@@ -118,7 +123,10 @@ namespace Project.Environment
         private void DestroyPlayables()
         {
             if (playableGraph.IsValid())
+            {
+                playableGraph.Stop();
                 playableGraph.Destroy();
+            }
 
             playablesReady = false;
         }

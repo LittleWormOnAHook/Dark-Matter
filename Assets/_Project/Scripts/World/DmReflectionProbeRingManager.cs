@@ -134,8 +134,6 @@ namespace Project.World
                 return true;
 
             GameObject player = PlayerLocator.FindPlayerObject();
-            if (player == null)
-                player = GameObject.Find("Player_v7");
 
             if (player == null)
                 return false;

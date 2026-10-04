@@ -502,7 +502,7 @@ namespace Project.UI
 
             if (boundInventory == null)
             {
-                InventorySystem inventory = FindAnyObjectByType<InventorySystem>();
+                InventorySystem inventory = PlayerLocator.FindLiveInventory();
                 if (inventory != null)
                 {
                     boundInventory = inventory;
@@ -1143,7 +1143,7 @@ namespace Project.UI
                 return;
 
             if (boundInventory == null)
-                boundInventory = FindAnyObjectByType<InventorySystem>();
+                boundInventory = PlayerLocator.FindLiveInventory();
             if (boundInventory == null)
                 return;
 

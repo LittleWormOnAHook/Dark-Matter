@@ -1,3 +1,4 @@
+using Project.Core;
 using Project.Survival.Exposure;
 using Project.Data;
 using Project.Features.Jetpack;
@@ -54,7 +55,7 @@ namespace Project.UI
             embeddedParent = parent;
             progression = PlayerProgressionManager.EnsureExists();
             survivalStats = FindAnyObjectByType<SurvivalStats>();
-            equipment = FindAnyObjectByType<EquipmentController>();
+            equipment = PlayerLocator.FindLiveEquipment();
             ammoState = equipment != null ? equipment.GetComponent<WeaponAmmoState>() : null;
             roster = PioneerRosterManager.EnsureExists();
             EnsureBuilt(parent);
@@ -169,7 +170,7 @@ namespace Project.UI
 
             progression ??= PlayerProgressionManager.EnsureExists();
             survivalStats ??= FindAnyObjectByType<SurvivalStats>();
-            equipment ??= FindAnyObjectByType<EquipmentController>();
+            equipment ??= PlayerLocator.FindLiveEquipment();
             if (equipment != null && (ammoState == null || ammoState.gameObject != equipment.gameObject))
                 ammoState = equipment.GetComponent<WeaponAmmoState>();
             roster ??= PioneerRosterManager.EnsureExists();
