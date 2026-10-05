@@ -1,15 +1,67 @@
 # Dark Matter: Genesis — Combat, AI, Companions & Encounters
-## Master Plan v2.1 (Sep 29, 2026; code-status sync Sep 30, 2026)
+## Master Plan v2.2 (Sep 29, 2026 design; code-status sync Oct 4, 2026)
 
 Items marked *(fill-in)* are proposals added beyond Anthony's spec. All numbers are starting values exposed in Genesis Studio, never hardcoded.
 
-Status markers come from the Phase 1 code audit (Sep 30, 2026; `DMG_Combat_Audit_Phase1.md`): **[Built]** works today, **[Partial]** part exists, **[Missing]** not started, **[Conflicts]** the code does it differently and needs a decision. Each section ends with a *Current build* block; design targets are unchanged unless a line says otherwise.
+Status markers come from the Phase 1 code audit (Sep 30, 2026; `DMG_Combat_Audit_Phase1.md`) plus the Oct 2026 disk-truth pass: **[Built]** / **Shipped** works in Play, **[Partial]** / **Partial-on-disk** code exists but is not the finished design, **[Missing]** / **Not started** has no runtime, **[Conflicts]** the code does it differently (Phase 1 decisions locked Oct 3). Each numbered section keeps Anthony's design targets; *Current build* and §0 are execution notes only. Docs-only text and empty Studio placeholders are **not** shipped.
 
+Canonical copies (keep aligned): this file, Desktop `C:\Users\Teabagger\Desktop\DMG_Combat_Plan_v2.md`, and `combat_master_plan_handoff.md` (repo + Desktop).
 
-## 0. Current build status (code audit, Sep 30, 2026)
-68 systems checked: **8 Built, 28 Partial, 25 Missing, 7 Conflicts**. Built through Invector today: melee (light/heavy/combos/block), ranged aim/fire, crits (10%, x2), stamina, dodge roll, dash, 9 ammo types, 5 statuses, Hot Cross, hex skill tree, 3-companion trio, death/loot. Not started: utility brain, Combat Director/tokens, poise, parry, i-frames, Momentum, finishers, Sick Stick, body damage, factions.
+---
 
-Systems outside the numbered sections:
+## 0. Current build status (disk truth, Oct 4, 2026)
+
+**Tuning scene:** `Assets/_Project/Scenes/Dark Matter Genesis v1.6.5.unity`. **Combat_Sandbox is RETIRED** for melee/combat tuning (scene + `DMCombatSandboxSpawner` may still exist as a leftover; do not treat it as the play target).
+
+**Phase 1 (Audit) closed Oct 3, 2026.** Locked: Plasma default status = **Burning**; Ice→Cryo / Electricity→Energy display mapping; Fire/Gunpowder/Explosive/ResonanceStabilizer are damage types; wrap Invector (don't replace); `DamageInfo` + `IDamageReceiver` beside `IDamageable`; skill-branch and companion-role mappings. Animation tag sheet: `DMG_Combat_Animation_Tag_Sheet.md`.
+
+**Gate 0 (attack yaw) IMPLEMENTED separately, already on disk — not part of Phase 2.** Attack/charge auto-face uses `meleeAttackAutoFaceHalfAngle` (~16°) via `DMMeleeBlockThreatFacing.ApplyAttackFacing`; block stays ~30°. Do not re-prove it in Phase 2 except as a regression.
+
+**Phase 2 = §31 #2 Core combat** (in progress): Combat Studio shell **shipped** (Core / Melee / Ranged / Play / Roadmap + Genesis placeholders), Jetpack melee anims mapped (lights → Weak `SwordAttack` A→B→C Invector combo + `SwordRandomAttack.B`; charge hold `SwordCharge`; release Strong `SwordAttack.B` / AttackC). v1.6.5 acceptance still open, melee polish. After Phase 2 sign-off → **§31 #3 utility brain** (not Director/Momentum).
+
+**Batch 1 on disk:** `DamageInfo`, `CombatEvents`, `CombatPoise`, i-frames (`DMCombatIFrameController`), partial parry/block (`DMEnemyGuardBreakStagger`), `DM_CombatCoreProfile` + Genesis Combat Core subtab.
+
+**Performance (Oct 2026):** Pre-combat-plan Play in v1.6.5 was decent **with terrains + full hierarchy**. ~10 FPS was a UITK `DMUiToolkitWorldChrome` per-frame pickup/dot/bar scan — **FIXED by throttle** (`ExclusivePickupScanInterval` 0.2s, `ShouldRepaintDots()` wired, `SceneComponentCache` 0.2s refresh; nearest-threat via `EnemyHealthSceneRegistry`). Terrains stay **ON**. Test-mode toggles that disable world systems are temporary isolation only; all game functions return.
+
+Sep 30 audit snapshot (historical): 68 systems — 8 Built, 28 Partial, 25 Missing, 7 Conflicts. Built through Invector then: melee (light/heavy/combos/block), ranged aim/fire, crits (10%, x2), stamina, dodge roll, dash, 9 ammo types, 5 statuses, Hot Cross, hex skill tree, 3-companion trio, death/loot.
+
+### Shipped vs Not shipped (disk truth, Oct 4, 2026)
+
+Docs-only or Studio placeholders are **Not started**. Evidence is one class/asset on disk.
+
+| System | Status | Evidence |
+|---|---|---|
+| Invector wrap (body/motor/melee/shooter) | **Shipped** (legacy) | `PioneerShooterMeleeInput`, `EnemyInvector*` / `CompanionInvector*` bridges |
+| Melee light / heavy / combos / block | **Shipped** (legacy) | Invector `vMeleeManager` via Pioneer input |
+| Ranged aim / fire / ammo / Hot Cross | **Shipped** (legacy) | `DMUiToolkitHotCross`, 16 ammo items, `DMAmmoFxCatalog` |
+| Lock-on / death+loot / companion trio | **Shipped** (legacy) | `CombatFocusController`; death overlay + loot; `PioneerRosterManager` |
+| Hex skill tree (stat nodes) | **Shipped** (legacy; 5 cats ≠ plan 4 branches) | 51 `SkillDefinition` assets |
+| Gate 0 attack yaw (~16°, tighter than block 30°) | **Shipped** | `DMMeleeBlockThreatFacing` + `meleeAttackAutoFaceHalfAngle` on `DM_CombatCoreProfile.asset` |
+| WorldChrome FPS throttle | **Shipped** | `DMUiToolkitWorldChrome` 0.2s exclusive pickup + `ShouldRepaintDots`; `EnemyHealthSceneRegistry` |
+| Combat Core profile + Genesis Combat Core tab | **Shipped** | `DM_CombatCoreProfile` / `.asset`; `DMStudioRegistry` combat-core; `CombatCoreOnly` filter |
+| DamageInfo + CombatEvents + IDamageReceiver | **Shipped** | `DamageInfo.cs`, `CombatEvents.cs`, `IDamageReceiver.cs`, `CombatDamageApplicator` |
+| Poise (dummy + humanoid) | **Shipped** | `CombatPoise` on `EnemyHealth` / `EnemyInvectorBootstrap` / dummy |
+| Dodge / dash i-frames | **Shipped** | `DMCombatIFrameController` + applicator gate; profile 0.25s |
+| Block vs parry guard-break | **Partial-on-disk** | `DMEnemyGuardBreakStagger` + `parryWindowSeconds`; no dedicated parry input / counter |
+| Block auto-face (~30°) | **Shipped** | `ApplyBlockFacing` + `meleeBlockAutoFaceHalfAngle` |
+| Status stacks / immunity / boss multiplier | **Partial-on-disk** | `CombatStatusEffectController` reads profile; element combos still missing |
+| Melee hitbox scale + swing dedupe | **Partial-on-disk** | `PioneerMeleeHitboxTuning`, `PioneerMeleeSwingHitDedupe` — Play acceptance still open |
+| Strong melee charge | **Partial-on-disk** | `strongMeleeChargeSeconds` + Pioneer CrossFade `Attacks.StrongAttacks.SwordCharge` / `SwordAttack.B` (AttackC). Lights use Weak `SwordAttack` A→B→C plus `SwordRandomAttack.B`. Play acceptance still open. |
+| Enemy melee reach / creep / reposition | **Partial-on-disk** | `enemyMeleeAttackRangeMultiplier` in `EnemyCombat`; creep in `EnemyAiController.States` |
+| Combat Studio (Phase 2 shell: Core/Melee/Ranged/Play/Roadmap) | **Shipped** (shell) | `DMCombatStudioWindow` tabs Core / Melee / Ranged / Play (v1.6.5) / Roadmap. Sandbox demoted to forensics. |
+| Genesis placeholders (AI, Director, Momentum, Sick Stick, Body, Encounters) | **Shipped** (labels only) | `DMStudioPanelMode.CombatPlanPlaceholder` — info panels, no empty `.asset` files |
+| v1.6.5 as combat tune scene | **Shipped** (scene exists) | `Dark Matter Genesis v1.6.5.unity` |
+| Combat_Sandbox as tune target | **Retired** | Leftover `Combat_Sandbox.unity` / spawner — do not use |
+| Player hitstop from `hitstopLightFrames` | **Not started** | Profile hooks only; no player TimeScale/hitstop consumer |
+| Utility AI brain (§31 #3) | **Not started** | No utility-score brain class |
+| Combat Director / attack tokens / morale | **Not started** | No `CombatDirector` |
+| Momentum / finishers / specials / Overdrive | **Not started** | Skill named "Momentum Strike" is a stat node only |
+| Sick Stick | **Not started** | No weapon / trigger / puke |
+| Body damage / dismemberment | **Not started** | Ragdoll + death dissolve only |
+| Factions / combat memory / L0–L3 sim / personality | **Not started** | No matching types |
+| Awareness meter / AI debug readout | **Not started** | No icon / readout |
+
+Systems outside the numbered sections (unchanged design; still true):
 - **[Partial] Combat HUD**: UI Toolkit HUD, ranged crosshair HUD, health HUD for the engaged enemy, enemy health bars and damage numbers. Gap: No Momentum bar, Sick Stick ready icon, awareness icons or finisher prompt.
 - **[Built] Hot Cross (quick-select)**: A gold cross with 4 quadrants. Top-left: 4 weapon slots, cycled with Tab / Y. Top-right: consumables (slots 4-9). Bottom-left: tools (binoculars, scanner). Includes an ammo-load popup. A code comment notes that element specials may share this face later.
 - **[Built] Ammo system**: 9 ammo types across 16 ammo items. Ammo cycles on D-Pad right / X and reloads on R / Select. Ammo FX profiles.
@@ -17,8 +69,6 @@ Systems outside the numbered sections:
 - **[Built] Lock-on / combat focus**: CombatFocusController: 3.5 m focus range with break-lock rules. Not in the plan.
 - **[Built] Death + loot workflow**: Player death, death overlay, respawn, enemy death sequence, loot bag and loot dialog. Gap: Downed/revive should hook into this workflow.
 - **[Partial] Enemy + creature roster**: Humanoid EnemyDefinitions: corrupt_patrol_android, Humanoid_Enemy, The_Evil_One. Non-human: Enemy, Gongo. DMI creatures have 4 brain profiles. Gap: Nothing is tagged by archetype. There's no body profile.
-
-**Phase 1 closed Oct 3, 2026** — decisions recorded in audit section 4 and `combat_master_plan_handoff.md`. Plasma default status = **Burning**; element display mapping and resource model locked.
 
 ---
 
@@ -45,8 +95,9 @@ Use event-driven systems, cached references, pooling, tick-based AI, a shared pe
 
 Tiered perception *(fill-in)*: cheap overlap/distance test every few ticks, raycasts only for NPCs that pass it.
 
-*Current build (audit Sep 30, 2026):*
+*Current build (audit Sep 30, 2026; execution Oct 4, 2026):*
 - **[Partial] Performance principles**: Vision checks refresh every 0.12 s, not every frame. Gap: Every enemy runs its own Update.
+- **[Shipped] UITK WorldChrome throttle (Oct 2026):** `DMUiToolkitWorldChrome` exclusive pickup / recipe / node scan is 0.2 s; `ShouldRepaintDots()` is wired; floating bars throttled. `EnemyHealthSceneRegistry` caches nearest-threat. Terrains stay on.
 
 ## 4. AI simulation levels
 - **L0 Dormant**: position, objective, high-level state only. No perception.
@@ -64,11 +115,11 @@ Brain = Archetype + Personality + Tactical Traits + Perception + Combat + Moveme
 **Decision layer: utility scoring** *(fill-in)*. Every possible action gets a score:
 `archetype base x personality modifiers x tactical traits x combat memory x Combat Director permission`, plus small randomness. Highest score wins. Personality becomes tunable numbers instead of new code.
 
-**Invector decision** *(fill-in)*: the audit must decide early whether the new brain wraps Invector's AI/controllers or replaces them, since this drives animation and hit-reaction work. **Audit result:** the code already wraps Invector for the player, enemies and companions (motor, melee, shooter, ragdoll, hit reactions via project bridges). Recommended: wrap Invector as the Body and replace only the decision layer (awaiting Anthony's confirmation).
+**Invector decision** *(fill-in)*: the audit must decide early whether the new brain wraps Invector's AI/controllers or replaces them, since this drives animation and hit-reaction work. **Locked Oct 3, 2026:** wrap Invector as the Body (motor, melee, shooter, ragdoll, hit reactions via project bridges). Replace only the decision layer later (§31 #3). Do not rip out Invector.
 
-*Current build (audit Sep 30, 2026):*
-- **[Conflicts] Unified utility-scoring brain**: There are three separate hard-coded brains. Gap: The plan wants one utility-scored brain shared by enemies, creatures and companions.
-- **[Partial] Invector decision (wrap vs replace)**: In practice the code already wraps Invector: project bridges drive Invector's motor, melee, shooter, ragdoll and damage for the player, enemies and companions. Gap: The decision still needs to be confirmed and written down.
+*Current build (audit Sep 30, 2026; execution Oct 4, 2026):*
+- **[Conflicts] Unified utility-scoring brain**: There are three separate hard-coded brains. Gap: The plan wants one utility-scored brain shared by enemies, creatures and companions. **Not started** — next after Phase 2 sign-off.
+- **[Shipped decision] Invector wrap**: Confirmed. Bridges stay; new Brain / DamageInfo / poise / status / Momentum layers sit above them.
 
 ## 6. Archetypes (behaviour templates, not classes)
 Code note: the code's `EnemyArchetype` enum is a rig type (LegacyCreature / HumanoidInvector), not a behaviour archetype. Current behaviour presets: Custom, AggressiveHunter, Guard, PatrolInvestigator, Ambush.
@@ -147,7 +198,7 @@ Guard, protect, retrieve, transport, repair, destroy equipment, hunt, capture, i
 
 **Poise and stamina** *(fill-in)*: hits drain poise; at zero the target staggers. Bosses have more poise instead of special rules. Blocking costs stamina; heavy/guard-break attacks go through blocks; unblockable attacks flash red.
 
-**Parry and dodge** *(fill-in)*: parry window about 0.2 s; perfect parry deals heavy poise damage and opens a counter. The existing dodge roll (gamepad B press / keyboard Q, Invector roll, costs stamina) and dash (B double-tap + hold / Left Alt; 4.5 m, 0.55 s cooldown, 22 stamina, `DM_ClimbDashProfile`) get invulnerability frames (about 0.25 s); neither has them yet.
+**Parry and dodge** *(fill-in)*: parry window about 0.2 s; perfect parry deals heavy poise damage and opens a counter. The existing dodge roll (gamepad B press / keyboard Q, Invector roll, costs stamina) and dash (B double-tap + hold / Left Alt; 4.5 m, 0.55 s cooldown, 22 stamina, `DM_ClimbDashProfile`) get invulnerability frames (about 0.25 s). **Oct 2026:** i-frames are on disk (`DMCombatIFrameController`); dedicated parry input + counter still later.
 
 **Damage Profile**: base damage, type, element, crit modifier, status, duration, area, dismemberment behaviour, environmental interaction, resource cost. Current contract is `IDamageable.TakeDamage(float, GameObject, bool isCritical)`; add the profile beside it with an adapter so existing callers keep working.
 
@@ -157,20 +208,21 @@ Guard, protect, retrieve, transport, repair, destroy equipment, hunt, capture, i
 
 **Feedback**: hitstop (2-4 frames light, 6 heavy, more on crit) *(fill-in)*, hit colours (Plasma orange, Cryo cyan, Energy violet, Laser red, Ion white-blue) *(fill-in)*, audio, VFX, UI, light camera feedback. No screen clutter.
 
-*Current build (audit Sep 30, 2026):*
+*Current build (audit Sep 30, 2026; execution Oct 4, 2026):*
 - **[Partial] Weapon interface / data**: ItemData holds melee damage, range, cooldown, stamina cost, knockback, crit chance 0.1 and multiplier x2, invectorWeaponId and grip. Gap: No light/heavy/combo definitions, parry, finisher set, dismemberment profile, or element separate from ammo.
 - **[Partial] Melee light / heavy / combos / block**: Built through Invector: vShooterMeleeInput drives vMeleeManager attacks, and combos come from the Invector animator. Gap: Combo strings aren't data-driven.
+- **[Shipped] Gate 0 attack yaw** (pre–Phase 2): `DMMeleeBlockThreatFacing.ApplyAttackFacing`, `meleeAttackAutoFaceHalfAngle` 16° vs block 30°.
 - **[Built] Ranged aim / fire**: ADS on LT/RMB, fire on RT/LMB, hip-fire spread, custom recoil (Invector recoil suppressed), burst fire, projectiles, hitscan beams and grenades. Gap: Nothing blocking.
 - **[Built] Critical hits**: Crits are a random roll per weapon (ItemData.RollCriticalHit, 10% for x2). Gap: No element crit effects and no consecutive-crit tracking (the Sick Stick needs it).
 - **[Built] Stamina costs**: Invector stamina, with stamina costs for melee, roll and dash. Gap: Block stamina is left to Invector defaults.
-- **[Missing] Poise**: None. Gap: No poise meter.
-- **[Partial] Stagger**: Ranged hits and crits trigger a ragdoll hit-stagger (0.28 s by default). Gap: Stagger isn't driven by poise.
-- **[Missing] Parry**: None. Gap: No parry window and no counter.
-- **[Partial] Dodge roll + dash**: Dodge roll (gamepad B press / keyboard Q) uses Invector Roll with a stamina cost. Gap: Neither has invulnerability frames.
-- **[Conflicts] Damage Profile / damage events**: IDamageable.TakeDamage(float, GameObject, bool isCritical) is the only damage contract. Gap: The call carries no type, element, poise, status or dismemberment data, so it conflicts with the plan's Damage Profile.
-- **[Partial] Status framework**: Statuses: Burning, Frozen, Shocked, Corroded, Stabilized. Gap: No max stacks, no immunity window, no boss multiplier.
+- **[Shipped] Poise**: `CombatPoise` on dummy + humanoids; values from `DM_CombatCoreProfile`. Break calls existing stagger / ragdoll bridge.
+- **[Partial] Stagger**: Poise-break stagger plus block/parry guard-break (`DMEnemyGuardBreakStagger`). Ranged ragdoll hit-stagger still exists.
+- **[Partial-on-disk] Parry**: Timed window (`parryWindowSeconds` 0.2s) on held block; stronger stagger + parry hitstop on the attacker. Gap: no dedicated parry button, no player counter.
+- **[Shipped] Dodge / dash i-frames**: `DMCombatIFrameController` (0.25 s profile) gated in `CombatDamageApplicator`.
+- **[Shipped] DamageInfo / events**: `DamageInfo` + `IDamageReceiver` + `CombatEvents` beside `IDamageable`. Body part unused; full element/dismemberment profile still later.
+- **[Partial] Status framework**: Statuses: Burning, Frozen, Shocked, Corroded, Stabilized. **Oct 2026:** max stacks, immunity window, boss multiplier live on the Combat Core profile. Gap: no element combos.
 - **[Missing] Resistances**: None on enemies. Gap: No per-element resistance by body profile.
-- **[Partial] Feedback (hitstop, colours, VFX, audio, camera, rumble)**: Impact VFX and audio per ammo (DMAmmoFxProfile x9, DMAmmoFxCatalog), floating damage numbers, CameraShakeService and laser burn marks. Gap: No hitstop.
+- **[Partial] Feedback (hitstop, colours, VFX, audio, camera, rumble)**: Impact VFX and audio per ammo (DMAmmoFxProfile x9, DMAmmoFxCatalog), floating damage numbers, CameraShakeService and laser burn marks. **Parry** uses local animator hitstop on the enemy. **Player swing hitstop** (`hitstopLightFrames` / `hitstopHeavyFrames`) is a profile hook only — not started.
 
 ## 15. Melee weapons
 - **Knife**: fastest, short reach, backstab bonus, high crit vs unaware, quick execution, later throw/recall.
@@ -336,15 +388,15 @@ Relationships: Friendly, Allied, Neutral, Suspicious, Hostile, Fearful, Territor
 ## 26. Genesis Studio
 Grows every phase. Profiles for: AI (archetype, personality, traits, perception, aggro, leash, memory), combat (damage, speed, reach, poise, attack priority, tokens), elements (status, duration, cost, crit effect, upgrade scaling, combos), Momentum/finishers/specials/Overdrive, Sick Stick triggers, skill tree, body (components, weak points, dismemberment, functional damage), companions (roles, buffs, debuffs, bond), encounters (composition, objectives, reinforcements, escalation, environment), difficulty *(fill-in: scales tokens, detection speed, reaction time and poise damage rather than health)*.
 
-*Current build (audit Sep 30, 2026):*
-- **[Partial] Genesis Studio combat knobs**: Combat group: Ammo FX and Hit Catalog. Gap: No AI, combat-core, element, Momentum, finisher, Sick Stick, skill-data, body, encounter or difficulty profiles.
+*Current build (audit Sep 30, 2026; execution Oct 4, 2026):*
+- **[Partial] Genesis Studio combat knobs**: Live tabs remain Combat Core, Melee Animations, Combat Studio, Ammo FX, Hit Catalog, Surface Damage (+ Carve Tool). Phase 2 shell **shipped**: Combat Studio is Core / Melee / Ranged / Play (opens v1.6.5) / Roadmap. Genesis Combat now has info-only placeholders (AI & awareness, Director & tokens, Momentum & finishers, Sick Stick & specials, Body & dismemberment, Encounters & difficulty) via `CombatPlanPlaceholder` — no empty profile assets. Runtime profiles for those phases still missing.
 
 ## 27. Combat sandbox (built in Phase 2)
 Start from the existing `TrainingDummy` (+ DummyCombatUI).
 Spawn any enemy, weapon, element, archetype, personality, status, body configuration, companion, encounter. Debug: god mode, infinite stamina/power/plasma/Momentum, force stagger/dismember/status/Sick Stick, spawn/reset encounter. Visualise vision cones, hearing radius, aggro, leash, target, last known position, token, state, objective, personality modifiers, utility scores.
 
-*Current build (audit Sep 30, 2026):*
-- **[Partial] Combat sandbox**: A TrainingDummy exists. Gap: No sandbox scene, spawner or debug toggles.
+*Current build (audit Sep 30, 2026; execution Oct 4, 2026):*
+- **[Retired as tune target] Combat_Sandbox**: Leftover scene + `DMCombatSandboxSpawner` / TrainingDummy exist. **Do not use for Phase 2 melee tuning.** Play and accept in **Dark Matter Genesis v1.6.5**. Full sandbox (spawn any archetype/personality, god mode, token viz) remains a later Phase 2/16 goal, not the daily tune scene.
 
 ## 28. Debugging
 Readable reports, e.g. "AI Brain 042, State: Search, Target: Player, Last Known: X/Y/Z, Reason: lost behind obstruction, Next: Investigate, Confidence: 61%". Hold a dev key and look at an enemy to see it *(fill-in)*. Stripped from release builds.
@@ -365,22 +417,22 @@ Each phase: hit detection, damage, stagger, death, finishers, dismemberment, tar
 - **[Missing] Combat testing**: EditMode tests exist for Directors, GameState, Validation and WorldState only. Gap: No combat tests and no performance harness.
 
 ## 31. Implementation order
-1. **Audit** **[In progress (this audit)]**: architecture and dependency maps; enemy, weapon, damage and animation library inventory (tagged); reuse vs replace candidates; Invector decision; migration table.
-2. **Core combat** **[Partial]**: damage profiles, weapon and element interfaces, hit detection, poise/stamina, status framework with immunity, health/damage events, **combat sandbox scene**.
-3. **Unified brain** **[Missing]**: utility scoring, archetype, personality, traits, perception/awareness, states. Migrate one enemy.
+1. **Audit** **[Done Oct 3, 2026]**: architecture and dependency maps; enemy, weapon, damage and animation library inventory (tagged); reuse vs replace candidates; Invector decision (**wrap**); migration table; animation tag sheet.
+2. **Core combat** **[Partial — Phase 2 in progress, Oct 2026]**: damage profiles, weapon and element interfaces, hit detection, poise/stamina, status framework with immunity, health/damage events. **Tune in v1.6.5; Combat_Sandbox retired.** Batch 1 on disk (DamageInfo, events, poise, i-frames, partial parry/block, Combat Core). **Gate 0 attack yaw is already shipped and is not mixed into this step.** Combat Studio + Genesis placeholder shell **shipped**. Jetpack melee: lights → Weak `SwordAttack` A→B→C + `SwordRandomAttack.B`; charge → `SwordCharge` / Strong `SwordAttack.B`. Remaining Phase 2 slice: v1.6.5 acceptance Play checklist, melee polish (hitboxes, strong charge feel, enemy reach). After sign-off → step 3, not Director/Momentum.
+3. **Unified brain** **[Missing — next after Phase 2]**: utility scoring, archetype, personality, traits, perception/awareness, states. Migrate one enemy (Humanoid_Enemy).
 4. **Combat Director** **[Missing]**: tokens, coordination, flanking, intensity, morale, reinforcement hooks. Test with 5 identical enemies.
 5. **Plasma sword template** **[Partial]**: attack, damage, hit react, crit, burn, resource use, upgrade. Start Blade and Survival skill branches.
 6. **Momentum meter and finishers** **[Missing]**: build-up, finisher selection, first finishers on the migrated enemy.
 7. **Sick Stick signature** **[Missing]**: trigger conditions, puke/stun, boss stagger, immunity, upgrades, VFX/audio.
 8. **Special moves and Overdrive** **[Missing]**.
-9. **Remaining elements** **[Conflicts]**: Cryo, Energy, Laser, Ion, then the Cryo-to-Energy combo. Elemental mastery panel.
+9. **Remaining elements** **[Conflicts, names locked Oct 3]**: Cryo, Energy, Laser, Ion, then the Cryo-to-Energy combo. Elemental mastery panel. Display mapping locked; plasma-fuel / power-cell implementation still later.
 10. **Body damage and dismemberment** **[Missing]** on one enemy, element-specific finishers.
 11. **Companions** **[Partial]**: roles, buffs/debuffs, commands, downed/revive, bond. Slot-based party.
 12. **Remaining skill branches** **[Partial]** (Control, Marksman) and ranged polish.
 13. **Environment and noise escalation** **[Partial]**.
 14. **Combat memory** **[Missing]**.
 15. **Encounters** **[Partial]**: 15a authored definitions with random picks, 15b faction battles, 15c noise escalation chains, 15d world events, survivor memory.
-16. **Studio completion and performance pass** **[Partial]**.
+16. **Studio completion and performance pass** **[Partial]**: WorldChrome throttle shipped; Combat Studio Phase 2 shell shipped (Core/Melee/Ranged/Play/Roadmap + Genesis placeholders). Remaining Studio profiles (AI, Director, Momentum, etc.) still wait for their phases.
 
 ## 32. Success criteria
 - New enemy mostly created through Studio profiles.

@@ -43,7 +43,7 @@ namespace Project.UI
         private const float CloseKeyHostPx = CloseCirclePx + CloseRingThickness * 2f + 2f;
         private const float CloseKeyInsetPx = (CloseKeyHostPx - CloseCirclePx) * 0.5f;
         private const float InteractionScanInterval = 1f / 12f;
-        private const float ExclusivePickupScanInterval = 0.1f;
+        private const float ExclusivePickupScanInterval = 0.2f;
         private const int MaxDots = 24;
         private const int MaxBars = 16;
 
@@ -59,6 +59,10 @@ namespace Project.UI
         private bool uguiHidden;
         private float nextInteractScan;
         private float nextExclusivePickupScan;
+        private float nextBarPaintTime;
+        private ItemPickup exclusiveItemRef;
+        private RecipePickup exclusiveRecipeRef;
+        private ResourceNode exclusiveHarvestRef;
         private int interactScanRevision;
         private int lastPaintInteractRevision = -1;
         private int lastPaintDotCount = -1;
@@ -188,8 +192,17 @@ namespace Project.UI
             CollectDots();
             if (pendingDots.Count > 0)
             {
-                PaintDots();
-                NotePaintSnapshot();
+                if (ShouldRepaintDots())
+                {
+                    PaintDots();
+                    NotePaintSnapshot();
+                }
+                else if (hasExclusiveDot
+                         && !Mathf.Approximately(exclusiveDot.HoldProgress01, lastPaintExclusiveHoldProgress))
+                {
+                    PaintDots();
+                    NotePaintSnapshot();
+                }
             }
             else
                 RecycleDots(0);
@@ -278,7 +291,17 @@ namespace Project.UI
 
         private void CollectExclusivePickupDot(Transform player, Camera camera)
         {
+            if (Time.unscaledTime < nextExclusivePickupScan
+                && TryRefreshExclusivePickupFromRefs(player, camera))
+            {
+                return;
+            }
+
+            nextExclusivePickupScan = Time.unscaledTime + ExclusivePickupScanInterval;
             WorldPickupFocus.Clear();
+            exclusiveItemRef = null;
+            exclusiveRecipeRef = null;
+            exclusiveHarvestRef = null;
 
             float nearR = WorldUseController.MaxPickupDistance;
             float nearSqr = nearR * nearR;
@@ -304,6 +327,8 @@ namespace Project.UI
                     continue;
                 if (!WorldUseController.IsCollectiblePickup(pickup))
                     continue;
+                if (PlanarDistanceSq(pickup.transform.position, player.position) > nearSqr)
+                    continue;
                 Vector3 anchor = pickup.GetVisualCenterWorldAnchor();
                 if (!TryQualify(anchor, player.position, origin, forward, nearSqr, halfCone, out float dist))
                     continue;
@@ -325,6 +350,8 @@ namespace Project.UI
             {
                 RecipePickup recipe = recipes[i];
                 if (recipe == null || !recipe.IsIndicatorAvailable)
+                    continue;
+                if (PlanarDistanceSq(recipe.transform.position, player.position) > nearSqr)
                     continue;
                 Vector3 anchor = recipe.GetVisualCenterWorldAnchor();
                 if (!TryQualify(anchor, player.position, origin, forward, nearSqr, halfCone, out float dist))
@@ -350,6 +377,8 @@ namespace Project.UI
                     || node.interactionMode != ResourceNodeInteractionMode.HoldHarvest
                     || node.resourceItem == null
                     || node.IsHoldActive)
+                    continue;
+                if (PlanarDistanceSq(node.transform.position, player.position) > nearSqr)
                     continue;
                 Vector3 pos = node.GetNodeCenter();
                 if (!TryQualify(pos, player.position, origin, forward, nearSqr, halfCone, out float dist))
@@ -386,21 +415,106 @@ namespace Project.UI
             FillPickupIdentity(bestItem, bestRecipe, bestHarvest, ref dot);
 
             if (isPickup)
-            {
-                bool close = WorldPickupFocus.IsWithinClosePromptRange(player.position, bestWorld);
-                dot.ClosePrompt = close;
-                dot.KeyLabel = "E";
-                dot.ActionLabel = "Take";
-                if (bestItem != null && bestItem.IsHoldActive)
-                    dot.HoldProgress01 = bestItem.HoldProgress01;
-                else if (bestRecipe != null && bestRecipe.IsHoldActive)
-                    dot.HoldProgress01 = bestRecipe.HoldProgress01;
-                else
-                    dot.HoldProgress01 = 0f;
-            }
+                ApplyExclusiveClosePrompt(player, bestWorld, ref dot);
 
             exclusiveDot = dot;
             hasExclusiveDot = true;
+            exclusiveItemRef = bestItem;
+            exclusiveRecipeRef = bestRecipe;
+            exclusiveHarvestRef = bestHarvest;
+        }
+
+        /// <summary>
+        /// Between full-scene pickup scans, track the last focused target only (O(1)).
+        /// </summary>
+        private bool TryRefreshExclusivePickupFromRefs(Transform player, Camera camera)
+        {
+            float nearR = WorldUseController.MaxPickupDistance;
+            float nearSqr = nearR * nearR;
+            float halfCone = Mathf.Clamp(PickupConeFov, 1f, 179f) * 0.5f;
+            Vector3 origin = camera != null ? camera.transform.position : player.position;
+            Vector3 forward = camera != null ? camera.transform.forward : player.forward;
+
+            if (exclusiveItemRef != null && exclusiveItemRef.IsIndicatorAvailable && exclusiveItemRef.itemData != null)
+            {
+                Vector3 anchor = exclusiveItemRef.GetVisualCenterWorldAnchor();
+                if (TryQualify(anchor, player.position, origin, forward, nearSqr, halfCone, out _))
+                {
+                    WorldPickupFocus.SetItem(exclusiveItemRef);
+                    exclusiveDot = MakeStemDot(
+                        anchor,
+                        ProximityDotStyle.PickupColor(exclusiveItemRef.itemData.itemType),
+                        exclusiveItemRef.IndicatorStemMinHeight,
+                        exclusiveItemRef.IndicatorStemMaxHeight);
+                    exclusiveDot.IsPickupPrompt = true;
+                    FillPickupIdentity(exclusiveItemRef, null, null, ref exclusiveDot);
+                    ApplyExclusiveClosePrompt(player, anchor, ref exclusiveDot);
+                    hasExclusiveDot = true;
+                    return true;
+                }
+            }
+
+            if (exclusiveRecipeRef != null && exclusiveRecipeRef.IsIndicatorAvailable)
+            {
+                Vector3 anchor = exclusiveRecipeRef.GetVisualCenterWorldAnchor();
+                if (TryQualify(anchor, player.position, origin, forward, nearSqr, halfCone, out _))
+                {
+                    WorldPickupFocus.SetRecipe(exclusiveRecipeRef);
+                    exclusiveDot = MakeStemDot(
+                        anchor,
+                        ProximityDotStyle.RecipeColor,
+                        exclusiveRecipeRef.IndicatorStemMinHeight,
+                        exclusiveRecipeRef.IndicatorStemMaxHeight);
+                    exclusiveDot.IsPickupPrompt = true;
+                    FillPickupIdentity(null, exclusiveRecipeRef, null, ref exclusiveDot);
+                    ApplyExclusiveClosePrompt(player, anchor, ref exclusiveDot);
+                    hasExclusiveDot = true;
+                    return true;
+                }
+            }
+
+            if (exclusiveHarvestRef != null
+                && exclusiveHarvestRef.interactionMode == ResourceNodeInteractionMode.HoldHarvest
+                && exclusiveHarvestRef.resourceItem != null
+                && !exclusiveHarvestRef.IsHoldActive)
+            {
+                Vector3 pos = exclusiveHarvestRef.GetNodeCenter();
+                if (TryQualify(pos, player.position, origin, forward, nearSqr, halfCone, out _))
+                {
+                    WorldPickupFocus.SetHarvest(exclusiveHarvestRef);
+                    exclusiveDot = MakeStemDot(
+                        pos,
+                        ProximityDotStyle.PickupColor(exclusiveHarvestRef.resourceItem.itemType),
+                        PickupStemFarMeters,
+                        PickupStemNearMeters);
+                    exclusiveDot.IsPickupPrompt = true;
+                    FillPickupIdentity(null, null, exclusiveHarvestRef, ref exclusiveDot);
+                    ApplyExclusiveClosePrompt(player, pos, ref exclusiveDot);
+                    hasExclusiveDot = true;
+                    return true;
+                }
+            }
+
+            hasExclusiveDot = false;
+            WorldPickupFocus.Clear();
+            exclusiveItemRef = null;
+            exclusiveRecipeRef = null;
+            exclusiveHarvestRef = null;
+            return false;
+        }
+
+        private void ApplyExclusiveClosePrompt(Transform player, Vector3 world, ref WorldDot dot)
+        {
+            bool close = WorldPickupFocus.IsWithinClosePromptRange(player.position, world);
+            dot.ClosePrompt = close;
+            dot.KeyLabel = "E";
+            dot.ActionLabel = "Take";
+            if (exclusiveItemRef != null && exclusiveItemRef.IsHoldActive)
+                dot.HoldProgress01 = exclusiveItemRef.HoldProgress01;
+            else if (exclusiveRecipeRef != null && exclusiveRecipeRef.IsHoldActive)
+                dot.HoldProgress01 = exclusiveRecipeRef.HoldProgress01;
+            else
+                dot.HoldProgress01 = 0f;
         }
 
         private void RefreshExclusiveHoldProgress()
@@ -447,6 +561,13 @@ namespace Project.UI
             }
         }
 
+        private static float PlanarDistanceSq(Vector3 a, Vector3 b)
+        {
+            float dx = a.x - b.x;
+            float dz = a.z - b.z;
+            return dx * dx + dz * dz;
+        }
+
         private static bool TryQualify(
             Vector3 world,
             Vector3 playerPos,
@@ -457,7 +578,7 @@ namespace Project.UI
             out float dist)
         {
             dist = 0f;
-            float sqr = (world - playerPos).sqrMagnitude;
+            float sqr = PlanarDistanceSq(world, playerPos);
             if (sqr > nearSqr)
                 return false;
             Vector3 toTarget = world - origin;
@@ -472,7 +593,9 @@ namespace Project.UI
             if (into == null)
                 return;
 
-            QuestGiverNpc[] givers = SceneComponentCache.GetAll<QuestGiverNpc>();
+            QuestGiverNpc[] givers = SceneComponentCache.GetAll<QuestGiverNpc>(
+                FindObjectsInactive.Exclude,
+                refreshInterval: 0.35f);
             for (int i = 0; i < givers.Length; i++)
             {
                 QuestGiverNpc giver = givers[i];
@@ -481,7 +604,9 @@ namespace Project.UI
                 into.Add(MakeStemDot(giver.transform.position, ProximityDotStyle.QuestGiverColor, InteractStemMeters));
             }
 
-            CraftingStation[] stations = SceneComponentCache.GetAll<CraftingStation>();
+            CraftingStation[] stations = SceneComponentCache.GetAll<CraftingStation>(
+                FindObjectsInactive.Exclude,
+                refreshInterval: 0.35f);
             for (int i = 0; i < stations.Length; i++)
             {
                 CraftingStation station = stations[i];
@@ -490,7 +615,9 @@ namespace Project.UI
                 into.Add(MakeStemDot(station.transform.position, ProximityDotStyle.CraftingColor, InteractStemMeters));
             }
 
-            BuildingControlPanel[] panels = SceneComponentCache.GetAll<BuildingControlPanel>();
+            BuildingControlPanel[] panels = SceneComponentCache.GetAll<BuildingControlPanel>(
+                FindObjectsInactive.Exclude,
+                refreshInterval: 0.35f);
             for (int i = 0; i < panels.Length; i++)
             {
                 BuildingControlPanel panel = panels[i];
@@ -499,7 +626,9 @@ namespace Project.UI
                 into.Add(MakeStemDot(panel.transform.position, ProximityDotStyle.BuildingColor, 0.9f));
             }
 
-            EnemyLootBag[] bags = SceneComponentCache.GetAll<EnemyLootBag>();
+            EnemyLootBag[] bags = SceneComponentCache.GetAll<EnemyLootBag>(
+                FindObjectsInactive.Exclude,
+                refreshInterval: 0.35f);
             for (int i = 0; i < bags.Length; i++)
             {
                 EnemyLootBag bag = bags[i];
@@ -509,7 +638,9 @@ namespace Project.UI
             }
 
 
-            InjuredPioneerLabRecoverable[] recoverables = SceneComponentCache.GetAll<InjuredPioneerLabRecoverable>();
+            InjuredPioneerLabRecoverable[] recoverables = SceneComponentCache.GetAll<InjuredPioneerLabRecoverable>(
+                FindObjectsInactive.Exclude,
+                refreshInterval: 0.35f);
             for (int i = 0; i < recoverables.Length; i++)
             {
                 InjuredPioneerLabRecoverable recoverable = recoverables[i];
@@ -520,7 +651,9 @@ namespace Project.UI
                 into.Add(MakeStemDot(recoverable.transform.position, ProximityDotStyle.ScienceLabColor, 0.85f));
             }
 
-            EchoWorldEntity[] echoes = SceneComponentCache.GetAll<EchoWorldEntity>();
+            EchoWorldEntity[] echoes = SceneComponentCache.GetAll<EchoWorldEntity>(
+                FindObjectsInactive.Exclude,
+                refreshInterval: 0.35f);
             for (int i = 0; i < echoes.Length; i++)
             {
                 EchoWorldEntity echo = echoes[i];
@@ -531,7 +664,9 @@ namespace Project.UI
                 into.Add(MakeStemDot(echo.transform.position, ProximityDotStyle.EchoColor, InteractStemMeters));
             }
 
-            PetWorldAdoptable[] adoptables = SceneComponentCache.GetAll<PetWorldAdoptable>();
+            PetWorldAdoptable[] adoptables = SceneComponentCache.GetAll<PetWorldAdoptable>(
+                FindObjectsInactive.Exclude,
+                refreshInterval: 0.35f);
             for (int i = 0; i < adoptables.Length; i++)
             {
                 PetWorldAdoptable adoptable = adoptables[i];
@@ -646,12 +781,30 @@ namespace Project.UI
             return 0;
         }
 
+        private bool ShouldRepaintBars()
+        {
+            Camera camera = worldCamera;
+            if (camera == null)
+                return true;
+
+            Transform cam = camera.transform;
+            if ((cam.position - lastPaintCamPos).sqrMagnitude > 0.04f)
+                return true;
+
+            if (Quaternion.Angle(cam.rotation, lastPaintCamRot) > 0.35f)
+                return true;
+
+            Transform player = playerTransform;
+            return player != null && (player.position - lastPaintPlayerPos).sqrMagnitude > 0.04f;
+        }
+
         private bool ShouldRepaintDots()
         {
-            // Exclusive pickup must repaint every frame while the camera moves so world-locked stems
-            // stay glued to the item (throttling caused screen-space detach/jitter on pan/tilt).
-            if (hasExclusiveDot)
+            if (hasExclusiveDot
+                && !Mathf.Approximately(exclusiveDot.HoldProgress01, lastPaintExclusiveHoldProgress))
+            {
                 return true;
+            }
 
             if (pendingDots.Count != lastPaintDotCount)
                 return true;
@@ -992,6 +1145,11 @@ namespace Project.UI
         {
             if (barsLayer == null || barsLayer.panel == null)
                 return;
+
+            if (Time.unscaledTime < nextBarPaintTime && !ShouldRepaintBars())
+                return;
+
+            nextBarPaintTime = Time.unscaledTime + 0.12f;
 
             Camera camera = worldCamera;
             FloatingTargetHealthBar[] bars = SceneComponentCache.GetAll<FloatingTargetHealthBar>(

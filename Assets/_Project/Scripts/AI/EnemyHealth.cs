@@ -56,11 +56,13 @@ namespace Project.AI
             isDead = false;
             ResetCombatPoise();
             NotifyHealthChanged();
+            EnemyHealthSceneRegistry.Register(this);
         }
 
         private void OnDisable()
         {
             CancelInvoke(nameof(Respawn));
+            EnemyHealthSceneRegistry.Unregister(this);
         }
 
         public void TakeDamage(float damage, GameObject source, bool isCritical = false)

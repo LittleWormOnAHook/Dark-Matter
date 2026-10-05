@@ -6,14 +6,19 @@ namespace Project.Combat
     [Serializable]
     public sealed class DMMeleeClipSlots
     {
-        [Tooltip("WeakAttacks / StrongAttacks state A")]
+        [Tooltip("WeakAttacks / SwordAttack A — regular chained light.")]
         public AnimationClip lightA;
+        [Tooltip("WeakAttacks / SwordAttack B — regular chained light.")]
         public AnimationClip lightB;
+        [Tooltip("WeakAttacks / SwordAttack C — regular chained light.")]
         public AnimationClip lightC;
+        [Tooltip("StrongAttacks / SwordAttack A — other heavy. Not the charge release.")]
         public AnimationClip strongA;
+        [Tooltip("StrongAttacks / SwordAttack B — charged release (AttackC).")]
         public AnimationClip strongB;
+        [Tooltip("StrongAttacks / SwordAttack C — other heavy.")]
         public AnimationClip strongC;
-        [Tooltip("Hold pose while charging strong attack (optional; falls back to strongA first frame).")]
+        [Tooltip("Attacks.StrongAttacks.SwordCharge hold pose (optional; falls back to strongB).")]
         public AnimationClip chargeHold;
     }
 
@@ -37,7 +42,7 @@ namespace Project.Combat
             }
         }
 
-        [Header("One-hand sword (AttackID 1 / SwordAttack)")]
+        [Header("One-hand sword (AttackID 1 / Weak SwordAttack A→B→C combo chain)")]
         public DMMeleeClipSlots oneHandSword = new DMMeleeClipSlots();
 
         [Header("Other families (catalog for future weapons)")]

@@ -372,7 +372,13 @@ namespace Project.AI.Invector
         {
             float duration = weaponStaggerSeconds > 0f ? weaponStaggerSeconds : defaultStaggerSeconds;
             if (poiseBreak)
-                duration = Mathf.Clamp(duration, 0.22f, 1.5f);
+            {
+                // Guard-break / profile stagger: honor full blockStaggerSeconds (up to 3s) and parryStaggerSeconds (up to 10s). Poise-only flinch stays capped.
+                if (weaponStaggerSeconds > 0f)
+                    duration = Mathf.Max(0.22f, duration);
+                else
+                    duration = Mathf.Clamp(duration, 0.22f, 1.5f);
+            }
 
             RestartStaggerRoutine(AnimatorStaggerRoutine(
                 sourceDamage,

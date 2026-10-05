@@ -10,7 +10,7 @@ namespace Project.AI
     public class EnemyCombat : MonoBehaviour
     {
         [Header("Melee")]
-        [SerializeField] private float attackRange = 1.8f;
+        [SerializeField] private float attackRange = 2.35f;
         [SerializeField] private float attackDamage = 12f;
         [SerializeField] private float attackCooldown = 1.4f;
         [Tooltip("Extra wait after a melee swing ends so attacks are not a constant loop. Randomized per swing. Standing in range still starts the next swing on its own.")]
@@ -37,6 +37,10 @@ namespace Project.AI
         public bool IsTargetingPioneer => targetCompanionHealth != null;
 
         private bool pendingInvectorAttack;
+        private bool _wasAttackPending;
+        private float _meleeRepositionUntil;
+
+        public bool WantsMeleeReposition => Time.time < _meleeRepositionUntil;
 
         /// <summary>
         /// Clears in-flight swings and pushes the next attack attempt until stagger ends.
@@ -178,6 +182,18 @@ namespace Project.AI
 
         private void Update()
         {
+            if (_wasAttackPending && !attackPending)
+            {
+                if (HasLivingTarget() && target != null)
+                {
+                    float connectRange = ResolveEffectiveAttackRange(target) * 0.82f;
+                    if (HorizontalDistance(transform.position, target.position) > connectRange)
+                        _meleeRepositionUntil = Time.time + 0.65f;
+                }
+            }
+
+            _wasAttackPending = attackPending;
+
             if (!attackPending)
                 return;
 
@@ -220,11 +236,21 @@ namespace Project.AI
         public float ResolveEffectiveAttackRange(Transform candidate)
         {
             if (candidate == null)
-                return attackRange;
+                return ResolveBaseAttackRange();
 
+            float range = ResolveBaseAttackRange();
             return candidate.GetComponentInParent<CompanionHealth>() != null
-                ? attackRange * pioneerRangeGraceMultiplier
-                : attackRange;
+                ? range * pioneerRangeGraceMultiplier
+                : range;
+        }
+
+        private float ResolveBaseAttackRange()
+        {
+            float range = attackRange;
+            DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
+            if (profile != null && profile.enemyMeleeAttackRangeMultiplier > 0f)
+                range *= profile.enemyMeleeAttackRangeMultiplier;
+            return range;
         }
 
         private float ResolveEffectiveAttackRange()

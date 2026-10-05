@@ -32,6 +32,7 @@ namespace Project.World
         private Transform _playerTransform;
         private readonly List<DmChunkReflectionProbe> _probes = new List<DmChunkReflectionProbe>();
         private Vector3 _lastPlayerPosition;
+        private float _nextTierUpdateUnscaled;
         private bool _botdProbeDisabled;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -89,9 +90,15 @@ namespace Project.World
                 return;
 
             Vector3 playerPosition = _playerTransform.position;
-            if ((playerPosition - _lastPlayerPosition).sqrMagnitude < 0.25f && _probes.Count == registeredProbeCount)
+            float now = Time.unscaledTime;
+            if (now < _nextTierUpdateUnscaled
+                && (playerPosition - _lastPlayerPosition).sqrMagnitude < 0.25f
+                && _probes.Count == registeredProbeCount)
+            {
                 return;
+            }
 
+            _nextTierUpdateUnscaled = now + 0.12f;
             _lastPlayerPosition = playerPosition;
             UpdatePlayerTile(playerPosition);
             ApplyDistanceTiers(playerPosition);

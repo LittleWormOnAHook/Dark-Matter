@@ -80,13 +80,18 @@ namespace Project.Player.Invector
         private const float StrongAttackBlockSuppressSeconds = 0.2f;
         private const float StrongDamageWindowSeconds = 1.75f;
         /// <summary>
-        /// FullBody path. The controller has no charge/hold clip, so the wind-up is a modest
-        /// hand/forearm cock. StrongAttacks/SwordAttack/A (WeakAttack_SwordB) plays on release.
-        /// That clip's retarget folds the right hand behind the chest after the opening strike,
-        /// so the swing is cut back to Null before the blade spins through the back.
+        /// Phase 2 one-hand mapping (Jetpack FullBody Attacks):
+        /// lights → WeakAttacks/SwordAttack A→B→C (Invector WeakAttack combo);
+        /// SwordRandomAttack is parallel pool only (not light tap entry);
+        /// charge hold → StrongAttacks/SwordCharge; charge release → Strong SwordAttack B.
+        /// Strong A and C are other heavies, not charge.
         /// </summary>
-        private const string StrongSwordStatePath = "Attacks.StrongAttacks.SwordAttack.A";
-        private static readonly int StrongSwordStateHash = Animator.StringToHash(StrongSwordStatePath);
+        private const string LightComboAPath = "Attacks.WeakAttacks.SwordAttack.A";
+        private const string StrongSwordBPath = "Attacks.StrongAttacks.SwordAttack.B";
+        private const string StrongSwordAPath = "Attacks.StrongAttacks.SwordAttack.A";
+        private static readonly int LightComboAHash = Animator.StringToHash(LightComboAPath);
+        private static readonly int StrongSwordBHash = Animator.StringToHash(StrongSwordBPath);
+        private static readonly int StrongSwordAHash = Animator.StringToHash(StrongSwordAPath);
         private const string StrongSwordChargeStatePath = "Attacks.StrongAttacks.SwordCharge";
         private static readonly int StrongSwordChargeStateHash = Animator.StringToHash(StrongSwordChargeStatePath);
         private bool _lightAttackHeldLast;
@@ -454,6 +459,7 @@ namespace Project.Player.Invector
             SyncPioneerCursorState();
             PinAimFollowDistance();
             MaintainStrongChargeAnimation();
+            ApplyMeleeThreatFacing();
         }
 
         protected override void CheckAimConditions()
@@ -791,6 +797,8 @@ namespace Project.Player.Invector
         public bool IsStrongMeleeDamageActive =>
             _strongDamageArmed && Time.time <= _strongDamageUntil;
 
+        public bool IsStrongChargePoseActive => _strongChargePoseActive;
+
         public override void BlockingInput()
         {
             if (animator == null || cc == null)
@@ -874,8 +882,7 @@ namespace Project.Player.Invector
 
             if (!_strongDamageSawSwing)
                 _strongDamageArmed = false;
-            animator.ResetTrigger(vAnimatorParameters.StrongAttack);
-            TriggerWeakAttack();
+            PlayLightSwordSwing();
         }
 
         private void TryReleaseStrongMelee()
@@ -895,31 +902,57 @@ namespace Project.Player.Invector
         }
 
         /// <summary>
-        /// CrossFades FullBody into the sword strong swing. A StrongAttack trigger only leaves Null,
-        /// so a block pose or an in-progress full-body transition ate it and the swing never started.
+        /// Regular / light: Invector WeakAttack → Weak SwordAttack A→B→C.
+        /// First tap also CrossFades combo A so a leftover FullBody pose cannot swallow WeakAttack.
+        /// </summary>
+        private void PlayLightSwordSwing()
+        {
+            int layer = ResolveFullBodyLayer();
+            PrepareDrawnSwordAttackId();
+
+            TriggerWeakAttack();
+
+            if (!isAttacking && layer >= 0 && animator.HasState(layer, LightComboAHash))
+            {
+                animator.SetLayerWeight(layer, 1f);
+                animator.CrossFadeInFixedTime(LightComboAHash, 0.06f, layer, 0f);
+            }
+        }
+
+        /// <summary>
+        /// Charged release: Strong SwordAttack B (AttackC). Falls back to A only if B is missing.
+        /// A StrongAttack trigger only leaves Null, so a block pose ate it and the swing never started.
         /// </summary>
         private void PlayStrongSwordSwing()
         {
-            int layer = cc != null ? cc.fullbodyLayer : -1;
-            if (layer < 0)
-                layer = animator.GetLayerIndex("FullBody");
+            int layer = ResolveFullBodyLayer();
+            PrepareDrawnSwordAttackId();
 
+            int hash = 0;
+            if (layer >= 0 && animator.HasState(layer, StrongSwordBHash))
+                hash = StrongSwordBHash;
+            else if (layer >= 0 && animator.HasState(layer, StrongSwordAHash))
+                hash = StrongSwordAHash;
+
+            if (hash != 0)
+            {
+                animator.SetLayerWeight(layer, 1f);
+                animator.CrossFadeInFixedTime(hash, 0.06f, layer, 0f);
+                _strongSwingStartedAt = Time.time;
+                return;
+            }
+
+            TriggerStrongAttack();
+        }
+
+        private void PrepareDrawnSwordAttackId()
+        {
             animator.ResetTrigger(vAnimatorParameters.WeakAttack);
             animator.ResetTrigger(vAnimatorParameters.StrongAttack);
             int attackId = AttackID;
             if (attackId <= 0)
                 attackId = 1;
             animator.SetInteger(vAnimatorParameters.AttackID, attackId);
-
-            if (layer >= 0 && animator.HasState(layer, StrongSwordStateHash))
-            {
-                animator.SetLayerWeight(layer, 1f);
-                animator.CrossFadeInFixedTime(StrongSwordStateHash, 0.06f, layer, 0f);
-                _strongSwingStartedAt = Time.time;
-                return;
-            }
-
-            TriggerStrongAttack();
         }
 
         /// <summary>
@@ -954,7 +987,10 @@ namespace Project.Player.Invector
 
         private static bool IsStrongSwordState(AnimatorStateInfo info)
         {
-            return info.fullPathHash == StrongSwordStateHash || info.IsName(StrongSwordStatePath);
+            return info.fullPathHash == StrongSwordBHash
+                || info.IsName(StrongSwordBPath)
+                || info.fullPathHash == StrongSwordAHash
+                || info.IsName(StrongSwordAPath);
         }
 
         private static bool IsStrongChargeState(AnimatorStateInfo info)
@@ -1107,10 +1143,24 @@ namespace Project.Player.Invector
         {
             return damage != null
                 && !damage.ignoreDefense
-                && isBlocking
+                && IsBlockingAtHitTime()
                 && meleeManager != null
                 && damage.sender != null
                 && meleeManager.CanBlockAttack(damage.sender.position);
+        }
+
+        /// <summary>
+        /// Re-read block input when the hit lands so stale isBlocking cannot absorb after a released parry tap.
+        /// </summary>
+        private bool IsBlockingAtHitTime()
+        {
+            if (cc == null)
+                return isBlocking;
+
+            return ReadBlockHeld()
+                && cc.currentStamina > 0
+                && !cc.customAction
+                && !isAttacking;
         }
 
         /// <summary>
@@ -1141,12 +1191,34 @@ namespace Project.Player.Invector
             if (successfulBlock)
                 TryAbsorbBlockedMelee(damage);
 
-            base.OnReceiveAttack(damage, attacker);
+            if (damage != null
+                && !damage.ignoreDefense
+                && successfulBlock
+                && meleeManager != null)
+            {
+                int damageReduction = meleeManager.GetDefenseRate();
+                if (damageReduction > 0)
+                    damage.ReduceDamage(damageReduction);
+
+                if (attacker != null && meleeManager.CanBreakAttack())
+                    attacker.BreakAttack(meleeManager.GetDefenseRecoilID());
+
+                meleeManager.OnDefense();
+                cc.currentStaminaRecoveryDelay = damage.staminaRecoveryDelay;
+                cc.currentStamina -= damage.staminaBlockCost;
+            }
+
+            if (damage != null)
+                damage.hitReaction = !successfulBlock || damage.ignoreDefense;
+
+            cc.TakeDamage(damage);
 
             if (!successfulBlock)
                 return;
 
             PlayGuardImpactReaction();
+            if (isParry)
+                DMParryClashVfx.TryPlay(damage, transform, damageSender);
             DMEnemyGuardBreakStagger.TryApplyFromBlock(attacker, transform, isParry, damageSender);
         }
 
@@ -1187,6 +1259,44 @@ namespace Project.Player.Invector
                 animator.CrossFadeInFixedTime("Null", 0.06f, layer, 0f);
 
             animator.SetBool(vAnimatorParameters.IsBlocking, true);
+        }
+
+        private void ApplyMeleeThreatFacing()
+        {
+            if (cc == null || cc.isDead || cc.customAction || cc.ragdolled)
+                return;
+
+            bool blockHeld = ReadBlockHeld();
+            if (!blockHeld && !IsDrawnMeleeWeaponActive())
+                return;
+
+            if (!blockHeld && !ShouldApplyAttackThreatFacing())
+                return;
+
+            DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
+
+            if (blockHeld)
+            {
+                if (!IsDrawnMeleeWeaponActive() && !isBlocking)
+                    return;
+
+                DMMeleeBlockThreatFacing.ApplyBlockFacing(transform, profile);
+                return;
+            }
+
+            DMMeleeBlockThreatFacing.ApplyAttackFacing(transform, profile);
+        }
+
+        private bool ShouldApplyAttackThreatFacing()
+        {
+            if (!IsDrawnMeleeWeaponActive())
+                return false;
+            if (cc.isRolling || cc.isJumping || isEquipping || lockInput || lockMeleeInput)
+                return false;
+            if (IsAiming || isReloading)
+                return false;
+
+            return isAttacking || _strongChargeArmed || _strongChargePoseActive;
         }
 
         private void ApplyDrawnMeleeBlockInput()

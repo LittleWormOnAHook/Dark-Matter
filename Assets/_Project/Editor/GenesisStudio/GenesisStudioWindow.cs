@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
+using Project.EditorTools.Combat;
 using Project.EditorTools.Theme;
 using Project.EditorTools.UiLayout;
 using Project.Player;
@@ -53,6 +54,35 @@ namespace Project.EditorTools.GenesisStudio
             GenesisStudioWindow window = GetWindow<GenesisStudioWindow>("Genesis Studio");
             window.minSize = new Vector2(920f, 620f);
             window.Show();
+        }
+
+        public static void OpenTo(string categoryId, string subtabId)
+        {
+            Open();
+            GenesisStudioWindow window = GetWindow<GenesisStudioWindow>("Genesis Studio");
+            IReadOnlyList<DMStudioCategory> cats = DMStudioRegistry.Categories;
+            for (int c = 0; c < cats.Count; c++)
+            {
+                if (cats[c].Id != categoryId)
+                    continue;
+
+                window.categoryIndex = c;
+                window.subtabIndex = 0;
+                DMStudioSubtab[] subs = cats[c].Subtabs;
+                for (int s = 0; s < subs.Length; s++)
+                {
+                    if (subs[s].Id == subtabId)
+                    {
+                        window.subtabIndex = s;
+                        break;
+                    }
+                }
+
+                window.contentScroll = Vector2.zero;
+                window.RebuildChrome();
+                window.Focus();
+                return;
+            }
         }
 
         private void OnEnable()
@@ -485,6 +515,9 @@ namespace Project.EditorTools.GenesisStudio
                     companionSystemsPanel.Draw();
                     EditorGUILayout.BeginScrollView(contentScroll, GUILayout.ExpandHeight(true));
                     break;
+                case DMStudioPanelMode.CombatPlanPlaceholder:
+                    DrawCombatPlanPlaceholder(sub);
+                    break;
             }
 
             EditorGUILayout.EndScrollView();
@@ -516,6 +549,36 @@ namespace Project.EditorTools.GenesisStudio
             {
                 if (!string.IsNullOrEmpty(sub.ExternalMenuPath))
                     EditorApplication.ExecuteMenuItem(sub.ExternalMenuPath);
+            }
+        }
+
+        private static void DrawCombatPlanPlaceholder(DMStudioSubtab sub)
+        {
+            EditorGUILayout.HelpBox(
+                string.IsNullOrEmpty(sub.Description)
+                    ? "Future combat profile. No ScriptableObject yet — this tab is a roadmap label only."
+                    : sub.Description,
+                MessageType.Info);
+
+            EditorGUILayout.Space(8f);
+            EditorGUILayout.HelpBox(
+                "Do not create an empty .asset here. Profiles ship when the matching §31 phase starts. "
+                + "Phase 2 is Core combat only — utility brain, Director, Momentum, and Sick Stick wait for sign-off.",
+                MessageType.None);
+
+            EditorGUILayout.Space(8f);
+            if (GUILayout.Button("Open Combat Studio → Roadmap", GUILayout.Height(32f)))
+                DMCombatStudioWindow.OpenTab(DMCombatStudioWindow.TabRoadmap);
+
+            if (!string.IsNullOrEmpty(sub.AssetPath)
+                && GUILayout.Button("Ping master combat plan", GUILayout.Height(26f)))
+            {
+                Object plan = AssetDatabase.LoadAssetAtPath<Object>(sub.AssetPath);
+                if (plan != null)
+                {
+                    EditorGUIUtility.PingObject(plan);
+                    Selection.activeObject = plan;
+                }
             }
         }
 

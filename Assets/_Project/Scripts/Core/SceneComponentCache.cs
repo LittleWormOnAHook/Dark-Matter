@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Project.AI;
 using UnityEngine;
 
 namespace Project.Core
@@ -19,11 +20,13 @@ namespace Project.Core
         }
 
         private static readonly Dictionary<Type, Entry> Cache = new Dictionary<Type, Entry>(16);
+        private static readonly List<EnemyHealth> EnemyHealthScratch = new List<EnemyHealth>(64);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             Cache.Clear();
+            EnemyHealthScratch.Clear();
         }
 
         public static void Invalidate()
@@ -50,7 +53,17 @@ namespace Project.Core
                 return cached;
             }
 
-            T[] found = UnityEngine.Object.FindObjectsByType<T>(inactive);
+            T[] found;
+            if (type == typeof(EnemyHealth) && inactive == FindObjectsInactive.Exclude)
+            {
+                EnemyHealthSceneRegistry.CopyTo(EnemyHealthScratch);
+                found = (T[])(object)EnemyHealthScratch.ToArray();
+            }
+            else
+            {
+                found = UnityEngine.Object.FindObjectsByType<T>(inactive);
+            }
+
             Cache[type] = new Entry
             {
                 ExpiresAtUnscaled = now + Mathf.Max(0.05f, refreshInterval),

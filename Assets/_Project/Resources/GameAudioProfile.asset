@@ -246,7 +246,7 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 45586ddf42b72ec418095966c5b1afef, type: 3}
   poiseStaggerDingClips:
   - {fileID: 8300000, guid: 551afa2800995734d9a55b8690f684c0, type: 3}
-  poiseStaggerDingSpacing: 0.0655
+  poiseStaggerDingSpacing: 0.1991
   poiseStaggerDingVolume: 0.92
   combatVolume: 1
   buttonClickClips:

@@ -4,6 +4,7 @@ using UnityEngine.Events;
 
 namespace Invector.vMelee
 {
+    using Project.Combat;
     using vEventSystems;
     [vClassHeader("Melee Object", openClose = false)]
     public partial class vMeleeAttackObject : vMonoBehaviour
@@ -149,39 +150,44 @@ namespace Invector.vMelee
             if (!targetColliders.ContainsKey(hitBox))
                 targetColliders.Add(hitBox, new List<GameObject>());
 
-            // check first condition for hit 
-            // Pioneer patch: ignore trigger volumes (ambience/quest/interaction zones) and ALL
-            // colliders under the attacker — prevents phantom hits on zones the player stands in.
-            if (canApplyDamage && !other.isTrigger && !targetColliders[hitBox].Contains(other.gameObject) && (meleeManager != null && other.gameObject != meleeManager.gameObject && !other.transform.IsChildOf(meleeManager.transform)))
+            if (meleeManager == null)
+                meleeManager = GetComponentInParent<vMeleeManager>();
+
+            // Pioneer patch: ignore triggers, self/child colliders, and non-combat overlaps.
+            if (!canApplyDamage
+                || other == null
+                || other.isTrigger
+                || targetColliders[hitBox].Contains(other.gameObject)
+                || meleeManager == null
+                || PioneerMeleeOutgoingHitFilter.IsExcludedAttackerCollider(meleeManager, other))
             {
-                var inDamage = false;
-                var inRecoil = false;
+                return;
+            }
 
-                if (meleeManager == null)
-                {
-                    meleeManager = GetComponentInParent<vMeleeManager>();
-                }
+            HitProperties _hitProperties = meleeManager.hitProperties;
 
-                //check if meleeManager exists and apply his hitProperties to this
-                HitProperties _hitProperties = meleeManager.hitProperties;
+            bool inDamage = false;
+            bool inRecoil = false;
 
-                // damage conditions
-                if (((hitBox.triggerType & vHitBoxType.Damage) != 0) && _hitProperties.hitDamageTags == null || _hitProperties.hitDamageTags.Count == 0)
-                {
+            if ((hitBox.triggerType & vHitBoxType.Damage) != 0)
+            {
+                if (_hitProperties.hitDamageTags == null || _hitProperties.hitDamageTags.Count == 0)
                     inDamage = true;
-                }
-                else if (((hitBox.triggerType & vHitBoxType.Damage) != 0) && MatchesDamageTag(other, _hitProperties.hitDamageTags))
-                {
+                else if (MatchesDamageTag(other, _hitProperties.hitDamageTags))
                     inDamage = true;
-                }
-                // recoil conditions  
-                else if (((hitBox.triggerType & vHitBoxType.Recoil) != 0) &&
-                    (_hitProperties.hitRecoilLayer == (_hitProperties.hitRecoilLayer | (1 << other.gameObject.layer))))
-                {
-                    inRecoil = true;
-                }
 
-                if (inDamage || inRecoil)
+                if (inDamage && PioneerMeleeOutgoingHitFilter.IsAttackerPlayerSide(meleeManager))
+                    inDamage = PioneerMeleeOutgoingHitFilter.IsValidOutgoingDamageTarget(other, _hitProperties);
+            }
+
+            if (!inDamage
+                && (hitBox.triggerType & vHitBoxType.Recoil) != 0
+                && (_hitProperties.hitRecoilLayer == (_hitProperties.hitRecoilLayer | (1 << other.gameObject.layer))))
+            {
+                inRecoil = !PioneerMeleeOutgoingHitFilter.ShouldSuppressWorldRecoil(meleeManager, other);
+            }
+
+            if (inDamage || inRecoil)
                 {
                     // add target collider in the list to control the frequency of hit
                     targetColliders[hitBox].Add(other.gameObject);
@@ -220,7 +226,6 @@ namespace Invector.vMelee
                         onRecoilHit.Invoke(hitInfo);
                     }
                 }
-            }
         }
 
         /// <summary>

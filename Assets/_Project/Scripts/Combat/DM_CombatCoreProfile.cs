@@ -42,10 +42,10 @@ namespace Project.Combat
         [Range(0.1f, 1f)] public float humanoidPoiseStaggerSeconds = 0.32f;
 
         [Header("Block / parry guard-break (attacker stagger)")]
-        [Tooltip("Attack lockout after a normal block. Mild guard stun, about 0.35–0.45s — shorter than a parry. Souls and God of War treat a held block as a light recoil, not a riposte.")]
-        [Range(0.2f, 1.2f)] public float blockStaggerSeconds = 0.4f;
-        [Tooltip("Attack lockout after a parry (block inside parryWindowSeconds). Stronger riposte stun, about 0.7–0.85s. Sekiro and Souls parries are a real opening; a block is not.")]
-        [Range(0.25f, 1.5f)] public float parryStaggerSeconds = 0.8f;
+        [Tooltip("Attack lockout after a normal block. Tunable 0–3s (default 0.4). Typical Souls / God of War guard recoil is ~0.35–0.45s — shorter than a parry.")]
+        [Range(0f, 3f)] public float blockStaggerSeconds = 0.4f;
+        [Tooltip("Attack lockout after a parry (block inside parryWindowSeconds). Riposte opening on the attacker — tunable 0–10s (default 5). Shorter than block at low values; Sekiro/Souls-style at ~0.7–0.85s.")]
+        [Range(0f, 10f)] public float parryStaggerSeconds = 5f;
         [Tooltip("Flinch shove on a normal block. Kept under 1 so a guard tap is a mild stagger, not a launch.")]
         [Range(0.5f, 3f)] public float blockParryStaggerImpulseScale = 0.85f;
         [Tooltip("Multiplies the block shove on a parry. 1.75 × 0.85 ≈ 1.5, a clearly harder impact than a block.")]
@@ -82,6 +82,19 @@ namespace Project.Combat
         [Range(1f, 2.5f)] public float meleeHitboxReachScale = 1.75f;
         [Tooltip("Half-angle (degrees) from body forward for melee block/parry. Invector default is 90 (180° frontal).")]
         [Range(45f, 180f)] public float meleeBlockDefenseHalfAngle = 130f;
+        [Tooltip("Hold block (RMB): auto-face the nearest threat when their bearing exceeds this many degrees off forward.")]
+        [Range(5f, 75f)] public float meleeBlockAutoFaceHalfAngle = 30f;
+        [Tooltip("Max horizontal distance to snap facing while blocking.")]
+        [Range(2f, 8f)] public float meleeBlockAutoFaceMaxDistance = 4.5f;
+        [Tooltip("Yaw degrees per second while block-assist turning.")]
+        [Range(180f, 900f)] public float meleeBlockAutoFaceTurnSpeed = 540f;
+        [Tooltip("Light/strong swing and strong charge: auto-face nearest threat when bearing exceeds this half-angle (tighter than block).")]
+        [Range(5f, 45f)] public float meleeAttackAutoFaceHalfAngle = 16f;
+        [Tooltip("Extra reach scale for humanoid enemy melee hitboxes only.")]
+        [Range(1f, 2.5f)] public float enemyMeleeHitboxWidthScale = 2.25f;
+        [Range(1f, 2.5f)] public float enemyMeleeHitboxReachScale = 2.15f;
+        [Tooltip("Multiplies EnemyCombat.attackRange for AI strike distance (prefab values are often short).")]
+        [Range(1f, 1.5f)] public float enemyMeleeAttackRangeMultiplier = 1.22f;
         [Tooltip("Unused (legacy). Forgiveness is handled by scaled primary hitbox + per-swing target dedupe.")]
         [Range(0f, 45f)] public float meleeHitYawForgivenessDegrees = 0f;
 
@@ -90,11 +103,23 @@ namespace Project.Combat
         [Range(0.2f, 0.8f)] public float strongMeleeChargeSeconds = 0.4f;
         [Tooltip("Scales the normal melee damage roll on that charged swing. 1.8 is clearly above a light hit.")]
         [Range(1.2f, 3f)] public float strongMeleeDamageMultiplier = 1.8f;
+        [Tooltip("Normalized clip time when charged release (Strong SwordAttack B) hitboxes turn on. Late in the swing.")]
+        [Range(0.05f, 0.95f)] public float strongMeleeDamageStartNormalized = 0.72f;
+        [Tooltip("Normalized clip time when charged release hitboxes turn off.")]
+        [Range(0.1f, 1f)] public float strongMeleeDamageEndNormalized = 0.98f;
+        [Tooltip("Animator state speed for StrongAttacks/SwordCharge hold and Strong SwordAttack B (charged release). Does not affect light weak combo states.")]
+        [Range(0.75f, 2f)] public float strongMeleeAnimSpeedMultiplier = 1.25f;
 
         [Header("Future tuning hooks")]
         [Range(0, 12)] public int hitstopLightFrames = 2;
         [Range(0, 12)] public int hitstopHeavyFrames = 6;
         [Range(0.05f, 0.5f)] public float parryWindowSeconds = 0.2f;
+
+        [Header("Parry clash VFX")]
+        [Tooltip("One-shot sparks at the blade contact on a successful parry. Assign SparksLong.prefab under Prefabs/Combat/VFX.")]
+        public GameObject parryClashVfxPrefab;
+        [Range(0.5f, 2.5f)] public float parryClashVfxScale = 1.15f;
+        [Range(0.1f, 1.5f)] public float parryClashVfxLifetimeSeconds = 0.45f;
 
         [Header("Debug")]
         public bool logCombatEventsInPlay;

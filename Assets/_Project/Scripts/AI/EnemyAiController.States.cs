@@ -406,9 +406,16 @@ namespace Project.AI
                 && (combatBridge == null || !combatBridge.IsArmedRangedPreferred());
             if (meleeInRange)
             {
-                StopNavMeshMovement();
-                currentLocomotionSpeed = 0f;
-                currentLocalMoveDirection = Vector3.zero;
+                float effectiveRange = combat.ResolveEffectiveAttackRange(target);
+                float creepRing = Mathf.Min(standoff, effectiveRange * 0.84f);
+                float creepSpeed = walkSpeed * (combat.IsAttacking ? 0.38f : 0.62f);
+                if (combat.WantsMeleeReposition)
+                    creepSpeed = walkSpeed * 0.92f;
+
+                MoveTowardsCombatRing(target, creepSpeed, creepRing);
+                if (combat.WantsMeleeReposition && distanceToTarget > effectiveRange * 0.7f)
+                    MoveTowards(target.position, creepSpeed * 0.85f, effectiveRange * 0.58f);
+
                 FaceTowards(target.position);
                 combat.TryAttack();
                 return;

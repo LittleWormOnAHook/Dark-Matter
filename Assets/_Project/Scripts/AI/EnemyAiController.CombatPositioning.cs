@@ -26,7 +26,7 @@ namespace Project.AI
 
             // Prefer a contact band inside weapon reach so Meshy-proportion swings (shorter arms)
             // still connect; never orbit farther than we can strike.
-            float maxOrbit = Mathf.Max(minCombatSeparation, effectiveRange * 0.72f);
+            float maxOrbit = Mathf.Max(minCombatSeparation, effectiveRange * 0.86f);
             return Mathf.Min(standoff, maxOrbit);
         }
 

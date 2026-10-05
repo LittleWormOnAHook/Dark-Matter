@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Project.Combat;
 using UnityEditor;
 using UnityEditor.Animations;
@@ -9,6 +8,17 @@ namespace Project.EditorTools.Combat
     /// <summary>
     /// Builds DM_MeleeAnimationSet clip refs and applies one-hand sword motions to Invector attack states.
     /// </summary>
+    /// <remarks>
+    /// Jetpack FullBody mapping (do not regress):
+    /// <list type="bullet">
+    /// <item>WeakAttacks/SwordAttack A,B,C ← oneHandSword lightA/lightB/lightC (WeakAttack_SwordA→B→C chain).</item>
+    /// <item>WeakAttacks/SwordRandomAttack A,B,C ← Mixamo parallel swings only (never combo light slots).</item>
+    /// <item>StrongAttacks/SwordAttack A,B,C ← strongA/strongB/strongC.</item>
+    /// <item>StrongAttacks/SwordCharge ← chargeHold (speed from strongMeleeAnimSpeedMultiplier).</item>
+    /// <item>WeakAttacks entry AttackID==1 → SwordAttack sub-SM (not SwordRandomAttack).</item>
+    /// Never call AssignSlotStates on SwordRandomAttack — that copies combo clips into the random pool.
+    /// </list>
+    /// </remarks>
     public static class DMMeleeAnimationSetApplier
     {
         private const string SetAssetPath = "Assets/_Project/Resources/Combat/DM_MeleeAnimationSet.asset";
@@ -19,6 +29,17 @@ namespace Project.EditorTools.Combat
 
         private const string AttackCPath =
             "Assets/PROTOFACTOR/Ultimate Animation Collection/Animations/1Handed Melee Weapon Animset/FBX Motions/Humanoid@AttackC1hMelee.fbx";
+
+        private const string InvectorSwordWeakFbxPath =
+            "Assets/Invector-3rdPersonController/Melee Combat/3DModels/Animations/Melee_CombatSet.fbx";
+
+        /// <summary>Parallel random weak swings — not the WeakAttack_Sword A→B→C combo chain.</summary>
+        private const string RandomLightAPath =
+            "Assets/Animations/Mixamo Animations/Melee Weapons/One Hand/Sword And Shield Attack.fbx";
+        private const string RandomLightBPath =
+            "Assets/Animations/Mixamo Animations/Melee Weapons/One Hand/Sword And Shield Slash.fbx";
+        private const string RandomLightCPath =
+            "Assets/Animations/Mixamo Animations/Melee Weapons/One Hand/Sword And Shield Attack (1).fbx";
 
         [MenuItem("Tools/Dark Matter Genesis/Combat/Build And Apply Melee Animation Set")]
         public static void BuildAndApply()
@@ -57,15 +78,12 @@ namespace Project.EditorTools.Combat
         {
             AnimationClip attackC = LoadFirstClip(AttackCPath);
 
-            set.oneHandSword.lightA = LoadFirstClip(
-                "Assets/Animations/Mixamo Animations/Melee Weapons/One Hand/Sword And Shield Attack.fbx");
-            set.oneHandSword.lightB = LoadFirstClip(
-                "Assets/Animations/Mixamo Animations/Melee Weapons/One Hand/Sword And Shield Slash.fbx");
-            set.oneHandSword.lightC = LoadFirstClip(
-                "Assets/Animations/Mixamo Animations/Melee Weapons/One Hand/Sword And Shield Attack (1).fbx");
-            set.oneHandSword.strongA = attackC;
-            set.oneHandSword.strongB = LoadFirstClip(
+            set.oneHandSword.lightA = LoadClipByName(InvectorSwordWeakFbxPath, "WeakAttack_SwordA");
+            set.oneHandSword.lightB = LoadClipByName(InvectorSwordWeakFbxPath, "WeakAttack_SwordB");
+            set.oneHandSword.lightC = LoadClipByName(InvectorSwordWeakFbxPath, "WeakAttack_SwordC");
+            set.oneHandSword.strongA = LoadFirstClip(
                 "Assets/Animations/Mixamo Animations/Melee Weapons/One Hand/Sword And Shield Slash (1).fbx");
+            set.oneHandSword.strongB = attackC;
             set.oneHandSword.strongC = LoadFirstClip(
                 "Assets/Animations/Mixamo Animations/Melee Weapons/One Hand/Sword And Shield Slash (2).fbx");
             set.oneHandSword.chargeHold = attackC;
@@ -130,8 +148,12 @@ namespace Project.EditorTools.Combat
             AnimatorStateMachine strongAttacks = FindSubStateMachine(attacks, "StrongAttacks");
             if (weakAttacks != null)
             {
-                AnimatorStateMachine swordWeak = FindSubStateMachine(weakAttacks, "SwordAttack");
-                AssignSlotStates(swordWeak, slots);
+                AnimatorStateMachine swordCombo = FindSubStateMachine(weakAttacks, "SwordAttack");
+                ApplyWeakSwordComboClips(swordCombo, slots);
+                RouteWeakAttackIdToSwordAttack(weakAttacks, swordCombo);
+
+                AnimatorStateMachine swordRandom = FindSubStateMachine(weakAttacks, "SwordRandomAttack");
+                ApplySwordRandomParallelClips(swordRandom);
             }
 
             if (strongAttacks != null)
@@ -139,14 +161,68 @@ namespace Project.EditorTools.Combat
                 AnimatorStateMachine swordStrong = FindSubStateMachine(strongAttacks, "SwordAttack");
                 AssignSlotStates(swordStrong, slots, useStrongSlots: true);
 
-                AnimationClip chargeClip = slots.chargeHold != null ? slots.chargeHold : slots.strongA;
+                AnimationClip chargeClip = slots.chargeHold != null ? slots.chargeHold : slots.strongB;
+                if (chargeClip == null)
+                    chargeClip = slots.strongA;
                 AnimatorState charge = GetOrCreateState(strongAttacks, "SwordCharge");
                 charge.motion = chargeClip;
-                charge.speed = 0f;
                 charge.writeDefaultValues = true;
             }
 
+            ApplyStrongMeleeAnimSpeedFromProfile(controller);
             EditorUtility.SetDirty(controller);
+        }
+
+        /// <summary>
+        /// StrongAttacks/SwordCharge + Strong SwordAttack B only — never weak combo states.
+        /// </summary>
+        private static void ApplyStrongMeleeAnimSpeedFromProfile(AnimatorController controller)
+        {
+            if (controller == null)
+                return;
+
+            DM_CombatCoreProfile profile = AssetDatabase.LoadAssetAtPath<DM_CombatCoreProfile>(
+                "Assets/_Project/Resources/Combat/DM_CombatCoreProfile.asset");
+            float mult = profile != null ? profile.strongMeleeAnimSpeedMultiplier : 1.25f;
+            mult = Mathf.Clamp(mult, 0.75f, 2f);
+
+            AnimatorControllerLayer fullBody = FindLayer(controller, "FullBody");
+            if (fullBody == null)
+                return;
+
+            AnimatorStateMachine attacks = FindSubStateMachine(fullBody.stateMachine, "Attacks");
+            AnimatorStateMachine strongAttacks = attacks != null ? FindSubStateMachine(attacks, "StrongAttacks") : null;
+            if (strongAttacks == null)
+                return;
+
+            AnimatorState charge = GetOrCreateState(strongAttacks, "SwordCharge");
+            charge.speed = mult;
+
+            AnimatorStateMachine swordStrong = FindSubStateMachine(strongAttacks, "SwordAttack");
+            if (swordStrong != null)
+            {
+                AnimatorState strongB = GetOrCreateState(swordStrong, "B");
+                strongB.speed = mult;
+            }
+        }
+
+        /// <summary>Invector weak combo — WeakAttacks/SwordAttack A→B→C only.</summary>
+        private static void ApplyWeakSwordComboClips(AnimatorStateMachine swordCombo, DMMeleeClipSlots slots)
+        {
+            AssignSlotStates(swordCombo, slots, useStrongSlots: false);
+        }
+
+        /// <summary>
+        /// SwordRandomAttack must not reuse WeakAttack_SwordA/B/C (those live on chained SwordAttack).
+        /// </summary>
+        private static void ApplySwordRandomParallelClips(AnimatorStateMachine swordRandom)
+        {
+            if (swordRandom == null)
+                return;
+
+            SetStateMotion(swordRandom, "A", LoadFirstClip(RandomLightAPath));
+            SetStateMotion(swordRandom, "B", LoadFirstClip(RandomLightBPath));
+            SetStateMotion(swordRandom, "C", LoadFirstClip(RandomLightCPath));
         }
 
         private static void AssignSlotStates(
@@ -160,6 +236,45 @@ namespace Project.EditorTools.Combat
             SetStateMotion(swordAttack, "A", useStrongSlots ? slots.strongA : slots.lightA);
             SetStateMotion(swordAttack, "B", useStrongSlots ? slots.strongB : slots.lightB);
             SetStateMotion(swordAttack, "C", useStrongSlots ? slots.strongC : slots.lightC);
+        }
+
+        /// <summary>
+        /// AttackID 1 (one-hand) must enter Weak SwordAttack so Invector can chain A→B→C.
+        /// SwordRandomAttack is not the WeakAttack entry dest (combo uses SwordAttack).
+        /// </summary>
+        private static void RouteWeakAttackIdToSwordAttack(
+            AnimatorStateMachine weakAttacks,
+            AnimatorStateMachine swordCombo)
+        {
+            if (weakAttacks == null || swordCombo == null)
+                return;
+
+            AnimatorTransition[] entries = weakAttacks.entryTransitions;
+            for (int i = 0; i < entries.Length; i++)
+            {
+                AnimatorTransition transition = entries[i];
+                if (transition == null || !TransitionHasIntEquals(transition, "AttackID", 1))
+                    continue;
+
+                transition.destinationStateMachine = swordCombo;
+                transition.destinationState = null;
+                transition.isExit = false;
+            }
+        }
+
+        private static bool TransitionHasIntEquals(AnimatorTransition transition, string parameter, int value)
+        {
+            AnimatorCondition[] conditions = transition.conditions;
+            for (int i = 0; i < conditions.Length; i++)
+            {
+                AnimatorCondition condition = conditions[i];
+                if (condition.mode == AnimatorConditionMode.Equals
+                    && condition.parameter == parameter
+                    && Mathf.Approximately(condition.threshold, value))
+                    return true;
+            }
+
+            return false;
         }
 
         private static void SetStateMotion(AnimatorStateMachine sm, string stateName, AnimationClip clip)
@@ -220,5 +335,23 @@ namespace Project.EditorTools.Combat
 
             return null;
         }
+
+        private static AnimationClip LoadClipByName(string assetPath, string clipName)
+        {
+            if (string.IsNullOrEmpty(clipName))
+                return null;
+
+            Object[] assets = AssetDatabase.LoadAllAssetsAtPath(assetPath);
+            for (int i = 0; i < assets.Length; i++)
+            {
+                if (assets[i] is AnimationClip clip
+                    && clip.name == clipName
+                    && !clip.name.StartsWith("__"))
+                    return clip;
+            }
+
+            return null;
+        }
+
     }
 }

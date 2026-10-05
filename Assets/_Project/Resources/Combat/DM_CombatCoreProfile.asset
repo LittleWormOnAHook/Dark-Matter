@@ -19,11 +19,11 @@ MonoBehaviour:
   poiseRegenDelayAfterHit: 5
   humanoidPoiseMax: 80
   humanoidPoiseStaggerSeconds: 0.6
-  blockStaggerSeconds: 0.6
-  parryStaggerSeconds: 1.5
+  blockStaggerSeconds: 1.2
+  parryStaggerSeconds: 5
   blockParryStaggerImpulseScale: 0.85
   parryStaggerImpulseBonus: 1.75
-  blockStaggerHitstopSeconds: 0
+  blockStaggerHitstopSeconds: 0.146
   parryStaggerHitstopSeconds: 0.12
   trainingDummyPositionSpring: 20
   trainingDummyPositionDamping: 2.73
@@ -42,10 +42,23 @@ MonoBehaviour:
   meleeHitboxWidthScale: 2.1
   meleeHitboxReachScale: 1.75
   meleeBlockDefenseHalfAngle: 130
+  meleeBlockAutoFaceHalfAngle: 30
+  meleeBlockAutoFaceMaxDistance: 4.5
+  meleeBlockAutoFaceTurnSpeed: 540
+  meleeAttackAutoFaceHalfAngle: 16
+  enemyMeleeHitboxWidthScale: 2.25
+  enemyMeleeHitboxReachScale: 2.15
+  enemyMeleeAttackRangeMultiplier: 1.22
   meleeHitYawForgivenessDegrees: 0
   strongMeleeChargeSeconds: 0.4
   strongMeleeDamageMultiplier: 1.8
+  strongMeleeDamageStartNormalized: 0.72
+  strongMeleeDamageEndNormalized: 0.98
+  strongMeleeAnimSpeedMultiplier: 1.25
   hitstopLightFrames: 2
   hitstopHeavyFrames: 6
   parryWindowSeconds: 0.2
+  parryClashVfxPrefab: {fileID: 7766587421872479702, guid: ff3ee9c6089c20a4cba93a558d8eccbe, type: 3}
+  parryClashVfxScale: 1.15
+  parryClashVfxLifetimeSeconds: 0.45
   logCombatEventsInPlay: 0

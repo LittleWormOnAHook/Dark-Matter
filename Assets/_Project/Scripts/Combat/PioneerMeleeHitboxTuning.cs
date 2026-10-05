@@ -10,7 +10,7 @@ namespace Project.Combat
     {
         private const string LegacyAuxPrefix = "PioneerHitForgiveness_";
 
-        public static void ApplyToWeapon(vMeleeWeapon weapon)
+        public static void ApplyToWeapon(vMeleeWeapon weapon, bool enemyWeapon = false)
         {
             if (weapon == null)
                 return;
@@ -20,6 +20,11 @@ namespace Project.Combat
             DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
             float widthScale = profile != null ? profile.meleeHitboxWidthScale : 2.1f;
             float reachScale = profile != null ? profile.meleeHitboxReachScale : 1.75f;
+            if (enemyWeapon && profile != null)
+            {
+                widthScale = profile.enemyMeleeHitboxWidthScale;
+                reachScale = profile.enemyMeleeHitboxReachScale;
+            }
 
             vHitBox[] boxes = weapon.GetComponentsInChildren<vHitBox>(true);
             for (int i = 0; i < boxes.Length; i++)

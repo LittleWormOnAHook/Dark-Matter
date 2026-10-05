@@ -25,7 +25,9 @@ namespace Project.Companions
         public EnemyHealth ScanForThreat(Transform owner, CombatFocusController playerFocus)
         {
             float maxRange = EffectiveDetectRange(playerFocus);
-            EnemyHealth[] enemies = SceneComponentCache.GetAll<EnemyHealth>();
+            EnemyHealth[] enemies = SceneComponentCache.GetAll<EnemyHealth>(
+                FindObjectsInactive.Exclude,
+                refreshInterval: 0.35f);
             EnemyHealth best = null;
             float bestScore = float.MaxValue;
 

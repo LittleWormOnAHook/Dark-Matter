@@ -172,6 +172,9 @@ namespace Project.EditorTools.GenesisStudio
             "parryStaggerImpulseBonus",
             "blockStaggerHitstopSeconds",
             "parryStaggerHitstopSeconds",
+            "parryClashVfxPrefab",
+            "parryClashVfxScale",
+            "parryClashVfxLifetimeSeconds",
             "poiseDamageFromHealthMultiplier",
             "maxPoiseDamageFractionPerHit",
             "poiseRegenPerSecond",
@@ -196,8 +199,18 @@ namespace Project.EditorTools.GenesisStudio
             "meleeHitboxWidthScale",
             "meleeHitboxReachScale",
             "meleeBlockDefenseHalfAngle",
+            "meleeAttackAutoFaceHalfAngle",
+            "meleeBlockAutoFaceHalfAngle",
+            "meleeBlockAutoFaceMaxDistance",
+            "meleeBlockAutoFaceTurnSpeed",
+            "enemyMeleeHitboxWidthScale",
+            "enemyMeleeHitboxReachScale",
+            "enemyMeleeAttackRangeMultiplier",
             "strongMeleeChargeSeconds",
             "strongMeleeDamageMultiplier",
+            "strongMeleeDamageStartNormalized",
+            "strongMeleeDamageEndNormalized",
+            "strongMeleeAnimSpeedMultiplier",
             "logCombatEventsInPlay"
         };
 
@@ -337,7 +350,7 @@ namespace Project.EditorTools.GenesisStudio
                 DMStudioProfileSectionFilter.CombatAmmoOnly =>
                     "Live ammo combat fields (Play Mode edits push to the drawn weapon each tick). Fire Rate / burst / reload / mag on the loaded ammo profile win when greater than zero; else the weapon ItemData is used. Recoil Vertical/Horizontal are camera kick; rifle column on Ammo Recoil Profile still overrides two-hand weapons. Invector weapon recoilUp does nothing.",
                 DMStudioProfileSectionFilter.CombatCoreOnly =>
-                    "Poise, block vs parry guard-break (mild block, no block hitstop, parry pose-hold and triple ring), dummy spring, i-frames, strong melee charge, and status rules on DM_CombatCoreProfile (Resources/Combat).",
+                    "Poise, block vs parry, attack/block face, dummy spring, i-frames, strong melee charge, enemy melee scales, and status rules on DM_CombatCoreProfile (Resources/Combat).",
                 DMStudioProfileSectionFilter.LandingHeightsOnly =>
                     "Jump/Landing 3-tier height band on DM_ClimbDashProfile (bounce / hero / hero+damage + jetpack grace) - same asset as Climb/Dash; Play-mode edits persist via Profile Save.",
                 DMStudioProfileSectionFilter.BuildingPreviewOnly =>

@@ -22,7 +22,8 @@ namespace Project.EditorTools.GenesisStudio
         ControlsInputEditor = 13,
         PickupItemsCombined = 14,
         BuildingLibrary = 15,
-        EnvironmentStrata = 16
+        EnvironmentStrata = 16,
+        CombatPlanPlaceholder = 17
     }
 
     public readonly struct DMStudioSubtab
@@ -311,14 +312,14 @@ new DMStudioSubtab(
                     "combat",
                     "Combat",
                     "✦",
-                    "Ammo FX profiles, surface hit catalog, and surface damage (rock carving).",
+                    "Combat Core, melee animations, Combat Studio, ammo FX, and §31 phase placeholders.",
                     FromHex("#8F1E5E"),
                     new[]
                     {
                         new DMStudioSubtab(
                             "combat-core",
                             "Combat Core",
-                            "Poise, humanoid stagger, i-frames, status immunity/stacks, hitstop and parry hooks.",
+                            "Poise, humanoid stagger, i-frames, status immunity/stacks, hitstop, attack/block face, and parry hooks.",
                             DMStudioPanelMode.AssetFolder,
                             searchFolder: "Assets/_Project/Resources/Combat",
                             typeFilter: "t:DM_CombatCoreProfile",
@@ -335,7 +336,7 @@ new DMStudioSubtab(
                         new DMStudioSubtab(
                             "combat-studio",
                             "Combat Studio",
-                            "Standalone combat tuning window — core profile, sandbox scene, debug links.",
+                            "Standalone Combat Studio — Core / Melee / Ranged / Play (v1.6.5) / Roadmap.",
                             DMStudioPanelMode.ExternalTool,
                             externalMenuPath: "Tools/Dark Matter Genesis/Combat/Combat Studio"),
                         new DMStudioSubtab(
@@ -365,7 +366,43 @@ new DMStudioSubtab(
                             "Carve Tool",
                             "Edit Mode brush: click = one cut, hold + drag = continuous. Fracture / Erosion / Blast presets.",
                             DMStudioPanelMode.ExternalTool,
-                            externalMenuPath: Project.EditorTools.SurfaceCarve.DMCarveToolWindow.MenuPath)
+                            externalMenuPath: Project.EditorTools.SurfaceCarve.DMCarveToolWindow.MenuPath),
+                        new DMStudioSubtab(
+                            "combat-ai-awareness",
+                            "AI & awareness",
+                            "§31 #3 — utility scoring, archetype, personality, traits, perception. Next after Phase 2 core sign-off. Info only; no profile asset yet.",
+                            DMStudioPanelMode.CombatPlanPlaceholder,
+                            assetPath: "Assets/_Project/Documentation/Design/Combat/DMG_Combat_Plan_v2.md"),
+                        new DMStudioSubtab(
+                            "combat-director-tokens",
+                            "Director & tokens",
+                            "§31 #4 — Combat Director tokens, coordination, flanking, intensity, morale. Info only; no profile asset yet.",
+                            DMStudioPanelMode.CombatPlanPlaceholder,
+                            assetPath: "Assets/_Project/Documentation/Design/Combat/DMG_Combat_Plan_v2.md"),
+                        new DMStudioSubtab(
+                            "combat-momentum-finishers",
+                            "Momentum & finishers",
+                            "§31 #6 — Momentum meter, finisher selection, first finishers on the migrated enemy. Info only; no profile asset yet.",
+                            DMStudioPanelMode.CombatPlanPlaceholder,
+                            assetPath: "Assets/_Project/Documentation/Design/Combat/DMG_Combat_Plan_v2.md"),
+                        new DMStudioSubtab(
+                            "combat-sick-stick-specials",
+                            "Sick Stick & specials",
+                            "§31 #7–8 — Sick Stick trigger/puke, specials, Overdrive. Info only; no profile asset yet.",
+                            DMStudioPanelMode.CombatPlanPlaceholder,
+                            assetPath: "Assets/_Project/Documentation/Design/Combat/DMG_Combat_Plan_v2.md"),
+                        new DMStudioSubtab(
+                            "combat-body-dismemberment",
+                            "Body & dismemberment",
+                            "§31 #10 — body components, weak points, dismemberment, functional damage. Info only; no profile asset yet.",
+                            DMStudioPanelMode.CombatPlanPlaceholder,
+                            assetPath: "Assets/_Project/Documentation/Design/Combat/DMG_Combat_Plan_v2.md"),
+                        new DMStudioSubtab(
+                            "combat-encounters-difficulty",
+                            "Encounters & difficulty",
+                            "§31 #15–16 — authored encounters, faction battles, difficulty (tokens / detection / poise, not health). Info only; no profile asset yet.",
+                            DMStudioPanelMode.CombatPlanPlaceholder,
+                            assetPath: "Assets/_Project/Documentation/Design/Combat/DMG_Combat_Plan_v2.md")
                     }),
                 new DMStudioCategory(
                     "companions",

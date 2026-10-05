@@ -77,7 +77,23 @@ namespace Invector.vMelee
 
         bool TriggerCondictions(Collider other)
         {
-            return (canHit && (attackObject != null && (attackObject.meleeManager == null || other.gameObject != attackObject.meleeManager.gameObject)));
+            if (!canHit || attackObject == null || other == null)
+                return false;
+
+            vMeleeManager manager = attackObject.meleeManager;
+            if (manager == null)
+                return other.gameObject != attackObject.gameObject;
+
+            if (other.gameObject == manager.gameObject)
+                return false;
+
+            if (other.transform.IsChildOf(manager.transform))
+                return false;
+
+            if (other.transform.root == manager.transform.root)
+                return false;
+
+            return true;
         }
     }
 

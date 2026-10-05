@@ -445,7 +445,7 @@ namespace Project.AI.Invector
                     weapon.hitBoxes.Add(box);
             }
 
-            PioneerMeleeHitboxTuning.ApplyToWeapon(weapon);
+            PioneerMeleeHitboxTuning.ApplyToWeapon(weapon, enemyWeapon: true);
         }
 
         /// <summary>
