@@ -112,6 +112,9 @@ namespace Project.Player.Invector
             if (GetComponent<DMCombatIFrameController>() == null)
                 gameObject.AddComponent<DMCombatIFrameController>();
 
+            if (GetComponent<PioneerMeleeDamageWindowTracker>() == null)
+                gameObject.AddComponent<PioneerMeleeDamageWindowTracker>();
+
             if (!disableLegacyCombatComponents)
                 return;
 
@@ -208,6 +211,7 @@ namespace Project.Player.Invector
             PlayerInvectorRuntimeSetup.Apply(gameObject);
             StripLegacyEcm2Motor();
             EnsureInvectorPhysicsReady();
+            DMMeleeCombatProfileApplier.ApplyToPlayer(this);
             _physicsInitialized = true;
         }
 

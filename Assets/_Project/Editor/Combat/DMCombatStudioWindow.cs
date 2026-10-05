@@ -192,6 +192,18 @@ namespace Project.EditorTools.Combat
                         "statusBossMultiplier");
                 });
 
+                DMStudioStyles.DrawSection("Melee hit detection", DMStudioStyles.ContentPanel, () =>
+                {
+                    EditorGUILayout.HelpBox(
+                        "Scales Invector vHitBox on player and humanoid enemy weapons. Wider block cone uses defaultDefenseRange (half-angle from forward).",
+                        MessageType.Info);
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedProfile,
+                        "meleeHitboxWidthScale",
+                        "meleeHitboxReachScale",
+                        "meleeBlockDefenseHalfAngle");
+                });
+
                 DMStudioStyles.DrawSection("Strong melee", DMStudioStyles.ContentPanel, () =>
                 {
                     EditorGUILayout.HelpBox(
@@ -308,6 +320,9 @@ namespace Project.EditorTools.Combat
 
             DMStudioStyles.DrawSection("Related authoring", DMStudioStyles.ContentPanel, () =>
             {
+                if (GUILayout.Button("Build and apply melee animation set"))
+                    DMMeleeAnimationSetApplier.BuildAndApply();
+
                 if (GUILayout.Button("Genesis Studio → Combat → Ammo FX"))
                     EditorUtility.DisplayDialog(
                         "Ammo FX",

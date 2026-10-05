@@ -1,6 +1,7 @@
 using Invector.vCharacterController;
 using Invector.vMelee;
 using Invector.vShooter;
+using Project.Combat;
 using Project.Data;
 using Project.Player.Invector;
 using System;
@@ -443,6 +444,8 @@ namespace Project.AI.Invector
                 if (!weapon.hitBoxes.Contains(box))
                     weapon.hitBoxes.Add(box);
             }
+
+            PioneerMeleeHitboxTuning.ApplyToWeapon(weapon);
         }
 
         /// <summary>

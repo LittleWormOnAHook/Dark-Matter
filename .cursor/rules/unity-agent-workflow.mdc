@@ -8,7 +8,7 @@ alwaysApply: true
 ## Live editor
 
 - Unity **6 HDRP 6000.4.11f1**. Playable scene `Assets/_Project/Scenes/Dark Matter Genesis v1.6.2.unity`.
-- **Auto Refresh is off** (`kAutoRefreshMode=0`). After script/asset edits, tell the user to **Ctrl+R** / Assets → Refresh. Do **not** call `refresh_unity` with `mode: force` or `compile: request` unless they explicitly ask.
+- **Auto Refresh is off** (`kAutoRefreshMode=0`). After you finish Unity edits, **you** refresh the Editor via MCP (see **Auto refresh after edits** below). Do not leave disk changes un-imported. Only ask the user for **Ctrl+R** if MCP refresh fails or Unity is disconnected.
 - Work the **live Unity folder** the editor has open (Play uses that path). Do not clone onto an agent VM.
 - Git is agent source of truth. Plastic check-in is the user in the Plastic window (**no `cm` CLI**).
 
@@ -17,15 +17,27 @@ alwaysApply: true
 When editing Unity C# scripts, shaders, ScriptableObjects, or other assets that trigger recompile:
 
 1. Finish the code/asset changes first.
-2. **Do not** call `refresh_unity` with `mode: force` or `compile: request` unless the user explicitly asks.
+2. Run **Auto refresh after edits** (MCP `refresh_unity`).
 3. **Do not** spam MCP tools while compile / domain reload is in progress.
 4. Wait until Unity has **stopped compiling and finished domain reload**:
-   - Poll `mcpforunity://editor/state` until `compilation.is_compiling == false`, `is_domain_reload_pending == false`, and tools are ready.
+   - Prefer `refresh_unity` with `wait_for_ready: true`, or poll `mcpforunity://editor/state` until `compilation.is_compiling == false`, `is_domain_reload_pending == false`, and `data.advice.ready_for_tools` is true.
    - Domain reloads in this project can take 10–20+ seconds — be patient.
 5. Then run `read_console` focused on **errors** (include warnings if relevant).
-6. If new compile errors appear from the change, fix them and repeat steps 4–5.
+6. If new compile errors appear from the change, fix them and repeat steps 2–5.
 
 Never claim an edit is done while Unity is still compiling or reloading.
+
+## Auto refresh after edits
+
+When a task changes anything under `Assets/` or `ProjectSettings/` that Unity should import or compile (scripts, shaders, `.unity`, prefabs, ScriptableObjects, etc.):
+
+1. After the **last** file write for that task, call MCP **`refresh_unity`** once:
+   - **`mode`:** `if_dirty` (default). Use `force` only if `if_dirty` did not clear `external_changes_dirty` and import is still stale.
+   - **`scope`:** `all` (or `scripts` if only `.cs` changed and no other assets).
+   - **`compile`:** `request` when C# / `.asmdef` / shader includes changed; `none` for pure asset YAML/material/scene-only edits if compile is not needed.
+   - **`wait_for_ready`:** `true`.
+2. Then **`read_console`** (errors) before marking the task done or committing.
+3. If Unity MCP is unavailable, tell the user to **Ctrl+R** and wait for compile before claiming done.
 
 ## No commit with console errors
 

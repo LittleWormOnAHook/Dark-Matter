@@ -34,6 +34,10 @@ namespace Project.Combat
             if (damage == null)
                 return;
 
+            GameObject senderForDedupe = damage.sender != null ? damage.sender.gameObject : null;
+            if (!PioneerMeleeSwingHitDedupe.TryAcceptHit(senderForDedupe, gameObject))
+                return;
+
             // Humanoid enemies are transform-driven — strip knockback so shots do not launch the body.
             EnemyHealth enemyHealth = GetComponentInParent<EnemyHealth>();
             bool wantsHitStagger = damage.activeRagdoll;

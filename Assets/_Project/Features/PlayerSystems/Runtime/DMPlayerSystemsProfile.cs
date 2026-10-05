@@ -1,4 +1,5 @@
 using Project.Core;
+using Project.World;
 using Project.Features.Climb;
 using Project.Features.Dash;
 using Project.Features.Jetpack;
@@ -34,7 +35,7 @@ namespace Project.Player
         public bool requireSkillTreeUnlocks = true;
 
         [Header("World")]
-        [Tooltip("Gaia terrain tile streaming around the player (play mode). Off pauses the Terrain Loader Manager: no tiles load or unload, and tiles already loaded stay.")]
+        [Tooltip("Final authority for Gaia terrain streaming, content scenes, expedition tile wait, and related world loaders. Off keeps Terrain Loader Manager disabled in Play and after returning to Edit.")]
         public bool terrainLoading = true;
 
         private bool _appliedClimb = true;
@@ -47,9 +48,37 @@ namespace Project.Player
         public bool DashEnabled => isActiveAndEnabled && dash && PassesSkillGate(DMSkillMovementSystemGates.IsDashUnlockedBySkills);
         public bool JetpackEnabled => isActiveAndEnabled && jetpack && PassesSkillGate(DMSkillMovementSystemGates.IsJetpackUnlockedBySkills);
         public bool HeroLandEnabled => isActiveAndEnabled && heroLand;
-        // TEMP COMBAT FOCUS — keep the serialized prefab field intact; gate at runtime only.
-        public bool TerrainLoadingEnabled =>
-            terrainLoading && !DmTempCombatFocus.SkipWorldStreaming;
+        public bool TerrainLoadingEnabled => isActiveAndEnabled && terrainLoading;
+
+        /// <summary>Authority for world terrain streaming (live player profile, else any active profile).</summary>
+        public static bool IsWorldTerrainLoadingEnabled()
+        {
+            DMPlayerSystemsProfile profile = PlayerLocator.FindOnLivePlayer<DMPlayerSystemsProfile>();
+            if (profile == null)
+                profile = Object.FindFirstObjectByType<DMPlayerSystemsProfile>(FindObjectsInactive.Exclude);
+
+            return profile == null || profile.TerrainLoadingEnabled;
+        }
+
+        /// <summary>Enables or pauses Gaia's Terrain Loader Manager when present.</summary>
+        public static bool TryApplyGaiaTerrainLoader(bool on)
+        {
+            GameObject host = Gaia.GaiaUtils.GetTerrainLoaderManagerObject(false);
+            Gaia.TerrainLoaderManager loader = host != null ? host.GetComponent<Gaia.TerrainLoaderManager>() : null;
+            if (loader == null)
+                return false;
+
+            if (loader.enabled != on)
+                loader.enabled = on;
+
+            return true;
+        }
+
+        /// <summary>Re-applies Terrain Loading from the live scene profile (Edit or Play).</summary>
+        public static void ApplyTerrainAuthorityFromProfiles()
+        {
+            DmGaiaTerrainStreamingGate.ApplyFromProfiles();
+        }
 
         private bool PassesSkillGate(System.Func<bool> unlocked) =>
             !requireSkillTreeUnlocks || unlocked();
@@ -123,21 +152,8 @@ namespace Project.Player
             _appliedTerrainLoading = ApplyTerrainLoading(terrainOn) ? terrainOn : !terrainOn;
         }
 
-        /// <summary>Pauses or resumes Gaia's Terrain Loader Manager. Play mode only, so the scene is never dirtied.</summary>
-        private static bool ApplyTerrainLoading(bool on)
-        {
-            if (!Application.isPlaying)
-                return true;
-
-            GameObject host = Gaia.GaiaUtils.GetTerrainLoaderManagerObject(false);
-            Gaia.TerrainLoaderManager loader = host != null ? host.GetComponent<Gaia.TerrainLoaderManager>() : null;
-            if (loader == null)
-                return on;
-
-            if (loader.enabled != on)
-                loader.enabled = on;
-            return true;
-        }
+        private static bool ApplyTerrainLoading(bool on) =>
+            TryApplyGaiaTerrainLoader(on) || !on;
 
         private void SetEnabled<T>(bool on) where T : Behaviour
         {

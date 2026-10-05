@@ -325,6 +325,14 @@ new DMStudioSubtab(
                             playModeSave: true,
                             sectionFilter: DMStudioProfileSectionFilter.CombatCoreOnly),
                         new DMStudioSubtab(
+                            "melee-animations",
+                            "Melee Animations",
+                            "Per-weapon Mixamo / PROTOFACTOR clip families for Invector attack states.",
+                            DMStudioPanelMode.AssetFolder,
+                            searchFolder: "Assets/_Project/Resources/Combat",
+                            typeFilter: "t:DM_MeleeAnimationSet",
+                            playModeSave: true),
+                        new DMStudioSubtab(
                             "combat-studio",
                             "Combat Studio",
                             "Standalone combat tuning window — core profile, sandbox scene, debug links.",

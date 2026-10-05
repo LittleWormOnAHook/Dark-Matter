@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using Gaia;
+using Project.World;
 using UnityEditor;
 using UnityEngine;
 
@@ -75,6 +76,8 @@ public static class BindDmGenesisGaiaTerrainScenes
 
         EditorUtility.SetDirty(storage);
         AssetDatabase.SaveAssets();
+
+        DmGaiaTerrainStreamingGate.ApplyFromProfiles();
     }
 
     static void EnsureTerrainScenesInBuildSettings()

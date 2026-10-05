@@ -22,7 +22,7 @@ The **live Unity project folder on Anthony's machine** is the play target. Cloud
 
 ## After git changes on the live folder
 
-Tell the user to **Ctrl+R** (Auto Refresh off). Remind which **Genesis scene** file is canonical (current numbered scene under `Assets/_Project/Scenes/`).
+Run MCP **`refresh_unity`** after disk edits (`unity-agent-workflow.mdc`). If MCP is unavailable, tell the user **Ctrl+R**. Remind which **Genesis scene** file is canonical (current numbered scene under `Assets/_Project/Scenes/`).
 
 ## Optional local hooks
 

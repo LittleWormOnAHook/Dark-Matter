@@ -14,7 +14,7 @@
 - **Unity 6 HDRP** `6000.4.11f1` (the `unity-urp` rule filename is leftover — do not target URP)
 - Playable scene: `Assets/_Project/Scenes/Dark Matter Genesis v1.6.5.unity` (main scene, latest v1.6)
 - Git branch for UITK cutover: `cursor/uitoolkit-ui`
-- Editor **Auto Refresh is off**. After script/asset edits, Anthony Ctrl+R / Assets → Refresh. Do not force-refresh unless asked.
+- Editor **Auto Refresh is off**. After script/asset edits, agent runs MCP `refresh_unity` (`if_dirty`, `compile: request` when scripts change, `wait_for_ready: true`). Anthony Ctrl+R only if MCP is unavailable.
 - Git is agent source of truth. Plastic check-in is Anthony in the Plastic window (no `cm` CLI).
 - Do not clone this repo onto the agent box. Work the live project folder Unity has open (Play uses that path).
 - Do not add untracked L.V.E, mocap packs, `UIElementsSchema`, PlanetPack02, OlegWER, or GDKEditionAutoGen. Policy: `Assets/_Project/Documentation/Engineering/Vendor_Assets_And_Git_Policy.md`.

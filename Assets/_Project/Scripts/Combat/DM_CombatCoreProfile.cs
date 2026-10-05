@@ -75,6 +75,16 @@ namespace Project.Combat
         [Range(0f, 10f)] public float statusImmunityWindowSeconds = 2f;
         [Range(0.1f, 1f)] public float statusBossMultiplier = 0.5f;
 
+        [Header("Melee hit detection")]
+        [Tooltip("Scales Invector vHitBox trigger width (left/right thickness).")]
+        [Range(1f, 2.5f)] public float meleeHitboxWidthScale = 2.1f;
+        [Tooltip("Scales reach along the blade (box depth / length).")]
+        [Range(1f, 2.5f)] public float meleeHitboxReachScale = 1.75f;
+        [Tooltip("Half-angle (degrees) from body forward for melee block/parry. Invector default is 90 (180° frontal).")]
+        [Range(45f, 180f)] public float meleeBlockDefenseHalfAngle = 130f;
+        [Tooltip("Unused (legacy). Forgiveness is handled by scaled primary hitbox + per-swing target dedupe.")]
+        [Range(0f, 45f)] public float meleeHitYawForgivenessDegrees = 0f;
+
         [Header("Strong melee (hold light attack, then release)")]
         [Tooltip("Seconds the light-attack button (left mouse / Attack) must be held before a release plays the strong sword swing. After this threshold the charge pose stays until release. There is no maximum hold and the swing does not fire by itself. A shorter press-and-release stays a light tap. Right mouse stays block.")]
         [Range(0.2f, 0.8f)] public float strongMeleeChargeSeconds = 0.4f;

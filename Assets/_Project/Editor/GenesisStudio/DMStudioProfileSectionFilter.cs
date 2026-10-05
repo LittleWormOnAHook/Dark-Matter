@@ -193,6 +193,9 @@ namespace Project.EditorTools.GenesisStudio
             "hitstopLightFrames",
             "hitstopHeavyFrames",
             "parryWindowSeconds",
+            "meleeHitboxWidthScale",
+            "meleeHitboxReachScale",
+            "meleeBlockDefenseHalfAngle",
             "strongMeleeChargeSeconds",
             "strongMeleeDamageMultiplier",
             "logCombatEventsInPlay"

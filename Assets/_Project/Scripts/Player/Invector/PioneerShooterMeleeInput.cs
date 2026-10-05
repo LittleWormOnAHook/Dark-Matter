@@ -73,6 +73,7 @@ namespace Project.Player.Invector
         private bool _wasAimingCameraLastFrame;
         private bool _wasUiBlockingLastFrame;
         private bool _wasBlockHeldLastFrame;
+        private bool _strafeForBackwardLocomotion;
         private float _lastBlockPressTime = float.NegativeInfinity;
         private Coroutine _guardImpactRoutine;
         private const float BlockGuardPoseSeconds = 0.12f;
@@ -86,14 +87,12 @@ namespace Project.Player.Invector
         /// </summary>
         private const string StrongSwordStatePath = "Attacks.StrongAttacks.SwordAttack.A";
         private static readonly int StrongSwordStateHash = Animator.StringToHash(StrongSwordStatePath);
-        private const float StrongWindupDegrees = 24f;
-        private const float StrongForearmWindupDegrees = 10f;
-        private const float StrongWindupEaseSeconds = 0.14f;
-        private const float StrongSwingMinSeconds = 0.1f;
-        private const float StrongSwingMaxSeconds = 0.2f;
+        private const string StrongSwordChargeStatePath = "Attacks.StrongAttacks.SwordCharge";
+        private static readonly int StrongSwordChargeStateHash = Animator.StringToHash(StrongSwordChargeStatePath);
         private bool _lightAttackHeldLast;
         private float _lightAttackHoldStart = float.NegativeInfinity;
         private bool _strongChargeArmed;
+        private bool _strongChargePoseActive;
         private float _chargeArmedTime;
         private float _suppressBlockUntil;
         private bool _strongDamageArmed;
@@ -114,6 +113,7 @@ namespace Project.Player.Invector
         protected override void Start()
         {
             base.Start();
+            DMMeleeCombatProfileApplier.ApplyToPlayer(PioneerInvectorBootstrap.Instance);
             _inputBridge = GetComponent<PioneerInvectorInputBridge>();
             _jetpackInputBridge = GetComponent<DMJetpackInputBridge>();
             _climb = GetComponent<DMClimbController>();
@@ -453,7 +453,7 @@ namespace Project.Player.Invector
             base.LateUpdate();
             SyncPioneerCursorState();
             PinAimFollowDistance();
-            ApplyStrongMeleeChargePose();
+            MaintainStrongChargeAnimation();
         }
 
         protected override void CheckAimConditions()
@@ -619,7 +619,37 @@ namespace Project.Player.Invector
             input.x = move.x;
             input.z = move.y;
             cc.input = input;
+            UpdateBackwardStrafeWithoutTurnaround();
             cc.ControlKeepDirection();
+        }
+
+        /// <summary>
+        /// S/back moves away from camera facing without spinning the body 180° (strafe-back).
+        /// </summary>
+        private void UpdateBackwardStrafeWithoutTurnaround()
+        {
+            if (cc == null)
+                return;
+
+            if (IsAimingActive || cc.lockInStrafe || cc.customAction || cc.isRolling || cc.isJumping)
+            {
+                _strafeForBackwardLocomotion = false;
+                return;
+            }
+
+            bool backing = cc.input.z < -0.12f;
+            if (backing)
+            {
+                cc.isStrafing = true;
+                _strafeForBackwardLocomotion = true;
+                return;
+            }
+
+            if (_strafeForBackwardLocomotion)
+            {
+                cc.isStrafing = false;
+                _strafeForBackwardLocomotion = false;
+            }
         }
 
         public override void SprintInput()
@@ -783,6 +813,7 @@ namespace Project.Player.Invector
             {
                 _lightAttackHeldLast = false;
                 _strongChargeArmed = false;
+                _strongChargePoseActive = false;
                 return;
             }
 
@@ -856,6 +887,7 @@ namespace Project.Player.Invector
             isBlocking = false;
             animator.SetBool(vAnimatorParameters.IsBlocking, false);
             _suppressBlockUntil = Time.time + StrongAttackBlockSuppressSeconds;
+            _strongChargePoseActive = false;
             PlayStrongSwordSwing();
             _strongDamageArmed = true;
             _strongDamageSawSwing = false;
@@ -891,62 +923,33 @@ namespace Project.Player.Invector
         }
 
         /// <summary>
-        /// Invector@ShooterMelee_Jetpack has no charge clip. After the hold threshold, cock the
-        /// right hand and forearm so the blade draws back on the sword side and stay there until release.
-        /// The offset is applied in character space on top of the animated pose, so it cannot roll the
-        /// weapon around its own grip axis or leave a stuck local rotation into the swing.
+        /// FullBody charge pose from DM melee clip pool (PROTOFACTOR AttackC hold).
         /// </summary>
-        private void ApplyStrongMeleeChargePose()
+        private void MaintainStrongChargeAnimation()
         {
-            ExitStrongSwingIfArmFoldsBack();
-
-            bool holding = _strongChargeArmed
-                && CanTrackDrawnMeleeCharge()
-                && ReadLightAttackHeld()
-                && !isAttacking
-                && !isBlocking;
-            if (!holding || animator == null)
-                return;
-
-            float ease = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((Time.time - _chargeArmedTime) / StrongWindupEaseSeconds));
-            ApplySwordWindup(ease);
-        }
-
-        /// <summary>
-        /// WeakAttack_SwordB stays in front of the chest for the opening strike, then the retarget
-        /// parks the right hand behind the torso. Leave FullBody before that fold reads as a spin.
-        /// </summary>
-        private void ExitStrongSwingIfArmFoldsBack()
-        {
-            if (_strongSwingStartedAt < 0f || animator == null)
-                return;
-
-            int layer = cc != null ? cc.fullbodyLayer : animator.GetLayerIndex("FullBody");
-            if (layer < 0)
+            if (!_strongChargeArmed
+                || !CanTrackDrawnMeleeCharge()
+                || !ReadLightAttackHeld()
+                || isAttacking
+                || isBlocking
+                || animator == null)
             {
-                _strongSwingStartedAt = float.NegativeInfinity;
+                if (!_strongChargeArmed)
+                    _strongChargePoseActive = false;
                 return;
             }
 
-            bool inSwing = IsStrongSwordState(animator.GetCurrentAnimatorStateInfo(layer));
-            bool blendingIn = animator.IsInTransition(layer)
-                && IsStrongSwordState(animator.GetNextAnimatorStateInfo(layer));
-            if (!inSwing && !blendingIn)
-            {
-                _strongSwingStartedAt = float.NegativeInfinity;
-                return;
-            }
-
-            float elapsed = Time.time - _strongSwingStartedAt;
-            if (elapsed < StrongSwingMinSeconds)
+            int layer = ResolveFullBodyLayer();
+            if (layer < 0 || !animator.HasState(layer, StrongSwordChargeStateHash))
                 return;
 
-            bool handBehind = TryGetRightHandAhead(out float ahead) && ahead < -0.18f;
-            if (!handBehind && elapsed < StrongSwingMaxSeconds)
+            AnimatorStateInfo current = animator.GetCurrentAnimatorStateInfo(layer);
+            if (_strongChargePoseActive && (IsStrongChargeState(current) || animator.IsInTransition(layer)))
                 return;
 
-            animator.CrossFadeInFixedTime("Null", 0.1f, layer, 0f);
-            _strongSwingStartedAt = float.NegativeInfinity;
+            animator.SetLayerWeight(layer, 1f);
+            animator.CrossFadeInFixedTime(StrongSwordChargeStateHash, 0.08f, layer, 0f);
+            _strongChargePoseActive = true;
         }
 
         private static bool IsStrongSwordState(AnimatorStateInfo info)
@@ -954,113 +957,16 @@ namespace Project.Player.Invector
             return info.fullPathHash == StrongSwordStateHash || info.IsName(StrongSwordStatePath);
         }
 
-        private void ApplySwordWindup(float ease)
+        private static bool IsStrongChargeState(AnimatorStateInfo info)
         {
-            if (ease <= 0.001f)
-                return;
-
-            Transform hand = animator.GetBoneTransform(HumanBodyBones.RightHand);
-            Transform lower = animator.GetBoneTransform(HumanBodyBones.RightLowerArm);
-            if (hand == null)
-                return;
-
-            Transform weapon = meleeManager != null && meleeManager.rightWeapon != null
-                ? meleeManager.rightWeapon.transform
-                : null;
-            Vector3 grip = weapon != null ? weapon.position : hand.position;
-            if (weapon == null || !TryGetBladeTip(weapon, grip, out Vector3 tip))
-                tip = grip - transform.up * 0.8f + transform.right * 0.12f;
-
-            if (!TryChooseWindup(grip, tip, lower != null ? lower.position : hand.position, hand.position, out Quaternion forearmDelta, out Quaternion handDelta))
-                return;
-
-            AddWorldRotation(lower, forearmDelta, ease);
-            AddWorldRotation(hand, handDelta, ease);
+            return info.fullPathHash == StrongSwordChargeStateHash || info.IsName(StrongSwordChargeStatePath);
         }
 
-        private bool TryChooseWindup(Vector3 grip, Vector3 tip, Vector3 elbow, Vector3 handPosition, out Quaternion forearmDelta, out Quaternion handDelta)
+        private int ResolveFullBodyLayer()
         {
-            forearmDelta = Quaternion.identity;
-            handDelta = Quaternion.identity;
-            Vector3 blade = tip - grip;
-            if (blade.sqrMagnitude < 0.0001f)
-                return false;
-
-            Vector3 chest = ChestPosition();
-            Vector3[] axes = { transform.right, transform.forward, Vector3.Cross(transform.up, blade.normalized) };
-            float bestScore = float.NegativeInfinity;
-            bool found = false;
-            for (int a = 0; a < axes.Length; a++)
-            {
-                Vector3 axis = axes[a];
-                if (axis.sqrMagnitude < 0.01f)
-                    continue;
-                axis.Normalize();
-                for (int s = -1; s <= 1; s += 2)
-                {
-                    Quaternion wrist = Quaternion.AngleAxis(s * StrongWindupDegrees, axis);
-                    Quaternion forearm = Quaternion.AngleAxis(s * StrongForearmWindupDegrees, axis);
-                    Vector3 newHand = elbow + forearm * (handPosition - elbow);
-                    Vector3 cockedGrip = newHand + (grip - handPosition);
-                    Vector3 newTip = cockedGrip + wrist * (forearm * blade);
-                    Vector3 fromChest = newTip - chest;
-                    float right = Vector3.Dot(fromChest, transform.right);
-                    float handAhead = Vector3.Dot(newHand - chest, transform.forward);
-                    float handRight = Vector3.Dot(newHand - chest, transform.right);
-                    if (right < 0.05f || handRight < 0.02f || handAhead < -0.12f)
-                        continue;
-
-                    float raised = Vector3.Dot(newTip - tip, transform.up);
-                    float pulledBack = -Vector3.Dot(newTip - tip, transform.forward);
-                    if (raised < 0.02f && pulledBack < 0.02f)
-                        continue;
-
-                    float score = raised * 1.1f + pulledBack * 1.25f + handRight * 0.2f;
-                    if (score <= bestScore)
-                        continue;
-
-                    bestScore = score;
-                    forearmDelta = forearm;
-                    handDelta = wrist;
-                    found = true;
-                }
-            }
-
-            return found;
-        }
-
-        private Vector3 ChestPosition()
-        {
-            if (animator != null)
-            {
-                Transform chest = animator.GetBoneTransform(HumanBodyBones.Chest);
-                if (chest != null)
-                    return chest.position;
-            }
-
-            return transform.position + transform.up * 1.2f;
-        }
-
-        private bool TryGetRightHandAhead(out float ahead)
-        {
-            ahead = 0f;
-            if (animator == null)
-                return false;
-
-            Transform hand = animator.GetBoneTransform(HumanBodyBones.RightHand);
-            if (hand == null)
-                return false;
-
-            ahead = Vector3.Dot(hand.position - ChestPosition(), transform.forward);
-            return true;
-        }
-
-        private static void AddWorldRotation(Transform bone, Quaternion delta, float weight)
-        {
-            if (bone == null || weight <= 0.001f)
-                return;
-
-            bone.rotation = Quaternion.Slerp(Quaternion.identity, delta, Mathf.Clamp01(weight)) * bone.rotation;
+            if (cc != null && cc.fullbodyLayer >= 0)
+                return cc.fullbodyLayer;
+            return animator != null ? animator.GetLayerIndex("FullBody") : -1;
         }
 
         private static bool TryGetBladeTip(Transform weapon, Vector3 grip, out Vector3 tipWorld)

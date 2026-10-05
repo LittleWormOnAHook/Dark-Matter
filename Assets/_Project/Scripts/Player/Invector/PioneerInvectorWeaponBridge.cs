@@ -2437,6 +2437,7 @@ namespace Project.Player.Invector
             if (weapon.movesetID <= 0)
                 weapon.movesetID = 1;
 
+            PioneerMeleeHitboxTuning.ApplyToWeapon(weapon);
             EnsureMeleeHitBoxes(weapon);
             weapon.enabled = true;
             _meleeManager.SetRightWeapon(weapon);

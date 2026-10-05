@@ -39,6 +39,10 @@ MonoBehaviour:
   statusMaxStacks: 3
   statusImmunityWindowSeconds: 2
   statusBossMultiplier: 0.5
+  meleeHitboxWidthScale: 2.1
+  meleeHitboxReachScale: 1.75
+  meleeBlockDefenseHalfAngle: 130
+  meleeHitYawForgivenessDegrees: 0
   strongMeleeChargeSeconds: 0.4
   strongMeleeDamageMultiplier: 1.8
   hitstopLightFrames: 2
