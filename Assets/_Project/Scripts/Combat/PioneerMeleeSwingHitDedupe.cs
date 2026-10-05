@@ -33,7 +33,7 @@ namespace Project.Combat
                 _targetRootsThisSwing.Clear();
             }
 
-            int targetRootId = hitColliderObject.transform.root.GetInstanceID();
+            int targetRootId = hitColliderObject.transform.root.gameObject.GetEntityId().GetHashCode();
             return _targetRootsThisSwing.Add(targetRootId);
         }
     }

@@ -1,5 +1,5 @@
 # Dark Matter: Genesis — Combat, AI, Companions & Encounters
-## Master Plan v2.2 (Sep 29, 2026 design; code-status sync Oct 4, 2026)
+## Master Plan v2.2 (Sep 29, 2026 design; code-status sync Oct 5, 2026)
 
 Items marked *(fill-in)* are proposals added beyond Anthony's spec. All numbers are starting values exposed in Genesis Studio, never hardcoded.
 
@@ -9,23 +9,25 @@ Canonical copies (keep aligned): this file, Desktop `C:\Users\Teabagger\Desktop\
 
 ---
 
-## 0. Current build status (disk truth, Oct 4, 2026)
+## 0. Current build status (disk truth, Oct 5, 2026)
 
 **Tuning scene:** `Assets/_Project/Scenes/Dark Matter Genesis v1.6.5.unity`. **Combat_Sandbox is RETIRED** for melee/combat tuning (scene + `DMCombatSandboxSpawner` may still exist as a leftover; do not treat it as the play target).
 
 **Phase 1 (Audit) closed Oct 3, 2026.** Locked: Plasma default status = **Burning**; Ice→Cryo / Electricity→Energy display mapping; Fire/Gunpowder/Explosive/ResonanceStabilizer are damage types; wrap Invector (don't replace); `DamageInfo` + `IDamageReceiver` beside `IDamageable`; skill-branch and companion-role mappings. Animation tag sheet: `DMG_Combat_Animation_Tag_Sheet.md`.
 
-**Gate 0 (attack yaw) IMPLEMENTED separately, already on disk — not part of Phase 2.** Attack/charge auto-face uses `meleeAttackAutoFaceHalfAngle` (~16°) via `DMMeleeBlockThreatFacing.ApplyAttackFacing`; block stays ~30°. Do not re-prove it in Phase 2 except as a regression.
+**Gate 0 (attack yaw) — regression-only.** Attack/charge auto-face uses `meleeAttackAutoFaceHalfAngle` (~16°) via `DMMeleeBlockThreatFacing.ApplyAttackFacing`; block stays ~30°. Shipped separately from Phase 2; do not re-prove except on regression.
 
-**Phase 2 = §31 #2 Core combat** (in progress): Combat Studio shell **shipped** (Core / Melee / Ranged / Play / Roadmap + Genesis placeholders), Jetpack melee anims mapped (lights → Weak `SwordAttack` A→B→C Invector combo + `SwordRandomAttack.B`; charge hold `SwordCharge`; release Strong `SwordAttack.B` / AttackC). v1.6.5 acceptance still open, melee polish. After Phase 2 sign-off → **§31 #3 utility brain** (not Director/Momentum).
+**Phase 2 = §31 #2 Core combat — SIGNED OFF Oct 5, 2026** (Anthony acceptance in v1.6.5). Shipped: Batch 1 + melee polish — weak chain WeakAttack **A→B→C** + `SwordRandomAttack.B`; strong **charge timing/speed** (`SwordCharge` hold → Strong `SwordAttack.B`); **parry/block stagger** (`DMEnemyGuardBreakStagger`); **SparksLong** parry VFX; **incoming block fix**; **Combat Studio shell** (Core / Melee / Ranged / Play / Roadmap + Genesis placeholders). Primary code commit: `59368909c` (melee polish); earlier Batch 1 / hitbox / charge wiring in branch history (`4524a4069`, `5dcce7743`, etc.).
 
-**Batch 1 on disk:** `DamageInfo`, `CombatEvents`, `CombatPoise`, i-frames (`DMCombatIFrameController`), partial parry/block (`DMEnemyGuardBreakStagger`), `DM_CombatCoreProfile` + Genesis Combat Core subtab.
+**Next = §31 #3 utility brain** — one enemy (`Humanoid_Enemy`), **not** Combat Director / Momentum.
+
+**Batch 1 on disk:** `DamageInfo`, `CombatEvents`, `CombatPoise`, i-frames (`DMCombatIFrameController`), parry/block guard-break (`DMEnemyGuardBreakStagger`), `DM_CombatCoreProfile` + Genesis Combat Core subtab, hitbox tuning + swing dedupe (`PioneerMeleeHitboxTuning`, `PioneerMeleeSwingHitDedupe`).
 
 **Performance (Oct 2026):** Pre-combat-plan Play in v1.6.5 was decent **with terrains + full hierarchy**. ~10 FPS was a UITK `DMUiToolkitWorldChrome` per-frame pickup/dot/bar scan — **FIXED by throttle** (`ExclusivePickupScanInterval` 0.2s, `ShouldRepaintDots()` wired, `SceneComponentCache` 0.2s refresh; nearest-threat via `EnemyHealthSceneRegistry`). Terrains stay **ON**. Test-mode toggles that disable world systems are temporary isolation only; all game functions return.
 
 Sep 30 audit snapshot (historical): 68 systems — 8 Built, 28 Partial, 25 Missing, 7 Conflicts. Built through Invector then: melee (light/heavy/combos/block), ranged aim/fire, crits (10%, x2), stamina, dodge roll, dash, 9 ammo types, 5 statuses, Hot Cross, hex skill tree, 3-companion trio, death/loot.
 
-### Shipped vs Not shipped (disk truth, Oct 4, 2026)
+### Shipped vs Not shipped (disk truth, Oct 5, 2026)
 
 Docs-only or Studio placeholders are **Not started**. Evidence is one class/asset on disk.
 
@@ -45,8 +47,9 @@ Docs-only or Studio placeholders are **Not started**. Evidence is one class/asse
 | Block vs parry guard-break | **Partial-on-disk** | `DMEnemyGuardBreakStagger` + `parryWindowSeconds`; no dedicated parry input / counter |
 | Block auto-face (~30°) | **Shipped** | `ApplyBlockFacing` + `meleeBlockAutoFaceHalfAngle` |
 | Status stacks / immunity / boss multiplier | **Partial-on-disk** | `CombatStatusEffectController` reads profile; element combos still missing |
-| Melee hitbox scale + swing dedupe | **Partial-on-disk** | `PioneerMeleeHitboxTuning`, `PioneerMeleeSwingHitDedupe` — Play acceptance still open |
-| Strong melee charge | **Partial-on-disk** | `strongMeleeChargeSeconds` + Pioneer CrossFade `Attacks.StrongAttacks.SwordCharge` / `SwordAttack.B` (AttackC). Lights use Weak `SwordAttack` A→B→C plus `SwordRandomAttack.B`. Play acceptance still open. |
+| Melee hitbox scale + swing dedupe | **Shipped** (Phase 2) | `PioneerMeleeHitboxTuning`, `PioneerMeleeSwingHitDedupe` — accepted v1.6.5 |
+| Strong melee charge + weak chain A→B→C | **Shipped** (Phase 2) | `strongMeleeChargeSeconds` + `SwordCharge` / Strong `SwordAttack.B`; lights Weak `SwordAttack` A→B→C + `SwordRandomAttack.B` |
+| Parry VFX (SparksLong) + incoming block fix | **Shipped** (Phase 2) | `59368909c` polish pass |
 | Enemy melee reach / creep / reposition | **Partial-on-disk** | `enemyMeleeAttackRangeMultiplier` in `EnemyCombat`; creep in `EnemyAiController.States` |
 | Combat Studio (Phase 2 shell: Core/Melee/Ranged/Play/Roadmap) | **Shipped** (shell) | `DMCombatStudioWindow` tabs Core / Melee / Ranged / Play (v1.6.5) / Roadmap. Sandbox demoted to forensics. |
 | Genesis placeholders (AI, Director, Momentum, Sick Stick, Body, Encounters) | **Shipped** (labels only) | `DMStudioPanelMode.CombatPlanPlaceholder` — info panels, no empty `.asset` files |
@@ -418,8 +421,8 @@ Each phase: hit detection, damage, stagger, death, finishers, dismemberment, tar
 
 ## 31. Implementation order
 1. **Audit** **[Done Oct 3, 2026]**: architecture and dependency maps; enemy, weapon, damage and animation library inventory (tagged); reuse vs replace candidates; Invector decision (**wrap**); migration table; animation tag sheet.
-2. **Core combat** **[Partial — Phase 2 in progress, Oct 2026]**: damage profiles, weapon and element interfaces, hit detection, poise/stamina, status framework with immunity, health/damage events. **Tune in v1.6.5; Combat_Sandbox retired.** Batch 1 on disk (DamageInfo, events, poise, i-frames, partial parry/block, Combat Core). **Gate 0 attack yaw is already shipped and is not mixed into this step.** Combat Studio + Genesis placeholder shell **shipped**. Jetpack melee: lights → Weak `SwordAttack` A→B→C + `SwordRandomAttack.B`; charge → `SwordCharge` / Strong `SwordAttack.B`. Remaining Phase 2 slice: v1.6.5 acceptance Play checklist, melee polish (hitboxes, strong charge feel, enemy reach). After sign-off → step 3, not Director/Momentum.
-3. **Unified brain** **[Missing — next after Phase 2]**: utility scoring, archetype, personality, traits, perception/awareness, states. Migrate one enemy (Humanoid_Enemy).
+2. **Core combat** **[Done — Phase 2 signed off Oct 5, 2026]**: damage profiles, weapon and element interfaces, hit detection, poise/stamina, status framework with immunity, health/damage events. **Tune in v1.6.5; Combat_Sandbox retired.** Batch 1 + melee polish shipped (`59368909c` + branch history). Gate 0 attack yaw regression-only. Combat Studio + Genesis placeholder shell shipped. Jetpack melee: lights → Weak `SwordAttack` A→B→C + `SwordRandomAttack.B`; charge → `SwordCharge` / Strong `SwordAttack.B`; parry/block stagger, SparksLong, incoming block fix.
+3. **Unified brain** **[Next — Phase 3]**: utility scoring, archetype, personality, traits, perception/awareness, states. Migrate **one** enemy (`Humanoid_Enemy`). **Not** Director/Momentum yet.
 4. **Combat Director** **[Missing]**: tokens, coordination, flanking, intensity, morale, reinforcement hooks. Test with 5 identical enemies.
 5. **Plasma sword template** **[Partial]**: attack, damage, hit react, crit, burn, resource use, upgrade. Start Blade and Survival skill branches.
 6. **Momentum meter and finishers** **[Missing]**: build-up, finisher selection, first finishers on the migrated enemy.

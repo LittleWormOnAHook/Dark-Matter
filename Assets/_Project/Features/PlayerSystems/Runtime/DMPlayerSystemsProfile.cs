@@ -55,7 +55,7 @@ namespace Project.Player
         {
             DMPlayerSystemsProfile profile = PlayerLocator.FindOnLivePlayer<DMPlayerSystemsProfile>();
             if (profile == null)
-                profile = Object.FindFirstObjectByType<DMPlayerSystemsProfile>(FindObjectsInactive.Exclude);
+                profile = Object.FindAnyObjectByType<DMPlayerSystemsProfile>(FindObjectsInactive.Exclude);
 
             return profile == null || profile.TerrainLoadingEnabled;
         }
