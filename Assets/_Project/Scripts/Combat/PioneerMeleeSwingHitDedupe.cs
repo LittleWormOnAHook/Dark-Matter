@@ -72,10 +72,7 @@ namespace Project.Combat
         public static bool IsStrongReleaseState(AnimatorStateInfo state, out float normalizedTime)
         {
             normalizedTime = state.normalizedTime;
-            return state.fullPathHash == StrongSwordBHash
-                || state.fullPathHash == StrongSwordBHashWithLayer
-                || state.IsName(StrongSwordBPath)
-                || state.IsName(StrongSwordBPathWithLayer);
+            return TryGetStrongReleaseSlot(state, out _);
         }
 
         public static bool IsStrongReleaseState(AnimatorStateInfo state)
@@ -114,11 +111,42 @@ namespace Project.Combat
             || state.IsName(StrongSwordAPath)
             || state.IsName(StrongSwordAPathWithLayer);
 
+        public static bool IsStrongBState(AnimatorStateInfo state) =>
+            state.fullPathHash == StrongSwordBHash
+            || state.fullPathHash == StrongSwordBHashWithLayer
+            || state.IsName(StrongSwordBPath)
+            || state.IsName(StrongSwordBPathWithLayer);
+
         public static bool IsStrongCState(AnimatorStateInfo state) =>
             state.fullPathHash == StrongSwordCHash
             || state.fullPathHash == StrongSwordCHashWithLayer
             || state.IsName(StrongSwordCPath)
             || state.IsName(StrongSwordCPathWithLayer);
+
+        /// <summary>0 = A, 1 = B (late hit window), 2 = C.</summary>
+        public static bool TryGetStrongReleaseSlot(AnimatorStateInfo state, out int slot)
+        {
+            if (IsStrongBState(state))
+            {
+                slot = 1;
+                return true;
+            }
+
+            if (IsStrongCState(state))
+            {
+                slot = 2;
+                return true;
+            }
+
+            if (IsStrongAState(state))
+            {
+                slot = 0;
+                return true;
+            }
+
+            slot = -1;
+            return false;
+        }
 
         public static bool TryResolveStrongAnimSpeedSlot(
             Animator animator,
@@ -129,21 +157,6 @@ namespace Project.Combat
             multiplier = 1f;
             if (animator == null || layer < 0)
                 return false;
-
-            if (shooterInput != null)
-            {
-                if (shooterInput.IsStrongChargePoseActive || shooterInput.IsStrongChargeHoldActive)
-                {
-                    multiplier = ResolveStrongChargeOrReleaseMultiplier();
-                    return true;
-                }
-
-                if (shooterInput.IsStrongMeleeDamageActive || shooterInput.IsChargedStrongSwingActive)
-                {
-                    multiplier = ResolveStrongChargeOrReleaseMultiplier();
-                    return true;
-                }
-            }
 
             AnimatorStateInfo current = animator.GetCurrentAnimatorStateInfo(layer);
             if (IsStrongChargeState(current) || IsStrongReleaseState(current))
@@ -272,6 +285,19 @@ namespace Project.Combat
             Animator.StringToHash(LightRandomPathsWithLayer[2])
         };
 
+        private const string InteractHoldComboPath = "Attacks.InteractHoldCombo";
+        private const string InteractHoldComboPathWithLayer = "FullBody.Attacks.InteractHoldCombo";
+        private static readonly int InteractHoldComboHash = Animator.StringToHash(InteractHoldComboPath);
+        private static readonly int InteractHoldComboHashWithLayer =
+            Animator.StringToHash(InteractHoldComboPathWithLayer);
+
+        public static bool IsInteractHoldComboState(AnimatorStateInfo state) =>
+            state.fullPathHash == InteractHoldComboHash
+            || state.fullPathHash == InteractHoldComboHashWithLayer
+            || state.IsName(InteractHoldComboPath)
+            || state.IsName(InteractHoldComboPathWithLayer)
+            || state.IsName("InteractHoldCombo");
+
         public static bool TryGetLightComboSlot(AnimatorStateInfo state, out int slotIndex)
         {
             slotIndex = -1;
@@ -340,6 +366,13 @@ namespace Project.Combat
             if (TryGetLightRandomSlot(state, out int randomSlot))
             {
                 multiplier = ResolveLightRandomMultiplier(profile, randomSlot);
+                return true;
+            }
+
+            if (IsInteractHoldComboState(state))
+            {
+                multiplier = profile != null ? profile.interactHoldComboAnimSpeed : 1.75f;
+                multiplier = Mathf.Clamp(multiplier, 0.75f, 2.5f);
                 return true;
             }
 
@@ -416,6 +449,23 @@ namespace Project.Combat
         }
 
         /// <summary>Called when charge/release crossfades start so speed applies the same frame (before tracker LateUpdate).</summary>
+        public static void ClearSpeedOverride()
+        {
+            if (_instance == null || _instance._animator == null)
+                return;
+
+            if (_instance._meleeAnimSpeedOverrideApplied)
+            {
+                float restored = _instance._savedAnimatorSpeed;
+                _instance._animator.speed = restored > 0.01f && restored < 1.05f ? restored : 1f;
+                _instance._meleeAnimSpeedOverrideApplied = false;
+            }
+            else if (_instance._animator.speed > 1.05f)
+            {
+                _instance._animator.speed = 1f;
+            }
+        }
+
         public static void ApplyStrongMeleeSpeedOverride(float multiplier)
         {
             if (_instance == null || _instance._animator == null)
@@ -461,6 +511,21 @@ namespace Project.Combat
         private void LateUpdate()
         {
             ApplyMeleeAnimSpeedFromProfile();
+
+            // Re-apply the strong hit window after the Animator ran: vMeleeAttackControl toggles
+            // damage from inside the Animator update, which otherwise leaks one physics step of
+            // damage at its own (wider) window edges, e.g. during Strong A's raise or B's windup.
+            if (ShouldForceDisableWeaponHitboxes())
+                return;
+
+            if (TryGateStrongReleaseDamage(out bool wantStrongDamage))
+            {
+                if (wantStrongDamage && !_wasDamageActive)
+                    CurrentSwingId++;
+
+                SetWeaponDamageActive(wantStrongDamage);
+                _wasDamageActive = wantStrongDamage;
+            }
         }
 
         /// <summary>
@@ -498,58 +563,107 @@ namespace Project.Combat
             if (_animator == null)
                 return false;
 
-            int layer = PioneerStrongMeleeAnimStates.ResolveFullBodyLayer(_animator, _motor);
+            int upper = _animator.GetLayerIndex("UpperBody");
+            if (upper >= 0)
+            {
+                if (PioneerStrongMeleeAnimStates.TryResolveStrongAnimSpeedSlot(
+                        _animator, upper, _shooterInput, out multiplier))
+                    return true;
+
+                if (PioneerLightMeleeAnimStates.TryResolveLightAnimSpeedSlot(_animator, upper, out multiplier))
+                    return true;
+            }
+
+            int fullBody = PioneerStrongMeleeAnimStates.ResolveFullBodyLayer(_animator, _motor);
             if (PioneerStrongMeleeAnimStates.TryResolveStrongAnimSpeedSlot(
-                    _animator, layer, _shooterInput, out multiplier))
+                    _animator, fullBody, _shooterInput, out multiplier))
                 return true;
 
-            return PioneerLightMeleeAnimStates.TryResolveLightAnimSpeedSlot(_animator, layer, out multiplier);
+            if (PioneerLightMeleeAnimStates.TryResolveLightAnimSpeedSlot(_animator, fullBody, out multiplier))
+                return true;
+
+            return false;
         }
 
         private bool TryGateStrongReleaseDamage(out bool wantActive)
         {
             wantActive = false;
-            if (_shooterInput == null || !_shooterInput.IsStrongMeleeDamageActive)
+            // Gate any playing strong release swing, even if the post-release timer disarmed.
+            if (_shooterInput == null)
                 return false;
 
-            if (!TryGetStrongReleaseNormalizedTime(out float normalizedTime))
+            if (!TryGetStrongReleaseNormalizedTime(out float normalizedTime, out int slot))
                 return false;
 
-            DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
-            float start = profile != null ? profile.strongMeleeDamageStartNormalized : 0.72f;
-            float end = profile != null ? profile.strongMeleeDamageEndNormalized : 0.98f;
-            if (end < start)
-            {
-                float swap = start;
-                start = end;
-                end = swap;
-            }
+            if (slot < 0)
+                slot = _shooterInput.StrongReleaseSlot;
 
             float t = normalizedTime % 1f;
-            wantActive = t >= start && t <= end;
+            wantActive = IsInStrongHitWindow(slot, t);
             return true;
         }
 
-        private bool TryGetStrongReleaseNormalizedTime(out float normalizedTime)
+        // Normalized damage windows measured from the clips (right-hand sweep through the
+        // front of the body), Oct 6 2026. A: slam only (not the overhead raise).
+        // B: two sweeps, each its own window so each lands one hit (half damage each, see
+        // PioneerInvectorDamageBridge). C: the single forward sweep.
+        private static readonly Vector2[] StrongHitWindowsA = { new Vector2(0.52f, 0.66f) };
+        private static readonly Vector2[] StrongHitWindowsB = { new Vector2(0.34f, 0.48f), new Vector2(0.58f, 0.71f) };
+        private static readonly Vector2[] StrongHitWindowsC = { new Vector2(0.30f, 0.48f) };
+
+        private static bool IsInStrongHitWindow(int slot, float t)
+        {
+            Vector2[] windows = slot == 1 ? StrongHitWindowsB : slot == 2 ? StrongHitWindowsC : StrongHitWindowsA;
+            for (int i = 0; i < windows.Length; i++)
+            {
+                if (t >= windows[i].x && t <= windows[i].y)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private bool TryGetStrongReleaseNormalizedTime(out float normalizedTime, out int slot)
         {
             normalizedTime = 0f;
+            slot = -1;
             if (_animator == null)
                 return false;
 
-            int layer = PioneerStrongMeleeAnimStates.ResolveFullBodyLayer(_animator, _motor);
-            if (layer < 0)
-                return false;
-
-            if (PioneerStrongMeleeAnimStates.IsStrongReleaseState(
-                    _animator.GetCurrentAnimatorStateInfo(layer), out normalizedTime))
+            int fullBody = PioneerStrongMeleeAnimStates.ResolveFullBodyLayer(_animator, _motor);
+            if (TryGetStrongReleaseNormalizedTimeOnLayer(fullBody, out normalizedTime, out slot))
                 return true;
 
-            if (_animator.IsInTransition(layer)
-                && PioneerStrongMeleeAnimStates.IsStrongReleaseState(
-                    _animator.GetNextAnimatorStateInfo(layer), out normalizedTime))
+            int upper = _animator.GetLayerIndex("UpperBody");
+            if (upper >= 0 && TryGetStrongReleaseNormalizedTimeOnLayer(upper, out normalizedTime, out slot))
                 return true;
 
             return false;
+        }
+
+        private bool TryGetStrongReleaseNormalizedTimeOnLayer(int layer, out float normalizedTime, out int slot)
+        {
+            normalizedTime = 0f;
+            slot = -1;
+            if (_animator == null || layer < 0)
+                return false;
+
+            AnimatorStateInfo current = _animator.GetCurrentAnimatorStateInfo(layer);
+            if (PioneerStrongMeleeAnimStates.TryGetStrongReleaseSlot(current, out slot))
+            {
+                normalizedTime = current.normalizedTime;
+                return true;
+            }
+
+            if (!_animator.IsInTransition(layer))
+                return false;
+
+            AnimatorStateInfo next = _animator.GetNextAnimatorStateInfo(layer);
+            if (!PioneerStrongMeleeAnimStates.TryGetStrongReleaseSlot(next, out slot))
+                return false;
+
+            normalizedTime = next.normalizedTime;
+            return true;
         }
 
         private void SetWeaponDamageActive(bool active)

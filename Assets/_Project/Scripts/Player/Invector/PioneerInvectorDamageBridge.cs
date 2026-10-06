@@ -54,6 +54,9 @@ namespace Project.Player.Invector
                     DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
                     float scale = profile != null ? profile.strongMeleeDamageMultiplier : 1.8f;
                     rolled *= Mathf.Max(1f, scale);
+                    // Strong B lands two hits; together they equal one strong hit.
+                    if (meleeInput.StrongReleaseSlot == 1)
+                        rolled *= 0.5f;
                 }
 
                 return rolled;

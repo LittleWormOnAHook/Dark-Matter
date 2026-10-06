@@ -78,20 +78,51 @@ namespace Project.Player.Invector
         private Coroutine _guardImpactRoutine;
         private const float BlockGuardPoseSeconds = 0.12f;
         private const float StrongAttackBlockSuppressSeconds = 0.2f;
-        private const float StrongDamageWindowSeconds = 1.75f;
+        private const float StrongDamageWindowSeconds = 4.0f; // Strong B runs ~3.7 s at 1.25x; disarms early when the swing ends.
         /// <summary>
-        /// Phase 2 one-hand mapping (Jetpack FullBody Attacks):
-        /// lights → WeakAttacks/SwordAttack A→B→C (Invector WeakAttack combo);
-        /// SwordRandomAttack is parallel pool only (not light tap entry);
-        /// charge hold → StrongAttacks/SwordCharge; charge release → Strong SwordAttack B.
-        /// Strong A and C are other heavies, not charge.
+        /// Moving and standing share a layer except Hold E.
+        /// FullBody (weight stays 1): light tap, charge hold, charged release A/B/C, parry.
+        /// UpperBody (arms mask, hip-safe clip): Hold E One Hand Sword Combo only.
+        /// Base layer is locomotion. Never crossfade Mixamo clips onto Base.
         /// </summary>
         private const string LightComboAPath = "Attacks.WeakAttacks.SwordAttack.A";
         private const string StrongSwordBPath = "Attacks.StrongAttacks.SwordAttack.B";
         private const string StrongSwordAPath = "Attacks.StrongAttacks.SwordAttack.A";
+        private const string StrongSwordCPath = "Attacks.StrongAttacks.SwordAttack.C";
+        private const string Parry01HitPath = "Attacks.Parry01_Hit";
+        private static readonly int[] ParryWindupHashes =
+        {
+            Animator.StringToHash("Attacks.Parry01"),
+            Animator.StringToHash("Attacks.Parry"),
+            Animator.StringToHash("Parry01"),
+            Animator.StringToHash("Parry"),
+            Animator.StringToHash("Defense.Parry01"),
+            Animator.StringToHash("Defense.Parry")
+        };
         private static readonly int LightComboAHash = Animator.StringToHash(LightComboAPath);
         private static readonly int StrongSwordBHash = Animator.StringToHash(StrongSwordBPath);
         private static readonly int StrongSwordAHash = Animator.StringToHash(StrongSwordAPath);
+        private static readonly int StrongSwordCHash = Animator.StringToHash(StrongSwordCPath);
+        private static readonly int Parry01HitHash = Animator.StringToHash(Parry01HitPath);
+        private const float ParryWindupSeconds = 0.28f;
+        private const float ParryHitSeconds = 0.5f;
+        private float _interactUpperClearAt = float.PositiveInfinity;
+        private bool _wasAttacking;
+        private bool _meleeIdleRestoreQueued;
+        private float _meleeOverlayProtectUntil;
+        private float _overlayEnteredAt = float.NegativeInfinity;
+        private int _overlayStateHash;
+        private int _emptyFullBodyHash;
+        private const float FullBodyAttackExitNormalized = 0.95f;
+        private const float FullBodyIdleBlend = 0.1f;
+        private const float MeleeOverlayProtectSeconds = 0.22f;
+        /// <summary>
+        /// 1HandSwordChargeUp loops the wind-up (frames 24–49). Pin near the end so the hold is a static draw-back, not a pumping swing.
+        /// </summary>
+        private const float ChargeHoldNormalizedTime = 0.82f;
+        private const string FullBodyIdleEmptyName = "Idle_Empty";
+        /// <summary>0 = Strong A, 1 = Strong B, 2 = Strong C. Set when a charged release starts.</summary>
+        public int StrongReleaseSlot { get; private set; }
         private const string StrongSwordChargeStatePath = "Attacks.StrongAttacks.SwordCharge";
         private static readonly int StrongSwordChargeStateHash = Animator.StringToHash(StrongSwordChargeStatePath);
         private bool _lightAttackHeldLast;
@@ -131,6 +162,8 @@ namespace Project.Player.Invector
 
             if (GameSession.HasStarted)
                 ApplyStartZoomIn();
+
+            RestoreMeleeFullBodyIdle();
         }
 
         private void OnEnable()
@@ -142,6 +175,15 @@ namespace Project.Player.Invector
 
         private void OnDisable()
         {
+            RestoreMeleeFullBodyIdle();
+            _strongDamageArmed = false;
+            _strongChargeArmed = false;
+            _strongChargePoseActive = false;
+            _strongSwingStartedAt = float.NegativeInfinity;
+            _meleeIdleRestoreQueued = false;
+            _wasAttacking = false;
+            OnDisableAttack();
+            PioneerMeleeDamageWindowTracker.ClearSpeedOverride();
             RestoreBuildModeLookUp();
             GameSession.GameStarted -= HandleGameStartedZoom;
             if (_startZoomRoutine != null)
@@ -459,6 +501,8 @@ namespace Project.Player.Invector
             SyncPioneerCursorState();
             PinAimFollowDistance();
             MaintainStrongChargeAnimation();
+            TickLightComboChain();
+            TickMeleeFullBodyIdleRestore();
             ApplyMeleeThreatFacing();
         }
 
@@ -794,6 +838,17 @@ namespace Project.Player.Invector
             base.MeleeWeakAttackInput();
         }
 
+        /// <summary>
+        /// Drawn sword charge owns the strong release. The base press trigger always enters SwordAttack A.
+        /// </summary>
+        public override void MeleeStrongAttackInput()
+        {
+            if (IsDrawnMeleeWeaponActive())
+                return;
+
+            base.MeleeStrongAttackInput();
+        }
+
         public bool IsStrongMeleeDamageActive =>
             _strongDamageArmed && Time.time <= _strongDamageUntil;
 
@@ -821,13 +876,23 @@ namespace Project.Player.Invector
             isBlocking = ReadBlockHeld() && cc.currentStamina > 0 && !cc.customAction && !isAttacking;
         }
 
+        public override void OnDisableAttack()
+        {
+            base.OnDisableAttack();
+            _meleeIdleRestoreQueued = true;
+            _wasAttacking = false;
+        }
+
         private void UpdateDrawnMeleeCharge()
         {
+            TickUpperInteractRestore();
             TickStrongDamageWindow();
 
             if (!CanTrackDrawnMeleeCharge())
             {
                 _lightAttackHeldLast = false;
+                if (_strongChargeArmed || _strongChargePoseActive)
+                    CancelChargePose();
                 _strongChargeArmed = false;
                 _strongChargePoseActive = false;
                 return;
@@ -851,7 +916,11 @@ namespace Project.Player.Invector
             {
                 _lightAttackHoldStart = Time.time;
                 _strongChargeArmed = false;
+                ResetDrawnMeleeAttackTriggers();
             }
+
+            if (held && !released)
+                ResetDrawnMeleeAttackTriggers();
 
             if (held && Time.time - _lightAttackHoldStart >= chargeSeconds)
             {
@@ -890,7 +959,11 @@ namespace Project.Player.Invector
 
             if (!_strongDamageSawSwing)
                 _strongDamageArmed = false;
-            PlayLightSwordSwing();
+
+            if (ReadInteractHoldActive())
+                PlayInteractHoldComboAttack();
+            else
+                PlayLightSwordSwing();
         }
 
         private void TryReleaseStrongMelee()
@@ -910,48 +983,683 @@ namespace Project.Player.Invector
         }
 
         /// <summary>
-        /// Regular / light: Invector WeakAttack → Weak SwordAttack A→B→C.
-        /// First tap also CrossFades combo A so a leftover FullBody pose cannot swallow WeakAttack.
+        /// Layer policy (walk/run and standing use the same layer unless noted):
+        /// Light tap, charge hold, charged A/B/C, and parry play on FullBody with weight kept at 1.
+        /// That is the pre-overlay path: the attack clip plays in place and Base locomotion returns when the state exits.
+        /// Hold E (One Hand Sword Combo) is the only UpperBody swing. The Mixamo clip sinks the hips on an unmasked FullBody.
+        /// Never crossfade these clips on the Base layer, and never leave FullBody weight at 0.
         /// </summary>
         private void PlayLightSwordSwing()
         {
-            int layer = ResolveFullBodyLayer();
             PrepareDrawnSwordAttackId();
+            ExitUpperInteract(0.1f);
+            int layer = ResolveFullBodyLayer();
+            if (layer >= 0)
+                animator.SetLayerWeight(layer, 1f);
+
+            MarkMeleeOverlayStarted();
+            if (layer < 0)
+            {
+                TriggerWeakAttack();
+                return;
+            }
+
+            // A tap during A or B queues the next swing. The chain is driven here, not by the WeakAttack
+            // trigger: taps fire on release, and every press resets the triggers (charge needs that), so a
+            // press that landed inside the controller's short A>B / B>C window used to drop the combo.
+            AnimatorStateInfo current = animator.GetCurrentAnimatorStateInfo(layer);
+            int activeSlot = -1;
+            if (animator.IsInTransition(layer)
+                && PioneerLightMeleeAnimStates.TryGetLightComboSlot(animator.GetNextAnimatorStateInfo(layer), out int nextSlot))
+                activeSlot = nextSlot;
+            else if (PioneerLightMeleeAnimStates.TryGetLightComboSlot(current, out int currentSlot))
+                activeSlot = currentSlot;
+
+            if (activeSlot >= 0)
+            {
+                if (activeSlot < LightComboPaths.Length - 1)
+                {
+                    _lightChainQueuedSlot = activeSlot + 1;
+                    _lightChainQueuedAt = Time.time;
+                    TickLightComboChain();
+                }
+
+                return;
+            }
+
+            // A tap just after A or B finished still continues the combo instead of restarting at A.
+            if (_lastLightSlot >= 0 && _lastLightSlot < LightComboPaths.Length - 1
+                && Time.time - _lastLightSlotSeenAt <= LightChainGraceSeconds)
+            {
+                PlayLightComboSlot(layer, _lastLightSlot + 1);
+                return;
+            }
+
+            // First tap starts A directly. The hash needs the layer prefix (FullBody.Attacks...):
+            // the bare path never matched HasState, so taps only set a trigger that Idle_Empty has no transition for.
+            int lightA = ResolveStateHash(layer, LightComboAPath);
+            if (lightA != 0)
+            {
+                animator.CrossFadeInFixedTime(lightA, 0.06f, layer, 0f);
+                return;
+            }
 
             TriggerWeakAttack();
+        }
 
-            if (!isAttacking && layer >= 0 && animator.HasState(layer, LightComboAHash))
+        private static readonly string[] LightComboPaths =
+        {
+            "Attacks.WeakAttacks.SwordAttack.A",
+            "Attacks.WeakAttacks.SwordAttack.B",
+            "Attacks.WeakAttacks.SwordAttack.C"
+        };
+
+        // Normalized time in A / B at which a queued tap moves on (the controller's authored chain points,
+        // just before each swing's own exit at 0.75 / 0.90).
+        private static readonly float[] LightChainAtNormalized = { 0.70f, 0.85f };
+        private const float LightChainBufferSeconds = 1.0f;
+        private const float LightChainGraceSeconds = 0.35f;
+        private const float LightChainBlendSeconds = 0.1f;
+        private int _lightChainQueuedSlot = -1;
+        private float _lightChainQueuedAt = float.NegativeInfinity;
+        private int _lastLightSlot = -1;
+        private float _lastLightSlotSeenAt = float.NegativeInfinity;
+
+        private void PlayLightComboSlot(int layer, int slot)
+        {
+            _lightChainQueuedSlot = -1;
+            ResetDrawnMeleeAttackTriggers();
+            int hash = slot >= 0 && slot < LightComboPaths.Length ? ResolveStateHash(layer, LightComboPaths[slot]) : 0;
+            if (hash == 0)
             {
-                animator.SetLayerWeight(layer, 1f);
-                animator.CrossFadeInFixedTime(LightComboAHash, 0.06f, layer, 0f);
+                TriggerWeakAttack();
+                return;
             }
+
+            MarkMeleeOverlayStarted();
+            animator.CrossFadeInFixedTime(hash, LightChainBlendSeconds, layer, 0f);
+            _lastLightSlot = slot;
+            _lastLightSlotSeenAt = Time.time;
         }
 
         /// <summary>
-        /// Charged release: Strong SwordAttack B (AttackC). Falls back to A only if B is missing.
-        /// A StrongAttack trigger only leaves Null, so a block pose ate it and the swing never started.
+        /// Runs every LateUpdate: remembers the last light slot seen, and fires a queued tap once the
+        /// current swing reaches its chain point (or right away if that point already passed).
+        /// </summary>
+        private void TickLightComboChain()
+        {
+            if (animator == null)
+                return;
+
+            int layer = ResolveFullBodyLayer();
+            if (layer < 0)
+                return;
+
+            bool inTransition = animator.IsInTransition(layer);
+            AnimatorStateInfo current = animator.GetCurrentAnimatorStateInfo(layer);
+            bool currentIsLight = PioneerLightMeleeAnimStates.TryGetLightComboSlot(current, out int currentSlot);
+            int nextSlot = -1;
+            bool nextIsLight = inTransition
+                && PioneerLightMeleeAnimStates.TryGetLightComboSlot(animator.GetNextAnimatorStateInfo(layer), out nextSlot);
+
+            if (nextIsLight)
+            {
+                _lastLightSlot = nextSlot;
+                _lastLightSlotSeenAt = Time.time;
+            }
+            else if (currentIsLight)
+            {
+                _lastLightSlot = currentSlot;
+                _lastLightSlotSeenAt = Time.time;
+            }
+
+            if (_lightChainQueuedSlot < 0)
+                return;
+
+            if (Time.time - _lightChainQueuedAt > LightChainBufferSeconds)
+            {
+                _lightChainQueuedSlot = -1;
+                return;
+            }
+
+            // Already blending into the queued swing (or past it).
+            if (nextIsLight && nextSlot >= _lightChainQueuedSlot)
+            {
+                _lightChainQueuedSlot = -1;
+                return;
+            }
+
+            if (!currentIsLight || nextIsLight)
+            {
+                // The swing already left (parked or exiting). Continue if it only just ended.
+                if (!currentIsLight && Time.time - _lastLightSlotSeenAt <= LightChainGraceSeconds)
+                    PlayLightComboSlot(layer, _lightChainQueuedSlot);
+                return;
+            }
+
+            if (currentSlot >= _lightChainQueuedSlot)
+            {
+                _lightChainQueuedSlot = -1;
+                return;
+            }
+
+            float chainAt = currentSlot < LightChainAtNormalized.Length ? LightChainAtNormalized[currentSlot] : 0.7f;
+            if (current.normalizedTime < chainAt)
+                return;
+
+            PlayLightComboSlot(layer, _lightChainQueuedSlot);
+        }
+
+        /// <summary>
+        /// Charged release always crossfades FullBody Strong SwordAttack A, B, or C (favor A), walking or standing.
         /// </summary>
         private void PlayStrongSwordSwing()
         {
-            int layer = ResolveFullBodyLayer();
             PrepareDrawnSwordAttackId();
+            ExitUpperInteract(0.1f);
+            _strongChargePoseActive = false;
 
-            int hash = 0;
-            if (layer >= 0 && animator.HasState(layer, StrongSwordBHash))
-                hash = StrongSwordBHash;
-            else if (layer >= 0 && animator.HasState(layer, StrongSwordAHash))
-                hash = StrongSwordAHash;
-
-            if (hash != 0)
-            {
+            int layer = ResolveFullBodyLayer();
+            if (layer >= 0)
                 animator.SetLayerWeight(layer, 1f);
-                animator.CrossFadeInFixedTime(hash, 0.06f, layer, 0f);
-                _strongSwingStartedAt = Time.time;
-                ApplyStrongMeleeAnimSpeedFromLiveProfile();
+
+            if (!TryPickStrongRelease(out int slot, out int fullBodyHash))
+            {
+                MarkMeleeOverlayStarted();
+                TriggerStrongAttack();
+                return;
+            }
+
+            StrongReleaseSlot = slot;
+            _strongSwingStartedAt = Time.time;
+            MarkMeleeOverlayStarted();
+            ApplyStrongMeleeAnimSpeedFromLiveProfile();
+
+            if (layer >= 0 && fullBodyHash != 0 && animator.HasState(layer, fullBodyHash))
+            {
+                animator.CrossFadeInFixedTime(fullBodyHash, 0.08f, layer, 0f);
                 return;
             }
 
             TriggerStrongAttack();
+        }
+
+        /// <summary>
+        /// Hold E + light release. Masked UpperBody only, hip-safe combo clip, speed from the profile (1.75).
+        /// FullBody stays at weight 1 and is moved to its empty pose so it does not cover the upper swing or the legs.
+        /// </summary>
+        private void PlayInteractHoldComboAttack()
+        {
+            if (animator == null)
+                return;
+
+            PrepareDrawnSwordAttackId();
+            DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
+            float speed = profile != null ? profile.interactHoldComboAnimSpeed : 1.75f;
+            speed = Mathf.Clamp(speed, 0.75f, 2.5f);
+
+            int upper = ResolveUpperBodyLayer();
+            int hash = ResolveStateHash(upper, "InteractHoldCombo");
+            if (upper < 0 || hash == 0 || !animator.HasState(upper, hash))
+                return;
+
+            int fullBody = ResolveFullBodyLayer();
+            if (fullBody >= 0)
+                animator.SetLayerWeight(fullBody, 1f);
+            ParkFullBodyOnEmpty();
+            animator.CrossFadeInFixedTime(hash, 0.1f, upper, 0f);
+            PioneerMeleeDamageWindowTracker.ApplyStrongMeleeSpeedOverride(speed);
+            MarkMeleeOverlayStarted();
+            _interactUpperClearAt = Time.time + 3.2f;
+        }
+
+        private static bool ReadInteractHoldActive()
+        {
+            return DMPlayerInputActions.IsPressed("Use");
+        }
+
+        private void TickUpperInteractRestore()
+        {
+            if (animator == null)
+                return;
+
+            int upper = ResolveUpperBodyLayer();
+            if (upper < 0 || animator.IsInTransition(upper))
+                return;
+
+            AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(upper);
+            bool pastEnd = info.IsName("InteractHoldCombo") && info.normalizedTime >= 1.02f;
+            if (!pastEnd && Time.time < _interactUpperClearAt)
+                return;
+
+            if (info.IsName("InteractHoldCombo"))
+            {
+                ExitUpperInteract(FullBodyIdleBlend);
+                RestoreMeleeFullBodyIdle();
+            }
+            else
+                _interactUpperClearAt = float.PositiveInfinity;
+        }
+
+        private void ExitUpperInteract(float blend)
+        {
+            _interactUpperClearAt = float.PositiveInfinity;
+            if (animator == null)
+                return;
+
+            int upper = ResolveUpperBodyLayer();
+            if (upper < 0 || animator.IsInTransition(upper))
+                return;
+
+            AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(upper);
+            if (!info.IsName("InteractHoldCombo"))
+                return;
+
+            int empty = ResolveStateHash(upper, "null");
+            if (empty == 0)
+                empty = ResolveStateHash(upper, "Null");
+            if (empty != 0)
+                animator.CrossFadeInFixedTime(empty, blend, upper, 0f);
+            PioneerMeleeDamageWindowTracker.ClearSpeedOverride();
+        }
+
+        /// <summary>
+        /// Puts FullBody weight back to 1. Leaves an in-progress light/strong/parry alone.
+        /// Clears a charge pose that is no longer held, and the Hold E upper state.
+        /// </summary>
+        private void RestoreMeleeLocomotionLayers()
+        {
+            if (animator == null)
+                return;
+
+            ExitUpperInteract(FullBodyIdleBlend);
+            int fullBody = ResolveFullBodyLayer();
+            if (fullBody < 0)
+                return;
+
+            animator.SetLayerWeight(fullBody, 1f);
+            if (animator.IsInTransition(fullBody))
+                return;
+
+            AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(fullBody);
+            bool chargeLeftUp = PioneerStrongMeleeAnimStates.IsStrongChargeState(info) && !_strongChargeArmed;
+            if (chargeLeftUp)
+                ParkFullBodyOnEmpty();
+        }
+
+        /// <summary>
+        /// Parks FullBody on a verified empty state (Idle_Empty, motion null) so Base locomotion shows.
+        /// Nested Attacks.Null CrossFade often never lands after Pioneer CrossFades into SwordAttack.
+        /// </summary>
+        private void RestoreMeleeFullBodyIdle()
+        {
+            if (animator == null)
+                return;
+
+            PioneerMeleeDamageWindowTracker.ClearSpeedOverride();
+            ExitUpperInteract(FullBodyIdleBlend);
+
+            int fullBody = ResolveFullBodyLayer();
+            if (fullBody >= 0)
+            {
+                animator.SetLayerWeight(fullBody, 1f);
+                ParkFullBodyOnEmpty();
+            }
+
+            isAttacking = false;
+            _strongDamageArmed = false;
+            _meleeIdleRestoreQueued = false;
+            _wasAttacking = false;
+        }
+
+        private void MarkMeleeOverlayStarted()
+        {
+            _wasAttacking = true;
+            _overlayEnteredAt = Time.time;
+            _meleeOverlayProtectUntil = Time.time + MeleeOverlayProtectSeconds;
+        }
+
+        /// <summary>
+        /// Event-independent: Mixamo/PROTOFACTOR clips have no OnDisableAttack events.
+        /// Parks Idle_Empty when an attack overlay finishes. Exempts SwordCharge while the button is held.
+        /// Does not use isAttacking as a gate.
+        /// </summary>
+        private void TickMeleeFullBodyIdleRestore()
+        {
+            if (animator == null)
+                return;
+
+            int upper = ResolveUpperBodyLayer();
+            if (upper >= 0 && !animator.IsInTransition(upper))
+            {
+                AnimatorStateInfo upperInfo = animator.GetCurrentAnimatorStateInfo(upper);
+                if (PioneerLightMeleeAnimStates.IsInteractHoldComboState(upperInfo)
+                    && upperInfo.normalizedTime >= FullBodyAttackExitNormalized)
+                    ExitUpperInteract(FullBodyIdleBlend);
+            }
+
+            int layer = ResolveFullBodyLayer();
+            if (layer < 0)
+                return;
+
+            if (Time.time < _meleeOverlayProtectUntil)
+                return;
+
+            if (_guardImpactRoutine != null)
+                return;
+
+            bool held = ReadLightAttackHeld() || _lightAttackHeldLast;
+            bool inTransition = animator.IsInTransition(layer);
+            AnimatorStateInfo current = animator.GetCurrentAnimatorStateInfo(layer);
+            AnimatorStateInfo next = inTransition ? animator.GetNextAnimatorStateInfo(layer) : current;
+            AnimatorStateInfo info = IsMeleeAttackOverlayState(current) ? current : next;
+
+            // Charge hold has no max time and must not auto-swing or get parked by the stick watchdog.
+            if (_strongChargeArmed && held)
+                return;
+
+            if (IsEmptyFullBodyState(current) && !inTransition)
+            {
+                // Parked on an untagged empty state: anything still tagged on this layer is stale.
+                // Invector's isAttacking also reads the "Attack" tag, which blocks jump, sprint and roll,
+                // and "LockMovement" freezes locomotion. Interrupted transitions skip OnStateExit, so
+                // those tags can survive the swing that added them.
+                PurgeStaleLayerTags(layer);
+                if (_meleeIdleRestoreQueued || isAttacking)
+                {
+                    PioneerMeleeDamageWindowTracker.ClearSpeedOverride();
+                    isAttacking = false;
+                    _strongDamageArmed = false;
+                    _meleeIdleRestoreQueued = false;
+                    _wasAttacking = false;
+                }
+
+                return;
+            }
+
+            if (held && (PioneerStrongMeleeAnimStates.IsStrongChargeState(info)
+                || PioneerStrongMeleeAnimStates.IsStrongChargeState(current)
+                || _strongChargePoseActive))
+                return;
+
+            bool overlay = IsMeleeAttackOverlayState(current) || IsMeleeAttackOverlayState(next);
+            if (!overlay)
+            {
+                if (IsLegacyFullBodyNull(current) || _meleeIdleRestoreQueued)
+                {
+                    RestoreMeleeFullBodyIdle();
+                    return;
+                }
+
+                _wasAttacking = isAttacking;
+                return;
+            }
+
+            // The swing is already blending out on its own (EXIT transition). Cutting in with another
+            // CrossFade interrupts that transition, which skips the swing's OnStateExit and strands its tags.
+            if (inTransition && IsMeleeAttackOverlayState(current) && !IsMeleeAttackOverlayState(next))
+                return;
+
+            if (_overlayEnteredAt < 0f || info.fullPathHash != _overlayStateHash)
+            {
+                // Restart the elapsed timer per swing so a chained B or C is not cut short by A's start time.
+                _overlayStateHash = info.fullPathHash;
+                _overlayEnteredAt = Time.time;
+            }
+
+            float cycle = info.normalizedTime;
+            float clipLength = info.length > 0.05f ? info.length : 0.8f;
+            float speed = Mathf.Max(0.05f, animator.speed);
+            bool pastNormalized = cycle >= FullBodyAttackExitNormalized;
+            bool pastElapsed = Time.time - _overlayEnteredAt >= clipLength / speed + 0.12f;
+            if (!pastNormalized && !pastElapsed)
+                return;
+
+            RestoreMeleeFullBodyIdle();
+        }
+
+        private float _nextStaleTagLogAt;
+
+        /// <summary>
+        /// Removes every tag left on one animator layer in all Invector tag listeners.
+        /// Only call while that layer is parked on an untagged state and not in transition.
+        /// </summary>
+        private void PurgeStaleLayerTags(int layer)
+        {
+            if (cc == null || cc.animatorStateInfos == null)
+                return;
+
+            vAnimatorStateInfos.vStateInfo[] ccInfos = cc.animatorStateInfos.stateInfos;
+            if (ccInfos == null || layer < 0 || layer >= ccInfos.Length || ccInfos[layer] == null
+                || ccInfos[layer].tags.Count == 0)
+                return;
+
+            string cleared = string.Join(",", ccInfos[layer].tags);
+            System.Collections.Generic.HashSet<vAnimatorStateInfos> seen =
+                new System.Collections.Generic.HashSet<vAnimatorStateInfos> { cc.animatorStateInfos };
+            vAnimatorTagBase[] behaviours = animator.GetBehaviours<vAnimatorTagBase>();
+            for (int b = 0; b < behaviours.Length; b++)
+            {
+                if (behaviours[b] == null || behaviours[b].stateInfos == null)
+                    continue;
+                for (int s = 0; s < behaviours[b].stateInfos.Count; s++)
+                    if (behaviours[b].stateInfos[s] != null)
+                        seen.Add(behaviours[b].stateInfos[s]);
+            }
+
+            foreach (vAnimatorStateInfos infos in seen)
+            {
+                if (infos.stateInfos == null || layer >= infos.stateInfos.Length || infos.stateInfos[layer] == null)
+                    continue;
+                infos.stateInfos[layer].tags.Clear();
+                infos.stateInfos[layer].shortPathHash = 0;
+                infos.stateInfos[layer].normalizedTime = 0f;
+            }
+
+            if (Time.time >= _nextStaleTagLogAt)
+            {
+                _nextStaleTagLogAt = Time.time + 2f;
+                Debug.Log($"[DM Melee] Cleared stale FullBody tags after swing: {cleared}", this);
+            }
+        }
+
+        private bool IsEmptyFullBodyState(AnimatorStateInfo info)
+        {
+            return info.IsName(FullBodyIdleEmptyName)
+                || info.IsName("Attacks.Idle_Empty")
+                || info.IsName("FullBody.Idle_Empty")
+                || info.IsName("FullBody.Attacks.Idle_Empty");
+        }
+
+        private static bool IsLegacyFullBodyNull(AnimatorStateInfo info)
+        {
+            return info.IsName("Null")
+                || info.IsName("null")
+                || info.IsName("Attacks.Null.Null")
+                || info.IsName("FullBody.Attacks.Null.Null");
+        }
+
+        private static bool IsMeleeAttackOverlayState(AnimatorStateInfo info)
+        {
+            if (PioneerStrongMeleeAnimStates.TryGetStrongReleaseSlot(info, out _))
+                return true;
+            if (PioneerStrongMeleeAnimStates.IsStrongChargeState(info))
+                return true;
+            if (PioneerLightMeleeAnimStates.TryGetLightComboSlot(info, out _))
+                return true;
+            if (PioneerLightMeleeAnimStates.TryGetLightRandomSlot(info, out _))
+                return true;
+            if (PioneerLightMeleeAnimStates.IsInteractHoldComboState(info))
+                return true;
+            return info.IsName("Parry01")
+                || info.IsName("Parry")
+                || info.IsName("Parry01_Hit")
+                || info.IsName("Attacks.Parry01")
+                || info.IsName("Attacks.Parry")
+                || info.IsName("Attacks.Parry01_Hit")
+                || info.IsName("FullBody.Attacks.Parry01")
+                || info.IsName("FullBody.Attacks.Parry")
+                || info.IsName("FullBody.Attacks.Parry01_Hit");
+        }
+
+        private void CancelChargePose()
+        {
+            _strongChargePoseActive = false;
+            _strongChargeArmed = false;
+            RestoreMeleeFullBodyIdle();
+        }
+
+        /// <summary>
+        /// Parry and guard presentation call this after parking FullBody.
+        /// Clears the attack flag without a Base-layer crossfade and without dropping FullBody weight.
+        /// </summary>
+        private void EndSwingIfBodyIdle()
+        {
+            if (animator == null)
+                return;
+
+            int layer = ResolveFullBodyLayer();
+            if (layer >= 0 && animator.IsInTransition(layer))
+                return;
+
+            if (layer >= 0)
+            {
+                AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(layer);
+                if (IsStrongSwordState(info) || IsStrongChargeState(info)
+                    || info.IsName(LightComboAPath)
+                    || info.IsName("Attacks.WeakAttacks.SwordAttack.B")
+                    || info.IsName("Attacks.WeakAttacks.SwordAttack.C"))
+                    return;
+            }
+
+            OnDisableAttack();
+        }
+
+        private void ParkFullBodyOnEmpty()
+        {
+            int fullBody = ResolveFullBodyLayer();
+            if (animator == null || fullBody < 0)
+                return;
+
+            animator.SetLayerWeight(fullBody, 1f);
+            int hash = ResolveEmptyFullBodyHash(fullBody);
+            if (hash == 0)
+                return;
+
+            AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(fullBody);
+            if (IsEmptyFullBodyState(info) && !animator.IsInTransition(fullBody))
+                return;
+
+            animator.CrossFadeInFixedTime(hash, FullBodyIdleBlend, fullBody, 0f);
+        }
+
+        private int ResolveEmptyFullBodyHash(int layer)
+        {
+            if (_emptyFullBodyHash != 0 && animator != null && animator.HasState(layer, _emptyFullBodyHash))
+                return _emptyFullBodyHash;
+
+            string[] paths =
+            {
+                FullBodyIdleEmptyName,
+                "FullBody.Idle_Empty",
+                "Attacks.Idle_Empty",
+                "FullBody.Attacks.Idle_Empty"
+            };
+            for (int i = 0; i < paths.Length; i++)
+            {
+                int hash = ResolveStateHash(layer, paths[i]);
+                if (hash != 0)
+                {
+                    _emptyFullBodyHash = hash;
+                    return hash;
+                }
+            }
+
+            return 0;
+        }
+
+        private int ResolveStateHash(int layer, string path)
+        {
+            if (animator == null || layer < 0 || string.IsNullOrEmpty(path))
+                return 0;
+
+            int hash = Animator.StringToHash(path);
+            if (animator.HasState(layer, hash))
+                return hash;
+
+            string layerName = animator.GetLayerName(layer);
+            int withLayer = Animator.StringToHash(layerName + "." + path);
+            if (animator.HasState(layer, withLayer))
+                return withLayer;
+
+            return 0;
+        }
+
+        private int ResolveUpperBodyLayer()
+        {
+            if (cc != null && cc.upperBodyLayer >= 0)
+                return cc.upperBodyLayer;
+            return animator != null ? animator.GetLayerIndex("UpperBody") : -1;
+        }
+
+        private bool TryPickStrongRelease(out int slot, out int fullBodyHash)
+        {
+            slot = 0;
+            fullBodyHash = 0;
+            if (animator == null)
+                return false;
+
+            int fullLayer = ResolveFullBodyLayer();
+            int hashA = ResolveStateHash(fullLayer, StrongSwordAPath);
+            int hashB = ResolveStateHash(fullLayer, StrongSwordBPath);
+            int hashC = ResolveStateHash(fullLayer, StrongSwordCPath);
+
+            DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
+            float wa = hashA != 0 ? Mathf.Max(0f, profile != null ? profile.strongReleaseWeightA : 0.55f) : 0f;
+            float wb = hashB != 0 ? Mathf.Max(0f, profile != null ? profile.strongReleaseWeightB : 0.22f) : 0f;
+            float wc = hashC != 0 ? Mathf.Max(0f, profile != null ? profile.strongReleaseWeightC : 0.23f) : 0f;
+            float sum = wa + wb + wc;
+            if (sum <= 0.001f)
+                return false;
+
+            float r = Random.value * sum;
+            if (r < wa && hashA != 0)
+            {
+                slot = 0;
+                fullBodyHash = hashA;
+                return true;
+            }
+
+            r -= wa;
+            if (r < wb && hashB != 0)
+            {
+                slot = 1;
+                fullBodyHash = hashB;
+                return true;
+            }
+
+            if (hashC != 0)
+            {
+                slot = 2;
+                fullBodyHash = hashC;
+                return true;
+            }
+
+            if (hashB != 0)
+            {
+                slot = 1;
+                fullBodyHash = hashB;
+                return true;
+            }
+
+            if (hashA != 0)
+            {
+                slot = 0;
+                fullBodyHash = hashA;
+                return true;
+            }
+
+            return false;
         }
 
         private static void ApplyStrongMeleeAnimSpeedFromLiveProfile()
@@ -964,23 +1672,33 @@ namespace Project.Player.Invector
 
         private void PrepareDrawnSwordAttackId()
         {
-            animator.ResetTrigger(vAnimatorParameters.WeakAttack);
-            animator.ResetTrigger(vAnimatorParameters.StrongAttack);
+            ResetDrawnMeleeAttackTriggers();
             int attackId = AttackID;
             if (attackId <= 0)
                 attackId = 1;
             animator.SetInteger(vAnimatorParameters.AttackID, attackId);
         }
 
+        private void ResetDrawnMeleeAttackTriggers()
+        {
+            if (animator == null)
+                return;
+
+            animator.ResetTrigger(vAnimatorParameters.WeakAttack);
+            animator.ResetTrigger(vAnimatorParameters.StrongAttack);
+        }
+
         /// <summary>
-        /// FullBody charge pose from DM melee clip pool (PROTOFACTOR AttackC hold).
+        /// Charge pose is always FullBody SwordCharge, walking or standing. Weight stays 1.
+        /// 1HandSwordChargeUp is a looping wind-up, so after the draw-back frame the state is pinned
+        /// (Play at ChargeHoldNormalizedTime) until release. Release crossfades to A/B/C; cancel parks Idle_Empty.
+        /// Press must not fire WeakAttack — triggers stay reset while the button is held.
         /// </summary>
         private void MaintainStrongChargeAnimation()
         {
             if (!_strongChargeArmed
                 || !CanTrackDrawnMeleeCharge()
                 || !ReadLightAttackHeld()
-                || isAttacking
                 || isBlocking
                 || animator == null)
             {
@@ -989,26 +1707,65 @@ namespace Project.Player.Invector
                 return;
             }
 
-            int layer = ResolveFullBodyLayer();
-            if (layer < 0 || !animator.HasState(layer, StrongSwordChargeStateHash))
-                return;
+            ResetDrawnMeleeAttackTriggers();
 
-            AnimatorStateInfo current = animator.GetCurrentAnimatorStateInfo(layer);
-            if (_strongChargePoseActive && (IsStrongChargeState(current) || animator.IsInTransition(layer)))
+            int layer = ResolveFullBodyLayer();
+            int standingChargeHash = ResolveStateHash(layer, StrongSwordChargeStatePath);
+            if (standingChargeHash == 0)
+                standingChargeHash = ResolveStateHash(layer, "SwordCharge");
+            if (standingChargeHash == 0)
+                standingChargeHash = StrongSwordChargeStateHash;
+            if (layer < 0 || !animator.HasState(layer, standingChargeHash))
                 return;
 
             animator.SetLayerWeight(layer, 1f);
-            animator.CrossFadeInFixedTime(StrongSwordChargeStateHash, 0.08f, layer, 0f);
+            bool inTransition = animator.IsInTransition(layer);
+            AnimatorStateInfo current = animator.GetCurrentAnimatorStateInfo(layer);
+            bool inCharge = PioneerStrongMeleeAnimStates.IsStrongChargeState(current)
+                || IsStrongChargeState(current);
+
+            if (inCharge && !inTransition)
+            {
+                float cycle = current.normalizedTime;
+                if (cycle >= 1f)
+                    cycle -= Mathf.Floor(cycle);
+                if (cycle >= ChargeHoldNormalizedTime || current.normalizedTime >= ChargeHoldNormalizedTime)
+                    animator.Play(standingChargeHash, layer, ChargeHoldNormalizedTime);
+                _strongChargePoseActive = true;
+                _meleeOverlayProtectUntil = Time.time + MeleeOverlayProtectSeconds;
+                return;
+            }
+
+            if (_strongChargePoseActive && inTransition)
+                return;
+
+            animator.CrossFadeInFixedTime(standingChargeHash, 0.1f, layer, 0f);
             _strongChargePoseActive = true;
-            ApplyStrongMeleeAnimSpeedFromLiveProfile();
+            _meleeOverlayProtectUntil = Time.time + MeleeOverlayProtectSeconds;
+        }
+
+        private bool IsStrongPosePlaying()
+        {
+            int layer = ResolveFullBodyLayer();
+            if (animator == null || layer < 0)
+                return false;
+
+            AnimatorStateInfo info = animator.IsInTransition(layer)
+                ? animator.GetNextAnimatorStateInfo(layer)
+                : animator.GetCurrentAnimatorStateInfo(layer);
+            return IsStrongSwordState(info);
         }
 
         private static bool IsStrongSwordState(AnimatorStateInfo info)
         {
+            if (PioneerStrongMeleeAnimStates.TryGetStrongReleaseSlot(info, out _))
+                return true;
             return info.fullPathHash == StrongSwordBHash
                 || info.IsName(StrongSwordBPath)
                 || info.fullPathHash == StrongSwordAHash
-                || info.IsName(StrongSwordAPath);
+                || info.IsName(StrongSwordAPath)
+                || info.fullPathHash == StrongSwordCHash
+                || info.IsName(StrongSwordCPath);
         }
 
         private static bool IsStrongChargeState(AnimatorStateInfo info)
@@ -1095,11 +1852,19 @@ namespace Project.Player.Invector
             if (!_strongDamageArmed)
                 return;
 
-            if (isAttacking)
+            if (IsStrongPosePlaying() || isAttacking)
                 _strongDamageSawSwing = true;
 
-            if ((_strongDamageSawSwing && !isAttacking) || Time.time > _strongDamageUntil)
+            if (Time.time > _strongDamageUntil)
+            {
                 _strongDamageArmed = false;
+                _meleeIdleRestoreQueued = true;
+            }
+            else if (_strongDamageSawSwing && !IsStrongPosePlaying() && !isAttacking)
+            {
+                _strongDamageArmed = false;
+                _meleeIdleRestoreQueued = true;
+            }
         }
 
         private static float ResolveStrongChargeSeconds()
@@ -1234,14 +1999,15 @@ namespace Project.Player.Invector
             if (!successfulBlock)
                 return;
 
-            PlayGuardImpactReaction();
             if (isParry)
             {
+                PlayParryHitReaction();
                 DMParryClashVfx.TryPlay(damage, transform, damageSender);
                 DMCombatCameraShake.PlayParry();
             }
             else
             {
+                PlayGuardImpactReaction();
                 DMCombatCameraShake.PlayBlock();
             }
 
@@ -1255,6 +2021,76 @@ namespace Project.Player.Invector
         /// and is not used here. RecoilID above 2 is recoil_hard, tagged CustomAction,
         /// which clears isBlocking. This path does not freeze animator speed.
         /// </summary>
+        /// <summary>
+        /// Tap-parry contact: FullBody Parry01 windup, then Parry01_Hit. Hold-block stays on the guard pose.
+        /// </summary>
+        private void PlayParryHitReaction()
+        {
+            if (animator == null)
+                return;
+
+            RestoreMeleeLocomotionLayers();
+            int layer = ResolveFullBodyLayer();
+            int windup = ResolveParryWindupHash(layer);
+            bool hasHit = layer >= 0 && animator.HasState(layer, Parry01HitHash);
+            if (windup == 0 && !hasHit)
+            {
+                PlayGuardImpactReaction();
+                return;
+            }
+
+            animator.SetBool(vAnimatorParameters.IsBlocking, true);
+            animator.SetInteger(vAnimatorParameters.DefenseID, DefenseID);
+            if (windup != 0)
+                animator.CrossFadeInFixedTime(windup, 0.05f, layer, 0f);
+            else
+                animator.CrossFadeInFixedTime(Parry01HitHash, 0.05f, layer, 0f);
+
+            if (_guardImpactRoutine != null)
+                StopCoroutine(_guardImpactRoutine);
+
+            _guardImpactRoutine = StartCoroutine(ParryPresentationRoutine(layer, windup != 0 && hasHit));
+        }
+
+        private int ResolveParryWindupHash(int layer)
+        {
+            if (animator == null || layer < 0)
+                return 0;
+
+            for (int i = 0; i < ParryWindupHashes.Length; i++)
+            {
+                if (animator.HasState(layer, ParryWindupHashes[i]))
+                    return ParryWindupHashes[i];
+            }
+
+            return 0;
+        }
+
+        private IEnumerator ParryPresentationRoutine(int layer, bool chainHit)
+        {
+            if (chainHit)
+            {
+                yield return new WaitForSeconds(ParryWindupSeconds);
+                if (animator != null && layer >= 0 && animator.HasState(layer, Parry01HitHash))
+                    animator.CrossFadeInFixedTime(Parry01HitHash, 0.05f, layer, 0f);
+                yield return new WaitForSeconds(ParryHitSeconds);
+            }
+            else
+            {
+                yield return new WaitForSeconds(ParryWindupSeconds + ParryHitSeconds);
+            }
+
+            _guardImpactRoutine = null;
+            if (animator == null || layer < 0)
+                yield break;
+
+            AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(layer);
+            if (info.IsName("Parry01") || info.IsName("Parry") || info.IsName("Parry01_Hit"))
+                RestoreMeleeFullBodyIdle();
+            else
+                EndSwingIfBodyIdle();
+        }
+
         private void PlayGuardImpactReaction()
         {
             if (animator == null)
@@ -1282,7 +2118,7 @@ namespace Project.Player.Invector
 
             int layer = cc != null ? cc.fullbodyLayer : animator.GetLayerIndex("FullBody");
             if (layer >= 0)
-                animator.CrossFadeInFixedTime("Null", 0.06f, layer, 0f);
+                RestoreMeleeFullBodyIdle();
 
             animator.SetBool(vAnimatorParameters.IsBlocking, true);
         }
