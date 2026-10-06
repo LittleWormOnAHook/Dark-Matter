@@ -319,7 +319,7 @@ new DMStudioSubtab(
                         new DMStudioSubtab(
                             "combat-core",
                             "Combat Core",
-                            "Poise, humanoid stagger, i-frames, status immunity/stacks, hitstop, attack/block face, and parry hooks.",
+                            "DM_CombatCoreProfile — flat inspector here; Combat Studio groups the same fields under Player vs Enemy.",
                             DMStudioPanelMode.AssetFolder,
                             searchFolder: "Assets/_Project/Resources/Combat",
                             typeFilter: "t:DM_CombatCoreProfile",
@@ -336,7 +336,7 @@ new DMStudioSubtab(
                         new DMStudioSubtab(
                             "combat-studio",
                             "Combat Studio",
-                            "Standalone Combat Studio — Core / Melee / Ranged / Play (v1.6.5) / Roadmap.",
+                            "Combat Studio — Core & Melee use Player / Enemy headings; Ranged links, Play (v1.6.5), Roadmap.",
                             DMStudioPanelMode.ExternalTool,
                             externalMenuPath: "Tools/Dark Matter Genesis/Combat/Combat Studio"),
                         new DMStudioSubtab(

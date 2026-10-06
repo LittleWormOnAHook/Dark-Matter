@@ -50,15 +50,30 @@ MonoBehaviour:
   enemyMeleeHitboxReachScale: 2.15
   enemyMeleeAttackRangeMultiplier: 1.22
   meleeHitYawForgivenessDegrees: 0
+  lightComboAnimSpeedA: 1
+  lightComboAnimSpeedB: 1
+  lightComboAnimSpeedC: 1
+  lightRandomAnimSpeedA: 1
+  lightRandomAnimSpeedB: 1
+  lightRandomAnimSpeedC: 1
+  strongMeleeAnimSpeedA: 1
+  strongMeleeAnimSpeedC: 1
   strongMeleeChargeSeconds: 0.4
-  strongMeleeDamageMultiplier: 1.8
-  strongMeleeDamageStartNormalized: 0.72
+  strongMeleeDamageMultiplier: 2.443
+  strongMeleeDamageStartNormalized: 0.865
   strongMeleeDamageEndNormalized: 0.98
-  strongMeleeAnimSpeedMultiplier: 1.25
+  strongMeleeAnimSpeedMultiplier: 1.472
+  chargedHitsIgnoreEnemyWeapons: 1
   hitstopLightFrames: 2
   hitstopHeavyFrames: 6
   parryWindowSeconds: 0.2
   parryClashVfxPrefab: {fileID: 7766587421872479702, guid: ff3ee9c6089c20a4cba93a558d8eccbe, type: 3}
   parryClashVfxScale: 1.15
   parryClashVfxLifetimeSeconds: 0.45
-  logCombatEventsInPlay: 0
+  chargedHitShakeAmplitude: 0.55
+  chargedHitShakeDurationSeconds: 0.22
+  parryShakeAmplitude: 0.32
+  parryShakeDurationSeconds: 0.14
+  blockShakeAmplitude: 0.18
+  blockShakeDurationSeconds: 0.08
+  logCombatEventsInPlay: 1

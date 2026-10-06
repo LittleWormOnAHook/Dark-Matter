@@ -6,6 +6,7 @@ namespace Project.Combat
 {
     /// <summary>
     /// Applies DM_CombatCoreProfile melee block cone to Invector melee managers on the player.
+    /// Also refreshed in Play when the profile changes via <see cref="DMMeleeCombatProfileLiveRefresh"/>.
     /// </summary>
     public static class DMMeleeCombatProfileApplier
     {

@@ -95,6 +95,7 @@ namespace Project.Combat
                         enemyHealth.TakeDamage(damage, source, isCritical);
                         SpawnHitVfx(damage, source, hitPoint);
                         PlayMeleeHitAudio(hitPoint, isCritical);
+                        DMCombatCameraShake.TryPlayChargedHit(source);
 
                         if (enemyHealth.IsDead)
                             ragdollBridge.ActivateCorpseRagdoll(staggerSnapshot);
@@ -114,6 +115,7 @@ namespace Project.Combat
                     enemyHealth.TakeDamage(damage, source, isCritical);
                     SpawnHitVfx(damage, source, hitPoint);
                     PlayMeleeHitAudio(hitPoint, isCritical);
+                    DMCombatCameraShake.TryPlayChargedHit(source);
                     return;
                 }
             }

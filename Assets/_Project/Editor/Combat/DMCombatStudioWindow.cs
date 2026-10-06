@@ -8,7 +8,7 @@ using UnityEngine;
 namespace Project.EditorTools.Combat
 {
     /// <summary>
-    /// Combat Studio Phase 2 shell: Core / Melee / Ranged / Play (v1.6.5) / Roadmap.
+    /// Combat Studio Phase 2 shell: Core / Melee (Player vs Enemy groupings) / Ranged / Play / Roadmap.
     /// Runtime numbers live on DM_CombatCoreProfile. Combat_Sandbox is forensics only.
     /// </summary>
     public sealed class DMCombatStudioWindow : EditorWindow
@@ -71,7 +71,7 @@ namespace Project.EditorTools.Combat
 
             DMStudioStyles.DrawHeroHeader(
                 "Combat Studio",
-                "Core, melee, ranged links, v1.6.5 Play, and §31 roadmap — runtime reads DM_CombatCoreProfile.");
+                "Core and Melee group tunables under Player vs Enemy. Ranged links, v1.6.5 Play, §31 roadmap — runtime reads DM_CombatCoreProfile.");
 
             DMStudioStyles.DrawHorizontalTabBar(() =>
             {
@@ -121,21 +121,29 @@ namespace Project.EditorTools.Combat
 
             using (DMStudioStyles.BeginProfileInspector(serializedProfile))
             {
-                DMStudioStyles.DrawSection("Poise", DMStudioStyles.ContentPanel, () =>
+                DrawCombatActorHeader(
+                    "Player",
+                    "Kade defensive windows and dodge/dash invulnerability. Parry timing pairs with Melee → Player → block & parry.");
+
+                DMStudioStyles.DrawSection("I-frames (dodge / dash)", DMStudioStyles.ContentPanel, () =>
                 {
                     EditorGUILayout.HelpBox(
-                        "Recommended humanoid drain: max 100, health→poise 0.35, per-hit cap 0.4. "
-                        + "A ~40 damage swing then costs ~14 poise (~7 hits to break). "
-                        + "Per-hit cap stops one swing from always breaking; set it to 1 to allow one-shots.",
+                        "Invulnerability after a dodge roll or combat dash. Does not apply while blocking.",
                         MessageType.Info);
-                    DMStudioStyles.DrawPropertyFields(
-                        serializedProfile,
-                        "trainingDummyPoiseMax",
-                        "poiseDamageFromHealthMultiplier",
-                        "maxPoiseDamageFractionPerHit",
-                        "poiseRegenPerSecond",
-                        "poiseRegenDelayAfterHit");
+                    DMStudioStyles.DrawPropertyFields(serializedProfile, "dodgeIFrameSeconds", "dashIFrameSeconds");
                 });
+
+                DMStudioStyles.DrawSection("Parry window", DMStudioStyles.ContentPanel, () =>
+                {
+                    EditorGUILayout.HelpBox(
+                        "Block input inside this window counts as a parry (riposte). Guard-break stagger on the attacker is under Melee → Enemy.",
+                        MessageType.Info);
+                    DMStudioStyles.DrawPropertyFields(serializedProfile, "parryWindowSeconds");
+                });
+
+                DrawCombatActorHeader(
+                    "Enemy & targets",
+                    "Poise drain, break stagger, and break audio for humanoids and the training dummy.");
 
                 DMStudioStyles.DrawSection("Humanoid poise", DMStudioStyles.ContentPanel, () =>
                 {
@@ -151,12 +159,29 @@ namespace Project.EditorTools.Combat
                         "humanoidPoiseStaggerSeconds");
                 });
 
-                DMStudioStyles.DrawSection("I-Frames", DMStudioStyles.ContentPanel, () =>
+                DMStudioStyles.DrawSection("Training dummy poise", DMStudioStyles.ContentPanel, () =>
                 {
-                    DMStudioStyles.DrawPropertyFields(serializedProfile, "dodgeIFrameSeconds", "dashIFrameSeconds");
+                    EditorGUILayout.HelpBox(
+                        "Recommended humanoid drain: max 100, health→poise 0.35, per-hit cap 0.4. "
+                        + "A ~40 damage swing then costs ~14 poise (~7 hits to break). "
+                        + "Per-hit cap stops one swing from always breaking; set it to 1 to allow one-shots.",
+                        MessageType.Info);
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedProfile,
+                        "trainingDummyPoiseMax",
+                        "poiseDamageFromHealthMultiplier",
+                        "maxPoiseDamageFractionPerHit",
+                        "poiseRegenPerSecond",
+                        "poiseRegenDelayAfterHit");
                 });
 
-                DMStudioStyles.DrawSection("Status", DMStudioStyles.ContentPanel, () =>
+                DrawPoiseStaggerAudioSection();
+
+                DrawCombatActorHeader(
+                    "Shared rules",
+                    "Status stacks and future hitstop hooks that apply across combat actors.");
+
+                DMStudioStyles.DrawSection("Status (global)", DMStudioStyles.ContentPanel, () =>
                 {
                     DMStudioStyles.DrawPropertyFields(
                         serializedProfile,
@@ -165,13 +190,12 @@ namespace Project.EditorTools.Combat
                         "statusBossMultiplier");
                 });
 
-                DMStudioStyles.DrawSection("Hooks & debug", DMStudioStyles.ContentPanel, () =>
+                DMStudioStyles.DrawSection("Hitstop hooks & debug", DMStudioStyles.ContentPanel, () =>
                 {
                     DMStudioStyles.DrawPropertyFields(
                         serializedProfile,
                         "hitstopLightFrames",
                         "hitstopHeavyFrames",
-                        "parryWindowSeconds",
                         "logCombatEventsInPlay");
                 });
             }
@@ -181,8 +205,6 @@ namespace Project.EditorTools.Combat
                 serializedProfile.ApplyModifiedProperties();
                 EditorUtility.SetDirty(profile);
             }
-
-            DrawPoiseStaggerAudioSection();
         }
 
         private void DrawMeleeTab()
@@ -197,26 +219,27 @@ namespace Project.EditorTools.Combat
 
             using (DMStudioStyles.BeginProfileInspector(serializedProfile))
             {
-                DMStudioStyles.DrawSection("Hit detection", DMStudioStyles.ContentPanel, () =>
+                DrawCombatActorHeader(
+                    "Player",
+                    "Kade sword hitboxes, attack/block facing, hold-to-strong, and parry clash VFX.");
+
+                DMStudioStyles.DrawSection("Hitboxes & block cone", DMStudioStyles.ContentPanel, () =>
                 {
                     EditorGUILayout.HelpBox(
-                        "Scales Invector vHitBox on player and humanoid enemy weapons. Wider block cone uses defaultDefenseRange (half-angle from forward).",
+                        "Scales player vHitBox width and reach. meleeBlockDefenseHalfAngle is the frontal block/parry arc (degrees from forward).",
                         MessageType.Info);
                     DMStudioStyles.DrawPropertyFields(
                         serializedProfile,
                         "meleeHitboxWidthScale",
                         "meleeHitboxReachScale",
-                        "meleeBlockDefenseHalfAngle",
-                        "enemyMeleeHitboxWidthScale",
-                        "enemyMeleeHitboxReachScale",
-                        "enemyMeleeAttackRangeMultiplier");
+                        "meleeBlockDefenseHalfAngle");
                 });
 
-                DMStudioStyles.DrawSection("Attack / block facing", DMStudioStyles.ContentPanel, () =>
+                DMStudioStyles.DrawSection("Attack / block facing (yaw)", DMStudioStyles.ContentPanel, () =>
                 {
                     EditorGUILayout.HelpBox(
                         "Gate 0 attack yaw is shipped — do not retune unless it regresses. "
-                        + "Attack auto-face uses a tighter cone than block; both share max distance and turn speed.",
+                        + "Attack auto-face uses a tighter cone than block; block assist shares max distance and turn speed.",
                         MessageType.Info);
                     DMStudioStyles.DrawPropertyFields(
                         serializedProfile,
@@ -226,7 +249,103 @@ namespace Project.EditorTools.Combat
                         "meleeBlockAutoFaceTurnSpeed");
                 });
 
-                DMStudioStyles.DrawSection("Block / parry guard-break", DMStudioStyles.ContentPanel, () =>
+                DMStudioStyles.DrawSection("Light combo anim speed (A→B→C)", DMStudioStyles.ContentPanel, () =>
+                {
+                    EditorGUILayout.HelpBox(
+                        "Per-slot Animator.speed while in WeakAttacks/SwordAttack A, B, or C (regular chained lights). "
+                        + "1 = clip default, 1.25 = 25% faster (0.75–2). Play reads profile.Live via PioneerMeleeDamageWindowTracker LateUpdate.",
+                        MessageType.Info);
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedProfile,
+                        "lightComboAnimSpeedA",
+                        "lightComboAnimSpeedB",
+                        "lightComboAnimSpeedC");
+                });
+
+                DMStudioStyles.DrawSection("Light random pool anim speed", DMStudioStyles.ContentPanel, () =>
+                {
+                    EditorGUILayout.HelpBox(
+                        "WeakAttacks/SwordRandomAttack A/B/C — parallel random weak swings, not the combo chain.",
+                        MessageType.Info);
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedProfile,
+                        "lightRandomAnimSpeedA",
+                        "lightRandomAnimSpeedB",
+                        "lightRandomAnimSpeedC");
+                });
+
+                DMStudioStyles.DrawSection("Strong melee (hold release)", DMStudioStyles.ContentPanel, () =>
+                {
+                    EditorGUILayout.HelpBox(
+                        "Sword out: tap left mouse (release before the charge time) for the light swing. "
+                        + "Hold past strongMeleeChargeSeconds and the weapon stays drawn back until you release — no max hold, no auto-swing. "
+                        + "Release then plays the strong sword clip. Right mouse stays block / parry. "
+                        + "strongMeleeDamageMultiplier scales the normal melee roll. "
+                        + "strongMeleeDamageStartNormalized / End gate Strong SwordAttack B hitboxes (runtime + controller fallback). "
+                        + "strongMeleeAnimSpeedMultiplier (0.75–2) drives charge + Strong SwordAttack B. "
+                        + "strongMeleeAnimSpeedA/C tune other strong slots when those clips play. "
+                        + "chargedHitsIgnoreEnemyWeapons skips the defender's sword / outgoing blade so a close charge waits for a body hit. Block and parry still register.",
+                        MessageType.Info);
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedProfile,
+                        "strongMeleeAnimSpeedA",
+                        "strongMeleeAnimSpeedC",
+                        "strongMeleeChargeSeconds",
+                        "strongMeleeDamageMultiplier",
+                        "strongMeleeDamageStartNormalized",
+                        "strongMeleeDamageEndNormalized",
+                        "strongMeleeAnimSpeedMultiplier",
+                        "chargedHitsIgnoreEnemyWeapons");
+                });
+
+                DMStudioStyles.DrawSection("Block & parry (player feedback)", DMStudioStyles.ContentPanel, () =>
+                {
+                    EditorGUILayout.HelpBox(
+                        "Parry timing window lives on Core → Player → Parry window. "
+                        + "Sparks spawn at blade contact on a successful parry.",
+                        MessageType.Info);
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedProfile,
+                        "parryClashVfxPrefab",
+                        "parryClashVfxScale",
+                        "parryClashVfxLifetimeSeconds");
+                });
+
+                DMStudioStyles.DrawSection("Camera shake", DMStudioStyles.ContentPanel, () =>
+                {
+                    EditorGUILayout.HelpBox(
+                        "Trauma on the existing CameraShake hub (0 = off). "
+                        + "Useful amplitude is 0–1; values above 1 cap at full shake. "
+                        + "Duration holds trauma then decays. "
+                        + "Block is smallest, parry medium, charged hit (on a real enemy hit, not swing start) strongest.",
+                        MessageType.Info);
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedProfile,
+                        "chargedHitShakeAmplitude",
+                        "chargedHitShakeDurationSeconds",
+                        "parryShakeAmplitude",
+                        "parryShakeDurationSeconds",
+                        "blockShakeAmplitude",
+                        "blockShakeDurationSeconds");
+                });
+
+                DrawCombatActorHeader(
+                    "Enemy & targets",
+                    "Humanoid melee reach, guard-break lockouts when Kade blocks or parries, and training dummy wobble.");
+
+                DMStudioStyles.DrawSection("Melee hitboxes & strike range", DMStudioStyles.ContentPanel, () =>
+                {
+                    EditorGUILayout.HelpBox(
+                        "Scales humanoid enemy vHitBox and multiplies EnemyCombat.attackRange for AI swing distance.",
+                        MessageType.Info);
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedProfile,
+                        "enemyMeleeHitboxWidthScale",
+                        "enemyMeleeHitboxReachScale",
+                        "enemyMeleeAttackRangeMultiplier");
+                });
+
+                DMStudioStyles.DrawSection("Guard-break stagger (attacker)", DMStudioStyles.ContentPanel, () =>
                 {
                     EditorGUILayout.HelpBox(
                         "A held block is a light guard tap. A parry (block inside parryWindowSeconds) is the riposte.\n"
@@ -234,7 +353,7 @@ namespace Project.EditorTools.Combat
                         + "blockStaggerSeconds is tunable 0–3s (profile default 0.4). "
                         + "A parry is the riposte opening (parryStaggerSeconds 0–10s, default 5; harder shove, ~0.12s enemy pose hold, triple bell).\n"
                         + "Block plays one quieter ding and a ~0.12s player guard pose. "
-                        + "Parry plays the poise triple ring. The player uses that same mild guard pose. "
+                        + "Parry plays the poise triple ring. "
                         + "blockStaggerHitstopSeconds stays 0 — a block does not freeze either animator. "
                         + "Parry hitstop is the enemy animator only, not Time.timeScale.",
                         MessageType.Info);
@@ -245,31 +364,10 @@ namespace Project.EditorTools.Combat
                         "blockParryStaggerImpulseScale",
                         "parryStaggerImpulseBonus",
                         "blockStaggerHitstopSeconds",
-                        "parryStaggerHitstopSeconds",
-                        "parryClashVfxPrefab",
-                        "parryClashVfxScale",
-                        "parryClashVfxLifetimeSeconds");
+                        "parryStaggerHitstopSeconds");
                 });
 
-                DMStudioStyles.DrawSection("Strong melee", DMStudioStyles.ContentPanel, () =>
-                {
-                    EditorGUILayout.HelpBox(
-                        "Sword out: tap left mouse (release before the charge time) for the light swing. "
-                        + "Hold past strongMeleeChargeSeconds and the weapon stays drawn back until you release — no max hold, no auto-swing. "
-                        + "Release then plays the strong sword clip. Right mouse stays block / parry. "
-                        + "strongMeleeDamageMultiplier scales the normal melee roll. "
-                        + "strongMeleeDamageStartNormalized / End gate Strong SwordAttack B hitboxes (runtime + controller fallback).",
-                        MessageType.Info);
-                    DMStudioStyles.DrawPropertyFields(
-                        serializedProfile,
-                        "strongMeleeChargeSeconds",
-                        "strongMeleeDamageMultiplier",
-                        "strongMeleeDamageStartNormalized",
-                        "strongMeleeDamageEndNormalized",
-                        "strongMeleeAnimSpeedMultiplier");
-                });
-
-                DMStudioStyles.DrawSection("Dummy spring / stagger", DMStudioStyles.ContentPanel, () =>
+                DMStudioStyles.DrawSection("Training dummy spring / stagger", DMStudioStyles.ContentPanel, () =>
                 {
                     EditorGUILayout.HelpBox(
                         "Training dummy hit wobble. Runtime reads DM_CombatCoreProfile.Live; "
@@ -434,7 +532,7 @@ namespace Project.EditorTools.Combat
             {
                 EditorGUILayout.ObjectField("Game audio profile", audioProfile, typeof(GameAudioProfile), false);
                 EditorGUILayout.HelpBox(
-                    "When poise hits zero, CombatEvents.Stagger plays this clip three times "
+                    "When enemy poise hits zero, CombatEvents.Stagger plays this clip three times "
                     + "(rising pitch). Empty slots fall back to level-up / achievement clips.",
                     MessageType.Info);
                 using (DMStudioStyles.BeginProfileInspector(serializedAudioProfile))
@@ -479,6 +577,17 @@ namespace Project.EditorTools.Combat
 
             EditorGUIUtility.PingObject(plan);
             Selection.activeObject = plan;
+        }
+
+        private static void DrawCombatActorHeader(string title, string help)
+        {
+            EditorGUILayout.Space(12f);
+            Rect r = GUILayoutUtility.GetRect(0f, 22f, GUILayout.ExpandWidth(true));
+            EditorGUI.LabelField(r, title, DMStudioStyles.SectionTitle);
+            DMStudioStyles.DrawAccentLine(r, new Color(0.56f, 0.12f, 0.37f, 1f), 2f);
+            if (!string.IsNullOrEmpty(help))
+                EditorGUILayout.HelpBox(help, MessageType.None);
+            EditorGUILayout.Space(4f);
         }
 
         private static DM_CombatCoreProfile LoadOrCreateProfile()

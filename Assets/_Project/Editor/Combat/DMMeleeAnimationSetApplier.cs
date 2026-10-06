@@ -14,7 +14,7 @@ namespace Project.EditorTools.Combat
     /// <item>WeakAttacks/SwordAttack A,B,C ← oneHandSword lightA/lightB/lightC (WeakAttack_SwordA→B→C chain).</item>
     /// <item>WeakAttacks/SwordRandomAttack A,B,C ← Mixamo parallel swings only (never combo light slots).</item>
     /// <item>StrongAttacks/SwordAttack A,B,C ← strongA/strongB/strongC.</item>
-    /// <item>StrongAttacks/SwordCharge ← chargeHold (speed from strongMeleeAnimSpeedMultiplier).</item>
+    /// <item>StrongAttacks/SwordCharge ← chargeHold (state speed 1; Play uses profile.Live via PioneerMeleeDamageWindowTracker).</item>
     /// <item>WeakAttacks entry AttackID==1 → SwordAttack sub-SM (not SwordRandomAttack).</item>
     /// Never call AssignSlotStates on SwordRandomAttack — that copies combo clips into the random pool.
     /// </list>
@@ -183,9 +183,6 @@ namespace Project.EditorTools.Combat
 
             DM_CombatCoreProfile profile = AssetDatabase.LoadAssetAtPath<DM_CombatCoreProfile>(
                 "Assets/_Project/Resources/Combat/DM_CombatCoreProfile.asset");
-            float mult = profile != null ? profile.strongMeleeAnimSpeedMultiplier : 1.25f;
-            mult = Mathf.Clamp(mult, 0.75f, 2f);
-
             AnimatorControllerLayer fullBody = FindLayer(controller, "FullBody");
             if (fullBody == null)
                 return;
@@ -195,14 +192,15 @@ namespace Project.EditorTools.Combat
             if (strongAttacks == null)
                 return;
 
+            // Play mode reads DM_CombatCoreProfile.Live via PioneerMeleeDamageWindowTracker (light/strong per-slot Animator.speed).
             AnimatorState charge = GetOrCreateState(strongAttacks, "SwordCharge");
-            charge.speed = mult;
+            charge.speed = 1f;
 
             AnimatorStateMachine swordStrong = FindSubStateMachine(strongAttacks, "SwordAttack");
             if (swordStrong != null)
             {
                 AnimatorState strongB = GetOrCreateState(swordStrong, "B");
-                strongB.speed = mult;
+                strongB.speed = 1f;
             }
         }
 

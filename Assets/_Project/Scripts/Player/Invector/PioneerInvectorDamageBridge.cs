@@ -99,6 +99,7 @@ namespace Project.Player.Invector
                 in info);
             CombatHitVfx.SpawnBloodSplatter(hitPoint, direction, -direction, damage);
             EnemyNoiseEvents.RaiseNoise(hitPoint, 12f, source);
+            DMCombatCameraShake.TryPlayChargedHit(source);
         }
     }
 }

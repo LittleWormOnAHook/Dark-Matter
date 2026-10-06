@@ -799,6 +799,14 @@ namespace Project.Player.Invector
 
         public bool IsStrongChargePoseActive => _strongChargePoseActive;
 
+        /// <summary>Hold past charge threshold, before or during charge pose crossfade.</summary>
+        public bool IsStrongChargeHoldActive => _strongChargeArmed && _lightAttackHeldLast;
+
+        /// <summary>Charged release swing (Strong SwordAttack B) — covers clip even if FullBody state hash mismatches.</summary>
+        public bool IsChargedStrongSwingActive =>
+            _strongSwingStartedAt > float.NegativeInfinity
+            && Time.time - _strongSwingStartedAt <= StrongDamageWindowSeconds;
+
         public override void BlockingInput()
         {
             if (animator == null || cc == null)
@@ -939,10 +947,19 @@ namespace Project.Player.Invector
                 animator.SetLayerWeight(layer, 1f);
                 animator.CrossFadeInFixedTime(hash, 0.06f, layer, 0f);
                 _strongSwingStartedAt = Time.time;
+                ApplyStrongMeleeAnimSpeedFromLiveProfile();
                 return;
             }
 
             TriggerStrongAttack();
+        }
+
+        private static void ApplyStrongMeleeAnimSpeedFromLiveProfile()
+        {
+            DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
+            float mult = profile != null ? profile.strongMeleeAnimSpeedMultiplier : 1.25f;
+            mult = Mathf.Clamp(mult, 0.75f, 2f);
+            PioneerMeleeDamageWindowTracker.ApplyStrongMeleeSpeedOverride(mult);
         }
 
         private void PrepareDrawnSwordAttackId()
@@ -983,6 +1000,7 @@ namespace Project.Player.Invector
             animator.SetLayerWeight(layer, 1f);
             animator.CrossFadeInFixedTime(StrongSwordChargeStateHash, 0.08f, layer, 0f);
             _strongChargePoseActive = true;
+            ApplyStrongMeleeAnimSpeedFromLiveProfile();
         }
 
         private static bool IsStrongSwordState(AnimatorStateInfo info)
@@ -1218,7 +1236,15 @@ namespace Project.Player.Invector
 
             PlayGuardImpactReaction();
             if (isParry)
+            {
                 DMParryClashVfx.TryPlay(damage, transform, damageSender);
+                DMCombatCameraShake.PlayParry();
+            }
+            else
+            {
+                DMCombatCameraShake.PlayBlock();
+            }
+
             DMEnemyGuardBreakStagger.TryApplyFromBlock(attacker, transform, isParry, damageSender);
         }
 

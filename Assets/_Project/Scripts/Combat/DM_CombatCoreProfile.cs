@@ -98,6 +98,26 @@ namespace Project.Combat
         [Tooltip("Unused (legacy). Forgiveness is handled by scaled primary hitbox + per-swing target dedupe.")]
         [Range(0f, 45f)] public float meleeHitYawForgivenessDegrees = 0f;
 
+        [Header("Light melee combo (Weak SwordAttack A→B→C)")]
+        [Tooltip("Play-mode Animator.speed in WeakAttacks/SwordAttack A. 1 = clip default, 1.25 = 25% faster. Future knife/baton: add parallel A/B/C triplets or a weapon-family nested profile — keep named slots for now.")]
+        [Range(0.75f, 2f)] public float lightComboAnimSpeedA = 1f;
+        [Tooltip("WeakAttacks/SwordAttack B. 1 = normal, 1.25 = +25% faster.")]
+        [Range(0.75f, 2f)] public float lightComboAnimSpeedB = 1f;
+        [Tooltip("WeakAttacks/SwordAttack C. 1 = normal, 1.25 = +25% faster.")]
+        [Range(0.75f, 2f)] public float lightComboAnimSpeedC = 1f;
+
+        [Header("Light random pool (Weak SwordRandomAttack A→B→C)")]
+        [Tooltip("Parallel random weak swings (not the A→B→C chain). 1 = clip default, 1.25 = 25% faster.")]
+        [Range(0.75f, 2f)] public float lightRandomAnimSpeedA = 1f;
+        [Range(0.75f, 2f)] public float lightRandomAnimSpeedB = 1f;
+        [Range(0.75f, 2f)] public float lightRandomAnimSpeedC = 1f;
+
+        [Header("Strong melee slots (A/C — B + charge below)")]
+        [Tooltip("StrongAttacks/SwordAttack A (non-charge heavy). Charge + Strong B use strongMeleeAnimSpeedMultiplier.")]
+        [Range(0.75f, 2f)] public float strongMeleeAnimSpeedA = 1f;
+        [Tooltip("StrongAttacks/SwordAttack C. 1 = normal, 1.25 = +25% faster.")]
+        [Range(0.75f, 2f)] public float strongMeleeAnimSpeedC = 1f;
+
         [Header("Strong melee (hold light attack, then release)")]
         [Tooltip("Seconds the light-attack button (left mouse / Attack) must be held before a release plays the strong sword swing. After this threshold the charge pose stays until release. There is no maximum hold and the swing does not fire by itself. A shorter press-and-release stays a light tap. Right mouse stays block.")]
         [Range(0.2f, 0.8f)] public float strongMeleeChargeSeconds = 0.4f;
@@ -107,8 +127,10 @@ namespace Project.Combat
         [Range(0.05f, 0.95f)] public float strongMeleeDamageStartNormalized = 0.72f;
         [Tooltip("Normalized clip time when charged release hitboxes turn off.")]
         [Range(0.1f, 1f)] public float strongMeleeDamageEndNormalized = 0.98f;
-        [Tooltip("Animator state speed for StrongAttacks/SwordCharge hold and Strong SwordAttack B (charged release). Does not affect light weak combo states.")]
+        [Tooltip("Play-mode speed for StrongAttacks/SwordCharge and Strong SwordAttack B (1 = clip default, 1.25 = 25% faster, 0.75 = slowest allowed). Applied at runtime from profile.Live; Build And Apply only syncs controller clips.")]
         [Range(0.75f, 2f)] public float strongMeleeAnimSpeedMultiplier = 1.25f;
+        [Tooltip("Charged Strong B / AttackC ignores the defender's sword and other outgoing weapon volumes. Damage waits for a real body / dummy hit. Block and parry still register as guard.")]
+        public bool chargedHitsIgnoreEnemyWeapons = true;
 
         [Header("Future tuning hooks")]
         [Range(0, 12)] public int hitstopLightFrames = 2;
@@ -120,6 +142,18 @@ namespace Project.Combat
         public GameObject parryClashVfxPrefab;
         [Range(0.5f, 2.5f)] public float parryClashVfxScale = 1.15f;
         [Range(0.1f, 1.5f)] public float parryClashVfxLifetimeSeconds = 0.45f;
+
+        [Header("Camera shake")]
+        [Tooltip("Trauma added on a charged strong hit that actually damages an enemy. 0 = off. Useful range 0–1 (CameraShake trauma caps at 1).")]
+        [Range(0f, 2f)] public float chargedHitShakeAmplitude = 0.55f;
+        [Tooltip("Hold trauma this long after a charged hit, then decay. 0 = one-shot punch only.")]
+        [Range(0f, 0.4f)] public float chargedHitShakeDurationSeconds = 0.22f;
+        [Tooltip("Trauma on a successful parry. 0 = off. Medium vs block; weaker than a charged hit.")]
+        [Range(0f, 2f)] public float parryShakeAmplitude = 0.32f;
+        [Range(0f, 0.4f)] public float parryShakeDurationSeconds = 0.14f;
+        [Tooltip("Trauma on a successful guard connect that is not a parry. 0 = off. Smallest of the three.")]
+        [Range(0f, 2f)] public float blockShakeAmplitude = 0.18f;
+        [Range(0f, 0.4f)] public float blockShakeDurationSeconds = 0.08f;
 
         [Header("Debug")]
         public bool logCombatEventsInPlay;

@@ -115,6 +115,9 @@ namespace Project.Player.Invector
             if (GetComponent<PioneerMeleeDamageWindowTracker>() == null)
                 gameObject.AddComponent<PioneerMeleeDamageWindowTracker>();
 
+            if (GetComponent<DMMeleeCombatProfileLiveRefresh>() == null)
+                gameObject.AddComponent<DMMeleeCombatProfileLiveRefresh>();
+
             if (!disableLegacyCombatComponents)
                 return;
 

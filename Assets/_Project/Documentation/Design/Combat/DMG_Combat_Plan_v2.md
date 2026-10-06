@@ -13,6 +13,8 @@ Canonical copies (keep aligned): this file, Desktop `C:\Users\Teabagger\Desktop\
 
 **Tuning scene:** `Assets/_Project/Scenes/Dark Matter Genesis v1.6.5.unity`. **Combat_Sandbox is RETIRED** for melee/combat tuning (scene + `DMCombatSandboxSpawner` may still exist as a leftover; do not treat it as the play target).
 
+**Studio → runtime authority:** Combat Studio + Genesis **Combat Core** fields are **Resources profile → `DM_CombatCoreProfile.Live` at runtime and in builds** (not editor-only applier steps). Exception: **Melee Animations** / **Build And Apply** wires **clip assets** on animator YAML; tunable numbers (stagger, charge, hitbox scale, parry window, strong anim speed, etc.) must apply immediately in Play when sliders move. See `Unity_Compile_Iteration_Audit.md` §6.
+
 **Phase 1 (Audit) closed Oct 3, 2026.** Locked: Plasma default status = **Burning**; Ice→Cryo / Electricity→Energy display mapping; Fire/Gunpowder/Explosive/ResonanceStabilizer are damage types; wrap Invector (don't replace); `DamageInfo` + `IDamageReceiver` beside `IDamageable`; skill-branch and companion-role mappings. Animation tag sheet: `DMG_Combat_Animation_Tag_Sheet.md`.
 
 **Gate 0 (attack yaw) — regression-only.** Attack/charge auto-face uses `meleeAttackAutoFaceHalfAngle` (~16°) via `DMMeleeBlockThreatFacing.ApplyAttackFacing`; block stays ~30°. Shipped separately from Phase 2; do not re-prove except on regression.
@@ -20,6 +22,8 @@ Canonical copies (keep aligned): this file, Desktop `C:\Users\Teabagger\Desktop\
 **Phase 2 = §31 #2 Core combat — SIGNED OFF Oct 5, 2026** (Anthony acceptance in v1.6.5). Shipped: Batch 1 + melee polish — weak chain WeakAttack **A→B→C** + `SwordRandomAttack.B`; strong **charge timing/speed** (`SwordCharge` hold → Strong `SwordAttack.B`); **parry/block stagger** (`DMEnemyGuardBreakStagger`); **SparksLong** parry VFX; **incoming block fix**; **Combat Studio shell** (Core / Melee / Ranged / Play / Roadmap + Genesis placeholders). Primary code commit: `59368909c` (melee polish); earlier Batch 1 / hitbox / charge wiring in branch history (`4524a4069`, `5dcce7743`, etc.).
 
 **Next = §31 #3 utility brain** — one enemy (`Humanoid_Enemy`), **not** Combat Director / Momentum.
+
+**Melee animation library (doc, Oct 5, 2026):** Some clips are **skill-gated** (base vs unlock tiers); **special attacks** use a **dedicated hold** binding (not light tap, not charge-only on attack). Catalog ↔ skill id plan, Input System **TBD** slot (`Combat/SpecialHold` proposed — **ask-before-assign**), and Jetpack Special sub-SM / AttackID branch notes → `DM_Melee_Animation_Library_Plan.md` **§9**. **No** skill-tree wiring or new bindings yet.
 
 **Batch 1 on disk:** `DamageInfo`, `CombatEvents`, `CombatPoise`, i-frames (`DMCombatIFrameController`), parry/block guard-break (`DMEnemyGuardBreakStagger`), `DM_CombatCoreProfile` + Genesis Combat Core subtab, hitbox tuning + swing dedupe (`PioneerMeleeHitboxTuning`, `PioneerMeleeSwingHitDedupe`).
 
@@ -317,7 +321,7 @@ Four branches, about 12-15 nodes each, top tier needs points in that branch, eve
 **Elemental mastery** side panel: 3 nodes per element (stronger effect, cheaper cost, signature special move), unlocked by owning that element.
 **Points**: 1 per level from the existing level-up system, bonus points from rare blueprints and bosses. Free respec at a Terminal/Build Hub (maybe small resource cost). Skills change moves; weapon upgrades stay separate as gear.
 
-**Animations**: the audit lists and tags Anthony's animation library (light, heavy, combo, finisher, dodge, hit react, idle, special, puke, etc.). Skill nodes point at clips through the same animation profiles the enemies use, so clips can be swapped or edited without code.
+**Animations**: the audit lists and tags Anthony's animation library (light, heavy, combo, finisher, dodge, hit react, idle, special, puke, etc.). Skill nodes point at clips through the same animation profiles the enemies use, so clips can be swapped or edited without code. **`DM_MeleeAnimationSet`** (+ future **`DM_MeleeFinisherCatalog`**) hold clip refs; Studio assigns all clips, **runtime gates playback** by unlocked skills (see `DM_Melee_Animation_Library_Plan.md` §9). Specials: dedicated hold input — separate from charge on attack.
 
 *Current build (audit Sep 30, 2026):*
 - **[Conflicts] Skill tree**: A hex skill tree is live with 5 categories: Melee 6, Pistols 6, Rifles 12, Survival 9, Player 18 (51 nodes). Gap: The plan has 4 branches (Blade, Control, Marksman, Survival).
@@ -425,9 +429,9 @@ Each phase: hit detection, damage, stagger, death, finishers, dismemberment, tar
 3. **Unified brain** **[Next — Phase 3]**: utility scoring, archetype, personality, traits, perception/awareness, states. Migrate **one** enemy (`Humanoid_Enemy`). **Not** Director/Momentum yet.
 4. **Combat Director** **[Missing]**: tokens, coordination, flanking, intensity, morale, reinforcement hooks. Test with 5 identical enemies.
 5. **Plasma sword template** **[Partial]**: attack, damage, hit react, crit, burn, resource use, upgrade. Start Blade and Survival skill branches.
-6. **Momentum meter and finishers** **[Missing]**: build-up, finisher selection, first finishers on the migrated enemy.
+6. **Momentum meter and finishers** **[Missing]**: build-up, finisher selection, first finishers on the migrated enemy. Skill-gated finisher rows on `DM_MeleeFinisherCatalog` (library plan §9).
 7. **Sick Stick signature** **[Missing]**: trigger conditions, puke/stun, boss stagger, immunity, upgrades, VFX/audio.
-8. **Special moves and Overdrive** **[Missing]**.
+8. **Special moves and Overdrive** **[Missing]**. Dedicated **special hold** binding (TBD, user approval) + Jetpack AttackID or Special sub-SM (library plan §9.4).
 9. **Remaining elements** **[Conflicts, names locked Oct 3]**: Cryo, Energy, Laser, Ion, then the Cryo-to-Energy combo. Elemental mastery panel. Display mapping locked; plasma-fuel / power-cell implementation still later.
 10. **Body damage and dismemberment** **[Missing]** on one enemy, element-specific finishers.
 11. **Companions** **[Partial]**: roles, buffs/debuffs, commands, downed/revive, bond. Slot-based party.
