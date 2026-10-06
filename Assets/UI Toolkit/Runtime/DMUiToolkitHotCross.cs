@@ -747,12 +747,28 @@ namespace Project.UI
             Color tint = Color.white;
             Color emissionColor = Color.white;
             float emission = 0f;
+            if (iconRegistry == null)
+                iconRegistry = DMHotCrossIconRegistry.LoadDefault();
             if (iconRegistry != null)
                 iconRegistry.TryResolve(item, out sprite, out tint, out emissionColor, out emission);
             if (sprite == null)
                 sprite = DMHotCrossIconRegistry.FindCutout(item);
 
-            if (sprite != null && DMUiToolkitStyle.TrySetSpriteBackground(icon, sprite, ScaleMode.ScaleToFit))
+            bool applied = sprite != null && DMUiToolkitStyle.TrySetSpriteBackground(icon, sprite, ScaleMode.ScaleToFit);
+            if (!applied && item != null)
+            {
+                // No Hot Cross cutout / alias match (or a broken cutout sprite): fall back to the item's
+                // normal inventory icon so an occupied slot is never blank. stamp: hotcross-icon-fallback 1006
+                Sprite fallback = DMGameIconRegistry.FindIcon(item);
+                if (fallback != null && fallback != sprite
+                    && DMUiToolkitStyle.TrySetSpriteBackground(icon, fallback, ScaleMode.ScaleToFit))
+                {
+                    sprite = fallback;
+                    applied = true;
+                }
+            }
+
+            if (applied)
             {
                 icon.style.unityBackgroundImageTintColor = tint;
                 icon.style.opacity = 1f;

@@ -241,6 +241,10 @@ namespace Project.UI
             // Journal tab letters must work while the journal locks the Player map / gameplay input.
             if (IsGameplayInputLockedByUi())
             {
+                // Modal UI owns input: drop any half-finished X / D-Pad Right press so its release is
+                // not replayed later as a stray ammo-cycle tap via the lost-key path.
+                ResetHotCrossConsumableHold();
+                ResetHotCrossGamepadAmmoHold();
                 TryHandleJournalHotkeys();
                 return;
             }
@@ -681,6 +685,12 @@ namespace Project.UI
             if (!CanProcess())
                 return false;
 
+            // KBM tab letters open only while that physical key is really down (the same keys the
+            // Input System bindings use). Rejects stray UITK KeyDown codes / layout mismatches and
+            // never lets X (Hot Cross AmmoCycle) open a journal tab. stamp: x-never-journal 1006
+            if (!IsJournalLetterKeyDown(keyCode))
+                return false;
+
             switch (keyCode)
             {
                 case KeyCode.J:
@@ -724,6 +734,40 @@ namespace Project.UI
                 default:
                     return false;
             }
+        }
+
+        private static bool IsJournalLetterKeyDown(KeyCode keyCode)
+        {
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard == null)
+                return false;
+
+            Key key = keyCode switch
+            {
+                KeyCode.J => Key.J,
+                KeyCode.I => Key.I,
+                KeyCode.M => Key.M,
+                KeyCode.K => Key.K,
+                KeyCode.P => Key.P,
+                KeyCode.C => Key.C,
+                KeyCode.U => Key.U,
+                KeyCode.T => Key.T,
+                KeyCode.L => Key.L,
+                KeyCode.G => Key.G,
+                _ => Key.None
+            };
+            if (key == Key.None)
+                return false;
+
+            UnityEngine.InputSystem.Controls.KeyControl control = keyboard[key];
+            if (control == null || !(control.wasPressedThisFrame || control.isPressed))
+                return false;
+
+            // X is the Hot Cross ammo key: a fresh X press is never read as a journal letter.
+            if (keyboard.xKey.wasPressedThisFrame && !control.wasPressedThisFrame)
+                return false;
+
+            return true;
         }
 
         public static void TryHandleAllLegacy()
@@ -786,6 +830,11 @@ namespace Project.UI
                 cachedEquipment = PlayerLocator.FindLiveEquipment();
                 cachedItemActions = PlayerLocator.FindOnLivePlayer<InventoryItemActions>();
             }
+
+            // InventoryItemActions can be missing when inventory/equipment were first cached
+            // (bootstrap order). Re-resolve so Hot Cross ammo loads never skip on a stale null cache.
+            if (!PlayerLocator.IsLive(cachedItemActions) && cachedInventory != null)
+                cachedItemActions = cachedInventory.GetComponent<InventoryItemActions>();
 
             inventory = cachedInventory;
             equipment = cachedEquipment;
@@ -1129,22 +1178,89 @@ namespace Project.UI
             hotCrossGamepadAmmoLostFrames = 0;
         }
 
+        private const int HotCrossUtilityFirstLocal = 4;
+        private const int HotCrossUtilityLastLocal = 9;
+
         private static void TryCycleHotCrossConsumableFocus()
         {
+            if (UiInputGuard.BlocksGameplayEquipmentInput)
+                return;
             if (!TryResolveInventory(out InventorySystem inventory, out EquipmentController equipment, out InventoryItemActions itemActions))
                 return;
 
             int current = DMUiToolkitHotCross.ConsumableLocalIndex;
+
+            // Ranged weapon drawn: X / D-Pad Right tap steps only through Hot Cross ammo that fits the
+            // drawn weapon and loads it (food / meds / wrong ammo are skipped). stamp: x-ammo-fit-cycle 1006
+            if (itemActions != null && itemActions.TryResolveActiveRangedWeaponHotbarSlot(out int weaponHotbarSlot))
+            {
+                TryCycleToNextFittingAmmo(inventory, equipment, itemActions, weaponHotbarSlot, current);
+                return;
+            }
+
             if (!equipment.TryGetNextOccupiedUtilityHotbarLocal(current, out int next))
                 return;
 
             DMUiToolkitHotCross.NotifyConsumableLocalIndex(next);
 
-            // KBM X / pad D-Pad Right tap: cycle Hot Cross ammo focus and auto-load into the armed ranged weapon.
+            // Holstered / melee: focus only (hold uses it). Ammo still hints to draw a ranged weapon.
             int absolute = inventory.HotbarStartIndex + next;
             ItemData item = inventory.GetItemAt(absolute);
             if (item != null && item.CountsAsAmmo && itemActions != null)
                 itemActions.TryEquipAmmoToActiveRangedWeapon(absolute);
+        }
+
+        private static void TryCycleToNextFittingAmmo(
+            InventorySystem inventory,
+            EquipmentController equipment,
+            InventoryItemActions itemActions,
+            int weaponHotbarSlot,
+            int current)
+        {
+            int last = Mathf.Min(HotCrossUtilityLastLocal, inventory.hotbarSize - 1);
+            int span = last - HotCrossUtilityFirstLocal + 1;
+            if (span <= 0)
+                return;
+
+            // Start after the focused slot and wrap; the focused slot itself is checked last.
+            int start = Mathf.Clamp(current, HotCrossUtilityFirstLocal, last);
+            int found = -1;
+            for (int offset = 1; offset <= span; offset++)
+            {
+                int candidate = HotCrossUtilityFirstLocal + ((start - HotCrossUtilityFirstLocal + offset) % span);
+                if (equipment.IsWeaponHotbarSlot(candidate))
+                    continue;
+
+                int candidateAbsolute = inventory.HotbarStartIndex + candidate;
+                ItemData candidateItem = inventory.GetItemAt(candidateAbsolute);
+                if (candidateItem == null || !candidateItem.CountsAsAmmo)
+                    continue;
+                if (!Project.Progression.LevelUnlockUtility.PassesUseGate(candidateItem, showToast: false))
+                    continue;
+                if (!itemActions.CanEquipAmmoToActiveRangedWeapon(candidateAbsolute))
+                    continue;
+
+                found = candidate;
+                break;
+            }
+
+            ItemData weapon = equipment.GetHotbarItem(weaponHotbarSlot);
+            string weaponName = weapon != null && !string.IsNullOrWhiteSpace(weapon.itemName)
+                ? weapon.itemName
+                : "this weapon";
+            if (found < 0)
+            {
+                PickupToastUI.Show($"No ammo for {weaponName} in Hot Cross slots 5-0");
+                return;
+            }
+
+            DMUiToolkitHotCross.NotifyConsumableLocalIndex(found);
+            int absolute = inventory.HotbarStartIndex + found;
+            ItemData ammo = inventory.GetItemAt(absolute);
+            string ammoName = ammo != null && !string.IsNullOrWhiteSpace(ammo.itemName) ? ammo.itemName : "Ammo";
+            // Success is shown by the Hot Cross loaded-ammo label + clip count; only failures toast.
+            if (!itemActions.TryEquipAmmoToActiveRangedWeapon(absolute, showToast: false))
+                PickupToastUI.Show($"{ammoName} already loaded (magazine full)");
         }
 
         private static void TryUseFocusedHotCrossConsumable()
@@ -1166,7 +1282,7 @@ namespace Project.UI
                 {
                     if (itemActions != null && !itemActions.TryResolveActiveRangedWeaponHotbarSlot(out _))
                         return;
-                    PickupToastUI.Show("Cannot load â€” magazine full or incompatible");
+                    PickupToastUI.Show("Cannot load - magazine full or incompatible");
                 }
 
                 return;
