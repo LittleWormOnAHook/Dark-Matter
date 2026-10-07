@@ -10,30 +10,30 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9b5afd8b56b0e0a42a75d8df8c68bc99, type: 3}
-  m_Name: The_Evil_One
+  m_Name: Robot_Enemy
   m_EditorClassIdentifier: Assembly-CSharp::Project.AI.EnemyDefinition
-  enemyId: the_evil_one
-  displayName: The Evil One
-  prefabFileName: The_Evil_One
+  enemyId: robot_enemy
+  displayName: Robot
+  prefabFileName: Robot
   archetype: 1
   surfaceThreatKind: 3
   meleeWeaponItem: {fileID: 11400000, guid: b4c5d6e7f8094a1b8c7d6e5f4a3b2c10, type: 2}
   rangedWeaponItem: {fileID: 11400000, guid: 5791b1d40c5dda44abe9a9770f6cd1e2, type: 2}
-  preferRangedWeapon: 1
-  enemyCategory: 1
-  bodyType: 1
-  overrideBrain: 0
-  brainArchetype: 0
-  primaryPersonality: 0
-  secondaryPersonality: 0
+  preferRangedWeapon: 0
+  enemyCategory: 3
+  bodyType: 2
+  overrideBrain: 1
+  brainArchetype: 5
+  primaryPersonality: 4
+  secondaryPersonality: 6
   brainProfileOverride: {fileID: 0}
   engagementProfileOverride: {fileID: 0}
   hitMarkProfileOverride: {fileID: 0}
-  maxHealth: 100
+  maxHealth: 850
   destroyOnDeath: 1
-  destroyDelay: 1
-  respawnTime: 2
-  xpReward: 25
+  destroyDelay: 3
+  respawnTime: 0
+  xpReward: 40
   showFloatingHealthBar: 1
   hideHealthBarUntilDamaged: 1
   healthBarOffset: {x: 0, y: 2, z: 0}
@@ -48,8 +48,8 @@ MonoBehaviour:
   aggroOnDamaged: 1
   aggroOnHeardHit: 1
   attackRange: 1.8
-  attackDamage: 12
-  attackCooldown: 1.4
+  attackDamage: 15
+  attackCooldown: 1.6099999
   attackWindup: 0.35
   meleeDuration: 0.85
   unarmedDuration: 0.55
@@ -57,7 +57,7 @@ MonoBehaviour:
   rangedAttackCooldown: 1.2
   rangedDuration: 0.35
   aimHoldDuration: 1.5
-  missRate: 0.65
+  missRate: 0.25
   movementMode: 2
   patrolMode: 0
   investigateNoise: 1
@@ -71,11 +71,11 @@ MonoBehaviour:
   patrolRadius: 6
   patrolWaitDuration: 2
   behaviorPreset: 1
-  walkSpeed: 2.4
-  runSpeed: 4.8
+  walkSpeed: 1.8000001
+  runSpeed: 3.6000001
   chaseSpeed: 0
   chaseSpeedMultiplier: 0.88
-  turnSpeed: 8
+  turnSpeed: 5.6
   loseTargetDelay: 4
   searchDuration: 6
   searchRadius: 4
@@ -95,12 +95,12 @@ MonoBehaviour:
   buildAnimatorFromClips: 1
   addEnemyAnimationController: 1
   lockVisualRootPosition: 0
-  visualChildName: scene
+  visualChildName: Visual
   enableLoot: 1
-  acDropMin: 2
-  acDropMax: 8
+  acDropMin: 1
+  acDropMax: 4
   randomLootCountMin: 0
-  randomLootCountMax: 2
+  randomLootCountMax: 1
   lootItemPool: []
   lootRespawnDelay: 20
   lootInteractRange: 2.75

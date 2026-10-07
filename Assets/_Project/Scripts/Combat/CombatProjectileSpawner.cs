@@ -14,7 +14,8 @@ namespace Project.Combat
     /// </summary>
     public static class CombatProjectileSpawner
     {
-        private const string DefaultProjectilePath = "Assets/_Project/Prefabs/Combat/Projectiles/DefaultBullet.prefab";
+        // Single copy (Resources) shared by the editor and builds.
+        private const string DefaultProjectilePath = "Assets/_Project/Resources/Combat/DefaultBullet.prefab";
 
         public static CombatProjectile Spawn(
             GameObject owner,
@@ -115,7 +116,18 @@ namespace Project.Combat
                     RangedFireSolver.MuzzleRayStartSkin))
             {
                 endPoint = hit.point;
-                CombatHitResolver.ApplyDirectHit(hit.collider, hit.point, direction, damage, false, owner);
+                CombatHitResolver.ApplyDirectHit(
+                    hit.collider,
+                    hit.point,
+                    direction,
+                    damage,
+                    false,
+                    owner,
+                    surfaceNormal: hit.normal,
+                    fxTravelDirection: direction,
+                    fxAmmoItem: ammoItem,
+                    fxWeapon: weapon,
+                    rangedHitMarks: true);
 
                 if (ammoItem.HasSplashDamage)
                     CombatHitResolver.ApplySplash(ammoItem, hit.point, damage, owner, hit.collider);

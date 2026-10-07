@@ -85,6 +85,11 @@ namespace Project.Combat
         }
 
         /// <summary>Applies direct damage to whatever the collider resolves to, plus VFX/UI feedback.</summary>
+        /// <param name="surfaceNormal">Hit surface normal (ranged). Used for blood / hit-mark orientation.</param>
+        /// <param name="fxTravelDirection">Shot travel direction for FX only (stagger / death impulse keep <paramref name="travelDirection"/>).</param>
+        /// <param name="fxAmmoItem">Ammo used only to pick FX / §16 element rules (does not change damage info).</param>
+        /// <param name="fxWeapon">Weapon used only to resolve the ammo FX profile.</param>
+        /// <param name="rangedHitMarks">Ranged gun hit: EnemyHealth targets route to DMEnemyHitMarks (body-type splatter + burn decals).</param>
         public static void ApplyDirectHit(
             Collider collider,
             Vector3 hitPoint,
@@ -92,7 +97,12 @@ namespace Project.Combat
             float damage,
             bool isCritical,
             GameObject owner,
-            ItemData ammoItem = null)
+            ItemData ammoItem = null,
+            Vector3 surfaceNormal = default,
+            Vector3 fxTravelDirection = default,
+            ItemData fxAmmoItem = null,
+            ItemData fxWeapon = null,
+            bool rangedHitMarks = false)
         {
             IDamageable damageable = DamageableUtility.GetDamageable(collider);
             if (damageable == null)
@@ -118,6 +128,9 @@ namespace Project.Combat
             }
 
             DamageInfo info = DamageInfo.FromHit(damage, isCritical, damageSource, hitPoint, ammoItem);
+            // Zone recorded for the deferred multiplier phase (D4); damage is unchanged (multipliers stay 1.0).
+            if (DMEnemyHitQuery.TryGetHitbox(collider, out DMEnemyHitbox hitbox))
+                info.BodyPart = hitbox.Zone;
             bool applied = CombatDamageApplicator.ApplyToDamageable(
                 damageable,
                 collider.transform.root.gameObject,
@@ -138,8 +151,33 @@ namespace Project.Combat
                     damageSource != null ? damageSource.transform : null);
             }
 
-            Vector3 normal = travelDirection.sqrMagnitude > 0.0001f ? travelDirection.normalized : Vector3.up;
-            CombatHitVfx.SpawnBloodSplatter(hitPoint, travelDirection, normal, damage);
+            Vector3 fxTravel = fxTravelDirection.sqrMagnitude > 0.0001f ? fxTravelDirection : travelDirection;
+            if (fxTravel.sqrMagnitude <= 0.0001f && damageSource != null)
+                fxTravel = hitPoint - damageSource.transform.position;
+            fxTravel = fxTravel.sqrMagnitude > 0.0001f ? fxTravel.normalized : Vector3.zero;
+
+            if (rangedHitMarks && enemyHealth != null)
+            {
+                // Enemy gun hits: body-type splatter / sparks + bone-parented burn decals (§16 element rules apply).
+                DMEnemyHitMarks.HandleRangedHit(
+                    enemyHealth,
+                    collider,
+                    hitPoint,
+                    surfaceNormal,
+                    fxTravel,
+                    damage,
+                    fxAmmoItem != null ? fxAmmoItem : ammoItem,
+                    fxWeapon);
+            }
+            else
+            {
+                // Spray out of the wound toward the shooter (was: along the bullet's travel).
+                Vector3 normal = surfaceNormal.sqrMagnitude > 0.0001f
+                    ? surfaceNormal.normalized
+                    : (fxTravel != Vector3.zero ? -fxTravel : Vector3.up);
+                Vector3 sprayDirection = fxTravel != Vector3.zero ? -fxTravel : normal;
+                CombatHitVfx.SpawnBloodSplatter(hitPoint, sprayDirection, normal, damage);
+            }
 
             // EnemyHealth/CompanionHealth already show their own floating damage number inside
             // TakeDamage (shared with the melee hit path) — showing it again here would double the

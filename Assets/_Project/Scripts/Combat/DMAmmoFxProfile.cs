@@ -16,6 +16,12 @@ namespace Project.Combat
         [Tooltip("Stamp the laser burn mark (pulse / continuous laser).")]
         public bool spawnLaserBurn;
 
+        [Header("Enemy hit marks (Combat Plan §16)")]
+        [Tooltip("Red blood on Humanoid enemies. Auto = §16 (Laser never bleeds). Coolant / sparks on Android and Robot always play.")]
+        public DMEnemyFxRule enemyBlood = DMEnemyFxRule.Auto;
+        [Tooltip("Burn mark decal on enemies. Auto = §16 (Ion never burns).")]
+        public DMEnemyFxRule enemyBurnMark = DMEnemyFxRule.Auto;
+
         [Header("Hit Marks (this ammo)")]
         [FormerlySerializedAs("useSurfaceMarks")]
         [Tooltip("Author holes + bursts on this ammo. Rows below override the shared catalog.")]

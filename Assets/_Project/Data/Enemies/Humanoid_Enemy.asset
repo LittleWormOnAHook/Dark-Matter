@@ -20,7 +20,16 @@ MonoBehaviour:
   meleeWeaponItem: {fileID: 11400000, guid: b4c5d6e7f8094a1b8c7d6e5f4a3b2c10, type: 2}
   rangedWeaponItem: {fileID: 11400000, guid: 5791b1d40c5dda44abe9a9770f6cd1e2, type: 2}
   preferRangedWeapon: 0
-  maxHealth: 500
+  enemyCategory: 0
+  bodyType: 0
+  overrideBrain: 0
+  brainArchetype: 0
+  primaryPersonality: 0
+  secondaryPersonality: 0
+  brainProfileOverride: {fileID: 0}
+  engagementProfileOverride: {fileID: 0}
+  hitMarkProfileOverride: {fileID: 0}
+  maxHealth: 400
   destroyOnDeath: 1
   destroyDelay: 3
   respawnTime: 0

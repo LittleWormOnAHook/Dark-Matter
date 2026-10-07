@@ -16,7 +16,6 @@ namespace Project.Combat
         [SerializeField] private string displayName = "Training Dummy";
 
         private TrainingDummy dummy;
-        private float lastPlayerAttackTime = -999f;
         private Transform canvasRoot;
 
         private void Awake()
@@ -47,21 +46,13 @@ namespace Project.Combat
             EngagedEnemyHealthHud.Instance?.ClearIf(dummy);
         }
 
-        private void LateUpdate()
-        {
-            if (dummy == null || dummy.IsDead)
-                return;
-
-            if (Time.time - lastPlayerAttackTime > EngagedEnemyHealthHud.AttackLinger)
-                EngagedEnemyHealthHud.Instance?.ClearIf(dummy);
-        }
+        // Linger / hide is handled by EngagedEnemyHealthHud (checks only the shown target at ~4 Hz).
 
         public void NotifyDamagedByPlayer(GameObject source)
         {
             if (dummy == null || dummy.IsDead || !IsPlayerSource(source))
                 return;
 
-            lastPlayerAttackTime = Time.time;
             PushHudImmediate();
         }
 

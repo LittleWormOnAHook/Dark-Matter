@@ -223,6 +223,9 @@ namespace Project.Combat
                     continue;
                 if (ShouldSkipAimHit(hit, castOrigin, direction, owner, minHitDistance))
                     continue;
+                // Enemy capsule / ragdoll / weapon colliders do not count while its DM hitbox rig is live.
+                if (DMEnemyHitQuery.IsSupersededByHitboxRig(hit.collider))
+                    continue;
 
                 if (hit.distance < bestDist)
                 {
@@ -230,6 +233,16 @@ namespace Project.Combat
                     bestHit = hit;
                     found = true;
                 }
+            }
+
+            // Per-bone enemy hitboxes: hitscan beams, reticle and muzzle aim converge on the visible body.
+            if (DMEnemyHitQuery.MaskWantsHitboxes(mask)
+                && DMEnemyHitQuery.RaycastHitboxes(castOrigin, direction, maxDistance, owner, out RaycastHit boxHit)
+                && !ShouldSkipAimHit(boxHit, castOrigin, direction, owner, minHitDistance)
+                && boxHit.distance < bestDist)
+            {
+                bestHit = boxHit;
+                found = true;
             }
 
             return found;

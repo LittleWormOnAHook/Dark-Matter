@@ -2092,7 +2092,7 @@ SkinnedMeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: d8bab0df5d3f0a045a31549c871c8e49, type: 2}
+  - {fileID: 2100000, guid: 3c7f44793118ae34893115a1f568ff3d, type: 2}
   - {fileID: 2100000, guid: 08f92fb4bee6e6740aeed128f64eec90, type: 2}
   - {fileID: 2100000, guid: fd5e79ef2b60ebc46848a30476c996d5, type: 2}
   - {fileID: 2100000, guid: 4a2bfe4818aecfe48bc7585647db7c94, type: 2}
@@ -11082,7 +11082,7 @@ BoxCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
@@ -18126,7 +18126,7 @@ BoxCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
@@ -27381,7 +27381,7 @@ BoxCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
@@ -38972,6 +38972,7 @@ GameObject:
   - component: {fileID: 2921688952400493967}
   - component: {fileID: 3066074561020570906}
   - component: {fileID: 6465512738650557702}
+  - component: {fileID: 6241847208397418303}
   m_Layer: 9
   m_Name: FRED
   m_TagString: Enemy
@@ -39543,6 +39544,8 @@ MonoBehaviour:
   attackRange: 1.8
   attackDamage: 12
   attackCooldown: 1.4
+  meleeRecoveryPauseMin: 0.6
+  meleeRecoveryPauseMax: 1.8
   attackWindup: 0.35
   pioneerRangeGraceMultiplier: 1.3
 --- !u!114 &5655559224856257919
@@ -39557,6 +39560,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 87122d74b24d9214a8a55477e60e51a4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.AI.EnemyAiController
+  engagementProfileOverride: {fileID: 0}
   movementMode: 2
   patrolMode: 0
   investigateNoise: 1
@@ -39644,7 +39648,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.AI.EnemyLootable
   enableLoot: 1
-  lootDisplayName: Humanoid Enemy
+  lootDisplayName: Android Enemy
   acDropMin: 1
   acDropMax: 4
   randomLootCountMin: 0
@@ -39698,7 +39702,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 17bb6b498f37e52469f3e028734c65d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.AI.Invector.EnemyInvectorBootstrap
-  enemyDefinition: {fileID: 11400000, guid: e8f4a2c19b3d4e5f8a7c6d5e4f3a2b10, type: 2}
+  enemyDefinition: {fileID: 11400000, guid: 7c812daf56939f14b8d3379fb8ff3234, type: 2}
   hitCapsuleRadius: 0.45
   hitCapsuleHeight: 2
   hitCapsuleCenter: {x: 0, y: 1, z: 0}
@@ -39732,6 +39736,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.AI.Invector.EnemyInvectorMotorBridge
   motorLodDistance: 0
+  driveLocomotionFromMeasuredVelocity: 1
+  freeWalkClipSpeed: 1.74
+  freeRunClipSpeed: 3.87
+  freeSprintClipSpeed: 5.91
+  strafeWalkClipSpeed: 1.5
+  strafeRunClipSpeed: 2.8
+  strafeAngleThreshold: 40
+  measuredVelocitySmoothing: 0.08
 --- !u!114 &2791428287195024268
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -39863,6 +39875,11 @@ MonoBehaviour:
   enableEnemyDirectionalHits: 1
   knockdownImpulse: 0.28
   softStaggerImpulse: 0.12
+  useLightFlinchForNormalHits: 1
+  lightFlinchSeconds: 0.28
+  lightFlinchDegrees: 6
+  criticalFlinchMultiplier: 1.4
+  poiseBreakUsesFullBodyReaction: 1
   baseReactionChance: 0.414
   criticalReactionChanceMultiplier: 2.243
   criticalReactionKnocksDown: 1
@@ -39924,6 +39941,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.CombatPoise
   maxPoise: 80
   useProfileDefaults: 1
+--- !u!114 &6241847208397418303
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5302866109626297033}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f30afdc37c8f8c4bac4c8e07ea01e46, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.DMEnemyHitMarks
+  bodyType: 1
+  profileOverride: {fileID: 0}
 --- !u!1 &5359619123608783030
 GameObject:
   m_ObjectHideFlags: 0
@@ -40957,7 +40988,7 @@ SkinnedMeshRenderer:
   - {fileID: 2100000, guid: fd5e79ef2b60ebc46848a30476c996d5, type: 2}
   - {fileID: 2100000, guid: 4a2bfe4818aecfe48bc7585647db7c94, type: 2}
   - {fileID: 2100000, guid: e6839823f9c76e74eaaa0012a1964f4e, type: 2}
-  - {fileID: 2100000, guid: 8ca50cac971f92b4fa234e0b48ccc432, type: 2}
+  - {fileID: 2100000, guid: 3cdf008f590f9a24bb23348760e91e7e, type: 2}
   - {fileID: 2100000, guid: 30a527013d66d7149a216f0ef785a164, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
@@ -42160,7 +42191,7 @@ BoxCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}

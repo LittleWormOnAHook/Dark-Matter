@@ -1,3 +1,4 @@
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -5,8 +6,10 @@ using UnityEngine.UI;
 namespace Project.UI
 {
     /// <summary>
-    /// Single top-center enemy health readout shown while an enemy is engaged with the player
-    /// or the player is attacking that enemy. Replaces floating world-space enemy bars.
+    /// Single top-center enemy health readout. Event-driven: the latest event wins (the player
+    /// hitting an enemy, or an enemy hitting the player, focuses that enemy). After the last event
+    /// the bar lingers <see cref="AttackLinger"/> seconds, and stays while the shown enemy is still
+    /// engaged with the player. Only the shown enemy is checked, at ~4 Hz (no per-enemy polling).
     /// </summary>
     [DisallowMultipleComponent]
     public class EngagedEnemyHealthHud : MonoBehaviour
@@ -17,6 +20,7 @@ namespace Project.UI
         private const float TopMargin = 28f;
         private const float NameGap = 4f;
         private const float AttackLingerSeconds = 3.5f;
+        private const float FocusCheckInterval = 0.25f;
 
         private static EngagedEnemyHealthHud instance;
 
@@ -26,8 +30,9 @@ namespace Project.UI
         private Image backgroundImage;
         private Image fillImage;
         private IEngagedHealthHudTarget boundHealth;
-        private IEngagedHealthHudTarget engagementCandidate;
-        private float engagementCandidateTime = float.PositiveInfinity;
+        private Func<bool> boundStillEngaged;
+        private float lastFocusEventTime = -999f;
+        private float nextFocusCheckTime;
         private bool built;
 
         public static EngagedEnemyHealthHud Instance => instance;
@@ -40,7 +45,7 @@ namespace Project.UI
                 return instance;
             }
 
-            EngagedEnemyHealthHud existing = Object.FindAnyObjectByType<EngagedEnemyHealthHud>(FindObjectsInactive.Include);
+            EngagedEnemyHealthHud existing = UnityEngine.Object.FindAnyObjectByType<EngagedEnemyHealthHud>(FindObjectsInactive.Include);
             if (existing != null)
             {
                 instance = existing;
@@ -139,67 +144,93 @@ namespace Project.UI
             SetVisible(false);
         }
 
-        /// <summary>Player damage always takes over the HUD from any other enemy.</summary>
+        /// <summary>Player damage always takes over the HUD from any other enemy (latest event wins).</summary>
         public void ShowFromPlayerDamage(
             IEngagedHealthHudTarget health,
             string displayName,
             float current,
             float max)
         {
-            if (health == null || health.IsDead)
-            {
-                ClearIf(health);
-                return;
-            }
-
-            EnsureBuilt(transform.parent);
-            ClearEngagementCandidate();
-            BindAndPresent(health, displayName, current, max);
+            Focus(health, displayName, current, max, null);
         }
 
         /// <summary>
-        /// Engagement is sticky: first enemy to aggro claims the bar until the player damages another.
+        /// Latest event wins: focuses this target (player hit it, or it hit the player) and restarts the linger.
+        /// <paramref name="stillEngaged"/> (optional) keeps the bar up past the linger while it returns true;
+        /// it is only evaluated for the shown target, at ~4 Hz.
         /// </summary>
-        public void UpdateFromEngagement(
+        public void Focus(
             IEngagedHealthHudTarget health,
             string displayName,
             float current,
             float max,
-            float firstEngagedAt)
+            Func<bool> stillEngaged)
         {
             if (health == null || health.IsDead)
             {
-                ReleaseEngagementCandidate(health);
                 ClearIf(health);
                 return;
             }
 
             EnsureBuilt(transform.parent);
-
-            if (boundHealth == health)
-            {
-                if (nameLabel != null)
-                    nameLabel.text = string.IsNullOrWhiteSpace(displayName) ? "Enemy" : displayName;
-
-                ApplyHealth(current, max);
-                SetVisible(true);
-                return;
-            }
-
-            // Another enemy already owns the bar — engagement alone cannot steal focus.
-            if (boundHealth != null && boundHealth != health)
-                return;
-
-            if (engagementCandidate == null || firstEngagedAt < engagementCandidateTime)
-            {
-                engagementCandidate = health;
-                engagementCandidateTime = firstEngagedAt;
-            }
-
-            if (engagementCandidate != health)
-                return;
-
+            lastFocusEventTime = Time.time;
+            nextFocusCheckTime = Time.time + FocusCheckInterval;
+            boundStillEngaged = stillEngaged;
             BindAndPresent(health, displayName, current, max);
+        }
+
+        /// <summary>
+        /// Weak claim (an enemy started targeting the player): only shows when no other target is focused.
+        /// </summary>
+        public bool TryFocusIfIdle(
+            IEngagedHealthHudTarget health,
+            string displayName,
+            float current,
+            float max,
+            Func<bool> stillEngaged)
+        {
+            if (boundHealth != null && boundHealth != health && !boundHealth.IsDead)
+                return false;
+
+            Focus(health, displayName, current, max, stillEngaged);
+            return true;
+        }
+
+        public bool IsFocused(IEngagedHealthHudTarget health)
+        {
+            return health != null && boundHealth == health;
+        }
+
+        private void Update()
+        {
+            if (boundHealth == null || Time.time < nextFocusCheckTime)
+                return;
+
+            nextFocusCheckTime = Time.time + FocusCheckInterval;
+            if (boundHealth.IsDead)
+            {
+                Clear();
+                return;
+            }
+
+            if (Time.time - lastFocusEventTime <= AttackLingerSeconds)
+                return;
+
+            bool engaged = false;
+            if (boundStillEngaged != null)
+            {
+                try
+                {
+                    engaged = boundStillEngaged();
+                }
+                catch (MissingReferenceException)
+                {
+                    engaged = false;
+                }
+            }
+
+            if (!engaged)
+                Clear();
         }
 
         public void UpdateHealthIfBound(IEngagedHealthHudTarget health, float current, float max)
@@ -210,31 +241,16 @@ namespace Project.UI
             ApplyHealth(current, max);
         }
 
-        public void ReleaseEngagementCandidate(IEngagedHealthHudTarget health)
-        {
-            if (health == null || engagementCandidate != health)
-                return;
-
-            engagementCandidate = null;
-            engagementCandidateTime = float.PositiveInfinity;
-        }
-
         public void ClearIf(IEngagedHealthHudTarget health)
         {
             if (health != null && boundHealth != health)
-            {
-                ReleaseEngagementCandidate(health);
                 return;
-            }
 
-            ClearEngagementCandidate();
-            UnbindHealth();
-            SetVisible(false);
+            Clear();
         }
 
         public void Clear()
         {
-            ClearEngagementCandidate();
             UnbindHealth();
             SetVisible(false);
         }
@@ -259,12 +275,6 @@ namespace Project.UI
             ApplyHealth(current, max);
             SetVisible(true);
             transform.SetAsLastSibling();
-        }
-
-        private void ClearEngagementCandidate()
-        {
-            engagementCandidate = null;
-            engagementCandidateTime = float.PositiveInfinity;
         }
 
         private void HandleHealthChanged(float current, float max)
@@ -298,6 +308,7 @@ namespace Project.UI
             boundHealth.HealthChanged -= HandleHealthChanged;
             boundHealth.Died -= HandleBoundDied;
             boundHealth = null;
+            boundStillEngaged = null;
         }
 
         public bool TryGetFocus(out string displayName, out float normalized)
@@ -383,7 +394,7 @@ namespace Project.UI
 
         private static Transform ResolveDefaultCanvasRoot()
         {
-            UIManager uiManager = Object.FindAnyObjectByType<UIManager>();
+            UIManager uiManager = UnityEngine.Object.FindAnyObjectByType<UIManager>();
             return uiManager != null ? uiManager.transform : null;
         }
 

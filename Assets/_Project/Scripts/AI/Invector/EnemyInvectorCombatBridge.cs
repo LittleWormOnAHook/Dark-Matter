@@ -21,7 +21,7 @@ namespace Project.AI.Invector
         [SerializeField] private float defaultUnarmedDuration = 0.55f;
         [Tooltip("Distance at which ranged enemies stop chasing and start shooting.")]
         [SerializeField] private float rangedEngageRange = 12f;
-        [Tooltip("Seconds the aim pose is held after the enemy leaves a ranged engagement.")]
+        [Tooltip("Seconds the aim pose is held after the enemy leaves a ranged engagement. Also the aim-in time: the first shot only fires once the aim pose has been held this long.")]
         [SerializeField] private float aimHoldDuration = 1.5f;
         [Tooltip("Max degrees the chest bone tilts up/down to track the target vertically while aiming. Keeps the rifle pointed at the player's torso rather than straight ahead.")]
         [SerializeField] [Range(0f, 40f)] private float aimChestPitchLimit = 25f;
@@ -45,6 +45,9 @@ namespace Project.AI.Invector
         private Animator _animator;
         private bool _isAimStanceActive;
         private float _aimHoldTimer;
+        private float _aimStanceOnTime = -1f;
+        private float _aimRequestUntil;
+        private const float AimRequestWindow = 0.5f;
         private float _chestPitchCurrent;
         private Transform _chestBone;
 
@@ -70,10 +73,6 @@ namespace Project.AI.Invector
             _aiController = GetComponent<EnemyAiController>();
             _animator = _controller != null ? _controller.animator : GetComponentInChildren<Animator>(true);
 
-            // Disable any leftover EnemyWeaponAimIK — the UpperBody animator layer handles
-            // the rifle aim pose; procedural bone rotation fights the animator and breaks the pose.
-            EnemyWeaponAimIK aimIK = GetComponent<EnemyWeaponAimIK>();
-            if (aimIK != null) aimIK.enabled = false;
 
             _bootstrap?.EnsureInvectorInitialized();
             EnsureEnemyAmmoReferences();
@@ -108,7 +107,9 @@ namespace Project.AI.Invector
         {
             if (_controller == null || _animator == null) return;
 
-            bool inEngagement = _aiController != null && _aiController.IsInRangedEngagement;
+            // A deferred shot (TryDeferRangedAttack) also raises the stance so the aim-in can complete.
+            bool inEngagement = (_aiController != null && _aiController.IsInRangedEngagement)
+                || (Time.time < _aimRequestUntil && HasRangedWeaponEquipped());
 
             if (inEngagement)
             {
@@ -124,6 +125,8 @@ namespace Project.AI.Invector
 
             if (shouldAim == _isAimStanceActive) return;
             _isAimStanceActive = shouldAim;
+
+            _aimStanceOnTime = shouldAim ? Time.time : -1f;
 
             if (shouldAim)
             {
@@ -188,9 +191,38 @@ namespace Project.AI.Invector
 
         public bool IsArmedRangedPreferred()
         {
+            // A gun-only enemy (no melee weapon) is always a ranged fighter, even without preferRanged.
             return HasRangedWeaponEquipped()
                 && _loadoutBridge != null
-                && _loadoutBridge.PrefersRangedAtRange;
+                && (_loadoutBridge.PrefersRangedAtRange || _loadoutBridge.MeleeWeaponItem == null);
+        }
+
+        /// <summary>True once the aim pose has been held for <see cref="aimHoldDuration"/> seconds.</summary>
+        public bool IsAimReady =>
+            _isAimStanceActive && _aimStanceOnTime >= 0f && Time.time - _aimStanceOnTime >= aimHoldDuration;
+
+        /// <summary>
+        /// Called by EnemyCombat before an attack is committed. Returns true when the shot must wait:
+        /// the gun was just picked from a melee branch (draw it and let the ranged Attack state take over),
+        /// or the aim pose has not been held long enough yet. Never fires and never starts a melee fallback.
+        /// </summary>
+        public bool TryDeferRangedAttack(Transform target)
+        {
+            if (target == null || _loadoutBridge == null)
+                return false;
+
+            ItemData weapon = ResolveWeaponForTarget(target);
+            if (weapon == null || !weapon.IsRangedWeapon)
+                return false;
+
+            _aimRequestUntil = Time.time + AimRequestWindow;
+            if (_loadoutBridge.ActiveItem != weapon)
+            {
+                _loadoutBridge.EquipSpecificWeapon(weapon);
+                return true;
+            }
+
+            return !IsAimReady;
         }
 
         public bool TryBeginBlock(float blockDuration, out float duration)
@@ -281,7 +313,9 @@ namespace Project.AI.Invector
 
         private ItemData ResolveWeaponForTarget(Transform target)
         {
-            float meleeRange = _enemyCombat != null ? _enemyCombat.AttackRange : 1.8f;
+            // Same reach EnemyCombat uses to allow a melee swing (profile multiplier + pioneer grace),
+            // so a swing-range TryAttack can never resolve to the gun.
+            float meleeRange = _enemyCombat != null ? _enemyCombat.ResolveEffectiveAttackRange(target) : 1.8f;
             float distance = HorizontalDistance(transform.position, target.position);
             if (_loadoutBridge != null)
                 return _loadoutBridge.ResolveWeaponForTargetDistance(distance, meleeRange);
@@ -345,7 +379,9 @@ namespace Project.AI.Invector
             }
 
             PrepareShooterWeaponForFire();
-            Vector3 aimPoint = ApplyMissOffset(ResolveAimPoint(target), target);
+            Transform shotOrigin = ResolveProjectileMuzzle();
+            Vector3 originPoint = shotOrigin != null ? shotOrigin.position : transform.position + Vector3.up * 1.35f;
+            Vector3 aimPoint = ApplyMissOffset(ResolveAimPoint(target), target, originPoint);
             _shooterManager.Shoot(aimPoint, applyHipfirePrecision: false);
             SpawnRangedProjectile(weapon, aimPoint);
             EnemyNoiseEvents.RaiseNoise(transform.position, 12f, gameObject);
@@ -533,12 +569,24 @@ namespace Project.AI.Invector
 
         // Decides whether the shot misses and deflects the aim point accordingly.
         // A "miss" rolls against missRate; if it hits, a smaller natural spread is still applied.
-        private Vector3 ApplyMissOffset(Vector3 aimPoint, Transform target)
+        private Vector3 ApplyMissOffset(Vector3 aimPoint, Transform target, Vector3 origin)
         {
             if (missRate <= 0f) return aimPoint;
 
             float distance = HorizontalDistance(transform.position, target.position);
             bool isMiss = Random.value < missRate;
+
+            // Offsets are applied in the shot's own frame (right / up perpendicular to the shot line),
+            // so a miss always clears the target sideways or vertically regardless of facing.
+            Vector3 shot = aimPoint - origin;
+            if (shot.sqrMagnitude < 0.0001f)
+                shot = transform.forward;
+            shot.Normalize();
+            Vector3 right = Vector3.Cross(Vector3.up, shot);
+            if (right.sqrMagnitude < 0.0001f)
+                right = transform.right;
+            right.Normalize();
+            Vector3 up = Vector3.Cross(shot, right).normalized;
 
             if (isMiss)
             {
@@ -546,13 +594,13 @@ namespace Project.AI.Invector
                 float deflect = Mathf.Lerp(0.6f, 2f, missRate) * Mathf.Max(1f, distance / 10f);
                 Vector2 dir   = Random.insideUnitCircle.normalized * deflect;
                 EnemyFloatingText.ShowMiss(target);
-                return aimPoint + new Vector3(dir.x, dir.y, 0f);
+                return aimPoint + right * dir.x + up * dir.y;
             }
 
             // Small natural jitter even on hit shots.
             float spread = 0.08f * Mathf.Max(1f, distance / 10f);
             Vector2 jitter = Random.insideUnitCircle * spread;
-            return aimPoint + new Vector3(jitter.x, jitter.y, 0f);
+            return aimPoint + right * jitter.x + up * jitter.y;
         }
 
         private void SyncMeleeAnimatorParams(bool useWeaponMoveSet)

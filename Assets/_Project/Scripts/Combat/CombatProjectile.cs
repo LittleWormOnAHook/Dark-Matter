@@ -11,6 +11,7 @@ namespace Project.Combat
     public class CombatProjectile : MonoBehaviour, IPoolable
     {
         private const int OverlapBufferSize = 16;
+        private const int SweepBufferSize = 16;
 
         [SerializeField] private float speed = 85f;
         [SerializeField] private float maxLifetime = 3f;
@@ -37,6 +38,7 @@ namespace Project.Combat
         private AudioSource travelAudioSource;
         private Renderer[] cachedBodyRenderers;
         private static readonly Collider[] OverlapBuffer = new Collider[OverlapBufferSize];
+        private static readonly RaycastHit[] SweepBuffer = new RaycastHit[SweepBufferSize];
 
         private void Awake()
         {
@@ -251,35 +253,66 @@ namespace Project.Combat
 
             Vector3 origin = previousPosition;
             Vector3 direction = delta.normalized;
-            float remaining = distance;
 
-            // Skip owner colliders and continue the sweep so self-hits do not swallow the shot.
-            const int maxSkips = 4;
-            for (int skip = 0; skip < maxSkips && remaining > 0.0001f; skip++)
+            // World sweep (triggers ignored). Owner colliders, and enemy capsules / ragdoll / weapon colliders
+            // superseded by an active DM hitbox rig, are skipped so the shot continues to what is behind them.
+            bool worldHit = TrySweepWorld(origin, direction, distance, out RaycastHit hit);
+
+            // Per-bone enemy hitboxes (layer DMHitbox, triggers) with a thin sweep: the nearest valid hit wins.
+            if (DMEnemyHitQuery.MaskWantsHitboxes(hitLayers)
+                && DMEnemyHitQuery.SphereCastHitboxes(
+                    origin,
+                    DMEnemyHitQuery.HitboxSweepRadius,
+                    direction,
+                    distance,
+                    owner,
+                    out RaycastHit boxHit)
+                && (!worldHit || boxHit.distance <= hit.distance))
             {
-                if (!Physics.SphereCast(
-                        origin,
-                        radius,
-                        direction,
-                        out RaycastHit hit,
-                        remaining,
-                        hitLayers,
-                        QueryTriggerInteraction.Ignore))
-                {
-                    return;
-                }
-
-                if (CombatHitResolver.IsOwnerCollider(owner, hit.collider))
-                {
-                    float advance = Mathf.Max(0.02f, hit.distance + 0.01f);
-                    origin += direction * advance;
-                    remaining -= advance;
-                    continue;
-                }
-
-                ResolveHit(hit.collider, hit.point, hit.normal);
+                ResolveHit(boxHit.collider, boxHit.point, boxHit.normal);
                 return;
             }
+
+            if (worldHit)
+                ResolveHit(hit.collider, hit.point, hit.normal);
+        }
+
+        private bool TrySweepWorld(Vector3 origin, Vector3 direction, float distance, out RaycastHit best)
+        {
+            best = default;
+            int count = Physics.SphereCastNonAlloc(
+                origin,
+                radius,
+                direction,
+                SweepBuffer,
+                distance,
+                hitLayers,
+                QueryTriggerInteraction.Ignore);
+
+            float bestDistance = float.MaxValue;
+            bool found = false;
+            for (int i = 0; i < count; i++)
+            {
+                RaycastHit candidate = SweepBuffer[i];
+                Collider collider = candidate.collider;
+                if (collider == null)
+                    continue;
+                // Starting overlaps (distance 0, point zero) are owned by TryResolveOverlapHit.
+                if (candidate.distance <= 0f && candidate.point == Vector3.zero)
+                    continue;
+                if (CombatHitResolver.IsOwnerCollider(owner, collider))
+                    continue;
+                if (DMEnemyHitQuery.IsSupersededByHitboxRig(collider))
+                    continue;
+                if (candidate.distance >= bestDistance)
+                    continue;
+
+                bestDistance = candidate.distance;
+                best = candidate;
+                found = true;
+            }
+
+            return found;
         }
 
         private bool TryResolveOverlapHit()
@@ -294,7 +327,7 @@ namespace Project.Combat
                 OverlapBuffer,
                 hitLayers,
                 QueryTriggerInteraction.Ignore);
-            if (count <= 0)
+            if (count <= 0 && !DMEnemyHitQuery.AnyRigActive)
                 return false;
 
             Collider best = null;
@@ -304,6 +337,8 @@ namespace Project.Combat
             {
                 Collider candidate = OverlapBuffer[i];
                 if (candidate == null || CombatHitResolver.IsOwnerCollider(owner, candidate))
+                    continue;
+                if (DMEnemyHitQuery.IsSupersededByHitboxRig(candidate))
                     continue;
 
                 Vector3 closest = GetClosestPointSafe(candidate, origin);
@@ -315,10 +350,23 @@ namespace Project.Combat
                 best = candidate;
             }
 
+            Vector3 hitPoint = best != null ? GetClosestPointSafe(best, origin) : origin;
+            if (DMEnemyHitQuery.MaskWantsHitboxes(hitLayers)
+                && DMEnemyHitQuery.OverlapHitboxes(
+                    origin,
+                    Mathf.Max(0.03f, DMEnemyHitQuery.HitboxSweepRadius),
+                    owner,
+                    out Collider boxCollider,
+                    out Vector3 boxPoint,
+                    out float boxDistSq)
+                && boxDistSq <= bestDistSq)
+            {
+                best = boxCollider;
+                hitPoint = boxPoint;
+            }
+
             if (best == null)
                 return false;
-
-            Vector3 hitPoint = GetClosestPointSafe(best, origin);
             Vector3 normal = origin - hitPoint;
             if (normal.sqrMagnitude < 0.0001f)
                 normal = -velocity.normalized;
@@ -349,6 +397,7 @@ namespace Project.Combat
         {
             hasHit = true;
             launched = false;
+            Vector3 travelDirection = velocity.sqrMagnitude > 0.0001f ? velocity.normalized : transform.forward;
             velocity = Vector3.zero;
             transform.position = hitPoint;
             StopTravelAudio();
@@ -361,7 +410,19 @@ namespace Project.Combat
                     appliedDamage = Mathf.Max(1f, damage * 0.15f);
             }
 
-            CombatHitResolver.ApplyDirectHit(collider, hitPoint, velocity, appliedDamage, isCritical, owner, ammoItem);
+            // Stagger / death impulse keep their previous (zero) direction input; hit marks get the real travel.
+            CombatHitResolver.ApplyDirectHit(
+                collider,
+                hitPoint,
+                velocity,
+                appliedDamage,
+                isCritical,
+                owner,
+                ammoItem,
+                surfaceNormal: surfaceNormal,
+                fxTravelDirection: travelDirection,
+                fxWeapon: weapon,
+                rangedHitMarks: true);
 
             if (ammoItem != null && ammoItem.HasSplashDamage)
                 CombatHitResolver.ApplySplash(ammoItem, hitPoint, appliedDamage, owner, collider);

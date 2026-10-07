@@ -141,6 +141,11 @@ namespace Project.Combat
             GameObject impactVfxOverride = null)
         {
             DMAmmoFxProfile profile = ResolveProfile(ammoItem, weapon);
+            // Enemies get body-type marks from DMEnemyHitMarks (CombatHitResolver.ApplyDirectHit). Ammo without
+            // world hit marks (Plasma / Ion / Laser) used to drop its world impact (bullet hole, sparks) on the body.
+            if (IsEnemyReceiver(receiver) && (profile == null || !profile.useHitMarks))
+                return;
+
             bool skipDecal = ShouldSkipImpactDecal(receiver);
             // Carve first so hit marks / burns land on the crater floor instead of the surface that was just removed.
             if (!skipDecal && Project.SurfaceCarve.DMCarveImpacts.TryCarveFromAmmo(ammoItem, profile, point, normal, receiver, out Vector3 carvedPoint))
@@ -176,6 +181,11 @@ namespace Project.Combat
                 : DMILaserBurnMarkSpawner.ShouldSpawnForLaserAmmo(ammoItem, weapon));
             if (burn)
                 DMILaserBurnMarkSpawner.Spawn(point, normal, attach);
+        }
+
+        private static bool IsEnemyReceiver(GameObject receiver)
+        {
+            return receiver != null && receiver.GetComponentInParent<EnemyHealth>() != null;
         }
 
         /// <summary>

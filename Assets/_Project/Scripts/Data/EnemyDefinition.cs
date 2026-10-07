@@ -33,6 +33,18 @@ namespace Project.AI
         HumanoidInvector
     }
 
+    /// <summary>Enemy type / category (Genesis Studio Enemy Types table, encounter tables).</summary>
+    public enum EnemyCategory
+    {
+        Grunt,
+        Ranged,
+        Hybrid,
+        Tank,
+        Patrol,
+        Elite,
+        Boss
+    }
+
     public enum SurfaceThreatKind
     {
         Any,
@@ -56,6 +68,26 @@ namespace Project.AI
         public ItemData meleeWeaponItem;
         public ItemData rangedWeaponItem;
         public bool preferRangedWeapon;
+
+        [Header("Type, Body & Brain (empty overrides = global Resources/Combat profiles)")]
+        [Tooltip("Enemy type / category shown in Genesis Studio → Combat → AI & Awareness → Enemy Types.")]
+        public EnemyCategory enemyCategory = EnemyCategory.Grunt;
+        [Tooltip("Hit marks body type applied to DMEnemyHitMarks at spawn: Humanoid = blood, Android = coolant + sparks, Robot = sparks.")]
+        public Project.Combat.DMEnemyBodyType bodyType = Project.Combat.DMEnemyBodyType.Humanoid;
+        [Tooltip("Off = archetype / personality come from DM_EnemyBrainProfile defaults. On = use the values below.")]
+        public bool overrideBrain;
+        public DMEnemyArchetype brainArchetype = DMEnemyArchetype.Duelist;
+        public DMEnemyPersonality primaryPersonality = DMEnemyPersonality.None;
+        public DMEnemyPersonality secondaryPersonality = DMEnemyPersonality.None;
+        [Tooltip("Optional per-type utility brain profile. Empty = Resources/Combat/DM_EnemyBrainProfile.")]
+        public DM_EnemyBrainProfile brainProfileOverride;
+        [Tooltip("Optional per-type engagement profile (this enemy's spacing / holder / facing reads). Empty = Resources/Combat/DM_EnemyEngagementProfile. Ring-wide director rules stay global.")]
+        public DM_EnemyEngagementProfile engagementProfileOverride;
+        [Tooltip("Optional per-type hit marks profile. Empty = Resources/Combat/DM_EnemyHitMarkProfile.")]
+        public Project.Combat.DM_EnemyHitMarkProfile hitMarkProfileOverride;
+
+        public bool HasAnyProfileOverride =>
+            brainProfileOverride != null || engagementProfileOverride != null || hitMarkProfileOverride != null;
 
         [Header("Health")]
         public float maxHealth = 60f;

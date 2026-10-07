@@ -104,7 +104,9 @@ PrefabInstance:
       propertyPath: InitialModule.startLifetime.scalar
       value: 5
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 114801155035620022, guid: c0ddb623e2878c94190a0546149028c8, type: 3}
+    - {fileID: 1885366973659875524, guid: c0ddb623e2878c94190a0546149028c8, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []

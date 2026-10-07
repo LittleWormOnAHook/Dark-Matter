@@ -98,6 +98,12 @@ namespace Project.Survival
         public event System.Action OnStatsChanged;
         public event System.Action<float> OnDamaged;
 
+        /// <summary>
+        /// Raised after damage with a known source GameObject actually reduced health (enemy melee, enemy
+        /// projectiles, scripted enemy hits). Lets UI/AI resolve WHO hit the player without polling.
+        /// </summary>
+        public event System.Action<GameObject> DamagedBySource;
+
         public float LastDamageTime { get; private set; } = float.NegativeInfinity;
 
         /// <summary>
@@ -801,7 +807,17 @@ namespace Project.Survival
 
         void IDamageable.TakeDamage(float damage, GameObject source, bool isCritical)
         {
+            ApplyDamageFromSource(damage, source);
+        }
+
+        /// <summary>ApplyDamage with the attacker GameObject; raises <see cref="DamagedBySource"/> when health dropped.</summary>
+        public void ApplyDamageFromSource(float damage, GameObject source)
+        {
+            float before = CurrentHealth;
+            bool wasDead = IsDead;
             ApplyDamage(damage, source != null ? source.name : null);
+            if (source != null && !wasDead && CurrentHealth < before)
+                DamagedBySource?.Invoke(source);
         }
 
         public void DevSetHealth(float value)

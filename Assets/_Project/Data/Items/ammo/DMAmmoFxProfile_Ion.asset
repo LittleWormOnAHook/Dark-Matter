@@ -69,7 +69,7 @@ MonoBehaviour:
   grantRandomStartingAmmo: 1
   startingAmmoMin: 250
   startingAmmoMax: 500
-  projectilePrefab: {fileID: 4187284465382147618, guid: 78530f692d803864c8ab165b49aabed2, type: 3}
+  projectilePrefab: {fileID: 8396057869617009126, guid: 026ee1a17eb2fa04793c06183b169bbb, type: 3}
   muzzleSocketName: Muzzle
   aimFovMultiplier: 0.78
   hipFireMaxDeviationDegrees: 15
@@ -153,6 +153,8 @@ MonoBehaviour:
     Favored for denser Io fauna and armored androids.
   unlocksInventoryStorageRow: 0
   spawnLaserBurn: 1
+  enemyBlood: 0
+  enemyBurnMark: 0
   useHitMarks: 0
   defaultDecals: []
   defaultHitEffects: []

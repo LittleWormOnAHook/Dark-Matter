@@ -135,6 +135,10 @@ namespace Project.AI.Invector
             EnemyGroundUtility.SnapCreatureToGround(transform, transform.position, minY);
             HumanoidPerformanceController.ForceSpawnVisible(gameObject);
             DMSpawnPhysicsStabilizer.KeepLivingRootKinematic(gameObject);
+
+            // After rig repair + hit setup: per-bone ranged hitboxes (layer DMHitbox) and bullet hit marks.
+            DMEnemyHitboxRig.Ensure(gameObject);
+            DMEnemyHitMarks.Ensure(gameObject);
         }
 
         private void OnDestroy()

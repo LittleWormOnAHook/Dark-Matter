@@ -32,6 +32,8 @@ namespace Project.AI.Invector
         public GameObject ActiveDrawnInstance => _activeDrawnInstance;
         public GameObject LastDroppedWeapon => _lastDroppedWeapon;
         public bool PrefersRangedAtRange => preferRangedAtRange;
+        public ItemData MeleeWeaponItem => meleeWeaponItem;
+        public ItemData RangedWeaponItem => rangedWeaponItem;
 
         private void Awake()
         {

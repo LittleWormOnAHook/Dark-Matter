@@ -201,8 +201,10 @@ namespace Project.Player.Invector
             _forwardingInvectorDamage = true;
             try
             {
-                string senderName = damage.sender != null ? damage.sender.name : "unknown";
-                _survivalStats.ApplyDamage(damage.damageValue, senderName);
+                if (damage.sender != null)
+                    _survivalStats.ApplyDamageFromSource(damage.damageValue, damage.sender.gameObject);
+                else
+                    _survivalStats.ApplyDamage(damage.damageValue, "unknown");
                 CombatHitVfx.SpawnIncomingEnemyHit(damage, transform);
                 PlayerCombatEvents.RaisePlayerAttackedBySender(damage.sender);
                 PushHealthToInvector();

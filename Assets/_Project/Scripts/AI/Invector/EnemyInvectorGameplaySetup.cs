@@ -149,6 +149,9 @@ namespace Project.AI.Invector
                 SetField(bar, "hideUntilDamaged", definition.hideHealthBarUntilDamaged);
                 SetField(bar, "healthBarOffset", definition.healthBarOffset);
             }
+
+            // Per-type identity: body type, brain archetype / personalities, profile overrides (else global).
+            EnemyDefinitionOverrides.Apply(root, definition);
         }
 
         public static void EnsureRootDamageReceiver(GameObject root)

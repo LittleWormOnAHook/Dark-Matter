@@ -20,6 +20,15 @@ MonoBehaviour:
   meleeWeaponItem: {fileID: 11400000, guid: acc8c5e8067ca3644964e55a91642ee8, type: 2}
   rangedWeaponItem: {fileID: 11400000, guid: 5791b1d40c5dda44abe9a9770f6cd1e2, type: 2}
   preferRangedWeapon: 0
+  enemyCategory: 4
+  bodyType: 1
+  overrideBrain: 0
+  brainArchetype: 0
+  primaryPersonality: 0
+  secondaryPersonality: 0
+  brainProfileOverride: {fileID: 0}
+  engagementProfileOverride: {fileID: 0}
+  hitMarkProfileOverride: {fileID: 0}
   maxHealth: 500
   destroyOnDeath: 1
   destroyDelay: 3
@@ -97,3 +106,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 8e7a10ae2399b0e4a8d0519742119e0d, type: 2}
   lootRespawnDelay: 20
   lootInteractRange: 2.75
+  lootBagPrefab: {fileID: 0}
+  lootBagMesh: {fileID: 0}
+  lootBagTexture: {fileID: 0}

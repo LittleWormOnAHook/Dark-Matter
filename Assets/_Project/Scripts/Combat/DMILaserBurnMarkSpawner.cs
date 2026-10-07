@@ -12,7 +12,8 @@ namespace Project.Combat
     /// </summary>
     public static class DMILaserBurnMarkSpawner
     {
-        public const string PrefabPath = "Assets/_Project/Prefabs/Combat/VFX/Laser_Burn_Mark.prefab";
+        // Single copy (Resources) so the editor and builds use the same burn mark.
+        public const string PrefabPath = "Assets/_Project/Resources/Combat/VFX/Laser_Burn_Mark.prefab";
 
         // Dense overlap vs scorch diameter ~0.95–1.05 (root scale 1). Slight gaps only.
         private const float MiningStampMinDistance = 0.018f;

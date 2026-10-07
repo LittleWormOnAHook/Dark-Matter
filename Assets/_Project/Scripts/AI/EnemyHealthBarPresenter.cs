@@ -11,7 +11,9 @@ namespace Project.AI
 {
     /// <summary>
     /// Routes enemy health into the top-screen engaged HUD instead of floating world bars.
-    /// Shows while this enemy targets the player, or while the player is attacking it.
+    /// Event-driven (no per-frame polling): the player damaging this enemy (EnemyHealth.DamagedBy) or this
+    /// enemy damaging the player (SurvivalStats.DamagedBySource) focuses it; starting to target the player
+    /// claims the bar only when nothing else is shown. The HUD then checks only the shown enemy at ~4 Hz.
     /// </summary>
     [DisallowMultipleComponent]
     public class EnemyHealthBarPresenter : MonoBehaviour
@@ -24,12 +26,11 @@ namespace Project.AI
         private DMICreatureBridge creatureBridge;
         private EnemyLootable lootable;
         private EnemyInvectorBootstrap invectorBootstrap;
-        private float lastPlayerAttackTime = -999f;
-        private float firstEngagedTime = -1f;
-        private bool reporting;
-        private bool wasEngagedLastFrame;
         private Transform _canvasRoot;
         private Transform _cachedPlayerRoot;
+        private System.Func<bool> _stillEngaged;
+
+        private static SurvivalStats s_boundPlayerStats;
 
         private void Awake()
         {
@@ -47,11 +48,46 @@ namespace Project.AI
 
             _canvasRoot = ResolveCanvasRoot();
             EngagedEnemyHealthHud.EnsureExists(_canvasRoot);
+            _stillEngaged = IsEngagedWithPlayer;
 
             health.DamagedBy += OnDamagedBy;
             health.HealthChanged += OnHealthChanged;
             health.Died += HandleDied;
             health.Respawned += HandleRespawned;
+            if (combat != null)
+                combat.TargetChanged += OnCombatTargetChanged;
+
+            EnsurePlayerDamageRouting();
+        }
+
+        /// <summary>
+        /// Subscribes once (static) to the player's SurvivalStats.DamagedBySource. Re-binds only if the player
+        /// object was replaced. Runs at enemy Start, never per frame.
+        /// </summary>
+        private static void EnsurePlayerDamageRouting()
+        {
+            if (s_boundPlayerStats != null)
+                return;
+
+            GameObject player = PlayerLocator.FindPlayerObject();
+            SurvivalStats stats = player != null ? player.GetComponentInParent<SurvivalStats>() : null;
+            if (stats == null && player != null)
+                stats = player.GetComponentInChildren<SurvivalStats>();
+            if (stats == null)
+                return;
+
+            s_boundPlayerStats = stats;
+            stats.DamagedBySource += HandlePlayerDamagedBySource;
+        }
+
+        private static void HandlePlayerDamagedBySource(GameObject source)
+        {
+            if (source == null)
+                return;
+
+            EnemyHealthBarPresenter presenter = source.GetComponentInParent<EnemyHealthBarPresenter>();
+            if (presenter != null)
+                presenter.PushHealthHudImmediate();
         }
 
         private void OnDestroy()
@@ -64,60 +100,21 @@ namespace Project.AI
                 health.Respawned -= HandleRespawned;
             }
 
+            if (combat != null)
+                combat.TargetChanged -= OnCombatTargetChanged;
+
             EngagedEnemyHealthHud.Instance?.ClearIf(health);
         }
 
-        private void LateUpdate()
+        private void OnCombatTargetChanged(Transform newTarget)
         {
-            if (!showFloatingHealthBar || health == null || health.IsDead)
-            {
-                if (reporting)
-                {
-                    EngagedEnemyHealthHud.Instance?.ClearIf(health);
-                    reporting = false;
-                }
-
+            if (!showFloatingHealthBar || health == null || health.IsDead || !IsPlayerTarget(newTarget))
                 return;
-            }
 
-            bool engaged = IsEngagedWithPlayer();
-            if (engaged && !wasEngagedLastFrame)
-                firstEngagedTime = Time.time;
+            EnsurePlayerDamageRouting();
 
-            if (!engaged && wasEngagedLastFrame)
-                EngagedEnemyHealthHud.Instance?.ReleaseEngagementCandidate(health);
-
-            wasEngagedLastFrame = engaged;
-
-            bool playerAttacking = Time.time - lastPlayerAttackTime <= EngagedEnemyHealthHud.AttackLinger;
-            bool shouldShow = engaged || playerAttacking;
-
-            if (!shouldShow)
-            {
-                if (reporting)
-                {
-                    EngagedEnemyHealthHud.Instance?.ClearIf(health);
-                    reporting = false;
-                }
-
-                return;
-            }
-
-            // While the player is actively damaging this target, HUD refresh is event-driven.
-            if (playerAttacking)
-            {
-                reporting = true;
-                return;
-            }
-
-            EngagedEnemyHealthHud hud = EngagedEnemyHealthHud.EnsureExists(_canvasRoot);
-            hud.UpdateFromEngagement(
-                health,
-                ResolveDisplayName(),
-                health.CurrentHealth,
-                health.MaxHealth,
-                firstEngagedTime);
-            reporting = true;
+            EngagedEnemyHealthHud hud = EngagedEnemyHealthHud.EnsureExists(_canvasRoot ?? ResolveCanvasRoot());
+            hud.TryFocusIfIdle(health, ResolveDisplayName(), health.CurrentHealth, health.MaxHealth, _stillEngaged);
         }
 
         private void OnDamagedBy(GameObject source)
@@ -125,7 +122,6 @@ namespace Project.AI
             if (!IsPlayerSource(source))
                 return;
 
-            lastPlayerAttackTime = Time.time;
             PushHealthHudImmediate();
         }
 
@@ -143,30 +139,33 @@ namespace Project.AI
                 return;
 
             EngagedEnemyHealthHud hud = EngagedEnemyHealthHud.EnsureExists(_canvasRoot ?? ResolveCanvasRoot());
-            hud.ShowFromPlayerDamage(
+            hud.Focus(
                 health,
                 ResolveDisplayName(),
                 health.CurrentHealth,
-                health.MaxHealth);
-            reporting = true;
+                health.MaxHealth,
+                _stillEngaged);
         }
 
         private void HandleDied()
         {
-            reporting = false;
             EngagedEnemyHealthHud.Instance?.ClearIf(health);
         }
 
         private void HandleRespawned()
         {
-            lastPlayerAttackTime = -999f;
-            firstEngagedTime = -1f;
-            wasEngagedLastFrame = false;
-            reporting = false;
-            EngagedEnemyHealthHud.Instance?.ReleaseEngagementCandidate(health);
+            EngagedEnemyHealthHud.Instance?.ClearIf(health);
         }
 
         private bool IsEngagedWithPlayer()
+        {
+            if (this == null || health == null || health.IsDead)
+                return false;
+
+            return IsEngagedWithPlayerCore();
+        }
+
+        private bool IsEngagedWithPlayerCore()
         {
             if (combat != null && IsPlayerTarget(combat.CurrentTarget))
                 return true;

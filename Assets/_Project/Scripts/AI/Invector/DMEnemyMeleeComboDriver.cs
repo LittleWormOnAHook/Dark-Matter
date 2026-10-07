@@ -107,6 +107,9 @@ namespace Project.AI.Invector
         private float _sequenceStartTime;
         private float _nextChargedTime;
 
+        private float _swingNormalizedTime;
+        private bool _hasSwingProgress;
+
         private vMeleeAttackObject _scaledWeapon;
         private float _scaledWeaponOriginalDamage;
         private bool _windupSpeedApplied;
@@ -117,6 +120,20 @@ namespace Project.AI.Invector
 
         public bool IsSequenceActive => _sequenceActive;
         public bool IsChargedAttackActive => _sequenceActive && _isCharged;
+
+        /// <summary>Punish rule armed (N qualifying hits inside the window). Read by the engagement director for token priority.</summary>
+        public bool HasPunishArmed => IsPunishArmed();
+
+        /// <summary>
+        /// Normalized time of the swing currently playing (per swing, restarts on each chain swing) and whether it is
+        /// the charged attack. Used for the Phase 3 per-swing tracking window. Last frame's value.
+        /// </summary>
+        public bool TryGetSwingProgress(out float normalizedTime, out bool charged)
+        {
+            normalizedTime = _swingNormalizedTime;
+            charged = _isCharged;
+            return _sequenceActive && _hasSwingProgress;
+        }
 
         private void Awake()
         {
@@ -232,6 +249,8 @@ namespace Project.AI.Invector
             _followUpQueued = false;
             _seenAttackState = false;
             _sequenceStartTime = Time.time;
+            _hasSwingProgress = false;
+            _swingNormalizedTime = 0f;
         }
 
         private void Update()
@@ -271,6 +290,9 @@ namespace Project.AI.Invector
                 _swingsStarted++;
                 _followUpQueued = false;
             }
+
+            _swingNormalizedTime = swing.normalizedTime;
+            _hasSwingProgress = true;
 
             if (_isCharged)
             {
@@ -370,6 +392,7 @@ namespace Project.AI.Invector
             _isCharged = false;
             _followUpQueued = false;
             _currentSwingHash = 0;
+            _hasSwingProgress = false;
 
             // Clears a follow-up trigger that was queued but never consumed (it would start a stray
             // attack from Null.Null later). Skipped when a fresh swing's trigger was just set.
