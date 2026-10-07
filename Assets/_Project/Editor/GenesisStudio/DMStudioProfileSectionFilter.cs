@@ -19,7 +19,9 @@ namespace Project.EditorTools.GenesisStudio
         BuildingPlacementOnly = 10,
         BuildingDoorOnly = 11,
         BuildingBuiltTintsOnly = 12,
-        CombatCoreOnly = 13
+        CombatCoreOnly = 13,
+        LootChestTimersOnly = 14,
+        LootChestPresentationOnly = 15
     }
 
     internal static class DMStudioProfileSections
@@ -131,6 +133,15 @@ namespace Project.EditorTools.GenesisStudio
             "doorInteractRangeMeters",
             "gateSwingDegrees",
             "gateSwingSeconds"
+        };
+
+        private static readonly string[] LootChestTimerFields =
+        {
+            "relootWindowSeconds",
+            "timerStart",
+            "emptiedDissolveDelay",
+            "postExitDestroySeconds",
+            "fullInventoryHoldSeconds"
         };
 
         private static readonly string[] SurvivalFields =
@@ -348,6 +359,8 @@ namespace Project.EditorTools.GenesisStudio
                 DMStudioProfileSectionFilter.BuildingSnapOnly => IsBuildingSnapField(propertyPath),
                 DMStudioProfileSectionFilter.BuildingPlacementOnly => IsBuildingPlacementField(propertyPath),
                 DMStudioProfileSectionFilter.BuildingDoorOnly => IsBuildingDoorField(propertyPath),
+                DMStudioProfileSectionFilter.LootChestTimersOnly => IsLootChestTimerField(propertyPath),
+                DMStudioProfileSectionFilter.LootChestPresentationOnly => !IsLootChestTimerField(propertyPath),
                 _ => true
             };
         }
@@ -382,6 +395,10 @@ namespace Project.EditorTools.GenesisStudio
                     "Hold to build/destroy, aim distance, overlap padding, and door frame seat on DM_BuildingGhostProfile.",
                 DMStudioProfileSectionFilter.BuildingDoorOnly =>
                     "Built stone door swing and interact range on DM_BuildingGhostProfile.",
+                DMStudioProfileSectionFilter.LootChestTimersOnly =>
+                    "World Reloot window, emptied dissolve delay, Single Loot removal, and the 30-minute full-inventory hold on DM_LootChestProfile (Resources/Loot). Play-mode edits persist via Profile Save.",
+                DMStudioProfileSectionFilter.LootChestPresentationOnly =>
+                    "Lid timing, loot window delay, interact and auto-close range, storage defaults, dissolve look, and the enemy drop box prefab on DM_LootChestProfile. Timers have their own tab.",
                 _ => string.Empty
             };
         }
@@ -472,6 +489,8 @@ namespace Project.EditorTools.GenesisStudio
         private static bool IsBuildingPlacementField(string propertyPath) => MatchesField(propertyPath, BuildingPlacementFields);
 
         private static bool IsBuildingDoorField(string propertyPath) => MatchesField(propertyPath, BuildingDoorFields);
+
+        private static bool IsLootChestTimerField(string propertyPath) => MatchesField(propertyPath, LootChestTimerFields);
     }
 }
 #endif

@@ -12,6 +12,12 @@
     color: rgb(212, 160, 23);
 }
 
+/* Controller focus on crate / inventory slots (loot plan 8.5, D15). */
+.dmg-vendor-slot.dmg-crate-slot.dmg-pad-focus {
+    border-color: rgb(192, 46, 122);
+    border-width: 2px;
+}
+
 #crate-close {
     margin-left: auto;
     color: rgb(212, 160, 23);

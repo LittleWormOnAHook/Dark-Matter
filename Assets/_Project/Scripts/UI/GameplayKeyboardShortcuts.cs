@@ -390,6 +390,9 @@ namespace Project.UI
             if (DMUiToolkitCrate.TryHandleBack())
                 return;
 
+            if (DMUiToolkitLoot.TryHandleBack())
+                return;
+
             if (Project.UI.DMUiToolkitGenerator.TryHandleBack())
                 return;
 
@@ -463,7 +466,8 @@ namespace Project.UI
                 return true;
             if (DMUiToolkitMenuPanels.IsAnySubPanelOpen)
                 return true;
-            if (DMUiToolkitVendor.IsOpen || DMUiToolkitCrate.IsOpen || Project.UI.DMUiToolkitGenerator.IsOpen)
+            if (DMUiToolkitVendor.IsOpen || DMUiToolkitCrate.IsOpen || DMUiToolkitLoot.IsOpen
+                || Project.UI.DMUiToolkitGenerator.IsOpen)
                 return true;
             if (DMUiToolkitHotCross.IsAmmoLoadPopupOpen)
                 return true;
@@ -533,6 +537,9 @@ namespace Project.UI
                 return;
 
             if (DMUiToolkitCrate.TryHandleBack())
+                return;
+
+            if (DMUiToolkitLoot.TryHandleBack())
                 return;
 
             if (Project.UI.DMUiToolkitGenerator.TryHandleBack())

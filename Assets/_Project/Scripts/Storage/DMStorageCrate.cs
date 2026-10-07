@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Project.Core;
+using Project.Events;
 using Project.Interaction;
 using Project.Player;
 using Project.UI;
@@ -25,6 +26,8 @@ namespace Project.Storage
         [SerializeField] private string openAnimationName = DefaultOpenAnimationName;
         [SerializeField] private GameObject openParticle;
         [SerializeField] private Collider interactCollider;
+
+        private DMChestLid lid;
 
         public string CrateId => string.IsNullOrWhiteSpace(crateId) ? "camp_storage_01" : crateId;
         public int SlotCount => Mathf.Max(1, slotCount);
@@ -119,7 +122,9 @@ namespace Project.Storage
 
         public string GetInteractionPromptMessage()
         {
-            return string.IsNullOrWhiteSpace(promptText) ? "Press E — Storage" : promptText;
+            string text = string.IsNullOrWhiteSpace(promptText) ? "Press E — Storage" : promptText;
+            // 7.6: name the chest type even when a custom prompt omits it.
+            return text.IndexOf("Storage", System.StringComparison.OrdinalIgnoreCase) >= 0 ? text : text + " — Storage";
         }
 
         public void ResolvePresentation()
@@ -158,6 +163,10 @@ namespace Project.Storage
 
             if (interactCollider == null)
                 interactCollider = GetComponent<Collider>();
+
+            // Unscaled lid (loot plan 7.4 / 7.5): the storage window pauses time, a legacy clip would freeze.
+            if (lid == null)
+                lid = DMChestLid.EnsureForLegacyClip(chestAnimation, ResolveOpenAnimationName());
         }
 
         private void PlayOpenPresentation()
@@ -165,7 +174,9 @@ namespace Project.Storage
             if (openParticle != null)
                 openParticle.SetActive(true);
 
-            PlayLid(1f, 0f);
+            if (lid == null)
+                ResolvePresentation();
+            lid?.Open();
         }
 
         private void PlayClosePresentation()
@@ -173,30 +184,7 @@ namespace Project.Storage
             if (openParticle != null)
                 openParticle.SetActive(false);
 
-            string clipName = ResolveOpenAnimationName();
-            if (chestAnimation == null || string.IsNullOrEmpty(clipName))
-                return;
-
-            AnimationState state = chestAnimation[clipName];
-            float startTime = state != null ? state.length : 1f;
-            PlayLid(-1f, startTime);
-        }
-
-        private void PlayLid(float speed, float time)
-        {
-            string clipName = ResolveOpenAnimationName();
-            if (chestAnimation == null || string.IsNullOrEmpty(clipName))
-                return;
-
-            AnimationState state = chestAnimation[clipName];
-            if (state != null)
-            {
-                state.speed = speed;
-                state.time = time;
-            }
-
-            chestAnimation.Stop();
-            chestAnimation.Play(clipName);
+            lid?.Close();
         }
 
         private string ResolveOpenAnimationName()

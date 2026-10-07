@@ -916,6 +916,9 @@ namespace Project.UI
             PlayerProgressionManager.EnsureExists()?.ResetToNewGame();
             Project.World.Clock.DMIoClock.ResetToNewGame();
             Project.Vendor.DMVendorRuntime.ResetAll();
+            // Loot plan 9.3: the scene is not reloaded on New Game, so storage crates and loot chests reset here.
+            Project.Storage.DMStorageCrateRuntime.ResetAll();
+            Project.Events.DMLootChestRuntime.ResetAll();
             GameObject player = PlayerLocator.FindPlayerObject();
             ProgressionStatScaler scaler = player != null ? player.GetComponent<ProgressionStatScaler>() : null;
             if (scaler != null)

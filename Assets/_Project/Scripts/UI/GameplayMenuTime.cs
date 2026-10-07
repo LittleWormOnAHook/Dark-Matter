@@ -8,6 +8,7 @@ namespace Project.UI
     /// <summary>
     /// Gameplay menu time policy: Journal tabs and Mode Switch fully pause (<c>timeScale = 0</c>);
     /// other in-game menus slow the world to 20%. Main-menu / boot hard-pause is left alone.
+    /// The loot window (<see cref="ReasonLootDialog"/>) is a full pause like the storage crate (loot plan D5).
     /// </summary>
     public static class GameplayMenuTime
     {
@@ -18,6 +19,7 @@ namespace Project.UI
         public const string ReasonBuildingControl = "BuildingControl";
         public const string ReasonQuestDialog = "QuestDialog";
         public const string ReasonPptDirections = "PptDirections";
+        /// <summary>UITK loot window: use with <see cref="SetPause"/> (full pause, D5), not slow motion.</summary>
         public const string ReasonLootDialog = "LootDialog";
         public const string ReasonCraftingStation = "CraftingStation";
         public const string ReasonHovercraftMenu = "HovercraftMenu";
@@ -105,7 +107,8 @@ namespace Project.UI
 
         public static void Apply()
         {
-            if (!Application.isPlaying || !GameSession.HasStarted)
+            // Reason sets still update above; teardown (exit Play / quit) skips scene lookups and cursor coroutines.
+            if (!Application.isPlaying || !GameSession.HasStarted || GameplayInputRecovery.IsTearingDown)
                 return;
 
             // Hard pause owned by main menu / boot. Do not fight it when we have no reasons.

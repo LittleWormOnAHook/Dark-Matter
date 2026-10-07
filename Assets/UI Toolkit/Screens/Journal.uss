@@ -1386,3 +1386,13 @@
     -unity-text-align: middle-center;
     -unity-font-style: bold;
 }
+
+/* Level-lock look (loot plan 8.8): same values as the vendor blocked overlay in Vendor.uss. */
+.dmg-vendor-block {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(143, 30, 94, 0.55);
+}

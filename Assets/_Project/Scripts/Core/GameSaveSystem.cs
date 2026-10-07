@@ -27,7 +27,7 @@ namespace Project.Core
         public const int ContinueSlotIndex = 0;
         public const int AutosaveSlotCount = 2;
         public const float AutosaveIntervalSeconds = 5f * 60f;
-        public const int CurrentSaveVersion = 23;
+        public const int CurrentSaveVersion = 24; // v24: loot chests (loot plan 9.1). v25 is reserved for Combat Plan v2.
 
         private const string LegacySaveFileName = "savegame.json";
         private const string SlotFileNameFormat = "savegame_slot{0}.json";
@@ -405,6 +405,7 @@ namespace Project.Core
             DMIoClock.CaptureSave(out data.ioDay, out data.ioHour, out data.ioMinute);
             data.vendors = DMVendorRuntime.BuildSave();
             data.storageCrates = Project.Storage.DMStorageCrateRuntime.BuildSave();
+            data.lootChests = Project.Events.DMLootChestRuntime.BuildSave();
             data.builtPieces = DMBuildingSaveRuntime.BuildSave();
 
             if (progressionManager != null)
@@ -521,6 +522,7 @@ namespace Project.Core
             ApplyIoClockSave(data);
             ApplyVendorSave(data);
             ApplyStorageCrateSave(data);
+            ApplyLootChestSave(data);
             DMBuildingSaveRuntime.ApplySave(data.builtPieces);
 
             ApplyQuestSave(player, data.questProgress);
@@ -850,6 +852,18 @@ namespace Project.Core
             }
 
             Project.Storage.DMStorageCrateRuntime.ApplySave(data.storageCrates);
+        }
+
+        private static void ApplyLootChestSave(GameSaveData data)
+        {
+            // v23 and older carry no loot chest data: every chest starts fresh with its authored loot (9.1).
+            if (data == null || data.version < 24)
+            {
+                Project.Events.DMLootChestRuntime.ResetAll();
+                return;
+            }
+
+            Project.Events.DMLootChestRuntime.ApplySave(data.lootChests);
         }
 
         private static void ApplyCraftingSave(GameObject player, string[] discoveredRecipeIds, string[] pendingRecipeScrollIds)

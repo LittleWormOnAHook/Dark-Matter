@@ -6,6 +6,7 @@ using Project.Inventory;
 using Project.Player;
 using Project.Storage;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 
 namespace Project.UI
@@ -52,7 +53,17 @@ namespace Project.UI
         private readonly List<VisualElement> playerSlots = new List<VisualElement>();
         private readonly List<VisualElement> crateSlots = new List<VisualElement>();
 
+        // Controller support (loot plan 8.5, D15): A transfers the focused stack, X splits, B closes.
+        private const string CrateSlotClass = "dmg-crate-slot";
+        private int openedFrame = -1;
+        private bool padSouthHeldSinceOpen;
+        private bool padWestHeldSinceOpen;
+        private int padSubmitBlockedUntilFrame = -1;
+
         public static bool IsOpen => instance != null && instance.open;
+
+        /// <summary>Gamepad navigation root while open (<see cref="DMUiJournalGamepadNav"/>).</summary>
+        public static VisualElement NavigationRoot => IsOpen ? instance.root : null;
 
         public static DMUiToolkitCrate EnsureHost()
         {
@@ -120,7 +131,18 @@ namespace Project.UI
         private void OnDisable()
         {
             DMStorageCrateRuntime.StatesChanged -= RefreshAll;
-            ApplyOverlaySession(false);
+            // Release the pause only when this host owns an open crate session (not on every teardown disable).
+            if (open)
+            {
+                bool tearingDown = GameplayInputRecovery.IsTearingDown;
+                if (!tearingDown && crate != null)
+                    crate.NotifyClosed();
+                open = false;
+                crate = null;
+                CancelDrag();
+                ApplyOverlaySession(false);
+            }
+
             if (instance == this)
                 instance = null;
         }
@@ -168,11 +190,130 @@ namespace Project.UI
                 ? inventory.GetComponent<InventoryItemActions>()
                 : Object.FindAnyObjectByType<InventoryItemActions>();
             open = true;
+            openedFrame = Time.frameCount;
+            Gamepad pad = Gamepad.current;
+            padSouthHeldSinceOpen = pad != null && pad.buttonSouth.isPressed;
+            padWestHeldSinceOpen = pad != null && pad.buttonWest.isPressed;
+            padSubmitBlockedUntilFrame = -1;
             if (root != null)
                 DMUiToolkitOverlayDocument.SetShown(root, true);
             DMUiToolkitOverlayDocument.PromoteInteractiveOverlay(document);
             ApplyOverlaySession(true);
             RefreshAll();
+            if (root != null)
+                DMUiJournalGamepadNav.NotifyMenuOpened(root);
+        }
+
+        private void Update()
+        {
+            if (!open)
+                return;
+
+            TickGamepad();
+        }
+
+        private void TickGamepad()
+        {
+            Gamepad pad = Gamepad.current;
+            if (pad == null)
+                return;
+
+            // The pad press that opened the crate (X = Use) must not split / transfer on the same hold.
+            if (padSouthHeldSinceOpen && !pad.buttonSouth.isPressed)
+            {
+                padSouthHeldSinceOpen = false;
+                padSubmitBlockedUntilFrame = Time.frameCount + 1;
+            }
+
+            if (padWestHeldSinceOpen && !pad.buttonWest.isPressed)
+                padWestHeldSinceOpen = false;
+
+            if (Time.frameCount == openedFrame || padWestHeldSinceOpen || ctxOpen || dragIndex >= 0)
+                return;
+
+            if (pad.buttonWest.wasPressedThisFrame && TryGetFocusedSlot(out FocusSide side, out int index))
+                SplitSlot(side, index);
+        }
+
+        private bool PadSubmitBlocked =>
+            padSouthHeldSinceOpen || Time.frameCount <= padSubmitBlockedUntilFrame || Time.frameCount == openedFrame;
+
+        private bool TryGetFocusedSlot(out FocusSide side, out int index)
+        {
+            side = FocusSide.Player;
+            index = -1;
+            VisualElement focused = root?.panel?.focusController?.focusedElement as VisualElement;
+            if (focused == null || focused.userData is not SlotKey key)
+                return false;
+
+            side = key.Side;
+            index = key.Index;
+            return true;
+        }
+
+        /// <summary>Synthesized submit (gamepad A / Enter via DMUiJournalGamepadNav, clickCount 0) transfers the stack.</summary>
+        private void OnSlotClick(ClickEvent evt)
+        {
+            if (evt.clickCount != 0 || evt.currentTarget is not VisualElement slot || slot.userData is not SlotKey key)
+                return;
+
+            evt.StopPropagation();
+            if (PadSubmitBlocked || ctxOpen || crate == null || inventory == null)
+                return;
+
+            if (ResolveItem(key.Side, key.Index) == null)
+            {
+                GameAudioManager.Instance?.PlayUiDeny();
+                return;
+            }
+
+            if (key.Side == FocusSide.Player && !CanStore(ResolveItem(key.Side, key.Index)))
+            {
+                GameAudioManager.Instance?.PlayUiDeny();
+                return;
+            }
+
+            TransferSlot(key.Side, key.Index);
+            ShowFocusTooltip(slot, key);
+        }
+
+        private void OnSlotFocusIn(FocusInEvent evt)
+        {
+            if (dragActive || evt.currentTarget is not VisualElement slot || slot.userData is not SlotKey key)
+                return;
+
+            ShowFocusTooltip(slot, key);
+        }
+
+        private void OnSlotFocusOut(FocusOutEvent evt)
+        {
+            if (!dragActive)
+                DMUiToolkitWorldMenus.HideItemTooltip();
+        }
+
+        private void ShowFocusTooltip(VisualElement slot, SlotKey key)
+        {
+            // Only for pad / keyboard focus; the mouse path uses pointer enter.
+            if (Gamepad.current == null || slot.panel == null)
+                return;
+
+            ItemData item = ResolveItem(key.Side, key.Index);
+            if (item == null)
+            {
+                DMUiToolkitWorldMenus.HideItemTooltip();
+                return;
+            }
+
+            // Panel space is top-down and scaled; tooltips take a bottom-up screen position (like the mouse).
+            Rect panelRect = slot.panel.visualTree.worldBound;
+            if (panelRect.width < 1f || panelRect.height < 1f)
+                return;
+
+            Rect bounds = slot.worldBound;
+            Vector2 screen = new Vector2(
+                bounds.xMax / panelRect.width * Screen.width,
+                Screen.height - bounds.yMin / panelRect.height * Screen.height);
+            DMUiToolkitWorldMenus.TryShowItemTooltip(item, ResolveAmount(key.Side, key.Index), screen);
         }
 
         private void HideInternal()
@@ -194,6 +335,8 @@ namespace Project.UI
         private static void ApplyOverlaySession(bool overlayOpen)
         {
             GameplayMenuTime.SetPause(GameplayMenuTime.ReasonStorageCrate, overlayOpen);
+            if (!overlayOpen && GameplayInputRecovery.IsTearingDown)
+                return;
             PlayerController player = PlayerLocator.FindPlayerController();
             if (player != null)
             {
@@ -294,8 +437,11 @@ namespace Project.UI
                 int index = slots.Count;
                 VisualElement slot = new VisualElement();
                 slot.AddToClassList("dmg-vendor-slot");
+                slot.AddToClassList(CrateSlotClass);
                 slot.style.position = Position.Relative;
                 slot.pickingMode = PickingMode.Position;
+                slot.focusable = true;
+                slot.tabIndex = 0;
 
                 VisualElement icon = new VisualElement();
                 icon.AddToClassList("dmg-vendor-icon");
@@ -326,6 +472,9 @@ namespace Project.UI
                 slot.RegisterCallback<PointerMoveEvent>(OnSlotPointerMove);
                 slot.RegisterCallback<PointerUpEvent>(OnSlotPointerUp);
                 slot.RegisterCallback<PointerCaptureOutEvent>(OnSlotPointerCaptureOut);
+                slot.RegisterCallback<ClickEvent>(OnSlotClick);
+                slot.RegisterCallback<FocusInEvent>(OnSlotFocusIn);
+                slot.RegisterCallback<FocusOutEvent>(OnSlotFocusOut);
                 host.Add(slot);
                 slots.Add(slot);
             }
@@ -790,12 +939,17 @@ namespace Project.UI
 
         private void SplitFocused()
         {
-            bool ok = ctxSide == FocusSide.Player
-                ? itemActions != null && itemActions.TrySplit(ctxIndex)
-                : SplitCrate(ctxIndex);
+            SplitSlot(ctxSide, ctxIndex);
+        }
+
+        private void SplitSlot(FocusSide side, int index)
+        {
+            bool ok = side == FocusSide.Player
+                ? itemActions != null && itemActions.TrySplit(index)
+                : SplitCrate(index);
             if (!ok)
                 GameAudioManager.Instance?.PlayUiDeny();
-            else if (ctxSide == FocusSide.Crate)
+            else if (side == FocusSide.Crate)
                 GameAudioManager.Instance?.PlayItemSplit();
             RefreshAll();
         }

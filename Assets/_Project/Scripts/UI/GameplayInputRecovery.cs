@@ -211,6 +211,9 @@ namespace Project.UI
             CursorRestoreRunner.Kick();
         }
 
+        /// <summary>True while exiting Play / quitting / tearing the scene down: skip scene lookups and coroutines.</summary>
+        public static bool IsTearingDown => CursorRestoreRunner.IsTearingDown;
+
         public static void CancelPendingCursorRestore()
         {
             CursorRestoreRunner.Cancel();
@@ -301,6 +304,14 @@ namespace Project.UI
             {
                 SceneManager.sceneUnloaded -= OnSceneUnloaded;
                 SceneManager.sceneUnloaded += OnSceneUnloaded;
+                Application.quitting -= OnQuitting;
+                Application.quitting += OnQuitting;
+            }
+
+            private static void OnQuitting()
+            {
+                // Exiting Play / quitting: OnDisable callbacks must not Find scene objects or start coroutines.
+                tearingDown = true;
             }
 
             private static void OnSceneUnloaded(Scene scene)
@@ -324,6 +335,10 @@ namespace Project.UI
                     go.hideFlags = HideFlags.HideAndDontSave;
                     instance = go.AddComponent<CursorRestoreRunner>();
                 }
+
+                // Never StartCoroutine on an inactive runner (teardown deactivates it): that asserts go.IsActive().
+                if (!instance.isActiveAndEnabled)
+                    return;
 
                 instance.token++;
                 instance.StartCoroutine(instance.RestoreAfterUiClick(instance.token));

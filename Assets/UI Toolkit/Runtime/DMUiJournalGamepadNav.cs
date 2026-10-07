@@ -35,7 +35,8 @@ namespace Project.UI
             "dmg-ach-slot",
             "dmg-trio-slot",
             "dmg-subtab",
-            "dmg-bp-learn"
+            "dmg-bp-learn",
+            "dmg-crate-slot"
         };
 
         private static VisualElement lastFocused;
@@ -287,6 +288,14 @@ namespace Project.UI
 
             if (DMUiToolkitMainMenu.IsVisible)
                 return RootFromNamedHost(DMUiToolkitMainMenu.MainMenuName);
+
+            // Loot window (loot plan 8.5, D15): rows reuse the focusable dmg-list-row class.
+            if (DMUiToolkitLoot.IsOpen)
+                return DMUiToolkitLoot.NavigationRoot;
+
+            // Storage crate (8.5, D15): player and crate grids are focusable (dmg-crate-slot).
+            if (DMUiToolkitCrate.IsOpen)
+                return DMUiToolkitCrate.NavigationRoot;
 
             if (DMUiToolkitMenus.IsOpen)
                 return DMUiToolkitMenus.NavigationRoot;

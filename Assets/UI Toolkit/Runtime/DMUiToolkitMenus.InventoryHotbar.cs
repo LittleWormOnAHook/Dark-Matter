@@ -130,6 +130,7 @@ namespace Project.UI
                 return;
 
             EquipmentController equipment = boundInventory.GetComponent<EquipmentController>();
+            int playerLevel = Project.Progression.LevelUnlockUtility.CachedPlayerLevel;
 
             for (int i = 0; i < invHotbarSlots.Count; i++)
             {
@@ -156,6 +157,7 @@ namespace Project.UI
 
                 int stack = data != null ? data.amount : 0;
                 amount.text = item != null && stack > 1 ? stack.ToString() : string.Empty;
+                DMUiLevelLockOverlay.Apply(slot, item, playerLevel);
 
                 bool selected = false;
                 if (item != null && equipment != null)

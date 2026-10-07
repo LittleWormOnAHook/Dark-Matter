@@ -1,0 +1,149 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &7711561816215837233
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 402146264907223389, guid: d222ffb9eac9a7848bda7cbed4d4b909, type: 3}
+      propertyPath: outlineColor.b
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 402146264907223389, guid: d222ffb9eac9a7848bda7cbed4d4b909, type: 3}
+      propertyPath: outlineColor.g
+      value: 0.5130332
+      objectReference: {fileID: 0}
+    - target: {fileID: 402146264907223389, guid: d222ffb9eac9a7848bda7cbed4d4b909, type: 3}
+      propertyPath: outlineColor.r
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6438786670368682028, guid: d222ffb9eac9a7848bda7cbed4d4b909, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.59
+      objectReference: {fileID: 0}
+    - target: {fileID: 6438786670368682028, guid: d222ffb9eac9a7848bda7cbed4d4b909, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.59
+      objectReference: {fileID: 0}
+    - target: {fileID: 6438786670368682028, guid: d222ffb9eac9a7848bda7cbed4d4b909, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6438786670368682028, guid: d222ffb9eac9a7848bda7cbed4d4b909, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6438786670368682028, guid: d222ffb9eac9a7848bda7cbed4d4b909, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6438786670368682028, guid: d222ffb9eac9a7848bda7cbed4d4b909, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: -0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 6438786670368682028, guid: d222ffb9eac9a7848bda7cbed4d4b909, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 6438786670368682028, guid: d222ffb9eac9a7848bda7cbed4d4b909, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6438786670368682028, guid: d222ffb9eac9a7848bda7cbed4d4b909, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6438786670368682028, guid: d222ffb9eac9a7848bda7cbed4d4b909, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: -89.937
+      objectReference: {fileID: 0}
+    - target: {fileID: 6438786670368682028, guid: d222ffb9eac9a7848bda7cbed4d4b909, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6438786670368682028, guid: d222ffb9eac9a7848bda7cbed4d4b909, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 127.679
+      objectReference: {fileID: 0}
+    - target: {fileID: 6438786670369141864, guid: d222ffb9eac9a7848bda7cbed4d4b909, type: 3}
+      propertyPath: m_Name
+      value: DM_Storage_Crate
+      objectReference: {fileID: 0}
+    - target: {fileID: 6438786670371116116, guid: d222ffb9eac9a7848bda7cbed4d4b909, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 50302a569a3358f43b53da19552a8363, type: 2}
+    - target: {fileID: 6438786670371132018, guid: d222ffb9eac9a7848bda7cbed4d4b909, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 980c4710932884749a403664e05008f7, type: 2}
+    - target: {fileID: 8520337221021562753, guid: d222ffb9eac9a7848bda7cbed4d4b909, type: 3}
+      propertyPath: scanLabel
+      value: Storage
+      objectReference: {fileID: 0}
+    - target: {fileID: 8520337221021562753, guid: d222ffb9eac9a7848bda7cbed4d4b909, type: 3}
+      propertyPath: scanColor.b
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8520337221021562753, guid: d222ffb9eac9a7848bda7cbed4d4b909, type: 3}
+      propertyPath: scanColor.g
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8520337221021562753, guid: d222ffb9eac9a7848bda7cbed4d4b909, type: 3}
+      propertyPath: scanCategory
+      value: 5
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 2427798450558660997, guid: d222ffb9eac9a7848bda7cbed4d4b909, type: 3}
+    - {fileID: 4107076431669934075, guid: d222ffb9eac9a7848bda7cbed4d4b909, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 6438786670369141864, guid: d222ffb9eac9a7848bda7cbed4d4b909, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3803869611941406650}
+  m_SourcePrefab: {fileID: 100100000, guid: d222ffb9eac9a7848bda7cbed4d4b909, type: 3}
+--- !u!111 &3629851555088631669 stripped
+Animation:
+  m_CorrespondingSourceObject: {fileID: 6438786670362352964, guid: d222ffb9eac9a7848bda7cbed4d4b909, type: 3}
+  m_PrefabInstance: {fileID: 7711561816215837233}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &3629851555093479907 stripped
+BoxCollider:
+  m_CorrespondingSourceObject: {fileID: 6438786670366940114, guid: d222ffb9eac9a7848bda7cbed4d4b909, type: 3}
+  m_PrefabInstance: {fileID: 7711561816215837233}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &3629851555095490137 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6438786670369141864, guid: d222ffb9eac9a7848bda7cbed4d4b909, type: 3}
+  m_PrefabInstance: {fileID: 7711561816215837233}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &3803869611941406650
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3629851555095490137}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e897e390b93e61344b733c4590bb463a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Storage.DMStorageCrate
+  crateId: camp_storage_01
+  slotCount: 20
+  assignIdOnBuild: 0
+  interactRange: 3.5
+  promptText: "Press E \u2014 Storage"
+  chestAnimation: {fileID: 3629851555088631669}
+  openAnimationName: Cache-Lid-Open
+  openParticle: {fileID: 3629851555095551843}
+  interactCollider: {fileID: 3629851555093479907}
+--- !u!1 &3629851555095551843 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6438786670368933202, guid: d222ffb9eac9a7848bda7cbed4d4b909, type: 3}
+  m_PrefabInstance: {fileID: 7711561816215837233}
+  m_PrefabAsset: {fileID: 0}

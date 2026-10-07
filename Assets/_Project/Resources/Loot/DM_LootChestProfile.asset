@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc7842178576e984e887f13a3155cd3f, type: 3}
+  m_Name: DM_LootChestProfile
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Events.DMLootChestProfile
+  relootWindowSeconds: 120
+  timerStart: 0
+  emptiedDissolveDelay: 2
+  postExitDestroySeconds: 5
+  fullInventoryHoldSeconds: 1800
+  defaultSlotCount: 20
+  rangeCloseAppliesToStorage: 0
+  lidOpenSeconds: 1
+  lidCloseSeconds: 0.8
+  openLootWindowDelay: 1
+  interactRange: 3
+  closeRangeMeters: 4.5
+  dissolveSeconds: 1.6
+  dissolveEdgeWidth: 0.06
+  dissolveEdgeColor: {r: 0.831, g: 0.627, b: 0.09, a: 1}
+  dissolveShader: {fileID: 4800000, guid: 810ad7296a689ab4d8c3008b11846c44, type: 3}
+  dissolveMaterial: {fileID: 0}
+  enemyLootBagPrefab: {fileID: 5070942837361520457, guid: 171f2890153a93c4c9421280816d02de, type: 3}

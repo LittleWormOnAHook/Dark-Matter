@@ -7,7 +7,7 @@
         <ui:VisualElement name="crate-panel" picking-mode="Position" class="dmg-vendor-panel">
             <ui:VisualElement name="crate-header" picking-mode="Ignore" class="dmg-vendor-header">
                 <ui:Label name="crate-title" text="STORAGE" picking-mode="Ignore" class="dmg-section-title dmg-gold"/>
-                <ui:Label name="crate-hint" text="Drag stacks to move · right-click for Split, Drop, Transfer" picking-mode="Ignore" class="dmg-hint"/>
+                <ui:Label name="crate-hint" text="Drag stacks to move · right-click for Split, Drop, Transfer · Pad: A transfer · X split · B close" picking-mode="Ignore" class="dmg-hint"/>
                 <ui:Button name="crate-close" text="Close" picking-mode="Position" class="dmg-tab"/>
             </ui:VisualElement>
             <ui:VisualElement name="crate-split" picking-mode="Position" class="dmg-vendor-split">

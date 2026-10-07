@@ -58,6 +58,15 @@ namespace Project.Audio
         public AudioClip[] itemPickupClips;
         public AudioClip[] achievementUnlockClips;
         public AudioClip[] levelUpClips;
+
+        [Header("Loot Chests")]
+        [Tooltip("World loot chest lid opening (3D at the chest). Empty = silent.")]
+        public AudioClip[] lootChestOpenClips;
+        [Tooltip("World loot chest lid closing. Empty = silent.")]
+        public AudioClip[] lootChestCloseClips;
+        [Tooltip("Loot chest dissolve start. Empty = silent.")]
+        public AudioClip[] lootChestDissolveClips;
+        [Range(0f, 1f)] public float lootChestVolume = 0.8f;
         [Range(0f, 1f)] public float uiVolume = 0.85f;
 
         [Header("3D Playback")]

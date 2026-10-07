@@ -1,0 +1,126 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &6438786670369089896
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 122112, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
+      propertyPath: m_Name
+      value: DM_LootChest_Base
+      objectReference: {fileID: 0}
+    - target: {fileID: 448836, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.4253
+      objectReference: {fileID: 0}
+    - target: {fileID: 448836, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.59
+      objectReference: {fileID: 0}
+    - target: {fileID: 448836, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.8296
+      objectReference: {fileID: 0}
+    - target: {fileID: 448836, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 448836, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 448836, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 448836, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: -0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 448836, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 448836, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 448836, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 448836, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: -89.937
+      objectReference: {fileID: 0}
+    - target: {fileID: 448836, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 448836, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 127.679
+      objectReference: {fileID: 0}
+    - target: {fileID: 19983670, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
+      propertyPath: 'm_Materials.Array.data[1]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 111ee638dd846464d8a9e6fe3d5f0865, type: 2}
+    - target: {fileID: 3415272041255395049, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
+      propertyPath: scanLabel
+      value: Loot Chest
+      objectReference: {fileID: 0}
+    - target: {fileID: 7035869592195833491, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
+      propertyPath: scanLabel
+      value: Loot Chest
+      objectReference: {fileID: 0}
+    - target: {fileID: 7035869592195833491, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
+      propertyPath: cacheDisplayName
+      value: Loot Chest
+      objectReference: {fileID: 0}
+    - target: {fileID: 7035869592195833491, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
+      propertyPath: lootSlots.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 20800156, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
+    m_RemovedGameObjects:
+    - {fileID: 188518, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 122112, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3385534171682352928}
+  m_SourcePrefab: {fileID: 100100000, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
+--- !u!111 &6438786670362352964 stripped
+Animation:
+  m_CorrespondingSourceObject: {fileID: 11105324, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
+  m_PrefabInstance: {fileID: 6438786670369089896}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &6438786670369141864 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 122112, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
+  m_PrefabInstance: {fileID: 6438786670369089896}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &3385534171682352928
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6438786670369141864}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e37155545c5e24e4b93d98f597ca4a34, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Events.DMChestLid
+  mode: 0
+  chestAnimation: {fileID: 6438786670362352964}
+  clipName: Cache-Lid-Open
+  lidTransform: {fileID: 0}
+  openEulerOffset: {x: -80, y: 0, z: 0}
+  openLocalOffset: {x: 0, y: 0, z: 0}
+  openSecondsOverride: -1
+  closeSecondsOverride: -1

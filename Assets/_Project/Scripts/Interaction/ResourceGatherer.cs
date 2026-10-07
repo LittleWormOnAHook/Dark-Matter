@@ -51,7 +51,8 @@ namespace Project.Interaction
             if (!LevelUnlockUtility.PassesPickupGate(item, showToast: true))
                 return false;
 
-            int added = inventory.AddItem(item, amount);
+            // D7: gathered ammo goes to a Hot Cross stack or the inventory, never into magazines.
+            int added = Project.Loot.DMLootGrant.AddPickupItem(inventory, item, amount);
             if (added > 0)
             {
                 QuestManager questManager = QuestManager.EnsureExists();

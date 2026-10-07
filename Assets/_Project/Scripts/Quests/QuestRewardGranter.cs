@@ -94,7 +94,8 @@ namespace Project.Quests
                 return 0;
             }
 
-            int added = inventory.AddItem(item, amount);
+            // D7: rewards never load ammo into magazines (Hot Cross stack, then inventory).
+            int added = Project.Loot.DMLootGrant.AddPickupItem(inventory, item, amount);
             if (added < amount)
                 Debug.LogWarning($"QuestRewardGranter: Could only add {added}/{amount} of {item.itemName}.");
 

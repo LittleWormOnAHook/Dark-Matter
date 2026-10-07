@@ -41,16 +41,6 @@
                 <ui:Button name="weapon-rifle-beam" text="Laser  OFF" picking-mode="Position" class="dmg-fmenu-btn"/>
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:VisualElement name="loot-host" picking-mode="Position" class="dmg-wm-modal">
-            <ui:VisualElement name="loot-veil" picking-mode="Position" class="dmg-hi-veil"/>
-            <ui:VisualElement name="loot-panel" picking-mode="Position" class="dmg-wm-dialog">
-                <ui:Label name="loot-title" text="Loot" picking-mode="Ignore" class="dmg-hi-title"/>
-                <ui:Label name="loot-body" text="" picking-mode="Ignore" class="dmg-wm-dialog-body"/>
-                <ui:Button name="loot-next" text="Loot" picking-mode="Position" class="dmg-hi-btn"/>
-                <ui:Button name="loot-all" text="Loot All" picking-mode="Position" class="dmg-hi-btn"/>
-                <ui:Button name="loot-close" text="Close" picking-mode="Position" class="dmg-hi-btn dmg-hi-btn-muted"/>
-            </ui:VisualElement>
-        </ui:VisualElement>
         <ui:VisualElement name="echo-host" picking-mode="Position" class="dmg-wm-modal">
             <ui:VisualElement name="echo-veil" picking-mode="Position" class="dmg-gs-veil"/>
             <ui:VisualElement name="echo-panel" picking-mode="Position" class="dmg-wm-dialog dmg-wm-echo">

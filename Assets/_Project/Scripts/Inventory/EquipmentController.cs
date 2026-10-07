@@ -552,13 +552,16 @@ namespace Project.Inventory
             {
                 if (item.itemType != ItemType.Tool)
                     return false;
-                return LevelUnlockUtility.PassesEquipGate(item, showToast: showLevelToast);
+                // Loot plan D21: level-locked items stay in the main grid.
+                return LevelUnlockUtility.PassesLevelLock(item, showToast: showLevelToast);
             }
 
             if (!inventory.IsHotbarIndex(absoluteSlotIndex))
                 return true;
 
-            if (item.IsEquippable && !LevelUnlockUtility.PassesEquipGate(item, showToast: showLevelToast))
+            // Loot plan D21: every level-locked item kind (weapons, consumables, ammo, deployables)
+            // is refused on hotbar / Hot Cross slots until its equip or use level is reached.
+            if (!LevelUnlockUtility.PassesLevelLock(item, showToast: showLevelToast))
                 return false;
 
             int hotbarIndex = absoluteSlotIndex - inventory.inventorySize;

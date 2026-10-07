@@ -4,6 +4,7 @@ using Project.AI;
 using Project.Core;
 using Project.Data;
 using Project.Interaction;
+using Project.Loot;
 using Project.Map;
 using Project.Progression;
 using Project.Quests;
@@ -16,9 +17,12 @@ namespace Project.Events
     /// Dark Matter loot table / grant logic for world caches.
     /// Pair with <see cref="DMItemCollection"/> on a child trigger for open animation + E interaction.
     /// Keeps ScannableTarget + OutlineController on the cache root.
+    /// Per-item looting goes through <see cref="IDMLootContainer"/> (stable entry ids) and the shared
+    /// <see cref="DMLootGrant"/> path: items only (D6), main grid (D8), no ammo auto-load (D7),
+    /// level-gated items granted and shown locked (D3, D22).
     /// </summary>
     [DisallowMultipleComponent]
-    public class DmEvents : MonoBehaviour, IEnemyLootProvider
+    public class DmEvents : MonoBehaviour, IDMLootContainer
     {
         public const int MaxLootSlots = 25;
 
@@ -44,7 +48,7 @@ namespace Project.Events
         [Tooltip("When empty, only stop interaction — keep the opened chest mesh in the world.")]
         [SerializeField] private bool keepVisualWhenEmpty = true;
 
-        private readonly List<QuestRewardDefinition> remainingLoot = new List<QuestRewardDefinition>(MaxLootSlots);
+        private readonly DMLootEntryList remainingLoot = new DMLootEntryList();
         private UIManager uiManager;
         private bool initialized;
         private bool emptied;
@@ -53,13 +57,96 @@ namespace Project.Events
         public string CacheDisplayName =>
             string.IsNullOrWhiteSpace(cacheDisplayName) ? "IO Ancient Cache" : cacheDisplayName;
 
-        public bool HasRemainingLoot => remainingLoot.Count > 0;
+        public bool HasRemainingLoot => !remainingLoot.IsEmpty;
+
+        /// <summary>
+        /// Set on window close: a loot action this visit hit a full inventory and items remain.
+        /// Phase 4 turns this into the 30-minute hold (D4, D19). Read it from <see cref="LootWindowClosed"/>.
+        /// </summary>
+        public bool FullInventoryHoldRequested { get; private set; }
+
+        /// <summary>Raised after every loot window close (D4 hold, lid close and timers hook here).</summary>
+        public event Action<DmEvents> LootWindowClosed;
+
+        // IDMLootContainer
+        public string LootDisplayName => CacheDisplayName;
+        public IReadOnlyList<DMLootEntry> Entries => remainingLoot.Entries;
+        public bool IsEmpty => remainingLoot.IsEmpty;
+        public bool HasProtectedEntries => remainingLoot.HasProtectedEntries;
+        public Vector3 LootWorldPosition => transform.position;
+
+        private bool authoredVisibleToScanner = true;
+        private bool authoredCaptured;
+        private bool savedStateApplied;
 
         private void Awake()
         {
+            CaptureAuthored();
             EnsureScannerAndOutline();
+            // A save / New Game restore that ran before Awake (9.2) wins over the authored slots.
+            if (!savedStateApplied)
+                BuildRuntimeLootFromSlots();
+            initialized = true;
+        }
+
+        private void CaptureAuthored()
+        {
+            if (authoredCaptured)
+                return;
+            authoredCaptured = true;
+            authoredVisibleToScanner = visibleToScanner;
+        }
+
+        /// <summary>New Game / fresh load: authored loot back, scanner as authored (loot plan 9.3).</summary>
+        public void ResetToAuthoredLoot()
+        {
+            CaptureAuthored();
+            savedStateApplied = true;
+            FullInventoryHoldRequested = false;
             BuildRuntimeLootFromSlots();
             initialized = true;
+            SetVisibleToScanner(authoredVisibleToScanner);
+        }
+
+        /// <summary>Remaining entries from a v24 save (9.2). Unknown item ids are skipped.</summary>
+        public void ApplySavedEntries(LootChestEntrySave[] entries)
+        {
+            CaptureAuthored();
+            savedStateApplied = true;
+            FullInventoryHoldRequested = false;
+            remainingLoot.Clear();
+            if (entries != null)
+            {
+                for (int i = 0; i < entries.Length && remainingLoot.Count < MaxLootSlots; i++)
+                {
+                    LootChestEntrySave entry = entries[i];
+                    if (entry == null || entry.amount <= 0 || string.IsNullOrEmpty(entry.itemId))
+                        continue;
+                    ItemData item = ItemRegistry.Resolve(entry.itemId);
+                    if (item != null)
+                        remainingLoot.Add(item, entry.amount);
+                }
+            }
+
+            emptied = !HasRemainingLoot;
+            initialized = true;
+            SetVisibleToScanner(authoredVisibleToScanner && !emptied);
+        }
+
+        /// <summary>Remaining entries for the save (items only, D6).</summary>
+        public LootChestEntrySave[] BuildEntrySave()
+        {
+            IReadOnlyList<DMLootEntry> entries = remainingLoot.Entries;
+            List<LootChestEntrySave> list = new List<LootChestEntrySave>(entries.Count);
+            for (int i = 0; i < entries.Count; i++)
+            {
+                DMLootEntry entry = entries[i];
+                if (entry == null || entry.IsEmpty)
+                    continue;
+                list.Add(new LootChestEntrySave { itemId = entry.item.name, amount = entry.amount });
+            }
+
+            return list.ToArray();
         }
 
         private void OnValidate()
@@ -70,13 +157,15 @@ namespace Project.Events
             if (string.IsNullOrWhiteSpace(cacheDisplayName))
                 cacheDisplayName = "IO Ancient Cache";
 
+            WarnOnNonItemLoot();
+
             // Keep scanner toggle in sync while editing.
             if (scannableTarget == null)
                 scannableTarget = GetComponent<ScannableTarget>();
             scannableTarget?.SetHiddenFromScanner(!visibleToScanner);
         }
 
-        /// <summary>Designer / runtime helper to replace loot contents (clamped to 10).</summary>
+        /// <summary>Designer / runtime helper to replace loot contents (clamped to <see cref="MaxLootSlots"/>).</summary>
         public void ConfigureLoot(IReadOnlyList<LootSlot> slots, string displayName = null)
         {
             if (!string.IsNullOrWhiteSpace(displayName))
@@ -105,12 +194,29 @@ namespace Project.Events
                 if (slot == null || slot.item == null || slot.amount <= 0)
                     continue;
 
-                remainingLoot.Add(new QuestRewardDefinition
-                {
-                    type = QuestRewardType.Item,
-                    item = slot.item,
-                    amount = Mathf.Max(1, slot.amount)
-                });
+                remainingLoot.Add(slot.item, Mathf.Max(1, slot.amount));
+            }
+        }
+
+        /// <summary>
+        /// Item-only validator (D6): chests never hold Aether Credits. AC-infused items are flagged so
+        /// the designer swaps them for plain items. Full id/slot validation is the phase 5 editor tool.
+        /// </summary>
+        private void WarnOnNonItemLoot()
+        {
+            if (lootSlots == null)
+                return;
+
+            for (int i = 0; i < lootSlots.Length; i++)
+            {
+                LootSlot slot = lootSlots[i];
+                if (slot == null || slot.item == null || !slot.item.isAcInfused)
+                    continue;
+
+                Debug.LogWarning(
+                    $"[DmEvents] '{name}' loot slot {i} ({slot.item.itemName}) carries Aether Credits. " +
+                    "Chests hold items only (loot plan D6).",
+                    this);
             }
         }
 
@@ -149,73 +255,50 @@ namespace Project.Events
             scannableTarget?.SetHiddenFromScanner(!visible);
         }
 
-        /// <summary>Called by <see cref="DMItemCollection"/> after the open animation delay.</summary>
-        public void OpenLootDialogFromCollection()
+        /// <summary>Story chests (and storage) keep their emptied visual instead of hiding (loot plan 7.5).</summary>
+        public void SetKeepVisualWhenEmpty(bool keep)
+        {
+            keepVisualWhenEmpty = keep;
+        }
+
+        /// <summary>Called by <see cref="DMItemCollection"/> after the open delay. True when the loot window now shows this chest.</summary>
+        public bool OpenLootDialogFromCollection()
         {
             if (!initialized || emptied || !HasRemainingLoot)
-                return;
+                return false;
 
             if (EnemyLootDialogUI.IsDialogOpen)
-                return;
-
-            EnemyLootDialogUI.Show(this, CacheDisplayName, BuildLootSummary());
-        }
-
-        public bool TryLootNextEntry()
-        {
-            if (!HasRemainingLoot)
                 return false;
 
-            QuestRewardDefinition entry = remainingLoot[0];
-            if (TryGrantLootEntry(entry))
-                remainingLoot.RemoveAt(0);
-
-            RefreshEmptyState();
-            return true;
+            EnemyLootDialogUI.Show(this);
+            return EnemyLootDialogUI.IsShowing(this);
         }
 
-        public bool TryLootAll()
+        /// <summary>Grants one entry by its stable id (loot window rows, D4 partial rules).</summary>
+        public DMLootGrantResult TryLootEntry(int entryId)
         {
-            if (!HasRemainingLoot)
-                return false;
-
-            bool anyLeftUnlooted = false;
-            for (int i = remainingLoot.Count - 1; i >= 0; i--)
-            {
-                if (TryGrantLootEntry(remainingLoot[i]))
-                    remainingLoot.RemoveAt(i);
-                else
-                    anyLeftUnlooted = true;
-            }
-
-            if (anyLeftUnlooted)
-                PickupToastUI.ShowInventoryFull();
-
+            DMLootGrantResult result = remainingLoot.TryLootEntry(entryId);
             RefreshEmptyState();
-            return true;
+            return result;
         }
 
-        public string BuildLootSummary()
+        /// <summary>Takes whatever fits in list order; the rest stays in the cache (D4).</summary>
+        public DMLootGrantResult TryLootAll()
         {
-            if (!HasRemainingLoot)
-                return "Cache is empty.";
+            DMLootGrantResult result = remainingLoot.TryLootAll();
+            RefreshEmptyState();
+            return result;
+        }
 
-            System.Text.StringBuilder builder = new System.Text.StringBuilder();
-            builder.AppendLine($"{CacheDisplayName} contains:");
-            for (int i = 0; i < remainingLoot.Count; i++)
-            {
-                QuestRewardDefinition entry = remainingLoot[i];
-                if (entry == null)
-                    continue;
+        public void NotifyWindowClosed()
+        {
+            FullInventoryHoldRequested = remainingLoot.FullInventoryRefusedThisVisit && HasRemainingLoot;
+            remainingLoot.ResetVisit();
+            LootWindowClosed?.Invoke(this);
 
-                string line = QuestRewardFormatter.FormatLootLine(entry);
-                if (!string.IsNullOrEmpty(line))
-                    builder.AppendLine(line);
-            }
-
-            builder.AppendLine();
-            builder.Append("Press E to loot · Shift+E or Loot All for everything");
-            return builder.ToString().TrimEnd();
+            // Emptied while the window was open: hide only now, so the lid / listeners finish first.
+            if (emptied && !keepVisualWhenEmpty)
+                gameObject.SetActive(false);
         }
 
         private void RefreshEmptyState()
@@ -229,39 +312,9 @@ namespace Project.Events
             // Hide from scanners once emptied.
             SetVisibleToScanner(false);
 
-            if (!keepVisualWhenEmpty)
+            // While the loot window shows this chest, NotifyWindowClosed hides it after the window closes.
+            if (!keepVisualWhenEmpty && !EnemyLootDialogUI.IsShowing(this))
                 gameObject.SetActive(false);
-        }
-
-        /// <returns>True when the entry was fully granted and can be removed from remaining loot.</returns>
-        private bool TryGrantLootEntry(QuestRewardDefinition entry)
-        {
-            if (entry == null)
-                return true;
-
-            if (entry.type == QuestRewardType.Item && entry.item != null
-                && !LevelUnlockUtility.PassesPickupGate(entry.item, showToast: true))
-                return false;
-
-            int requested = Mathf.Max(0, entry.amount);
-            int granted = QuestRewardGranter.GrantReward(entry, CacheDisplayName);
-
-            if (entry.type == QuestRewardType.Item && entry.item != null)
-            {
-                if (granted > 0)
-                    PickupToastUI.Show($"+{granted} {entry.item.itemName}");
-
-                if (granted >= requested)
-                    return true;
-
-                entry.amount = Mathf.Max(0, requested - granted);
-                return false;
-            }
-
-            if (entry.type == QuestRewardType.Pi && granted > 0)
-                PickupToastUI.Show($"+{granted} AC");
-
-            return granted > 0 || requested <= 0;
         }
 
         private UIManager ResolveUiManager()

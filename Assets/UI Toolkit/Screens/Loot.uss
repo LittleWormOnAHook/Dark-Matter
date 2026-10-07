@@ -1,0 +1,231 @@
+/* UITK loot window (loot plan section 8). Palette: DarkMatterGenesisUiPalette literals. */
+
+.dmg-loot-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+}
+
+.dmg-loot-veil {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(12, 16, 22, 0.55);
+}
+
+/* Panel: Dark Navy, Slate Gray border. */
+.dmg-loot-panel {
+    width: 560px;
+    max-height: 78%;
+    background-color: rgba(28, 42, 56, 0.97);
+    border-width: 2px;
+    border-color: rgb(74, 74, 90);
+    border-radius: 4px;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Header: Charcoal. */
+.dmg-loot-header {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+    height: 44px;
+    padding-left: 16px;
+    padding-right: 8px;
+    background-color: rgb(47, 47, 47);
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(74, 74, 90);
+}
+
+.dmg-loot-title {
+    flex-grow: 1;
+    font-size: 18px;
+    -unity-font-style: bold;
+    color: rgb(237, 233, 228);
+    -unity-text-align: middle-left;
+}
+
+.dmg-loot-close-x {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgb(140, 127, 117);
+    border-radius: 3px;
+}
+
+.dmg-loot-close-x:hover {
+    color: rgb(237, 233, 228);
+    background-color: rgb(192, 46, 122);
+}
+
+.dmg-loot-list {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 80px;
+    padding: 6px 8px;
+}
+
+/* Rows reuse the focusable dmg-list-row class for gamepad navigation (8.5). */
+.dmg-loot-row {
+    flex-direction: row;
+    align-items: center;
+    height: 60px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+    padding-left: 6px;
+    padding-right: 6px;
+    background-color: rgba(47, 47, 47, 0.55);
+    border-width: 1px;
+    border-color: rgba(74, 74, 90, 0.6);
+    border-radius: 3px;
+}
+
+.dmg-loot-row:hover {
+    background-color: rgba(74, 74, 90, 0.75);
+}
+
+.dmg-loot-row--selected {
+    border-color: rgb(192, 46, 122);
+    background-color: rgba(74, 74, 90, 0.85);
+}
+
+.dmg-loot-row.dmg-pad-focus,
+.dmg-loot-row:focus {
+    border-width: 2px;
+    border-color: rgb(212, 160, 23);
+    background-color: rgba(74, 74, 90, 0.92);
+}
+
+.dmg-loot-icon-holder {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    background-color: rgba(28, 42, 56, 0.92);
+    border-width: 1px;
+    border-color: rgba(237, 233, 228, 0.28);
+    overflow: hidden;
+}
+
+.dmg-loot-icon {
+    position: absolute;
+    left: 2px;
+    top: 2px;
+    right: 2px;
+    bottom: 2px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.dmg-loot-name {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin-left: 12px;
+    font-size: 15px;
+    color: rgb(237, 233, 228);
+    -unity-text-align: middle-left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dmg-loot-amount {
+    width: 64px;
+    flex-shrink: 0;
+    font-size: 15px;
+    color: rgb(140, 127, 117);
+    -unity-text-align: middle-right;
+    margin-right: 10px;
+}
+
+/* Buttons: Deep Magenta, Rich Fuchsia on hover / focus. */
+.dmg-loot-btn {
+    height: 34px;
+    padding-left: 16px;
+    padding-right: 16px;
+    margin: 0 0 0 8px;
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(237, 233, 228);
+    background-color: rgb(143, 30, 94);
+    border-width: 1px;
+    border-color: rgb(74, 74, 90);
+    border-radius: 3px;
+}
+
+.dmg-loot-btn:hover,
+.dmg-loot-btn:focus,
+.dmg-loot-btn.dmg-pad-focus {
+    background-color: rgb(192, 46, 122);
+}
+
+.dmg-loot-btn.dmg-pad-focus,
+.dmg-loot-btn:focus {
+    border-width: 2px;
+    border-color: rgb(212, 160, 23);
+}
+
+.dmg-loot-row-btn {
+    height: 32px;
+    min-width: 72px;
+}
+
+/* Loot All accent: Gold. */
+.dmg-loot-all {
+    color: rgb(212, 160, 23);
+    border-color: rgb(212, 160, 23);
+}
+
+.dmg-loot-close {
+    background-color: rgb(74, 74, 90);
+}
+
+.dmg-loot-footer {
+    flex-shrink: 0;
+    padding: 10px 16px 12px 16px;
+    border-top-width: 1px;
+    border-top-color: rgb(74, 74, 90);
+    background-color: rgba(47, 47, 47, 0.65);
+}
+
+.dmg-loot-footer-buttons {
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+/* "Inventory full - N left" banner (and, from phase 4, World Reloot time left). */
+.dmg-loot-hint {
+    margin-bottom: 8px;
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(212, 160, 23);
+    -unity-text-align: middle-left;
+}
+
+/* Control glyph line (helper text, Soft Beige-Gray). Not a one-shot hint (D13). */
+.dmg-loot-controls {
+    margin-top: 8px;
+    font-size: 12px;
+    color: rgb(140, 127, 117);
+    -unity-text-align: middle-right;
+}
+
+/* Level-lock look (loot plan 8.8): same values as the vendor blocked overlay in Vendor.uss. */
+.dmg-vendor-block {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(143, 30, 94, 0.55);
+}

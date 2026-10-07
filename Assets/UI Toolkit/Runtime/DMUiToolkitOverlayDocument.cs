@@ -40,6 +40,7 @@ namespace Project.UI
         public const string CraftName = "UITK_Craft";
         public const string VendorName = "UITK_Vendor";
         public const string CrateName = "UITK_Crate";
+        public const string LootName = "UITK_Loot";
         public const string AcRewardName = "UITK_AcReward";
         public const string GameStartName = "UITK_GameStart";
         public const string ContextName = "UITK_Context";
@@ -63,6 +64,7 @@ namespace Project.UI
         public const int CraftSort = ModalInteractiveSort;
         public const int VendorSort = ModalInteractiveSort;
         public const int CrateSort = ModalInteractiveSort;
+        public const int LootSort = ModalInteractiveSort;
         public const int DialogueSort = ModalInteractiveSort;
         public const int AcRewardSort = ModalInteractiveSort + 5;
         public const int DeathSort = ModalInteractiveSort;
@@ -112,6 +114,8 @@ namespace Project.UI
         public const string VendorUss = "Assets/UI Toolkit/Screens/Vendor.uss";
         public const string CrateUxml = "Assets/UI Toolkit/Screens/Crate.uxml";
         public const string CrateUss = "Assets/UI Toolkit/Screens/Crate.uss";
+        public const string LootUxml = "Assets/UI Toolkit/Screens/Loot.uxml";
+        public const string LootUss = "Assets/UI Toolkit/Screens/Loot.uss";
         public const string AcRewardUxml = "Assets/UI Toolkit/Screens/AcReward.uxml";
         public const string AcRewardUss = "Assets/UI Toolkit/Screens/AcReward.uss";
         public const string GameStartUxml = "Assets/UI Toolkit/Screens/GameStart.uxml";

@@ -367,6 +367,18 @@ namespace Project.Audio
             PlayUiClip(PickClip(profile?.achievementUnlockClips), profile != null ? profile.uiVolume * 1.05f : 0.9f);
         }
 
+        /// <summary>Loot chest hooks (loot plan phase 4). Silent until clips are assigned in Genesis Studio Audio.</summary>
+        public void PlayLootChestOpen(Vector3 position) => PlayLootChestClip(profile?.lootChestOpenClips, position);
+        public void PlayLootChestClose(Vector3 position) => PlayLootChestClip(profile?.lootChestCloseClips, position);
+        public void PlayLootChestDissolve(Vector3 position) => PlayLootChestClip(profile?.lootChestDissolveClips, position);
+
+        private void PlayLootChestClip(AudioClip[] clips, Vector3 position)
+        {
+            if (clips == null || clips.Length == 0 || profile == null)
+                return;
+            PlayClip3D(PickClip(clips), position, profile.lootChestVolume, Random.Range(0.97f, 1.03f));
+        }
+
         /// <summary>Level-up chime. Prefers levelUpClips, then achievementUnlockClips.</summary>
         public void PlayLevelUp()
         {

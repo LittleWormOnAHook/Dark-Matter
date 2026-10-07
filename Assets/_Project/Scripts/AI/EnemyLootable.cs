@@ -73,7 +73,8 @@ namespace Project.AI
             if (lootBagPrefab != null)
                 return;
 
-            lootBagPrefab = Resources.Load<GameObject>("Combat/EnemyLootBag");
+            // Loot plan: the profile drop box (Prefabs/Combat/EnemyLootBag); the Resources sphere bag is retired (phase 7).
+            lootBagPrefab = Project.Events.DMLootChestProfile.ResolveEnemyLootBagPrefab();
         }
 
         private void OnEnable()
@@ -107,7 +108,9 @@ namespace Project.AI
             lootItemPool = definition.lootItemPool ?? Array.Empty<ItemData>();
             lootUnlootedLifetime = definition.lootRespawnDelay;
             lootInteractRange = definition.lootInteractRange;
-            lootBagPrefab = definition.lootBagPrefab;
+            // A definition without its own bag keeps the default drop box instead of clearing it.
+            if (definition.lootBagPrefab != null)
+                lootBagPrefab = definition.lootBagPrefab;
             if (lootBagPrefab == null)
                 ResolveLootBagPrefabReference();
 #if UNITY_EDITOR

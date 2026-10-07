@@ -1479,6 +1479,15 @@ namespace Project.Interaction
 
             // Hold-harvest plants use proximity dots + map markers instead of Hold-E prompt text.
 
+            // Loot plan 7.6: the prompt names the chest E opens (collection 97 > loot bag 94 > vendor / crate 90).
+            Project.Events.DMItemCollection collection = FindClosestDMItemCollectionInRange(context.PlayerPosition);
+            if (collection != null)
+                return collection.GetInteractionPromptMessage();
+
+            EnemyLootBag lootBag = FindClosestLootBagInRange(context.PlayerPosition);
+            if (lootBag != null)
+                return lootBag.GetInteractionPromptMessage();
+
             DMVendorNpc vendor = FindAimedVendorInRange(context);
             if (vendor != null)
                 return vendor.GetInteractionPromptMessage();
@@ -1504,14 +1513,6 @@ namespace Project.Interaction
             BuildingControlPanel controlPanel = FindAimedBuildingControlPanelInRange(context);
             if (controlPanel != null)
                 return controlPanel.GetInteractionPromptMessage();
-
-            EnemyLootBag lootBag = FindClosestLootBagInRange(context.PlayerPosition);
-            if (lootBag != null)
-                return lootBag.GetInteractionPromptMessage();
-
-            Project.Events.DMItemCollection collection = FindClosestDMItemCollectionInRange(context.PlayerPosition);
-            if (collection != null)
-                return collection.GetInteractionPromptMessage();
 
             return null;
         }

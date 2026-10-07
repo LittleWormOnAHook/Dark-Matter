@@ -74,6 +74,8 @@ namespace Project.Core
         public int ioMinute;
         public Project.Vendor.VendorRuntimeSave[] vendors;
         public Project.Storage.StorageCrateSave[] storageCrates;
+        /// <summary>Loot chest state by chestId (save v24, loot plan 9.1). Null in older saves: every chest starts fresh.</summary>
+        public Project.Events.LootChestSave[] lootChests;
         /// <summary>Placed build pieces (0926). Null in older saves, which load with no pieces.</summary>
         public Project.Building.BuiltPieceSaveEntry[] builtPieces;
     }

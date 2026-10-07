@@ -73,6 +73,10 @@ namespace Project.UI
                     GameplayKeyboardShortcuts.TryHandleJournalHotkeys();
                 }
 
+                // Loot window and storage crate (loot plan 8.5, D15) lock gameplay input, so drive their pad navigation here.
+                if (DMUiToolkitLoot.IsOpen || DMUiToolkitCrate.IsOpen)
+                    DMUiJournalGamepadNav.Tick();
+
                 return;
             }
 

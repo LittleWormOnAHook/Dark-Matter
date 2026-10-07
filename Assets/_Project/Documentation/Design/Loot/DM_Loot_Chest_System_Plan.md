@@ -303,12 +303,13 @@ Evolve **`DMItemCollection` in place** (keep its script guid so prefab reference
 - State is saved, so after death or a load it stays looted ("respawn at shuttle with crate already looted if opened", `Prologue_Acts_Expanded.md:120`).
 
 **Emergency Crate: teaching "inventory full" (D17)**
-- The crate is a `DM_Story_Crate` and holds more than an empty starting inventory can take. Entries in this order: O2 canister x1, bandage x2, rock pick / starter tool (`Prologue_Acts_Expanded.md:109`), then one entry of a low-value salvage item that does not stack (`maxStack = 1`). Set the salvage amount so the whole crate needs 3 more main-grid slots than a fresh start has free (20 unlocked slots today, `GameSaveData.cs:43`, so 20 salvage pieces).
+- The crate is a `DM_Story_Crate` and holds more than an empty starting inventory can take. Entries in this order: O2 canister x1, medical pack x1, rock pick / starter tool (`Prologue_Acts_Expanded.md:109`), then one entry of a low-value salvage item that does not stack (`maxStack = 1`). Set the salvage amount so the whole crate needs 3 more main-grid slots than a fresh start has free (20 unlocked slots today, `GameSaveData.cs:43`, so 20 salvage pieces).
 - Loot All takes entries in list order, so the story items always land first. The free slots fill, the window stays open with the normal "Inventory full - N left" banner, and the rest stays in the crate. No special code: this is the standard D4 behaviour.
 - The player drops, uses or sells items to make room and comes back. The Story crate never expires, so no hold or timer applies.
 - Quest step 1.3 completes when the three story items are taken, not when the crate is empty, so the player is never forced to clear it.
 - Optional: one Ops or companion line the first time the banner shows (for example "Pack's full. Drop what you don't need, the crate isn't going anywhere.").
 - Pick the salvage item from existing items in phase 6, or add one if none fits.
+- **Status (Oct 7, 2026, Anthony):** the medical pack (`Medpack`) is the healing item for this crate. `DM_Story_Crate.prefab` holds, in order: Oxygen Tank x1, DM_Mining_Tool x1 (starter tool), Medpack x1, Sci-Fi Pistol x1 and Standard ammo x50. The non-stacking (`maxStack = 1`) salvage item is still **pending** (no such item exists yet); it is added, with the salvage amount set per D17, once it does. Until then the crate does not yet teach "inventory full".
 
 **Storage**
 - `DMStorageCrate` stays separate (no loot table, never registers in `DMLootChestRuntime`). Switches to `DMChestLid` and calls `NotifyClosed()` from `DMUiToolkitCrate.HideInternal` (already wired). **Never expires.** Controller support is required (D15, section 8.5).

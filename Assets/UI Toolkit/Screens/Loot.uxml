@@ -1,0 +1,22 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="../Themes/DarkMatterGenesis.uss"/>
+    <Style src="Loot.uss"/>
+    <ui:VisualElement name="loot-root" picking-mode="Position" class="dmg-loot-root">
+        <ui:VisualElement name="loot-veil" picking-mode="Position" class="dmg-loot-veil"/>
+        <ui:VisualElement name="loot-panel" picking-mode="Position" class="dmg-loot-panel">
+            <ui:VisualElement name="loot-header" picking-mode="Position" class="dmg-loot-header">
+                <ui:Label name="loot-title" text="LOOT" picking-mode="Ignore" class="dmg-loot-title"/>
+                <ui:Label name="loot-close-x" text="X" picking-mode="Position" class="dmg-loot-close-x"/>
+            </ui:VisualElement>
+            <ui:ScrollView name="loot-list" picking-mode="Position" class="dmg-loot-list"/>
+            <ui:VisualElement name="loot-footer" picking-mode="Position" class="dmg-loot-footer">
+                <ui:Label name="loot-hint" text="" picking-mode="Ignore" class="dmg-loot-hint"/>
+                <ui:VisualElement name="loot-footer-buttons" picking-mode="Ignore" class="dmg-loot-footer-buttons">
+                    <ui:Button name="loot-all" text="Loot All" picking-mode="Position" class="dmg-loot-btn dmg-loot-all"/>
+                    <ui:Button name="loot-close" text="Close" picking-mode="Position" class="dmg-loot-btn dmg-loot-close"/>
+                </ui:VisualElement>
+                <ui:Label name="loot-controls" text="" picking-mode="Ignore" class="dmg-loot-controls"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

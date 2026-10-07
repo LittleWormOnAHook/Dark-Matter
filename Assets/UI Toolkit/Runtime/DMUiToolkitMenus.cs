@@ -1155,6 +1155,7 @@ namespace Project.UI
             EnsureInventorySlots(count);
             // Force slot chrome refresh so locked/unlocked slate contrast reapplies after layout/style changes.
             invSlotVisualCache.Clear();
+            int playerLevel = Project.Progression.LevelUnlockUtility.CachedPlayerLevel;
 
             for (int i = 0; i < count; i++)
             {
@@ -1203,6 +1204,9 @@ namespace Project.UI
                     slot.style.borderLeftColor = unlockedBorder;
                     slot.style.opacity = 1f;
                 }
+
+                // Level-lock look (D3/D22): vendor blocked overlay while below the item's equip/use level.
+                DMUiLevelLockOverlay.Apply(slot, unlocked ? item : null, playerLevel);
 
                 if (unchanged && unlocked)
                     continue;

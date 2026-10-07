@@ -274,8 +274,7 @@ namespace Project.Interaction
                 return false;
             if (context.Inventory == null)
                 return false;
-            if (!LevelUnlockUtility.PassesPickupGate(itemData, showToast: false))
-                return false;
+            // D22: no pickup-level check on world pickups; locked items are picked up and shown locked.
             return true;
         }
 
@@ -389,11 +388,9 @@ public void PrepareForWorldDrop(ItemData item, int dropAmount)
 
             if (inventory == null || itemData == null) return false;
 
-            if (!LevelUnlockUtility.PassesPickupGate(itemData, showToast: showPlayerPrompt))
-                return false;
-
+            // D22: level-locked items are always picked up. D7: ammo never auto-loads into magazines.
             int requested = amount;
-            int added = inventory.AddItem(itemData, requested);
+            int added = Project.Loot.DMLootGrant.AddPickupItem(inventory, itemData, requested);
             if (added <= 0)
             {
                 if (showPlayerPrompt)

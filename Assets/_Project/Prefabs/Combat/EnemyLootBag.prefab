@@ -80,6 +80,14 @@ MonoBehaviour:
   visualRenderer: {fileID: 8926302428338146928}
   dropMesh: {fileID: 0}
   dropTexture: {fileID: 0}
+  lidTransform: {fileID: 0}
+  animateLid: 1
+  lidOpenEuler: {x: -24, y: 0, z: 0}
+  lidOpenOffset: {x: 0, y: 0.32, z: -0.22}
+  lidOpenSeconds: 0.35
+  lidCloseSeconds: 0.3
+  bagShader: {fileID: 4800000, guid: 6e4ae4064600d784cac1e41a9e6f2e59, type: 3}
+  dissolveShader: {fileID: 4800000, guid: 810ad7296a689ab4d8c3008b11846c44, type: 3}
 --- !u!1001 &8913679923588749008
 PrefabInstance:
   m_ObjectHideFlags: 0

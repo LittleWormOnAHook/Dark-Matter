@@ -87,6 +87,53 @@ namespace Project.Progression
         public static bool PassesPickupGate(ItemData item, bool showToast = false) =>
             PassesGate(item?.requiredLevelToPickup ?? 0, showToast);
 
+        /// <summary>
+        /// Level lock (loot plan D3/D18/D21): the higher of the item's effective equip and use gates.
+        /// Pickup and craft gates are not part of the lock. 1 means unlocked for everyone.
+        /// </summary>
+        public static int GetLevelLockRequiredLevel(ItemData item)
+        {
+            if (item == null)
+                return 1;
+            return Mathf.Max(GetEffectiveEquipRequiredLevel(item), GetEffectiveUseRequiredLevel(item));
+        }
+
+        /// <summary>True while the player is below the item's equip or use gate (vendor blocked-overlay look).</summary>
+        public static bool IsLevelLocked(ItemData item) => IsLevelLocked(item, GetPlayerLevel());
+
+        public static bool IsLevelLocked(ItemData item, int playerLevel)
+        {
+            if (item == null)
+                return false;
+            int required = GetLevelLockRequiredLevel(item);
+            return IsGateActive(required) && !CanAccess(playerLevel, required);
+        }
+
+        /// <summary>
+        /// Hotbar, toolbar and Hot Cross placement gate (D21): refuses every level-locked item kind,
+        /// not only equippables. Shows the Require Level popup when asked (once per failed drag).
+        /// </summary>
+        public static bool PassesLevelLock(ItemData item, bool showToast = false)
+        {
+            if (!IsLevelLocked(item))
+                return true;
+
+            if (showToast)
+                ShowLevelRequiredToast(GetLevelLockRequiredLevel(item));
+
+            return false;
+        }
+
+        /// <summary>Cheap per-frame level read for UI repaint checks (no scene search).</summary>
+        public static int CachedPlayerLevel
+        {
+            get
+            {
+                PlayerProgressionManager progression = PlayerProgressionManager.Instance;
+                return progression != null ? Mathf.Max(1, progression.Level) : 1;
+            }
+        }
+
         /// <summary>Effective craft level = max(recipe gate, output item craft gate). Inactive gates ignored.</summary>
         public static int GetEffectiveCraftRequiredLevel(int recipeRequiredLevel, ItemData outputItem)
         {

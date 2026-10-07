@@ -72,6 +72,7 @@ namespace Project.UI
 
         private bool ammoPopupOpen;
         private bool visualsDirty = true;
+        private int lastLockLevel = -1;
         private bool lastShown;
         private int ammoPopupAbsoluteSlot = -1;
         private readonly List<InventoryItemActions.AmmoEquipOption> ammoOptions = new List<InventoryItemActions.AmmoEquipOption>(4);
@@ -312,6 +313,14 @@ namespace Project.UI
             if (inventory == null || ammoState == null)
             {
                 BindInventoryEvents();
+                visualsDirty = true;
+            }
+
+            // Level-lock overlay (D3/D22): level also changes on save load without an event, so poll it.
+            int lockLevel = Project.Progression.LevelUnlockUtility.CachedPlayerLevel;
+            if (lockLevel != lastLockLevel)
+            {
+                lastLockLevel = lockLevel;
                 visualsDirty = true;
             }
 
@@ -685,6 +694,7 @@ namespace Project.UI
             }
 
             ApplyIcon(iconTl, glowTl, amtTl, item, stack);
+            DMUiLevelLockOverlay.Apply(iconTl, item, Project.Progression.LevelUnlockUtility.CachedPlayerLevel);
             // Independent TL weapon focus (Tab 0-3). Chrome stays on so empty slots remain readable.
             quadTl?.EnableInClassList("hot-cross-quad--selected", true);
         }
@@ -721,6 +731,7 @@ namespace Project.UI
             }
 
             ApplyIcon(iconTr, glowTr, amtTr, item, stack, ghost);
+            DMUiLevelLockOverlay.Apply(iconTr, ghost ? null : item, Project.Progression.LevelUnlockUtility.CachedPlayerLevel);
             // Independent TR consumable focus (X 4-9). Chrome stays on so empty slots remain readable.
             quadTr?.EnableInClassList("hot-cross-quad--selected", true);
             quadTr?.EnableInClassList("hot-cross-quad--ghost", ghost);
@@ -784,6 +795,7 @@ namespace Project.UI
             }
 
             ApplyIcon(iconBl, glowBl, null, item, 0);
+            DMUiLevelLockOverlay.Apply(iconBl, item, Project.Progression.LevelUnlockUtility.CachedPlayerLevel);
             if (keyBl != null)
                 keyBl.text = toolFace == ToolFace.Scanner ? "N" : "B";
             quadBl?.EnableInClassList("hot-cross-quad--selected", selected);

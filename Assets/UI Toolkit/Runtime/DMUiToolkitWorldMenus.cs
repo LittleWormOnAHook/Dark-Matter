@@ -52,12 +52,6 @@ namespace Project.UI
         private Button pistolBeam;
         private Button rifleSight;
         private Button rifleBeam;
-        private VisualElement lootHost;
-        private Label lootTitle;
-        private Label lootBody;
-        private Button lootNext;
-        private Button lootAll;
-        private Button lootClose;
         private VisualElement echoHost;
         private Label echoName;
         private Label echoBody;
@@ -100,7 +94,6 @@ namespace Project.UI
         private bool shelterOpen;
         private bool drillOpen;
         private bool weaponOpen;
-        private bool lootOpen;
         private bool echoOpen;
         private bool scanOpen;
         private bool tamingOpen;
@@ -119,7 +112,6 @@ namespace Project.UI
         private DMWalkerDrillUsable activeDrill;
         private WeaponModeSwitchController weaponController;
         private PlayerController boundWeaponPlayer;
-        private IEnemyLootProvider activeLoot;
         private Action echoClosed;
         private Coroutine scanRoutine;
         private PioneerRosterPanelUI rosterPanel;
@@ -128,11 +120,11 @@ namespace Project.UI
         public static bool IsShelterOpen => instance != null && instance.shelterOpen;
         public static bool IsDrillOpen => instance != null && instance.drillOpen;
         public static bool IsWeaponOpen => instance != null && instance.weaponOpen;
-        public static bool IsLootOpen => instance != null && instance.lootOpen;
 
-        public static bool IsAnyModalOpen => instance != null && (
+        /// <summary>World modals plus the UITK loot window (<see cref="DMUiToolkitLoot"/>); blocks autosave.</summary>
+        public static bool IsAnyModalOpen => DMUiToolkitLoot.IsOpen || (instance != null && (
             instance.shelterOpen || instance.drillOpen || instance.weaponOpen
-            || instance.lootOpen || instance.echoOpen);
+            || instance.echoOpen));
 
 
         public static DMUiToolkitWorldMenus EnsureHost()
@@ -187,17 +179,6 @@ namespace Project.UI
             if (host == null)
                 return false;
             host.ShowWeaponInternal(controller);
-            return true;
-        }
-
-        public static bool TryShowLoot(IEnemyLootProvider lootProvider, string enemyName, string lootSummary)
-        {
-            if (!DMUiToolkitHud.IsDriving || lootProvider == null)
-                return false;
-            DMUiToolkitWorldMenus host = EnsureHost();
-            if (host == null)
-                return false;
-            host.ShowLootInternal(lootProvider, enemyName, lootSummary);
             return true;
         }
 
@@ -350,7 +331,6 @@ namespace Project.UI
         public static void HideShelter() => instance?.HideShelterInternal();
         public static void HideDrill() => instance?.HideDrillInternal();
         public static void HideWeapon() => instance?.HideWeaponInternal();
-        public static void HideLoot() => instance?.HideLootInternal();
         public static void HideEcho() => instance?.HideEchoInternal();
         public static void HideTaming() => instance?.HideTamingInternal();
         public static void HideItemTooltip() => instance?.HideItemTipInternal();
@@ -433,24 +413,6 @@ namespace Project.UI
                     && UnityEngine.InputSystem.Mouse.current != null
                     && UnityEngine.InputSystem.Mouse.current.rightButton.wasPressedThisFrame)
                     HideWeaponInternal();
-            }
-
-            if (lootOpen)
-            {
-                if (UiEscapeGate.TryConsumeEscape())
-                {
-                    HideLootInternal();
-                    return;
-                }
-
-                var keyboard = UnityEngine.InputSystem.Keyboard.current;
-                if (keyboard != null && keyboard.eKey.wasPressedThisFrame)
-                {
-                    if (keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed)
-                        OnLootAll();
-                    else
-                        OnLootNext();
-                }
             }
 
             if (pioneerOpen && UiEscapeGate.TryConsumeEscape())
@@ -538,12 +500,6 @@ namespace Project.UI
             pistolBeam = tree.Q<Button>("weapon-pistol-beam");
             rifleSight = tree.Q<Button>("weapon-rifle-sight");
             rifleBeam = tree.Q<Button>("weapon-rifle-beam");
-            lootHost = tree.Q<VisualElement>("loot-host");
-            lootTitle = tree.Q<Label>("loot-title");
-            lootBody = tree.Q<Label>("loot-body");
-            lootNext = tree.Q<Button>("loot-next");
-            lootAll = tree.Q<Button>("loot-all");
-            lootClose = tree.Q<Button>("loot-close");
             echoHost = tree.Q<VisualElement>("echo-host");
             echoName = tree.Q<Label>("echo-name");
             echoBody = tree.Q<Label>("echo-body");
@@ -607,9 +563,6 @@ namespace Project.UI
             if (pistolBeam != null) pistolBeam.clicked += TogglePistolBeam;
             if (rifleSight != null) rifleSight.clicked += ToggleRifleSight;
             if (rifleBeam != null) rifleBeam.clicked += ToggleRifleBeam;
-            if (lootNext != null) lootNext.clicked += OnLootNext;
-            if (lootAll != null) lootAll.clicked += OnLootAll;
-            if (lootClose != null) lootClose.clicked += HideLootInternal;
             if (echoClose != null) echoClose.clicked += HideEchoInternal;
             if (itemTipQty != null)
                 itemTipQty.RegisterValueChangedCallback(OnVendorTradeQtyChanged);
@@ -635,7 +588,6 @@ namespace Project.UI
             DMUiToolkitOverlayDocument.SetShown(weaponHost, weaponOpen);
             DMUiToolkitOverlayDocument.SetShown(pistolsSub, false);
             DMUiToolkitOverlayDocument.SetShown(riflesSub, false);
-            DMUiToolkitOverlayDocument.SetShown(lootHost, lootOpen);
             DMUiToolkitOverlayDocument.SetShown(echoHost, echoOpen);
             DMUiToolkitOverlayDocument.SetShown(scanHost, scanOpen);
             DMUiToolkitOverlayDocument.SetShown(tamingHost, tamingOpen);
@@ -648,7 +600,7 @@ namespace Project.UI
             DMUiToolkitOverlayDocument.SetShown(labDismiss, labOpen);
             DMUiToolkitOverlayDocument.SetShown(labMenu, labOpen);
 
-            if (shelterOpen || drillOpen || weaponOpen || lootOpen || echoOpen || scanOpen || tamingOpen
+            if (shelterOpen || drillOpen || weaponOpen || echoOpen || scanOpen || tamingOpen
                 || pioneerOpen || labOpen)
                 DMUiToolkitOverlayDocument.PromoteInteractiveOverlay(document);
         }
@@ -923,63 +875,6 @@ namespace Project.UI
         }
 
         private static string FormatToggle(string name, bool on) => on ? $"{name}  ON" : $"{name}  OFF";
-
-        private void ShowLootInternal(IEnemyLootProvider lootProvider, string enemyName, string lootSummary)
-        {
-            BindTree();
-            activeLoot = lootProvider;
-            lootOpen = true;
-            if (lootTitle != null)
-                lootTitle.text = string.IsNullOrWhiteSpace(enemyName) ? "Loot" : $"Loot - {enemyName}";
-            if (lootBody != null)
-                lootBody.text = lootSummary ?? string.Empty;
-            DMUiToolkitOverlayDocument.SetShown(lootHost, true);
-            PlayerController player = UnityEngine.Object.FindAnyObjectByType<PlayerController>();
-            player?.SetLootDialogOpen(true);
-            GameplayMenuTime.SetSlowMotion(GameplayMenuTime.ReasonLootDialog, true);
-            UnityEngine.Cursor.lockState = CursorLockMode.None;
-            UnityEngine.Cursor.visible = true;
-            RefreshLoot();
-        }
-
-        private void HideLootInternal()
-        {
-            lootOpen = false;
-            activeLoot = null;
-            DMUiToolkitOverlayDocument.SetShown(lootHost, false);
-            PlayerController player = UnityEngine.Object.FindAnyObjectByType<PlayerController>();
-            player?.SetLootDialogOpen(false);
-            GameplayMenuTime.SetSlowMotion(GameplayMenuTime.ReasonLootDialog, false);
-        }
-
-        private void RefreshLoot()
-        {
-            bool hasLoot = activeLoot != null && activeLoot.HasRemainingLoot;
-            lootNext?.SetEnabled(hasLoot);
-            lootAll?.SetEnabled(hasLoot);
-            if (activeLoot != null && lootBody != null)
-                lootBody.text = activeLoot.BuildLootSummary();
-        }
-
-        private void OnLootNext()
-        {
-            if (activeLoot == null)
-                return;
-            activeLoot.TryLootNextEntry();
-            RefreshLoot();
-            if (activeLoot == null || !activeLoot.HasRemainingLoot)
-                HideLootInternal();
-        }
-
-        private void OnLootAll()
-        {
-            if (activeLoot == null)
-                return;
-            activeLoot.TryLootAll();
-            RefreshLoot();
-            if (activeLoot == null || !activeLoot.HasRemainingLoot)
-                HideLootInternal();
-        }
 
         private void ShowEchoInternal(string echoDisplayName, string classLine, string abilitySummary, Action closedCallback)
         {
@@ -1549,7 +1444,6 @@ namespace Project.UI
             HideType<QuoraShelterMenuUI>();
             HideType<WalkerDrillInteractMenuUI>();
             HideType<WeaponModeSwitchMenuUI>();
-            HideType<EnemyLootDialogUI>();
             HideType<EchoRescueRevealUI>();
             HideType<ResourceScanResultUI>();
             HideType<PetTamingProgressUI>();
