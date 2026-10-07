@@ -23,6 +23,13 @@ Canonical copies (keep aligned): this file, Desktop `C:\Users\Teabagger\Desktop\
 
 **Next = §31 #3 utility brain** — one enemy (`Humanoid_Enemy`), **not** Combat Director / Momentum.
 
+**Phase 3 status (Oct 7, 2026): core BUILT, compiles clean, NOT play-tested, NOT committed.** Built = utility brain core + the spacing half of `DM_Enemy_Spacing_And_Hit_Marks_Plan.md` (Part A) merged in, per Anthony's order (loot → hit marks → Phase 3 + spacing).
+- **Brain:** `Scripts/AI/Brain/DMEnemyBrain.cs` (auto-attached to every `EnemyAiController`; no prefab edits) scores Press / Defend / Retreat / Hold = archetype base × personality × condition + seeded randomness. Data: `DM_EnemyBrainProfile` (Resources/Combat; 7 archetype rows, 13 personalities, condition thresholds Healthy/Injured/Severely injured/Critical). Awareness (Unaware/Suspicious/Alert/Combat) is derived from the state machine (no icon yet).
+- **Spacing / tokens:** `DMEnemyEngagementDirector` (static, 5 Hz) gives exactly one melee Engager per target (D1); everyone else uses the new `Hold` state on world-anchored hold points with holder sidestep / taunt / feint and the 30°-per-10 s drift cap (D5). Per-frame ring slot rotation removed; range hysteresis, attack facing cone, per-swing tracking windows, hand-off grace and off-screen wind-up added. Tuning: `DM_EnemyEngagementProfile` (Resources/Combat).
+- **Studio:** Combat → "AI & awareness" and "Director & tokens" now open the two profiles (were placeholders).
+- **Rollback:** `enableEngagementDirector` / `enableUtilityBrain` profile switches. **Save:** no bump (nothing persists); v25 stays reserved.
+- **Deferred:** perception upgrades (vertical FOV, darkness, crouch, camouflage), awareness icon, AI debug readout UI, L0–L3 simulation, Flank/Objective/Flee states, remaining archetype rows, per-enemy archetype from `EnemyDefinition`, companions/creatures on the same brain, ranged token pool use, taunt clips, role-aware dodge, Engager cooldown strafe, §31 #4 Director (morale, intensity, flanking).
+
 **Melee animation library (doc, Oct 5–6, 2026):** Some clips are **skill-gated** (base vs unlock tiers); **special attacks** use a **dedicated hold** binding (not light tap, not charge-only on attack). Catalog ↔ skill id plan, Input System **TBD** slot (`Combat/SpecialHold` proposed — **ask-before-assign**), and Jetpack Special sub-SM / AttackID branch notes → `DM_Melee_Animation_Library_Plan.md` **§9**. **Moving melee layer canon** (Base / UpperBody / FullBody, hybrid moving heavies, deprecated `DM_MeleeUpper`, charged release A/B/C) → library plan **§10** and `DM_Melee_Locomotion_Layer_Policy.md`; wiki mirror `Documentation/Wiki/Combat-Moving-Melee-Layer-Policy.md` (sync to [GitHub wiki](https://github.com/LittleWormOnAHook/Dark-Matter/wiki/Combat-Moving-Melee-Layer-Policy)). **No** skill-tree wiring or new bindings yet.
 
 **Batch 1 on disk:** `DamageInfo`, `CombatEvents`, `CombatPoise`, i-frames (`DMCombatIFrameController`), parry/block guard-break (`DMEnemyGuardBreakStagger`), `DM_CombatCoreProfile` + Genesis Combat Core subtab, hitbox tuning + swing dedupe (`PioneerMeleeHitboxTuning`, `PioneerMeleeSwingHitDedupe`).
@@ -60,8 +67,8 @@ Docs-only or Studio placeholders are **Not started**. Evidence is one class/asse
 | v1.6.5 as combat tune scene | **Shipped** (scene exists) | `Dark Matter Genesis v1.6.5.unity` |
 | Combat_Sandbox as tune target | **Retired** | Leftover `Combat_Sandbox.unity` / spawner — do not use |
 | Player hitstop from `hitstopLightFrames` | **Not started** | Profile hooks only; no player TimeScale/hitstop consumer |
-| Utility AI brain (§31 #3) | **Not started** | No utility-score brain class |
-| Combat Director / attack tokens / morale | **Not started** | No `CombatDirector` |
+| Utility AI brain (§31 #3) | **Partial-on-disk** (Oct 7, not play-tested) | `DMEnemyBrain` + `DM_EnemyBrainProfile` (Press/Defend/Retreat/Hold utility, archetype × personality × condition) |
+| Combat Director / attack tokens / morale | **Partial-on-disk** (Oct 7, not play-tested) | `DMEnemyEngagementDirector` + `DM_EnemyEngagementProfile`: 1 melee token per target, Hold state, hold ring. No morale / intensity / flanking yet |
 | Momentum / finishers / specials / Overdrive | **Not started** | Skill named "Momentum Strike" is a stat node only |
 | Sick Stick | **Not started** | No weapon / trigger / puke |
 | Body damage / dismemberment | **Not started** | Ragdoll + death dissolve only |
@@ -430,7 +437,7 @@ Each phase: hit detection, damage, stagger, death, finishers, dismemberment, tar
 ## 31. Implementation order
 1. **Audit** **[Done Oct 3, 2026]**: architecture and dependency maps; enemy, weapon, damage and animation library inventory (tagged); reuse vs replace candidates; Invector decision (**wrap**); migration table; animation tag sheet.
 2. **Core combat** **[Done — Phase 2 signed off Oct 5, 2026]**: damage profiles, weapon and element interfaces, hit detection, poise/stamina, status framework with immunity, health/damage events. **Tune in v1.6.5; Combat_Sandbox retired.** Batch 1 + melee polish shipped (`59368909c` + branch history). Gate 0 attack yaw regression-only. Combat Studio + Genesis placeholder shell shipped. Jetpack melee: lights → Weak `SwordAttack` A→B→C + `SwordRandomAttack.B`; charge → `SwordCharge` / Strong `SwordAttack.B`; parry/block stagger, SparksLong, incoming block fix.
-3. **Unified brain** **[Next — Phase 3]**: utility scoring, archetype, personality, traits, perception/awareness, states. Migrate **one** enemy (`Humanoid_Enemy`). **Not** Director/Momentum yet.
+3. **Unified brain** **[Core built Oct 7, 2026 — awaiting play-test; spacing/token half of the Spacing plan merged in, see §0]**: utility scoring, archetype, personality, traits, perception/awareness, states. Migrate **one** enemy (`Humanoid_Enemy`). **Not** Director/Momentum yet.
 4. **Combat Director** **[Missing]**: tokens, coordination, flanking, intensity, morale, reinforcement hooks. Test with 5 identical enemies.
 5. **Plasma sword template** **[Partial]**: attack, damage, hit react, crit, burn, resource use, upgrade. Start Blade and Survival skill branches.
 6. **Momentum meter and finishers** **[Missing]**: build-up, finisher selection, first finishers on the migrated enemy. Skill-gated finisher rows on `DM_MeleeFinisherCatalog` (library plan §9).

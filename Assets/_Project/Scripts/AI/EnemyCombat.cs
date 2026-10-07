@@ -36,7 +36,13 @@ namespace Project.AI
         public float AttackDamage => attackDamage;
         public bool IsAttacking => attackPending;
         public Transform CurrentTarget => target;
+
+        /// <summary>Raised when the combat target changes (event-driven consumers such as the engaged health HUD).</summary>
+        public event System.Action<Transform> TargetChanged;
         public bool IsTargetingPioneer => targetCompanionHealth != null;
+
+        /// <summary>Seconds since the current attack started (-1 when no attack is pending).</summary>
+        public float AttackElapsed => attackPending ? Time.time - attackStartTime : -1f;
 
         private bool pendingInvectorAttack;
         private bool _wasAttackPending;
@@ -90,9 +96,12 @@ namespace Project.AI
                 pendingMeleeRecovery = false;
             }
 
+            bool changed = newTarget != target;
             target = newTarget;
             targetStats = newTarget != null ? newTarget.GetComponentInParent<SurvivalStats>() : null;
             targetCompanionHealth = newTarget != null ? newTarget.GetComponentInParent<CompanionHealth>() : null;
+            if (changed)
+                TargetChanged?.Invoke(newTarget);
         }
 
         public bool HasLivingTarget()
@@ -160,6 +169,15 @@ namespace Project.AI
             if (comboDriver != null && comboDriver.IsSequenceActive)
                 return;
 
+            // Phase 3 spacing: only the melee token holder swings, after its hand-off grace, inside the facing cone.
+            if (aiController != null && !aiController.CanEngagementAttack(target))
+                return;
+
+            // Ranged aim gate: draw the gun / hold the aim pose first. Never consumes the cooldown and
+            // never falls through to the scripted melee fallback below.
+            if (invectorCombat != null && invectorCombat.TryDeferRangedAttack(target))
+                return;
+
             nextAttackTime = Time.time + attackCooldown;
 
             // Charged swing (random roll after cooldown, or forced by the punish rule). Melee range only.
@@ -172,6 +190,7 @@ namespace Project.AI
                 pendingMeleeRecovery = true;
                 attackStartTime = Time.time;
                 windupEndTime = Time.time + chargedHoldSeconds;
+                aiController?.NotifyEngagementAttackBegan();
                 return;
             }
 
@@ -185,13 +204,16 @@ namespace Project.AI
                 attackStartTime = Time.time;
                 windupEndTime = Time.time + invectorDuration;
                 pendingMeleeRecovery = !invectorCombat.LastAttackWasRanged;
+                aiController?.NotifyEngagementAttackBegan();
                 return;
             }
 
             pendingInvectorAttack = false;
             pendingMeleeRecovery = true;
             attackPending = true;
+            attackStartTime = Time.time;
             windupEndTime = Time.time + attackWindup;
+            aiController?.NotifyEngagementAttackBegan();
         }
 
         /// <summary>
@@ -316,7 +338,7 @@ namespace Project.AI
                     return;
 
                 float healthBefore = stats.CurrentHealth;
-                stats.ApplyDamage(damage, attackerName);
+                stats.ApplyDamageFromSource(damage, gameObject);
                 CombatHitVfx.SpawnIncomingEnemyHit(transform, stats.transform, damage);
 #if UNITY_EDITOR
                 float healthAfter = stats.CurrentHealth;

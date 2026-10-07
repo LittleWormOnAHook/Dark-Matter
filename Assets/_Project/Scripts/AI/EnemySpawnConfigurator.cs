@@ -109,7 +109,18 @@ namespace Project.AI
                 melee,
                 ranged,
                 startMelee,
-                settings.preferRangedAtRange);
+                ResolvePreferRanged(settings, definition));
+        }
+
+        /// <summary>
+        /// UseDefinitionDefaults follows the EnemyDefinition (preferRangedWeapon); other modes use the spawn setting.
+        /// </summary>
+        public static bool ResolvePreferRanged(EnemySpawnSettings settings, EnemyDefinition definition)
+        {
+            if (settings.weaponMode == EnemySpawnWeaponMode.UseDefinitionDefaults && definition != null)
+                return definition.preferRangedWeapon;
+
+            return settings.preferRangedAtRange;
         }
 
         public static void ResolveWeaponChoice(
@@ -129,6 +140,10 @@ namespace Project.AI
                     melee = definition.meleeWeaponItem;
                 if (ranged == null)
                     ranged = definition.rangedWeaponItem;
+
+                // Respect the definition: ranged-preferred enemies spawn with the gun drawn.
+                if (settings.weaponMode == EnemySpawnWeaponMode.UseDefinitionDefaults)
+                    startMelee = !definition.preferRangedWeapon;
             }
 
             switch (settings.weaponMode)

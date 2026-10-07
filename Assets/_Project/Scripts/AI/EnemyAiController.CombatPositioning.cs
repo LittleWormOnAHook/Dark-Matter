@@ -64,7 +64,11 @@ namespace Project.AI
             else
                 toSelf.Normalize();
 
-            toSelf = Quaternion.AngleAxis(combatRingSlotAngle, Vector3.up) * toSelf;
+            // Phase 3 spacing: the per-enemy slot rotation re-derived from the live bearing every frame was the
+            // main cause of the constant circling (Spacing plan §2.1). Legacy only, behind the profile switch.
+            DM_EnemyEngagementProfile engagementProfile = DM_EnemyEngagementProfile.Live;
+            if (engagementProfile != null && engagementProfile.legacyRingSlotRotation)
+                toSelf = Quaternion.AngleAxis(combatRingSlotAngle, Vector3.up) * toSelf;
 
             Vector3 separation = ComputeEnemySeparationOffset();
             if (separation.sqrMagnitude > 0.0001f)

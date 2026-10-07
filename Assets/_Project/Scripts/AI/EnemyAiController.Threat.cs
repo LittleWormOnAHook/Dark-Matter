@@ -68,7 +68,7 @@ namespace Project.AI
 
             playerTarget = null;
 
-            if ((state == AiState.Chase || state == AiState.Attack || state == AiState.Defensive) &&
+            if ((state == AiState.Chase || state == AiState.Attack || state == AiState.Defensive || state == AiState.Hold) &&
                 !HasActiveAggroTarget() && !IsTargetingLivingPioneer())
                 GiveUpChaseAndReturnHome();
         }
@@ -82,7 +82,7 @@ namespace Project.AI
                 return;
 
             ApplyAggroTarget(attacker);
-            if (state != AiState.Attack && state != AiState.Chase && state != AiState.Defensive)
+            if (state != AiState.Attack && state != AiState.Chase && state != AiState.Defensive && state != AiState.Hold)
             {
                 float dist = HorizontalDistance(transform.position, attacker.position);
                 EnterState(ResolveAttackEntryState(attacker, dist));
@@ -136,7 +136,7 @@ namespace Project.AI
                     this);
             }
 
-            if (state != AiState.Attack && state != AiState.Chase && state != AiState.Defensive)
+            if (state != AiState.Attack && state != AiState.Chase && state != AiState.Defensive && state != AiState.Hold)
             {
                 float dist = HorizontalDistance(transform.position, attacker.position);
                 EnterState(ResolveAttackEntryState(attacker, dist));
@@ -145,6 +145,8 @@ namespace Project.AI
 
         private void HandleDamagedWithSource(float damage, GameObject source, bool isCritical)
         {
+            RecordDamageForEngagement(source, damage);
+
             if (!aggroOnDamaged || source == null || health == null || health.IsDead || damage <= 0f)
                 return;
 

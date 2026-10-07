@@ -49,6 +49,21 @@ namespace Project.AI
             transform.rotation = Quaternion.RotateTowards(transform.rotation, look, maxDegrees);
         }
 
+        /// <summary>Yaw toward a world point at an explicit deg/sec rate (Phase 3 role turn rates).</summary>
+        public static void FaceTowardDegrees(Transform transform, Vector3 worldTarget, float degreesPerSecond)
+        {
+            if (transform == null || degreesPerSecond <= 0f)
+                return;
+
+            Vector3 toTarget = worldTarget - transform.position;
+            toTarget.y = 0f;
+            if (toTarget.sqrMagnitude <= 0.0001f)
+                return;
+
+            Quaternion look = Quaternion.LookRotation(toTarget.normalized, Vector3.up);
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, look, degreesPerSecond * Time.deltaTime);
+        }
+
         /// <summary>
         /// 1 when facing the move direction; drops toward <paramref name="minScale"/> on sharp turns
         /// so ping-pong reversals ease through the turn instead of sliding sideways.

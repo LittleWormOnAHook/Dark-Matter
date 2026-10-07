@@ -197,7 +197,7 @@ namespace Project.AI
                 lostTargetTimer = 0f;
             }
 
-            if (combat.HasLivingTarget() && chaseTarget != null)
+            if (!engagementActiveThisFrame && combat.HasLivingTarget() && chaseTarget != null)
             {
                 float distance = HorizontalDistance(transform.position, chaseTarget.position);
                 float engageDistance = ResolveEffectiveEngageDistance(chaseTarget);
@@ -395,6 +395,17 @@ namespace Project.AI
             }
 
             float distanceToTarget = HorizontalDistance(transform.position, target.position);
+
+            // Phase 3 spacing: the token holder uses the hysteresis / facing-cone / tracking-window path.
+            if (engagementActiveThisFrame &&
+                engagementState.Role == DMEngagementRole.Engager &&
+                engagementState.Ring != null &&
+                engagementState.Ring.Target == target)
+            {
+                UpdateEngagerAttack(target, distanceToTarget);
+                return;
+            }
+
             float standoff = ResolveCombatStandoffFor(target);
             bool inRangedEngagement = combatBridge != null
                 && combatBridge.IsArmedRangedPreferred()
@@ -482,7 +493,7 @@ namespace Project.AI
             {
                 aggroTarget = null;
                 aggroUntil = 0f;
-                if (state == AiState.Chase || state == AiState.Attack || state == AiState.Defensive)
+                if (state == AiState.Chase || state == AiState.Attack || state == AiState.Defensive || state == AiState.Hold)
                     GiveUpChaseAndReturnHome();
                 return;
             }
@@ -492,6 +503,9 @@ namespace Project.AI
 
             if (IsPioneer(aggroTarget))
                 lostTargetTimer = 0f;
+
+            if (RunEngagementTransitions(combat.CurrentTarget))
+                return;
 
             if (combat.HasLivingTarget())
             {
@@ -512,6 +526,7 @@ namespace Project.AI
 
         private void GiveUpChaseAndReturnHome()
         {
+            LeaveEngagement();
             lostTargetTimer = 0f;
             chaseStartedTime = 0f;
             defensiveActionPending = false;

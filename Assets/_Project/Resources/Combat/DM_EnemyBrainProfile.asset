@@ -1,0 +1,188 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f1705f9994b4812b8149a9ae47f47df, type: 3}
+  m_Name: DM_EnemyBrainProfile
+  m_EditorClassIdentifier: Assembly-CSharp::Project.AI.DM_EnemyBrainProfile
+  enableUtilityBrain: 1
+  autoAttachBrain: 1
+  defaultArchetype: 0
+  defaultPersonality: 0
+  debugLogDecisions: 0
+  decisionInterval: 0.8
+  scoreRandomness: 0.25
+  defendThreatMemory: 1.2
+  defendWhenHitBonus: 0.6
+  defendCooldown: 3
+  defendBlockShare: 0.6
+  retreatSeconds: 5
+  retreatCooldown: 10
+  injuredBelow: 0.75
+  severelyInjuredBelow: 0.5
+  criticalBelow: 0.25
+  conditionPress: {x: 1, y: 1, z: 0.9, w: 0.8}
+  conditionDefend: {x: 1, y: 1.15, z: 1.3, w: 1.5}
+  conditionRetreat: {x: 0, y: 0, z: 0.4, w: 1.2}
+  archetypes:
+  - archetype: 0
+    press: 1
+    defend: 0.35
+    retreat: 0.6
+    tokenBias: 0
+    holderTaunt: 1
+    holderFeint: 1
+  - archetype: 1
+    press: 1.3
+    defend: 0.15
+    retreat: 0.3
+    tokenBias: 1
+    holderTaunt: 1.2
+    holderFeint: 1.5
+  - archetype: 2
+    press: 1.5
+    defend: 0.05
+    retreat: 0
+    tokenBias: 1.5
+    holderTaunt: 1.6
+    holderFeint: 1.2
+  - archetype: 3
+    press: 1
+    defend: 0.3
+    retreat: 0.6
+    tokenBias: 0
+    holderTaunt: 0.6
+    holderFeint: 1.4
+  - archetype: 4
+    press: 1.1
+    defend: 0.2
+    retreat: 0.8
+    tokenBias: 0.5
+    holderTaunt: 0.4
+    holderFeint: 1
+  - archetype: 5
+    press: 0.9
+    defend: 0.6
+    retreat: 0.1
+    tokenBias: 0
+    holderTaunt: 1.3
+    holderFeint: 0.5
+  - archetype: 6
+    press: 0.8
+    defend: 0.7
+    retreat: 0.2
+    tokenBias: -0.5
+    holderTaunt: 1
+    holderFeint: 0.5
+  personalities:
+  - personality: 1
+    pressMul: 1.3
+    defendMul: 0.8
+    retreatMul: 0.6
+    tokenBiasAdd: 0.75
+    holderSidestepMul: 1
+    holderTauntMul: 1.4
+    holderFeintMul: 1.3
+  - personality: 2
+    pressMul: 1.05
+    defendMul: 1.4
+    retreatMul: 1.2
+    tokenBiasAdd: -0.5
+    holderSidestepMul: 1.2
+    holderTauntMul: 0.6
+    holderFeintMul: 0.7
+  - personality: 3
+    pressMul: 0.8
+    defendMul: 1.3
+    retreatMul: 2
+    tokenBiasAdd: -1
+    holderSidestepMul: 1.2
+    holderTauntMul: 0.3
+    holderFeintMul: 0.5
+  - personality: 4
+    pressMul: 1.15
+    defendMul: 1
+    retreatMul: 0.4
+    tokenBiasAdd: 0.5
+    holderSidestepMul: 1
+    holderTauntMul: 1.2
+    holderFeintMul: 1
+  - personality: 9
+    pressMul: 1.4
+    defendMul: 0.5
+    retreatMul: 0.2
+    tokenBiasAdd: 1
+    holderSidestepMul: 0.8
+    holderTauntMul: 1.5
+    holderFeintMul: 1.5
+  - personality: 12
+    pressMul: 0.9
+    defendMul: 1.6
+    retreatMul: 1
+    tokenBiasAdd: -0.25
+    holderSidestepMul: 1
+    holderTauntMul: 0.8
+    holderFeintMul: 0.6
+  - personality: 7
+    pressMul: 1.1
+    defendMul: 1
+    retreatMul: 1
+    tokenBiasAdd: 0.25
+    holderSidestepMul: 1
+    holderTauntMul: 0.8
+    holderFeintMul: 1.6
+  - personality: 10
+    pressMul: 1
+    defendMul: 1.25
+    retreatMul: 1
+    tokenBiasAdd: 0
+    holderSidestepMul: 1.1
+    holderTauntMul: 0.5
+    holderFeintMul: 1.3
+  - personality: 6
+    pressMul: 1.1
+    defendMul: 1.1
+    retreatMul: 0.5
+    tokenBiasAdd: 0.25
+    holderSidestepMul: 0.8
+    holderTauntMul: 1.3
+    holderFeintMul: 0.8
+  - personality: 11
+    pressMul: 1.2
+    defendMul: 0.9
+    retreatMul: 0.5
+    tokenBiasAdd: 0.5
+    holderSidestepMul: 1
+    holderTauntMul: 1.2
+    holderFeintMul: 1
+  - personality: 13
+    pressMul: 1.2
+    defendMul: 0.8
+    retreatMul: 0.7
+    tokenBiasAdd: 0.5
+    holderSidestepMul: 1.2
+    holderTauntMul: 0.6
+    holderFeintMul: 1.4
+  - personality: 8
+    pressMul: 1
+    defendMul: 1.2
+    retreatMul: 0.6
+    tokenBiasAdd: 0
+    holderSidestepMul: 1
+    holderTauntMul: 1
+    holderFeintMul: 0.8
+  - personality: 5
+    pressMul: 1
+    defendMul: 1
+    retreatMul: 1
+    tokenBiasAdd: 0
+    holderSidestepMul: 1.2
+    holderTauntMul: 0.8
+    holderFeintMul: 1.2

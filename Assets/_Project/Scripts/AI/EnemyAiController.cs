@@ -33,7 +33,9 @@ namespace Project.AI
             Chase,
             Defensive,
             Attack,
-            Search
+            Search,
+            /// <summary>Phase 3 spacing: waiting on a world-anchored hold point without the attack token.</summary>
+            Hold
         }
 
         [Header("Movement Mode")]
@@ -202,7 +204,7 @@ namespace Project.AI
         }
 
         public bool IsEngagedWithTarget =>
-            state == AiState.Attack || state == AiState.Chase || state == AiState.Defensive;
+            state == AiState.Attack || state == AiState.Chase || state == AiState.Defensive || state == AiState.Hold;
 
         /// <summary>Chasing, attacking, or still inside the damage/heard-hit aggro window.</summary>
         public bool IsAggroed => IsEngagedWithTarget || HasActiveAggroTarget();
@@ -369,6 +371,7 @@ namespace Project.AI
             RefreshPatrolRouteFlag();
             ConfigureNavMeshAgent();
             InitializeCrowdProfile();
+            InitializeEngagement();
             TryBindAssignedPatrolPath();
         }
 
@@ -413,6 +416,7 @@ namespace Project.AI
             if (patrolPathProvider != null)
                 patrolPathProvider.UnregisterEnemy(this);
 
+            LeaveEngagement();
             UnsubscribePlayerEvents();
         }
 
@@ -438,6 +442,7 @@ namespace Project.AI
         {
             currentLocomotionSpeed = 0f;
             currentLocalMoveDirection = Vector3.zero;
+            engagementActiveThisFrame = false;
 
             if (GameplayWorldSimulation.IsFrozen)
                 return;
@@ -468,7 +473,11 @@ namespace Project.AI
                 if (!threatIsPlayer || !IsTargetingLivingPioneer())
                     combat.SetTarget(visibleThreat);
 
-                if (combat.IsTargetInEffectiveRange())
+                if (RunEngagementTransitions(combat.CurrentTarget))
+                {
+                    // Phase 3 spacing: role + range hysteresis handled by the engagement director.
+                }
+                else if (combat.IsTargetInEffectiveRange())
                 {
                     if (state != AiState.Defensive && state != AiState.Attack)
                     {
@@ -494,7 +503,7 @@ namespace Project.AI
                 if (IsCombatTargetPlayer(combat.CurrentTarget))
                     combat.SetTarget(null);
 
-                if (state == AiState.Chase || state == AiState.Attack)
+                if (state == AiState.Chase || state == AiState.Attack || state == AiState.Hold)
                 {
                     lostTargetTimer += Time.deltaTime;
                     if (lostTargetTimer >= loseTargetDelay)
@@ -534,7 +543,12 @@ namespace Project.AI
                 case AiState.Search:
                     UpdateSearch();
                     break;
+                case AiState.Hold:
+                    UpdateHold();
+                    break;
             }
+
+            LateEngagementBookkeeping();
         }
 
         private void EnterCalmState()
@@ -563,6 +577,17 @@ namespace Project.AI
             bool willNavState = newState == AiState.Wander || newState == AiState.Chase;
             if (wasNavState && !willNavState)
                 StopNavMeshMovement();
+
+            if (state == AiState.Hold && newState != AiState.Hold)
+                CancelHolderAction();
+
+            if (state == AiState.Defensive && newState == AiState.Hold)
+            {
+                // Token moved on mid-guard: drop the block pose before holding.
+                combatBridge?.EndBlock();
+                defensiveActionPending = false;
+                defensiveActionUntil = 0f;
+            }
 
             state = newState;
 
@@ -604,6 +629,13 @@ namespace Project.AI
                     break;
                 case AiState.Attack:
                     StopNavMeshMovement();
+                    coneBlockedSince = -1f;
+                    offscreenReadySince = -1f;
+                    creeping = false;
+                    creepTimer = 0f;
+                    break;
+                case AiState.Hold:
+                    OnEnterHold();
                     break;
                 case AiState.Search:
                     stateTimer = searchDuration;
@@ -623,11 +655,13 @@ namespace Project.AI
                    aiState == AiState.ReturnHome ||
                    aiState == AiState.Chase ||
                    aiState == AiState.Defensive ||
+                   aiState == AiState.Hold ||
                    aiState == AiState.Search;
         }
 
         private void HandleDeath()
         {
+            LeaveEngagement();
             ClearThreatLedger();
             ClearLocomotion();
             StopNavMeshMovement();
@@ -639,6 +673,8 @@ namespace Project.AI
 
         private void OnDrawGizmosSelected()
         {
+            DrawEngagementGizmos();
+
             Vector3 home = Application.isPlaying ? homePosition : transform.position;
 
             Gizmos.color = new Color(0.2f, 0.8f, 1f, 0.35f);

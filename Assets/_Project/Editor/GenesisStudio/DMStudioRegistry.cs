@@ -236,7 +236,7 @@ new DMStudioSubtab(
                     "world",
                     "World",
                     "◎",
-                    "Map calibration, fog-of-war, and the Io clock.",
+                    "Map calibration, fog-of-war, the Io clock, and loot chests.",
                     FromHex("#4A4A5A"),
                     new[]
                     {
@@ -269,6 +269,22 @@ new DMStudioSubtab(
                             DMStudioPanelMode.SingletonAsset,
                             "Assets/_Project/Resources/World/DM_IoClockProfile.asset",
                             playModeSave: true),
+                        new DMStudioSubtab(
+                            "loot-chest-timers",
+                            "Loot Chests - Timers",
+                            "World Reloot window, emptied dissolve, Single Loot removal, and full-inventory hold.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Loot/DM_LootChestProfile.asset",
+                            playModeSave: true,
+                            sectionFilter: DMStudioProfileSectionFilter.LootChestTimersOnly),
+                        new DMStudioSubtab(
+                            "loot-chest-presentation",
+                            "Loot Chests - Presentation",
+                            "Lid timing, loot window delay, ranges, storage defaults, and dissolve look.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Loot/DM_LootChestProfile.asset",
+                            playModeSave: true,
+                            sectionFilter: DMStudioProfileSectionFilter.LootChestPresentationOnly),
                         new DMStudioSubtab(
                             "vendors",
                             "Vendors",
@@ -312,7 +328,7 @@ new DMStudioSubtab(
                     "combat",
                     "Combat",
                     "✦",
-                    "Combat Core, melee animations, Combat Studio, ammo FX, and §31 phase placeholders.",
+                    "Combat Core, melee animations, Combat Studio, ammo FX, enemy hit marks, AI / director, and §31 phase placeholders.",
                     FromHex("#8F1E5E"),
                     new[]
                     {
@@ -355,6 +371,13 @@ new DMStudioSubtab(
                             DMStudioPanelMode.SingletonAsset,
                             "Assets/_Project/Data/Items/Ammo/DMAmmoFxCatalog.asset"),
                         new DMStudioSubtab(
+                            "enemy-hit-marks",
+                            "Hit Marks",
+                            "Enemy bullet hit marks — DM_EnemyHitMarkProfile (Resources/Combat): mark limit, glow cool-down, decal size, effect budget / distance, and blood / coolant / spark response per body type (Humanoid, Android, Robot). Live in Play.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Combat/DM_EnemyHitMarkProfile.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
                             "surface-damage",
                             "Surface Damage",
                             "Rock carving from ammo hits: global switch, cut-face / rim look, debris, limits. Per-ammo carve lives on each Ammo FX profile.",
@@ -370,15 +393,17 @@ new DMStudioSubtab(
                         new DMStudioSubtab(
                             "combat-ai-awareness",
                             "AI & awareness",
-                            "§31 #3 — utility scoring, archetype, personality, traits, perception. Next after Phase 2 core sign-off. Info only; no profile asset yet.",
-                            DMStudioPanelMode.CombatPlanPlaceholder,
-                            assetPath: "Assets/_Project/Documentation/Design/Combat/DMG_Combat_Plan_v2.md"),
+                            "§31 #3 utility brain — DM_EnemyBrainProfile (Resources/Combat): archetype rows, personality multipliers, condition thresholds, defend / retreat scoring. Live in Play.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Combat/DM_EnemyBrainProfile.asset",
+                            playModeSave: true),
                         new DMStudioSubtab(
                             "combat-director-tokens",
                             "Director & tokens",
-                            "§31 #4 — Combat Director tokens, coordination, flanking, intensity, morale. Info only; no profile asset yet.",
-                            DMStudioPanelMode.CombatPlanPlaceholder,
-                            assetPath: "Assets/_Project/Documentation/Design/Combat/DMG_Combat_Plan_v2.md"),
+                            "Phase 3 spacing — DM_EnemyEngagementProfile (Resources/Combat): one melee attacker per target, token hand-off / anti-thrash, hold ring, holder sidestep / taunt / feint, facing and tracking. Live in Play. Full §31 #4 Director (morale, flanking, intensity) still later.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Combat/DM_EnemyEngagementProfile.asset",
+                            playModeSave: true),
                         new DMStudioSubtab(
                             "combat-momentum-finishers",
                             "Momentum & finishers",
