@@ -1,0 +1,74 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8bc5347ace9ce8c4cbcf2ee4a418417e, type: 3}
+  m_Name: DM_EnemyHitMarkProfile
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.DM_EnemyHitMarkProfile
+  maxBurnMarksPerEnemy: 5
+  regenFadeSeconds: 1.5
+  glowCoolSeconds: 2
+  glowResidual: 0.15
+  glowSizeScale: 0.7
+  emberGlowSeconds: 1.5
+  laserAlwaysGlowBurn: 1
+  burnSize: {x: 0.06, y: 0.1}
+  burnProjectionDepth: 0.08
+  burnAngleFade: {x: 50, y: 80}
+  decalDrawDistance: 40
+  fxBurstBudget: 24
+  perEnemyMinInterval: 0.06
+  fxMaxDistance: 40
+  splatterDamageScale: {x: 0.8, y: 1.3}
+  splatterFullScaleDamage: 30
+  bloodEntryNormalBlend: 0.35
+  exitSprayDamageThreshold: 25
+  exitSprayStrength: 0.3
+  humanoidResponse:
+    splatter: 1
+    splatterScale: 1
+    sparks: 0
+    sparkScale: 1
+    exitSpray: 1
+    burnStyle: 0
+    embers: 0
+  androidResponse:
+    splatter: 2
+    splatterScale: 1
+    sparks: 3
+    sparkScale: 1
+    exitSpray: 1
+    burnStyle: 1
+    embers: 1
+  robotResponse:
+    splatter: 0
+    splatterScale: 1
+    sparks: 4
+    sparkScale: 1
+    exitSpray: 1
+    burnStyle: 1
+    embers: 1
+  bloodHitPrefab: {fileID: 2345860371650758179, guid: ca10a4a8208648846a708d9de2cc9dd9, type: 3}
+  coolantHitPrefab: {fileID: 295272506448569077, guid: 74172b59fd40258468db61a5a89ec5e3, type: 3}
+  sparkHitSmallPrefab: {fileID: 1791922173031173756, guid: e162c7becdfc4814282f7c3bc678c9da, type: 3}
+  sparkHitLargePrefab: {fileID: 275107855635536946, guid: bf41b2f14387ab44eb9597d2cb030f5b, type: 3}
+  burnEmberPrefab: {fileID: 8868438038499838756, guid: 42618d34d92bf814c84d9822aa7e41ed, type: 3}
+  bulletBurnMaterial: {fileID: 2100000, guid: 87aa0e93593d2d3449a6161e96211efb, type: 2}
+  glowBurnMaterial: {fileID: 2100000, guid: 9231581d189384549bc858a7e2c490a1, type: 2}
+  glowBurnHotMaterial: {fileID: 2100000, guid: 625b0d19717ac9146980562c874f73e0, type: 2}
+  hitboxInflate: 1.05
+  hitboxSweepRadius: 0.02
+  addFillerHitboxes: 1
+  headMultiplier: 1
+  torsoMultiplier: 1
+  armMultiplier: 1
+  legMultiplier: 1
+  enemyDecalRenderingLayer: DM Enemy Marks
+  enemyDecalRenderingLayerFallbackIndex: 15

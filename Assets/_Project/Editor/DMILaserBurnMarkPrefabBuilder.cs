@@ -12,7 +12,7 @@ namespace Project.EditorTools
     /// </summary>
     public static class DMILaserBurnMarkPrefabBuilder
     {
-        private const string PrefabPath = "Assets/_Project/Prefabs/Combat/VFX/Laser_Burn_Mark.prefab";
+        private const string PrefabPath = DMILaserBurnMarkSpawner.PrefabPath;
         private const string ArtFolder = "Assets/_Project/Art/Combat";
         private const string MatFolder = "Assets/_Project/Materials/Combat";
         private const string PrefabFolder = "Assets/_Project/Prefabs/Combat/VFX";
@@ -86,12 +86,10 @@ namespace Project.EditorTools
                 mid.GetComponent<Renderer>(),
                 glow.GetComponent<Renderer>());
 
-            PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
-
             EnsureFolder("Assets/_Project/Resources");
             EnsureFolder("Assets/_Project/Resources/Combat");
             EnsureFolder("Assets/_Project/Resources/Combat/VFX");
-            PrefabUtility.SaveAsPrefabAsset(root, "Assets/_Project/Resources/Combat/VFX/Laser_Burn_Mark.prefab");
+            PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
 
             Object.DestroyImmediate(root);
             DMILaserBurnMarkSpawner.SetPrefabForEditor(

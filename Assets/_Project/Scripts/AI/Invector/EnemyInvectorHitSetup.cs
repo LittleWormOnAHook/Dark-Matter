@@ -104,8 +104,18 @@ namespace Project.AI.Invector
                 if (IsOutgoingWeaponHitCollider(collider))
                     continue;
 
+                // DM per-bone ranged hitboxes (layer DMHitbox) are owned by DMEnemyHitboxRig.
+                if (collider.isTrigger && collider.GetComponent<DMEnemyHitbox>() != null)
+                    continue;
+
                 collider.enabled = false;
             }
+        }
+
+        /// <summary>True for enemy-held weapon / melee hit volumes (never body hitboxes).</summary>
+        public static bool IsOutgoingWeaponCollider(Collider collider)
+        {
+            return IsOutgoingWeaponHitCollider(collider);
         }
 
         private static bool IsOutgoingWeaponHitCollider(Collider collider)
