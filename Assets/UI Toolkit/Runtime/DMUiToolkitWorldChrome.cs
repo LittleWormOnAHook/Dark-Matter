@@ -57,7 +57,9 @@ namespace Project.UI
         private bool lastGameplayWant;
         private bool chromeHiddenCleaned;
         private bool uguiHidden;
+        private bool uguiSuppressedThisSession;
         private float nextInteractScan;
+        private float nextInteractOnlyDotPaint;
         private float nextExclusivePickupScan;
         private float nextBarPaintTime;
         private ItemPickup exclusiveItemRef;
@@ -174,6 +176,7 @@ namespace Project.UI
                     RecycleBars(0);
                     hasExclusiveDot = false;
                     WorldPickupFocus.Clear();
+                    uguiSuppressedThisSession = false;
                 }
 
                 if (want && !uguiHidden)
@@ -183,12 +186,14 @@ namespace Project.UI
 
             chromeHiddenCleaned = false;
 
-            // Keep uGUI pickup/interact painters suppressed every frame while UITK drives chrome.
-            HideUguiCounterparts();
-            ForceSuppressLegacyDotPainters();
+            if (!uguiSuppressedThisSession)
+            {
+                HideUguiCounterparts();
+                ForceSuppressLegacyDotPainters();
+                uguiSuppressedThisSession = true;
+            }
 
-            // Refresh lens each frame after collision overlay (order 10000 < 10100).
-            worldCamera = PlayerReference.ResolveCamera();
+            RefreshWorldCameraCache();
             CollectDots();
             if (pendingDots.Count > 0)
             {
@@ -203,10 +208,19 @@ namespace Project.UI
                     PaintDots();
                     NotePaintSnapshot();
                 }
+                else if (ShouldRepaintInteractDotsThrottled())
+                {
+                    // Non-exclusive interaction dots only — exclusive pickup stem stays on the every-frame path above.
+                    PaintDots();
+                    NotePaintSnapshot();
+                    nextInteractOnlyDotPaint = Time.unscaledTime + InteractOnlyDotPaintInterval();
+                }
             }
             else
                 RecycleDots(0);
-            PaintBars();
+
+            if (ShouldRepaintBars() || Time.unscaledTime >= nextBarPaintTime)
+                PaintBars();
         }
 
         private void OnDestroy()
@@ -1141,15 +1155,46 @@ namespace Project.UI
             DMUiToolkitOverlayDocument.SetShown(visuals.FarName, false);
         }
 
+        private float BarPaintInterval()
+        {
+            DMUiToolkitConfig config = DMUiToolkitConfig.Instance;
+            float hz = config != null ? config.worldChromeBarPaintHz : 8f;
+            hz = Mathf.Clamp(hz, 5f, 30f);
+            return 1f / hz;
+        }
+
+        private float InteractOnlyDotPaintInterval()
+        {
+            DMUiToolkitConfig config = DMUiToolkitConfig.Instance;
+            float hz = config != null ? config.worldChromeInteractDotPaintHz : 30f;
+            hz = Mathf.Clamp(hz, 10f, 60f);
+            return 1f / hz;
+        }
+
+        private bool ShouldRepaintInteractDotsThrottled()
+        {
+            if (Time.unscaledTime < nextInteractOnlyDotPaint)
+                return false;
+            if (cachedInteractDots.Count == 0)
+                return false;
+            if (interactScanRevision == lastPaintInteractRevision)
+                return false;
+            return true;
+        }
+
+        private void RefreshWorldCameraCache()
+        {
+            Camera live = PlayerReference.Camera ?? PlayerReference.ResolveCamera();
+            if (live != worldCamera)
+                worldCamera = live;
+        }
+
         private void PaintBars()
         {
             if (barsLayer == null || barsLayer.panel == null)
                 return;
 
-            if (Time.unscaledTime < nextBarPaintTime && !ShouldRepaintBars())
-                return;
-
-            nextBarPaintTime = Time.unscaledTime + 0.12f;
+            nextBarPaintTime = Time.unscaledTime + BarPaintInterval();
 
             Camera camera = worldCamera;
             FloatingTargetHealthBar[] bars = SceneComponentCache.GetAll<FloatingTargetHealthBar>(
@@ -1509,7 +1554,8 @@ namespace Project.UI
             if (cachedPlayer == null)
                 cachedPlayer = PlayerLocator.FindPlayerController();
             playerTransform = PlayerReference.Transform ?? (cachedPlayer != null ? cachedPlayer.transform : null);
-            worldCamera = PlayerReference.ResolveCamera();
+            if (worldCamera == null)
+                worldCamera = PlayerReference.Camera ?? PlayerReference.ResolveCamera();
             if (cachedInventory == null && cachedPlayer != null)
                 cachedInventory = cachedPlayer.GetComponent<InventorySystem>();
             player = playerTransform;

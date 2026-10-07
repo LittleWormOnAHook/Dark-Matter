@@ -32,9 +32,14 @@ namespace Project.AI.Invector
                 return;
 
             StopDeathRoutines();
+            GetComponent<HumanoidPerformanceController>()?.ForceVisibleForDeathPresentation();
             PrepareAnimatorForDeath();
             CacheHipsParentIfNeeded();
             _ragdollBridge?.PrepareForDeath();
+
+            // Always detach weapons up front so a failed/slow ragdoll bind cannot leave them
+            // glued to a frozen upright corpse (or floating after a partial drop).
+            GetComponent<EnemyInvectorLoadoutBridge>()?.DropHeldWeaponOnDeath();
 
             bool usableRagdoll = _ragdollBridge != null && _ragdollBridge.HasUsableRagdollRig;
 
@@ -63,15 +68,16 @@ namespace Project.AI.Invector
             _controller.disableAnimations = false;
             _controller.StopCharacter();
 
-            if (!usableRagdoll)
+            // Always attempt corpse ragdoll (same path as melee). ActivateCorpseRagdoll itself
+            // falls back to Mecanim death when the rig is unusable — do not skip the call here
+            // or ranged kills freeze upright with no DropHeldWeaponOnDeath retry / body-part bind.
+            if (_ragdollBridge != null)
+                _ragdollBridge.ActivateCorpseRagdoll();
+            else if (!usableRagdoll)
             {
-                // Keep Mecanim death playing — broken/orphan ragdoll would freeze the pose.
-                _ensureDeathRoutine = StartCoroutine(EnsureDeathPresentation());
-                return;
+                // No bridge at all: keep Mecanim death playing.
             }
 
-            // Usable ragdoll: collapse immediately (AnimationWithRagdoll still retries via ensure).
-            _ragdollBridge?.ActivateCorpseRagdoll();
             _ensureDeathRoutine = StartCoroutine(EnsureDeathPresentation());
         }
 

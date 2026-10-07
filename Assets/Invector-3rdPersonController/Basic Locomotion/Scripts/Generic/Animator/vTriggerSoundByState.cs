@@ -33,6 +33,10 @@ namespace Invector
             if (_random == null)
                 _random = new vFisherYatesRandom();
             isTrigger = true;
+            // DM: never spawn outside Play. Edit-mode animator evaluation left "AudioSource(Clone)" roots
+            // in the scene because the prefab's vDestroyGameObject timer only runs in Play.
+            if (!Project.Audio.DMSpawnedAudio.CanSpawn || sounds == null || sounds.Count == 0)
+                return;
             GameObject audioObject = null;
             if (audioSource != null)
                 audioObject = Instantiate(audioSource.gameObject, animator.transform.position, Quaternion.identity) as GameObject;
@@ -43,9 +47,15 @@ namespace Invector
             }
             if (audioObject != null)
             {
+                Project.Audio.DMSpawnedAudio.MarkRuntimeSpawned(audioObject);
                 var source = audioObject.gameObject.GetComponent<AudioSource>();
+                if (source == null)
+                    source = audioObject.AddComponent<AudioSource>();
                 var clip = sounds[_random.Next(sounds.Count)];
-                source.PlayOneShot(clip);
+                if (clip != null)
+                    source.PlayOneShot(clip);
+                if (audioObject.GetComponent<vDestroyGameObject>() == null)
+                    Destroy(audioObject, clip != null ? clip.length + 0.1f : 0.1f);
             }
         }      
     }

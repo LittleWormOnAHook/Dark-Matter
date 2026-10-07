@@ -16,49 +16,9 @@ namespace Project.Inventory
         private const string PlasmaFuelItemName = "Plasma Fuel";
         private const string StandardAmmoItemName = "Standard";
 
-        [Serializable]
-        private class ParkedMag
-        {
-            public int loaded;
-            public ItemData loadedItem;
-        }
-
-        /// <summary>Per-weapon-slot memory of magazine counts per ammo profile (swap restores parked rounds).</summary>
-        private readonly struct MagProfileKey : IEquatable<MagProfileKey>
-        {
-            public readonly AmmoType Type;
-            public readonly bool ContinuousLaser;
-
-            public MagProfileKey(AmmoType type, bool continuousLaser)
-            {
-                Type = type;
-                ContinuousLaser = continuousLaser;
-            }
-
-            public static MagProfileKey From(ItemData ammo)
-            {
-                if (ammo == null)
-                    return new MagProfileKey(AmmoType.Gunpowder, false);
-
-                return new MagProfileKey(ammo.ammoType, ammo.isContinuousLaser);
-            }
-
-            public static MagProfileKey FromEntry(SlotAmmo entry)
-            {
-                if (entry?.loadedItem != null)
-                    return From(entry.loadedItem);
-
-                return new MagProfileKey(entry?.loadedType ?? AmmoType.Gunpowder, false);
-            }
-
-            public bool Equals(MagProfileKey other) =>
-                Type == other.Type && ContinuousLaser == other.ContinuousLaser;
-
-            public override bool Equals(object obj) => obj is MagProfileKey other && Equals(other);
-
-            public override int GetHashCode() => ((int)Type * 397) ^ ContinuousLaser.GetHashCode();
-        }
-
+        // stamp: ammo-conserve 1006. Magazines are never "parked" in memory any more: swapping ammo
+        // type unloads the unspent rounds back into real inventory / Hot Cross stacks (see
+        // ReturnRoundsToInventory), so rounds can never become invisible or be destroyed.
         [Serializable]
         private class SlotAmmo
         {
@@ -67,11 +27,16 @@ namespace Project.Inventory
             /// <summary>Actual ammo ItemData asset currently loaded, so VFX/status-effect data can be
             /// resolved per specific ammo variant rather than just the shared enum type.</summary>
             public ItemData loadedItem;
-            public readonly Dictionary<MagProfileKey, ParkedMag> parkedByProfile = new Dictionary<MagProfileKey, ParkedMag>(8);
+            /// <summary>Absolute inventory slot the loaded rounds were last taken from (-1 = unknown).
+            /// Unloading prefers this slot so ammo goes back where the player had it.</summary>
+            public int sourceSlotIndex = -1;
         }
 
         private readonly Dictionary<int, SlotAmmo> slotAmmo = new Dictionary<int, SlotAmmo>(4);
         private readonly Dictionary<int, ItemData> slotWeaponIdentity = new Dictionary<int, ItemData>(4);
+        private readonly HashSet<ItemData> startingAmmoGrantedWeapons = new HashSet<ItemData>();
+        private bool handlingInventoryChange;
+        private bool pendingInventoryNotify;
         private EquipmentController equipment;
         private InventorySystem inventory;
 
@@ -125,6 +90,13 @@ namespace Project.Inventory
                 : AmmoType.Gunpowder;
         }
 
+        /// <summary>Absolute inventory slot the loaded rounds were last taken from (-1 = unknown).
+        /// Used by the X ammo cycle to know where the loaded type sits in the Hot Cross / inventory order.</summary>
+        public int GetLoadedAmmoSourceSlot(int weaponHotbarSlot)
+        {
+            return slotAmmo.TryGetValue(weaponHotbarSlot, out SlotAmmo entry) ? entry.sourceSlotIndex : -1;
+        }
+
         /// <summary>The actual ammo ItemData asset currently loaded in this weapon slot, or null if unset/empty.</summary>
         public ItemData GetLoadedAmmoItem(int weaponHotbarSlot)
         {
@@ -156,10 +128,32 @@ namespace Project.Inventory
         }
 
         /// <summary>
-        /// Reserve ammo count for a specific weapon hotbar slot: only counts inventory stacks
-        /// matching that slot's currently loaded ammo type (not just any type the weapon could
-        /// accept), so the HUD doesn't advertise reserve rounds that won't actually auto-refill.
-        /// Mining tools report Plasma Fuel count instead.
+        /// True for Hot Cross utility slots (keys 5-0). Reload and ammo loading only ever pull
+        /// rounds from these slots, never from the inventory grid. stamp: reload-hotcross-only 1006
+        /// </summary>
+        public bool IsHotCrossUtilityIndex(int absoluteSlotIndex)
+        {
+            if (inventory == null || equipment == null || !inventory.IsHotbarIndex(absoluteSlotIndex))
+                return false;
+
+            return equipment.IsUtilityHotbarSlot(absoluteSlotIndex - inventory.HotbarStartIndex);
+        }
+
+        /// <summary>Name of the ammo loaded (or last loaded) in this weapon slot, for toasts.</summary>
+        public string GetLoadedAmmoDisplayName(int weaponHotbarSlot)
+        {
+            ItemData item = GetLoadedAmmoItem(weaponHotbarSlot);
+            if (item != null && !string.IsNullOrWhiteSpace(item.itemName))
+                return item.itemName;
+
+            AmmoType type = GetLoadedAmmoType(weaponHotbarSlot);
+            return type == AmmoType.Gunpowder ? "Standard" : type.ToString();
+        }
+
+        /// <summary>
+        /// Reserve ammo count for a specific weapon hotbar slot: only counts Hot Cross utility stacks
+        /// (5-0) matching that slot's currently loaded ammo type. Inventory-grid ammo is not reserve:
+        /// R reload never pulls from the grid. Mining tools report Plasma Fuel count instead.
         /// </summary>
         public int GetReserveAmmoCount(int weaponHotbarSlot)
         {
@@ -180,6 +174,9 @@ namespace Project.Inventory
             int reserve = 0;
             for (int i = 0; i < inventory.slots.Count; i++)
             {
+                if (!IsHotCrossUtilityIndex(i))
+                    continue;
+
                 InventorySystem.InventorySlot slot = inventory.slots[i];
                 if (slot == null || slot.IsEmpty || slot.item == null || !slot.item.CountsAsAmmo)
                     continue;
@@ -364,8 +361,11 @@ namespace Project.Inventory
 
         /// <summary>
         /// Explicit player-driven equip: loads ammo from a specific inventory stack into a specific
-        /// weapon's hotbar slot (Hot Cross hold / inventory "Equip Ammo To"). Swapping types parks the
-        /// current magazine in memory — switching back restores the round count that type had before.
+        /// weapon's hotbar slot (X cycle, Hot Cross hold, inventory "Equip Ammo To"). Only what fits the
+        /// magazine is taken; the rest stays in the stack. Swapping to a different ammo first unloads the
+        /// current magazine back into the inventory (origin slot, same stack, free Hot Cross slot, free
+        /// inventory slot, else world drop). If the rounds have nowhere to go the swap is refused and
+        /// they stay in the magazine. Ammo is never destroyed. stamp: ammo-conserve 1006
         /// </summary>
         public bool TryEquipAmmoToWeaponSlot(int weaponHotbarSlot, int inventorySlotIndex)
         {
@@ -387,44 +387,81 @@ namespace Project.Inventory
             if (weapon.isMiningTool || invSlot.item.isContinuousLaser)
                 return false;
 
+            ItemData ammo = invSlot.item;
             SlotAmmo entry = GetOrCreateSlot(weaponHotbarSlot, weapon);
-            int capacity = GetMagazineCapacity(weapon, invSlot.item);
-            bool sameProfile = entry.loadedType == invSlot.item.ammoType
-                && AmmoItemsCompatibleForReserve(entry.loadedItem, invSlot.item);
+            int capacity = GetMagazineCapacity(weapon, ammo);
 
-            bool restoredParked = false;
-            if (!sameProfile)
+            // Same ammo (or an empty magazine): top up with only what fits; the rest stays in the slot.
+            if (entry.loaded <= 0 || IsSameLoadedAmmo(entry, ammo))
             {
-                ParkActiveMag(entry, capacity);
-                restoredParked = TryRestoreParkedMag(entry, invSlot.item, capacity);
-                if (!restoredParked)
-                {
-                    entry.loadedType = invSlot.item.ammoType;
-                    entry.loadedItem = invSlot.item;
-                    entry.loaded = 0;
-                }
-            }
-
-            int space = Mathf.Max(0, capacity - entry.loaded);
-            int take = Mathf.Min(space, invSlot.amount);
-            if (take > 0)
-            {
-                entry.loadedType = invSlot.item.ammoType;
-                entry.loadedItem = invSlot.item;
-                entry.loaded += take;
-                inventory.RemoveItemAt(inventorySlotIndex, take);
-            }
-
-            if (sameProfile)
-            {
+                int current = Mathf.Max(0, entry.loaded);
+                int take = Mathf.Min(Mathf.Max(0, capacity - current), invSlot.amount);
                 if (take <= 0)
                     return false;
+
+                entry.loadedType = ammo.ammoType;
+                entry.loadedItem = ammo;
+                entry.loaded = current + take;
+                entry.sourceSlotIndex = inventorySlotIndex;
+                inventory.RemoveItemAt(inventorySlotIndex, take);
+                NotifyChanged();
+                return true;
             }
-            else if (!restoredParked && take <= 0)
+
+            // Different ammo: unload the current magazine into the inventory first, then load the new type.
+            ItemData oldAmmo = ResolveLoadedItemForReturn(entry);
+            if (oldAmmo == null)
             {
+                Project.UI.PickupToastUI.Show("Cannot unload the current magazine");
                 return false;
             }
 
+            int takeNew = Mathf.Min(capacity, invSlot.amount);
+            if (takeNew <= 0)
+                return false;
+
+            int leftover = ReturnRoundsToInventory(oldAmmo, entry.loaded, entry.sourceSlotIndex);
+
+            // Inventory full but the new stack is fully loaded: the old rounds take its slot (a clean swap).
+            bool swapIntoSource = leftover > 0
+                && takeNew >= invSlot.amount
+                && leftover <= Mathf.Max(1, oldAmmo.maxStack)
+                && inventory.CanAcceptItemAt(inventorySlotIndex, oldAmmo);
+
+            if (leftover > 0 && !swapIntoSource && Application.isPlaying && inventory.TrySpawnWorldDrop(oldAmmo, leftover))
+            {
+                Project.UI.PickupToastUI.Show($"Inventory full: dropped {leftover} {AmmoDisplayName(oldAmmo)}");
+                leftover = 0;
+            }
+
+            if (leftover > 0 && !swapIntoSource)
+            {
+                // Nowhere to put them: keep the remaining old rounds in the magazine and refuse the swap.
+                entry.loaded = leftover;
+                inventory.NotifyChanged();
+                NotifyChanged();
+                Project.UI.PickupToastUI.Show($"No room to unload {AmmoDisplayName(oldAmmo)} ({leftover} kept in magazine)");
+                return false;
+            }
+
+            invSlot.amount -= takeNew;
+            if (invSlot.amount <= 0)
+            {
+                invSlot.item = null;
+                invSlot.amount = 0;
+            }
+
+            if (swapIntoSource)
+            {
+                invSlot.item = oldAmmo;
+                invSlot.amount = leftover;
+            }
+
+            entry.loadedType = ammo.ammoType;
+            entry.loadedItem = ammo;
+            entry.loaded = takeNew;
+            entry.sourceSlotIndex = inventorySlotIndex;
+            inventory.NotifyChanged();
             NotifyChanged();
             return true;
         }
@@ -451,32 +488,167 @@ namespace Project.Inventory
             return eligible;
         }
 
-        private static void ParkActiveMag(SlotAmmo entry, int capacity)
+        private static bool IsSameLoadedAmmo(SlotAmmo entry, ItemData ammo)
         {
-            if (entry == null)
-                return;
+            if (entry == null || ammo == null)
+                return false;
 
-            MagProfileKey key = MagProfileKey.FromEntry(entry);
-            entry.parkedByProfile[key] = new ParkedMag
-            {
-                loaded = Mathf.Clamp(entry.loaded, 0, capacity),
-                loadedItem = entry.loadedItem
-            };
+            if (entry.loadedItem != null)
+                return entry.loadedItem == ammo;
+
+            return entry.loadedType == ammo.ammoType && !ammo.isContinuousLaser;
         }
 
-        private static bool TryRestoreParkedMag(SlotAmmo entry, ItemData targetAmmo, int capacity)
+        private static string AmmoDisplayName(ItemData item)
         {
-            if (entry == null || targetAmmo == null)
+            if (item == null)
+                return "ammo";
+
+            return !string.IsNullOrWhiteSpace(item.itemName) ? item.itemName : item.name;
+        }
+
+        /// <summary>The ammo item the magazine's rounds should go back into the inventory as.</summary>
+        private ItemData ResolveLoadedItemForReturn(SlotAmmo entry)
+        {
+            if (entry == null)
+                return null;
+
+            if (entry.loadedItem != null)
+                return entry.loadedItem;
+
+            ItemData sameType = FindFirstInventoryAmmo(entry.loadedType);
+            if (sameType != null)
+                return sameType;
+
+            ItemData[] all = ItemRegistry.GetAllItems();
+            for (int i = 0; all != null && i < all.Length; i++)
+            {
+                ItemData item = all[i];
+                if (item != null && item.CountsAsAmmo && !item.isContinuousLaser && item.ammoType == entry.loadedType)
+                    return item;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Puts unloaded rounds back as real stacks: (1) the slot they came from if it is empty or still
+        /// holds that ammo, (2) any existing stack of that ammo, (3) the first free Hot Cross utility
+        /// slot (5-0) so X can see it, (4) any free unlocked inventory slot. Mutates slots without
+        /// raising OnInventoryChanged; callers notify once. Returns rounds that did not fit.
+        /// </summary>
+        private int ReturnRoundsToInventory(ItemData item, int amount, int preferredIndex)
+        {
+            if (amount <= 0)
+                return 0;
+
+            if (inventory == null || item == null)
+                return amount;
+
+            int remaining = amount;
+            int maxStack = Mathf.Max(1, item.maxStack);
+            int count = inventory.slots.Count;
+
+            if (preferredIndex >= 0 && preferredIndex < count)
+                remaining = AddRoundsToSlot(preferredIndex, item, remaining, maxStack, requireEmpty: false);
+
+            for (int i = 0; i < count && remaining > 0; i++)
+            {
+                InventorySystem.InventorySlot slot = inventory.slots[i];
+                if (slot != null && !slot.IsEmpty && slot.item == item)
+                    remaining = AddRoundsToSlot(i, item, remaining, maxStack, requireEmpty: false);
+            }
+
+            if (equipment != null)
+            {
+                for (int local = 0; local < inventory.hotbarSize && remaining > 0; local++)
+                {
+                    if (!equipment.IsUtilityHotbarSlot(local))
+                        continue;
+
+                    int absolute = inventory.HotbarStartIndex + local;
+                    if (absolute < count)
+                        remaining = AddRoundsToSlot(absolute, item, remaining, maxStack, requireEmpty: true);
+                }
+            }
+
+            for (int i = 0; i < inventory.inventorySize && i < count && remaining > 0; i++)
+                remaining = AddRoundsToSlot(i, item, remaining, maxStack, requireEmpty: true);
+
+            return remaining;
+        }
+
+        private int AddRoundsToSlot(int index, ItemData item, int remaining, int maxStack, bool requireEmpty)
+        {
+            if (remaining <= 0)
+                return 0;
+
+            InventorySystem.InventorySlot slot = inventory.slots[index];
+            if (slot == null)
+                return remaining;
+
+            bool empty = slot.IsEmpty;
+            if (requireEmpty && !empty)
+                return remaining;
+            if (!empty && slot.item != item)
+                return remaining;
+            if (!inventory.CanAcceptItemAt(index, item))
+                return remaining;
+
+            int current = empty ? 0 : slot.amount;
+            int add = Mathf.Min(remaining, maxStack - current);
+            if (add <= 0)
+                return remaining;
+
+            slot.item = item;
+            slot.amount = current + add;
+            return remaining - add;
+        }
+
+        /// <summary>
+        /// A ranged weapon left this hotbar slot (moved, unequipped or replaced): its unspent rounds go
+        /// back into the inventory instead of being wiped by the next weapon's fresh magazine.
+        /// </summary>
+        private bool ReturnMagazineOfRemovedWeapon(int hotbarSlot, ItemData previousWeapon)
+        {
+            if (previousWeapon == null || previousWeapon.isMiningTool)
                 return false;
 
-            MagProfileKey key = MagProfileKey.From(targetAmmo);
-            if (!entry.parkedByProfile.TryGetValue(key, out ParkedMag parked))
+            if (!slotAmmo.TryGetValue(hotbarSlot, out SlotAmmo entry) || entry.loaded <= 0)
                 return false;
 
-            entry.loadedType = targetAmmo.ammoType;
-            entry.loadedItem = parked.loadedItem != null ? parked.loadedItem : targetAmmo;
-            entry.loaded = Mathf.Clamp(parked.loaded, 0, capacity);
+            ItemData ammo = ResolveLoadedItemForReturn(entry);
+            if (ammo == null)
+                return false;
+
+            int leftover = ReturnRoundsToInventory(ammo, entry.loaded, entry.sourceSlotIndex);
+            if (leftover > 0 && Application.isPlaying && inventory.TrySpawnWorldDrop(ammo, leftover))
+            {
+                Project.UI.PickupToastUI.Show($"Inventory full: dropped {leftover} {AmmoDisplayName(ammo)}");
+                leftover = 0;
+            }
+
+            if (leftover > 0)
+                Debug.LogWarning($"[WeaponAmmoState] No room to unload {leftover} {AmmoDisplayName(ammo)} from removed weapon {previousWeapon.name}.");
+
+            entry.loaded = 0;
+            entry.sourceSlotIndex = -1;
+            NotifyChanged();
             return true;
+        }
+
+        private void QueueInventoryNotify()
+        {
+            if (inventory == null)
+                return;
+
+            if (handlingInventoryChange)
+            {
+                pendingInventoryNotify = true;
+                return;
+            }
+
+            inventory.NotifyChanged();
         }
 
         public void EnsureWeaponInitialized(int weaponHotbarSlot, ItemData weapon)
@@ -484,17 +656,22 @@ namespace Project.Inventory
             if (weapon == null || !weapon.IsRangedWeapon)
                 return;
 
-            bool isFreshWeaponInSlot = !slotWeaponIdentity.TryGetValue(weaponHotbarSlot, out ItemData previousWeapon)
-                || previousWeapon != weapon;
+            bool hadIdentity = slotWeaponIdentity.TryGetValue(weaponHotbarSlot, out ItemData previousWeapon);
+            bool isFreshWeaponInSlot = !hadIdentity || previousWeapon != weapon;
 
-            SlotAmmo entry = GetOrCreateSlot(weaponHotbarSlot, weapon);
             if (isFreshWeaponInSlot)
             {
+                bool returnedRounds = hadIdentity && ReturnMagazineOfRemovedWeapon(weaponHotbarSlot, previousWeapon);
+                SlotAmmo freshEntry = GetOrCreateSlot(weaponHotbarSlot, weapon);
                 slotWeaponIdentity[weaponHotbarSlot] = weapon;
-                ApplyFreshWeaponAmmo(weapon, entry);
+                ApplyFreshWeaponAmmo(weapon, freshEntry);
                 NotifyChanged();
+                if (returnedRounds)
+                    QueueInventoryNotify();
                 return;
             }
+
+            SlotAmmo entry = GetOrCreateSlot(weaponHotbarSlot, weapon);
 
             if (entry.loaded > 0)
                 return;
@@ -509,7 +686,7 @@ namespace Project.Inventory
         /// </summary>
         private void ApplyFreshWeaponAmmo(ItemData weapon, SlotAmmo entry)
         {
-            entry.parkedByProfile.Clear();
+            entry.sourceSlotIndex = -1;
 
             if (weapon != null && weapon.isMiningTool)
             {
@@ -525,6 +702,11 @@ namespace Project.Inventory
             entry.loaded = 0;
 
             if (!weapon.grantRandomStartingAmmo)
+                return;
+
+            // Unloading now returns rounds to the inventory, so only grant the random starting mag once
+            // per weapon item per session (moving a weapon between slots must not mint ammo).
+            if (!startingAmmoGrantedWeapons.Add(weapon))
                 return;
 
             int capacity = GetMagazineCapacity(weapon, defaultAmmo);
@@ -683,6 +865,10 @@ namespace Project.Inventory
                 if (needed <= 0)
                     break;
 
+                // Reload refills only from Hot Cross utility slots (5-0), never the inventory grid.
+                if (!IsHotCrossUtilityIndex(i))
+                    continue;
+
                 InventorySystem.InventorySlot slot = inventory.slots[i];
                 if (slot == null || slot.IsEmpty || slot.item == null || !slot.item.CountsAsAmmo)
                     continue;
@@ -697,6 +883,7 @@ namespace Project.Inventory
                 entry.loadedType = slot.item.ammoType;
                 entry.loadedItem = slot.item;
                 entry.loaded += take;
+                entry.sourceSlotIndex = i;
                 inventory.RemoveItemAt(i, take);
             }
 
@@ -723,27 +910,48 @@ namespace Project.Inventory
 
         private void HandleInventoryChanged()
         {
-            if (equipment == null)
+            if (equipment == null || handlingInventoryChange)
                 return;
 
-            equipment.ForEachWeaponHotbarSlot(slot =>
+            handlingInventoryChange = true;
+            try
             {
-                ItemData weapon = equipment.GetHotbarItem(slot);
-                if (weapon != null && weapon.IsRangedWeapon)
+                equipment.ForEachWeaponHotbarSlot(slot =>
                 {
-                    // Only init freshly assigned weapons. Do NOT silently refill an empty magazine
-                    // whenever any item is picked up — that races with reload audio and skips R.
-                    // Empty→full refill belongs to EnsureWeaponInitialized after a real reload finish,
-                    // or CreditAmmoPickup for world ammo stacks.
-                    bool isFreshWeaponInSlot = !slotWeaponIdentity.TryGetValue(slot, out ItemData previousWeapon)
-                        || previousWeapon != weapon;
-                    if (isFreshWeaponInSlot)
-                        EnsureWeaponInitialized(slot, weapon);
-                    return;
-                }
+                    ItemData weapon = equipment.GetHotbarItem(slot);
+                    if (weapon != null && weapon.IsRangedWeapon)
+                    {
+                        // Only init freshly assigned weapons. Do NOT silently refill an empty magazine
+                        // whenever any item is picked up — that races with reload audio and skips R.
+                        // Empty→full refill belongs to EnsureWeaponInitialized after a real reload finish,
+                        // or CreditAmmoPickup for world ammo stacks.
+                        bool isFreshWeaponInSlot = !slotWeaponIdentity.TryGetValue(slot, out ItemData previousWeapon)
+                            || previousWeapon != weapon;
+                        if (isFreshWeaponInSlot)
+                            EnsureWeaponInitialized(slot, weapon);
+                        return;
+                    }
 
-                slotWeaponIdentity.Remove(slot);
-            });
+                    // Ranged weapon removed from this slot: unload its magazine into the inventory first.
+                    if (slotWeaponIdentity.TryGetValue(slot, out ItemData removedWeapon)
+                        && ReturnMagazineOfRemovedWeapon(slot, removedWeapon))
+                    {
+                        pendingInventoryNotify = true;
+                    }
+
+                    slotWeaponIdentity.Remove(slot);
+                });
+            }
+            finally
+            {
+                handlingInventoryChange = false;
+            }
+
+            if (pendingInventoryNotify)
+            {
+                pendingInventoryNotify = false;
+                inventory?.NotifyChanged();
+            }
         }
 
         private int ResolveActiveWeaponHotbarSlot()

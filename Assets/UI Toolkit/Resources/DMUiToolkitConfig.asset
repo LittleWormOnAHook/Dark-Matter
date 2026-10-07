@@ -17,3 +17,6 @@ MonoBehaviour:
   zoneVignetteAlphaMax: 0.402
   damageVignetteAlpha: 0.5
   showPilotCluster: 1
+  pilotClusterRefreshHz: 15
+  worldChromeInteractDotPaintHz: 30
+  worldChromeBarPaintHz: 8

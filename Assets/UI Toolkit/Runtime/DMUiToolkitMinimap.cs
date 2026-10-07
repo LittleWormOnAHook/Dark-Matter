@@ -141,6 +141,7 @@ namespace Project.UI
         public static void InvalidateViewCache()
         {
             warnedMissingTexture = false;
+            DMUiToolkitPilotCluster.MarkPresentationDirty();
             if (instance == null)
                 return;
 

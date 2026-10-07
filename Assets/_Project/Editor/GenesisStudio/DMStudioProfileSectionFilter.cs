@@ -225,6 +225,10 @@ namespace Project.EditorTools.GenesisStudio
             "strongMeleeDamageStartNormalized",
             "strongMeleeDamageEndNormalized",
             "strongMeleeAnimSpeedMultiplier",
+            "strongReleaseWeightA",
+            "strongReleaseWeightB",
+            "strongReleaseWeightC",
+            "interactHoldComboAnimSpeed",
             "chargedHitsIgnoreEnemyWeapons",
             "logCombatEventsInPlay"
         };

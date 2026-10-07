@@ -327,6 +327,8 @@ namespace Project.Combat
             DetachVolumetricSmoke();
             owner?.NotifyLootBagDissolved();
             Destroy(gameObject);
+            // Notify destroys the enemy shell; sweep leftover anchors / weapons / smoke / empty clones.
+            EnemyDeathRuntimeCleanup.SweepOrphans(destroyImmediately: false);
         }
 
         private void StartIdleSmoke()

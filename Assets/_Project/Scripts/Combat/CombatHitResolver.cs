@@ -8,6 +8,7 @@ using Project.Interaction;
 using Project.Progression;
 using Project.Survival;
 using Project.UI;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Project.Combat
@@ -26,6 +27,22 @@ namespace Project.Combat
         public const float DefaultImpactNoiseRadius = 10f;
 
         private static readonly Collider[] SplashOverlapBuffer = new Collider[48];
+
+        private readonly struct SplashTarget
+        {
+            public readonly IDamageable Damageable;
+            public readonly Collider Collider;
+            public readonly Vector3 Closest;
+            public readonly float Distance;
+
+            public SplashTarget(IDamageable damageable, Collider collider, Vector3 closest, float distance)
+            {
+                Damageable = damageable;
+                Collider = collider;
+                Closest = closest;
+                Distance = distance;
+            }
+        }
 
         public static bool IsOwnerCollider(GameObject owner, Collider collider)
         {
@@ -254,18 +271,54 @@ namespace Project.Combat
                 ~0,
                 QueryTriggerInteraction.Ignore);
 
+            if (hitCount <= 0)
+                return;
+
+            // One entry per damageable (its closest collider): multi-collider targets (hitbox / ragdoll
+            // bones) used to take splash damage + status once per overlapping collider. The directly hit
+            // target is excluded as a whole, not just the collider the projectile struck. Copying out of
+            // the shared static buffer also keeps a nested pulse (death effects) from clobbering it.
+            IDamageable excludedDamageable = excludeCollider != null
+                ? DamageableUtility.GetDamageable(excludeCollider)
+                : null;
+            List<SplashTarget> targets = new List<SplashTarget>(hitCount);
             for (int i = 0; i < hitCount; i++)
             {
-                Collider hitCollider = SplashOverlapBuffer[i];
-                if (hitCollider == null || hitCollider == excludeCollider || IsOwnerCollider(owner, hitCollider))
+                Collider candidate = SplashOverlapBuffer[i];
+                SplashOverlapBuffer[i] = null;
+                if (candidate == null || candidate == excludeCollider || IsOwnerCollider(owner, candidate))
                     continue;
 
-                IDamageable damageable = DamageableUtility.GetDamageable(hitCollider);
-                if (damageable == null)
+                IDamageable candidateDamageable = DamageableUtility.GetDamageable(candidate);
+                if (candidateDamageable == null
+                    || (excludedDamageable != null && ReferenceEquals(candidateDamageable, excludedDamageable)))
                     continue;
 
-                Vector3 closest = GetClosestPointSafe(hitCollider, center);
-                float distance = Vector3.Distance(center, closest);
+                Vector3 candidateClosest = GetClosestPointSafe(candidate, center);
+                float candidateDistance = Vector3.Distance(center, candidateClosest);
+                int existing = -1;
+                for (int j = 0; j < targets.Count; j++)
+                {
+                    if (ReferenceEquals(targets[j].Damageable, candidateDamageable))
+                    {
+                        existing = j;
+                        break;
+                    }
+                }
+
+                SplashTarget entry = new SplashTarget(candidateDamageable, candidate, candidateClosest, candidateDistance);
+                if (existing < 0)
+                    targets.Add(entry);
+                else if (candidateDistance < targets[existing].Distance)
+                    targets[existing] = entry;
+            }
+
+            for (int i = 0; i < targets.Count; i++)
+            {
+                Collider hitCollider = targets[i].Collider;
+                IDamageable damageable = targets[i].Damageable;
+                Vector3 closest = targets[i].Closest;
+                float distance = targets[i].Distance;
                 float t = Mathf.Clamp01(distance / Mathf.Max(0.01f, radius));
                 float falloffDamage = Mathf.Lerp(centerDamage, centerDamage * ammoItem.splashDamageFalloff, t);
                 if (falloffDamage <= 0.01f)

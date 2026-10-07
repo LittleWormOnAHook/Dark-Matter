@@ -97,7 +97,14 @@ namespace Project.Core
             if (player == null)
                 return null;
 
-            return player.GetComponent<T>() ?? player.GetComponentInChildren<T>();
+            // Explicit Unity null checks: `??` only tests the C# reference, so a "fake null" from
+            // GetComponent (editor, native component types) would skip the children fallback.
+            T onRoot = player.GetComponent<T>();
+            if (onRoot != null)
+                return onRoot;
+
+            T inChildren = player.GetComponentInChildren<T>();
+            return inChildren != null ? inChildren : null;
         }
 
         public static PlayerInput FindLivePlayerInput()

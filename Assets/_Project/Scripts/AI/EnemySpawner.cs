@@ -251,12 +251,16 @@ namespace Project.AI
         {
             GameObject deadInstance = slot.Instance;
 
+            float postLootDelay = 0f;
             if (deadInstance != null)
             {
                 EnemyDeathSequence deathSequence = deadInstance.GetComponent<EnemyDeathSequence>();
                 if (deathSequence != null)
                 {
-                    while (deadInstance != null && !deathSequence.IsComplete)
+                    postLootDelay = Mathf.Max(0f, deathSequence.PostLootRespawnDelay);
+                    // Instance may be destroyed when the loot bag finishes; keep waiting on IsComplete
+                    // via the Unity fake-null component reference until the sequence marks complete.
+                    while (deathSequence != null && !deathSequence.IsComplete)
                         yield return null;
                 }
                 else
@@ -264,14 +268,17 @@ namespace Project.AI
                     EnemyLootable lootable = deadInstance.GetComponent<EnemyLootable>();
                     while (deadInstance != null && lootable != null && lootable.IsLootPending)
                         yield return null;
-
-                    if (respawnDelay > 0f)
-                        yield return new WaitForSeconds(respawnDelay);
                 }
             }
 
+            float wait = Mathf.Max(Mathf.Max(0f, respawnDelay), postLootDelay);
+            if (wait > 0f)
+                yield return new WaitForSeconds(wait);
+
             if (deadInstance != null)
                 Destroy(deadInstance);
+
+            EnemyDeathRuntimeCleanup.SweepOrphans(destroyImmediately: false);
 
             slot.Instance = null;
             slot.RespawnRoutine = null;

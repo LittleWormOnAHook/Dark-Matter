@@ -28,6 +28,7 @@ namespace Invector.vMelee
             {
                 var clip = hitSounds[UnityEngine.Random.Range(0, hitSounds.Length)];
                 var audioObj = Instantiate(audioSource, transform.position, transform.rotation) as GameObject;
+                Project.Audio.DMSpawnedAudio.MarkRuntimeSpawned(audioObj); // DM: never saved into the scene
                 audioObj.GetComponent<AudioSource>().PlayOneShot(clip);
             }
         }
@@ -38,6 +39,7 @@ namespace Invector.vMelee
             {
                 var clip = recoilSounds[UnityEngine.Random.Range(0, recoilSounds.Length)];
                 var audioObj = Instantiate(audioSource, transform.position, transform.rotation) as GameObject;
+                Project.Audio.DMSpawnedAudio.MarkRuntimeSpawned(audioObj); // DM: never saved into the scene
                 audioObj.GetComponent<AudioSource>().PlayOneShot(clip);
             }
             if (recoilParticles.Length > 0)
@@ -55,6 +57,7 @@ namespace Invector.vMelee
             {
                 var clip = defSounds[UnityEngine.Random.Range(0, defSounds.Length)];
                 var audioObj = Instantiate(audioSource, transform.position, transform.rotation) as GameObject;
+                Project.Audio.DMSpawnedAudio.MarkRuntimeSpawned(audioObj); // DM: never saved into the scene
                 audioObj.GetComponent<AudioSource>().PlayOneShot(clip);
             }
         }

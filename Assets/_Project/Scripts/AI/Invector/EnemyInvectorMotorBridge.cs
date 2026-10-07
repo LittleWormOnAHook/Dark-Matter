@@ -6,6 +6,10 @@ namespace Project.AI.Invector
     /// <summary>
     /// Drives Invector locomotion animator params from EnemyAiController transform movement.
     /// Motor params update in FixedUpdate; animator ticks once in LateUpdate when needed.
+    /// With driveLocomotionFromMeasuredVelocity, InputMagnitude / InputVertical / InputHorizontal come
+    /// from the root's measured planar velocity (local forward/sideways) so the walk/run cycle matches
+    /// how fast the AI really translates the transform, and engaged sideways/backward moves use the
+    /// Strafing Movement blend tree instead of the forward-only Free Movement tree.
     /// </summary>
     [DefaultExecutionOrder(100)]
     [DisallowMultipleComponent]
@@ -14,6 +18,21 @@ namespace Project.AI.Invector
         private const float MoveSpeedThreshold = 0.08f;
 
         [SerializeField] private float motorLodDistance;
+
+        [Header("Velocity-driven locomotion (DM)")]
+        [Tooltip("Feed locomotion params from the measured root velocity instead of the AI's intended speed.")]
+        [SerializeField] private bool driveLocomotionFromMeasuredVelocity = true;
+        [Tooltip("Root speed (m/s at Animator.humanScale 1) of Free Movement at InputMagnitude 0.5 / 1 / 1.5. Measured on Invector@ShooterMelee (FRED humanScale 1.073: 1.87 / 4.15 / 6.34 m/s).")]
+        [SerializeField] private float freeWalkClipSpeed = 1.74f;
+        [SerializeField] private float freeRunClipSpeed = 3.87f;
+        [SerializeField] private float freeSprintClipSpeed = 5.91f;
+        [Tooltip("Root speed (m/s at humanScale 1) of Strafing Movement at InputMagnitude 0.5 (walk ring) and 1 (run ring).")]
+        [SerializeField] private float strafeWalkClipSpeed = 1.5f;
+        [SerializeField] private float strafeRunClipSpeed = 2.8f;
+        [Tooltip("While engaged, moves more than this many degrees off the facing direction use strafe clips.")]
+        [SerializeField, Range(10f, 90f)] private float strafeAngleThreshold = 40f;
+        [Tooltip("Smoothing time constant (seconds) for the measured root velocity.")]
+        [SerializeField] private float measuredVelocitySmoothing = 0.08f;
 
         private EnemyAiController _aiController;
         private EnemyCombat _enemyCombat;
@@ -31,6 +50,13 @@ namespace Project.AI.Invector
         private bool _hasInputMagnitude;
         private bool _hasSpeed;
         private bool _animatorParamsCached;
+        private bool _hasIsAiming;
+        private Vector3 _measuredVelocity;
+        private Vector3 _lastSamplePosition;
+        private bool _hasLastSamplePosition;
+        private bool _strafeLatched;
+        private const float MaxPlausibleSpeed = 14f;
+        private static readonly int IsAimingHash = Animator.StringToHash("IsAiming");
 
         private void Awake()
         {
@@ -84,6 +110,9 @@ namespace Project.AI.Invector
 
         private void LateUpdate()
         {
+            // Sample every frame (even while blocked) so the first frame after a stagger has no spike.
+            SampleMeasuredVelocity();
+
             if (_health != null && _health.IsDead)
                 return;
 
@@ -104,13 +133,119 @@ namespace Project.AI.Invector
                 _controller.animator.updateMode = AnimatorUpdateMode.Normal;
 
             if (!ShouldTickAnimator())
+            {
+                if (driveLocomotionFromMeasuredVelocity)
+                    ZeroLocomotionAnimatorFloats();
                 return;
+            }
 
             // Engaged / moving humanoids must keep bone writes alive — CullUpdateTransforms
             // intermittently freezes the last pose while NavMesh still translates the root.
             EnsureLocomotionAnimatorWrites();
 
+            if (driveLocomotionFromMeasuredVelocity)
+                ApplyMeasuredVelocityLocomotion();
+
             _controller.UpdateAnimator();
+        }
+
+        private void SampleMeasuredVelocity()
+        {
+            Vector3 position = transform.position;
+            float dt = Time.deltaTime;
+            if (_hasLastSamplePosition && dt > 0.0001f)
+            {
+                Vector3 delta = position - _lastSamplePosition;
+                delta.y = 0f;
+                Vector3 velocity = delta / dt;
+                if (velocity.sqrMagnitude > MaxPlausibleSpeed * MaxPlausibleSpeed)
+                    velocity = Vector3.zero; // teleport / spawn snap / ragdoll get-up
+
+                float blend = measuredVelocitySmoothing > 0.0001f
+                    ? 1f - Mathf.Exp(-dt / measuredVelocitySmoothing)
+                    : 1f;
+                _measuredVelocity = Vector3.Lerp(_measuredVelocity, velocity, blend);
+                if (_measuredVelocity.sqrMagnitude < 0.0004f)
+                    _measuredVelocity = Vector3.zero;
+            }
+
+            _lastSamplePosition = position;
+            _hasLastSamplePosition = true;
+        }
+
+        /// <summary>
+        /// Writes Invector's locomotion fields from the measured root velocity right before
+        /// UpdateAnimator: InputMagnitude is chosen so the blend tree's clip speed equals the real
+        /// speed; engaged sideways/backward motion uses strafe locomotion with local direction.
+        /// </summary>
+        private void ApplyMeasuredVelocityLocomotion()
+        {
+            Animator animator = _controller.animator;
+            if (animator == null)
+                return;
+
+            float scale = animator.isHuman ? Mathf.Max(0.1f, animator.humanScale) : 1f;
+            bool aiming = _hasIsAiming && animator.GetBool(IsAimingHash);
+            bool engaged = _aiController != null && _aiController.IsEngagedWithTarget;
+            float speed = _measuredVelocity.magnitude;
+
+            if (speed <= MoveSpeedThreshold)
+            {
+                _controller.isSprinting = false;
+                _controller.inputMagnitude = 0f;
+                _controller.verticalSpeed = 0f;
+                _controller.horizontalSpeed = 0f;
+                // Keep the last locomotion family while idle so Free/Strafe does not flap.
+                _strafeLatched = aiming || (engaged && _strafeLatched);
+                _controller.isStrafing = _strafeLatched;
+                return;
+            }
+
+            Vector3 localDirection = transform.InverseTransformDirection(_measuredVelocity / speed);
+            localDirection.y = 0f;
+            if (localDirection.sqrMagnitude > 0.0001f)
+                localDirection.Normalize();
+            else
+                localDirection = Vector3.forward;
+
+            float offFacing = Mathf.Abs(Mathf.Atan2(localDirection.x, localDirection.z) * Mathf.Rad2Deg);
+            float strafeWalk = Mathf.Max(0.1f, strafeWalkClipSpeed * scale);
+            float strafeRun = Mathf.Max(strafeWalk + 0.1f, strafeRunClipSpeed * scale);
+            float angleGate = _strafeLatched ? Mathf.Max(0f, strafeAngleThreshold - 10f) : strafeAngleThreshold;
+            bool strafe = aiming || (engaged && offFacing > angleGate && speed <= strafeRun * 1.15f);
+            _strafeLatched = strafe;
+            _controller.isStrafing = strafe;
+
+            if (strafe)
+            {
+                float magnitude = speed <= strafeWalk
+                    ? 0.5f * speed / strafeWalk
+                    : Mathf.Lerp(0.5f, 1f, Mathf.Clamp01((speed - strafeWalk) / (strafeRun - strafeWalk)));
+                float ring = Mathf.Max(0.5f, magnitude);
+                _controller.isSprinting = false;
+                _controller.inputMagnitude = magnitude;
+                _controller.verticalSpeed = localDirection.z * ring;
+                _controller.horizontalSpeed = localDirection.x * ring;
+                return;
+            }
+
+            float freeMagnitude = FreeInputMagnitudeForSpeed(speed, scale);
+            _controller.isSprinting = freeMagnitude > 1.001f;
+            _controller.inputMagnitude = freeMagnitude;
+            _controller.verticalSpeed = localDirection.z;
+            _controller.horizontalSpeed = 0f;
+        }
+
+        private float FreeInputMagnitudeForSpeed(float speed, float scale)
+        {
+            float walk = Mathf.Max(0.1f, freeWalkClipSpeed * scale);
+            float run = Mathf.Max(walk + 0.1f, freeRunClipSpeed * scale);
+            float sprint = Mathf.Max(run + 0.1f, freeSprintClipSpeed * scale);
+            if (speed <= walk)
+                return 0.5f * speed / walk;
+            if (speed <= run)
+                return Mathf.Lerp(0.5f, 1f, (speed - walk) / (run - walk));
+            return Mathf.Lerp(1f, 1.5f, Mathf.Clamp01((speed - run) / (sprint - run)));
         }
 
         private bool ShouldTickAnimator()
@@ -250,7 +385,8 @@ namespace Project.AI.Invector
                 return;
             }
 
-            if (_aiController.IsEngagedWithTarget)
+            // Velocity-driven mode decides Free vs Strafe in LateUpdate from the real move direction.
+            if (_aiController.IsEngagedWithTarget && !driveLocomotionFromMeasuredVelocity)
                 _controller.isStrafing = false;
 
             float speed = ResolvePresentationSpeed();
@@ -296,6 +432,13 @@ namespace Project.AI.Invector
         /// </summary>
         private float ResolvePresentationSpeed()
         {
+            if (driveLocomotionFromMeasuredVelocity)
+            {
+                float measured = _measuredVelocity.magnitude;
+                if (measured > MoveSpeedThreshold)
+                    return measured;
+            }
+
             float aiSpeed = _aiController != null ? _aiController.CurrentLocomotionSpeed : 0f;
             if (aiSpeed > MoveSpeedThreshold)
                 return aiSpeed;
@@ -362,6 +505,7 @@ namespace Project.AI.Invector
             _hasInputVertical = AnimatorHasParameter(animator, "InputVertical");
             _hasInputMagnitude = AnimatorHasParameter(animator, "InputMagnitude");
             _hasSpeed = AnimatorHasParameter(animator, "Speed");
+            _hasIsAiming = AnimatorHasParameter(animator, "IsAiming");
             _animatorParamsCached = true;
         }
 
@@ -372,7 +516,17 @@ namespace Project.AI.Invector
             _controller.isSprinting = false;
             _controller.inputMagnitude = 0f;
 
-            if (_controller.animator == null)
+            // Velocity-driven mode: LateUpdate owns the animator floats (damped). Hard zero writes
+            // here, between frames, collapsed InputMagnitude whenever the AI speed dipped for a frame.
+            if (driveLocomotionFromMeasuredVelocity)
+                return;
+
+            ZeroLocomotionAnimatorFloats();
+        }
+
+        private void ZeroLocomotionAnimatorFloats()
+        {
+            if (_controller == null || _controller.animator == null)
                 return;
 
             Animator animator = _controller.animator;

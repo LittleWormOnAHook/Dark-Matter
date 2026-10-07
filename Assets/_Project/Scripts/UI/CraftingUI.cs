@@ -105,7 +105,10 @@ namespace Project.UI
 
         private void EnsureRecipeTooltip()
         {
-            Canvas canvas = GetComponent<Canvas>() ?? GetComponentInParent<Canvas>() ?? FindAnyObjectByType<Canvas>();
+            // Explicit null check: `??` ignores Unity fake nulls, so the scene-wide fallback never ran.
+            Canvas canvas = GetComponentInParent<Canvas>();
+            if (canvas == null)
+                canvas = FindAnyObjectByType<Canvas>();
             if (canvas != null)
                 RecipeHoverTooltip.EnsureExists(canvas.transform);
         }

@@ -25,6 +25,8 @@ namespace Project.AI
         private CompanionHealth targetCompanionHealth;
         private EnemyAiController aiController;
         private EnemyInvectorCombatBridge invectorCombat;
+        private DMEnemyMeleeComboDriver comboDriver;
+        private float attackStartTime;
         private float nextAttackTime;
         private float windupEndTime;
         private bool attackPending;
@@ -47,6 +49,7 @@ namespace Project.AI
         /// </summary>
         public void InterruptAttackForStagger(float lockoutSeconds)
         {
+            comboDriver?.CancelSequence();
             attackPending = false;
             pendingInvectorAttack = false;
             pendingMeleeRecovery = false;
@@ -58,6 +61,19 @@ namespace Project.AI
         {
             aiController = GetComponent<EnemyAiController>();
             invectorCombat = GetComponent<EnemyInvectorCombatBridge>();
+            comboDriver = GetComponent<DMEnemyMeleeComboDriver>();
+            if (comboDriver == null && invectorCombat != null)
+                comboDriver = gameObject.AddComponent<DMEnemyMeleeComboDriver>();
+        }
+
+        /// <summary>
+        /// Combo driver callback: the swing chain (or charged swing) left its attack states,
+        /// so the pending attack can end and the recovery pause can start.
+        /// </summary>
+        public void NotifyAttackSequenceEnded()
+        {
+            if (attackPending && pendingInvectorAttack)
+                windupEndTime = Mathf.Min(windupEndTime, Time.time);
         }
 
         public void SetTarget(Transform newTarget)
@@ -141,12 +157,32 @@ namespace Project.AI
             if (Time.time < nextAttackTime)
                 return;
 
+            if (comboDriver != null && comboDriver.IsSequenceActive)
+                return;
+
             nextAttackTime = Time.time + attackCooldown;
 
-            if (invectorCombat != null && invectorCombat.TryBeginAttack(target, out float invectorDuration))
+            // Charged swing (random roll after cooldown, or forced by the punish rule). Melee range only.
+            if (comboDriver != null && invectorCombat != null && IsTargetInRange() &&
+                !invectorCombat.HasRangedWeaponEquipped() &&
+                comboDriver.TryBeginChargedAttack(out float chargedHoldSeconds))
             {
                 attackPending = true;
                 pendingInvectorAttack = true;
+                pendingMeleeRecovery = true;
+                attackStartTime = Time.time;
+                windupEndTime = Time.time + chargedHoldSeconds;
+                return;
+            }
+
+            if (invectorCombat != null && invectorCombat.TryBeginAttack(target, out float invectorDuration))
+            {
+                if (!invectorCombat.LastAttackWasRanged && comboDriver != null)
+                    comboDriver.BeginLightSequence();
+
+                attackPending = true;
+                pendingInvectorAttack = true;
+                attackStartTime = Time.time;
                 windupEndTime = Time.time + invectorDuration;
                 pendingMeleeRecovery = !invectorCombat.LastAttackWasRanged;
                 return;
@@ -198,6 +234,11 @@ namespace Project.AI
                 return;
 
             if (Time.time < windupEndTime)
+                return;
+
+            // Keep the attack pending while a combo chain or charged swing is still playing.
+            if (pendingInvectorAttack && comboDriver != null &&
+                comboDriver.HoldsAttackPending(Time.time - attackStartTime))
                 return;
 
             attackPending = false;

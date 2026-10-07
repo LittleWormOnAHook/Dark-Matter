@@ -6,8 +6,9 @@ using UnityEngine;
 namespace Project.AI
 {
     /// <summary>
-    /// A self-contained floating text popup that rises above a world position and fades out.
-    /// Spawned via EnemyFloatingText.Show() — no authored prefab required (runtime template + PoolManager).
+    /// A self-contained floating text popup that rises above a world position and fades out,
+    /// or a sticky follow marker that stays above a transform until Dismiss() (charged wind-up tell).
+    /// Spawned via EnemyFloatingText.Show() / ShowFollow() — no authored prefab required (runtime template + PoolManager).
     /// </summary>
     [DisallowMultipleComponent]
     public class EnemyFloatingText : MonoBehaviour, IPoolable
@@ -17,12 +18,16 @@ namespace Project.AI
         private TextMeshPro _text;
         private Camera _cam;
         private Coroutine _animateRoutine;
+        private Transform _followTarget;
+        private float _followHeightOffset;
+        private bool _sticky;
 
         private const float RiseDuration = 0.8f;
         private const float HoldDuration = 0.3f;
         private const float FadeDuration = 0.4f;
         private const float RiseDistance = 0.65f;
         private const float FontSize = 3.2f;
+        private const float StickyFontSize = 4.6f;
 
         public static void Show(Transform origin, string message, Color color, float heightOffset = 2.1f)
         {
@@ -35,7 +40,26 @@ namespace Project.AI
                 return;
 
             EnemyFloatingText popup = go.GetComponent<EnemyFloatingText>();
-            popup.Activate(message, color);
+            popup.Activate(message, color, sticky: false, follow: null, followHeightOffset: 0f);
+        }
+
+        /// <summary>
+        /// World-space TMP marker that tracks follow + up offset until Dismiss().
+        /// Used for the charged-attack wind-up triangle above the enemy head.
+        /// </summary>
+        public static EnemyFloatingText ShowFollow(Transform follow, string message, Color color, float heightOffset = 0.35f)
+        {
+            if (follow == null || string.IsNullOrEmpty(message))
+                return null;
+
+            Vector3 spawnPos = follow.position + Vector3.up * heightOffset;
+            GameObject go = PoolManager.Spawn(EnsureTemplate(), spawnPos, Quaternion.identity);
+            if (go == null)
+                return null;
+
+            EnemyFloatingText popup = go.GetComponent<EnemyFloatingText>();
+            popup.Activate(message, color, sticky: true, follow: follow, followHeightOffset: heightOffset);
+            return popup;
         }
 
         public static void ShowMiss(Transform origin) => Show(origin, "Miss", new Color(1f, 0.25f, 0.25f));
@@ -53,6 +77,27 @@ namespace Project.AI
                 StopCoroutine(_animateRoutine);
                 _animateRoutine = null;
             }
+
+            _followTarget = null;
+            _sticky = false;
+        }
+
+        /// <summary>Ends a sticky follow marker (no-op if already released / not sticky).</summary>
+        public void Dismiss()
+        {
+            if (!_sticky)
+                return;
+
+            _sticky = false;
+            _followTarget = null;
+
+            if (_animateRoutine != null)
+            {
+                StopCoroutine(_animateRoutine);
+                _animateRoutine = null;
+            }
+
+            PoolManager.Release(gameObject);
         }
 
         private static GameObject EnsureTemplate()
@@ -68,14 +113,18 @@ namespace Project.AI
             return templatePrefab;
         }
 
-        private void Activate(string message, Color color)
+        private void Activate(string message, Color color, bool sticky, Transform follow, float followHeightOffset)
         {
             EnsureTextComponent();
             _cam = Camera.main;
 
+            _sticky = sticky;
+            _followTarget = follow;
+            _followHeightOffset = followHeightOffset;
+
             _text.text = message;
             _text.color = color;
-            _text.fontSize = FontSize;
+            _text.fontSize = sticky ? StickyFontSize : FontSize;
             _text.alignment = TextAlignmentOptions.Center;
             _text.fontStyle = FontStyles.Bold;
             _text.raycastTarget = false;
@@ -85,17 +134,45 @@ namespace Project.AI
 
             if (_animateRoutine != null)
                 StopCoroutine(_animateRoutine);
-            _animateRoutine = StartCoroutine(Animate());
+
+            if (sticky)
+            {
+                SnapToFollow();
+                BillboardToCamera();
+                _animateRoutine = StartCoroutine(FollowSticky());
+            }
+            else
+            {
+                _animateRoutine = StartCoroutine(Animate());
+            }
         }
 
-        private void EnsureTextComponent()
+        private IEnumerator FollowSticky()
         {
-            if (_text != null)
+            while (_sticky)
+            {
+                if (_followTarget == null)
+                    break;
+
+                SnapToFollow();
+                BillboardToCamera();
+                yield return null;
+            }
+
+            _animateRoutine = null;
+            if (_sticky)
+            {
+                _sticky = false;
+                PoolManager.Release(gameObject);
+            }
+        }
+
+        private void SnapToFollow()
+        {
+            if (_followTarget == null)
                 return;
 
-            _text = GetComponent<TextMeshPro>();
-            if (_text == null)
-                _text = gameObject.AddComponent<TextMeshPro>();
+            transform.position = _followTarget.position + Vector3.up * _followHeightOffset;
         }
 
         private IEnumerator Animate()
@@ -135,9 +212,23 @@ namespace Project.AI
         private void BillboardToCamera()
         {
             if (_cam == null)
+                _cam = Camera.main;
+
+            if (_cam == null)
                 return;
 
             transform.forward = _cam.transform.forward;
         }
+
+        private void EnsureTextComponent()
+        {
+            if (_text != null)
+                return;
+
+            _text = GetComponent<TextMeshPro>();
+            if (_text == null)
+                _text = gameObject.AddComponent<TextMeshPro>();
+        }
     }
 }
+

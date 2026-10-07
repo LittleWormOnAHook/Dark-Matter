@@ -44,6 +44,8 @@ Written Oct 3, 2026; **execution sync Oct 5, 2026** for a Cursor agent picking u
 
 Animation tag sheet: `Assets/_Project/Documentation/Design/Combat/DMG_Combat_Animation_Tag_Sheet.md`.
 
+**Moving melee layers (Oct 6, 2026 canon):** `DM_Melee_Locomotion_Layer_Policy.md` + library plan §10; wiki mirror `Documentation/Wiki/Combat-Moving-Melee-Layer-Policy.md`. Do not reintroduce `DM_MeleeUpper` or crossfade full melee on Base.
+
 ## Phase 2 (closed Oct 5, 2026)
 
 Do **not** re-implement attack yaw (regression tests only). Phase 2 delivered:

@@ -18,8 +18,16 @@ namespace Project.Combat
         public AnimationClip strongB;
         [Tooltip("StrongAttacks / SwordAttack C — other heavy.")]
         public AnimationClip strongC;
-        [Tooltip("Attacks.StrongAttacks.SwordCharge hold pose (optional; falls back to strongB).")]
+        [Tooltip("Attacks.StrongAttacks.SwordCharge hold pose. Must be a looping wind-up (1HandSwordChargeUp), not a swing.")]
         public AnimationClip chargeHold;
+
+        [Header("Overlays (parry / interact hold)")]
+        [Tooltip("1H-RH@Parry01 — tap parry presentation (optional).")]
+        public AnimationClip parry01;
+        [Tooltip("1H-RH@Parry01_Hit — successful parry hit reaction.")]
+        public AnimationClip parry01Hit;
+        [Tooltip("Hold E + light attack — One Hand Sword Combo.")]
+        public AnimationClip interactHoldCombo;
     }
 
     [CreateAssetMenu(menuName = "Dark Matter/Combat/Melee Animation Set", fileName = "DM_MeleeAnimationSet")]

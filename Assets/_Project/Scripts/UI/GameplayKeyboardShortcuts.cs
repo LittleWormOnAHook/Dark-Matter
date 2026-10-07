@@ -1210,6 +1210,18 @@ namespace Project.UI
                 itemActions.TryEquipAmmoToActiveRangedWeapon(absolute);
         }
 
+        private static readonly System.Collections.Generic.List<ItemData> ammoCycleItems =
+            new System.Collections.Generic.List<ItemData>(16);
+        private static readonly System.Collections.Generic.List<int> ammoCycleSlots =
+            new System.Collections.Generic.List<int>(16);
+
+        /// <summary>
+        /// X / D-Pad Right tap with a ranged weapon drawn. Builds the list of ammo TYPES the player has
+        /// that fit the drawn weapon (Hot Cross 5-0 first, then the inventory grid; empty slots, non-ammo
+        /// and duplicates of the same item skipped), then loads the next type after the loaded one and
+        /// wraps to the start. Inventory-only ammo is included in the cycle (loaded straight from its
+        /// grid slot; unloaded rounds return there). stamp: x-ammo-type-cycle 1006
+        /// </summary>
         private static void TryCycleToNextFittingAmmo(
             InventorySystem inventory,
             EquipmentController equipment,
@@ -1217,50 +1229,186 @@ namespace Project.UI
             int weaponHotbarSlot,
             int current)
         {
-            int last = Mathf.Min(HotCrossUtilityLastLocal, inventory.hotbarSize - 1);
-            int span = last - HotCrossUtilityFirstLocal + 1;
-            if (span <= 0)
-                return;
-
-            // Start after the focused slot and wrap; the focused slot itself is checked last.
-            int start = Mathf.Clamp(current, HotCrossUtilityFirstLocal, last);
-            int found = -1;
-            for (int offset = 1; offset <= span; offset++)
-            {
-                int candidate = HotCrossUtilityFirstLocal + ((start - HotCrossUtilityFirstLocal + offset) % span);
-                if (equipment.IsWeaponHotbarSlot(candidate))
-                    continue;
-
-                int candidateAbsolute = inventory.HotbarStartIndex + candidate;
-                ItemData candidateItem = inventory.GetItemAt(candidateAbsolute);
-                if (candidateItem == null || !candidateItem.CountsAsAmmo)
-                    continue;
-                if (!Project.Progression.LevelUnlockUtility.PassesUseGate(candidateItem, showToast: false))
-                    continue;
-                if (!itemActions.CanEquipAmmoToActiveRangedWeapon(candidateAbsolute))
-                    continue;
-
-                found = candidate;
-                break;
-            }
-
             ItemData weapon = equipment.GetHotbarItem(weaponHotbarSlot);
             string weaponName = weapon != null && !string.IsNullOrWhiteSpace(weapon.itemName)
                 ? weapon.itemName
                 : "this weapon";
-            if (found < 0)
+
+            WeaponAmmoState ammoState = equipment.GetComponent<WeaponAmmoState>();
+            if (ammoState == null)
+                ammoState = inventory.GetComponent<WeaponAmmoState>();
+            ItemData loadedItem = ammoState != null ? ammoState.GetLoadedAmmoItem(weaponHotbarSlot) : null;
+            int loadedRounds = ammoState != null ? ammoState.GetLoadedAmmo(weaponHotbarSlot) : 0;
+            int loadedSource = ammoState != null ? ammoState.GetLoadedAmmoSourceSlot(weaponHotbarSlot) : -1;
+
+            BuildFittingAmmoCycle(inventory, equipment, itemActions);
+            int count = ammoCycleItems.Count;
+            int loadedIndex = loadedItem != null ? ammoCycleItems.IndexOf(loadedItem) : -1;
+
+            int pick = -1;
+            if (loadedIndex >= 0)
             {
-                PickupToastUI.Show($"No ammo for {weaponName} in Hot Cross slots 5-0");
+                for (int step = 1; step < count; step++)
+                {
+                    int candidate = (loadedIndex + step) % count;
+                    if (ammoCycleItems[candidate] != loadedItem)
+                    {
+                        pick = candidate;
+                        break;
+                    }
+                }
+            }
+            else if (count > 0)
+            {
+                // The loaded type has no stack left: continue after the slot it was loaded from (else the
+                // focused Hot Cross slot), wrapping back to the start.
+                int focusOrder = loadedSource >= 0
+                    ? AmmoCycleOrder(inventory, loadedSource)
+                    : current >= HotCrossUtilityFirstLocal && current <= HotCrossUtilityLastLocal
+                        ? current - HotCrossUtilityFirstLocal
+                        : -1;
+                pick = 0;
+                for (int i = 0; i < count; i++)
+                {
+                    if (AmmoCycleOrder(inventory, ammoCycleSlots[i]) > focusOrder)
+                    {
+                        pick = i;
+                        break;
+                    }
+                }
+            }
+
+            if (pick < 0)
+            {
+                // Only the loaded type exists. An empty / partial magazine tops up from its stack;
+                // otherwise say so once (PickupToastUI de-dupes repeats).
+                if (loadedIndex >= 0)
+                {
+                    int onlySlot = ammoCycleSlots[loadedIndex];
+                    NotifyAmmoCycleFocus(inventory, onlySlot);
+                    if (onlySlot >= 0
+                        && itemActions.TryEquipAmmoToActiveRangedWeapon(onlySlot, showToast: false))
+                        return;
+                }
+
+                if (loadedItem != null && (loadedRounds > 0 || loadedIndex >= 0))
+                    PickupToastUI.Show($"Only {AmmoCycleName(loadedItem)} available");
+                else
+                    PickupToastUI.Show($"No ammo for {weaponName}");
                 return;
             }
 
-            DMUiToolkitHotCross.NotifyConsumableLocalIndex(found);
-            int absolute = inventory.HotbarStartIndex + found;
-            ItemData ammo = inventory.GetItemAt(absolute);
-            string ammoName = ammo != null && !string.IsNullOrWhiteSpace(ammo.itemName) ? ammo.itemName : "Ammo";
-            // Success is shown by the Hot Cross loaded-ammo label + clip count; only failures toast.
-            if (!itemActions.TryEquipAmmoToActiveRangedWeapon(absolute, showToast: false))
-                PickupToastUI.Show($"{ammoName} already loaded (magazine full)");
+            int absolute = ammoCycleSlots[pick];
+            NotifyAmmoCycleFocus(inventory, absolute);
+            if (absolute < 0)
+            {
+                // Mag-only entry: already loaded; keep the Hot Cross ghost focused.
+                return;
+            }
+
+            // Success is shown by the Hot Cross loaded-ammo label + clip count; WeaponAmmoState toasts
+            // the rare "no room to unload" case itself.
+            itemActions.TryEquipAmmoToActiveRangedWeapon(absolute, showToast: false);
+        }
+
+        private static void BuildFittingAmmoCycle(
+            InventorySystem inventory,
+            EquipmentController equipment,
+            InventoryItemActions itemActions)
+        {
+            ammoCycleItems.Clear();
+            ammoCycleSlots.Clear();
+
+            // Only Hot Cross utility slots (5-0). Inventory-grid ammo is never in the cycle —
+            // the player must move it onto the Hot Cross before it can load.
+            // stamp: x-cycle-hotcross-only 1006
+            int last = Mathf.Min(HotCrossUtilityLastLocal, inventory.hotbarSize - 1);
+            for (int local = HotCrossUtilityFirstLocal; local <= last; local++)
+            {
+                if (equipment.IsWeaponHotbarSlot(local))
+                    continue;
+                TryAddAmmoCycleEntry(inventory, itemActions, inventory.HotbarStartIndex + local);
+            }
+
+            // Magazine-only ammo that was loaded from Hot Cross stays in the cycle so X can wrap
+            // back to it and the Hot Cross ghost identity stays meaningful.
+            TryAddLoadedMagazineToCycle(inventory, equipment, itemActions);
+        }
+
+        private static void TryAddLoadedMagazineToCycle(
+            InventorySystem inventory,
+            EquipmentController equipment,
+            InventoryItemActions itemActions)
+        {
+            if (equipment == null || !equipment.HasActiveRangedWeapon())
+                return;
+
+            WeaponAmmoState ammoState = equipment.GetComponent<WeaponAmmoState>()
+                ?? inventory.GetComponent<WeaponAmmoState>();
+            if (ammoState == null)
+                return;
+
+            int weaponSlot = equipment.ActiveWeaponHotbarSlot;
+            if (ammoState.GetLoadedAmmo(weaponSlot) <= 0)
+                return;
+
+            ItemData loaded = ammoState.GetLoadedAmmoItem(weaponSlot);
+            if (loaded == null || !loaded.CountsAsAmmo || ammoCycleItems.Contains(loaded))
+                return;
+
+            if (!Project.Progression.LevelUnlockUtility.PassesUseGate(loaded, showToast: false))
+                return;
+
+            ItemData weapon = equipment.GetHotbarItem(weaponSlot);
+            if (weapon == null || !weapon.AcceptsAmmoType(loaded.ammoType))
+                return;
+
+            int source = ammoState.GetLoadedAmmoSourceSlot(weaponSlot);
+            // Only keep a real slot if it is still a Hot Cross utility slot; otherwise mag-only (-1).
+            int slot = -1;
+            if (source >= 0
+                && inventory.IsHotbarIndex(source)
+                && equipment.IsUtilityHotbarSlot(source - inventory.HotbarStartIndex))
+                slot = source;
+
+            ammoCycleItems.Add(loaded);
+            ammoCycleSlots.Add(slot);
+        }
+
+        private static void TryAddAmmoCycleEntry(InventorySystem inventory, InventoryItemActions itemActions, int absolute)
+        {
+            ItemData item = inventory.GetItemAt(absolute);
+            if (item == null || !item.CountsAsAmmo || ammoCycleItems.Contains(item))
+                return;
+            if (!Project.Progression.LevelUnlockUtility.PassesUseGate(item, showToast: false))
+                return;
+            if (!itemActions.CanEquipAmmoToActiveRangedWeapon(absolute))
+                return;
+
+            ammoCycleItems.Add(item);
+            ammoCycleSlots.Add(absolute);
+        }
+
+        private static int AmmoCycleOrder(InventorySystem inventory, int absolute)
+        {
+            if (absolute < 0)
+                return 1000;
+            return inventory.IsHotbarIndex(absolute)
+                ? absolute - inventory.HotbarStartIndex - HotCrossUtilityFirstLocal
+                : 100 + absolute;
+        }
+
+        private static void NotifyAmmoCycleFocus(InventorySystem inventory, int absolute)
+        {
+            if (absolute < 0 || inventory == null)
+                return;
+            if (inventory.IsHotbarIndex(absolute))
+                DMUiToolkitHotCross.NotifyConsumableLocalIndex(absolute - inventory.HotbarStartIndex);
+        }
+
+        private static string AmmoCycleName(ItemData item)
+        {
+            return item != null && !string.IsNullOrWhiteSpace(item.itemName) ? item.itemName : "Ammo";
         }
 
         private static void TryUseFocusedHotCrossConsumable()
@@ -1278,11 +1426,16 @@ namespace Project.UI
 
             if (item.CountsAsAmmo)
             {
-                if (itemActions == null || !itemActions.TryEquipAmmoToActiveRangedWeapon(absolute))
+                if (itemActions == null || itemActions.TryEquipAmmoToActiveRangedWeapon(absolute))
+                    return;
+
+                // TryEquipAmmoToActiveRangedWeapon already toasted "no ranged weapon", "incompatible"
+                // and level-gate failures; only the remaining case (same ammo, magazine full) needs one.
+                if (itemActions.CanEquipAmmoToActiveRangedWeapon(absolute)
+                    && Project.Progression.LevelUnlockUtility.PassesUseGate(item))
                 {
-                    if (itemActions != null && !itemActions.TryResolveActiveRangedWeaponHotbarSlot(out _))
-                        return;
-                    PickupToastUI.Show("Cannot load - magazine full or incompatible");
+                    string ammoName = !string.IsNullOrWhiteSpace(item.itemName) ? item.itemName : "Ammo";
+                    PickupToastUI.Show($"{ammoName} already loaded (magazine full)");
                 }
 
                 return;

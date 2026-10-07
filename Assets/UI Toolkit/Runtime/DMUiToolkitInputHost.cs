@@ -46,11 +46,36 @@ namespace Project.UI
 
             TryRegisterBootstrapRoots();
 
-            // Do NOT RecoverGhostUiLocks every frame here — ForceHide/Close races made journal
-            // hotkeys appear dead. PlayerController polls lightly when input flags are stuck.
+            bool menusOpen = DMUiToolkitMainMenu.IsVisible
+                || DMUiToolkitMenuPanels.IsAnySubPanelOpen
+                || DMUiToolkitMenus.IsOpen
+                || DMUiToolkitLoadingOverlay.IsShowing;
+
+            // Escape / pause still run when UI blocks gameplay; skip modal + hotbar polling.
             GameplayKeyboardShortcuts.TryHandleDevPanel();
             GameplayKeyboardShortcuts.TryHandleEscapeAndPause();
-            GameplayKeyboardShortcuts.TryHandleCinematicHudToggle();
+            if (!menusOpen)
+                GameplayKeyboardShortcuts.TryHandleCinematicHudToggle();
+
+            if (menusOpen || GameplayKeyboardShortcuts.IsGameplayInputLockedByUi())
+            {
+                if (Time.unscaledTime >= nextGhostClear)
+                {
+                    nextGhostClear = Time.unscaledTime + 0.25f;
+                    GameplayInputRecovery.ClearGhostPauseOverlay();
+                }
+
+                if (GameSession.HasStarted
+                    && !DMUiToolkitLoadingOverlay.IsShowing
+                    && !DMUiToolkitMainMenu.IsVisible
+                    && DMUiToolkitMenus.IsOpen)
+                {
+                    GameplayKeyboardShortcuts.TryHandleJournalHotkeys();
+                }
+
+                return;
+            }
+
             DMUiModalInputGate.Tick();
             DMUiJournalGamepadNav.Tick();
 
@@ -60,21 +85,8 @@ namespace Project.UI
                 GameplayInputRecovery.ClearGhostPauseOverlay();
             }
 
-            if (GameSession.HasStarted
-                && !DMUiToolkitLoadingOverlay.IsShowing
-                && !DMUiToolkitMainMenu.IsVisible
-                && !DMUiToolkitMenuPanels.IsAnySubPanelOpen)
-            {
+            if (GameSession.HasStarted)
                 GameplayKeyboardShortcuts.TryHandleAll();
-            }
-            else if (GameSession.HasStarted
-                && !DMUiToolkitLoadingOverlay.IsShowing
-                && !DMUiToolkitMainMenu.IsVisible
-                && DMUiToolkitMenus.IsOpen)
-            {
-                // Journal open: Player map is disabled — still poll tab letters.
-                GameplayKeyboardShortcuts.TryHandleJournalHotkeys();
-            }
         }
 
         public static void RegisterKeyRoot(VisualElement root)

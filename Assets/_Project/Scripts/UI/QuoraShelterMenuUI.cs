@@ -428,7 +428,7 @@ namespace Project.UI
 
             Canvas canvas = canvasRootTransform != null
 
-                ? canvasRootTransform.GetComponent<Canvas>() ?? canvasRootTransform.GetComponentInParent<Canvas>()
+                ? canvasRootTransform.GetComponentInParent<Canvas>()
 
                 : null;
 

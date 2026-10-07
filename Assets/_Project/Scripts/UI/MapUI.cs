@@ -152,7 +152,24 @@ namespace Project.UI
             MapRegistry.MarkerRegistered += HandleMarkerRegistryChanged;
             MapRegistry.MarkerUnregistered += HandleMarkerRegistryChanged;
             ScannerDiscoveryRegistry.Changed += HandleMarkerRegistryChanged;
+            // OnDisable drops these; re-attach so the map/fog keep updating after a disable/enable cycle.
+            SubscribeMapSourceEvents(MapFogOfWar.Instance);
             RequestImmediateMarkerRefresh();
+        }
+
+        private void SubscribeMapSourceEvents(MapFogOfWar fog)
+        {
+            if (mapProvider != null)
+            {
+                mapProvider.MapTextureReady -= HandleMapTextureReady;
+                mapProvider.MapTextureReady += HandleMapTextureReady;
+            }
+
+            if (fog != null)
+            {
+                fog.FogUpdated -= HandleFogUpdated;
+                fog.FogUpdated += HandleFogUpdated;
+            }
         }
 
         private void OnDisable()
@@ -182,12 +199,7 @@ namespace Project.UI
         private void Start()
         {
             EnsureMapProvider();
-            if (mapProvider != null)
-                mapProvider.MapTextureReady += HandleMapTextureReady;
-
-            MapFogOfWar fog = MapFogOfWar.EnsureExists();
-            if (fog != null)
-                fog.FogUpdated += HandleFogUpdated;
+            SubscribeMapSourceEvents(MapFogOfWar.EnsureExists());
 
             SyncMinimapSpanFromWorldBounds();
             EnsureUiBuilt();

@@ -88,9 +88,20 @@ namespace Project.AI.Invector
         /// </summary>
         public void DropHeldWeaponOnDeath()
         {
+            // Idempotent: a second call (death presenter + ragdoll bridge) must not clear
+            // _lastDroppedWeapon or spawn a second physics body.
+            if (_lastDroppedWeapon != null)
+            {
+                DeactivateHolsteredWeaponVisuals();
+                return;
+            }
+
             GameObject weaponRoot = ResolveDrawnWeaponRoot();
             if (weaponRoot == null)
+            {
+                DeactivateHolsteredWeaponVisuals();
                 return;
+            }
 
             _activeDrawnInstance = null;
             _activeItem = null;

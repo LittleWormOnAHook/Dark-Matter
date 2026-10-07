@@ -331,7 +331,9 @@ namespace Project.UI
 
         private static void EnsureUiInput(Transform canvasRoot)
         {
-            Canvas canvas = canvasRoot.GetComponent<Canvas>() ?? canvasRoot.GetComponentInParent<Canvas>();
+            // GetComponentInParent includes canvasRoot itself; `GetComponent<Canvas>() ?? ...` never fell
+            // back to a parent canvas because a missing native component is a fake null, not a C# null.
+            Canvas canvas = canvasRoot.GetComponentInParent<Canvas>();
             if (canvas != null && canvas.GetComponent<GraphicRaycaster>() == null)
                 canvas.gameObject.AddComponent<GraphicRaycaster>();
 

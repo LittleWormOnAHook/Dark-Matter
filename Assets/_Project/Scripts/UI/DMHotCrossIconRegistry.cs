@@ -70,7 +70,8 @@ namespace Project.UI
                         continue;
 
                     if (entry.icon != null && entry.icon.texture != null
-                        && entry.icon.texture.width > 0 && entry.icon.rect.width > 0f)
+                        && entry.icon.texture.width > 0 && entry.icon.rect.width > 0f
+                        && (!item.CountsAsAmmo || IsAmmoSafeSprite(item, entry.icon)))
                         sprite = entry.icon;
                     tint = entry.tint;
                     tint.a = entry.alpha;
@@ -104,10 +105,25 @@ namespace Project.UI
             if (cutouts == null || cutouts.Count == 0)
                 return null;
 
-            if (TryExactCutout(item.itemName, out Sprite sprite)
-                || TryExactCutout(item.name, out sprite)
-                || TryExactCutout(Alias(item.itemName), out sprite)
-                || TryExactCutout(Alias(item.name), out sprite))
+            // Ammo only accepts ammo cutouts: exact item/ammo-type names first, and every alias or fuzzy hit
+            // must pass IsAmmoSafeSprite ("Laser Pistol Ammo" contains "pistol" -> Pistol weapon cutout).
+            // No ammo-specific match -> null, so callers fall back to the item's own icon.
+            bool ammo = item.CountsAsAmmo;
+            Sprite sprite;
+            if (ammo
+                && (TryAmmoSafeCutout(item, item.itemName, out sprite)
+                    || TryAmmoSafeCutout(item, item.name, out sprite)
+                    || TryAmmoSafeCutout(item, item.ammoType.ToString(), out sprite)
+                    || TryAmmoSafeCutout(item, item.ammoType + " Ammo", out sprite)
+                    || TryAmmoSafeCutout(item, Alias(item.itemName), out sprite)
+                    || TryAmmoSafeCutout(item, Alias(item.name), out sprite)))
+                return sprite;
+
+            if (!ammo
+                && (TryExactCutout(item.itemName, out sprite)
+                    || TryExactCutout(item.name, out sprite)
+                    || TryExactCutout(Alias(item.itemName), out sprite)
+                    || TryExactCutout(Alias(item.name), out sprite)))
                 return sprite;
 
             string itemKey = Normalize(item.itemName);
@@ -118,11 +134,51 @@ namespace Project.UI
 
             foreach (KeyValuePair<string, Sprite> pair in cutouts)
             {
-                if (pair.Key.Contains(itemKey) || itemKey.Contains(pair.Key))
-                    return pair.Value;
+                if (!(pair.Key.Contains(itemKey) || itemKey.Contains(pair.Key)))
+                    continue;
+                if (ammo && !IsAmmoSafeSprite(item, pair.Value))
+                    continue;
+                return pair.Value;
             }
 
             return null;
+        }
+
+        private static bool TryAmmoSafeCutout(ItemData item, string raw, out Sprite sprite)
+        {
+            if (TryExactCutout(raw, out sprite) && IsAmmoSafeSprite(item, sprite))
+                return true;
+            sprite = null;
+            return false;
+        }
+
+        private static readonly HashSet<string> AmmoTypeKeys = BuildAmmoTypeKeys();
+
+        private static HashSet<string> BuildAmmoTypeKeys()
+        {
+            var keys = new HashSet<string>();
+            foreach (string typeName in Enum.GetNames(typeof(Project.Combat.AmmoType)))
+                keys.Add(Normalize(typeName));
+            return keys;
+        }
+
+        /// <summary>
+        /// True when a sprite may represent an ammo item: named after the item itself, containing "ammo",
+        /// or named after an ammo type (Plasma, Ice, Resonance Stabilizer, ...). Weapon cutouts never pass.
+        /// </summary>
+        public static bool IsAmmoSafeSprite(ItemData item, Sprite sprite)
+        {
+            if (item == null || sprite == null)
+                return false;
+
+            string key = Normalize(sprite.name);
+            if (key.Length == 0)
+                return false;
+            if (key == Normalize(item.itemName) || key == Normalize(item.name))
+                return true;
+            if (key.Contains("ammo"))
+                return true;
+            return AmmoTypeKeys.Contains(key);
         }
 
         private static bool TryExactCutout(string raw, out Sprite sprite)

@@ -266,8 +266,13 @@ namespace Project.AI
             bagSpawned = false;
             remainingLoot.Clear();
 
-            if (health != null && health.IsDead && !health.IsRespawnExternallyManaged)
-                health.FinishLootHoldAndRespawn();
+            // Loot bag is gone — mark sequence complete then remove the dead enemy shell immediately
+            // (do not wait for post-loot respawn delay). Spawner paces respawn via PostLootRespawnDelay.
+            GetComponent<EnemyDeathSequence>()?.ForceMarkComplete();
+            if (health != null && health.IsDead)
+                health.DestroyDeadShellNow();
+            else
+                EnemyDeathRuntimeCleanup.SweepOrphans(destroyImmediately: false);
         }
     }
 }

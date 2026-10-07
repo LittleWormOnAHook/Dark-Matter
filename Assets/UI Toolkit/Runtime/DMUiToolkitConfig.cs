@@ -36,6 +36,19 @@ namespace Project.UI
         [Tooltip("Lower-right combined minimap, compass, and survival readouts. Legacy uGUI minimap/compass stay retired when UITK is enabled.")]
         public bool showPilotCluster = true;
 
+        [Tooltip("Default LateUpdate refresh rate for the pilot cluster (Hz, unscaled). Spikes bypass via MarkPresentationDirty.")]
+        [Range(5f, 60f)]
+        public float pilotClusterRefreshHz = 15f;
+
+        [Header("World Chrome (proximity dots / bars)")]
+        [Tooltip("Max repaint rate for non-exclusive interaction dots when the exclusive pickup stem is stable (Hz). Exclusive stem + Hold-E stay every frame.")]
+        [Range(10f, 60f)]
+        public float worldChromeInteractDotPaintHz = 30f;
+
+        [Tooltip("Floating target health bar repaint cap when camera/player are stable (Hz).")]
+        [Range(5f, 30f)]
+        public float worldChromeBarPaintHz = 8f;
+
         private static DMUiToolkitConfig cached;
 
         public static DMUiToolkitConfig Instance

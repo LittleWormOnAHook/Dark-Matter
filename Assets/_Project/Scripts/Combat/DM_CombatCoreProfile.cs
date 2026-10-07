@@ -127,8 +127,14 @@ namespace Project.Combat
         [Range(0.05f, 0.95f)] public float strongMeleeDamageStartNormalized = 0.72f;
         [Tooltip("Normalized clip time when charged release hitboxes turn off.")]
         [Range(0.1f, 1f)] public float strongMeleeDamageEndNormalized = 0.98f;
-        [Tooltip("Play-mode speed for StrongAttacks/SwordCharge and Strong SwordAttack B (1 = clip default, 1.25 = 25% faster, 0.75 = slowest allowed). Applied at runtime from profile.Live; Build And Apply only syncs controller clips.")]
+        [Tooltip("Play-mode speed for StrongAttacks/SwordCharge and charged Strong A/B/C release (1 = clip default, 1.25 = 25% faster, 0.75 = slowest allowed). Applied at runtime from profile.Live; Build And Apply only syncs controller clips.")]
         [Range(0.75f, 2f)] public float strongMeleeAnimSpeedMultiplier = 1.25f;
+        [Tooltip("Relative weights when picking Strong A/B/C on charged release (normalized at runtime). Favor A for the default heavy.")]
+        [Range(0f, 1f)] public float strongReleaseWeightA = 0.55f;
+        [Range(0f, 1f)] public float strongReleaseWeightB = 0.22f;
+        [Range(0f, 1f)] public float strongReleaseWeightC = 0.23f;
+        [Tooltip("Hold E + light attack (InteractHoldCombo state). Default 1.75 matches design.")]
+        [Range(0.75f, 2.5f)] public float interactHoldComboAnimSpeed = 1.75f;
         [Tooltip("Charged Strong B / AttackC ignores the defender's sword and other outgoing weapon volumes. Damage waits for a real body / dummy hit. Block and parry still register as guard.")]
         public bool chargedHitsIgnoreEnemyWeapons = true;
 

@@ -38,6 +38,20 @@ namespace Project.AI
         public float PreDisintegrationDelay => preDisintegrationDelay;
         public float PostLootRespawnDelay => postLootRespawnDelay;
 
+        /// <summary>
+        /// Marks the sequence complete before the host GameObject is destroyed (loot-bag finished).
+        /// Safe to call more than once.
+        /// </summary>
+        public void ForceMarkComplete()
+        {
+            if (_isComplete)
+                return;
+
+            _isComplete = true;
+            _sequenceRoutine = null;
+            SequenceCompleted?.Invoke();
+        }
+
         private void Awake()
         {
             _health = GetComponent<EnemyHealth>();
@@ -143,15 +157,14 @@ namespace Project.AI
             while (_lootable != null && _lootable.IsLootPending)
                 yield return null;
 
-            if (postLootRespawnDelay > 0f)
-                yield return new WaitForSeconds(postLootRespawnDelay);
+            // Mark complete BEFORE destroying the host so spawners observing IsComplete can proceed.
+            ForceMarkComplete();
 
-            _isComplete = true;
-            _sequenceRoutine = null;
-            SequenceCompleted?.Invoke();
-
-            if (_health != null && _health.IsDead && !_health.IsRespawnExternallyManaged)
-                _health.FinishLootHoldAndRespawn();
+            if (_health != null && _health.IsDead)
+                _health.DestroyDeadShellNow();
+            else
+                EnemyDeathRuntimeCleanup.SweepOrphans(destroyImmediately: false);
+            // postLootRespawnDelay is honored by EnemySpawner after IsComplete (corpse already gone).
         }
 
         private void BeginDeathPresentation()

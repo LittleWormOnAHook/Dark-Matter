@@ -174,6 +174,20 @@ namespace Project.AI
                 Destroy(gameObject, destroyDelay);
         }
 
+        /// <summary>
+        /// Immediately removes a dead enemy root (spawner-managed or world) and sweeps orphans.
+        /// Used when the loot bag finishes so empty FRED(Clone) shells do not linger.
+        /// </summary>
+        public void DestroyDeadShellNow()
+        {
+            if (!isDead)
+                return;
+
+            respawnExternallyManaged = false;
+            CancelInvoke(nameof(Respawn));
+            EnemyDeathRuntimeCleanup.DestroyDeadEnemyAndOrphans(gameObject, destroyImmediately: false);
+        }
+
         private void Respawn()
         {
             respawnExternallyManaged = false;

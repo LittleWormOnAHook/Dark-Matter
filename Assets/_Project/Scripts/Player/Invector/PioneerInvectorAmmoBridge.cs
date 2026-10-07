@@ -235,6 +235,15 @@ namespace Project.Player.Invector
         /// </summary>
         public bool TryRequestReload(bool playEmptyDenyFeedback)
         {
+            return TryRequestReloadInternal(playEmptyDenyFeedback, showNoReserveToast: playEmptyDenyFeedback);
+        }
+
+        /// <summary>
+        /// Reserve = matching ammo on Hot Cross utility slots (5-0) only. When there is none, toast
+        /// "No &lt;ammo&gt; in Hot Cross" (PickupToastUI de-dupes repeats). stamp: reload-hotcross-only 1006
+        /// </summary>
+        private bool TryRequestReloadInternal(bool playEmptyDenyFeedback, bool showNoReserveToast)
+        {
             if (_ammoState == null || _shooterManager == null || _equipment == null)
                 return false;
 
@@ -268,12 +277,16 @@ namespace Project.Player.Invector
             if (playEmptyDenyFeedback)
                 PlayEmptyReloadDeny();
 
+            if (showNoReserveToast)
+                Project.UI.PickupToastUI.Show($"No {_ammoState.GetLoadedAmmoDisplayName(slot)} in Hot Cross");
+
             return false;
         }
 
         private void TryStartReloadIfEmpty()
         {
-            if (!TryRequestReload(playEmptyDenyFeedback: false))
+            // Auto-reload on empty / dry fire: same Hot Cross-only reserve, one toast when none.
+            if (!TryRequestReloadInternal(playEmptyDenyFeedback: false, showNoReserveToast: true))
                 return;
 
             _shooterManager.ReloadWeapon();

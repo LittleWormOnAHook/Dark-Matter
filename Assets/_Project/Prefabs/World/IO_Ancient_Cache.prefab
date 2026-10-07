@@ -76,7 +76,8 @@ PrefabInstance:
       propertyPath: openAnimationName
       value: Cache-Lid-Open
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 20800156, guid: 833597b2707e3cf429fb53b2f04334d2, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []

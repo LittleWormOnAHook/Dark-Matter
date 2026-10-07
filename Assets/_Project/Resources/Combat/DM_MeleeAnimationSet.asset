@@ -17,9 +17,12 @@ MonoBehaviour:
     lightB: {fileID: 7400048, guid: 71a860de405aaeb44ace152c21808003, type: 3}
     lightC: {fileID: 7400050, guid: 71a860de405aaeb44ace152c21808003, type: 3}
     strongA: {fileID: 7400000, guid: 158e3583dffd4e0488ce12bf4a9cf2d5, type: 3}
-    strongB: {fileID: 7400000, guid: 3c1e0c5f432c83e42a57421061392705, type: 3}
-    strongC: {fileID: 7400000, guid: effc1354a48db59438ac43aca4e76076, type: 3}
-    chargeHold: {fileID: 7400000, guid: 3c1e0c5f432c83e42a57421061392705, type: 3}
+    strongB: {fileID: 7400000, guid: f918fed3c26ba8641be9894376b9293e, type: 3}
+    strongC: {fileID: 7400000, guid: 33e947fb8834d8a48902ee490b408a77, type: 3}
+    chargeHold: {fileID: 7400044, guid: f627a82535eb00b4cb9c402e49ac9d14, type: 3}
+    parry01: {fileID: 7400000, guid: 6f07f77346b201c4285e9ab3be604e1d, type: 3}
+    parry01Hit: {fileID: 7400002, guid: 6f07f77346b201c4285e9ab3be604e1d, type: 3}
+    interactHoldCombo: {fileID: 7400000, guid: 9ec73c67356935c499b73baaf8803eef, type: 3}
   swordAndShield:
     lightA: {fileID: 7400000, guid: 6f6b45f0d0ad6cc4da3c53bab1146e2e, type: 3}
     lightB: {fileID: 7400000, guid: 08c4cd2fea5f487499e3e2db6fbca4db, type: 3}
@@ -28,6 +31,9 @@ MonoBehaviour:
     strongB: {fileID: 0}
     strongC: {fileID: 0}
     chargeHold: {fileID: 0}
+    parry01: {fileID: 0}
+    parry01Hit: {fileID: 0}
+    interactHoldCombo: {fileID: 0}
   knife:
     lightA: {fileID: 7400000, guid: f020d0e9b1772e346a2b1dde3acee048, type: 3}
     lightB: {fileID: 7400000, guid: 8ab4695fdd495114eaf47914630d2e50, type: 3}
@@ -36,6 +42,9 @@ MonoBehaviour:
     strongB: {fileID: 0}
     strongC: {fileID: 0}
     chargeHold: {fileID: 0}
+    parry01: {fileID: 0}
+    parry01Hit: {fileID: 0}
+    interactHoldCombo: {fileID: 0}
   axe:
     lightA: {fileID: 7400002, guid: 2e0c2b57b0765a640a0f7ff78c822ee6, type: 3}
     lightB: {fileID: 7400000, guid: 29be3cdf815a9e944b90ac99f99d0ed5, type: 3}
@@ -44,6 +53,9 @@ MonoBehaviour:
     strongB: {fileID: 0}
     strongC: {fileID: 0}
     chargeHold: {fileID: 0}
+    parry01: {fileID: 0}
+    parry01Hit: {fileID: 0}
+    interactHoldCombo: {fileID: 0}
   twoHand:
     lightA: {fileID: 7400000, guid: 4349ab046b6a32c498ef28f1ff2ff323, type: 3}
     lightB: {fileID: 7400000, guid: 483e0e04fe628134aa3d0f612b1396d1, type: 3}
@@ -52,6 +64,9 @@ MonoBehaviour:
     strongB: {fileID: 0}
     strongC: {fileID: 0}
     chargeHold: {fileID: 0}
+    parry01: {fileID: 0}
+    parry01Hit: {fileID: 0}
+    interactHoldCombo: {fileID: 0}
   dualWield:
     lightA: {fileID: 7400000, guid: cff792c0a73a3ed4fb245ae373948491, type: 3}
     lightB: {fileID: 0}
@@ -60,6 +75,9 @@ MonoBehaviour:
     strongB: {fileID: 0}
     strongC: {fileID: 0}
     chargeHold: {fileID: 0}
+    parry01: {fileID: 0}
+    parry01Hit: {fileID: 0}
+    interactHoldCombo: {fileID: 0}
   torch:
     lightA: {fileID: 7400000, guid: 117f8085a9510374a898bc05e45b2155, type: 3}
     lightB: {fileID: 7400000, guid: bce6f2d5892c6ee4ba46dda521c45892, type: 3}
@@ -68,3 +86,6 @@ MonoBehaviour:
     strongB: {fileID: 0}
     strongC: {fileID: 0}
     chargeHold: {fileID: 0}
+    parry01: {fileID: 0}
+    parry01Hit: {fileID: 0}
+    interactHoldCombo: {fileID: 0}

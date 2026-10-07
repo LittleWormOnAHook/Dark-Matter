@@ -250,11 +250,13 @@ namespace Project.Player.Invector
             }
 
             base.Update();
-            SyncPioneerCursorState();
-            PollFollowCameraZoom();
 
-            if (_locomotionGait == null)
-                _locomotionGait = GetComponent<DMLocomotionGaitController>();
+            if (!IsGameplayInputDeferred())
+            {
+                SyncPioneerCursorState();
+                PollFollowCameraZoom();
+            }
+
             _locomotionGait?.TickLocomotion();
             RestoreJumpHeightIfJumpFinished();
         }
@@ -498,12 +500,47 @@ namespace Project.Player.Invector
             }
 
             base.LateUpdate();
-            SyncPioneerCursorState();
+
+            if (!IsGameplayInputDeferred())
+                SyncPioneerCursorState();
+
             PinAimFollowDistance();
+
+            if (!NeedsMeleeLateUpdateWork())
+                return;
+
             MaintainStrongChargeAnimation();
             TickLightComboChain();
             TickMeleeFullBodyIdleRestore();
             ApplyMeleeThreatFacing();
+        }
+
+        private bool IsGameplayInputDeferred()
+        {
+            if (!GameSession.HasStarted || Time.timeScale <= 0f)
+                return true;
+            if (GameplayKeyboardShortcuts.IsGameplayInputLockedByUi())
+                return true;
+            if (_inputBridge != null && _inputBridge.ShouldLockGameplayInput())
+                return true;
+            return false;
+        }
+
+        private bool NeedsMeleeLateUpdateWork()
+        {
+            if (_lightChainQueuedSlot >= 0)
+                return true;
+            if (_strongChargeArmed || _strongChargePoseActive || isAttacking)
+                return true;
+            if (IsDrawnMeleeWeaponActive())
+                return true;
+            if (isBlocking || ReadBlockHeld())
+                return true;
+            if (_meleeIdleRestoreQueued || _guardImpactRoutine != null)
+                return true;
+            if (Time.time < _meleeOverlayProtectUntil)
+                return true;
+            return false;
         }
 
         protected override void CheckAimConditions()

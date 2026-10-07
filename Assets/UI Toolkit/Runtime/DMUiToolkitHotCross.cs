@@ -56,6 +56,8 @@ namespace Project.UI
         private Label keyBl;
         private Label clipLabel;
         private Label loadedAmmoLabel;
+        private VisualElement loadedAmmoIcon;
+        private VisualElement loadedAmmoRow;
         private WeaponAmmoState ammoState;
         private int lastClipShown = int.MinValue;
         private string lastAmmoNameShown;
@@ -266,6 +268,16 @@ namespace Project.UI
 
         private void LateUpdate()
         {
+            if (bound && IsTreeStale())
+            {
+                // EnsureHost() re-enabling the UIDocument (or a tree reload) rebuilds the visual tree while this
+                // host stays enabled, so OnEnable never re-binds: icons were then drawn into detached elements
+                // and the visible slot stayed blank. Drop the stale refs and bind the live tree.
+                bound = false;
+                lastShown = !ShouldShow(); // force SetShown on the rebuilt root next pass
+                visualsDirty = true;
+            }
+
             if (!bound)
                 BindTree();
 
@@ -325,6 +337,15 @@ namespace Project.UI
                 && !GameplayHudVisibility.CinematicChromeHidden;
         }
 
+        private bool IsTreeStale()
+        {
+            return root == null
+                || root.panel == null
+                || (iconTl != null && iconTl.panel == null)
+                || (iconTr != null && iconTr.panel == null)
+                || (iconBl != null && iconBl.panel == null);
+        }
+
         private void BindTree()
         {
             if (document == null)
@@ -354,6 +375,8 @@ namespace Project.UI
             keyBl = tree.Q<Label>("hot-cross-key-bl");
             clipLabel = tree.Q<Label>("hot-cross-clip");
             loadedAmmoLabel = tree.Q<Label>("hot-cross-loaded-ammo");
+            loadedAmmoIcon = tree.Q<VisualElement>("hot-cross-loaded-icon");
+            loadedAmmoRow = tree.Q<VisualElement>("hot-cross-loaded");
             if (clipLabel != null)
                 clipLabel.text = string.Empty;
 
@@ -364,6 +387,15 @@ namespace Project.UI
                 lastAmmoNameShown = null;
                 lastAmmoNameGlowValid = false;
             }
+
+            if (loadedAmmoIcon != null)
+            {
+                DMUiToolkitStyle.ClearBackgroundImage(loadedAmmoIcon);
+                DMUiToolkitOverlayDocument.SetShown(loadedAmmoIcon, false);
+            }
+
+            if (loadedAmmoRow != null)
+                DMUiToolkitOverlayDocument.SetShown(loadedAmmoRow, false);
             ammoPopup = tree.Q<VisualElement>("hot-cross-ammo-popup");
             ammoTitle = tree.Q<Label>("hot-cross-ammo-title");
             ammoHint = tree.Q<Label>("hot-cross-ammo-hint");
@@ -414,7 +446,8 @@ namespace Project.UI
 
         private void HandleInventoryChanged() => MarkVisualsDirty();
 
-        private void HandleAmmoChanged() => RefreshClipCount();
+        // Mag load/unload also changes whether the TR ghost should show.
+        private void HandleAmmoChanged() => MarkVisualsDirty();
 
         private void HandleHotbarSelectionChanged(int _) => MarkVisualsDirty();
 
@@ -464,7 +497,7 @@ namespace Project.UI
 
         private void RefreshClipCount()
         {
-            if (clipLabel == null && loadedAmmoLabel == null)
+            if (clipLabel == null && loadedAmmoLabel == null && loadedAmmoIcon == null)
                 return;
 
             ResolveAmmoState();
@@ -485,17 +518,13 @@ namespace Project.UI
                     DMUiToolkitOverlayDocument.SetShown(clipLabel, false);
                 }
 
-                if (loadedAmmoLabel != null)
-                {
-                    loadedAmmoLabel.text = string.Empty;
-                    DMUiToolkitOverlayDocument.SetShown(loadedAmmoLabel, false);
-                }
-
+                HideLoadedAmmoRow();
                 return;
             }
 
             int slot = equipment.ActiveWeaponHotbarSlot;
             int loaded = ammoState != null ? ammoState.GetActiveLoadedAmmo() : 0;
+            ItemData loadedItem = ammoState != null ? ammoState.GetLoadedAmmoItem(slot) : null;
             AmmoType ammoType = ammoState != null
                 ? ammoState.GetLoadedAmmoType(slot)
                 : weapon.defaultAmmoType;
@@ -518,6 +547,12 @@ namespace Project.UI
 
                 DMUiToolkitOverlayDocument.SetShown(clipLabel, true);
             }
+
+            // Always show the magazine's ammo identity (cutout + name) while a ranged weapon is drawn.
+            // stamp: hotcross-loaded-persist 1006
+            bool showLoadedIdentity = loaded > 0 || loadedItem != null;
+            if (loadedAmmoRow != null)
+                DMUiToolkitOverlayDocument.SetShown(loadedAmmoRow, showLoadedIdentity);
 
             if (loadedAmmoLabel != null)
             {
@@ -542,7 +577,75 @@ namespace Project.UI
                     };
                 }
 
-                DMUiToolkitOverlayDocument.SetShown(loadedAmmoLabel, true);
+                DMUiToolkitOverlayDocument.SetShown(loadedAmmoLabel, showLoadedIdentity);
+            }
+
+            ApplyLoadedAmmoIcon(loadedItem, showLoadedIdentity);
+        }
+
+        private void HideLoadedAmmoRow()
+        {
+            if (loadedAmmoLabel != null)
+            {
+                loadedAmmoLabel.text = string.Empty;
+                DMUiToolkitOverlayDocument.SetShown(loadedAmmoLabel, false);
+            }
+
+            if (loadedAmmoIcon != null)
+            {
+                DMUiToolkitStyle.ClearBackgroundImage(loadedAmmoIcon);
+                DMUiToolkitOverlayDocument.SetShown(loadedAmmoIcon, false);
+            }
+
+            if (loadedAmmoRow != null)
+                DMUiToolkitOverlayDocument.SetShown(loadedAmmoRow, false);
+        }
+
+        private void ApplyLoadedAmmoIcon(ItemData ammoItem, bool show)
+        {
+            if (loadedAmmoIcon == null)
+                return;
+
+            if (!show || ammoItem == null)
+            {
+                DMUiToolkitStyle.ClearBackgroundImage(loadedAmmoIcon);
+                DMUiToolkitOverlayDocument.SetShown(loadedAmmoIcon, false);
+                return;
+            }
+
+            // Ammo cutout only — never the drawn weapon's icon.
+            Sprite sprite = null;
+            Color tint = Color.white;
+            Color emissionColor = Color.white;
+            float emission = 0f;
+            if (iconRegistry == null)
+                iconRegistry = DMHotCrossIconRegistry.LoadDefault();
+            if (iconRegistry != null)
+                iconRegistry.TryResolve(ammoItem, out sprite, out tint, out emissionColor, out emission);
+            if (sprite == null)
+                sprite = DMHotCrossIconRegistry.FindCutout(ammoItem);
+            if (sprite == null)
+                sprite = ammoItem.icon;
+
+            bool applied = sprite != null
+                && DMUiToolkitStyle.TrySetSpriteBackground(loadedAmmoIcon, sprite, ScaleMode.ScaleToFit);
+            if (!applied)
+            {
+                Sprite placeholder = GetPlaceholderIcon();
+                applied = DMUiToolkitStyle.TrySetSpriteBackground(loadedAmmoIcon, placeholder, ScaleMode.ScaleToFit);
+                tint = Color.white;
+            }
+
+            if (applied)
+            {
+                loadedAmmoIcon.style.unityBackgroundImageTintColor = tint;
+                loadedAmmoIcon.style.opacity = 1f;
+                DMUiToolkitOverlayDocument.SetShown(loadedAmmoIcon, true);
+            }
+            else
+            {
+                DMUiToolkitStyle.ClearBackgroundImage(loadedAmmoIcon);
+                DMUiToolkitOverlayDocument.SetShown(loadedAmmoIcon, false);
             }
         }
 
@@ -590,6 +693,7 @@ namespace Project.UI
         {
             ItemData item = null;
             int stack = 0;
+            bool ghost = false;
 
             if (inventory != null)
             {
@@ -597,11 +701,59 @@ namespace Project.UI
                 int absolute = inventory.HotbarStartIndex + consumableLocalIndex;
                 item = inventory.GetItemAt(absolute);
                 stack = GetStackAt(absolute);
+
+                // Stack fully loaded into the magazine: keep showing that ammo as a ghost on TR so
+                // X cycling still has a visible identity. Prefer the slot that sourced the mag;
+                // otherwise any empty focus when that ammo has 0 inventory left.
+                // stamp: hotcross-mag-ghost 1006
+                if ((item == null || stack <= 0)
+                    && TryGetMagazineGhostAmmo(out ItemData magAmmo, out int magCount, out int sourceAbsolute))
+                {
+                    bool ownsSlot = sourceAbsolute == absolute;
+                    bool allInMag = inventory.CountItem(magAmmo) <= 0;
+                    if (ownsSlot || allInMag)
+                    {
+                        item = magAmmo;
+                        stack = magCount;
+                        ghost = true;
+                    }
+                }
             }
 
-            ApplyIcon(iconTr, glowTr, amtTr, item, stack);
+            ApplyIcon(iconTr, glowTr, amtTr, item, stack, ghost);
             // Independent TR consumable focus (X 4-9). Chrome stays on so empty slots remain readable.
             quadTr?.EnableInClassList("hot-cross-quad--selected", true);
+            quadTr?.EnableInClassList("hot-cross-quad--ghost", ghost);
+        }
+
+        /// <summary>
+        /// Magazine ammo to ghost onto an empty Hot Cross utility focus when its stack was fully loaded.
+        /// </summary>
+        private bool TryGetMagazineGhostAmmo(out ItemData ammoItem, out int loadedCount, out int sourceAbsolute)
+        {
+            ammoItem = null;
+            loadedCount = 0;
+            sourceAbsolute = -1;
+
+            ResolveAmmoState();
+            if (equipment == null || ammoState == null || !equipment.HasActiveRangedWeapon())
+                return false;
+
+            ItemData weapon = equipment.DrawnWeaponItem;
+            if (weapon == null || !weapon.IsRangedWeapon || weapon.isMiningTool)
+                return false;
+
+            int weaponSlot = equipment.ActiveWeaponHotbarSlot;
+            loadedCount = ammoState.GetLoadedAmmo(weaponSlot);
+            if (loadedCount <= 0)
+                return false;
+
+            ammoItem = ammoState.GetLoadedAmmoItem(weaponSlot);
+            if (ammoItem == null || !ammoItem.CountsAsAmmo)
+                return false;
+
+            sourceAbsolute = ammoState.GetLoadedAmmoSourceSlot(weaponSlot);
+            return true;
         }
 
         private void RefreshToolQuadrant()
@@ -738,7 +890,44 @@ namespace Project.UI
             return slot != null && !slot.IsEmpty ? slot.amount : 0;
         }
 
-        private void ApplyIcon(VisualElement icon, VisualElement glow, Label amount, ItemData item, int stack)
+        private static Sprite placeholderIcon;
+
+        /// <summary>Generic framed-square icon for an occupied slot whose item has no cutout and no icon.</summary>
+        private static Sprite GetPlaceholderIcon()
+        {
+            if (placeholderIcon != null)
+                return placeholderIcon;
+
+            const int size = 64;
+            const int border = 6;
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                name = "DMHotCrossPlaceholderIcon",
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp,
+                hideFlags = HideFlags.DontSave
+            };
+            var pixels = new Color32[size * size];
+            var edge = new Color32(235, 240, 255, 235);
+            var fill = new Color32(235, 240, 255, 60);
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    bool onEdge = x < border || y < border || x >= size - border || y >= size - border;
+                    pixels[y * size + x] = onEdge ? edge : fill;
+                }
+            }
+
+            texture.SetPixels32(pixels);
+            texture.Apply(false, false);
+            placeholderIcon = Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), 100f);
+            placeholderIcon.name = "DMHotCrossPlaceholderIcon";
+            placeholderIcon.hideFlags = HideFlags.DontSave;
+            return placeholderIcon;
+        }
+
+        private void ApplyIcon(VisualElement icon, VisualElement glow, Label amount, ItemData item, int stack, bool ghost = false)
         {
             if (icon == null)
                 return;
@@ -757,9 +946,12 @@ namespace Project.UI
             bool applied = sprite != null && DMUiToolkitStyle.TrySetSpriteBackground(icon, sprite, ScaleMode.ScaleToFit);
             if (!applied && item != null)
             {
-                // No Hot Cross cutout / alias match (or a broken cutout sprite): fall back to the item's
-                // normal inventory icon so an occupied slot is never blank. stamp: hotcross-icon-fallback 1006
-                Sprite fallback = DMGameIconRegistry.FindIcon(item);
+                // Occupied slot is never blank: Hot Cross cutout -> the item's own icon -> generic placeholder.
+                // Ammo skips the game-icon registry's fuzzy name match (it can land on a weapon picture).
+                // stamp: hotcross-icon-fallback 1006b
+                Sprite fallback = item.CountsAsAmmo ? item.icon : DMGameIconRegistry.FindIcon(item);
+                if (fallback == null || fallback == sprite)
+                    fallback = item.icon;
                 if (fallback != null && fallback != sprite
                     && DMUiToolkitStyle.TrySetSpriteBackground(icon, fallback, ScaleMode.ScaleToFit))
                 {
@@ -768,23 +960,44 @@ namespace Project.UI
                 }
             }
 
+            if (!applied && item != null)
+            {
+                Sprite placeholder = GetPlaceholderIcon();
+                if (DMUiToolkitStyle.TrySetSpriteBackground(icon, placeholder, ScaleMode.ScaleToFit))
+                {
+                    sprite = placeholder;
+                    applied = true;
+                    tint = Color.white;
+                    emission = 0f;
+                }
+            }
+
+            icon.EnableInClassList("hot-cross-icon--ghost", ghost && applied);
             if (applied)
             {
                 icon.style.unityBackgroundImageTintColor = tint;
-                icon.style.opacity = 1f;
+                icon.style.opacity = ghost ? 0.55f : 1f;
                 DMUiToolkitOverlayDocument.SetShown(icon, true);
             }
             else
             {
                 DMUiToolkitStyle.ClearBackgroundImage(icon);
                 icon.style.unityBackgroundImageTintColor = StyleKeyword.Null;
+                icon.style.opacity = 1f;
                 DMUiToolkitOverlayDocument.SetShown(icon, false);
             }
 
-            ApplyGlow(glow, sprite, emissionColor, emission);
+            ApplyGlow(glow, sprite, emissionColor, ghost ? emission * 0.5f : emission);
 
             if (amount != null)
-                amount.text = item != null && stack > 1 ? stack.ToString() : string.Empty;
+            {
+                amount.EnableInClassList("hot-cross-amt--ghost", ghost && stack > 0);
+                // Ghost shows magazine count even for a single round so the player sees what's in the mag.
+                if (ghost && item != null && stack > 0)
+                    amount.text = stack.ToString();
+                else
+                    amount.text = item != null && stack > 1 ? stack.ToString() : string.Empty;
+            }
         }
 
         private static void ApplyGlow(VisualElement glow, Sprite sprite, Color emissionColor, float emission)

@@ -10,6 +10,12 @@ namespace Project.UI
     {
         private static PickupToastUI instance;
 
+        // Identical consecutive messages (e.g. repeated X presses) show at most once per window.
+        // stamp: toast-dedupe 1006
+        private const float DuplicateToastWindowSeconds = 1.5f;
+        private static string lastToastMessage;
+        private static float lastToastTime = -999f;
+
         private RectTransform toastRect;
         private CanvasGroup canvasGroup;
         private TextMeshProUGUI label;
@@ -21,6 +27,8 @@ namespace Project.UI
         private static void ResetStatics()
         {
             instance = null;
+            lastToastMessage = null;
+            lastToastTime = -999f;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -64,6 +72,15 @@ namespace Project.UI
         {
             if (string.IsNullOrEmpty(message))
                 return;
+
+            float now = Time.realtimeSinceStartup;
+            if (string.Equals(message, lastToastMessage, System.StringComparison.Ordinal)
+                && now - lastToastTime >= 0f
+                && now - lastToastTime < DuplicateToastWindowSeconds)
+                return;
+
+            lastToastMessage = message;
+            lastToastTime = now;
 
             if (ShouldCenterWarning(message) && DMUiToolkitLevelUp.TryShowCenterNotice(message))
                 return;

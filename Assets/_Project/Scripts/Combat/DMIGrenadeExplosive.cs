@@ -329,6 +329,7 @@ namespace Project.Combat
                 QueryTriggerInteraction.Ignore);
             var damagedEnemies = new HashSet<EnemyHealth>();
             var damagedCompanions = new HashSet<CompanionHealth>();
+            var damagedOthers = new HashSet<IDamageable>();
 
             for (int i = 0; i < hitCount; i++)
             {
@@ -367,7 +368,7 @@ namespace Project.Combat
                 {
                     // Optional self/friendly splash — off by default for expedition grenades.
                     IDamageable damageable = DamageableUtility.GetDamageable(col);
-                    if (damageable != null && damageable is not EnemyHealth)
+                    if (damageable != null && damageable is not EnemyHealth && damagedOthers.Add(damageable))
                         damageable.TakeDamage(damage, _damageSource, false);
                 }
             }

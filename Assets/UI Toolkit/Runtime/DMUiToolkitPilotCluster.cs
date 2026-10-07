@@ -53,6 +53,14 @@ namespace Project.UI
         private static DMUiToolkitPilotCluster instance;
 
         public static DMUiToolkitPilotCluster Instance => instance;
+
+        /// <summary>Force the next LateUpdate to run a full presentation refresh (minimap, stats, compass).</summary>
+        public static void MarkPresentationDirty()
+        {
+            if (instance != null)
+                instance.presentationDirty = true;
+        }
+
         public VisualElement ZoneIconsHost => zoneIconsHost;
         public Label ZoneEnteringLabel => zoneEnteringLabel;
         public Label ZoneNameLabel => zoneLabel;
@@ -153,6 +161,8 @@ namespace Project.UI
         private readonly Dictionary<MapMarker, VisualElement> compassDotLookup = new Dictionary<MapMarker, VisualElement>(16);
         private readonly HashSet<MapMarker> compassDotsSeen = new HashSet<MapMarker>();
         private bool mapOpacityApplied;
+        private float nextPresentationRefresh;
+        private bool presentationDirty;
 
         private struct CompassTick
         {
@@ -238,6 +248,14 @@ namespace Project.UI
 
         private void LateUpdate()
         {
+            DMUiToolkitConfig config = DMUiToolkitConfig.Instance;
+            if (config != null && !config.showPilotCluster)
+            {
+                if (root != null)
+                    DMUiToolkitOverlayDocument.SetShown(root, false);
+                return;
+            }
+
             if (!bound)
                 BindTree();
 
@@ -246,6 +264,14 @@ namespace Project.UI
             if (!want || cluster == null)
                 return;
 
+            float refreshHz = config != null ? config.pilotClusterRefreshHz : 15f;
+            refreshHz = Mathf.Clamp(refreshHz, 5f, 60f);
+            float interval = 1f / refreshHz;
+            if (!presentationDirty && Time.unscaledTime < nextPresentationRefresh)
+                return;
+
+            nextPresentationRefresh = Time.unscaledTime + interval;
+            presentationDirty = false;
             RefreshPresentation();
         }
 
@@ -343,6 +369,7 @@ namespace Project.UI
         private void RefreshIoClock()
         {
             SetLabelText(ioClockLabel, DMIoClock.DisplayText, ref lastIoClockText);
+            presentationDirty = true;
         }
 
         private void ApplyMinimapPlayerIconRotation()

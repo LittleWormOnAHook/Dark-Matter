@@ -123,12 +123,12 @@ namespace Project.Combat
                 dissolveRoutine = null;
             }
 
-            ReleaseVolumetricSmoke();
+            CleanupDeathPresentationArtifacts();
         }
 
         private void OnDestroy()
         {
-            ReleaseVolumetricSmoke();
+            CleanupDeathPresentationArtifacts();
         }
 
         private void ResolveDissolveTemplate()
@@ -471,9 +471,29 @@ namespace Project.Combat
 
             NotifyDeathPresentationComplete();
             CleanupDroppedWeapon();
+            CleanupDissolveObjects();
+            CleanupSmokeObjects();
+            CleanupLiftAnchor();
+            DestroyRuntimeMaterials();
             ReleaseVolumetricSmoke();
+            isDissolving = false;
             dissolveRoutine = null;
             onComplete?.Invoke();
+        }
+
+        /// <summary>
+        /// Destroys unparented lift anchors, baked dissolve/smoke meshes, and dropped weapons.
+        /// Safe to call repeatedly (OnDisable / OnDestroy / presentation end).
+        /// </summary>
+        private void CleanupDeathPresentationArtifacts()
+        {
+            CleanupDroppedWeapon();
+            CleanupDissolveObjects();
+            CleanupSmokeObjects();
+            CleanupLiftAnchor();
+            DestroyRuntimeMaterials();
+            ReleaseVolumetricSmoke();
+            isDissolving = false;
         }
 
         private void IncludeDroppedWeaponDissolve(List<Material> animatedMaterials)
@@ -484,6 +504,11 @@ namespace Project.Combat
 
             loadout.FreezeDroppedWeaponForDissolve();
             GameObject weapon = loadout.LastDroppedWeapon;
+
+            // Keep the dropped weapon with the dissolve lift (never float as a free orphan).
+            if (liftAnchor != null)
+                weapon.transform.SetParent(liftAnchor, true);
+
             Material smokeTemplate = enableSmoke ? ResolveSmokeTemplate() : null;
 
             MeshRenderer[] renderers = weapon.GetComponentsInChildren<MeshRenderer>(true);
@@ -494,7 +519,8 @@ namespace Project.Combat
                     continue;
 
                 ApplyDissolveMaterials(meshRenderer, meshRenderer.sharedMaterials, animatedMaterials);
-                dissolveObjects.Add(meshRenderer.gameObject);
+                // Do NOT add live weapon GOs to dissolveObjects — CleanupDissolveObjects would
+                // Destroy mesh children out from under the weapon root. Destroy via CleanupDroppedWeapon.
 
                 if (smokeTemplate != null)
                     CreateSmokeFromMesh(meshRenderer, smokeTemplate);

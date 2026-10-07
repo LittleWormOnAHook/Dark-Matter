@@ -27,7 +27,9 @@ namespace Project.Combat
             if (!sender.transform.IsChildOf(playerRoot) && sender.transform.root != playerRoot)
                 return true;
 
-            int swingId = PioneerMeleeDamageWindowTracker.CurrentSwingId;
+            // Resolved from the Animator at hit time: OnTriggerEnter runs inside the fixed step,
+            // before the tracker's Update/LateUpdate, so CurrentSwingId alone can still be stale.
+            int swingId = PioneerMeleeDamageWindowTracker.ResolveSwingIdForHit();
             if (swingId != _trackedSwingId)
             {
                 _trackedSwingId = swingId;
@@ -415,7 +417,13 @@ namespace Project.Combat
     }
 
     /// <summary>
-    /// Increments <see cref="CurrentSwingId"/> when Invector enables melee damage on an equipped weapon.
+    /// Owns the player's melee swing identity and hit windows.
+    /// <see cref="CurrentSwingId"/> advances on every attack-state ENTRY (any Animator state carrying a
+    /// vMeleeAttackControl, on FullBody or UpperBody) and on every new Strong B window, not on the rising
+    /// edge of canApplyDamage. The player Animator runs in AnimatorUpdateMode.Fixed, so vMeleeAttackControl
+    /// enables the weapon trigger inside the fixed step and OnTriggerEnter fires before Update; a rising-edge
+    /// counter bumped in Update was one physics step late, and a blade that already overlapped the target
+    /// when its window opened (Light C thrust, Strong A slam) was deduped against the previous swing.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(520)]
@@ -430,6 +438,18 @@ namespace Project.Combat
         private vThirdPersonMotor _motor;
         private Animator _animator;
         private bool _wasDamageActive;
+        private bool _swingTrackedByState;
+        private int _swingStateLayer = -1;
+        private int _swingStateHash;
+        private float _swingStateLastNormalized;
+        private int _swingWindowIndex = -1;
+        private bool _swingInWindow;
+        private bool _swingGatesRight;
+        private bool _swingGatesLeft;
+        private RuntimeAnimatorController _attackControlCacheController;
+        private readonly Dictionary<long, vMeleeAttackControl> _attackControlCache =
+            new Dictionary<long, vMeleeAttackControl>();
+        private const float SwingRestartTolerance = 0.05f;
         private bool _meleeAnimSpeedOverrideApplied;
         private float _savedAnimatorSpeed = 1f;
 
@@ -484,39 +504,55 @@ namespace Project.Combat
 
         private void Update()
         {
-            if (ShouldForceDisableWeaponHitboxes())
-            {
-                ForceDisableWeaponHitboxes();
-                _wasDamageActive = false;
+            // Force-disable runs in Update so hitboxes drop immediately; swing windows tick once in LateUpdate.
+            if (!ShouldForceDisableWeaponHitboxes())
                 return;
-            }
 
-            if (TryGateStrongReleaseDamage(out bool wantStrongDamage))
-            {
-                if (wantStrongDamage && !_wasDamageActive)
-                    CurrentSwingId++;
-
-                SetWeaponDamageActive(wantStrongDamage);
-                _wasDamageActive = wantStrongDamage;
-                return;
-            }
-
-            bool active = IsMeleeDamageActive();
-            if (active && !_wasDamageActive)
-                CurrentSwingId++;
-
-            _wasDamageActive = active;
+            ForceDisableWeaponHitboxes();
+            _wasDamageActive = false;
+            ResetSwingStateTracking();
         }
 
         private void LateUpdate()
         {
             ApplyMeleeAnimSpeedFromProfile();
 
-            // Re-apply the strong hit window after the Animator ran: vMeleeAttackControl toggles
-            // damage from inside the Animator update, which otherwise leaks one physics step of
-            // damage at its own (wider) window edges, e.g. during Strong A's raise or B's windup.
+            // Re-apply the hit window after this frame's Animator steps. vMeleeAttackControl toggles
+            // damage from inside the Animator update (Fixed mode), which otherwise leaks damage at its
+            // own window edges, e.g. during Strong A's raise or B's windup, or past normalized 1.
             if (ShouldForceDisableWeaponHitboxes())
                 return;
+
+            TickSwingAndDamageWindows();
+        }
+
+        /// <summary>
+        /// Swing id for a hit being processed right now (called from the dedupe inside OnTriggerEnter).
+        /// Reads the Animator, which already stepped this fixed step, so the first contact of a new
+        /// attack state gets the new id even before this component's Update runs.
+        /// </summary>
+        public static int ResolveSwingIdForHit()
+        {
+            if (_instance != null && _instance.isActiveAndEnabled)
+                _instance.RefreshSwingTracking();
+
+            return CurrentSwingId;
+        }
+
+        private void TickSwingAndDamageWindows()
+        {
+            bool newSwing = RefreshSwingTracking();
+            if (_swingTrackedByState && (_swingGatesRight || _swingGatesLeft))
+            {
+                // A new attack state never inherits the previous swing's open trigger: close it
+                // (clears vMeleeAttackObject.targetColliders), then open only inside this state's window.
+                if (newSwing && IsMeleeDamageActive())
+                    SetWeaponDamageActive(false);
+
+                SetWeaponDamageActive(_swingInWindow, _swingGatesRight, _swingGatesLeft);
+                _wasDamageActive = _swingInWindow;
+                return;
+            }
 
             if (TryGateStrongReleaseDamage(out bool wantStrongDamage))
             {
@@ -525,7 +561,202 @@ namespace Project.Combat
 
                 SetWeaponDamageActive(wantStrongDamage);
                 _wasDamageActive = wantStrongDamage;
+                return;
             }
+
+            // Fallback for damage that no attack state accounts for (rising edge, legacy behaviour).
+            bool active = IsMeleeDamageActive();
+            if (active && !_wasDamageActive && !_swingTrackedByState)
+                CurrentSwingId++;
+
+            _wasDamageActive = active;
+        }
+
+        private void ResetSwingStateTracking()
+        {
+            _swingTrackedByState = false;
+            _swingStateLayer = -1;
+            _swingStateHash = 0;
+            _swingStateLastNormalized = 0f;
+            _swingWindowIndex = -1;
+            _swingInWindow = false;
+            _swingGatesRight = false;
+            _swingGatesLeft = false;
+        }
+
+        /// <summary>
+        /// Follows the newest attack state (FullBody, then UpperBody). Bumps <see cref="CurrentSwingId"/>
+        /// when a different attack state is entered, when the same state restarts, or when a Strong B
+        /// swing moves into its second window. Returns true when the id changed.
+        /// </summary>
+        private bool RefreshSwingTracking()
+        {
+            if (!TryResolveActiveAttackState(out int layer, out AnimatorStateInfo info, out vMeleeAttackControl attackControl))
+            {
+                ResetSwingStateTracking();
+                return false;
+            }
+
+            bool newSwing = false;
+            float normalized = info.normalizedTime;
+            if (!_swingTrackedByState
+                || info.fullPathHash != _swingStateHash
+                || layer != _swingStateLayer
+                || normalized + SwingRestartTolerance < _swingStateLastNormalized)
+            {
+                CurrentSwingId++;
+                newSwing = true;
+                _swingStateHash = info.fullPathHash;
+                _swingStateLayer = layer;
+                _swingWindowIndex = -1;
+            }
+
+            _swingTrackedByState = true;
+            _swingStateLastNormalized = normalized;
+            _swingGatesRight = DrivesBodyPart(attackControl, "RightLowerArm");
+            _swingGatesLeft = DrivesBodyPart(attackControl, "LeftLowerArm");
+
+            int window = ResolveHitWindowIndex(info, attackControl);
+            _swingInWindow = window >= 0;
+            if (window >= 0)
+            {
+                // Strong B: each sweep window is its own swing (one hit each).
+                if (_swingWindowIndex >= 0 && window != _swingWindowIndex && !newSwing)
+                {
+                    CurrentSwingId++;
+                    newSwing = true;
+                }
+
+                _swingWindowIndex = window;
+            }
+
+            return newSwing;
+        }
+
+        private static bool DrivesBodyPart(vMeleeAttackControl attackControl, string bodyPart)
+        {
+            return attackControl != null
+                && attackControl.bodyParts != null
+                && attackControl.bodyParts.Contains(bodyPart);
+        }
+
+        private bool TryResolveActiveAttackState(
+            out int layer,
+            out AnimatorStateInfo info,
+            out vMeleeAttackControl attackControl)
+        {
+            layer = -1;
+            info = default;
+            attackControl = null;
+            if (_animator == null || !_animator.isActiveAndEnabled || _animator.runtimeAnimatorController == null)
+                return false;
+
+            int fullBody = PioneerStrongMeleeAnimStates.ResolveFullBodyLayer(_animator, _motor);
+            if (TryResolveActiveAttackStateOnLayer(fullBody, out info, out attackControl))
+            {
+                layer = fullBody;
+                return true;
+            }
+
+            int upper = _animator.GetLayerIndex("UpperBody");
+            if (upper >= 0 && upper != fullBody && TryResolveActiveAttackStateOnLayer(upper, out info, out attackControl))
+            {
+                layer = upper;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// The incoming attack state owns the swing as soon as a crossfade into it starts, unless the
+        /// outgoing state is still inside its own hit window and the incoming one is not yet.
+        /// </summary>
+        private bool TryResolveActiveAttackStateOnLayer(
+            int layer,
+            out AnimatorStateInfo info,
+            out vMeleeAttackControl attackControl)
+        {
+            info = default;
+            attackControl = null;
+            if (layer < 0 || layer >= _animator.layerCount)
+                return false;
+
+            AnimatorStateInfo current = _animator.GetCurrentAnimatorStateInfo(layer);
+            vMeleeAttackControl currentControl = ResolveAttackControl(layer, current);
+            if (_animator.IsInTransition(layer))
+            {
+                AnimatorStateInfo next = _animator.GetNextAnimatorStateInfo(layer);
+                vMeleeAttackControl nextControl = ResolveAttackControl(layer, next);
+                if (nextControl != null)
+                {
+                    bool nextInWindow = ResolveHitWindowIndex(next, nextControl) >= 0;
+                    bool currentInWindow = currentControl != null && ResolveHitWindowIndex(current, currentControl) >= 0;
+                    if (nextInWindow || !currentInWindow)
+                    {
+                        info = next;
+                        attackControl = nextControl;
+                        return true;
+                    }
+                }
+            }
+
+            if (currentControl == null)
+                return false;
+
+            info = current;
+            attackControl = currentControl;
+            return true;
+        }
+
+        private vMeleeAttackControl ResolveAttackControl(int layer, AnimatorStateInfo state)
+        {
+            RuntimeAnimatorController controller = _animator.runtimeAnimatorController;
+            if (controller != _attackControlCacheController)
+            {
+                _attackControlCache.Clear();
+                _attackControlCacheController = controller;
+            }
+
+            long key = ((long)layer << 32) | (uint)state.fullPathHash;
+            if (_attackControlCache.TryGetValue(key, out vMeleeAttackControl cached)
+                && (cached != null || ReferenceEquals(cached, null)))
+                return cached;
+
+            vMeleeAttackControl found = null;
+            StateMachineBehaviour[] behaviours = _animator.GetBehaviours(state.fullPathHash, layer);
+            if (behaviours != null)
+            {
+                for (int i = 0; i < behaviours.Length; i++)
+                {
+                    if (behaviours[i] is vMeleeAttackControl attackControl)
+                    {
+                        found = attackControl;
+                        break;
+                    }
+                }
+            }
+
+            _attackControlCache[key] = found;
+            return found;
+        }
+
+        /// <summary>
+        /// 0-based hit window the state is in right now, or -1. Strong releases use the measured
+        /// per-slot windows below; every other attack state uses its vMeleeAttackControl window.
+        /// Non-looping clips clamp at 1 so a state held past its end cannot reopen its window
+        /// (vMeleeAttackControl's own normalizedTime % 1 test does).
+        /// </summary>
+        private static int ResolveHitWindowIndex(AnimatorStateInfo info, vMeleeAttackControl attackControl)
+        {
+            float t = info.loop ? info.normalizedTime % 1f : Mathf.Min(info.normalizedTime, 1f);
+            if (PioneerStrongMeleeAnimStates.TryGetStrongReleaseSlot(info, out int slot))
+                return StrongHitWindowIndex(slot, t);
+
+            if (attackControl == null)
+                return -1;
+
+            return t >= attackControl.startDamage && t <= attackControl.endDamage ? 0 : -1;
         }
 
         /// <summary>
@@ -604,23 +835,29 @@ namespace Project.Combat
         }
 
         // Normalized damage windows measured from the clips (right-hand sweep through the
-        // front of the body), Oct 6 2026. A: slam only (not the overhead raise).
+        // front of the body), Oct 6 2026. A: slam only (not the overhead raise); opens at the
+        // measured slam start (0.50) so the head/shoulder contact is inside the window.
         // B: two sweeps, each its own window so each lands one hit (half damage each, see
         // PioneerInvectorDamageBridge). C: the single forward sweep.
-        private static readonly Vector2[] StrongHitWindowsA = { new Vector2(0.52f, 0.66f) };
+        private static readonly Vector2[] StrongHitWindowsA = { new Vector2(0.50f, 0.66f) };
         private static readonly Vector2[] StrongHitWindowsB = { new Vector2(0.34f, 0.48f), new Vector2(0.58f, 0.71f) };
         private static readonly Vector2[] StrongHitWindowsC = { new Vector2(0.30f, 0.48f) };
 
         private static bool IsInStrongHitWindow(int slot, float t)
         {
+            return StrongHitWindowIndex(slot, t) >= 0;
+        }
+
+        private static int StrongHitWindowIndex(int slot, float t)
+        {
             Vector2[] windows = slot == 1 ? StrongHitWindowsB : slot == 2 ? StrongHitWindowsC : StrongHitWindowsA;
             for (int i = 0; i < windows.Length; i++)
             {
                 if (t >= windows[i].x && t <= windows[i].y)
-                    return true;
+                    return i;
             }
 
-            return false;
+            return -1;
         }
 
         private bool TryGetStrongReleaseNormalizedTime(out float normalizedTime, out int slot)
@@ -668,16 +905,23 @@ namespace Project.Combat
 
         private void SetWeaponDamageActive(bool active)
         {
+            SetWeaponDamageActive(active, true, true);
+        }
+
+        private void SetWeaponDamageActive(bool active, bool right, bool left)
+        {
             if (_meleeManager == null)
                 return;
 
-            if (_meleeManager.rightWeapon != null
+            if (right
+                && _meleeManager.rightWeapon != null
                 && _meleeManager.rightWeapon.canApplyDamage != active)
             {
                 _meleeManager.rightWeapon.SetActiveDamage(active);
             }
 
-            if (_meleeManager.leftWeapon != null
+            if (left
+                && _meleeManager.leftWeapon != null
                 && _meleeManager.leftWeapon.canApplyDamage != active)
             {
                 _meleeManager.leftWeapon.SetActiveDamage(active);

@@ -3,7 +3,7 @@
 **Project:** Dark Matter: Genesis (Unity 6 HDRP 6000.4.11f1)  
 **Status:** Research / shopping plan only — no purchases or imports in this pass  
 **Audience:** Phase 2 polish → blade/control weapons (sword, knife, baton) + Phase 3 enemy `Humanoid_Enemy` mirror  
-**Last updated:** Oct 5, 2026 (skill-gated clips, special-hold input model, catalog ↔ skill IDs — doc only)
+**Last updated:** Oct 6, 2026 (moving melee layer policy §10; skill-gated clips §9 — doc only)
 
 **Reconcile:** Prior subagent `9da186c5` transcript was not found on disk; this file merges the earlier sword-focused draft with Anthony’s addendum (**regular melee attacks** for **sword**, **knives**, and **batons** — not only 2–3 hit chains, finishers, and charge).
 
@@ -75,7 +75,7 @@ Each family uses `DMMeleeClipSlots`: `lightA/B/C`, `strongA/B/C`, `chargeHold`.
 | *(random A/B/C)* | Regular **non-chain** taps | Mixamo `Sword And Shield Attack/Slash` (applier constants) | Move to catalog fields; add 2–3 more distinct singles |
 | strongA/C | Heavy variants | Mixamo slashes | Extra telegraph heavies from store combo packs |
 | strongB | Charge **release** | PROTOFACTOR `Humanoid@AttackC1hMelee` | Keep; tune via profile speed |
-| chargeHold | Charge loop pose | Same as strongB fallback | Optional dedicated loop from Mocap Sword & Shield “Force Attack” packs (Tier 2) |
+| chargeHold | Charge loop pose | Medievil `1HandSwordChargeUp` (frozen draw-back at runtime; never a swing clip) | Optional dedicated idle-guard loop from Mocap packs (Tier 2) |
 | Finisher | Execution | ~3 finisher-tagged clips on disk | Tier 2–3 paired packs (RamsterZ, Longsword Vol.2) when Momentum ships |
 
 ### 3.2 Knife / dagger (AttackID **3** — proposed)
@@ -325,7 +325,36 @@ Player controller: `Invector@ShooterMelee_Jetpack.controller` (`FullBody` → `A
 
 ---
 
-## 10. Integration checklist (per clip batch)
+## 10. Moving melee — layer policy & lessons learned
+
+**Canon detail (standalone):** `DM_Melee_Locomotion_Layer_Policy.md` · **Wiki mirror:** `Documentation/Wiki/Combat-Moving-Melee-Layer-Policy.md`
+
+### 10.1 Industry / feasibility (brief)
+
+Lower-body locomotion on **Base** plus **UpperBody**–masked attacks is industry-standard (Invector UpperBody, many action RPGs). **Full-body** attacks while moving ship via short full-body override, root motion, or **hybrid** (lights upper / heavies full-body). This project’s failures were **implementation** — Base unmasked clips, FullBody weight stuck at 0, extra **`DM_MeleeUpper`** without exits — **not** invalid design.
+
+### 10.2 Dark Matter canon (Phase 2, Jetpack controller)
+
+| Layer | Policy |
+|---|---|
+| **Base** | Locomotion only; **never** crossfade full Mixamo melee clips here |
+| **UpperBody** (spine/arms/head mask) | **Hold E + LMB** combo (**One Hand Sword Combo** @ **1.75**); other upper-only when hip-sink risk while moving |
+| **FullBody** | Standing attacks; while moving — light tap, charge hold, charged release **A/B/C** when the swing needs full commitment (hybrid) |
+| **FullBody weight** | Must **never** stay 0 during attacks; **restore** after every swing |
+| **FullBody Null** | Attack states dest-transition to **Idle_Empty** (not nested Null); Pioneer `RestoreMeleeFullBodyIdle` CrossFades Idle_Empty after each swing. SwordCharge is frozen 1HandSwordChargeUp while held. |
+| **`DM_MeleeUpper`** | **Deprecated / removed** — do not reintroduce |
+
+**Clips (Phase 2 baseline):** Strong **B** = Mixamo **Axe Standing Melee Combo Ver. 1**; Strong **C** = **Axe Standing Melee Attack 360 Low**; parry = PROTOFACTOR **RightHand@Parry01** / **Parry01_Hit**.
+
+**Charged release:** weighted random Strong **A/B/C** (favor **A**); per-slot damage windows — **A/C** earlier, **B** late (match animation events after Build And Apply).
+
+### 10.3 Agent workflow
+
+Studio/combat/controller edits: recall git + prior attempts (`.cursor/rules/dark-matter-genesis-studio-system-edit-recall.mdc`); after `Assets/` changes run MCP **`refresh_unity`** and **`read_console`** (errors) per `unity-agent-workflow.mdc`. Play-test in `Dark Matter Genesis v1.6.5.unity`: move + tap/charge/release, Hold E + LMB, parry — confirm layer weights restore.
+
+---
+
+## 11. Integration checklist (per clip batch)
 
 - [ ] Import FBX → Rig **Humanoid**, **In Place** for gameplay (root motion off unless enemy AI needs RM).
 - [ ] Duplicate clip → `DM_Anim_*` under `Assets/_Project/Animations/Combat/<Family>/`.
@@ -339,7 +368,7 @@ Player controller: `Invector@ShooterMelee_Jetpack.controller` (`FullBody` → `A
 
 ---
 
-## 11. Open decisions for Anthony
+## 12. Open decisions for Anthony
 
 1. **Knife/baton AttackID:** Approve **3** (knife) and **6** (baton) with duplicated Invector SMBs vs temporary **reuse AttackID 1** with clip-only swaps (faster but wrong semantics for dual-wield + random pool).  
 2. **Visual tone:** Tactical mocap (Knife_Mocap, Riot Control) vs CC0 stylized for Kade.  
@@ -351,4 +380,4 @@ Player controller: `Invector@ShooterMelee_Jetpack.controller` (`FullBody` → `A
 
 ---
 
-*Related: `DMG_Combat_Plan_v2.md` §0, §17, §19, §31; `DMG_Combat_Animation_Tag_Sheet.md`, `DM_MeleeAnimationSet.cs`, `DMMeleeAnimationSetApplier.cs`, Genesis **Combat → Melee Animations**.*
+*Related: `DMG_Combat_Plan_v2.md` §0, §15, §17, §19, §31; `DM_Melee_Locomotion_Layer_Policy.md`; `DMG_Combat_Animation_Tag_Sheet.md`, `DM_MeleeAnimationSet.cs`, `DMMeleeAnimationSetApplier.cs`, Genesis **Combat → Melee Animations**.*

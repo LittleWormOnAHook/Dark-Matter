@@ -555,13 +555,34 @@ namespace Project.Inventory
             return false;
         }
 
-        /// <summary>Eligible ranged weapons (currently in a hotbar slot) this ammo stack could be loaded into.</summary>
+        /// <summary>
+        /// True when <paramref name="absoluteSlotIndex"/> is a Hot Cross utility slot (keys 5-0 / local 4-9).
+        /// Ammo may only be loaded from these slots — not from the inventory grid.
+        /// stamp: ammo-hotcross-only 1006
+        /// </summary>
+        public bool IsHotCrossUtilityAmmoSlot(int absoluteSlotIndex)
+        {
+            if (inventory == null || equipment == null)
+                return false;
+            if (!inventory.IsHotbarIndex(absoluteSlotIndex))
+                return false;
+
+            int local = absoluteSlotIndex - inventory.HotbarStartIndex;
+            return equipment.IsUtilityHotbarSlot(local);
+        }
+
+        /// <summary>Eligible ranged weapons (currently in a hotbar slot) this ammo stack could be loaded into.
+        /// Empty when the stack is not on a Hot Cross utility slot.</summary>
         public List<AmmoEquipOption> GetAmmoEquipOptions(int slotIndex)
         {
             List<AmmoEquipOption> options = new List<AmmoEquipOption>();
 
             ItemData item = inventory?.GetItemAt(slotIndex);
             if (item == null || !item.CountsAsAmmo || ammoState == null || equipment == null)
+                return options;
+
+            // Inventory-grid ammo cannot be equipped — move it to Hot Cross first.
+            if (!IsHotCrossUtilityAmmoSlot(slotIndex))
                 return options;
 
             List<int> hotbarSlots = ammoState.GetEligibleWeaponHotbarSlots(item);
@@ -578,14 +599,21 @@ namespace Project.Inventory
             return options;
         }
 
-        public bool TryEquipAmmoToWeapon(int ammoSlotIndex, int weaponHotbarSlot)
+        public bool TryEquipAmmoToWeapon(int ammoSlotIndex, int weaponHotbarSlot, bool showToast = true)
         {
+            if (!IsHotCrossUtilityAmmoSlot(ammoSlotIndex))
+            {
+                if (showToast)
+                    PickupToastUI.Show("Move ammo to Hot Cross to load");
+                return false;
+            }
+
             ItemData ammo = inventory?.GetItemAt(ammoSlotIndex);
-            if (ammo != null && !LevelUnlockUtility.PassesUseGate(ammo, showToast: true))
+            if (ammo != null && !LevelUnlockUtility.PassesUseGate(ammo, showToast: showToast))
                 return false;
 
             ItemData weapon = equipment != null ? equipment.GetHotbarItem(weaponHotbarSlot) : null;
-            if (weapon != null && !LevelUnlockUtility.PassesEquipGate(weapon, showToast: true))
+            if (weapon != null && !LevelUnlockUtility.PassesEquipGate(weapon, showToast: showToast))
                 return false;
 
             if (ammoState == null || !ammoState.TryEquipAmmoToWeaponSlot(weaponHotbarSlot, ammoSlotIndex))
@@ -615,6 +643,9 @@ namespace Project.Inventory
 
         public bool CanEquipAmmoToActiveRangedWeapon(int ammoSlotIndex)
         {
+            if (!IsHotCrossUtilityAmmoSlot(ammoSlotIndex))
+                return false;
+
             if (!TryResolveActiveRangedWeaponHotbarSlot(out int weaponHotbarSlot))
                 return false;
 
@@ -626,13 +657,21 @@ namespace Project.Inventory
             return weapon != null && weapon.AcceptsAmmoType(ammo.ammoType);
         }
 
-        /// <summary>Hot Cross / D-Pad ammo cycle — loads into the drawn ranged weapon only.</summary>
+        /// <summary>Hot Cross / D-Pad ammo cycle — loads into the drawn ranged weapon only.
+        /// Ammo must sit on a Hot Cross utility slot (5-0); inventory-grid stacks cannot load.</summary>
         public bool TryEquipAmmoToActiveRangedWeapon(int ammoSlotIndex, bool showToast = true)
         {
             if (!TryResolveActiveRangedWeaponHotbarSlot(out int weaponHotbarSlot))
             {
                 if (showToast)
                     PickupToastUI.Show("Draw a ranged weapon to load ammo");
+                return false;
+            }
+
+            if (!IsHotCrossUtilityAmmoSlot(ammoSlotIndex))
+            {
+                if (showToast)
+                    PickupToastUI.Show("Move ammo to Hot Cross to load");
                 return false;
             }
 
@@ -643,7 +682,7 @@ namespace Project.Inventory
                 return false;
             }
 
-            return TryEquipAmmoToWeapon(ammoSlotIndex, weaponHotbarSlot);
+            return TryEquipAmmoToWeapon(ammoSlotIndex, weaponHotbarSlot, showToast);
         }
 
         private bool HasEmptyMainInventorySlot()

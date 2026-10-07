@@ -408,13 +408,23 @@ namespace Project.AI
             {
                 float effectiveRange = combat.ResolveEffectiveAttackRange(target);
                 float creepRing = Mathf.Min(standoff, effectiveRange * 0.84f);
-                float creepSpeed = walkSpeed * (combat.IsAttacking ? 0.38f : 0.62f);
+                float creepSpeed = walkSpeed * 0.62f;
                 if (combat.WantsMeleeReposition)
                     creepSpeed = walkSpeed * 0.92f;
 
-                MoveTowardsCombatRing(target, creepSpeed, creepRing);
-                if (combat.WantsMeleeReposition && distanceToTarget > effectiveRange * 0.7f)
-                    MoveTowards(target.position, creepSpeed * 0.85f, effectiveRange * 0.58f);
+                if (combat.IsAttacking)
+                {
+                    // Own swing / combo / charged attack: the attack clips are full-body and in place
+                    // (no root motion), so translating the root here slid the frozen legs. Hold position
+                    // and keep tracking the target with rotation only.
+                    ClearLocomotion();
+                }
+                else
+                {
+                    MoveTowardsCombatRing(target, creepSpeed, creepRing);
+                    if (combat.WantsMeleeReposition && distanceToTarget > effectiveRange * 0.7f)
+                        MoveTowards(target.position, creepSpeed * 0.85f, effectiveRange * 0.58f);
+                }
 
                 FaceTowards(target.position);
                 combat.TryAttack();

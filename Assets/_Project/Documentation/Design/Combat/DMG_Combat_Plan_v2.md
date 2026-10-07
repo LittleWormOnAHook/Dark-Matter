@@ -23,7 +23,7 @@ Canonical copies (keep aligned): this file, Desktop `C:\Users\Teabagger\Desktop\
 
 **Next = §31 #3 utility brain** — one enemy (`Humanoid_Enemy`), **not** Combat Director / Momentum.
 
-**Melee animation library (doc, Oct 5, 2026):** Some clips are **skill-gated** (base vs unlock tiers); **special attacks** use a **dedicated hold** binding (not light tap, not charge-only on attack). Catalog ↔ skill id plan, Input System **TBD** slot (`Combat/SpecialHold` proposed — **ask-before-assign**), and Jetpack Special sub-SM / AttackID branch notes → `DM_Melee_Animation_Library_Plan.md` **§9**. **No** skill-tree wiring or new bindings yet.
+**Melee animation library (doc, Oct 5–6, 2026):** Some clips are **skill-gated** (base vs unlock tiers); **special attacks** use a **dedicated hold** binding (not light tap, not charge-only on attack). Catalog ↔ skill id plan, Input System **TBD** slot (`Combat/SpecialHold` proposed — **ask-before-assign**), and Jetpack Special sub-SM / AttackID branch notes → `DM_Melee_Animation_Library_Plan.md` **§9**. **Moving melee layer canon** (Base / UpperBody / FullBody, hybrid moving heavies, deprecated `DM_MeleeUpper`, charged release A/B/C) → library plan **§10** and `DM_Melee_Locomotion_Layer_Policy.md`; wiki mirror `Documentation/Wiki/Combat-Moving-Melee-Layer-Policy.md` (sync to [GitHub wiki](https://github.com/LittleWormOnAHook/Dark-Matter/wiki/Combat-Moving-Melee-Layer-Policy)). **No** skill-tree wiring or new bindings yet.
 
 **Batch 1 on disk:** `DamageInfo`, `CombatEvents`, `CombatPoise`, i-frames (`DMCombatIFrameController`), parry/block guard-break (`DMEnemyGuardBreakStagger`), `DM_CombatCoreProfile` + Genesis Combat Core subtab, hitbox tuning + swing dedupe (`PioneerMeleeHitboxTuning`, `PioneerMeleeSwingHitDedupe`).
 
@@ -237,6 +237,8 @@ Guard, protect, retrieve, transport, repair, destroy equipment, hunt, capture, i
 - **Baton**: high stagger and poise damage, knockdown, interrupt, disarm, shield break. No cutting.
 - **Sick Stick**: the signature control weapon (see section 18).
 
+**Animator layer policy (Phase 2 Jetpack):** Base = locomotion only; UpperBody = moving / Hold E + LMB combos; FullBody = standing + hybrid moving charge/release; **`DM_MeleeUpper` removed.** Full policy → `DM_Melee_Locomotion_Layer_Policy.md` (library plan §10).
+
 Ranged weapons use the same interface and damage profiles.
 
 *Current build (audit Sep 30, 2026):*
@@ -413,6 +415,8 @@ Readable reports, e.g. "AI Brain 042, State: Search, Target: Player, Last Known:
 
 ## 29. Save/load
 Save what persists: enemy state where needed, objectives, faction state, world encounter state, persistent damage, survivor list, skill tree, bond levels, companion roster. Temporary combat memory and Momentum don't persist. Bump the save version and keep current saves loading.
+
+**Save version:** this plan takes **v25**, because v24 is reserved for loot chests (see `Design/Loot/DM_Loot_Chest_System_Plan.md`).
 
 *Current build (audit Sep 30, 2026):*
 - **[Partial] Save/load**: Save v23 stores skills, roster, trio and injured companions. Gap: No enemy, faction, encounter, survivor or bond state.

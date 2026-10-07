@@ -95,7 +95,7 @@ MonoBehaviour:
   splashRadius: 0
   splashDamageFalloff: 0.25
   fxProfile: {fileID: 11400000}
-  muzzleFlashPrefab: {fileID: 1399915115016296, guid: 166f9cc36c18473a983dd6135bbdc66e, type: 3}
+  muzzleFlashPrefab: {fileID: 4725880279932545583, guid: bd77eb6dcfeb6144589bbe013f1f1c6b, type: 3}
   tracerPrefab: {fileID: 4187284465382147618, guid: 78530f692d803864c8ab165b49aabed2, type: 3}
   impactVfxPrefab: {fileID: 1912521366823450, guid: 2cf57de4e1594ef387cb99d928a52a9b, type: 3}
   beamVfxPrefab: {fileID: 1210480914781820, guid: 1806b3a4d1e74d9eb3794d25de92a3fa, type: 3}
@@ -159,3 +159,12 @@ MonoBehaviour:
   surfaces: []
   fallBackToCatalog: 0
   catalog: {fileID: 11400000, guid: b6c7d8e9f0a12b3c4d5e6f708192a356, type: 2}
+  surfaceDamage:
+    mode: 0
+    custom:
+      style: 0
+      radius: 0.12
+      depth: 0.45
+      roughness: 1
+      debrisCount: 1
+      debrisScale: 0.35

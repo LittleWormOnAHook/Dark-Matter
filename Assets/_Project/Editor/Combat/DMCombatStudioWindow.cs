@@ -282,8 +282,10 @@ namespace Project.EditorTools.Combat
                         + "Release then plays the strong sword clip. Right mouse stays block / parry. "
                         + "strongMeleeDamageMultiplier scales the normal melee roll. "
                         + "strongMeleeDamageStartNormalized / End gate Strong SwordAttack B hitboxes (runtime + controller fallback). "
-                        + "strongMeleeAnimSpeedMultiplier (0.75–2) drives charge + Strong SwordAttack B. "
-                        + "strongMeleeAnimSpeedA/C tune other strong slots when those clips play. "
+                        + "strongMeleeAnimSpeedMultiplier (0.75–2) drives charge + charged Strong A/B/C release. "
+                        + "strongReleaseWeightA/B/C pick which strong clip plays on release (favor A). "
+                        + "interactHoldComboAnimSpeed (default 1.75) for Hold E + light attack. "
+                        + "strongMeleeAnimSpeedA/C tune strong A/C when those clips play outside charge. "
                         + "chargedHitsIgnoreEnemyWeapons skips the defender's sword / outgoing blade so a close charge waits for a body hit. Block and parry still register.",
                         MessageType.Info);
                     DMStudioStyles.DrawPropertyFields(
@@ -295,6 +297,10 @@ namespace Project.EditorTools.Combat
                         "strongMeleeDamageStartNormalized",
                         "strongMeleeDamageEndNormalized",
                         "strongMeleeAnimSpeedMultiplier",
+                        "strongReleaseWeightA",
+                        "strongReleaseWeightB",
+                        "strongReleaseWeightC",
+                        "interactHoldComboAnimSpeed",
                         "chargedHitsIgnoreEnemyWeapons");
                 });
 

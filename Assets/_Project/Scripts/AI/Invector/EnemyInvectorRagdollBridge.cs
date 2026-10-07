@@ -29,6 +29,16 @@ namespace Project.AI.Invector
         [Tooltip("Soft-ragdoll impulse when Prefer Animator Soft Hits is off.")]
         [SerializeField] private float softStaggerImpulse = 0.12f;
 
+        [Header("Light Flinch (DM)")]
+        [Tooltip("Normal and critical hits play a short procedural upper-body flinch (DMEnemyHitFlinch) that keeps the arms and guard up: no Mecanim hit reaction, no ragdoll, no AI pause. Poise breaks and guard breaks keep the full stagger.")]
+        [SerializeField] private bool useLightFlinchForNormalHits = true;
+        [SerializeField, Range(0.15f, 0.4f)] private float lightFlinchSeconds = 0.28f;
+        [SerializeField, Range(0f, 15f)] private float lightFlinchDegrees = 6f;
+        [Tooltip("Critical hits lean further and last slightly longer (still capped near 0.35 s).")]
+        [SerializeField, Range(1f, 2f)] private float criticalFlinchMultiplier = 1.4f;
+        [Tooltip("Poise / guard breaks play the full-body Big hit reaction. The arms-only Small reaction swaps the guard for unarmed arms (the arms drop, then come back up).")]
+        [SerializeField] private bool poiseBreakUsesFullBodyReaction = true;
+
         [Header("Reactive Hit Chance (Humanoid)")]
         [Tooltip("Base chance of a subtle hit reaction (~1 in 4 hits).")]
         [SerializeField, Range(0f, 1f)] private float baseReactionChance = 0.25f;
@@ -58,6 +68,7 @@ namespace Project.AI.Invector
         private bool _animatorHitstopActive;
         private float _animatorSpeedBeforeHitstop = 1f;
         private vDamage _pendingCorpseDamage;
+        private DMEnemyHitFlinch _flinch;
 
         public vRagdoll Ragdoll => _ragdoll;
 
@@ -95,6 +106,15 @@ namespace Project.AI.Invector
                 _ragdoll.CancelInvoke("ActivateRagdoll");
             }
             _physicsCache?.Refresh();
+            if (useLightFlinchForNormalHits)
+                EnsureFlinch();
+        }
+
+        private DMEnemyHitFlinch EnsureFlinch()
+        {
+            if (_flinch == null)
+                _flinch = GetComponent<DMEnemyHitFlinch>() ?? gameObject.AddComponent<DMEnemyHitFlinch>();
+            return _flinch;
         }
 
         private void OnEnable()
@@ -249,6 +269,14 @@ namespace Project.AI.Invector
                 return;
             }
 
+            // Normal and critical hits: mild procedural flinch only. The Mecanim soft reaction dropped the
+            // guard (arms-only unarmed clip) and crit knockdown ragdolled the body for ~2 s.
+            if (!poiseBreak && useLightFlinchForNormalHits)
+            {
+                PlayLightFlinch(sourceDamage, isCritical);
+                return;
+            }
+
             DMSpawnPhysicsStabilizer stabilizer = GetComponent<DMSpawnPhysicsStabilizer>();
             bool groundedLongEnough = stabilizer != null && stabilizer.HasConfirmedGrounded;
             // Soft hits wait for spawn settle (ragdoll get-up can launch the root). Poise uses animator flinch only.
@@ -303,6 +331,32 @@ namespace Project.AI.Invector
 
             vDamage knockdownDamage = BuildStaggerDamage(sourceDamage, knockdownImpulse);
             RestartStaggerRoutine(HitKnockdownRoutine(knockdownDamage, knockdownDownSeconds));
+        }
+
+        private void PlayLightFlinch(vDamage sourceDamage, bool isCritical)
+        {
+            if (HasActiveRagdoll || _isKnockdownActive)
+            {
+                LogStaggerDev(false, "light flinch skipped (ragdoll active)");
+                return;
+            }
+
+            DMEnemyHitFlinch flinch = EnsureFlinch();
+            if (flinch == null)
+                return;
+
+            Vector3 from;
+            if (sourceDamage != null && sourceDamage.sender != null)
+                from = sourceDamage.sender.position;
+            else if (sourceDamage != null && sourceDamage.hitPosition != Vector3.zero)
+                from = sourceDamage.hitPosition;
+            else
+                from = transform.position + transform.forward;
+
+            float degrees = lightFlinchDegrees * (isCritical ? criticalFlinchMultiplier : 1f);
+            float seconds = Mathf.Min(lightFlinchSeconds * (isCritical ? 1.2f : 1f), 0.36f);
+            flinch.Play(from, degrees, seconds);
+            LogStaggerDev(false, isCritical ? "critical light flinch" : "light flinch", played: true);
         }
 
         /// <summary>
@@ -378,6 +432,11 @@ namespace Project.AI.Invector
                     duration = Mathf.Max(0.22f, duration);
                 else
                     duration = Mathf.Clamp(duration, 0.22f, 1.5f);
+
+                // Hold AI until the full-body Big reaction (~0.8 s at speed 1.2) has blended out, so the
+                // root never moves while the legs are still in the reaction pose.
+                if (poiseBreakUsesFullBodyReaction)
+                    duration = Mathf.Max(duration, 0.8f);
             }
 
             RestartStaggerRoutine(AnimatorStaggerRoutine(
@@ -397,13 +456,15 @@ namespace Project.AI.Invector
         {
             _isHitStaggerActive = true;
             _isKnockdownActive = false;
+            // Every animator flinch freezes AI translation. IsHitStaggerActive already blocks the motor
+            // bridge (no locomotion params) and hit-stop holds the pose at animator speed 0, so letting
+            // EnemyAiController keep moving the transform here slid the body in a static flinch pose.
+            PauseAiLocomotion(true);
             if (pauseLocomotion)
-            {
-                PauseAiLocomotion(true);
                 EnemyInvectorCombatShutdown.DisableMeleeBeforeAnimatorEvents(gameObject);
-            }
 
-            PlayAnimatorHitReaction(sourceDamage, isCritical);
+            // Poise / guard break (pauseLocomotion) uses the full-body reaction so the arms never drop alone.
+            PlayAnimatorHitReaction(sourceDamage, isCritical || (pauseLocomotion && poiseBreakUsesFullBodyReaction));
 
             float elapsed = 0f;
             if (hitstopSeconds > 0.001f)
@@ -436,8 +497,7 @@ namespace Project.AI.Invector
             _staggerRoutine = null;
             _isHitStaggerActive = false;
             EndAnimatorHitstop();
-            if (pauseLocomotion)
-                PauseAiLocomotion(false);
+            PauseAiLocomotion(false);
         }
 
         private Animator ResolveStaggerAnimator()
