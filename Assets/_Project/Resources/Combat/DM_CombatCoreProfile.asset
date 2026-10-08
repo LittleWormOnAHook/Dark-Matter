@@ -39,20 +39,25 @@ MonoBehaviour:
   statusMaxStacks: 3
   statusImmunityWindowSeconds: 2
   statusBossMultiplier: 0.5
+  statusVfxNormalOffset: 0.004
   meleeHitboxWidthScale: 2.1
   meleeHitboxReachScale: 1.75
   meleeBlockDefenseHalfAngle: 130
   meleeBlockAutoFaceHalfAngle: 30
   meleeBlockAutoFaceMaxDistance: 4.5
-  meleeBlockAutoFaceTurnSpeed: 540
-  meleeAttackAutoFaceHalfAngle: 16
+  meleeBlockAutoFaceTurnSpeed: 680
+  meleeAttackAutoFaceHalfAngle: 22
   enemyMeleeHitboxWidthScale: 2.25
   enemyMeleeHitboxReachScale: 2.15
   enemyMeleeAttackRangeMultiplier: 1.22
   meleeHitYawForgivenessDegrees: 0
-  lightComboAnimSpeedA: 1.291
-  lightComboAnimSpeedB: 1.261
-  lightComboAnimSpeedC: 1.4
+  lightComboAnimSpeedA: 1.05
+  lightComboAnimSpeedB: 1.18
+  lightComboAnimSpeedC: 1.18
+  enableLightComboAttackMove: 1
+  lightComboStrafeSpeedMultiplier: 0.65
+  lightComboForwardDriftMultiplier: 0.12
+  lockMovementDuringLightCombo: 0
   lightRandomAnimSpeedA: 1
   lightRandomAnimSpeedB: 1
   lightRandomAnimSpeedC: 1
@@ -64,8 +69,8 @@ MonoBehaviour:
   strongMeleeDamageEndNormalized: 0.98
   strongMeleeAnimSpeedMultiplier: 1.472
   strongReleaseWeightA: 0.55
-  strongReleaseWeightB: 0.22
-  strongReleaseWeightC: 0.23
+  strongReleaseWeightB: 0.418
+  strongReleaseWeightC: 0.497
   interactHoldComboAnimSpeed: 1.75
   chargedHitsIgnoreEnemyWeapons: 1
   hitstopLightFrames: 2
@@ -74,9 +79,12 @@ MonoBehaviour:
   parryClashVfxPrefab: {fileID: 7766587421872479702, guid: ff3ee9c6089c20a4cba93a558d8eccbe, type: 3}
   parryClashVfxScale: 1.15
   parryClashVfxLifetimeSeconds: 0.45
-  combatCameraSnapSeconds: 0.25
-  chargedHitShakeAmplitude: 0.848
-  chargedHitShakeDurationSeconds: 0.1826
+  enableCombatCameraSnap: 0
+  combatCameraSnapSeconds: 0.35
+  enableGlobalCombatSeparation: 0
+  playerCombatBufferRadius: 0.119
+  chargedHitShakeAmplitude: 0.697
+  chargedHitShakeDurationSeconds: 0.1553
   parryShakeAmplitude: 0.587
   parryShakeDurationSeconds: 0.1249
   blockShakeAmplitude: 0.403

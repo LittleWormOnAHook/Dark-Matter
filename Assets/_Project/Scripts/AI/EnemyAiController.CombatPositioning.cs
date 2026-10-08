@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Serialization;
 using Project.AI.Invector;
+using Project.Combat;
 using Project.Companions;
 using Project.Survival;
 
@@ -14,19 +15,32 @@ namespace Project.AI
     // scans used for opportunistic retargeting. Split out of EnemyAiController.cs.
     public partial class EnemyAiController
     {
+        internal float ResolveMinCombatSeparation(Transform target)
+        {
+            float minSep = minCombatSeparation;
+            if (target == null || !IsCombatTargetPlayer(target))
+                return minSep;
+
+            DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
+            return profile != null
+                ? profile.ResolveMinCombatSeparationVsPlayer(minSep)
+                : minSep;
+        }
+
         internal float ResolveCombatStandoffFor(Transform target)
         {
+            float minSep = ResolveMinCombatSeparation(target);
             if (combat == null)
-                return minCombatSeparation;
+                return minSep;
 
             float effectiveRange = combat.ResolveEffectiveAttackRange(target);
-            float standoff = Mathf.Max(minCombatSeparation, combat.AttackRange * attackStandoffFraction);
+            float standoff = Mathf.Max(minSep, combat.AttackRange * attackStandoffFraction);
             if (IsCombatTargetPlayer(target))
                 standoff += playerStandoffBonus;
 
             // Prefer a contact band inside weapon reach so Meshy-proportion swings (shorter arms)
             // still connect; never orbit farther than we can strike.
-            float maxOrbit = Mathf.Max(minCombatSeparation, effectiveRange * 0.86f);
+            float maxOrbit = Mathf.Max(minSep, effectiveRange * 0.86f);
             return Mathf.Min(standoff, maxOrbit);
         }
 

@@ -14,6 +14,9 @@ namespace Project.Combat
             if (player == null || tpCamera == null)
                 return;
 
+            if (profile != null && !profile.enableCombatCameraSnap)
+                return;
+
             float duration = profile != null ? profile.combatCameraSnapSeconds : 0.25f;
             duration = Mathf.Clamp(duration, 0.1f, 0.5f);
             float lambda = 4f / duration;
@@ -31,7 +34,7 @@ namespace Project.Combat
         /// <summary>Maps profile snap duration to exponential damp lambda for ECM2 combat focus yaw.</summary>
         public static float ResolveCombatFocusSmoothLambda(DM_CombatCoreProfile profile, float fallbackLambda)
         {
-            if (profile == null)
+            if (profile == null || !profile.enableCombatCameraSnap)
                 return fallbackLambda;
 
             float duration = Mathf.Clamp(profile.combatCameraSnapSeconds, 0.1f, 0.5f);

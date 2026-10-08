@@ -89,9 +89,9 @@ namespace Project.Combat
         [Tooltip("Max horizontal distance to snap facing while blocking.")]
         [Range(2f, 8f)] public float meleeBlockAutoFaceMaxDistance = 4.5f;
         [Tooltip("Yaw degrees per second while block-assist turning.")]
-        [Range(180f, 900f)] public float meleeBlockAutoFaceTurnSpeed = 540f;
+        [Range(180f, 900f)] public float meleeBlockAutoFaceTurnSpeed = 680f;
         [Tooltip("Light/strong swing and strong charge: auto-face nearest threat when bearing exceeds this half-angle (tighter than block).")]
-        [Range(5f, 45f)] public float meleeAttackAutoFaceHalfAngle = 16f;
+        [Range(5f, 45f)] public float meleeAttackAutoFaceHalfAngle = 22f;
         [Tooltip("Extra reach scale for humanoid enemy melee hitboxes only.")]
         [Range(1f, 2.5f)] public float enemyMeleeHitboxWidthScale = 2.25f;
         [Range(1f, 2.5f)] public float enemyMeleeHitboxReachScale = 2.15f;
@@ -107,6 +107,14 @@ namespace Project.Combat
         [Range(0.75f, 2f)] public float lightComboAnimSpeedB = 1f;
         [Tooltip("WeakAttacks/SwordAttack C. 1 = normal, 1.25 = +25% faster.")]
         [Range(0.75f, 2f)] public float lightComboAnimSpeedC = 1f;
+        [Tooltip("Crimson-style attack move: camera-relative strafe during chained WeakAttacks/SwordAttack A→B→C only (not strong, charge, parry, or Hold-E upper-body combo).")]
+        public bool enableLightComboAttackMove = true;
+        [Tooltip("Multiplies locomotion speed while strafing during the weak A→B→C chain when attack move is on.")]
+        [Range(0.35f, 1.2f)] public float lightComboStrafeSpeedMultiplier = 0.65f;
+        [Tooltip("Minimum forward input (0–1) blended in during weak combo attack move when strafing or idle — small drift toward camera forward.")]
+        [Range(0f, 0.45f)] public float lightComboForwardDriftMultiplier = 0.12f;
+        [Tooltip("When off (default with attack move on), Invector LockMovement on weak A/B/C is bypassed so WASD strafe works. When on, weak combo plants like legacy Invector.")]
+        public bool lockMovementDuringLightCombo = false;
 
         [Header("Light random pool (Weak SwordRandomAttack A→B→C)")]
         [Tooltip("Parallel random weak swings (not the A→B→C chain). 1 = clip default, 1.25 = 25% faster.")]
@@ -152,8 +160,25 @@ namespace Project.Combat
         [Range(0.1f, 1.5f)] public float parryClashVfxLifetimeSeconds = 0.45f;
 
         [Header("Combat camera snap")]
-        [Tooltip("Seconds to ease the camera behind the player when melee attack/block auto-face rotates the body toward a threat (Invector tpCamera yaw + ECM2 combat focus).")]
-        [Range(0.1f, 0.5f)] public float combatCameraSnapSeconds = 0.25f;
+        [Tooltip("When on, melee block/attack auto-face eases Invector tpCamera yaw behind the body and ECM2 combat focus uses combatCameraSnapSeconds for yaw damp. When off, camera yaw is not snapped on auto-face and combat focus uses the CombatFocusController yawSmoothLambda only.")]
+        public bool enableCombatCameraSnap = false;
+        [Tooltip("Seconds to ease the camera behind the player when melee attack/block auto-face rotates the body toward a threat (Invector tpCamera yaw + ECM2 combat focus). Ignored when enableCombatCameraSnap is off.")]
+        [Range(0.1f, 0.5f)] public float combatCameraSnapSeconds = 0.35f;
+
+        [Header("Player combat buffer (enemy standoff)")]
+        [Tooltip("When on, enemies treat playerCombatBufferRadius as a global minimum planar separation vs Kade (Mathf.Max with each enemy prefab minCombatSeparation). Off or radius 0 = prefab-only spacing.")]
+        public bool enableGlobalCombatSeparation = true;
+        [Tooltip("Minimum keep-away radius (meters) between Kade and engaging enemies. Does not change Player_v7 capsule — AI ring/standoff and step clamps only.")]
+        [Range(0f, 4f)] public float playerCombatBufferRadius = 1.35f;
+
+        /// <summary>Global buffer vs player; prefab min when global off or radius ~0.</summary>
+        public float ResolveMinCombatSeparationVsPlayer(float enemyPrefabMinSeparation)
+        {
+            if (!enableGlobalCombatSeparation || playerCombatBufferRadius <= 0.001f)
+                return enemyPrefabMinSeparation;
+
+            return Mathf.Max(enemyPrefabMinSeparation, playerCombatBufferRadius);
+        }
 
         [Header("Camera shake")]
         [Tooltip("Trauma added on a charged strong hit that actually damages an enemy. 0 = off. Useful range 0–1 (CameraShake trauma caps at 1).")]

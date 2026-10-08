@@ -31,7 +31,7 @@ namespace Project.Player
 
         [Header("Break Lock")]
         [SerializeField] private float breakLookAwayDegrees = 25f;
-        [SerializeField] private float breakMoveInputThreshold = 0.6f;
+        [SerializeField] private float breakMoveInputThreshold = 0.45f;
         [SerializeField] private float breakMoveAwayDot = -0.2f;
         [SerializeField] private float lookAwayDecayRate = 0.35f;
 

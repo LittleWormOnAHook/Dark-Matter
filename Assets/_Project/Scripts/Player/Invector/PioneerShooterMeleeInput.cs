@@ -112,6 +112,8 @@ namespace Project.Player.Invector
         private float _meleeOverlayProtectUntil;
         private float _overlayEnteredAt = float.NegativeInfinity;
         private int _overlayStateHash;
+        private float _lightComboAttackMoveSavedSpeedMultiplier = 1f;
+        private bool _lightComboAttackMoveSpeedBorrowed;
         private int _emptyFullBodyHash;
         private const float FullBodyAttackExitNormalized = 0.95f;
         private const float FullBodyIdleBlend = 0.1f;
@@ -512,7 +514,15 @@ namespace Project.Player.Invector
             MaintainStrongChargeAnimation();
             TickLightComboChain();
             TickMeleeFullBodyIdleRestore();
+            ApplyLightComboAttackMoveLateUnlock();
             ApplyMeleeThreatFacing();
+        }
+
+        protected override void FixedUpdate()
+        {
+            bool attackMoveFrame = BeginLightComboAttackMoveForFixedUpdate(out DM_CombatCoreProfile attackProfile);
+            base.FixedUpdate();
+            EndLightComboAttackMoveForFixedUpdate(attackMoveFrame);
         }
 
         private bool IsGameplayInputDeferred()
@@ -531,6 +541,8 @@ namespace Project.Player.Invector
             if (_lightChainQueuedSlot >= 0)
                 return true;
             if (_strongChargeArmed || _strongChargePoseActive || isAttacking)
+                return true;
+            if (IsInLightComboAttackMoveState())
                 return true;
             if (IsDrawnMeleeWeaponActive())
                 return true;
@@ -718,7 +730,8 @@ namespace Project.Player.Invector
             if (cc == null)
                 return;
 
-            if (IsAimingActive || cc.lockInStrafe || cc.customAction || cc.isRolling || cc.isJumping)
+            if (IsAimingActive || cc.lockInStrafe || cc.isRolling || cc.isJumping
+                || (cc.customAction && !IsInLightComboAttackMoveState()))
             {
                 _strafeForBackwardLocomotion = false;
                 return;
@@ -1361,6 +1374,136 @@ namespace Project.Player.Invector
         /// Parks Idle_Empty when an attack overlay finishes. Exempts SwordCharge while the button is held.
         /// Does not use isAttacking as a gate.
         /// </summary>
+        private bool IsInLightComboAttackMoveState()
+        {
+            if (animator == null)
+                return false;
+
+            DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
+            if (profile == null || !profile.enableLightComboAttackMove)
+                return false;
+
+            int layer = ResolveFullBodyLayer();
+            if (layer < 0)
+                return false;
+
+            if (animator.IsInTransition(layer))
+            {
+                if (PioneerLightMeleeAnimStates.TryGetLightComboSlot(animator.GetNextAnimatorStateInfo(layer), out _))
+                    return true;
+            }
+
+            return PioneerLightMeleeAnimStates.TryGetLightComboSlot(
+                animator.GetCurrentAnimatorStateInfo(layer),
+                out _);
+        }
+
+        private bool BeginLightComboAttackMoveForFixedUpdate(out DM_CombatCoreProfile profile)
+        {
+            profile = null;
+            if (cc == null || !IsInLightComboAttackMoveState())
+                return false;
+
+            profile = DM_CombatCoreProfile.Live;
+            if (profile == null || profile.lockMovementDuringLightCombo)
+                return false;
+
+            cc.lockAnimMovement = false;
+            cc.lockAnimRotation = false;
+            cc.lockMovement = false;
+            StripFullBodyAnimatorTags("LockMovement", "LockRotation");
+
+            float strafeMult = Mathf.Clamp(profile.lightComboStrafeSpeedMultiplier, 0.35f, 1.2f);
+            if (!_lightComboAttackMoveSpeedBorrowed)
+            {
+                _lightComboAttackMoveSavedSpeedMultiplier = cc.speedMultiplier;
+                _lightComboAttackMoveSpeedBorrowed = true;
+            }
+
+            Vector3 input = cc.input;
+            float drift = Mathf.Clamp(profile.lightComboForwardDriftMultiplier, 0f, 0.45f);
+            if (drift > 0.001f)
+                input.z = Mathf.Max(input.z, drift);
+
+            bool moving = input.sqrMagnitude > 0.0004f;
+            if (moving)
+            {
+                cc.input = input;
+                cc.isStrafing = true;
+                cc.speedMultiplier = _lightComboAttackMoveSavedSpeedMultiplier * strafeMult;
+            }
+            else if (drift > 0.001f)
+            {
+                cc.input = input;
+                cc.isStrafing = true;
+                cc.speedMultiplier = _lightComboAttackMoveSavedSpeedMultiplier * strafeMult;
+            }
+
+            return true;
+        }
+
+        private void EndLightComboAttackMoveForFixedUpdate(bool attackMoveFrame)
+        {
+            if (attackMoveFrame || cc == null)
+                return;
+
+            if (_lightComboAttackMoveSpeedBorrowed)
+            {
+                cc.speedMultiplier = _lightComboAttackMoveSavedSpeedMultiplier;
+                _lightComboAttackMoveSpeedBorrowed = false;
+            }
+        }
+
+        private void ApplyLightComboAttackMoveLateUnlock()
+        {
+            if (cc == null || !IsInLightComboAttackMoveState())
+                return;
+
+            DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
+            if (profile == null || profile.lockMovementDuringLightCombo)
+                return;
+
+            cc.lockAnimMovement = false;
+            cc.lockAnimRotation = false;
+            cc.lockMovement = false;
+            StripFullBodyAnimatorTags("LockMovement", "LockRotation");
+        }
+
+        private void StripFullBodyAnimatorTags(params string[] tagsToRemove)
+        {
+            if (cc == null || cc.animatorStateInfos == null || tagsToRemove == null || tagsToRemove.Length == 0)
+                return;
+
+            int layer = ResolveFullBodyLayer();
+            if (layer < 0)
+                return;
+
+            System.Collections.Generic.HashSet<vAnimatorStateInfos> seen =
+                new System.Collections.Generic.HashSet<vAnimatorStateInfos> { cc.animatorStateInfos };
+            vAnimatorTagBase[] behaviours = animator.GetBehaviours<vAnimatorTagBase>();
+            for (int b = 0; b < behaviours.Length; b++)
+            {
+                if (behaviours[b] == null || behaviours[b].stateInfos == null)
+                    continue;
+                for (int s = 0; s < behaviours[b].stateInfos.Count; s++)
+                    if (behaviours[b].stateInfos[s] != null)
+                        seen.Add(behaviours[b].stateInfos[s]);
+            }
+
+            foreach (vAnimatorStateInfos infos in seen)
+            {
+                if (infos.stateInfos == null || layer >= infos.stateInfos.Length || infos.stateInfos[layer] == null)
+                    continue;
+
+                var tagList = infos.stateInfos[layer].tags;
+                if (tagList == null || tagList.Count == 0)
+                    continue;
+
+                for (int t = 0; t < tagsToRemove.Length; t++)
+                    tagList.Remove(tagsToRemove[t]);
+            }
+        }
+
         private void TickMeleeFullBodyIdleRestore()
         {
             if (animator == null)

@@ -506,11 +506,12 @@ namespace Project.AI
             Vector3 toTarget = target.position - transform.position;
             toTarget.y = 0f;
 
-            if (distance < minCombatSeparation)
+            float minSep = ResolveMinCombatSeparation(target);
+            if (distance < minSep)
             {
                 creeping = false;
                 creepTimer = 0f;
-                StepFlat(-toTarget, walkSpeed * 0.6f, minCombatSeparation - distance);
+                StepFlat(-toTarget, walkSpeed * 0.6f, minSep - distance);
             }
             else
             {
@@ -528,7 +529,7 @@ namespace Project.AI
                     }
                 }
 
-                float creepStop = Mathf.Max(standoff, minCombatSeparation);
+                float creepStop = Mathf.Max(standoff, minSep);
                 if (creeping && distance > creepStop)
                 {
                     float speed = walkSpeed * (combat.WantsMeleeReposition ? 0.92f : p.creepSpeedFactor);
