@@ -136,9 +136,15 @@ namespace Project.Combat
         public bool laserAlwaysGlowBurn = true;
 
         [Header("Decal size & projection")]
-        [Tooltip("Random burn mark size range in metres (min, max).")]
-        public Vector2 burnSize = new Vector2(0.06f, 0.10f);
-        [Range(0.02f, 0.2f)] public float burnProjectionDepth = 0.08f;
+        [Tooltip("Random ranged ammo burn mark size range in metres (min, max) before rangedAmmoMarkSizeMultiplier.")]
+        public Vector2 burnSize = new Vector2(0.10f, 0.10f);
+        [Range(0.02f, 1f)] public float burnProjectionDepth = 0.6f;
+        [Tooltip("Multiplies bullet / glow burn decal footprint and projection depth (default 2×).")]
+        [Range(1f, 4f)] public float rangedAmmoMarkSizeMultiplier = 2f;
+        [Tooltip("Push stamped marks along the outward surface normal (metres) so the decal volume straddles the struck face.")]
+        [Range(0f, 0.05f)] public float markSurfaceNormalOffset = 0.004f;
+        [Tooltip("When > 0, also shifts the stamp by this fraction of projection depth along the normal (centres the HDRP box on the face).")]
+        [Range(0f, 1f)] public float markDepthCenterBias = 0.5f;
         [Tooltip("Start / end angle fade in degrees so marks do not smear along grazing surfaces. Applies to live marks.")]
         public Vector2 burnAngleFade = new Vector2(50f, 80f);
         [Tooltip("Marks stop drawing beyond this camera distance. Applies to live marks.")]
@@ -179,6 +185,13 @@ namespace Project.Combat
         [Tooltip("SparksLarge kind (falls back to small when empty).")] public GameObject sparkHitLargePrefab;
         [Tooltip("Ember / glow burst on glowing burns.")] public GameObject burnEmberPrefab;
 
+        [Header("Melee slash marks")]
+        [Tooltip("Elongated decal along the swing (length × width in metres) before meleeSlashMarkSizeMultiplier.")]
+        public Vector2 slashSize = new Vector2(0.6f, 0.1f);
+        [Range(0.02f, 1f)] public float slashProjectionDepth = 0.6f;
+        [Tooltip("Multiplies melee slash decal length, width, and projection depth (default 3×).")]
+        [Range(1f, 4f)] public float meleeSlashMarkSizeMultiplier = 3f;
+
         [Header("Burn mark materials")]
         [Tooltip("BloodChar look: bright red blood spot with a circular char ring. 2x2 atlas.")]
         public Material bulletBurnMaterial;
@@ -186,19 +199,38 @@ namespace Project.Combat
         public Material glowBurnMaterial;
         [Tooltip("Emissive-only glow layer stacked on the glow burn; faded with the projector fade factor.")]
         public Material glowBurnHotMaterial;
+        [Tooltip("HDRP emissive flash for BloodChar bullet holes (debug / tuning). Empty = reuse glow hot material.")]
+        public Material bulletBurnHotMaterial;
 
         // ---------------------------------------------------------------- Hitboxes
-        [Header("Hitboxes (inflate / filler apply to enemies spawned after the change)")]
-        [Tooltip("Per-bone trigger hitboxes copy the ragdoll collider shapes, inflated by this factor.")]
+        [Header("Hitboxes (template scale applies on next rig build / spawn)")]
+        [Tooltip("Scales player-like per-bone DMHitbox templates (~1m humanoid). Live for newly built rigs.")]
+        [Range(0.5f, 1.5f)] public float hitboxTemplateScale = 1f;
+        [Tooltip("Legacy ragdoll-copy inflate (unused — templates replace ragdoll copy). Kept for asset compatibility.")]
         [Range(1f, 1.3f)] public float hitboxInflate = 1.05f;
         [Tooltip("Projectile sweep radius against hitboxes (world sweep keeps the projectile's own radius). Live.")]
         [Range(0.005f, 0.08f)] public float hitboxSweepRadius = 0.02f;
         [Tooltip("Add filler hitboxes (neck) where the ragdoll leaves gaps.")]
         public bool addFillerHitboxes = true;
 
-        [Header("Zone damage multipliers (deferred, D4 - not applied to damage yet; keep 1.0)")]
-        public float headMultiplier = 1f;
-        public float torsoMultiplier = 1f;
+        [Header("Debug hit mark visibility")]
+        [Tooltip("Boost HDRP decal emission on bullet + melee marks so hits are easy to spot in Play.")]
+        public bool debugBrightHitMarkEmission = true;
+        [Range(1f, 24f)] public float debugHitMarkEmissionIntensity = 10f;
+        [Tooltip("Melee slash marks get the hot emissive glow layer when debug emission is on.")]
+        public bool debugMeleeSlashEmissiveGlow = true;
+        [Tooltip("Ranged bullet marks get a hot emissive flash (round impact), including humanoid BloodChar holes.")]
+        public bool debugBrightRangedMarks = true;
+        [Tooltip("Scales the hot emissive decal when debug bright marks are active.")]
+        [Range(0.5f, 2.5f)] public float debugHotGlowSizeScale = 1.25f;
+        [Tooltip("Brief spark burst on ranged BloodChar impacts (humanoids have no default sparks).")]
+        public bool debugRangedImpactSpark = true;
+
+        [Header("Zone damage multipliers (Combat Plan D4)")]
+        [Tooltip("Head shots (+75% default).")]
+        public float headMultiplier = 1.75f;
+        [Tooltip("Chest / torso (+25% default).")]
+        public float torsoMultiplier = 1.25f;
         public float armMultiplier = 1f;
         public float legMultiplier = 1f;
 
@@ -259,11 +291,19 @@ namespace Project.Combat
             maxBurnMarksPerEnemy = Mathf.Clamp(maxBurnMarksPerEnemy, 1, MaxMarksPerEnemy);
             burnSize.x = Mathf.Max(0.005f, burnSize.x);
             burnSize.y = Mathf.Max(burnSize.x, burnSize.y);
+            markSurfaceNormalOffset = Mathf.Clamp(markSurfaceNormalOffset, 0f, 0.05f);
+            markDepthCenterBias = Mathf.Clamp01(markDepthCenterBias);
             burnAngleFade.x = Mathf.Clamp(burnAngleFade.x, 0f, 180f);
             burnAngleFade.y = Mathf.Clamp(burnAngleFade.y, burnAngleFade.x, 180f);
             decalDrawDistance = Mathf.Max(1f, decalDrawDistance);
             fxMaxDistance = Mathf.Max(0f, fxMaxDistance);
             exitSprayDamageThreshold = Mathf.Max(0f, exitSprayDamageThreshold);
+            hitboxTemplateScale = Mathf.Clamp(hitboxTemplateScale, 0.5f, 1.5f);
+            debugHitMarkEmissionIntensity = Mathf.Max(1f, debugHitMarkEmissionIntensity);
+            rangedAmmoMarkSizeMultiplier = Mathf.Clamp(rangedAmmoMarkSizeMultiplier, 1f, 4f);
+            meleeSlashMarkSizeMultiplier = Mathf.Clamp(meleeSlashMarkSizeMultiplier, 1f, 4f);
+            slashProjectionDepth = Mathf.Clamp(slashProjectionDepth, 0.02f, 1f);
+            burnProjectionDepth = Mathf.Clamp(burnProjectionDepth, 0.02f, 1f);
             Revision++;
         }
     }

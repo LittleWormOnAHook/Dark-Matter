@@ -38,6 +38,7 @@ namespace Project.EditorTools.GenesisStudio
         private readonly DMStudioPickupItemsPanel pickupItemsPanel = new DMStudioPickupItemsPanel();
         private readonly Project.EditorTools.Building.DMBuildingLibraryPanel buildingLibraryPanel = new Project.EditorTools.Building.DMBuildingLibraryPanel();
         private readonly DMStudioStrataPanel strataPanel = new DMStudioStrataPanel();
+        private readonly DMStudioEnemyTypesPanel enemyTypesPanel = new DMStudioEnemyTypesPanel();
         private UnityEditor.Editor playerSystemsEditor;
         private DMPlayerSystemsProfile playerSystemsTarget;
 
@@ -517,6 +518,9 @@ namespace Project.EditorTools.GenesisStudio
                     break;
                 case DMStudioPanelMode.CombatPlanPlaceholder:
                     DrawCombatPlanPlaceholder(sub);
+                    break;
+                case DMStudioPanelMode.EnemyTypesTable:
+                    enemyTypesPanel.Draw();
                     break;
             }
 

@@ -42,7 +42,8 @@ namespace Project.Combat
                 return;
 
             onStartReceiveDamage.Invoke(damage);
-            rootReceiver.TakeDamage(damage);
+            Collider boneCollider = GetComponent<Collider>();
+            rootReceiver.TakeDamageFromBone(damage, boneCollider);
             onReceiveDamage.Invoke(damage);
         }
 

@@ -21,7 +21,6 @@ namespace Project.Combat
         /// <summary>Bone this hitbox rides on. Burn marks parent here.</summary>
         public Transform Bone => bone != null ? bone : transform.parent;
         public CombatBodyPart Zone => zone;
-        /// <summary>Deferred (D4): stays 1.0. Read by nothing for damage yet.</summary>
         public float DamageMultiplier => damageMultiplier;
         public Collider Shape => shape;
         public bool IsLive => rig != null && rig.IsActive && shape != null && shape.enabled;

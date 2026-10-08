@@ -81,8 +81,8 @@ Material:
     - _UseEmissiveIntensity: 0
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
-    - _EmissiveColor: {r: 3.2, g: 1.344, b: 0.256, a: 3.2}
-    - _EmissiveColorHDR: {r: 3.2, g: 1.344, b: 0.256, a: 3.2}
+    - _EmissiveColor: {r: 472.14157, g: 198.29945, b: 37.771324, a: 3.2}
+    - _EmissiveColorHDR: {r: 472.14157, g: 198.29945, b: 37.771324, a: 3.2}
     - _EmissiveColorLDR: {r: 1, g: 0.42, b: 0.08, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

@@ -1,3 +1,4 @@
+using Invector.vCamera;
 using Project.AI;
 using UnityEngine;
 
@@ -54,7 +55,7 @@ namespace Project.Combat
             float maxDistance = profile != null ? profile.meleeBlockAutoFaceMaxDistance : 4.5f;
             float assistAfterDegrees = profile != null ? profile.meleeBlockAutoFaceHalfAngle : 30f;
             float turnSpeed = profile != null ? profile.meleeBlockAutoFaceTurnSpeed : 540f;
-            ApplyFacingTowardNearestThreat(player, maxDistance, assistAfterDegrees, turnSpeed);
+            ApplyFacingTowardNearestThreat(player, profile, maxDistance, assistAfterDegrees, turnSpeed);
         }
 
         public static void ApplyAttackFacing(Transform player, DM_CombatCoreProfile profile)
@@ -65,7 +66,7 @@ namespace Project.Combat
             float maxDistance = profile != null ? profile.meleeBlockAutoFaceMaxDistance : 4.5f;
             float assistAfterDegrees = profile != null ? profile.meleeAttackAutoFaceHalfAngle : 16f;
             float turnSpeed = profile != null ? profile.meleeBlockAutoFaceTurnSpeed : 540f;
-            ApplyFacingTowardNearestThreat(player, maxDistance, assistAfterDegrees, turnSpeed);
+            ApplyFacingTowardNearestThreat(player, profile, maxDistance, assistAfterDegrees, turnSpeed);
         }
 
         /// <summary>Block assist — prefer <see cref="ApplyBlockFacing"/>.</summary>
@@ -74,6 +75,7 @@ namespace Project.Combat
 
         private static void ApplyFacingTowardNearestThreat(
             Transform player,
+            DM_CombatCoreProfile profile,
             float maxDistance,
             float assistAfterDegrees,
             float turnSpeed)
@@ -99,7 +101,14 @@ namespace Project.Combat
 
             float maxStep = turnSpeed * Time.deltaTime;
             float step = Mathf.Clamp(signedAngle, -maxStep, maxStep);
+            if (Mathf.Abs(step) < 0.001f)
+                return;
+
             player.Rotate(0f, step, 0f, Space.World);
+
+            vThirdPersonCamera tpCamera = vThirdPersonCamera.instance;
+            if (tpCamera != null)
+                DMCombatCameraThreatSnap.ApplyYawBehindPlayer(player, tpCamera, profile);
         }
 
         private static bool TryFindNearestThreat(Transform player, float maxDistance, out Transform threat)

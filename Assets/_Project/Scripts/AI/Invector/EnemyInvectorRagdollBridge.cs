@@ -914,6 +914,10 @@ namespace Project.AI.Invector
                 EnemyInvectorHitSetup.StabilizeRigidbodies(gameObject);
 
             EnemyInvectorHitSetup.RestoreRagdollPhysicsLayers(gameObject);
+            EnemyInvectorHitSetup.RefreshCombatHitVolumes(gameObject);
+            DMEnemyHitboxRig rig = GetComponent<DMEnemyHitboxRig>();
+            if (rig != null)
+                rig.RefreshAfterRagdoll();
 
             if (_motorBridge != null)
                 _motorBridge.enabled = true;
@@ -1025,6 +1029,7 @@ namespace Project.AI.Invector
 
             _ragdoll.LoadBodyPart();
             EnemyInvectorHitSetup.RestoreRagdollPhysicsLayers(gameObject);
+            EnemyInvectorHitSetup.RefreshCombatHitVolumes(gameObject);
             return HasLoadedBodyParts();
         }
 

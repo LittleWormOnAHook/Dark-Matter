@@ -73,10 +73,15 @@ namespace Project.AI
             currentHealth = Mathf.Max(0f, currentHealth - damage);
             NotifyHealthChanged();
             Damaged?.Invoke(damage, isCritical);
-            if (source != null)
-                DamagedBy?.Invoke(source);
 
-            DamagedWithSource?.Invoke(damage, source, isCritical);
+            GameObject eventSource = CombatPlayerSourceUtility.NormalizeForDamageEvents(source) ?? source;
+            if (eventSource != null)
+                DamagedBy?.Invoke(eventSource);
+
+            DamagedWithSource?.Invoke(damage, eventSource ?? source, isCritical);
+
+            if (CombatPlayerSourceUtility.IsPlayerOrPioneerSource(eventSource ?? source))
+                EnemyHealthBarPresenter.RequestEngagedHudFocus(this);
 
             Vector3 feedbackPosition = transform.position + Vector3.up * 1.5f;
             CombatUiSpawner.ShowDamage(damage, feedbackPosition, isCritical);

@@ -23,9 +23,9 @@ MonoBehaviour:
   enemyCategory: 2
   bodyType: 1
   overrideBrain: 1
-  brainArchetype: 0
+  brainArchetype: 4
   primaryPersonality: 10
-  secondaryPersonality: 0
+  secondaryPersonality: 1
   brainProfileOverride: {fileID: 0}
   engagementProfileOverride: {fileID: 0}
   hitMarkProfileOverride: {fileID: 0}

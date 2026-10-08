@@ -149,6 +149,10 @@ namespace Project.Combat
         [Range(0.5f, 2.5f)] public float parryClashVfxScale = 1.15f;
         [Range(0.1f, 1.5f)] public float parryClashVfxLifetimeSeconds = 0.45f;
 
+        [Header("Combat camera snap")]
+        [Tooltip("Seconds to ease the camera behind the player when melee attack/block auto-face rotates the body toward a threat (Invector tpCamera yaw + ECM2 combat focus).")]
+        [Range(0.1f, 0.5f)] public float combatCameraSnapSeconds = 0.25f;
+
         [Header("Camera shake")]
         [Tooltip("Trauma added on a charged strong hit that actually damages an enemy. 0 = off. Useful range 0–1 (CameraShake trauma caps at 1).")]
         [Range(0f, 2f)] public float chargedHitShakeAmplitude = 0.55f;

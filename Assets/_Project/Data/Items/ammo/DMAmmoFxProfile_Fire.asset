@@ -69,7 +69,7 @@ MonoBehaviour:
   grantRandomStartingAmmo: 0
   startingAmmoMin: 1
   startingAmmoMax: 12
-  projectilePrefab: {fileID: 2577137788397890626, guid: 27ab7cf443f555f4bb1e8c4c53868733, type: 3}
+  projectilePrefab: {fileID: 100004, guid: 08e4c1c7aa6904cea876ff1df757c68f, type: 3}
   muzzleSocketName: Muzzle
   aimFovMultiplier: 0.78
   hipFireMaxDeviationDegrees: 15
@@ -118,10 +118,10 @@ MonoBehaviour:
   miningScanSuccessSound: {fileID: 0}
   miningScanDeniedSound: {fileID: 0}
   statusEffectOverride: 1
-  statusEffectDamagePerTick: 0
+  statusEffectDamagePerTick: 15
   statusEffectTickInterval: 1
   statusEffectDuration: 3
-  statusEffectVfxPrefab: {fileID: 0}
+  statusEffectVfxPrefab: {fileID: 100064, guid: 7bb37c1ce2f254617bd01547fafe7300, type: 3}
   componentCategory: 0
   toolType: 0
   toolRange: 8
@@ -152,7 +152,10 @@ MonoBehaviour:
     rounds per pickup; fast ballistic travel (~300 m/s). Reliable for pistols and
     rifles that accept Gunpowder ammo."
   unlocksInventoryStorageRow: 0
+  delivery: 0
   spawnLaserBurn: 0
+  enemyBlood: 0
+  enemyBurnMark: 0
   useHitMarks: 1
   defaultDecals: []
   defaultHitEffects: []
@@ -161,29 +164,101 @@ MonoBehaviour:
     hitMark: {fileID: 11400000, guid: b0c1d2e3f4a5061728394a5b6c7d8e9f, type: 2}
     decals: []
     hitEffects: []
+    surfaceDamage:
+      mode: 0
+      custom:
+        style: 0
+        radius: 0.12
+        depth: 0.45
+        roughness: 1
+        debrisCount: 1
+        debrisScale: 0.35
   - tag: Dirt
     hitMark: {fileID: 11400000, guid: b0c1d2e3f4a5061728394a5b6c7d8e9f, type: 2}
     decals: []
     hitEffects: []
+    surfaceDamage:
+      mode: 0
+      custom:
+        style: 0
+        radius: 0.12
+        depth: 0.45
+        roughness: 1
+        debrisCount: 1
+        debrisScale: 0.35
   - tag: Metal
     hitMark: {fileID: 11400000, guid: c1d2e3f4a5b60718293a4b5c6d7e8f01, type: 2}
     decals: []
     hitEffects: []
+    surfaceDamage:
+      mode: 0
+      custom:
+        style: 0
+        radius: 0.12
+        depth: 0.45
+        roughness: 1
+        debrisCount: 1
+        debrisScale: 0.35
   - tag: Concrete
     hitMark: {fileID: 11400000, guid: d2e3f4a5b6c708192a3b4c5d6e7f8012, type: 2}
     decals: []
     hitEffects: []
+    surfaceDamage:
+      mode: 0
+      custom:
+        style: 0
+        radius: 0.12
+        depth: 0.45
+        roughness: 1
+        debrisCount: 1
+        debrisScale: 0.35
   - tag: Wood
     hitMark: {fileID: 11400000, guid: e3f4a5b6c7d8091a2b3c4d5e6f708123, type: 2}
     decals: []
     hitEffects: []
+    surfaceDamage:
+      mode: 0
+      custom:
+        style: 0
+        radius: 0.12
+        depth: 0.45
+        roughness: 1
+        debrisCount: 1
+        debrisScale: 0.35
   - tag: Glass
     hitMark: {fileID: 11400000, guid: f4a5b6c7d8e90a1b2c3d4e5f60718234, type: 2}
     decals: []
     hitEffects: []
+    surfaceDamage:
+      mode: 0
+      custom:
+        style: 0
+        radius: 0.12
+        depth: 0.45
+        roughness: 1
+        debrisCount: 1
+        debrisScale: 0.35
   - tag: Barrel
     hitMark: {fileID: 11400000, guid: a5b6c7d8e9f01a2b3c4d5e6f70819245, type: 2}
     decals: []
     hitEffects: []
+    surfaceDamage:
+      mode: 0
+      custom:
+        style: 0
+        radius: 0.12
+        depth: 0.45
+        roughness: 1
+        debrisCount: 1
+        debrisScale: 0.35
   fallBackToCatalog: 1
   catalog: {fileID: 11400000, guid: b6c7d8e9f0a12b3c4d5e6f708192a356, type: 2}
+  surfaceDamage:
+    mode: 0
+    custom:
+      style: 0
+      radius: 0.12
+      depth: 0.45
+      roughness: 1
+      debrisCount: 1
+      debrisScale: 0.35

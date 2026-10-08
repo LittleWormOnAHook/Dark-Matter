@@ -1,6 +1,7 @@
 using Invector;
 using Project.AI;
 using Project.AI.Invector;
+using Project.Data;
 using Project.Player.Invector;
 using UnityEngine;
 
@@ -20,6 +21,8 @@ namespace Project.Combat
         public OnReceiveDamage onStartReceiveDamage => _onStartReceiveDamage;
         public OnReceiveDamage onReceiveDamage => _onReceiveDamage;
 
+        private Collider pendingMeleeHitCollider;
+
         private void Awake()
         {
             // Invector melee only damages colliders whose tag is in vMeleeManager.hitProperties
@@ -27,6 +30,20 @@ namespace Project.Combat
             // not tags — this tag assignment is for melee only.
             if (gameObject.CompareTag("Untagged"))
                 gameObject.tag = "Enemy";
+        }
+
+        /// <summary>Forwards melee hits from ragdoll bone colliders with the struck shape for zone FX / multipliers.</summary>
+        public void TakeDamageFromBone(vDamage damage, Collider boneCollider)
+        {
+            pendingMeleeHitCollider = boneCollider;
+            try
+            {
+                TakeDamage(damage);
+            }
+            finally
+            {
+                pendingMeleeHitCollider = null;
+            }
         }
 
         public void TakeDamage(vDamage damage)
@@ -56,9 +73,21 @@ namespace Project.Combat
             GameObject sender = damage.sender != null ? damage.sender.gameObject : null;
             float pioneerDamage = PioneerInvectorDamageResolver.ResolveOutgoingDamage(damage, sender, out bool critical);
 
+            if (enemyHealth != null)
+            {
+                Collider zoneCollider = pendingMeleeHitCollider != null ? pendingMeleeHitCollider : GetComponent<Collider>();
+                Animator animator = enemyHealth.GetComponentInChildren<Animator>();
+                CombatBodyPart zone = DMCombatBodyPartUtility.ResolveFromCollider(zoneCollider, animator);
+                pioneerDamage = DMCombatBodyPartUtility.ApplyZoneDamageMultiplier(
+                    pioneerDamage,
+                    zone,
+                    DM_EnemyHitMarkProfile.LiveOrDefault);
+            }
+
             GameObject source = sender != null
                 ? sender
                 : (damage.receiver != null ? damage.receiver.gameObject : null);
+            source = CombatPlayerSourceUtility.NormalizeForDamageEvents(source) ?? source;
 
             // Invector stamps the weapon hitbox's world position at the moment of impact.
             Vector3? hitPoint = damage.hitPosition != Vector3.zero ? damage.hitPosition : (Vector3?)null;
@@ -138,15 +167,31 @@ namespace Project.Combat
         {
             Vector3 point = hitPoint ?? transform.position;
 
-            // Clamp the hitbox position onto this receiver's collider surface so the
-            // splatter sits on the target instead of floating mid-swing.
-            Collider receiverCollider = GetComponent<Collider>();
-            if (receiverCollider != null && receiverCollider.enabled && !receiverCollider.isTrigger)
+            Collider receiverCollider = pendingMeleeHitCollider != null
+                ? pendingMeleeHitCollider
+                : GetComponent<Collider>();
+            if (receiverCollider != null && receiverCollider.enabled)
                 point = receiverCollider.ClosestPoint(point);
 
             Vector3 direction = source != null
                 ? (point - source.transform.position).normalized
                 : transform.forward;
+
+            EnemyHealth enemyHealth = GetComponentInParent<EnemyHealth>();
+            if (enemyHealth != null)
+            {
+                ItemData weapon = PioneerInvectorDamageBridge.ResolveEquippedWeapon(source);
+                DMEnemyHitMarks.HandleMeleeHit(
+                    enemyHealth,
+                    receiverCollider,
+                    point,
+                    direction,
+                    damage,
+                    weapon,
+                    source);
+                return;
+            }
+
             CombatHitVfx.SpawnBloodSplatter(point, direction, -direction, damage);
         }
     }

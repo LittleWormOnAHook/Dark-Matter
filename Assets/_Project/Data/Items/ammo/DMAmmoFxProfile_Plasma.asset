@@ -117,11 +117,11 @@ MonoBehaviour:
   miningScanLoopSound: {fileID: 0}
   miningScanSuccessSound: {fileID: 0}
   miningScanDeniedSound: {fileID: 0}
-  statusEffectOverride: 0
-  statusEffectDamagePerTick: 0
+  statusEffectOverride: 2
+  statusEffectDamagePerTick: 5
   statusEffectTickInterval: 1
-  statusEffectDuration: 0
-  statusEffectVfxPrefab: {fileID: 0}
+  statusEffectDuration: 10
+  statusEffectVfxPrefab: {fileID: 100008, guid: 6a2bfef2799f241b4806226d67789a78, type: 3}
   componentCategory: 0
   toolType: 0
   toolRange: 8
@@ -152,10 +152,22 @@ MonoBehaviour:
     50 rounds per pickup; physical projectile at ~230 m/s with strong accuracy. Favored
     for denser Io fauna and armored androids.
   unlocksInventoryStorageRow: 0
+  delivery: 0
   spawnLaserBurn: 0
+  enemyBlood: 0
+  enemyBurnMark: 0
   useHitMarks: 0
   defaultDecals: []
   defaultHitEffects: []
   surfaces: []
   fallBackToCatalog: 0
   catalog: {fileID: 11400000, guid: b6c7d8e9f0a12b3c4d5e6f708192a356, type: 2}
+  surfaceDamage:
+    mode: 0
+    custom:
+      style: 0
+      radius: 0.12
+      depth: 0.45
+      roughness: 1
+      debrisCount: 1
+      debrisScale: 0.35

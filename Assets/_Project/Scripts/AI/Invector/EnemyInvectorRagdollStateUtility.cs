@@ -20,6 +20,7 @@ namespace Project.AI.Invector
             bootstrap?.EnsureInvectorPhysicsReady();
             EnemyInvectorHitSetup.StabilizeRigidbodies(root);
             EnemyInvectorHitSetup.RestoreRagdollPhysicsLayers(root);
+            EnemyInvectorHitSetup.RefreshCombatHitVolumes(root);
             Physics.SyncTransforms();
         }
 

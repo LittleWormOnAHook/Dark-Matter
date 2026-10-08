@@ -12,3 +12,77 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c0fd7eb972443c5ada04c055876f509, type: 3}
   m_Name: DM_EnemyEngagementProfile
   m_EditorClassIdentifier: Assembly-CSharp::Project.AI.DM_EnemyEngagementProfile
+  enableEngagementDirector: 1
+  legacyRingSlotRotation: 0
+  debugLogHandoffs: 1
+  directorTickHz: 5
+  agentRoleTickHz: 10
+  tokenMinHoldSeconds: 2.5
+  switchScoreMargin: 2
+  switchConfirmSeconds: 0.35
+  minSecondsBetweenHandoffs: 1.5
+  postSwingLockSeconds: 0.25
+  tokenHoldMaxSequences: 2
+  tokenHoldMaxSeconds: 6
+  handoffGraceBeforeSwing: {x: 0.6, y: 1.2}
+  reawardCooldown: 1.5
+  candidateMaxDistance: 8
+  weightPlayerHit: 5
+  playerHitMemory: 1.5
+  weightPlayerTargeting: 4
+  weightPlayerFacing: 3
+  facingConeFull: 20
+  facingConeZero: 60
+  weightPositioning: 2
+  positioningRange: 6
+  weightWaitPerSecond: 0.25
+  weightWaitMax: 2
+  weightPunishPriority: 3
+  engageInFactor: 1
+  engageOutFactor: 1.35
+  engageOutGrace: 0.4
+  creepStartFactor: 0.95
+  creepGrace: 0.25
+  creepSpeedFactor: 0.62
+  attackFacingConeHalfAngle: 25
+  attackFacingMaxTurnSeconds: 0.5
+  engagerTurnRate: 200
+  lightTrackRate: 120
+  lightTrackUntil: 0.3
+  chargedTrackRate: 60
+  chargedTrackUntil: 0.28
+  offscreenAttackExtraWindup: 0.25
+  holdRingRadius: 4
+  holdRingRadiusMin: 3.2
+  holdRingRadiusMax: 5.5
+  holdBandMin: 3
+  holdBandMax: 6.5
+  holdBandGrace: 0.6
+  holdReanchorPlayerMove: 2
+  holdReanchorCooldown: {x: 2.5, y: 4}
+  holderMinSpacing: 1.6
+  holderEngagerLineHalfAngle: 20
+  holderWalkSpeed: 1.4
+  holderRunToAnchorDistance: 3
+  holderTurnRate: 90
+  holderFacingDeadZone: 35
+  holderFacingSettle: 10
+  holderActionInterval: {x: 3.5, y: 6}
+  holderWeightSidestep: 0.45
+  holderWeightTaunt: 0.3
+  holderWeightFeint: 0.15
+  holderWeightNone: 0.1
+  sidestepDistance: {x: 0.6, y: 1.2}
+  sidestepMaxArc: 15
+  sidestepCooldown: 4
+  tauntCooldown: 6
+  tauntDuration: {x: 1, y: 2}
+  feintDistance: 0.5
+  feintMinDistance: 3.5
+  holderGroupActionGap: 1
+  holderMaxConcurrentActions: 1
+  holderMaxDriftDegPer10s: 30
+  noSidestepPlayerSpeed: 1.5
+  noSidestepAfterReanchor: 2
+  chargedTokensPerTarget: 1
+  rangedShotTokensPerTarget: 2

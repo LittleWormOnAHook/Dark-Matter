@@ -95,8 +95,8 @@ MonoBehaviour:
   splashRadius: 0
   splashDamageFalloff: 0.25
   fxProfile: {fileID: 11400000}
-  muzzleFlashPrefab: {fileID: 0}
-  tracerPrefab: {fileID: 0}
+  muzzleFlashPrefab: {fileID: 1266052911378142, guid: f6d1b4c37e8059a5d2f3a4b5c6d7e8f9, type: 3}
+  tracerPrefab: {fileID: 7048032083067295583, guid: ef03efed27122084884eb9cbb3785b11, type: 3}
   impactVfxPrefab: {fileID: 0}
   beamVfxPrefab: {fileID: 7048032083067295583, guid: ef03efed27122084884eb9cbb3785b11, type: 3}
   isMiningTool: 0
@@ -117,11 +117,11 @@ MonoBehaviour:
   miningScanLoopSound: {fileID: 0}
   miningScanSuccessSound: {fileID: 0}
   miningScanDeniedSound: {fileID: 0}
-  statusEffectOverride: 0
-  statusEffectDamagePerTick: 0
-  statusEffectTickInterval: 1
-  statusEffectDuration: 0
-  statusEffectVfxPrefab: {fileID: 0}
+  statusEffectOverride: 1
+  statusEffectDamagePerTick: 3
+  statusEffectTickInterval: 0.3
+  statusEffectDuration: 5
+  statusEffectVfxPrefab: {fileID: 100004, guid: cac2bb927977d471386ed5f6cb00a06d, type: 3}
   componentCategory: 0
   toolType: 0
   toolRange: 8
@@ -152,10 +152,22 @@ MonoBehaviour:
     per pickup. Instant beam travel with high projectile speed \u2014 ideal for precise
     mid-range shots on Io patrols."
   unlocksInventoryStorageRow: 0
+  delivery: 0
   spawnLaserBurn: 1
+  enemyBlood: 0
+  enemyBurnMark: 0
   useHitMarks: 0
   defaultDecals: []
   defaultHitEffects: []
   surfaces: []
   fallBackToCatalog: 0
   catalog: {fileID: 11400000, guid: b6c7d8e9f0a12b3c4d5e6f708192a356, type: 2}
+  surfaceDamage:
+    mode: 0
+    custom:
+      style: 0
+      radius: 0.12
+      depth: 0.45
+      roughness: 1
+      debrisCount: 1
+      debrisScale: 0.35

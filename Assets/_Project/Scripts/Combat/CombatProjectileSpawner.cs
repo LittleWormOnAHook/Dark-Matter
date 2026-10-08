@@ -41,7 +41,9 @@ namespace Project.Combat
 
             float damage = ResolveShotDamage(weapon, ammoItem, damageOverride);
 
-            if (ammoItem != null && ammoItem.isHitscanBeam)
+            DMAmmoDeliveryMode delivery = DMCombatRangedResolver.ResolveDelivery(ammoItem, weapon);
+            if (delivery == DMAmmoDeliveryMode.Hitscan || delivery == DMAmmoDeliveryMode.Beam
+                || (ammoItem != null && ammoItem.isHitscanBeam))
             {
                 ResolveHitscanBeam(owner, muzzle, weapon, ammoItem, fireDirection, damage, lockedSpawnPosition);
                 return null;
@@ -105,41 +107,23 @@ namespace Project.Combat
             float castRange = Mathf.Max(0.01f, range - RangedFireSolver.MuzzleRayStartSkin);
             Vector3 endPoint = origin + direction * castRange;
 
-            int mask = Physics.DefaultRaycastLayers & ~(1 << 8);
-            if (RangedFireSolver.TryRaycastAim(
+            if (DMCombatRangedResolver.TryAimRaycast(
                     muzzlePos,
                     direction,
                     range,
-                    mask,
                     owner,
                     out RaycastHit hit,
                     RangedFireSolver.MuzzleRayStartSkin))
             {
                 endPoint = hit.point;
-                CombatHitResolver.ApplyDirectHit(
-                    hit.collider,
-                    hit.point,
+                DMCombatRangedResolver.ApplyHitOutcome(
+                    hit,
                     direction,
                     damage,
                     false,
                     owner,
-                    surfaceNormal: hit.normal,
-                    fxTravelDirection: direction,
-                    fxAmmoItem: ammoItem,
-                    fxWeapon: weapon,
-                    rangedHitMarks: true);
-
-                if (ammoItem.HasSplashDamage)
-                    CombatHitResolver.ApplySplash(ammoItem, hit.point, damage, owner, hit.collider);
-
-                CombatHitResolver.HandleRangedWorldImpact(
                     ammoItem,
-                    weapon,
-                    hit.point,
-                    hit.normal,
-                    owner,
-                    hit.collider != null ? hit.collider.gameObject : null);
-                CombatStatusEffect.Apply(ammoItem, hit.collider.gameObject, owner);
+                    weapon);
             }
 
             // Pulse/continuous laser ammo: tracers + beam line, never a traveling projectile.

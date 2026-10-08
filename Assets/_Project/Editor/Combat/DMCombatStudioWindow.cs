@@ -246,7 +246,8 @@ namespace Project.EditorTools.Combat
                         "meleeAttackAutoFaceHalfAngle",
                         "meleeBlockAutoFaceHalfAngle",
                         "meleeBlockAutoFaceMaxDistance",
-                        "meleeBlockAutoFaceTurnSpeed");
+                        "meleeBlockAutoFaceTurnSpeed",
+                        "combatCameraSnapSeconds");
                 });
 
                 DMStudioStyles.DrawSection("Light combo anim speed (A→B→C)", DMStudioStyles.ContentPanel, () =>

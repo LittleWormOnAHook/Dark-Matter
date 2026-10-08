@@ -524,6 +524,9 @@ namespace Project.Combat
                 return;
 
             TickSwingAndDamageWindows();
+
+            if (IsMeleeDamageActive())
+                PioneerMeleeDmHitboxProbe.ProbeManager(_meleeManager);
         }
 
         /// <summary>

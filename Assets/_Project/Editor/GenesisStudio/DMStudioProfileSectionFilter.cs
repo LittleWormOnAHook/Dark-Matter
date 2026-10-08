@@ -220,6 +220,7 @@ namespace Project.EditorTools.GenesisStudio
             "meleeBlockAutoFaceHalfAngle",
             "meleeBlockAutoFaceMaxDistance",
             "meleeBlockAutoFaceTurnSpeed",
+            "combatCameraSnapSeconds",
             "enemyMeleeHitboxWidthScale",
             "enemyMeleeHitboxReachScale",
             "enemyMeleeAttackRangeMultiplier",

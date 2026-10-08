@@ -5,6 +5,15 @@ using UnityEngine.Serialization;
 
 namespace Project.Combat
 {
+    /// <summary>How this ammo travels to the target (Combat Plan phase D shared resolver).</summary>
+    public enum DMAmmoDeliveryMode
+    {
+        Auto = 0,
+        Projectile = 1,
+        Hitscan = 2,
+        Beam = 3
+    }
+
     /// <summary>
     /// One ammo asset: inventory ItemData plus combat FX / hit marks.
     /// Pickups, registry, and weapons reference this asset directly.
@@ -12,6 +21,10 @@ namespace Project.Combat
     [CreateAssetMenu(menuName = "Dark Matter/Combat/Ammo FX Profile", fileName = "DMAmmoFxProfile_")]
     public class DMAmmoFxProfile : ItemData
     {
+        [Header("Delivery (Combat Plan §16 / phase D)")]
+        [Tooltip("Auto = infer from isHitscanBeam and projectile prefab. All nine ammo types resolve through DMCombatRangedResolver.")]
+        public DMAmmoDeliveryMode delivery = DMAmmoDeliveryMode.Auto;
+
         [Header("Hit VFX")]
         [Tooltip("Stamp the laser burn mark (pulse / continuous laser).")]
         public bool spawnLaserBurn;
@@ -114,6 +127,21 @@ namespace Project.Combat
             if (surfaceDamage == null)
                 surfaceDamage = new DMAmmoSurfaceDamage();
             return surfaceDamage.TryResolve(ammoType, itemName, out settings);
+        }
+
+        /// <summary>Resolved delivery for the shared ranged hit path (all nine <see cref="AmmoType"/> values).</summary>
+        public DMAmmoDeliveryMode ResolveDelivery()
+        {
+            if (delivery != DMAmmoDeliveryMode.Auto)
+                return delivery;
+
+            if (isHitscanBeam)
+                return beamVfxPrefab != null ? DMAmmoDeliveryMode.Beam : DMAmmoDeliveryMode.Hitscan;
+
+            if (projectilePrefab != null)
+                return DMAmmoDeliveryMode.Projectile;
+
+            return DMAmmoDeliveryMode.Projectile;
         }
 
         public void CopyFrom(DMAmmoFxProfile source)

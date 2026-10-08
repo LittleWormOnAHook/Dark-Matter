@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 563212509933227423}
   - component: {fileID: 74075068935162272}
   m_Layer: 0
-  m_Name: EnemyLootBag
+  m_Name: EnemyLootBox
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

@@ -1,4 +1,5 @@
 using Project.AI.Invector;
+using Project.Combat;
 using Project.Companions;
 using Project.Creatures;
 using Project.Core;
@@ -11,9 +12,9 @@ namespace Project.AI
 {
     /// <summary>
     /// Routes enemy health into the top-screen engaged HUD instead of floating world bars.
-    /// Event-driven (no per-frame polling): the player damaging this enemy (EnemyHealth.DamagedBy) or this
-    /// enemy damaging the player (SurvivalStats.DamagedBySource) focuses it; starting to target the player
-    /// claims the bar only when nothing else is shown. The HUD then checks only the shown enemy at ~4 Hz.
+    /// Event-driven (no per-frame polling): only player outbound damage (EnemyHealth.DamagedBy,
+    /// <see cref="DMEngagedEnemyHudFocusRouter"/>, lock-on) focuses the engaged bar — not incoming
+    /// enemy hits on the player. The HUD then checks only the shown enemy at ~4 Hz.
     /// </summary>
     [DisallowMultipleComponent]
     public class EnemyHealthBarPresenter : MonoBehaviour
@@ -29,8 +30,7 @@ namespace Project.AI
         private Transform _canvasRoot;
         private Transform _cachedPlayerRoot;
         private System.Func<bool> _stillEngaged;
-
-        private static SurvivalStats s_boundPlayerStats;
+        private float lastSeenHealth = -1f;
 
         private void Awake()
         {
@@ -51,43 +51,11 @@ namespace Project.AI
             _stillEngaged = IsEngagedWithPlayer;
 
             health.DamagedBy += OnDamagedBy;
+            health.DamagedWithSource += OnDamagedWithSource;
             health.HealthChanged += OnHealthChanged;
+            lastSeenHealth = health.CurrentHealth;
             health.Died += HandleDied;
             health.Respawned += HandleRespawned;
-            if (combat != null)
-                combat.TargetChanged += OnCombatTargetChanged;
-
-            EnsurePlayerDamageRouting();
-        }
-
-        /// <summary>
-        /// Subscribes once (static) to the player's SurvivalStats.DamagedBySource. Re-binds only if the player
-        /// object was replaced. Runs at enemy Start, never per frame.
-        /// </summary>
-        private static void EnsurePlayerDamageRouting()
-        {
-            if (s_boundPlayerStats != null)
-                return;
-
-            GameObject player = PlayerLocator.FindPlayerObject();
-            SurvivalStats stats = player != null ? player.GetComponentInParent<SurvivalStats>() : null;
-            if (stats == null && player != null)
-                stats = player.GetComponentInChildren<SurvivalStats>();
-            if (stats == null)
-                return;
-
-            s_boundPlayerStats = stats;
-            stats.DamagedBySource += HandlePlayerDamagedBySource;
-        }
-
-        private static void HandlePlayerDamagedBySource(GameObject source)
-        {
-            if (source == null)
-                return;
-
-            EnemyHealthBarPresenter presenter = source.GetComponentInParent<EnemyHealthBarPresenter>();
-            if (presenter != null)
-                presenter.PushHealthHudImmediate();
         }
 
         private void OnDestroy()
@@ -95,26 +63,13 @@ namespace Project.AI
             if (health != null)
             {
                 health.DamagedBy -= OnDamagedBy;
+                health.DamagedWithSource -= OnDamagedWithSource;
                 health.HealthChanged -= OnHealthChanged;
                 health.Died -= HandleDied;
                 health.Respawned -= HandleRespawned;
             }
 
-            if (combat != null)
-                combat.TargetChanged -= OnCombatTargetChanged;
-
             EngagedEnemyHealthHud.Instance?.ClearIf(health);
-        }
-
-        private void OnCombatTargetChanged(Transform newTarget)
-        {
-            if (!showFloatingHealthBar || health == null || health.IsDead || !IsPlayerTarget(newTarget))
-                return;
-
-            EnsurePlayerDamageRouting();
-
-            EngagedEnemyHealthHud hud = EngagedEnemyHealthHud.EnsureExists(_canvasRoot ?? ResolveCanvasRoot());
-            hud.TryFocusIfIdle(health, ResolveDisplayName(), health.CurrentHealth, health.MaxHealth, _stillEngaged);
         }
 
         private void OnDamagedBy(GameObject source)
@@ -125,12 +80,38 @@ namespace Project.AI
             PushHealthHudImmediate();
         }
 
-        private void OnHealthChanged(float current, float max)
+        private void OnDamagedWithSource(float damage, GameObject source, bool isCritical)
         {
-            if (health == null || health.IsDead)
+            if (damage <= 0f || !IsPlayerSource(source))
                 return;
 
+            PushHealthHudImmediate();
+        }
+
+        private void OnHealthChanged(float current, float max)
+        {
+            if (health == null)
+                return;
+
+            lastSeenHealth = current;
             EngagedEnemyHealthHud.Instance?.UpdateHealthIfBound(health, current, max);
+        }
+
+        /// <summary>Latest player damage wins the engaged HUD (melee, ranged, lock-on).</summary>
+        public static void RequestEngagedHudFocus(EnemyHealth target)
+        {
+            if (target == null || target.IsDead)
+                return;
+
+            EnemyHealthBarPresenter presenter = target.GetComponent<EnemyHealthBarPresenter>();
+            if (presenter != null)
+            {
+                presenter.PushHealthHudImmediate();
+                return;
+            }
+
+            EngagedEnemyHealthHud hud = EngagedEnemyHealthHud.EnsureExists(ResolveCanvasRoot());
+            hud.Focus(target, target.name, target.CurrentHealth, target.MaxHealth, null);
         }
 
         private void PushHealthHudImmediate()
@@ -155,6 +136,8 @@ namespace Project.AI
         private void HandleRespawned()
         {
             EngagedEnemyHealthHud.Instance?.ClearIf(health);
+            if (health != null)
+                lastSeenHealth = health.CurrentHealth;
         }
 
         private bool IsEngagedWithPlayer()
@@ -220,24 +203,7 @@ namespace Project.AI
 
         private static bool IsPlayerSource(GameObject source)
         {
-            if (source == null)
-                return false;
-
-            if (source.CompareTag("Player"))
-                return true;
-
-            if (source.GetComponentInParent<PlayerController>() != null)
-                return true;
-
-            if (source.GetComponentInParent<SurvivalStats>() != null &&
-                source.GetComponentInParent<CompanionHealth>() == null)
-                return true;
-
-            GameObject player = PlayerLocator.FindPlayerObject();
-            if (player == null)
-                return false;
-
-            return source == player || source.transform.IsChildOf(player.transform);
+            return CombatPlayerSourceUtility.IsPlayerOrPioneerSource(source);
         }
 
         private static Transform _cachedCanvasRoot;

@@ -18,6 +18,23 @@ namespace Project.Combat
     /// </summary>
     public static class PioneerMeleeOutgoingHitFilter
     {
+        /// <summary>
+        /// Per-bone enemy volumes are triggers on layer DMHitbox; ranged queries them explicitly.
+        /// Invector melee must still accept them (root capsule is also a trigger while the rig is live).
+        /// </summary>
+        public static bool IsDmEnemyCombatHitVolume(Collider other)
+        {
+            if (other == null)
+                return false;
+
+            return other.GetComponent<DMEnemyHitbox>() != null;
+        }
+
+        public static bool ShouldIgnoreTriggerForMelee(Collider other)
+        {
+            return other != null && other.isTrigger && !IsDmEnemyCombatHitVolume(other);
+        }
+
         public static bool IsAttackerPlayerSide(vMeleeManager meleeManager)
         {
             if (meleeManager == null)
@@ -43,7 +60,7 @@ namespace Project.Combat
 
         public static bool IsValidOutgoingDamageTarget(Collider other, HitProperties hitProperties)
         {
-            if (other == null || other.isTrigger)
+            if (other == null || ShouldIgnoreTriggerForMelee(other))
                 return false;
 
             if (hitProperties != null
@@ -77,7 +94,7 @@ namespace Project.Combat
         /// </summary>
         public static bool ShouldSuppressWorldRecoil(vMeleeManager meleeManager, Collider other)
         {
-            if (!IsAttackerPlayerSide(meleeManager) || other == null || other.isTrigger)
+            if (!IsAttackerPlayerSide(meleeManager) || other == null || ShouldIgnoreTriggerForMelee(other))
                 return false;
 
             if (ShouldIgnoreChargedEnemyWeapon(other))

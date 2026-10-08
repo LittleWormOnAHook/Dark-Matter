@@ -66,7 +66,8 @@ namespace Project.AI.Invector
                 gameObject,
                 hitCapsuleRadius,
                 hitCapsuleHeight,
-                hitCapsuleCenter);
+                hitCapsuleCenter,
+                fitToRenderers: false);
             // Before hit/ragdoll caches: remount orphan VBOT physics onto the live avatar.
             EnemyInvectorRagdollRigRepair.TryRemountOrphanRagdollOntoAvatar(gameObject);
             EnsureInvectorInitialized();
@@ -138,6 +139,7 @@ namespace Project.AI.Invector
 
             // After rig repair + hit setup: per-bone ranged hitboxes (layer DMHitbox) and bullet hit marks.
             DMEnemyHitboxRig.Ensure(gameObject);
+            EnemyInvectorHitSetup.RefreshCombatHitVolumes(gameObject);
             DMEnemyHitMarks.Ensure(gameObject);
         }
 

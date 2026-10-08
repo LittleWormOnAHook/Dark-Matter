@@ -74,6 +74,7 @@ MonoBehaviour:
   parryClashVfxPrefab: {fileID: 7766587421872479702, guid: ff3ee9c6089c20a4cba93a558d8eccbe, type: 3}
   parryClashVfxScale: 1.15
   parryClashVfxLifetimeSeconds: 0.45
+  combatCameraSnapSeconds: 0.25
   chargedHitShakeAmplitude: 0.848
   chargedHitShakeDurationSeconds: 0.1826
   parryShakeAmplitude: 0.587

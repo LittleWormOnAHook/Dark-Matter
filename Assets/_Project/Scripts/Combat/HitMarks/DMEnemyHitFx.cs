@@ -36,6 +36,26 @@ namespace Project.Combat
             return weapon != null ? weapon.defaultAmmoType : AmmoType.Gunpowder;
         }
 
+        /// <summary>Melee weapons use <see cref="ItemData.defaultAmmoType"/> as their element (plasma blade, ion edge, etc.).</summary>
+        public static AmmoType ResolveMeleeElement(ItemData weapon)
+        {
+            if (weapon == null)
+                return AmmoType.Gunpowder;
+            if (weapon.itemType == ItemType.Ammo)
+                return weapon.ammoType;
+            return weapon.defaultAmmoType;
+        }
+
+        public static bool AllowsBloodForElement(AmmoType type)
+        {
+            return type != AmmoType.Laser;
+        }
+
+        public static bool AllowsBurnForElement(AmmoType type)
+        {
+            return type != AmmoType.Ion;
+        }
+
         /// <summary>§16: Laser never bleeds. Per-ammo override on the FX profile wins over Auto.</summary>
         public static bool AllowsBlood(DMAmmoFxProfile profile, AmmoType type)
         {

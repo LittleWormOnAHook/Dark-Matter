@@ -48,6 +48,7 @@ namespace Project.Combat
 
         private static readonly List<Transform> ReleaseBuffer = new List<Transform>(16);
         private static readonly HashSet<string> WarnedMissing = new HashSet<string>();
+        private static readonly Dictionary<int, Material> DebugMaterialCache = new Dictionary<int, Material>(8);
 
         private readonly Slot[] slots = new Slot[MaxSlots];
         private EnemyHealth health;
@@ -96,6 +97,7 @@ namespace Project.Combat
         {
             WarnedMissing.Clear();
             ReleaseBuffer.Clear();
+            DebugMaterialCache.Clear();
         }
 
         /// <summary>Adds (if missing) the marks component on an enemy root. Default body type = Humanoid.</summary>
@@ -140,6 +142,49 @@ namespace Project.Combat
             }
 
             marks.OnRangedHit(hitCollider, hitPoint, surfaceNormal, travelDirection, damage, ammoItem, weapon);
+        }
+
+        /// <summary>Splash / AoE victims get body-type marks without world decals (phase D).</summary>
+        public static void HandleSplashHit(
+            EnemyHealth enemy,
+            Collider hitCollider,
+            Vector3 hitPoint,
+            Vector3 outward,
+            float damage,
+            ItemData ammoItem)
+        {
+            if (enemy == null)
+                return;
+
+            DMEnemyHitMarks marks = Ensure(enemy.gameObject);
+            if (marks == null)
+                return;
+
+            Vector3 normal = outward.sqrMagnitude > 0.0001f ? outward.normalized : Vector3.up;
+            marks.OnRangedHit(hitCollider, hitPoint, normal, outward, damage, ammoItem, weapon: null);
+        }
+
+        /// <summary>Melee slash: element from weapon defaultAmmoType; no FX_Blood_Splatter on enemies.</summary>
+        public static void HandleMeleeHit(
+            EnemyHealth enemy,
+            Collider hitCollider,
+            Vector3 hitPoint,
+            Vector3 swingDirection,
+            float damage,
+            ItemData weaponItem,
+            GameObject source)
+        {
+            if (enemy == null)
+                return;
+
+            DMEnemyHitMarks marks = Ensure(enemy.gameObject);
+            if (marks == null)
+                return;
+
+            Vector3 swing = swingDirection.sqrMagnitude > 0.0001f
+                ? swingDirection.normalized
+                : (source != null ? (hitPoint - source.transform.position).normalized : enemy.transform.forward);
+            marks.OnMeleeHit(hitCollider, hitPoint, swing, damage, weaponItem);
         }
 
         private void Awake()
@@ -245,11 +290,17 @@ namespace Project.Combat
             bool allowsBurn = DMEnemyHitFx.AllowsBurn(ammoProfile, ammoType);
 
             Vector3 travel = travelDirection.sqrMagnitude > 0.0001f ? travelDirection.normalized : Vector3.zero;
-            Vector3 normal = surfaceNormal.sqrMagnitude > 0.0001f ? surfaceNormal.normalized : Vector3.zero;
-            if (normal == Vector3.zero)
-                normal = travel != Vector3.zero ? -travel : (hitPoint - transform.position - Vector3.up).normalized;
+            Collider shape = hitCollider != null ? hitCollider : GetComponent<Collider>();
+            DMEnemyHitQuery.ResolveMarkSurface(
+                shape,
+                hitPoint,
+                travel,
+                surfaceNormal,
+                out Vector3 surfacePoint,
+                out Vector3 normal);
             if (travel == Vector3.zero)
-                travel = -normal;
+                travel = normal.sqrMagnitude > 0.0001f ? -normal : transform.forward;
+            hitPoint = ApplyMarkSurfaceOffset(profile, surfacePoint, normal, profile.burnProjectionDepth);
 
             DMEnemyHitbox hitbox = null;
             DMEnemyHitQuery.TryGetHitbox(hitCollider, out hitbox);
@@ -266,17 +317,33 @@ namespace Project.Combat
                     ? DMHitMarkStyle.GlowBurn
                     : response.burnStyle;
                 Transform bone = hitbox != null ? hitbox.Bone : attach;
-                if (StampBurn(profile, bone, hitPoint, normal, style)
-                    && style == DMHitMarkStyle.GlowBurn
-                    && response.embers
-                    && DMEnemyHitFx.IsWithinFxDistance(hitPoint, profile.fxMaxDistance))
+                if (StampBurn(profile, bone, hitPoint, normal, style))
                 {
-                    DMEnemyHitFx.SpawnAttached(
-                        profile.burnEmberPrefab,
-                        hitPoint + normal * 0.004f,
-                        normal,
-                        attach,
-                        profile.emberGlowSeconds + 0.75f);
+                    if (profile.debugBrightHitMarkEmission
+                        && profile.debugBrightRangedMarks
+                        && profile.debugRangedImpactSpark
+                        && style == DMHitMarkStyle.BloodChar
+                        && DMEnemyHitFx.IsWithinFxDistance(hitPoint, profile.fxMaxDistance))
+                    {
+                        GameObject spark = profile.ResolveFxPrefab(DMEnemyHitFxKind.SparksSmall);
+                        if (spark != null)
+                        {
+                            Vector3 sparkDir = travel != Vector3.zero ? Vector3.Slerp(normal, -travel, 0.35f) : normal;
+                            DMEnemyHitFx.SpawnBurst(spark, hitPoint + normal * 0.012f, sparkDir, 0.85f);
+                        }
+                    }
+
+                    if (style == DMHitMarkStyle.GlowBurn
+                        && response.embers
+                        && DMEnemyHitFx.IsWithinFxDistance(hitPoint, profile.fxMaxDistance))
+                    {
+                        DMEnemyHitFx.SpawnAttached(
+                            profile.burnEmberPrefab,
+                            hitPoint + normal * 0.004f,
+                            normal,
+                            attach,
+                            profile.emberGlowSeconds + 0.75f);
+                    }
                 }
             }
         }
@@ -324,11 +391,90 @@ namespace Project.Combat
                 DMEnemyHitFx.SpawnBurst(sparks, spawnPoint, Vector3.Slerp(normal, entry, 0.5f), scale * Mathf.Max(0.05f, response.sparkScale));
         }
 
-        private bool StampBurn(DM_EnemyHitMarkProfile profile, Transform bone, Vector3 point, Vector3 normal, DMHitMarkStyle style)
+        private void OnMeleeHit(
+            Collider hitCollider,
+            Vector3 hitPoint,
+            Vector3 swingDirection,
+            float damage,
+            ItemData weaponItem)
+        {
+            DM_EnemyHitMarkProfile profile = Profile;
+            AmmoType element = DMEnemyHitFx.ResolveMeleeElement(weaponItem);
+            bool allowsBlood = DMEnemyHitFx.AllowsBloodForElement(element);
+            bool allowsBurn = DMEnemyHitFx.AllowsBurnForElement(element);
+
+            Vector3 swing = swingDirection.sqrMagnitude > 0.0001f ? swingDirection.normalized : transform.forward;
+            Collider shape = hitCollider != null ? hitCollider : GetComponent<Collider>();
+            DMEnemyHitQuery.ResolveMarkSurface(shape, hitPoint, swing, Vector3.zero, out Vector3 surfacePoint, out Vector3 normal);
+            hitPoint = ApplyMarkSurfaceOffset(profile, surfacePoint, normal, profile.slashProjectionDepth);
+
+            DMEnemyHitbox hitbox = null;
+            if (hitCollider != null)
+                DMEnemyHitQuery.TryGetHitbox(hitCollider, out hitbox);
+            Transform attach = hitbox != null ? hitbox.transform : (hitCollider != null ? hitCollider.transform : transform);
+
+            if (DMEnemyHitFx.IsWithinFxDistance(hitPoint, profile.fxMaxDistance))
+                SpawnSplatter(profile, hitPoint, normal, swing, damage, allowsBlood);
+
+            bool alive = health == null || !health.IsDead;
+            if (!alive || !allowsBurn)
+                return;
+
+            DMEnemyBodyHitResponse response = profile.GetResponse(bodyType);
+            DMHitMarkStyle style = element == AmmoType.Laser && profile.laserAlwaysGlowBurn
+                ? DMHitMarkStyle.GlowBurn
+                : response.burnStyle;
+            Transform bone = hitbox != null ? hitbox.Bone : attach;
+            if (StampSlash(profile, bone, hitPoint, normal, swing, style)
+                && style == DMHitMarkStyle.GlowBurn
+                && response.embers
+                && DMEnemyHitFx.IsWithinFxDistance(hitPoint, profile.fxMaxDistance))
+            {
+                DMEnemyHitFx.SpawnAttached(
+                    profile.burnEmberPrefab,
+                    hitPoint + normal * 0.004f,
+                    normal,
+                    attach,
+                    profile.emberGlowSeconds + 0.75f);
+            }
+        }
+
+        private static Vector3 ApplyMarkSurfaceOffset(
+            DM_EnemyHitMarkProfile profile,
+            Vector3 surfacePoint,
+            Vector3 outwardNormal,
+            float projectionDepth)
+        {
+            if (profile == null || outwardNormal.sqrMagnitude < 0.0001f)
+                return surfacePoint;
+
+            Vector3 n = outwardNormal.normalized;
+            float depth = Mathf.Max(0.01f, projectionDepth);
+            float push = profile.markSurfaceNormalOffset + depth * Mathf.Clamp01(profile.markDepthCenterBias);
+            return surfacePoint + n * push;
+        }
+
+        private bool StampSlash(
+            DM_EnemyHitMarkProfile profile,
+            Transform bone,
+            Vector3 point,
+            Vector3 normal,
+            Vector3 swingDirection,
+            DMHitMarkStyle style)
         {
             Material baseMaterial = style == DMHitMarkStyle.BloodChar ? profile.bulletBurnMaterial : profile.glowBurnMaterial;
             if (baseMaterial == null)
                 return false;
+
+            Material hotSource = ResolveHotMaterialSource(profile, style);
+            Material glowMaterial = hotSource;
+            baseMaterial = ResolveMarkMaterial(baseMaterial, profile, bodyType: bodyType);
+            glowMaterial = ResolveMarkMaterial(
+                glowMaterial,
+                profile,
+                emissiveOnly: true,
+                bloodCharHot: style == DMHitMarkStyle.BloodChar,
+                bodyType: bodyType);
 
             EnsureRenderersTagged(profile);
             int capacity = Mathf.Clamp(profile.maxBurnMarksPerEnemy, 1, MaxSlots);
@@ -346,24 +492,34 @@ namespace Project.Combat
                 root.SetParent(parent, false);
             root.localScale = Vector3.one;
 
-            Vector3 forward = -normal;
-            Vector3 up = Mathf.Abs(Vector3.Dot(forward, Vector3.up)) > 0.98f ? Vector3.forward : Vector3.up;
-            Quaternion rotation = Quaternion.LookRotation(forward, up) * Quaternion.AngleAxis(Random.Range(0f, 360f), Vector3.forward);
+            Vector3 n = normal.sqrMagnitude > 0.0001f ? normal.normalized : Vector3.up;
+            Vector3 tangent = Vector3.ProjectOnPlane(swingDirection, n);
+            if (tangent.sqrMagnitude < 0.0001f)
+                tangent = Vector3.Cross(n, Vector3.forward);
+            if (tangent.sqrMagnitude < 0.0001f)
+                tangent = Vector3.Cross(n, Vector3.right);
+            tangent.Normalize();
+            Quaternion rotation = Quaternion.LookRotation(-n, tangent) * Quaternion.AngleAxis(Random.Range(-8f, 8f), Vector3.forward);
             root.SetPositionAndRotation(point, rotation);
 
-            float size = Random.Range(Mathf.Min(profile.burnSize.x, profile.burnSize.y), Mathf.Max(profile.burnSize.x, profile.burnSize.y));
-            float depth = Mathf.Max(0.01f, profile.burnProjectionDepth);
+            float slashScale = Mathf.Max(1f, profile.meleeSlashMarkSizeMultiplier);
+            float length = Mathf.Max(0.04f, Random.Range(Mathf.Min(profile.slashSize.x, profile.slashSize.y), Mathf.Max(profile.slashSize.x, profile.slashSize.y)) * slashScale);
+            float width = Mathf.Max(0.02f, Mathf.Min(profile.slashSize.x, profile.slashSize.y) * slashScale);
+            float depth = Mathf.Max(0.01f, profile.slashProjectionDepth * slashScale);
             Vector2 bias = AtlasBias[Random.Range(0, AtlasBias.Length)];
 
-            ConfigureProjector(slot.Base, baseMaterial, new Vector3(size, size, depth), bias, profile);
+            ConfigureProjector(slot.Base, baseMaterial, new Vector3(length, width, depth), bias, profile);
             slot.Base.fadeFactor = 1f;
             slot.Base.enabled = true;
 
-            bool glow = style == DMHitMarkStyle.GlowBurn && profile.glowBurnHotMaterial != null;
+            bool glow = glowMaterial != null
+                && (style == DMHitMarkStyle.GlowBurn
+                    || (profile.debugBrightHitMarkEmission && profile.debugMeleeSlashEmissiveGlow));
             if (glow)
             {
-                float glowSize = size * Mathf.Clamp(profile.glowSizeScale, 0.2f, 1.2f);
-                ConfigureProjector(slot.Glow, profile.glowBurnHotMaterial, new Vector3(glowSize, glowSize, depth), bias, profile);
+                float debugScale = profile.debugBrightHitMarkEmission ? profile.debugHotGlowSizeScale : 1f;
+                float glowSize = Mathf.Max(width, length * profile.glowSizeScale) * debugScale;
+                ConfigureProjector(slot.Glow, glowMaterial, new Vector3(glowSize, width * profile.glowSizeScale * debugScale, depth), bias, profile);
                 slot.Glow.fadeFactor = 1f;
                 slot.Glow.enabled = true;
                 slot.Glowing = true;
@@ -385,12 +541,181 @@ namespace Project.Combat
             return true;
         }
 
+        private bool StampBurn(DM_EnemyHitMarkProfile profile, Transform bone, Vector3 point, Vector3 normal, DMHitMarkStyle style)
+        {
+            Material baseMaterial = style == DMHitMarkStyle.BloodChar ? profile.bulletBurnMaterial : profile.glowBurnMaterial;
+            if (baseMaterial == null)
+                return false;
+
+            Material hotSource = ResolveHotMaterialSource(profile, style);
+            Material glowMaterial = hotSource;
+            baseMaterial = ResolveMarkMaterial(baseMaterial, profile, bodyType: bodyType);
+            glowMaterial = ResolveMarkMaterial(
+                glowMaterial,
+                profile,
+                emissiveOnly: true,
+                bloodCharHot: style == DMHitMarkStyle.BloodChar,
+                bodyType: bodyType);
+
+            EnsureRenderersTagged(profile);
+            int capacity = Mathf.Clamp(profile.maxBurnMarksPerEnemy, 1, MaxSlots);
+            TrimToCapacity(capacity);
+            int index = PickSlot(capacity);
+            ref Slot slot = ref slots[index];
+            EnsureSlotObjects(ref slot, index);
+
+            if (slot.Glowing || slot.FadingOut)
+                animatingCount = Mathf.Max(0, animatingCount - 1);
+
+            Transform parent = bone != null ? bone : transform;
+            Transform root = slot.Root.transform;
+            if (root.parent != parent)
+                root.SetParent(parent, false);
+            root.localScale = Vector3.one;
+
+            Vector3 n = normal.sqrMagnitude > 0.0001f ? normal.normalized : Vector3.up;
+            Vector3 forward = -n;
+            Vector3 up = Mathf.Abs(Vector3.Dot(forward, Vector3.up)) > 0.98f ? Vector3.forward : Vector3.up;
+            Quaternion rotation = Quaternion.LookRotation(forward, up) * Quaternion.AngleAxis(Random.Range(0f, 360f), Vector3.forward);
+            root.SetPositionAndRotation(point, rotation);
+
+            float ammoScale = Mathf.Max(1f, profile.rangedAmmoMarkSizeMultiplier);
+            float size = Random.Range(Mathf.Min(profile.burnSize.x, profile.burnSize.y), Mathf.Max(profile.burnSize.x, profile.burnSize.y)) * ammoScale;
+            size = Mathf.Max(0.02f, size);
+            float depth = Mathf.Max(0.01f, profile.burnProjectionDepth * ammoScale);
+            Vector2 bias = AtlasBias[Random.Range(0, AtlasBias.Length)];
+
+            ConfigureProjector(slot.Base, baseMaterial, new Vector3(size, size, depth), bias, profile);
+            slot.Base.fadeFactor = 1f;
+            slot.Base.enabled = true;
+
+            bool rangedDebugGlow = profile.debugBrightHitMarkEmission && profile.debugBrightRangedMarks;
+            bool glow = glowMaterial != null
+                && (style == DMHitMarkStyle.GlowBurn || rangedDebugGlow);
+            if (glow)
+            {
+                float glowScale = style == DMHitMarkStyle.GlowBurn && !rangedDebugGlow
+                    ? Mathf.Clamp(profile.glowSizeScale, 0.2f, 1.2f)
+                    : Mathf.Max(profile.glowSizeScale, profile.debugHotGlowSizeScale);
+                float glowSize = size * glowScale;
+                ConfigureProjector(slot.Glow, glowMaterial, new Vector3(glowSize, glowSize, depth), bias, profile);
+                slot.Glow.fadeFactor = 1f;
+                slot.Glow.enabled = true;
+                slot.Glowing = true;
+                slot.GlowStart = Time.time;
+                animatingCount++;
+            }
+            else
+            {
+                slot.Glow.enabled = false;
+                slot.Glowing = false;
+            }
+
+            slot.Used = true;
+            slot.FadingOut = false;
+            slot.StampTime = Time.time;
+            slot.HealthAtStamp = health != null ? health.CurrentHealth : 0f;
+            if (!slot.Root.activeSelf)
+                slot.Root.SetActive(true);
+            return true;
+        }
+
+        private static Material ResolveHotMaterialSource(DM_EnemyHitMarkProfile profile, DMHitMarkStyle style)
+        {
+            if (profile == null)
+                return null;
+
+            if (style == DMHitMarkStyle.BloodChar)
+                return profile.bulletBurnHotMaterial != null ? profile.bulletBurnHotMaterial : profile.glowBurnHotMaterial;
+
+            return profile.glowBurnHotMaterial;
+        }
+
+        private static Material ResolveMarkMaterial(
+            Material source,
+            DM_EnemyHitMarkProfile profile,
+            bool emissiveOnly = false,
+            bool bloodCharHot = false,
+            DMEnemyBodyType bodyType = DMEnemyBodyType.Humanoid)
+        {
+            if (source == null || profile == null || !profile.debugBrightHitMarkEmission)
+                return source;
+
+            int key = source.GetInstanceID()
+                ^ (emissiveOnly ? 0x40000000 : 0)
+                ^ (bloodCharHot ? 0x20000000 : 0)
+                ^ ((int)bodyType << 24);
+            if (!DebugMaterialCache.TryGetValue(key, out Material inst) || inst == null)
+            {
+                inst = Instantiate(source);
+                inst.hideFlags = HideFlags.HideAndDontSave;
+                DebugMaterialCache[key] = inst;
+            }
+
+            ApplyDebugEmission(inst, profile, emissiveOnly, bloodCharHot, bodyType);
+            return inst;
+        }
+
+        private static void ApplyDebugEmission(
+            Material mat,
+            DM_EnemyHitMarkProfile profile,
+            bool emissiveOnly,
+            bool bloodCharHot = false,
+            DMEnemyBodyType bodyType = DMEnemyBodyType.Humanoid)
+        {
+            if (mat == null || profile == null)
+                return;
+
+            float intensity = Mathf.Max(1f, profile.debugHitMarkEmissionIntensity);
+            Color ldr = ResolveDebugBodyEmissionColor(bodyType, emissiveOnly, bloodCharHot);
+            Color hdr = ldr * intensity;
+
+            if (mat.HasProperty("_AffectEmission"))
+                mat.SetFloat("_AffectEmission", 1f);
+            if (mat.HasProperty("_EmissiveIntensity"))
+                mat.SetFloat("_EmissiveIntensity", intensity);
+            if (mat.HasProperty("_UseEmissiveIntensity"))
+                mat.SetFloat("_UseEmissiveIntensity", 0f);
+            if (mat.HasProperty("_EmissiveExposureWeight"))
+                mat.SetFloat("_EmissiveExposureWeight", 0f);
+            if (mat.HasProperty("_EmissiveColorLDR"))
+                mat.SetColor("_EmissiveColorLDR", ldr);
+            if (mat.HasProperty("_EmissiveColorHDR"))
+                mat.SetColor("_EmissiveColorHDR", hdr);
+            if (mat.HasProperty("_EmissiveColor"))
+                mat.SetColor("_EmissiveColor", hdr);
+            if (!emissiveOnly && mat.HasProperty("_BaseColor"))
+                mat.SetColor("_BaseColor", Color.Lerp(Color.white, ldr, 0.35f));
+        }
+
+        private static Color ResolveDebugBodyEmissionColor(DMEnemyBodyType bodyType, bool emissiveOnly, bool bloodCharHot)
+        {
+            switch (bodyType)
+            {
+                case DMEnemyBodyType.Android:
+                    return emissiveOnly
+                        ? new Color(0.25f, 1f, 0.35f, 1f)
+                        : new Color(0.12f, 0.72f, 0.22f, 1f);
+                case DMEnemyBodyType.Robot:
+                    return emissiveOnly
+                        ? new Color(1f, 0.82f, 0.12f, 1f)
+                        : new Color(0.85f, 0.65f, 0.08f, 1f);
+                default:
+                    if (bloodCharHot)
+                        return emissiveOnly ? new Color(1f, 0.12f, 0.08f, 1f) : new Color(0.85f, 0.08f, 0.06f, 1f);
+                    return emissiveOnly
+                        ? new Color(1f, 0.22f, 0.15f, 1f)
+                        : new Color(1f, 0.2f, 0.15f, 1f);
+            }
+        }
+
         private void ConfigureProjector(DecalProjector projector, Material material, Vector3 size, Vector2 bias, DM_EnemyHitMarkProfile profile)
         {
             if (projector.material != material)
                 projector.material = material;
             projector.scaleMode = DecalScaleMode.ScaleInvariant;
-            projector.pivot = Vector3.zero;
+            float depthBias = Mathf.Clamp01(profile.markDepthCenterBias);
+            projector.pivot = new Vector3(0f, 0f, size.z * (0.5f - depthBias));
             projector.size = size;
             projector.uvScale = new Vector2(0.5f, 0.5f);
             projector.uvBias = bias;

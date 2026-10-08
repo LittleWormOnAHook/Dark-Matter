@@ -410,38 +410,22 @@ namespace Project.Combat
                     appliedDamage = Mathf.Max(1f, damage * 0.15f);
             }
 
-            // Stagger / death impulse keep their previous (zero) direction input; hit marks get the real travel.
-            CombatHitResolver.ApplyDirectHit(
+            DMCombatRangedResolver.ApplyHitOutcome(
                 collider,
                 hitPoint,
-                velocity,
+                surfaceNormal,
+                travelDirection,
                 appliedDamage,
                 isCritical,
                 owner,
                 ammoItem,
-                surfaceNormal: surfaceNormal,
-                fxTravelDirection: travelDirection,
-                fxWeapon: weapon,
-                rangedHitMarks: true);
-
-            if (ammoItem != null && ammoItem.HasSplashDamage)
-                CombatHitResolver.ApplySplash(ammoItem, hitPoint, appliedDamage, owner, collider);
-
-            Vector3 impactNormal = surfaceNormal.sqrMagnitude > 0.0001f ? surfaceNormal : -velocity.normalized;
-            CombatHitResolver.HandleRangedWorldImpact(
-                ammoItem,
                 weapon,
-                hitPoint,
-                impactNormal,
-                owner,
-                collider != null ? collider.gameObject : null,
-                playHitAudio: true,
+                playImpactAudio: true,
                 impactVfxOverride: impactVfxOverride);
 
-            if (ammoItem != null)
-                CombatStatusEffect.Apply(ammoItem, collider.gameObject, owner);
-            else
-                CombatStatusEffect.Apply(ammoType, collider.gameObject, owner);
+            Vector3 impactNormal = surfaceNormal.sqrMagnitude > 0.0001f
+                ? surfaceNormal
+                : (travelDirection.sqrMagnitude > 0.0001f ? -travelDirection : Vector3.up);
 
             Transform attach = collider != null ? collider.transform : null;
             GameObject vfxSource = tracerInstance != null ? tracerInstance : gameObject;

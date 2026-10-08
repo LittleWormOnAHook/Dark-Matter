@@ -140,11 +140,11 @@ namespace Project.Combat
             GameObject receiver,
             GameObject impactVfxOverride = null)
         {
-            DMAmmoFxProfile profile = ResolveProfile(ammoItem, weapon);
-            // Enemies get body-type marks from DMEnemyHitMarks (CombatHitResolver.ApplyDirectHit). Ammo without
-            // world hit marks (Plasma / Ion / Laser) used to drop its world impact (bullet hole, sparks) on the body.
-            if (IsEnemyReceiver(receiver) && (profile == null || !profile.useHitMarks))
+            // Enemies never get world impacts, surface decals, laser burns, or carve — only DMEnemyHitMarks body FX.
+            if (IsEnemyReceiver(receiver))
                 return;
+
+            DMAmmoFxProfile profile = ResolveProfile(ammoItem, weapon);
 
             bool skipDecal = ShouldSkipImpactDecal(receiver);
             // Carve first so hit marks / burns land on the crater floor instead of the surface that was just removed.

@@ -23,7 +23,8 @@ namespace Project.EditorTools.GenesisStudio
         PickupItemsCombined = 14,
         BuildingLibrary = 15,
         EnvironmentStrata = 16,
-        CombatPlanPlaceholder = 17
+        CombatPlanPlaceholder = 17,
+        EnemyTypesTable = 18
     }
 
     public readonly struct DMStudioSubtab
@@ -373,7 +374,7 @@ new DMStudioSubtab(
                         new DMStudioSubtab(
                             "enemy-hit-marks",
                             "Hit Marks",
-                            "Enemy bullet hit marks — DM_EnemyHitMarkProfile (Resources/Combat): mark limit, glow cool-down, decal size, effect budget / distance, and blood / coolant / spark response per body type (Humanoid, Android, Robot). Live in Play.",
+                            "Enemy bullet and melee slash hit marks — DM_EnemyHitMarkProfile (Resources/Combat): mark limit, glow cool-down, bullet + slash decal size, surface normal offset / depth centre bias, hitbox template scale, debug emissive visibility, effect budget / distance, and blood / coolant / spark response per body type (Humanoid, Android, Robot). Live in Play.",
                             DMStudioPanelMode.SingletonAsset,
                             "Assets/_Project/Resources/Combat/DM_EnemyHitMarkProfile.asset",
                             playModeSave: true),
@@ -397,6 +398,11 @@ new DMStudioSubtab(
                             DMStudioPanelMode.SingletonAsset,
                             "Assets/_Project/Resources/Combat/DM_EnemyBrainProfile.asset",
                             playModeSave: true),
+                        new DMStudioSubtab(
+                            "combat-enemy-types",
+                            "Enemy Types",
+                            "Every EnemyDefinition plus prefabs that use it: category, archetype, personalities, body type, prefer-ranged, and profile overrides. Global brain / engagement profiles remain the defaults.",
+                            DMStudioPanelMode.EnemyTypesTable),
                         new DMStudioSubtab(
                             "combat-director-tokens",
                             "Director & tokens",

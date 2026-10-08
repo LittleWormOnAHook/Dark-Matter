@@ -225,6 +225,16 @@ namespace Project.EditorTools.Combat
             Material bulletBurn = CreateDecalMaterial(MatFolder + "/DM_Decal_BulletBurn.mat", texBullet, texNormal, smoothness: 0.42f, emissive: false, emissiveMap: null);
             Material glowBurn = CreateDecalMaterial(MatFolder + "/DM_Decal_GlowBurn.mat", texGlow, texNormal, smoothness: 0.12f, emissive: false, emissiveMap: null);
             Material glowHot = CreateDecalMaterial(MatFolder + "/DM_Decal_GlowBurn_Hot.mat", texEmissive, null, smoothness: 0f, emissive: true, emissiveMap: texEmissive);
+            Material bulletHot = CreateDecalMaterial(MatFolder + "/DM_Decal_BulletBurn_Hot.mat", texBullet, null, smoothness: 0f, emissive: true, emissiveMap: texBullet);
+            if (bulletHot.HasProperty("_EmissiveColorLDR"))
+            {
+                Color ldr = new Color(1f, 0.12f, 0.08f, 1f);
+                const float intensity = 4.5f;
+                bulletHot.SetColor("_EmissiveColorLDR", ldr);
+                bulletHot.SetColor("_EmissiveColorHDR", ldr * intensity);
+                bulletHot.SetColor("_EmissiveColor", ldr * intensity);
+                bulletHot.SetFloat("_EmissiveIntensity", intensity);
+            }
 
             Material bloodMat = CopyMaterial(BloodSourceMat, MatFolder + "/DM_FX_Blood_Droplet.mat", m =>
             {
@@ -270,6 +280,7 @@ namespace Project.EditorTools.Combat
             profile.bulletBurnMaterial = bulletBurn;
             profile.glowBurnMaterial = glowBurn;
             profile.glowBurnHotMaterial = glowHot;
+            profile.bulletBurnHotMaterial = bulletHot;
             profile.bloodHitPrefab = blood;
             profile.coolantHitPrefab = coolant;
             profile.sparkHitSmallPrefab = sparkSmall;
@@ -764,6 +775,14 @@ namespace Project.EditorTools.Combat
             Material robotBody = EnsureRobotBodyMaterial();
             sb.Append(SetBodyType(RobotPath, DMEnemyBodyType.Robot, "Robot", robotBody));
             sb.Append(SetBodyType(HumanoidPath, DMEnemyBodyType.Humanoid, "Humanoid", null));
+            sb.Append(DMEnemyCombatColliderCleanup.StripPrefabs(new[]
+            {
+                FredPath,
+                CorruptAndroidPath,
+                RobotPath,
+                HumanoidPath,
+                EnemyFolder + "/The_Evil_One.prefab"
+            }));
             AssetDatabase.SaveAssets();
             return "Prefabs: " + sb;
         }

@@ -17,7 +17,7 @@ namespace Project.AI.Invector
             float targetRadius = 0.45f,
             float targetHeight = 2f,
             Vector3 targetCenter = default,
-            bool fitToRenderers = true)
+            bool fitToRenderers = false)
         {
             if (root == null)
                 return;
@@ -26,10 +26,78 @@ namespace Project.AI.Invector
                 targetCenter = new Vector3(0f, 1f, 0f);
 
             StabilizeRigidbodies(root);
-            DisableChildSolidColliders(root);
             FitRootCapsule(root, targetRadius, targetHeight, targetCenter, fitToRenderers);
             EnsureRootDamageReceiver(root);
             EnsureRagdollBoneDamageProxies(root);
+            RefreshCombatHitVolumes(root);
+        }
+
+        /// <summary>
+        /// Re-applies player-like bone triggers and disables stray ragdoll solids after stagger,
+        /// vRagdoll LoadBodyPart, or RestoreRagdollPhysicsLayers.
+        /// </summary>
+        public static void RefreshCombatHitVolumes(GameObject root)
+        {
+            if (root == null)
+                return;
+
+            DisableChildSolidColliders(root);
+            ConfigureMeleeBodyColliders(root);
+        }
+
+        public static void ConfigureMeleeBodyColliders(GameObject root)
+        {
+            if (root == null)
+                return;
+
+            Animator animator = root.GetComponentInChildren<Animator>(true);
+            if (animator == null || !animator.isHuman)
+                return;
+
+            for (int i = 0; i < DMEnemyHitboxRig.StandardHumanBones.Length; i++)
+            {
+                Transform bone = animator.GetBoneTransform(DMEnemyHitboxRig.StandardHumanBones[i]);
+                if (bone == null)
+                    continue;
+
+                Collider[] onBone = bone.GetComponents<Collider>();
+                for (int c = 0; c < onBone.Length; c++)
+                {
+                    Collider candidate = onBone[c];
+                    if (candidate == null || IsOutgoingWeaponHitCollider(candidate))
+                        continue;
+
+                    candidate.enabled = false;
+                }
+
+                PioneerRagdollBoneDamageProxy legacyProxy = bone.GetComponent<PioneerRagdollBoneDamageProxy>();
+                if (legacyProxy != null)
+                    Object.Destroy(legacyProxy);
+            }
+
+            DMEnemyHitboxRig rig = root.GetComponent<DMEnemyHitboxRig>();
+            rig?.WireMeleeReceivers();
+
+            DisableNonMeleeChildColliders(root, animator);
+        }
+
+        private static void DisableNonMeleeChildColliders(GameObject root, Animator animator)
+        {
+            Collider[] colliders = root.GetComponentsInChildren<Collider>(true);
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                Collider collider = colliders[i];
+                if (collider == null || collider.transform == root.transform)
+                    continue;
+
+                if (IsOutgoingWeaponHitCollider(collider))
+                    continue;
+
+                if (collider.GetComponent<DMEnemyHitbox>() != null)
+                    continue;
+
+                collider.enabled = false;
+            }
         }
 
         public static void StabilizeRigidbodies(GameObject root)
@@ -70,7 +138,7 @@ namespace Project.AI.Invector
             float targetRadius = 0.45f,
             float targetHeight = 2f,
             Vector3 targetCenter = default,
-            bool fitToRenderers = true)
+            bool fitToRenderers = false)
         {
             if (root == null)
                 return;
@@ -104,8 +172,8 @@ namespace Project.AI.Invector
                 if (IsOutgoingWeaponHitCollider(collider))
                     continue;
 
-                // DM per-bone ranged hitboxes (layer DMHitbox) are owned by DMEnemyHitboxRig.
-                if (collider.isTrigger && collider.GetComponent<DMEnemyHitbox>() != null)
+                // DM per-bone hit volumes (layer DMHitbox) are owned by DMEnemyHitboxRig children.
+                if (collider.GetComponent<DMEnemyHitbox>() != null)
                     continue;
 
                 collider.enabled = false;
@@ -228,32 +296,11 @@ namespace Project.AI.Invector
             if (root == null)
                 return;
 
-            PioneerInvectorDamageReceiver rootReceiver = root.GetComponent<PioneerInvectorDamageReceiver>();
-            if (rootReceiver == null)
-                rootReceiver = root.AddComponent<PioneerInvectorDamageReceiver>();
+            if (root.GetComponent<PioneerInvectorDamageReceiver>() == null)
+                root.AddComponent<PioneerInvectorDamageReceiver>();
 
-            Rigidbody rootBody = root.GetComponent<Rigidbody>();
-            Rigidbody[] bodies = root.GetComponentsInChildren<Rigidbody>(true);
-            for (int i = 0; i < bodies.Length; i++)
-            {
-                Rigidbody body = bodies[i];
-                if (body == null || body == rootBody)
-                    continue;
-
-                Collider boneCollider = body.GetComponent<Collider>();
-                if (boneCollider == null)
-                    continue;
-
-                // Skip outgoing weapon volumes that sit under the enemy hierarchy.
-                if (IsOutgoingWeaponHitCollider(boneCollider))
-                    continue;
-
-                PioneerRagdollBoneDamageProxy proxy = body.GetComponent<PioneerRagdollBoneDamageProxy>();
-                if (proxy == null)
-                    proxy = body.gameObject.AddComponent<PioneerRagdollBoneDamageProxy>();
-
-                proxy.Configure(rootReceiver);
-            }
+            DMEnemyHitboxRig rig = root.GetComponent<DMEnemyHitboxRig>();
+            rig?.WireMeleeReceivers();
         }
     }
 }

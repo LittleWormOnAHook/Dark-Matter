@@ -78,6 +78,15 @@ namespace Project.Player.Invector
             _survival.SetStamina(_survival.CurrentStamina - item.meleeStaminaCost);
         }
 
+        public static ItemData ResolveEquippedWeapon(GameObject source)
+        {
+            if (source == null)
+                return null;
+
+            PioneerInvectorWeaponBridge bridge = source.GetComponentInParent<PioneerInvectorWeaponBridge>();
+            return bridge != null ? bridge.ActiveEquippedItem : null;
+        }
+
         public static void ApplyPioneerDamageToCollider(Collider hitCollider, float damage, GameObject source, bool isCritical, Vector3? weaponHitPoint = null)
         {
             if (hitCollider == null || damage <= 0f)
@@ -100,7 +109,24 @@ namespace Project.Player.Invector
                 damageable,
                 hitCollider.transform.root.gameObject,
                 in info);
-            CombatHitVfx.SpawnBloodSplatter(hitPoint, direction, -direction, damage);
+
+            EnemyHealth enemyHealth = hitCollider.GetComponentInParent<EnemyHealth>();
+            if (enemyHealth != null)
+            {
+                DMEnemyHitMarks.HandleMeleeHit(
+                    enemyHealth,
+                    hitCollider,
+                    hitPoint,
+                    direction,
+                    damage,
+                    ResolveEquippedWeapon(source),
+                    source);
+            }
+            else
+            {
+                CombatHitVfx.SpawnBloodSplatter(hitPoint, direction, -direction, damage);
+            }
+
             EnemyNoiseEvents.RaiseNoise(hitPoint, 12f, source);
             DMCombatCameraShake.TryPlayChargedHit(source);
         }

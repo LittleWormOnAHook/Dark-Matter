@@ -21,7 +21,7 @@ MonoBehaviour:
   rangedWeaponItem: {fileID: 11400000, guid: 5791b1d40c5dda44abe9a9770f6cd1e2, type: 2}
   preferRangedWeapon: 1
   enemyCategory: 1
-  bodyType: 1
+  bodyType: 0
   overrideBrain: 0
   brainArchetype: 0
   primaryPersonality: 0

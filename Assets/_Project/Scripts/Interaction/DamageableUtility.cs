@@ -1,3 +1,4 @@
+using Project.Combat;
 using Project.Companions;
 using Project.Survival;
 using UnityEngine;
@@ -10,6 +11,13 @@ namespace Project.Interaction
         {
             if (collider == null)
                 return null;
+
+            if (collider.TryGetComponent(out DMEnemyHitbox enemyHitbox))
+            {
+                Project.AI.EnemyHealth enemyHealth = enemyHitbox.GetComponentInParent<Project.AI.EnemyHealth>();
+                if (enemyHealth != null)
+                    return enemyHealth;
+            }
 
             CompanionHealth companion = collider.GetComponentInParent<CompanionHealth>();
             if (companion != null)

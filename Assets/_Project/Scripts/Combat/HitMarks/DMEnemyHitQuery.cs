@@ -43,6 +43,15 @@ namespace Project.Combat
 
         public static int HitboxMask => 1 << HitboxLayer;
 
+        public const int PlayerLayerIndex = 8;
+
+        /// <summary>
+        /// Shared player / companion / enemy ranged mask: default raycast layers, player excluded,
+        /// DMHitbox included so <see cref="MaskWantsHitboxes"/> merges per-bone queries.
+        /// </summary>
+        public static int SharedRangedLayerMask =>
+            (Physics.DefaultRaycastLayers & ~(1 << PlayerLayerIndex)) | HitboxMask;
+
         /// <summary>True when any enemy has a live hitbox rig (otherwise callers can skip the second query).</summary>
         public static bool AnyRigActive => DMEnemyHitboxRig.ActiveRigCount > 0;
 
@@ -229,6 +238,85 @@ namespace Project.Combat
             }
 
             return found;
+        }
+
+        /// <summary>
+        /// World contact point + outward normal for bone-parented HDRP decals. Prefers a raycast on the struck
+        /// collider (hitboxes are triggers); falls back to resolver / travel hints, then shape exterior.
+        /// </summary>
+        public static void ResolveMarkSurface(
+            Collider collider,
+            Vector3 hitPoint,
+            Vector3 incomingDirection,
+            Vector3 hintNormal,
+            out Vector3 surfacePoint,
+            out Vector3 outwardNormal)
+        {
+            surfacePoint = hitPoint;
+            outwardNormal = hintNormal.sqrMagnitude > 0.0001f ? hintNormal.normalized : Vector3.zero;
+
+            if (collider == null)
+            {
+                if (outwardNormal == Vector3.zero)
+                    outwardNormal = Vector3.up;
+                return;
+            }
+
+            surfacePoint = ClosestPointOnCollider(collider, hitPoint);
+
+            Vector3 incoming = incomingDirection.sqrMagnitude > 0.0001f
+                ? incomingDirection.normalized
+                : outwardNormal != Vector3.zero
+                    ? -outwardNormal
+                    : Vector3.forward;
+
+            const float probe = 1.25f;
+            for (int attempt = 0; attempt < 3; attempt++)
+            {
+                float back = probe * (attempt + 1);
+                Vector3 origin = surfacePoint + incoming * back;
+                Ray ray = new Ray(origin, -incoming);
+                if (collider.Raycast(ray, out RaycastHit hit, back + 0.25f))
+                {
+                    surfacePoint = hit.point;
+                    outwardNormal = hit.normal.normalized;
+                    EnsureOutwardNormalFacesIncoming(incomingDirection, ref outwardNormal);
+                    return;
+                }
+            }
+
+            if (outwardNormal == Vector3.zero)
+            {
+                Vector3 center = collider.bounds.center;
+                outwardNormal = (surfacePoint - center).normalized;
+                if (outwardNormal.sqrMagnitude < 0.0001f)
+                    outwardNormal = collider.transform.up.sqrMagnitude > 0.0001f ? collider.transform.up : Vector3.up;
+            }
+
+            EnsureOutwardNormalFacesIncoming(incomingDirection, ref outwardNormal);
+        }
+
+        /// <summary>Decals project along -normal; flip when the resolver handed us an inward-facing normal.</summary>
+        private static void EnsureOutwardNormalFacesIncoming(Vector3 incomingDirection, ref Vector3 outwardNormal)
+        {
+            if (outwardNormal.sqrMagnitude < 0.0001f || incomingDirection.sqrMagnitude < 0.0001f)
+                return;
+
+            if (Vector3.Dot(outwardNormal.normalized, incomingDirection.normalized) > 0.01f)
+                outwardNormal = -outwardNormal;
+        }
+
+        private static Vector3 ClosestPointOnCollider(Collider collider, Vector3 point)
+        {
+            if (collider is BoxCollider
+                || collider is SphereCollider
+                || collider is CapsuleCollider
+                || (collider is MeshCollider meshCollider && meshCollider.convex))
+            {
+                return collider.ClosestPoint(point);
+            }
+
+            return collider.bounds.ClosestPoint(point);
         }
     }
 }

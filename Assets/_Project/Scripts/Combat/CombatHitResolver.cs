@@ -128,9 +128,22 @@ namespace Project.Combat
             }
 
             DamageInfo info = DamageInfo.FromHit(damage, isCritical, damageSource, hitPoint, ammoItem);
-            // Zone recorded for the deferred multiplier phase (D4); damage is unchanged (multipliers stay 1.0).
             if (DMEnemyHitQuery.TryGetHitbox(collider, out DMEnemyHitbox hitbox))
                 info.BodyPart = hitbox.Zone;
+            else if (enemyHealth != null && collider != null)
+            {
+                Animator animator = enemyHealth.GetComponentInChildren<Animator>();
+                info.BodyPart = DMCombatBodyPartUtility.ResolveFromCollider(collider, animator);
+            }
+
+            if (enemyHealth != null && info.BodyPart != CombatBodyPart.None)
+            {
+                info.Amount = DMCombatBodyPartUtility.ApplyZoneDamageMultiplier(
+                    info.Amount,
+                    info.BodyPart,
+                    DM_EnemyHitMarkProfile.LiveOrDefault);
+            }
+
             bool applied = CombatDamageApplicator.ApplyToDamageable(
                 damageable,
                 collider.transform.root.gameObject,
@@ -169,9 +182,9 @@ namespace Project.Combat
                     fxAmmoItem != null ? fxAmmoItem : ammoItem,
                     fxWeapon);
             }
-            else
+            else if (enemyHealth == null)
             {
-                // Spray out of the wound toward the shooter (was: along the bullet's travel).
+                // Non-enemy targets (player, companions, nodes) keep legacy splatter VFX.
                 Vector3 normal = surfaceNormal.sqrMagnitude > 0.0001f
                     ? surfaceNormal.normalized
                     : (fxTravel != Vector3.zero ? -fxTravel : Vector3.up);
@@ -385,6 +398,18 @@ namespace Project.Combat
                 if (!SelfReportsDamageUi(damageable))
                     CombatUiSpawner.ShowDamage(falloffDamage, closest, false);
                 ApplyStatusEffect(ammoItem, hitCollider, owner, dotDurationScale, forceResidue, falloffDamage * 0.08f);
+
+                if (splashEnemy != null && !splashEnemy.IsDead)
+                {
+                    Vector3 outward = (closest - center).sqrMagnitude > 0.0001f ? (closest - center).normalized : Vector3.up;
+                    DMEnemyHitMarks.HandleSplashHit(
+                        splashEnemy,
+                        hitCollider,
+                        closest,
+                        outward,
+                        falloffDamage,
+                        ammoItem);
+                }
             }
         }
 

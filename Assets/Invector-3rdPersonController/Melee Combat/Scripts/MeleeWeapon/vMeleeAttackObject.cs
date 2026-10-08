@@ -156,7 +156,7 @@ namespace Invector.vMelee
             // Pioneer patch: ignore triggers, self/child colliders, and non-combat overlaps.
             if (!canApplyDamage
                 || other == null
-                || other.isTrigger
+                || PioneerMeleeOutgoingHitFilter.ShouldIgnoreTriggerForMelee(other)
                 || targetColliders[hitBox].Contains(other.gameObject)
                 || meleeManager == null
                 || PioneerMeleeOutgoingHitFilter.IsExcludedAttackerCollider(meleeManager, other))

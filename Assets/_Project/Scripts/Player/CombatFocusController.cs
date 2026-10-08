@@ -1,6 +1,8 @@
 using ECM2;
 using Project.AI;
+using Project.Combat;
 using Project.Core;
+using Project.UI;
 using Project.Interaction;
 using Project.Survival;
 using UnityEngine;
@@ -219,6 +221,7 @@ namespace Project.Player
             _focusReferenceYaw = GetYawToward(enemy.transform.position);
             _savedRotationMode = _character.rotationMode;
             _character.rotationMode = Character.RotationMode.OrientRotationToViewDirection;
+            EnemyHealthBarPresenter.RequestEngagedHudFocus(enemy);
         }
 
         private void ReleaseLock()
@@ -251,7 +254,10 @@ namespace Project.Player
             float idealYaw = GetYawToward(enemyPosition);
             _focusReferenceYaw = idealYaw;
             float targetYaw = idealYaw + GetTurnVariation();
-            _player.ApplyCombatFocusYaw(targetYaw, yawSmoothLambda);
+            float snapLambda = DMCombatCameraThreatSnap.ResolveCombatFocusSmoothLambda(
+                DM_CombatCoreProfile.Live,
+                yawSmoothLambda);
+            _player.ApplyCombatFocusYaw(targetYaw, snapLambda);
         }
 
         private void TrackLookAwayBreak()
