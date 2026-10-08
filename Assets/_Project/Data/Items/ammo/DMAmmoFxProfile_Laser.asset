@@ -49,7 +49,7 @@ MonoBehaviour:
   attackTrigger: Attack
   rangedDamage: 18
   rangedDamageRandomRange: 4
-  rangedRange: 45
+  rangedRange: 100
   projectileSpeed: 120
   projectileSpreadDegrees: 1.5
   weaponAccuracy: 75
@@ -121,7 +121,7 @@ MonoBehaviour:
   statusEffectDamagePerTick: 3
   statusEffectTickInterval: 0.3
   statusEffectDuration: 5
-  statusEffectVfxPrefab: {fileID: 100004, guid: cac2bb927977d471386ed5f6cb00a06d, type: 3}
+  statusEffectVfxPrefab: {fileID: 2093057041444814577, guid: 9ffa3cb9a68386442a35c5868a7c08bc, type: 3}
   componentCategory: 0
   toolType: 0
   toolRange: 8

@@ -22,7 +22,7 @@ namespace Project.Combat
             public float nextTickTime;
             public GameObject source;
             public GameObject vfxInstance;
-            public Transform vfxFollow;
+            public Transform vfxAttach;
             public int stacks;
         }
 
@@ -37,7 +37,10 @@ namespace Project.Combat
             float tickInterval,
             float duration,
             GameObject source,
-            GameObject vfxPrefab = null)
+            GameObject vfxPrefab = null,
+            Transform vfxAttachParent = null,
+            Vector3 vfxWorldPoint = default,
+            Vector3 vfxOutwardNormal = default)
         {
             if (targetRoot == null || type == StatusEffectType.None || duration <= 0f)
                 return;
@@ -46,7 +49,16 @@ namespace Project.Combat
             if (controller == null)
                 controller = targetRoot.AddComponent<CombatStatusEffectController>();
 
-            controller.ApplyEffect(type, damagePerTick, Mathf.Max(0.1f, tickInterval), duration, source, vfxPrefab);
+            controller.ApplyEffect(
+                type,
+                damagePerTick,
+                Mathf.Max(0.1f, tickInterval),
+                duration,
+                source,
+                vfxPrefab,
+                vfxAttachParent,
+                vfxWorldPoint,
+                vfxOutwardNormal);
         }
 
         public bool HasEffect(StatusEffectType type)
@@ -71,7 +83,10 @@ namespace Project.Combat
             float tickInterval,
             float duration,
             GameObject source,
-            GameObject vfxPrefab)
+            GameObject vfxPrefab,
+            Transform vfxAttachParent,
+            Vector3 vfxWorldPoint,
+            Vector3 vfxOutwardNormal)
         {
             if (IsImmune(type))
                 return;
@@ -79,6 +94,8 @@ namespace Project.Combat
             DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
             int maxStacks = profile != null ? profile.statusMaxStacks : 3;
             duration *= GetBossDurationMultiplier();
+
+            Transform attach = vfxAttachParent != null ? vfxAttachParent : transform;
 
             for (int i = 0; i < activeEffects.Count; i++)
             {
@@ -91,7 +108,13 @@ namespace Project.Combat
                 existing.damagePerTick = damagePerTick;
                 existing.tickInterval = tickInterval;
                 existing.source = source;
-                existing.vfxFollow = transform;
+                existing.vfxAttach = attach;
+
+                if (existing.vfxInstance != null)
+                    RepositionAttachedVfx(existing.vfxInstance, attach, vfxWorldPoint, vfxOutwardNormal);
+                else if (vfxPrefab != null)
+                    existing.vfxInstance = SpawnAttachedStatusVfx(vfxPrefab, attach, vfxWorldPoint, vfxOutwardNormal);
+
                 CombatEvents.RaiseStatusApplied(default, type, gameObject);
                 return;
             }
@@ -104,18 +127,12 @@ namespace Project.Combat
                 remainingDuration = duration,
                 nextTickTime = Time.time + tickInterval,
                 source = source,
-                vfxFollow = transform,
+                vfxAttach = attach,
                 stacks = 1
             };
 
             if (vfxPrefab != null)
-            {
-                effect.vfxInstance = PoolManager.Spawn(
-                    vfxPrefab,
-                    transform.position,
-                    Quaternion.identity,
-                    null);
-            }
+                effect.vfxInstance = SpawnAttachedStatusVfx(vfxPrefab, attach, vfxWorldPoint, vfxOutwardNormal);
 
             activeEffects.Add(effect);
             CombatEvents.RaiseStatusApplied(default, type, gameObject);
@@ -173,9 +190,6 @@ namespace Project.Combat
                 ActiveEffect effect = activeEffects[i];
                 effect.remainingDuration -= Time.deltaTime;
 
-                if (effect.vfxInstance != null && effect.vfxFollow != null)
-                    effect.vfxInstance.transform.position = effect.vfxFollow.position;
-
                 if (effect.remainingDuration <= 0f)
                 {
                     immunityUntil[effect.type] = Time.time + immunityWindow;
@@ -212,12 +226,63 @@ namespace Project.Combat
 
             GameObject vfx = effect.vfxInstance;
             effect.vfxInstance = null;
-            effect.vfxFollow = null;
+            effect.vfxAttach = null;
 
             if (vfx.transform.parent != null)
                 vfx.transform.SetParent(null, true);
 
             PoolManager.ReleaseDelayed(vfx, 0f);
+        }
+
+        private static GameObject SpawnAttachedStatusVfx(
+            GameObject prefab,
+            Transform attachParent,
+            Vector3 worldPoint,
+            Vector3 outwardNormal)
+        {
+            if (prefab == null)
+                return null;
+
+            Transform parent = attachParent != null ? attachParent : null;
+            Vector3 n = outwardNormal.sqrMagnitude > 0.0001f ? outwardNormal.normalized : Vector3.up;
+            Vector3 up = Mathf.Abs(Vector3.Dot(n, Vector3.up)) > 0.98f ? Vector3.forward : Vector3.up;
+            Quaternion rotation = Quaternion.LookRotation(n, up);
+
+            if (worldPoint.sqrMagnitude < 0.0001f && parent != null)
+                worldPoint = parent.position;
+
+            GameObject instance = PoolManager.Spawn(prefab, worldPoint, rotation, parent);
+            if (instance == null)
+                return null;
+
+            instance.transform.SetPositionAndRotation(worldPoint, rotation);
+            CombatVfxUtility.NormalizeAttachedWorldScale(instance.transform);
+            CombatVfxUtility.PlayParticleSystemsRecursive(instance);
+            return instance;
+        }
+
+        private static void RepositionAttachedVfx(
+            GameObject instance,
+            Transform attachParent,
+            Vector3 worldPoint,
+            Vector3 outwardNormal)
+        {
+            if (instance == null)
+                return;
+
+            Transform parent = attachParent != null ? attachParent : instance.transform.parent;
+            if (parent != null && instance.transform.parent != parent)
+                instance.transform.SetParent(parent, true);
+
+            Vector3 n = outwardNormal.sqrMagnitude > 0.0001f ? outwardNormal.normalized : Vector3.up;
+            Vector3 up = Mathf.Abs(Vector3.Dot(n, Vector3.up)) > 0.98f ? Vector3.forward : Vector3.up;
+            Quaternion rotation = Quaternion.LookRotation(n, up);
+
+            if (worldPoint.sqrMagnitude < 0.0001f && parent != null)
+                worldPoint = parent.position;
+
+            instance.transform.SetPositionAndRotation(worldPoint, rotation);
+            CombatVfxUtility.NormalizeAttachedWorldScale(instance.transform);
         }
     }
 }

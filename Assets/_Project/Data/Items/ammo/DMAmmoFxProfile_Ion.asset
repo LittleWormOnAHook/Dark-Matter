@@ -49,8 +49,8 @@ MonoBehaviour:
   attackTrigger: Attack
   rangedDamage: 28
   rangedDamageRandomRange: 4
-  rangedRange: 45
-  projectileSpeed: 300
+  rangedRange: 100
+  projectileSpeed: 330
   projectileSpreadDegrees: 1.2
   weaponAccuracy: 88.6
   closeRangeFullAccuracyDistance: 12
@@ -152,6 +152,7 @@ MonoBehaviour:
     weapons energy chambers; Plasma projectile at ~330 m/s with strong accuracy. 
     Favored for denser Io fauna and armored androids.
   unlocksInventoryStorageRow: 0
+  delivery: 0
   spawnLaserBurn: 1
   enemyBlood: 0
   enemyBurnMark: 0

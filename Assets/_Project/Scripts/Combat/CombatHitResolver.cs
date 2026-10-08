@@ -397,7 +397,17 @@ namespace Project.Combat
                     in splashInfo);
                 if (!SelfReportsDamageUi(damageable))
                     CombatUiSpawner.ShowDamage(falloffDamage, closest, false);
-                ApplyStatusEffect(ammoItem, hitCollider, owner, dotDurationScale, forceResidue, falloffDamage * 0.08f);
+                Vector3 splashOutward = (closest - center).sqrMagnitude > 0.0001f ? (closest - center).normalized : Vector3.up;
+                ApplyStatusEffect(
+                    ammoItem,
+                    hitCollider,
+                    owner,
+                    dotDurationScale,
+                    forceResidue,
+                    falloffDamage * 0.08f,
+                    closest,
+                    splashOutward,
+                    Vector3.zero);
 
                 if (splashEnemy != null && !splashEnemy.IsDead)
                 {
@@ -462,7 +472,10 @@ namespace Project.Combat
             GameObject owner,
             float durationScale,
             bool forceResidue,
-            float residueTickFallback)
+            float residueTickFallback,
+            Vector3 hitPoint = default,
+            Vector3 surfaceNormal = default,
+            Vector3 travelDirection = default)
         {
             if (ammoItem == null || collider == null)
                 return;
@@ -476,7 +489,11 @@ namespace Project.Combat
                 owner,
                 durationScale,
                 forceResidue,
-                residueTickFallback);
+                residueTickFallback,
+                collider,
+                hitPoint,
+                surfaceNormal,
+                travelDirection);
         }
 
         public static void SpawnImpactVfx(

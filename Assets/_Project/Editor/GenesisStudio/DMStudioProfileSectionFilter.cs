@@ -209,6 +209,7 @@ namespace Project.EditorTools.GenesisStudio
             "dashIFrameSeconds",
             "statusMaxStacks",
             "statusImmunityWindowSeconds",
+            "statusVfxNormalOffset",
             "statusBossMultiplier",
             "hitstopLightFrames",
             "hitstopHeavyFrames",

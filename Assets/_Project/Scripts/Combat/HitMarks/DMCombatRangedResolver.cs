@@ -137,7 +137,16 @@ namespace Project.Combat
                 fxWeapon: weapon,
                 rangedHitMarks: true);
 
-            CombatHitResolver.ApplyStatusEffect(ammoItem, collider, owner);
+            CombatHitResolver.ApplyStatusEffect(
+                ammoItem,
+                collider,
+                owner,
+                1f,
+                false,
+                0f,
+                hitPoint,
+                surfaceNormal,
+                fxTravel);
 
             if (ammoItem != null && ammoItem.HasSplashDamage)
                 CombatHitResolver.ApplySplash(ammoItem, hitPoint, damage, owner, collider);

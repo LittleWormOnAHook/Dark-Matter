@@ -170,13 +170,20 @@ namespace Project.Combat
             if (!cloudTickedThisInterval.Add(id))
                 return;
 
+            Vector3 closest = other.ClosestPoint(transform.position);
+            Vector3 outward = (closest - transform.position).sqrMagnitude > 0.0001f
+                ? (closest - transform.position).normalized
+                : Vector3.up;
             CombatHitResolver.ApplyStatusEffect(
                 ammoItem,
                 other,
                 owner,
                 dotDurationScale,
                 forceResidue,
-                centerDamage * 0.08f);
+                centerDamage * 0.08f,
+                closest,
+                outward,
+                Vector3.zero);
         }
 
         private void BuildVisuals()

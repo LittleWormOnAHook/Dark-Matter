@@ -74,6 +74,8 @@ namespace Project.Combat
         [Range(1, 10)] public int statusMaxStacks = 3;
         [Range(0f, 10f)] public float statusImmunityWindowSeconds = 2f;
         [Range(0.1f, 1f)] public float statusBossMultiplier = 0.5f;
+        [Tooltip("World offset along the hit outward normal when parenting status DoT VFX (ION corroded orb, etc.).")]
+        [Range(0f, 0.05f)] public float statusVfxNormalOffset = 0.004f;
 
         [Header("Melee hit detection")]
         [Tooltip("Scales Invector vHitBox trigger width (left/right thickness).")]
