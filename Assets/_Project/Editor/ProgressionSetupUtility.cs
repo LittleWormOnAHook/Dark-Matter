@@ -14,7 +14,7 @@ namespace Project.EditorTools.Progression
         private const string CurvePath = ProgressionResourcesRoot + "/ProgressionCurve.asset";
         private const string RegistryPath = ProgressionResourcesRoot + "/SkillRegistry.asset";
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Content + "Create Progression Curve", false, 40)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Content + "Create Progression Curve", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Content_Create_Progression_Curve)]
         public static void CreateProgressionCurve()
         {
             EnsureFolder(ProgressionResourcesRoot);
@@ -35,7 +35,7 @@ namespace Project.EditorTools.Progression
             Selection.activeObject = curve;
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Content + "Sync Skill Tree Depth Defaults", false, 42)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Content + "Sync Skill Tree Depth Defaults", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Content_Sync_Skill_Tree_Depth_Defaults)]
         public static void SyncSkillTreeDepthDefaults()
         {
             SkillDefinition[] skills = Resources.LoadAll<SkillDefinition>("Progression/Skills");
@@ -60,7 +60,7 @@ namespace Project.EditorTools.Progression
             Debug.Log($"[Progression] Synced depth-based defaults on {updated} skills (5 ranks, level band + SP cost from branch depth).");
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Content + "Create Starter Skills + Registry", false, 41)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Content + "Create Starter Skills + Registry", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Content_Create_Starter_Skills_Registry)]
         public static void CreateStarterSkills()
         {
             EnsureFolder(SkillsFolder);

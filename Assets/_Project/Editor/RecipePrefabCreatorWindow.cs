@@ -9,7 +9,7 @@ namespace Project.EditorTools
     /// </summary>
     public class RecipePrefabCreatorWindow : EditorWindow
     {
-        [MenuItem(DarkMatterGenesisEditorMenus.RecipePrefabCreator, false, 14)]
+        [MenuItem(DarkMatterGenesisEditorMenus.RecipePrefabCreator, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Prefab_Creator_Blueprint_Prefab_Creator)]
         public static void Open()
         {
             CloseAllInstances();

@@ -16,7 +16,7 @@ namespace Project.EditorTools.Combat
         private const string HumanoidPath = "Assets/_Project/Prefabs/Combat/Enemies/HumanoidEnemy_Invector.prefab";
         private const string PlayerVariantPath = "Assets/_Project/Prefabs/Players/Player_v7 Variant.prefab";
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Combat + "Create Combat Sandbox Scene", false, 5)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Combat + "Create Combat Sandbox Scene", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Create_Combat_Sandbox_Scene)]
         public static void CreateCombatSandboxScene()
         {
             EnsureCombatCoreProfile();
@@ -70,7 +70,7 @@ namespace Project.EditorTools.Combat
             Debug.Log($"Combat sandbox saved to {ScenePath}. Assign terrain/lighting as needed.");
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Combat + "Ensure Combat Core Profile", false, 6)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Combat + "Ensure Combat Core Profile", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Ensure_Combat_Core_Profile)]
         public static void EnsureCombatCoreProfile()
         {
             if (!AssetDatabase.IsValidFolder("Assets/_Project/Resources/Combat"))

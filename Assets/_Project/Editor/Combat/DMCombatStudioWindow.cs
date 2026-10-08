@@ -34,7 +34,7 @@ namespace Project.EditorTools.Combat
         private Vector2 scrollPosition;
         private int tab;
 
-        [MenuItem("Tools/Dark Matter Genesis/Combat/Combat Studio")]
+        [MenuItem("Tools/Dark Matter Genesis/Combat/Combat Studio", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Combat_Studio)]
         public static void Open()
         {
             GetWindow<DMCombatStudioWindow>("Combat Studio");
@@ -239,7 +239,8 @@ namespace Project.EditorTools.Combat
                 {
                     EditorGUILayout.HelpBox(
                         "Gate 0 attack yaw is shipped — do not retune unless it regresses. "
-                        + "Attack auto-face uses a tighter cone than block; block assist shares max distance and turn speed.",
+                        + "Attack auto-face uses a tighter cone than block; block assist shares max distance and turn speed. "
+                        + "With enableCombatCameraSnap off, auto-face still rotates the body but the camera stays on its bearing and ECM2 focus lock uses CombatFocusController yawSmoothLambda.",
                         MessageType.Info);
                     DMStudioStyles.DrawPropertyFields(
                         serializedProfile,
@@ -247,7 +248,20 @@ namespace Project.EditorTools.Combat
                         "meleeBlockAutoFaceHalfAngle",
                         "meleeBlockAutoFaceMaxDistance",
                         "meleeBlockAutoFaceTurnSpeed",
+                        "enableCombatCameraSnap",
                         "combatCameraSnapSeconds");
+                });
+
+                DMStudioStyles.DrawSection("Player combat buffer (enemy AI)", DMStudioStyles.ContentPanel, () =>
+                {
+                    EditorGUILayout.HelpBox(
+                        "Global keep-away ring vs Kade only — Mathf.Max with each enemy prefab minCombatSeparation. "
+                        + "Turn off enableGlobalCombatSeparation or set radius to 0 for prefab-only spacing. Does not retune Player_v7.",
+                        MessageType.Info);
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedProfile,
+                        "enableGlobalCombatSeparation",
+                        "playerCombatBufferRadius");
                 });
 
                 DMStudioStyles.DrawSection("Light combo anim speed (A→B→C)", DMStudioStyles.ContentPanel, () =>
@@ -261,6 +275,21 @@ namespace Project.EditorTools.Combat
                         "lightComboAnimSpeedA",
                         "lightComboAnimSpeedB",
                         "lightComboAnimSpeedC");
+                });
+
+                DMStudioStyles.DrawSection("Light combo attack move (A→B→C)", DMStudioStyles.ContentPanel, () =>
+                {
+                    EditorGUILayout.HelpBox(
+                        "Crimson-style strafe while the FullBody weak chain plays. Only SwordAttack A→B→C — not strong/charge, parry, or Hold-E upper-body combo. "
+                        + "When enableLightComboAttackMove is on and lockMovementDuringLightCombo is off, Pioneer bypasses Invector LockMovement/LockRotation tags for that chain. "
+                        + "Strafe speed is moveSpeed × lightComboStrafeSpeedMultiplier; lightComboForwardDriftMultiplier adds a small camera-forward nudge.",
+                        MessageType.Info);
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedProfile,
+                        "enableLightComboAttackMove",
+                        "lightComboStrafeSpeedMultiplier",
+                        "lightComboForwardDriftMultiplier",
+                        "lockMovementDuringLightCombo");
                 });
 
                 DMStudioStyles.DrawSection("Light random pool anim speed", DMStudioStyles.ContentPanel, () =>
@@ -463,41 +492,129 @@ namespace Project.EditorTools.Combat
 
         private void DrawRoadmapTab()
         {
-            DMStudioStyles.DrawSection("Master plan", DMStudioStyles.ContentPanel, () =>
-            {
-                EditorGUILayout.HelpBox(
-                    "§31 implementation order from DMG_Combat_Plan_v2.md. Phase 2 = #2 Core combat. "
-                    + "Do not start #3 utility brain, Director, Momentum, or Sick Stick until Phase 2 sign-off.",
-                    MessageType.Info);
+            const string handoffPath =
+                "Assets/_Project/Documentation/Architecture/CursorPlans/combat_master_plan_handoff.md";
+            const string spacingPlanPath =
+                "Assets/_Project/Documentation/Design/Combat/DM_Enemy_Spacing_And_Hit_Marks_Plan.md";
 
-                if (GUILayout.Button("Ping DMG_Combat_Plan_v2.md", GUILayout.Height(28f)))
+            DMStudioRoadmapPanel.DrawIntro(
+                "§31 order from DMG_Combat_Plan_v2.md (sync Oct 2026). Phase 2 signed off Oct 5; Phase 3 + hit marks/spacing on disk — play-test before calling shipped.",
+                MessageType.Info);
+
+            DMStudioRoadmapPanel.DrawDocLinks(
+                ("Combat Plan v2", CombatPlanPath),
+                ("Master plan handoff", handoffPath),
+                ("Spacing & hit marks plan", spacingPlanPath));
+
+            DMStudioStyles.DrawSection("§31 Master plan", DMStudioStyles.ContentPanel, () =>
+            {
+                if (GUILayout.Button("Ping DMG_Combat_Plan_v2.md", GUILayout.Height(26f)))
                     PingCombatPlan();
             });
 
-            DrawRoadmapCard("1", "Audit", "Done Oct 3, 2026", "Architecture maps, Invector wrap, animation tag sheet.");
-            DrawRoadmapCard(
-                "2",
-                "Core combat",
-                "Partial — Phase 2 in progress",
-                "Damage, hit detection, poise, i-frames, status, Combat Core. Tune in v1.6.5. Gate 0 attack yaw already shipped.");
-            DrawRoadmapCard("3", "Unified brain", "Missing — next after Phase 2", "Utility scoring, archetype, personality, awareness. Migrate Humanoid_Enemy.");
-            DrawRoadmapCard("4", "Combat Director", "Missing", "Tokens, coordination, flanking, intensity, morale.");
-            DrawRoadmapCard("5", "Plasma sword template", "Partial", "Attack, damage, hit react, burn, Blade / Survival branches.");
-            DrawRoadmapCard("6", "Momentum + finishers", "Missing", "Build-up, finisher selection on the migrated enemy.");
-            DrawRoadmapCard("7–8", "Sick Stick & specials", "Missing", "Sick Stick trigger/puke, specials, Overdrive.");
-            DrawRoadmapCard("9", "Remaining elements", "Names locked", "Cryo, Energy, Laser, Ion display mapping locked; implementation later.");
-            DrawRoadmapCard("10", "Body & dismemberment", "Missing", "Body damage on one enemy, element-specific finishers.");
-            DrawRoadmapCard("11–14", "Companions / skills / memory", "Partial / missing", "Roles, Control/Marksman, environment noise, combat memory.");
-            DrawRoadmapCard("15–16", "Encounters & studio", "Partial", "Authored encounters; Studio completion + performance (WorldChrome throttle shipped).");
-        }
+            DMStudioRoadmapPanel.DrawPhase(
+                "§31 #1",
+                "Audit",
+                DMStudioRoadmapPanel.Status.Done,
+                "Closed Oct 3, 2026 — architecture maps, Invector wrap, animation tag sheet.");
 
-        private static void DrawRoadmapCard(string step, string title, string status, string note)
-        {
-            DMStudioStyles.DrawSection("§31 #" + step + "  " + title, DMStudioStyles.ContentPanel, () =>
+            DMStudioRoadmapPanel.DrawPhase(
+                "§31 #2",
+                "Core combat",
+                DMStudioRoadmapPanel.Status.Done,
+                "Signed off Oct 5, 2026 in v1.6.5: poise, i-frames, block/parry stagger, weak chain A→B→C, strong charge, Combat Core profile + Studio shell.");
+
+            DMStudioRoadmapPanel.DrawPhase(
+                "§31 #3",
+                "Unified brain + engagement spacing",
+                DMStudioRoadmapPanel.Status.InProgress,
+                "Oct 7 disk: DMEnemyBrain + DMEnemyEngagementDirector (1 melee engager, Hold ring, hysteresis). Profile toggles rollback. Not play-tested / not committed per handoff.");
+
+            DMStudioRoadmapPanel.DrawPhase(
+                "§31 #4",
+                "Combat Director (morale, intensity, flanking)",
+                DMStudioRoadmapPanel.Status.NotStarted,
+                "Engagement tokens are not the full Director. Do not expand until Phase 3 brain is signed off.");
+
+            DMStudioRoadmapPanel.DrawPhase(
+                "§31 #5",
+                "Plasma sword template",
+                DMStudioRoadmapPanel.Status.InProgress,
+                "Attack, damage, hit react, burn branches partial; Blade / Survival skill wiring later.");
+
+            DMStudioRoadmapPanel.DrawPhase(
+                "§31 #6–8",
+                "Momentum, Sick Stick, specials, Overdrive",
+                DMStudioRoadmapPanel.Status.NotStarted,
+                "Bindings unassigned — ask before mapping parry/finisher/special slots.");
+
+            DMStudioRoadmapPanel.DrawPhase(
+                "§31 #9",
+                "Remaining elements",
+                DMStudioRoadmapPanel.Status.InProgress,
+                "Cryo / Energy / Laser / Ion display mapping locked; Ion ammo routing + feedback hardened on disk.");
+
+            DMStudioRoadmapPanel.DrawPhase(
+                "§31 #10",
+                "Body damage & dismemberment",
+                DMStudioRoadmapPanel.Status.InProgress,
+                "CombatBodyPart zones + DMEnemyHitbox rig on disk; zone multipliers still 1.0 (deferred).");
+
+            DMStudioRoadmapPanel.DrawPhase(
+                "§31 #11–14",
+                "Companions, Control/Marksman, environment, combat memory",
+                DMStudioRoadmapPanel.Status.InProgress,
+                "Trio + hex tree shipped (legacy); roles, noise, and memory systems partial or missing.");
+
+            DMStudioRoadmapPanel.DrawPhase(
+                "§31 #15–16",
+                "Encounters & studio",
+                DMStudioRoadmapPanel.Status.InProgress,
+                "Surface encounter tables + Sulfur Hound prototype; Combat Studio + WorldChrome throttle shipped.");
+
+            EditorGUILayout.Space(6f);
+            DMStudioStyles.DrawSection("Oct 2026 combat extensions", DMStudioStyles.ContentPanel, () =>
             {
-                EditorGUILayout.LabelField("Status", status);
-                EditorGUILayout.HelpBox(note, MessageType.None);
+                EditorGUILayout.HelpBox(
+                    "Recent disk work aligned with DM_Enemy_Spacing_And_Hit_Marks_Plan.md — tune in v1.6.5, not Combat_Sandbox.",
+                    MessageType.None);
             });
+
+            DMStudioRoadmapPanel.DrawPhase(
+                "B",
+                "Hit marks & DMHitbox layer",
+                DMStudioRoadmapPanel.Status.InProgress,
+                "Per-bone triggers (layer 26), HDRP decal projectors, body-type blood/coolant/sparks, DM_EnemyHitMarkProfile + Genesis Hit Marks tab. Play-test pending.");
+
+            DMStudioRoadmapPanel.DrawPhase(
+                "B+",
+                "Melee DMHitbox probe + hit routing",
+                DMStudioRoadmapPanel.Status.InProgress,
+                "PioneerMeleeDmHitboxProbe, CombatHitResolver zone mapping, ranged refine onto hitboxes — verify FRED/Android in Play.");
+
+            DMStudioRoadmapPanel.DrawPhase(
+                "FX",
+                "Status VFX attach + ION feedback",
+                DMStudioRoadmapPanel.Status.InProgress,
+                "Status effects attach at hit point with profile offset; enemy hit routing keeps decals and ION display consistent.");
+
+            DMStudioRoadmapPanel.DrawPhase(
+                "Cam",
+                "Combat camera threat snap",
+                DMStudioRoadmapPanel.Status.Done,
+                "DMCombatCameraThreatSnap + combatCameraSnapSeconds on Combat Core profile (Genesis + Combat Studio Core).");
+
+            DMStudioRoadmapPanel.DrawPhase(
+                "A",
+                "Engagement spacing (Part A)",
+                DMStudioRoadmapPanel.Status.InProgress,
+                "Merged into Phase 3: token rotation, world-anchored hold points, facing cone, ring rotation removed. Ranged token pool unused; UITK debug overlay deferred.");
+
+            DMStudioRoadmapPanel.DrawPhase(
+                "Sandbox",
+                "Combat_Sandbox spawner",
+                DMStudioRoadmapPanel.Status.Blocked,
+                "Retired as tune target — forensics only on Play tab.");
         }
 
         private void DrawProfileHeader(string title)

@@ -30,7 +30,7 @@ namespace Project.EditorTools
             }
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Reset Time Scale To 1", false, 20)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Reset Time Scale To 1", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Maintenance_Reset_Time_Scale_To_1)]
         private static void ResetTimeScaleMenu()
         {
             EnsureProjectTimeScale(forceLog: true);

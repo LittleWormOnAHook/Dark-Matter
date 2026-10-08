@@ -38,7 +38,7 @@ namespace Project.EditorTools
             }
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.RefreshAllMapMarkers, false, 41)]
+        [MenuItem(DarkMatterGenesisEditorMenus.RefreshAllMapMarkers, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Scene_Refresh_All_Map_Markers)]
         public static void RefreshAllMapMarkersMenu()
         {
             int count = RefreshAllMapMarkers();

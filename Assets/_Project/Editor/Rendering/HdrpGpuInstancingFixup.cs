@@ -26,21 +26,21 @@ namespace Project.EditorTools.Rendering
             "Assets/_Project/Resources/Dash",
         };
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Disable Incompatible GPU Instancing (Dry Run)", false, 37)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Disable Incompatible GPU Instancing (Dry Run)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_HDRP_Disable_Incompatible_GPU_Instancing_Dry_Run)]
         public static void DryRunMenu()
         {
             FixReport report = FixAll(dryRun: true, includeActiveSceneOnly: false);
             EditorUtility.DisplayDialog("HDRP GPU Instancing (Dry Run)", report.ToSummary(), "OK");
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Disable Incompatible GPU Instancing (Apply)", false, 38)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Disable Incompatible GPU Instancing (Apply)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_HDRP_Disable_Incompatible_GPU_Instancing_Apply)]
         public static void ApplyMenu()
         {
             FixReport report = FixAll(dryRun: false, includeActiveSceneOnly: false);
             EditorUtility.DisplayDialog("HDRP GPU Instancing", report.ToSummary(), "OK");
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Disable Incompatible GPU Instancing (Active Scene Only)", false, 39)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Disable Incompatible GPU Instancing (Active Scene Only)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_HDRP_Disable_Incompatible_GPU_Instancing_Active_Scene_Only)]
         public static void ApplyActiveSceneMenu()
         {
             FixReport report = FixAll(dryRun: false, includeActiveSceneOnly: true);

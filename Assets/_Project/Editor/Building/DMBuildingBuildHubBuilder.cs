@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Project.Building;
 using Project.Data;
 using UnityEditor;
@@ -20,7 +20,7 @@ namespace Project.EditorTools.Building
         const string MetalScrapPath = "Assets/_Project/Data/Items/Components/metal_scrap.asset";
         public const string ZoneMaterialPath = "Assets/_Project/Resources/Building/DM_BuildZone.mat";
 
-        [MenuItem("Tools/Dark Matter Genesis/Buildings/Add Build Hub (Equipment)")]
+        [MenuItem("Tools/Dark Matter Genesis/Buildings/Add Build Hub (Equipment)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Buildings_Add_Build_Hub_Equipment)]
         public static void BuildMenu()
         {
             GameObject source = AssetDatabase.LoadAssetAtPath<GameObject>(SourcePrefabPath);

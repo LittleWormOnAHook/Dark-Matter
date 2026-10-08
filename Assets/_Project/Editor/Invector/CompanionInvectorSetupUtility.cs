@@ -21,7 +21,7 @@ namespace Project.EditorTools.Invector
         private const string OutputPrefabPath = PioneerCompanionDefaults.InvectorPrefabAssetPath;
         private const string ResourcesPrefabPath = "Assets/_Project/Resources/Companions/PioneerCompanion_Invector.prefab";
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Combat + "Build PioneerCompanion_Invector Prefab", false, 130)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Combat + "Build PioneerCompanion_Invector Prefab", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Build_PioneerCompanion_Invector_Prefab)]
         public static void BuildCompanionInvectorPrefab()
         {
             if (!System.IO.File.Exists(SourcePlayerPrefabPath))

@@ -18,7 +18,7 @@ namespace Project.EditorTools.Jetpack
         private const string JetpackEngineInnerPath =
             "Assets/_Project/Models/DM_Jetpack/Materials/DM_Jetpack_EngineInner.mat";
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Jetpack + "Setup Selected Player For Jetpack")]
+        [MenuItem(DarkMatterGenesisEditorMenus.Jetpack + "Setup Selected Player For Jetpack", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Jetpack_Setup_Selected_Player_For_Jetpack)]
         public static void SetupSelectedPlayer()
         {
             GameObject selected = Selection.activeGameObject;
@@ -34,7 +34,7 @@ namespace Project.EditorTools.Jetpack
             EditorUtility.DisplayDialog("Jetpack Setup", WirePlayerRoot(selected), "OK");
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Jetpack + "Wire Player_v7 Prefab")]
+        [MenuItem(DarkMatterGenesisEditorMenus.Jetpack + "Wire Player_v7 Prefab", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Jetpack_Wire_Player_v7_Prefab)]
         public static void WirePlayerV7PrefabMenu()
         {
             EditorUtility.DisplayDialog("Jetpack Prefab Wire", WirePlayerPrefabAtPath(PlayerV7PrefabPath), "OK");

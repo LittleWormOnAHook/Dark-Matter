@@ -30,7 +30,7 @@ namespace Project.EditorTools.Player
             DmGaiaTerrainStreamingGate.ApplyFromProfiles();
         }
 
-        [MenuItem(ResetPoseMenu)]
+        [MenuItem(ResetPoseMenu, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Player_Reset_Live_Player_Edit_Mode_Bind_Pose)]
         public static void ResetLivePlayerBindPoseMenu()
         {
             if (ResetLivePlayerBindPose())

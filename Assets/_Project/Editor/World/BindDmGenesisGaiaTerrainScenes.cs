@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using Gaia;
 using Project.World;
@@ -21,7 +21,7 @@ public static class BindDmGenesisGaiaTerrainScenes
         EditorApplication.delayCall += BindIfNeeded;
     }
 
-    [MenuItem("Dark Matter Genesis/World/Bind Gaia DM Genesis Terrain Scenes")]
+    [MenuItem("Dark Matter Genesis/World/Bind Gaia DM Genesis Terrain Scenes", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Dark_Matter_Genesis_World_Bind_Gaia_DM_Genesis_Terrain_Scenes)]
     public static void BindIfNeeded()
     {
         if (!Directory.Exists(ScenesDir) || !File.Exists(SessionStorage))

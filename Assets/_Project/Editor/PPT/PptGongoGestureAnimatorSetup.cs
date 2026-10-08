@@ -18,7 +18,7 @@ namespace Project.EditorTools
         private const string PointStateName = "Point";
         private const string ShrugStateName = "Shrug";
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Ppt + "Add Upper Body Gesture Layer to Gongo Controller", false, 20)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Ppt + "Add Upper Body Gesture Layer to Gongo Controller", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_PPT_Add_Upper_Body_Gesture_Layer_to_Gongo_Controller)]
         public static void AddUpperBodyGestureLayer()
         {
             AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath);

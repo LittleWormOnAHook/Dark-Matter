@@ -9,7 +9,7 @@ namespace Project.EditorTools
         private const string PrefabPath = ProjectAssetPaths.HumanoidEnemyPrefab;
         private const string SceneEnemyName = "Enemy_Test";
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Combat + "Place Test Enemy", false, 10)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Combat + "Place Test Enemy", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Place_Test_Enemy)]
         public static void SetupEnemy()
         {
             EnsureDefaultPrefab();

@@ -36,13 +36,13 @@ namespace Project.EditorTools
             TryAutoConnectBridgeOnce();
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Repair Cursor MCP Connection", false, 0)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Repair Cursor MCP Connection", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Maintenance_Repair_Cursor_MCP_Connection)]
         public static void RepairCursorMcpConnectionMenu()
         {
             RepairCursorMcpConnection(showDialog: true);
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Repair Cursor MCP Connection (Silent)", false, 1)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Repair Cursor MCP Connection (Silent)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Maintenance_Repair_Cursor_MCP_Connection_Silent)]
         public static void RepairCursorMcpConnectionSilentMenu()
         {
             RepairCursorMcpConnection(showDialog: false);

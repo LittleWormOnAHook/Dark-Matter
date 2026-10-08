@@ -54,7 +54,7 @@ namespace Project.EditorTools.Optics
             serializedObject.ApplyModifiedProperties();
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Optics + "Select Crosshair Library")]
+        [MenuItem(DarkMatterGenesisEditorMenus.Optics + "Select Crosshair Library", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Optics_Select_Crosshair_Library)]
         public static void SelectLibraryAsset()
         {
             OpticsCrosshairLibrary library = AssetDatabase.LoadAssetAtPath<OpticsCrosshairLibrary>(

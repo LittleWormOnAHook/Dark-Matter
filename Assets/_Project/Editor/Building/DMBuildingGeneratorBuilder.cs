@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Project.Building;
 using Project.Data;
 using UnityEditor;
@@ -17,7 +17,7 @@ namespace Project.EditorTools.Building
         const string IronOrePath = "Assets/_Project/Data/Items/Resources/Mining/Iron Ore.asset";
         const string MetalScrapPath = "Assets/_Project/Data/Items/Components/metal_scrap.asset";
 
-        [MenuItem("Tools/Dark Matter Genesis/Buildings/Add Generator (Equipment)")]
+        [MenuItem("Tools/Dark Matter Genesis/Buildings/Add Generator (Equipment)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Buildings_Add_Generator_Equipment)]
         public static void BuildMenu()
         {
             GameObject source = AssetDatabase.LoadAssetAtPath<GameObject>(SourcePrefabPath);

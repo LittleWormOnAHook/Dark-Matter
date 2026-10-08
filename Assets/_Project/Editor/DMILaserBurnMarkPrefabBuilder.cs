@@ -17,7 +17,7 @@ namespace Project.EditorTools
         private const string MatFolder = "Assets/_Project/Materials/Combat";
         private const string PrefabFolder = "Assets/_Project/Prefabs/Combat/VFX";
 
-        [MenuItem("Tools/Dark Matter Genesis/Combat/Build Laser Burn Mark Prefab")]
+        [MenuItem("Tools/Dark Matter Genesis/Combat/Build Laser Burn Mark Prefab", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Build_Laser_Burn_Mark_Prefab)]
         public static void Build()
         {
             EnsureFolder("Assets/_Project/Art");

@@ -17,7 +17,7 @@ public static class PlayerInputRepairUtility
     private const string InputActionsPath = "Assets/_Project/Settings/Input/InputSystem_Actions.inputactions";
     private const string PlayerActionMapName = "Player";
 
-    [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Repair PlayerInput Action Events", false, 15)]
+    [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Repair PlayerInput Action Events", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Maintenance_Repair_PlayerInput_Action_Events)]
     public static void RepairPlayerInputMenu()
     {
         int prefabChanges = RepairPlayerPrefab(InvectorPlayerPrefabPath, resyncPlayerMap: false);
@@ -30,7 +30,7 @@ public static class PlayerInputRepairUtility
             Debug.Log("PlayerInput repair: no changes needed.");
     }
 
-    [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Repair PlayerInput + Sync Player Map", false, 16)]
+    [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Repair PlayerInput + Sync Player Map", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Maintenance_Repair_PlayerInput_Sync_Player_Map)]
     public static void RepairAndSyncPlayerMapMenu()
     {
         int prefabChanges = RepairPlayerPrefab(InvectorPlayerPrefabPath, resyncPlayerMap: true);

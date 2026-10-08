@@ -9,7 +9,7 @@ namespace Project.EditorTools.Invector
 {
     public static class EnemyInvectorRagdollAuditUtility
     {
-        [MenuItem(DarkMatterGenesisEditorMenus.Combat + "Audit Humanoid Ragdoll Setup", false, 132)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Combat + "Audit Humanoid Ragdoll Setup", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Audit_Humanoid_Ragdoll_Setup)]
         public static void AuditHumanoidRagdollSetup()
         {
             string[] prefabGuids = AssetDatabase.FindAssets("t:Prefab", new[] { ProjectAssetPaths.PrefabsCombat });
@@ -63,7 +63,7 @@ namespace Project.EditorTools.Invector
                 Debug.Log(message);
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Combat + "Audit Selected Ragdoll Setup", false, 134)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Combat + "Audit Selected Ragdoll Setup", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Audit_Selected_Ragdoll_Setup)]
         public static void AuditSelectedRagdollSetup()
         {
             GameObject[] selected = Selection.gameObjects;

@@ -26,7 +26,7 @@ namespace Project.EditorTools
         private const string ClimbEnterName = "ClimbEnter";
         private const string ClimbExitName = "ClimbExit";
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Climb + "Build Climb Blend Tree", false, 1)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Climb + "Build Climb Blend Tree", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Climb_Build_Climb_Blend_Tree)]
         public static void BuildClimbBlendTreeMenu()
         {
             bool ok = BuildOrUpdate(out string message);
@@ -40,7 +40,7 @@ namespace Project.EditorTools
             }
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Climb + "Add Climb Manager to Player_v7", false, 3)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Climb + "Add Climb Manager to Player_v7", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Climb_Add_Climb_Manager_to_Player_v7)]
         public static void AddClimbManagerToPlayer()
         {
             GameObject player = GameObject.Find("Player_v7");
@@ -71,7 +71,7 @@ namespace Project.EditorTools
                 "Climb manager is on Player_v7. Edit the Climb Profile on that component (or Assets/_Project/Resources/Climb/DM_ClimbDashProfile). Space or E only grabs a Climbable wall.",
                 "OK");
         }
-        [MenuItem(DarkMatterGenesisEditorMenus.Climb + "Spawn Climb Test Wall", false, 2)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Climb + "Spawn Climb Test Wall", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Climb_Spawn_Climb_Test_Wall)]
         public static void SpawnClimbTestWallMenu()
         {
             EditorTagUtility.EnsureTag("Climbable");

@@ -10,7 +10,7 @@ namespace Project.EditorTools
         private const string RegistryPath = "Assets/_Project/Resources/PPT/PptRegistry.asset";
         private const string PioneerGuidePrefabPath = "Assets/_Project/Prefabs/NPCs/QuestGiver_PioneerGuide.prefab";
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Ppt + "Phase 1 - Wire Pioneer Guide + Sample Registry", false, 10)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Ppt + "Phase 1 - Wire Pioneer Guide + Sample Registry", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_PPT_Phase_1_Wire_Pioneer_Guide_Sample_Registry)]
         public static void WirePhase1Content()
         {
             PptRegistry registry = AssetDatabase.LoadAssetAtPath<PptRegistry>(RegistryPath);

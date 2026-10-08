@@ -14,7 +14,7 @@ public static class OpticsOverlaySceneSetup
 {
     private const string CanvasName = "OpticsOverlayCanvas";
 
-    [MenuItem(DarkMatterGenesisEditorMenus.Optics + "Rebuild Scene Optics Overlay Canvas")]
+    [MenuItem(DarkMatterGenesisEditorMenus.Optics + "Rebuild Scene Optics Overlay Canvas", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Optics_Rebuild_Scene_Optics_Overlay_Canvas)]
     public static void RebuildSceneCanvasFromMenu()
     {
         int result = RebuildSceneCanvas();

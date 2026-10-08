@@ -24,7 +24,7 @@ public static class CombatSetupUtility
     private const string DamageNumberPrefabPath = UiPrefabFolder + "/FloatingDamageNumber.prefab";
     private const string HealthBarPrefabPath = UiPrefabFolder + "/FloatingTargetHealthBar.prefab";
 
-    [MenuItem(DarkMatterGenesisEditorMenus.Combat + "Combat Test Dummy", false, 20)]
+    [MenuItem(DarkMatterGenesisEditorMenus.Combat + "Combat Test Dummy", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Combat_Test_Dummy)]
     private static void SetupCombatTestDummy()
     {
         EnsureFolder(ProjectAssetPaths.Prefabs);

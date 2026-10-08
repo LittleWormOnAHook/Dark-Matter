@@ -10,7 +10,7 @@ namespace Project.EditorTools
     {
         private const string ShiftRoot = "Assets/Shift - Complete Sci-Fi UI";
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Ui + "Setup Shift UI Theme")]
+        [MenuItem(DarkMatterGenesisEditorMenus.Ui + "Setup Shift UI Theme", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_UI_Setup_Shift_UI_Theme)]
         public static void SetupShiftUiTheme()
         {
             EnsureThemeAsset();

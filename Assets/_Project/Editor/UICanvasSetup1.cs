@@ -6,7 +6,7 @@ using Project.EditorTools;
 
 public class UICanvasSetup : EditorWindow
 {
-    [MenuItem(DarkMatterGenesisEditorMenus.Ui + "Full UI Canvas + Inventory", false, 0)]
+    [MenuItem(DarkMatterGenesisEditorMenus.Ui + "Full UI Canvas + Inventory", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_UI_Full_UI_Canvas_Inventory)]
     public static void CreateFullUI()
     {
         GameObject canvasObj = GameObject.Find("MainCanvas") ?? new GameObject("MainCanvas");

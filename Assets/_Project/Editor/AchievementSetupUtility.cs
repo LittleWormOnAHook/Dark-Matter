@@ -12,7 +12,7 @@ namespace Project.EditorTools.Achievements
         private const string ResourcesRoot = "Assets/_Project/Resources/Achievements";
         private const string RegistryPath = ResourcesRoot + "/AchievementRegistry.asset";
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Content + "Create Starter Achievements", false, 42)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Content + "Create Starter Achievements", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Content_Create_Starter_Achievements)]
         public static void CreateStarterAchievements()
         {
             EnsureFolder(ResourcesRoot);

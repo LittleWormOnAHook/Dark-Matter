@@ -16,7 +16,7 @@ namespace Project.EditorTools.Diagnostics
     {
         private const string MenuRoot = "Tools/Dark Matter: Genesis/Diagnostics/Audit Console";
 
-        [MenuItem(MenuRoot, false, 1)]
+        [MenuItem(MenuRoot, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Diagnostics_Audit_Console)]
         public static void AuditAndLogSummary()
         {
             ConsoleAuditResult result = Collect();
@@ -27,7 +27,7 @@ namespace Project.EditorTools.Diagnostics
                 "OK");
         }
 
-        [MenuItem(MenuRoot + " (Copy Report)", false, 2)]
+        [MenuItem(MenuRoot + " (Copy Report)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Diagnostics_Audit_Console_Copy_Report)]
         public static void AuditAndCopyReport()
         {
             ConsoleAuditResult result = Collect();
@@ -35,7 +35,7 @@ namespace Project.EditorTools.Diagnostics
             Debug.Log("[ConsoleAudit] Report copied to clipboard.\n" + result.ToReport());
         }
 
-        [MenuItem("Tools/Dark Matter: Genesis/Diagnostics/Audit Resources Paths", false, 11)]
+        [MenuItem("Tools/Dark Matter: Genesis/Diagnostics/Audit Resources Paths", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Diagnostics_Audit_Resources_Paths)]
         public static void AuditResourcesPaths()
         {
             string report = ResourcesPathAudit.BuildReport();
@@ -43,7 +43,7 @@ namespace Project.EditorTools.Diagnostics
             EditorUtility.DisplayDialog("Resources Path Audit", report, "OK");
         }
 
-        [MenuItem("Tools/Dark Matter: Genesis/Diagnostics/Audit Resources Paths (Copy)", false, 12)]
+        [MenuItem("Tools/Dark Matter: Genesis/Diagnostics/Audit Resources Paths (Copy)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Diagnostics_Audit_Resources_Paths_Copy)]
         public static void AuditResourcesPathsCopy()
         {
             string report = ResourcesPathAudit.BuildReport();

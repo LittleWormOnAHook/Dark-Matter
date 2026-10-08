@@ -35,7 +35,7 @@ namespace Project.EditorTools.Creatures
         private string animStatusMessage = string.Empty;
         private PathCreator creaturePatrolPath;
 
-        [MenuItem(DarkMatterGenesisEditorMenus.CreatureManager, false, 25)]
+        [MenuItem(DarkMatterGenesisEditorMenus.CreatureManager, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Creatures_Creature_Manager)]
         public static void ShowWindow()
         {
             DMICreatureManagerWindow window = GetWindow<DMICreatureManagerWindow>("Creatures Manager");
@@ -43,7 +43,7 @@ namespace Project.EditorTools.Creatures
             window.RefreshDefinitions();
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.BuildSulfurHoundCreature, false, 26)]
+        [MenuItem(DarkMatterGenesisEditorMenus.BuildSulfurHoundCreature, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Creatures_Legacy_Build_Sulfur_Hound_Prefab_Malbers_OnWolf)]
         private static void BuildSulfurHoundQuick()
         {
             DMICreatureDefinition definition = DMICreaturePrefabBuilder.EnsureSulfurHoundDefinition();
@@ -54,7 +54,7 @@ namespace Project.EditorTools.Creatures
                 Debug.LogError("[Creatures Manager] Failed to build Sulfur Hound prefab.");
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.BuildSulfurHoundV2Creature, false, 26)]
+        [MenuItem(DarkMatterGenesisEditorMenus.BuildSulfurHoundV2Creature, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Creatures_Legacy_Build_Sulfur_Hound_V2_Rigged_Prefab)]
         private static void BuildSulfurHoundV2Quick()
         {
             DMICreatureDefinition definition = DMICreaturePrefabBuilder.EnsureSulfurHoundV2Definition();
@@ -65,7 +65,7 @@ namespace Project.EditorTools.Creatures
                 Debug.LogError("[Creatures Manager] Failed to build Sulfur Hound V2-A prefab.");
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.BuildSulfurHoundBrain, false, 27)]
+        [MenuItem(DarkMatterGenesisEditorMenus.BuildSulfurHoundBrain, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Creatures_Legacy_Build_Sulfur_Hound_Brain_Graph)]
         private static void BuildSulfurHoundBrainQuick()
         {
             MAIState start = DMICreatureBrainAssetBuilder.EnsureSulfurHoundBrainGraph(out string path);
@@ -84,7 +84,7 @@ namespace Project.EditorTools.Creatures
                 Selection.activeObject = start;
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.RegisterSulfurHoundEncounter, false, 28)]
+        [MenuItem(DarkMatterGenesisEditorMenus.RegisterSulfurHoundEncounter, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Creatures_Legacy_Register_Sulfur_Hound_In_B1_Encounter_Table)]
         private static void RegisterSulfurHoundEncounterQuick()
         {
             SurfaceEncounterTable table = DMICreatureWorldWireUtility.EnsureB1LifeformEncounterTable(out string message);
@@ -96,7 +96,7 @@ namespace Project.EditorTools.Creatures
             }
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.ValidateSulfurHoundSetup, false, 29)]
+        [MenuItem(DarkMatterGenesisEditorMenus.ValidateSulfurHoundSetup, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Creatures_Legacy_Validate_Sulfur_Hound_NavMesh_Collider)]
         private static void ValidateSulfurHoundSetupQuick()
         {
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
@@ -113,7 +113,7 @@ namespace Project.EditorTools.Creatures
             Selection.activeObject = prefab;
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.RebuildSulfurHoundReskin, false, 30)]
+        [MenuItem(DarkMatterGenesisEditorMenus.RebuildSulfurHoundReskin, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Creatures_Legacy_Rebuild_Sulfur_Hound_OnWolf_Houndv3)]
         private static void RebuildSulfurHoundReskinQuick()
         {
             DMICreatureDefinition definition = DMICreaturePrefabBuilder.EnsureSulfurHoundDefinition();
@@ -133,7 +133,7 @@ namespace Project.EditorTools.Creatures
             }
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.LegacyCreatures + "Smoke Test RiggedNative Build", false, 40)]
+        [MenuItem(DarkMatterGenesisEditorMenus.LegacyCreatures + "Smoke Test RiggedNative Build", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Creatures_Legacy_Smoke_Test_RiggedNative_Build)]
         private static void SmokeTestRiggedNativeBuild()
         {
             const string defPath = "Assets/_Project/Data/Creatures/SmokeTest_RiggedNative.asset";

@@ -16,7 +16,7 @@ namespace Project.EditorTools
         private const string InventoryItemPath = "Assets/_Project/Data/Items/Resources/Quora Shelter.asset";
         private const string LegacyConsumableItemPath = "Assets/_Project/Data/Items/Consumables/Quora Shelter.asset";
 
-        [MenuItem("Tools/Dark Matter Genesis/Shelter/Convert Selected To Enterable Shelter")]
+        [MenuItem("Tools/Dark Matter Genesis/Shelter/Convert Selected To Enterable Shelter", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Shelter_Convert_Selected_To_Enterable_Shelter)]
         public static void ConvertSelectedToEnterableShelter()
         {
             GameObject[] selected = Selection.gameObjects;
@@ -71,7 +71,7 @@ namespace Project.EditorTools
                 : "No Quora Shelter objects were converted. Select objects named with Quora or Shelter.");
         }
 
-        [MenuItem("Tools/Dark Matter Genesis/Shelter/Setup Quora Shelter Deploy Prefab")]
+        [MenuItem("Tools/Dark Matter Genesis/Shelter/Setup Quora Shelter Deploy Prefab", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Shelter_Setup_Quora_Shelter_Deploy_Prefab)]
         public static void SetupQuoraShelterDeployPrefab()
         {
             GameObject worldVisual = AssetDatabase.LoadAssetAtPath<GameObject>(WorldVisualPrefabPath);

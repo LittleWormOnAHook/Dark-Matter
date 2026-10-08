@@ -17,7 +17,7 @@ namespace Project.EditorTools
         private string search;
         private int sectionIndex;
 
-        [MenuItem(DarkMatterGenesisEditorMenus.ToolsWindow, false, 0)]
+        [MenuItem(DarkMatterGenesisEditorMenus.ToolsWindow, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Tools_Window)]
         public static void Open()
         {
             DarkMatterGenesisToolsWindow window = GetWindow<DarkMatterGenesisToolsWindow>("Genesis Tools");

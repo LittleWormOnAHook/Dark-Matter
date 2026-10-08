@@ -12,7 +12,7 @@ namespace Project.EditorTools.Companions
         private const string ClassProfileFolder = "Assets/_Project/Resources/CompanionClassProfiles";
         private const string AbilityFolder = "Assets/_Project/Resources/CompanionAbilities";
 
-        [MenuItem("Tools/Dark Matter Genesis/Companions/Create Med Tech Ability Assets")]
+        [MenuItem("Tools/Dark Matter Genesis/Companions/Create Med Tech Ability Assets", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Companions_Create_Med_Tech_Ability_Assets)]
         public static void CreateMedTechAbilityAssets()
         {
             EnsureFolder(ClassProfileFolder);
@@ -48,7 +48,7 @@ namespace Project.EditorTools.Companions
             SaveAndClearCaches("Med Tech");
         }
 
-        [MenuItem("Tools/Dark Matter Genesis/Companions/Create Base Role Class Assets")]
+        [MenuItem("Tools/Dark Matter Genesis/Companions/Create Base Role Class Assets", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Companions_Create_Base_Role_Class_Assets)]
         public static void CreateBaseRoleClassAssets()
         {
             EnsureFolder(ClassProfileFolder);

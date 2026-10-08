@@ -9,7 +9,7 @@ namespace Project.EditorTools.UiLayout
 {
     public static class PanelUiResetUtility
     {
-        [MenuItem(DarkMatterGenesisEditorMenus.Ui + "Reset Map UI To Default Layout", false, 120)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Ui + "Reset Map UI To Default Layout", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_UI_Reset_Map_UI_To_Default_Layout)]
         public static void ResetMapUiToDefaults()
         {
             if (!ConfirmReset(
@@ -20,7 +20,7 @@ namespace Project.EditorTools.UiLayout
             PerformMapUiReset(showCompletionDialog: true);
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Ui + "Reset Enemy Loot Dialog UI To Default Layout", false, 121)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Ui + "Reset Enemy Loot Dialog UI To Default Layout", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_UI_Reset_Enemy_Loot_Dialog_UI_To_Default_Layout)]
         public static void ResetEnemyLootDialogUiToDefaults()
         {
             if (!ConfirmReset(
@@ -33,7 +33,7 @@ namespace Project.EditorTools.UiLayout
             PerformEnemyLootDialogReset(showCompletionDialog: true);
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Ui + "Reset Quest Giver Dialog UI To Default Layout", false, 122)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Ui + "Reset Quest Giver Dialog UI To Default Layout", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_UI_Reset_Quest_Giver_Dialog_UI_To_Default_Layout)]
         public static void ResetQuestGiverDialogUiToDefaults()
         {
             if (!ConfirmReset(
@@ -46,7 +46,7 @@ namespace Project.EditorTools.UiLayout
             PerformQuestGiverDialogReset(showCompletionDialog: true);
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Ui + "Reset Journal UI To Default Layout", false, 123)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Ui + "Reset Journal UI To Default Layout", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_UI_Reset_Journal_UI_To_Default_Layout)]
         public static void ResetJournalUiToDefaults()
         {
             if (!ConfirmReset(
@@ -57,7 +57,7 @@ namespace Project.EditorTools.UiLayout
             PerformJournalUiReset(showCompletionDialog: true);
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Ui + "Reset Map & Loot UI To Default Layout", false, 123)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Ui + "Reset Map & Loot UI To Default Layout", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_UI_Reset_Map_Loot_UI_To_Default_Layout)]
         public static void ResetMapAndLootUiToDefaults()
         {
             if (!ConfirmReset(

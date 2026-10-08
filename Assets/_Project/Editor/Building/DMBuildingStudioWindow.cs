@@ -1,4 +1,4 @@
-﻿using Project.Building;
+using Project.Building;
 using Project.EditorTools.GenesisStudio;
 using UnityEditor;
 using UnityEngine;
@@ -11,7 +11,12 @@ namespace Project.EditorTools.Building
     public sealed class DMBuildingStudioWindow : EditorWindow
     {
         const string AssetPath = DMBuildingGhostProfile.AssetPath;
-        static readonly string[] Tabs = { "Settings", "Library", "Creation Effects" };
+        public const int TabSettings = 0;
+        public const int TabLibrary = 1;
+        public const int TabCreationFx = 2;
+        public const int TabRoadmap = 3;
+
+        static readonly string[] Tabs = { "Settings", "Library", "Creation Effects", "Roadmap" };
 
         DMBuildingGhostProfile profile;
         DMBuildingCreationFxProfile fxProfile;
@@ -20,10 +25,19 @@ namespace Project.EditorTools.Building
         int tab;
         readonly DMBuildingLibraryPanel libraryPanel = new DMBuildingLibraryPanel();
 
-        [MenuItem("Tools/Dark Matter Genesis/Buildings/Building Studio")]
+        [MenuItem("Tools/Dark Matter Genesis/Buildings/Building Studio", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Buildings_Building_Studio)]
         public static void Open()
         {
             GetWindow<DMBuildingStudioWindow>("Building Studio");
+        }
+
+        public static void OpenTab(int tabIndex)
+        {
+            var window = GetWindow<DMBuildingStudioWindow>("Building Studio");
+            window.tab = Mathf.Clamp(tabIndex, 0, Tabs.Length - 1);
+            EditorPrefs.SetInt("DM.BuildingStudio.Tab", window.tab);
+            window.Show();
+            window.Focus();
         }
 
         void OnEnable()
@@ -53,13 +67,77 @@ namespace Project.EditorTools.Building
             });
 
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
-            if (tab == 1)
-                libraryPanel.Draw();
-            else if (tab == 2)
-                DrawCreationFx();
-            else
-                DrawSettings();
+            switch (tab)
+            {
+                case TabLibrary:
+                    libraryPanel.Draw();
+                    break;
+                case TabCreationFx:
+                    DrawCreationFx();
+                    break;
+                case TabRoadmap:
+                    DrawRoadmapTab();
+                    break;
+                default:
+                    DrawSettings();
+                    break;
+            }
+
             EditorGUILayout.EndScrollView();
+        }
+
+        void DrawRoadmapTab()
+        {
+            const string scopePlan =
+                "Assets/_Project/Documentation/Design/DMG_Building_System_Scope_Plan.md";
+
+            DMStudioRoadmapPanel.DrawIntro(
+                "Scope lock from DMG_Building_System_Scope_Plan.md (Sep 2026 as-built). Component track largely on disk; story slices and materialize path remain.",
+                MessageType.Info);
+
+            DMStudioRoadmapPanel.DrawDocLinks(
+                ("Building scope plan", scopePlan),
+                ("Ghost profile", AssetPath),
+                ("Disk status (World Engine)", "Assets/_Project/Documentation/Architecture/World_Engine_Disk_Status.md"));
+
+            if (GUILayout.Button("Open Project Roadmap → Building", GUILayout.Height(28f)))
+                DMProjectRoadmapWindow.OpenTab(1);
+
+            DMStudioRoadmapPanel.DrawPhase(
+                "C1",
+                "Hold-B mode + style libraries",
+                DMStudioRoadmapPanel.Status.Done,
+                "Stone / Iron / Silicate kits, 4 m snap lattice, UITK build hotbar, save/load placed pieces.");
+
+            DMStudioRoadmapPanel.DrawPhase(
+                "C2",
+                "Building Studio + Genesis tabs",
+                DMStudioRoadmapPanel.Status.Done,
+                "Preview ghosts, snap, placement, doors, M-key finishes, creation FX — profiles use Live at runtime.");
+
+            DMStudioRoadmapPanel.DrawPhase(
+                "C3",
+                "Doors, power, storage",
+                DMStudioRoadmapPanel.Status.InProgress,
+                "Force-field doors, generator + base power, Build Hub zone, storage crates on disk.");
+
+            DMStudioRoadmapPanel.DrawPhase(
+                "S1–S7",
+                "Structure slices (definition → BCP → campaign)",
+                DMStudioRoadmapPanel.Status.InProgress,
+                "BCP tabs partial; BuildingDefinition SO, wreck scans, and prologue placement quests not finished.");
+
+            DMStudioRoadmapPanel.DrawPhase(
+                "S2",
+                "Full materialize path",
+                DMStudioRoadmapPanel.Status.NotStarted,
+                "Ghost commit, per-tick drain during hold, reverse dissolve — cancel refunds drained ticks.");
+
+            DMStudioRoadmapPanel.DrawPhase(
+                "Tiers",
+                "Steel / Amalgam + upgrades",
+                DMStudioRoadmapPanel.Status.NotStarted,
+                "Skill gates and in-place tier upgrade deferred.");
         }
 
         void DrawSettings()

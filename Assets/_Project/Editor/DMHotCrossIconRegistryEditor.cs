@@ -35,7 +35,7 @@ namespace Project.EditorTools
                 RebuildEntries((DMHotCrossIconRegistry)target);
         }
 
-        [MenuItem("Dark Matter Genesis/UI/Hot Cross/Import Cutout Icons as Sprites")]
+        [MenuItem("Dark Matter Genesis/UI/Hot Cross/Import Cutout Icons as Sprites", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Dark_Matter_Genesis_UI_Hot_Cross_Import_Cutout_Icons_as_Sprites)]
         public static void ImportHotCrossSprites()
         {
             ImportFolder(DMHotCrossIconRegistry.CutoutAssetFolder);
@@ -80,7 +80,7 @@ namespace Project.EditorTools
                 Debug.Log($"Hot Cross icons: imported {changed} sprite textures from {folder}.");
         }
 
-        [MenuItem("Dark Matter Genesis/UI/Hot Cross/Rebuild Icon Registry")]
+        [MenuItem("Dark Matter Genesis/UI/Hot Cross/Rebuild Icon Registry", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Dark_Matter_Genesis_UI_Hot_Cross_Rebuild_Icon_Registry)]
         public static void RebuildDefaultRegistry()
         {
             DMHotCrossIconRegistry registry = DMHotCrossIconRegistry.LoadDefault();

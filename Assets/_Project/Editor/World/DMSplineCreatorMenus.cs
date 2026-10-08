@@ -12,14 +12,14 @@ namespace Project.EditorTools
     {
         private const int MenuPriority = 12;
 
-        [MenuItem(DarkMatterGenesisEditorMenus.SplineCreatorWindowPrimary, false, MenuPriority)]
-        [MenuItem(DarkMatterGenesisEditorMenus.SplineCreatorWindow, false, MenuPriority)]
+        [MenuItem(DarkMatterGenesisEditorMenus.SplineCreatorWindowPrimary, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Spline_Creator_Window)]
+        [MenuItem(DarkMatterGenesisEditorMenus.SplineCreatorWindow, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_World_Spline_Creator_Window)]
         public static void OpenWindow()
         {
             DMSplineCreatorWindow.Open();
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.CreateElectricalLineSpline, false, MenuPriority + 1)]
+        [MenuItem(DarkMatterGenesisEditorMenus.CreateElectricalLineSpline, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_World_Create_Electrical_Line_Spline)]
         public static void CreateElectricalLine()
         {
             DMSplineCreator creator = CreateSplineRoot("ElectricalLineSpline");
@@ -28,7 +28,7 @@ namespace Project.EditorTools
             EditorGUIUtility.PingObject(creator.gameObject);
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.CreateObjectPlacerSpline, false, MenuPriority + 2)]
+        [MenuItem(DarkMatterGenesisEditorMenus.CreateObjectPlacerSpline, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_World_Create_Object_Placer_Spline)]
         public static void CreateObjectPlacerLine()
         {
             DMSplineCreator creator = CreateSplineRoot("ObjectPlacerSpline");
@@ -37,7 +37,7 @@ namespace Project.EditorTools
             EditorGUIUtility.PingObject(creator.gameObject);
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.CreateScatterPlacer, false, MenuPriority + 3)]
+        [MenuItem(DarkMatterGenesisEditorMenus.CreateScatterPlacer, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_World_Create_Scatter_Placer)]
         public static void CreateScatter()
         {
             GameObject root = new GameObject("ScatterPlacer");

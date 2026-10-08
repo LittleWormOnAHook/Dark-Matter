@@ -22,7 +22,7 @@ namespace Project.EditorTools.Building
                 EditorApplication.delayCall += CleanStrayPreviews;
         }
 
-        [MenuItem("Tools/Dark Matter Genesis/Buildings/Clean Stray Building Previews")]
+        [MenuItem("Tools/Dark Matter Genesis/Buildings/Clean Stray Building Previews", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Buildings_Clean_Stray_Building_Previews)]
         public static void CleanStrayPreviews()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode)

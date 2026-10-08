@@ -6,7 +6,7 @@ namespace Project.EditorTools
 {
     public static class ProjectStructureSetup
     {
-        [MenuItem(DarkMatterGenesisEditorMenus.Project + "Project Structure", false, 0)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Project + "Project Structure", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Project_Project_Structure)]
         public static void CreateFolders()
         {
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.Root);

@@ -30,13 +30,13 @@ public class CameraShakeEmitterCreatorWindow : EditorWindow
     private string outputFolder = DefaultFolder;
     private Vector2 scroll;
 
-    [MenuItem(DarkMatterGenesisEditorMenus.CameraShakeEmitterCreator, false, 55)]
+    [MenuItem(DarkMatterGenesisEditorMenus.CameraShakeEmitterCreator, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Prefab_Creator_Camera_Shake_Emitter_Creator)]
     public static void ShowWindow()
     {
         GetWindow<CameraShakeEmitterCreatorWindow>("Camera Shake Emitter").minSize = new Vector2(420, 520);
     }
 
-    [MenuItem(DarkMatterGenesisEditorMenus.CameraShakeEmitterCreateAllPresets, false, 56)]
+    [MenuItem(DarkMatterGenesisEditorMenus.CameraShakeEmitterCreateAllPresets, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Prefab_Creator_Create_All_Camera_Shake_Emitter_Prefabs)]
     public static void CreateAllPresetsMenu()
     {
         int count = CameraShakeEmitterPrefabBuilder.CreateAllPresetPrefabs(DefaultFolder);

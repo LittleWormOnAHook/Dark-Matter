@@ -68,7 +68,7 @@ namespace Project.EditorTools
         private string statusMessage = string.Empty;
         private MessageType statusType = MessageType.Info;
 
-        [MenuItem(DarkMatterGenesisEditorMenus.BlueprintCraftingManager, false, 10)]
+        [MenuItem(DarkMatterGenesisEditorMenus.BlueprintCraftingManager, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Crafting_Blueprint_and_Crafting_Manager)]
         public static void Open()
         {
             OpenTab(ManagerTab.Blueprints);

@@ -30,7 +30,7 @@ namespace Project.EditorTools
                 new[] { ("Rock", 3) }, "Medpack", 1)
         };
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Crafting + "Wire Scene Stations")]
+        [MenuItem(DarkMatterGenesisEditorMenus.Crafting + "Wire Scene Stations", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Crafting_Wire_Scene_Stations)]
         public static void WireCraftingStations()
         {
             EnsureFolders();
@@ -57,7 +57,7 @@ namespace Project.EditorTools
             Debug.Log("Crafting setup complete. Press E at Cooking/Workbench stations, find blueprint scrolls near the Recipe Book, and use Journal > Craft / Blueprints tabs.");
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Crafting + "Seed Starter Blueprints")]
+        [MenuItem(DarkMatterGenesisEditorMenus.Crafting + "Seed Starter Blueprints", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Crafting_Seed_Starter_Blueprints)]
         public static void CreateCraftingContentOnly()
         {
             EnsureFolders();
@@ -241,12 +241,12 @@ namespace Project.EditorTools
         }
 
         
-        [MenuItem(DarkMatterGenesisEditorMenus.Crafting + "Seed Starter Recipes", false, 200)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Crafting + "Seed Starter Recipes", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Crafting_Seed_Starter_Recipes)]
         private static void SeedStarterRecipesLegacy() => CreateCraftingContentOnly();
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Crafting + "Sync Recipe Registry", false, 201)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Crafting + "Sync Recipe Registry", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Crafting_Sync_Recipe_Registry)]
         private static void SyncRecipeRegistryLegacy() => SyncRecipeRegistryFromDataFolder();
-        [MenuItem(DarkMatterGenesisEditorMenus.Crafting + "Sync Blueprint Registry")]
+        [MenuItem(DarkMatterGenesisEditorMenus.Crafting + "Sync Blueprint Registry", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Crafting_Sync_Blueprint_Registry)]
         public static void SyncRecipeRegistryFromDataFolder()
         {
             EnsureFolders();

@@ -24,7 +24,7 @@ namespace Project.EditorTools.Jetpack
 
         private const string JetpackFlyBlendTreeName = "Jetpack Fly BT";
 
-        [MenuItem("Tools/Dark Matter Genesis/Jetpack/Build Player Jetpack Animator")]
+        [MenuItem("Tools/Dark Matter Genesis/Jetpack/Build Player Jetpack Animator", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Jetpack_Build_Player_Jetpack_Animator)]
         public static void BuildPlayerJetpackAnimatorMenu()
         {
             RuntimeAnimatorController controller = BuildOrUpdateController(out string message);
@@ -40,7 +40,7 @@ namespace Project.EditorTools.Jetpack
             }
         }
 
-        [MenuItem("Tools/Dark Matter Genesis/Jetpack/Repair Player Jetpack Animator Graph")]
+        [MenuItem("Tools/Dark Matter Genesis/Jetpack/Repair Player Jetpack Animator Graph", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Jetpack_Repair_Player_Jetpack_Animator_Graph)]
         public static void RepairPlayerJetpackAnimatorGraphMenu()
         {
             RuntimeAnimatorController controller = BuildOrUpdateController(out string message);

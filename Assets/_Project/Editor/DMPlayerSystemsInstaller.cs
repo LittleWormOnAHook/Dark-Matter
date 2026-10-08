@@ -13,7 +13,7 @@ namespace Project.EditorTools
             EditorApplication.delayCall += EnsureScenePlayer;
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Root + "Player/Add Systems Profile To Player_v7", false, 1)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Root + "Player/Add Systems Profile To Player_v7", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Player_Add_Systems_Profile_To_Player_v7)]
         private static void MenuEnsure()
         {
             EnsureScenePlayer();

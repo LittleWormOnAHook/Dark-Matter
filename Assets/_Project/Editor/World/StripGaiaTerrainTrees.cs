@@ -18,7 +18,7 @@ namespace Project.EditorTools
             EditorApplication.delayCall += RunIfFlagged;
         }
 
-        [MenuItem("Dark Matter Genesis/World/Strip Trees From All Terrains")]
+        [MenuItem("Dark Matter Genesis/World/Strip Trees From All Terrains", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Dark_Matter_Genesis_World_Strip_Trees_From_All_Terrains)]
         public static void StripFromMenu()
         {
             Strip(true);

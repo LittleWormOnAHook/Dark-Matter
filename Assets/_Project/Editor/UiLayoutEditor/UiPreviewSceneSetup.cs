@@ -14,7 +14,7 @@ namespace Project.EditorTools.UiLayout
     /// </summary>
     public static class UiPreviewSceneSetup
     {
-        [MenuItem(DarkMatterGenesisEditorMenus.Ui + "Create / Open UI Preview Scene")]
+        [MenuItem(DarkMatterGenesisEditorMenus.Ui + "Create / Open UI Preview Scene", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_UI_Create_Open_UI_Preview_Scene)]
         public static void CreateOrOpenPreviewScene()
         {
             if (!System.IO.File.Exists(ProjectAssetPaths.UiPreviewScene))

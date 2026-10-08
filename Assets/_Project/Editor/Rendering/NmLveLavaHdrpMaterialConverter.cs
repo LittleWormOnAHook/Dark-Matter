@@ -61,14 +61,14 @@ namespace Project.EditorTools.Rendering
             { BuiltInVolcanoSmokeGuid, HdrpVolcanoSmokeGuid },
         };
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Convert L.V.E Lava Standard→HDRP (Dry Run)", false, 35)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Convert L.V.E Lava Standard→HDRP (Dry Run)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_HDRP_Convert_L_V_E_Lava_Standard_HDRP_Dry_Run)]
         public static void ConvertDryRunMenu()
         {
             ConversionReport report = ConvertAll(dryRun: true);
             EditorUtility.DisplayDialog("L.V.E Lava Standard→HDRP (Dry Run)", report.ToSummary(), "OK");
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Convert L.V.E Lava Standard→HDRP (Apply)", false, 36)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Convert L.V.E Lava Standard→HDRP (Apply)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_HDRP_Convert_L_V_E_Lava_Standard_HDRP_Apply)]
         public static void ConvertApplyMenu()
         {
             if (!EditorUtility.DisplayDialog(

@@ -24,14 +24,14 @@ namespace Project.EditorTools
             CloseGraphEditorWindows();
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Close Graph Editor Windows", false, 40)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Close Graph Editor Windows", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Maintenance_Close_Graph_Editor_Windows)]
         public static void CloseGraphEditorWindowsMenu()
         {
             int closed = CloseGraphEditorWindows();
             Debug.Log($"[GraphGuard] Closed {closed} graph editor window(s).");
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Reserialize Animator Controllers", false, 41)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Reserialize Animator Controllers", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Maintenance_Reserialize_Animator_Controllers)]
         public static void ReserializeAnimatorControllersMenu()
         {
             int count = ReserializeAnimatorControllers();

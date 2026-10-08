@@ -170,7 +170,7 @@ namespace Project.EditorTools
         private string statusMessage = string.Empty;
         private MessageType statusType = MessageType.Info;
 
-        [MenuItem(DarkMatterGenesisEditorMenus.ResourceManager, false, 1)]
+        [MenuItem(DarkMatterGenesisEditorMenus.ResourceManager, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Prefab_Creator_Resource_Manager)]
         public static void Open()
         {
             GetWindow<ResourceManagerWindow>("Resource Manager").minSize = new Vector2(480f, 700f);

@@ -7,7 +7,7 @@ using Project.UI;
 
 public class UISlotPrefabSetup : EditorWindow
 {
-    [MenuItem(DarkMatterGenesisEditorMenus.InventorySlotPrefab, false, 30)]
+    [MenuItem(DarkMatterGenesisEditorMenus.InventorySlotPrefab, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Prefab_Creator_Inventory_Slot_Prefab)]
     public static void CreateSlotPrefab()
     {
         // Create the Slot GameObject

@@ -14,25 +14,25 @@ namespace Project.EditorTools.Invector
     /// </summary>
     public static class InvectorWeaponGripBakeUtility
     {
-        [MenuItem(DarkMatterGenesisEditorMenus.OpenInvectorWeaponGripWindow, false, 10)]
+        [MenuItem(DarkMatterGenesisEditorMenus.OpenInvectorWeaponGripWindow, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Equipment_Invector_Weapon_Grip_Grip_Bake_Window)]
         public static void OpenWindow()
         {
             InvectorWeaponGripBakeWindow.Open();
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.BakeInvectorDrawnGrip, false, 11)]
+        [MenuItem(DarkMatterGenesisEditorMenus.BakeInvectorDrawnGrip, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Equipment_Invector_Weapon_Grip_Bake_Drawn_Grip_Live_Player)]
         public static void BakeDrawnGripMenu()
         {
             BakeDrawnGrip(showDialog: true);
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.BakeInvectorHolsteredGrip, false, 12)]
+        [MenuItem(DarkMatterGenesisEditorMenus.BakeInvectorHolsteredGrip, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Equipment_Invector_Weapon_Grip_Bake_Holstered_Grip_Live_Player)]
         public static void BakeHolsteredGripMenu()
         {
             BakeHolsteredGrip(showDialog: true);
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.PreviewInvectorHolsteredWeapon, false, 13)]
+        [MenuItem(DarkMatterGenesisEditorMenus.PreviewInvectorHolsteredWeapon, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Equipment_Invector_Weapon_Grip_Preview_Holstered_On_Player)]
         public static void PreviewHolsteredMenu()
         {
             if (!TryResolveContext(out PioneerInvectorWeaponBridge bridge, out ItemData item, out string error))
@@ -46,7 +46,7 @@ namespace Project.EditorTools.Invector
             Debug.Log($"InvectorWeaponGripBakeUtility: holster preview active for '{item.name}'. Adjust the hip/back visual slot, pause, then bake holstered grip.");
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.EndInvectorHolsterPreview, false, 14)]
+        [MenuItem(DarkMatterGenesisEditorMenus.EndInvectorHolsterPreview, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Equipment_Invector_Weapon_Grip_End_Holster_Preview)]
         public static void EndHolsterPreviewMenu()
         {
             PioneerInvectorWeaponBridge bridge = FindPlayerBridge();
@@ -60,7 +60,7 @@ namespace Project.EditorTools.Invector
             Debug.Log("InvectorWeaponGripBakeUtility: holster preview ended.");
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.ResetInvectorWeaponGrips, false, 15)]
+        [MenuItem(DarkMatterGenesisEditorMenus.ResetInvectorWeaponGrips, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Equipment_Invector_Weapon_Grip_Reset_Grips_On_Selected_Item)]
         public static void ResetGripsOnSelectedItem()
         {
             ItemData item = Selection.activeObject as ItemData;

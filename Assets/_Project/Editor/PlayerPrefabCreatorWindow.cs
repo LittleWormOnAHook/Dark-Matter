@@ -24,7 +24,7 @@ namespace Project.EditorTools
         private Vector2 listScroll;
         private Vector2 editorScroll;
 
-        [MenuItem(DarkMatterGenesisEditorMenus.PlayerPrefabCreator + "Repair Player_v7 Prefab", false, 14)]
+        [MenuItem(DarkMatterGenesisEditorMenus.PlayerPrefabCreator + "Repair Player_v7 Prefab", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Prefab_Creator_Player_Prefab_CreatorRepair_Player_v7_Prefab)]
         public static void RepairPlayerV7Prefab()
         {
             const string path = "Assets/_Project/Prefabs/Players/Player_v7.prefab";
@@ -45,7 +45,7 @@ namespace Project.EditorTools
             Debug.Log($"[Player Prefab Creator] Repaired {path} (BodySnaps, ragdoll remount, frozen VBOT physics strip).");
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.PlayerPrefabCreator + "Dedup Player_v7 Weapon Holders", false, 15)]
+        [MenuItem(DarkMatterGenesisEditorMenus.PlayerPrefabCreator + "Dedup Player_v7 Weapon Holders", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Prefab_Creator_Player_Prefab_CreatorDedup_Player_v7_Weapon_Holders)]
         public static void DedupPlayerV7WeaponHolders()
         {
             const string path = PlayerV7WeaponHolderDedupUtility.DefaultPlayerV7Path;
@@ -78,7 +78,7 @@ namespace Project.EditorTools
                 "OK");
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.PlayerPrefabCreator, false, 13)]
+        [MenuItem(DarkMatterGenesisEditorMenus.PlayerPrefabCreator, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Prefab_Creator_Player_Prefab_Creator)]
         public static void Open()
         {
             PlayerPrefabCreatorWindow window = GetWindow<PlayerPrefabCreatorWindow>("Player Prefab Creator");

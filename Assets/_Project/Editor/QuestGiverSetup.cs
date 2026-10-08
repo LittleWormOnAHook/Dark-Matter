@@ -11,7 +11,7 @@ namespace Project.EditorTools
     {
         private const string PrefabPath = ProjectAssetPaths.QuestGiverPrefab;
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Quests + "Quest Giver NPC", false, 10)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Quests + "Quest Giver NPC", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Quests_Quest_Giver_NPC)]
         public static void PlaceQuestGiverNpc()
         {
             GameObject existing = GameObject.Find("QuestGiver_PioneerGuide");
@@ -316,7 +316,7 @@ namespace Project.EditorTools
         private Vector2 listScroll;
         private Vector2 editorScroll;
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Quests + "Quest Creator", false, 0)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Quests + "Quest Creator", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Quests_Quest_Creator)]
         public static void Open()
         {
             GetWindow<QuestCreatorWindow>("Quest Creator").minSize = new Vector2(780f, 560f);

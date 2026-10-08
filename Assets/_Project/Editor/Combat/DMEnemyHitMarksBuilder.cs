@@ -41,7 +41,7 @@ namespace Project.EditorTools.Combat
 
         // ---------------------------------------------------------------- menu
 
-        [MenuItem(Menu + "Build All (settings, assets, prefabs, test scene)", false, 40)]
+        [MenuItem(Menu + "Build All (settings, assets, prefabs, test scene)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Hit_Marks_Build_All_settings_assets_prefabs_test_scene)]
         public static string BuildAll()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode)
@@ -52,16 +52,16 @@ namespace Project.EditorTools.Combat
             return log;
         }
 
-        [MenuItem(Menu + "1. Apply Project Settings (layer 26, Decal Layers)", false, 41)]
+        [MenuItem(Menu + "1. Apply Project Settings (layer 26, Decal Layers)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Hit_Marks_1_Apply_Project_Settings_layer_26_Decal_Layers)]
         public static string ApplyProjectSettingsMenu() => LogResult(ApplyProjectSettings());
 
-        [MenuItem(Menu + "2. Build Decal + FX Assets and Profile", false, 42)]
+        [MenuItem(Menu + "2. Build Decal + FX Assets and Profile", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Hit_Marks_2_Build_Decal_FX_Assets_and_Profile)]
         public static string BuildAssetsMenu() => LogResult(BuildAssets());
 
-        [MenuItem(Menu + "3. Set Enemy Body Types + Robot/Humanoid Test Clones", false, 43)]
+        [MenuItem(Menu + "3. Set Enemy Body Types + Robot/Humanoid Test Clones", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Hit_Marks_3_Set_Enemy_Body_Types_Robot_Humanoid_Test_Clones)]
         public static string SetupEnemyPrefabsMenu() => LogResult(SetupEnemyPrefabs());
 
-        [MenuItem(Menu + "4. Create Hit Marks Test Scene", false, 44)]
+        [MenuItem(Menu + "4. Create Hit Marks Test Scene", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Hit_Marks_4_Create_Hit_Marks_Test_Scene)]
         public static string CreateTestSceneMenu() => LogResult(CreateTestScene());
 
         private static string LogResult(string s)

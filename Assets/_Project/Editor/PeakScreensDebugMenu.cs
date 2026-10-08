@@ -14,7 +14,7 @@ namespace Project.EditorTools
         private const string SpawnEchoMenuPath = "Tools/Dark Matter Genesis/Debug/Spawn Test Echo Signal";
         private const string RefreshTrioMenuPath = "Tools/Dark Matter Genesis/Debug/Refresh Expedition Trio Companions";
 
-        [MenuItem(CrisisMenuPath)]
+        [MenuItem(CrisisMenuPath, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Debug_Toggle_Sulfur_Crisis_HUD)]
         public static void ToggleSulfurCrisisHud()
         {
             if (!Application.isPlaying)
@@ -39,7 +39,7 @@ namespace Project.EditorTools
         [MenuItem(CrisisMenuPath, true)]
         private static bool ToggleSulfurCrisisHudValidate() => Application.isPlaying;
 
-        [MenuItem(EchoMenuPath)]
+        [MenuItem(EchoMenuPath, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Debug_Show_Echo_Rescue_Reveal_Test)]
         public static void ShowEchoRescueRevealTest()
         {
             if (!Application.isPlaying)
@@ -57,7 +57,7 @@ namespace Project.EditorTools
         [MenuItem(EchoMenuPath, true)]
         private static bool ShowEchoRescueRevealTestValidate() => Application.isPlaying;
 
-        [MenuItem(SpawnEchoMenuPath)]
+        [MenuItem(SpawnEchoMenuPath, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Debug_Spawn_Test_Echo_Signal)]
         public static void SpawnTestEchoSignal()
         {
             if (!Application.isPlaying)
@@ -86,7 +86,7 @@ namespace Project.EditorTools
         [MenuItem(SpawnEchoMenuPath, true)]
         private static bool SpawnTestEchoSignalValidate() => Application.isPlaying;
 
-        [MenuItem(RefreshTrioMenuPath)]
+        [MenuItem(RefreshTrioMenuPath, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Debug_Refresh_Expedition_Trio_Companions)]
         public static void RefreshExpeditionTrioCompanions()
         {
             if (!Application.isPlaying)

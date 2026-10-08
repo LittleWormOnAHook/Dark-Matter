@@ -13,7 +13,7 @@ namespace Project.EditorTools.Vendor
 {
     public static class DMStorageCrateSceneMenu
     {
-        [MenuItem(DarkMatterGenesisEditorMenus.World + "Wire Existing Storage Crate")]
+        [MenuItem(DarkMatterGenesisEditorMenus.World + "Wire Existing Storage Crate", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_World_Wire_Existing_Storage_Crate)]
         public static void WireExistingStorageCrate()
         {
             GameObject root = GameObject.Find("Storage Crate");

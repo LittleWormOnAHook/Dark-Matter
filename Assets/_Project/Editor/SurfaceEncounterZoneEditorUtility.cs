@@ -7,7 +7,7 @@ namespace Project.EditorTools
 {
     public static class SurfaceEncounterZoneEditorUtility
     {
-        [MenuItem("Tools/Dark Matter Genesis/Combat/Create Surface Encounter Zone")]
+        [MenuItem("Tools/Dark Matter Genesis/Combat/Create Surface Encounter Zone", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Create_Surface_Encounter_Zone)]
         public static void CreateSurfaceEncounterZone()
         {
             GameObject root = new GameObject("SurfaceEncounterZone");

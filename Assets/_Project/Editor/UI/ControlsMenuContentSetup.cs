@@ -13,7 +13,7 @@ namespace Project.EditorTools
         private const string KeyboardSchemePath = ResourcesRoot + "/ControlsScheme_KeyboardMouse.asset";
         private const string GamepadSchemePath = ResourcesRoot + "/ControlsScheme_Gamepad.asset";
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Ui + "Create Controls Menu Content", false, 10)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Ui + "Create Controls Menu Content", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_UI_Create_Controls_Menu_Content)]
         public static void CreateControlsMenuContent()
         {
             EnsureFolder("Assets/_Project/UI/Controls");

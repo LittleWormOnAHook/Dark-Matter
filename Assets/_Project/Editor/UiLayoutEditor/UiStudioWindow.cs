@@ -46,7 +46,7 @@ namespace Project.EditorTools.UiLayout
 
         private readonly Dictionary<Component, bool> componentFoldouts = new Dictionary<Component, bool>();
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Ui + "UI Studio")]
+        [MenuItem(DarkMatterGenesisEditorMenus.Ui + "UI Studio", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_UI_UI_Studio)]
         public static void ShowWindow()
         {
             UiStudioWindow window = GetWindow<UiStudioWindow>("UI Studio");
@@ -1092,7 +1092,7 @@ namespace Project.EditorTools.UiLayout
     /// <summary>Legacy menu alias — opens UI Studio.</summary>
     public sealed class UiLayoutEditorWindow : UiStudioWindow
     {
-        [MenuItem(DarkMatterGenesisEditorMenus.Ui + "UI Layout Editor (Legacy)", false, 100)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Ui + "UI Layout Editor (Legacy)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_UI_UI_Layout_Editor_Legacy)]
         public static void ShowLegacyWindow()
         {
             ShowWindow();

@@ -11,7 +11,7 @@ namespace Project.EditorTools
         private const string ProbeObjectName = "Reflection Probe";
         private const string PrefabPath = ProjectAssetPaths.ReflectionProbePrefab;
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Scene + "Reflection Probe", false, 10)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Scene + "Reflection Probe", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Scene_Reflection_Probe)]
         public static void SetupActiveReflectionProbe()
         {
             ReflectionProbe probe = FindOrCreateProbe(out GameObject probeObject);

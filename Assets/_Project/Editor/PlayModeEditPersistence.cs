@@ -161,7 +161,7 @@ namespace Project.EditorTools
                 EditorApplication.isPlaying = false;
         }
 
-        [MenuItem(MenuPath, false, 3)]
+        [MenuItem(MenuPath, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Maintenance_Persist_Play_Mode_Edits)]
         public static void Toggle()
         {
             Enabled = !Enabled;

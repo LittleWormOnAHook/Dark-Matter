@@ -41,7 +41,7 @@ namespace Project.EditorTools
             EditorApplication.playModeStateChanged += OnPlayMode;
         }
 
-        [MenuItem(MenuPath)]
+        [MenuItem(MenuPath, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Keep_Profiles_After_Play)]
         private static void ToggleEnabled()
         {
             Enabled = !Enabled;

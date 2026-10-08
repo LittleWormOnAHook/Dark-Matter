@@ -21,27 +21,27 @@ namespace Project.EditorTools
         }
 
         [MenuItem(GameObjectMenuRoot + "By Name (A→Z)", false, 49)]
-        [MenuItem(DarkMatterGenesisEditorMenus.HierarchySortChildren + "By Name (A→Z)", false, 100)]
+        [MenuItem(DarkMatterGenesisEditorMenus.HierarchySortChildren + "By Name (A→Z)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Hierarchy_Sort_Children_By_Name_A_Z)]
         public static void SortByNameAscending() => SortSelection(SortMode.Name, ascending: true);
 
         [MenuItem(GameObjectMenuRoot + "By Name (Z→A)", false, 50)]
-        [MenuItem(DarkMatterGenesisEditorMenus.HierarchySortChildren + "By Name (Z→A)", false, 101)]
+        [MenuItem(DarkMatterGenesisEditorMenus.HierarchySortChildren + "By Name (Z→A)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Hierarchy_Sort_Children_By_Name_Z_A)]
         public static void SortByNameDescending() => SortSelection(SortMode.Name, ascending: false);
 
         [MenuItem(GameObjectMenuRoot + "By Scene Age (Oldest First)", false, 51)]
-        [MenuItem(DarkMatterGenesisEditorMenus.HierarchySortChildren + "By Scene Age (Oldest First)", false, 102)]
+        [MenuItem(DarkMatterGenesisEditorMenus.HierarchySortChildren + "By Scene Age (Oldest First)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Hierarchy_Sort_Children_By_Scene_Age_Oldest_First)]
         public static void SortByAgeAscending() => SortSelection(SortMode.Age, ascending: true);
 
         [MenuItem(GameObjectMenuRoot + "By Scene Age (Newest First)", false, 52)]
-        [MenuItem(DarkMatterGenesisEditorMenus.HierarchySortChildren + "By Scene Age (Newest First)", false, 103)]
+        [MenuItem(DarkMatterGenesisEditorMenus.HierarchySortChildren + "By Scene Age (Newest First)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Hierarchy_Sort_Children_By_Scene_Age_Newest_First)]
         public static void SortByAgeDescending() => SortSelection(SortMode.Age, ascending: false);
 
         [MenuItem(GameObjectMenuRoot + "By Size (Largest First)", false, 53)]
-        [MenuItem(DarkMatterGenesisEditorMenus.HierarchySortChildren + "By Size (Largest First)", false, 104)]
+        [MenuItem(DarkMatterGenesisEditorMenus.HierarchySortChildren + "By Size (Largest First)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Hierarchy_Sort_Children_By_Size_Largest_First)]
         public static void SortBySizeDescending() => SortSelection(SortMode.Size, ascending: false);
 
         [MenuItem(GameObjectMenuRoot + "By Size (Smallest First)", false, 54)]
-        [MenuItem(DarkMatterGenesisEditorMenus.HierarchySortChildren + "By Size (Smallest First)", false, 105)]
+        [MenuItem(DarkMatterGenesisEditorMenus.HierarchySortChildren + "By Size (Smallest First)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Hierarchy_Sort_Children_By_Size_Smallest_First)]
         public static void SortBySizeAscending() => SortSelection(SortMode.Size, ascending: true);
 
         [MenuItem(GameObjectMenuRoot + "By Name (A→Z)", true)]

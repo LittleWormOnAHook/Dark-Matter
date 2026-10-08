@@ -20,7 +20,7 @@ namespace Project.EditorTools
         private bool createWorldPrefab;
         private bool addToItemRegistry = true;
 
-        [MenuItem(DarkMatterGenesisEditorMenus.GrenadeItemCreator, false, 2)]
+        [MenuItem(DarkMatterGenesisEditorMenus.GrenadeItemCreator, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Prefab_Creator_Grenade_Throwable_Item_Creator)]
         public static void Open()
         {
             GetWindow<DMIGrenadeItemCreatorWindow>("Grenade Item Creator").minSize = new Vector2(420f, 420f);

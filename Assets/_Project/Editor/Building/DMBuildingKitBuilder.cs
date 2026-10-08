@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using Project.Building;
 using UnityEditor;
@@ -52,14 +52,14 @@ namespace Project.EditorTools.Building
 
         static int kitLayer = -1;
 
-        [MenuItem("Tools/Dark Matter Genesis/Buildings/Rebuild Stone Kit (ProBuilder)")]
+        [MenuItem("Tools/Dark Matter Genesis/Buildings/Rebuild Stone Kit (ProBuilder)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Buildings_Rebuild_Stone_Kit_ProBuilder)]
         public static void RebuildStoneKit()
         {
             DMBuildingStyleLibraryBuilder.EnsureStyles();
             RebuildStyle(DMBuildingStyles.Find(DMBuildingStyles.DefaultId));
         }
 
-        [MenuItem("Tools/Dark Matter Genesis/Buildings/Rebuild All Style Kits (ProBuilder)")]
+        [MenuItem("Tools/Dark Matter Genesis/Buildings/Rebuild All Style Kits (ProBuilder)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Buildings_Rebuild_All_Style_Kits_ProBuilder)]
         public static void RebuildAllKits()
         {
             List<DMBuildingStyleLibrary> styles = DMBuildingStyleLibraryBuilder.EnsureStyles();

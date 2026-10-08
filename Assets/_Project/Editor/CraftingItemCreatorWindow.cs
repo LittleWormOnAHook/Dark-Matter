@@ -9,7 +9,7 @@ namespace Project.EditorTools
     /// </summary>
     public class CraftingItemCreatorWindow : EditorWindow
     {
-        [MenuItem(DarkMatterGenesisEditorMenus.CraftingItemCreator, false, 1)]
+        [MenuItem(DarkMatterGenesisEditorMenus.CraftingItemCreator, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Prefab_Creator_Crafting_Item_Creator)]
         public static void Open()
         {
             CloseAllInstances();

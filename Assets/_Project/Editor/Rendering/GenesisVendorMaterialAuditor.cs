@@ -50,20 +50,20 @@ namespace Project.EditorTools.Rendering
         private const string HdrpLitName = "HDRP/Lit";
         private const string HdrpUnlitName = "HDRP/Unlit";
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Audit Vendor Materials (write report)", false, 30)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Audit Vendor Materials (write report)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_HDRP_Audit_Vendor_Materials_write_report)]
         public static void AuditVendorMaterialsMenu()
         {
             string report = BuildAndWriteAuditReport(showDialog: true);
             Debug.Log($"{LogPrefix}\n{report}");
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Convert Folder URP→HDRP (Dry Run)...", false, 31)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Convert Folder URP→HDRP (Dry Run)...", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_HDRP_Convert_Folder_URP_HDRP_Dry_Run)]
         public static void ConvertFolderDryRunMenu()
         {
             ConvertSelectedOrPromptFolder(dryRun: true, showDialog: true);
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Convert Folder URP→HDRP (Apply)...", false, 32)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Convert Folder URP→HDRP (Apply)...", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_HDRP_Convert_Folder_URP_HDRP_Apply)]
         public static void ConvertFolderApplyMenu()
         {
             if (!EditorUtility.DisplayDialog(
@@ -79,14 +79,14 @@ namespace Project.EditorTools.Rendering
             ConvertSelectedOrPromptFolder(dryRun: false, showDialog: true);
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Convert Scene-Referenced Particles→HDRP", false, 33)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Convert Scene-Referenced Particles→HDRP", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_HDRP_Convert_Scene_Referenced_Particles_HDRP)]
         public static void ConvertSceneReferencedParticlesMenu()
         {
             string report = ConvertSceneReferencedParticles(dryRun: false, showDialog: true);
             Debug.Log($"{LogPrefix}\n{report}");
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Convert Scene-Referenced Particles→HDRP (Dry Run)", false, 34)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Convert Scene-Referenced Particles→HDRP (Dry Run)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_HDRP_Convert_Scene_Referenced_Particles_HDRP_Dry_Run)]
         public static void ConvertSceneReferencedParticlesDryRunMenu()
         {
             string report = ConvertSceneReferencedParticles(dryRun: true, showDialog: true);

@@ -16,8 +16,8 @@ namespace Project.EditorTools.World
         private const string DataFolder = "Assets/Gaia User Data/Sessions/DM Genesis/Terrain Data";
         private const string DataSuffix = "-20260823 - 024958";
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Root + "World/Stitch Center Tile Splat Edges")]
-        [MenuItem("Dark Matter Genesis/World/Stitch Center Tile Splat Edges")]
+        [MenuItem(DarkMatterGenesisEditorMenus.Root + "World/Stitch Center Tile Splat Edges", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_World_Stitch_Center_Tile_Splat_Edges)]
+        [MenuItem("Dark Matter Genesis/World/Stitch Center Tile Splat Edges", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Dark_Matter_Genesis_World_Stitch_Center_Tile_Splat_Edges)]
         public static void Stitch()
         {
             EdgeJob[] jobs =

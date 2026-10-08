@@ -45,7 +45,7 @@ namespace Project.EditorTools.SurfaceCarve
             public int[] Triangles;
         }
 
-        [MenuItem(MenuPath, false, 40)]
+        [MenuItem(MenuPath, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Surface_Carve_Tool)]
         public static void Open()
         {
             var w = GetWindow<DMCarveToolWindow>();

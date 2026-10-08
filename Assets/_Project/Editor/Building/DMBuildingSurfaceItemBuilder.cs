@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Project.Building;
 using UnityEditor;
 using UnityEngine;
@@ -42,7 +42,7 @@ namespace Project.EditorTools.Building
             new Seed { Id = "sign", Name = "Sign", Source = "Assets/PolygonSciFiWorlds/Prefabs/Props/Signs/SM_Prop_Sign_01.prefab", WallMount = true, Cost = 1 },
         };
 
-        [MenuItem("Tools/Dark Matter Genesis/Buildings/Build Surface Items (Lights, Decor)")]
+        [MenuItem("Tools/Dark Matter Genesis/Buildings/Build Surface Items (Lights, Decor)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Buildings_Build_Surface_Items_Lights_Decor)]
         public static void BuildMenu()
         {
             DMBuildingStyleLibraryBuilder.EnsureFolder(Folder);

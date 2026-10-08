@@ -11,7 +11,7 @@ namespace Project.EditorTools
         private PlayModeEditPersistence.PlayModeSaveScope saveScope =
             PlayModeEditPersistence.PlayModeSaveScope.AllOpenScenes;
 
-        [MenuItem(DarkMatterGenesisEditorMenus.PlayModeSaverWindow, false, 1)]
+        [MenuItem(DarkMatterGenesisEditorMenus.PlayModeSaverWindow, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Play_Mode_Saver_Open_Window)]
         public static void Open()
         {
             PlayModeSaverWindow window = GetWindow<PlayModeSaverWindow>("Play Mode Saver");
@@ -19,7 +19,7 @@ namespace Project.EditorTools
             window.Show();
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.PlayModeSaverSaveNow, false, 2)]
+        [MenuItem(DarkMatterGenesisEditorMenus.PlayModeSaverSaveNow, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Play_Mode_Saver_Save_Now_s)]
         public static void SaveNowFromMenu()
         {
             PlayModeEditPersistence.SaveNow();
@@ -31,7 +31,7 @@ namespace Project.EditorTools
             return EditorApplication.isPlaying;
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.PlayModeSaverSaveAndExit, false, 3)]
+        [MenuItem(DarkMatterGenesisEditorMenus.PlayModeSaverSaveAndExit, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Play_Mode_Saver_Save_And_Exit_Play_Mode_s)]
         public static void SaveAndExitFromMenu()
         {
             PlayModeEditPersistence.SaveAndExitPlayMode();

@@ -64,14 +64,14 @@ namespace Project.EditorTools
         private string statusMessage = string.Empty;
         private MessageType statusType = MessageType.Info;
 
-        [MenuItem(DarkMatterGenesisEditorMenus.PetManager, false, 20)]
+        [MenuItem(DarkMatterGenesisEditorMenus.PetManager, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Pets_Pet_Manager)]
         public static void ShowWindow()
         {
             DMIPetManagerWindow window = GetWindow<DMIPetManagerWindow>("Pet Manager");
             window.minSize = new Vector2(460f, 640f);
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.PetManagerFromSelection, false, 21)]
+        [MenuItem(DarkMatterGenesisEditorMenus.PetManagerFromSelection, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Pets_Pet_Manager_From_Selection)]
         private static void OpenFromSelection()
         {
             DMIPetManagerWindow window = GetWindow<DMIPetManagerWindow>("Pet Manager");

@@ -14,7 +14,7 @@ namespace Project.EditorTools
     /// </summary>
     public static class EnemyShooterLayerPatcher
     {
-        [MenuItem(DarkMatterGenesisEditorMenus.RebuildEnemyControllerFromShooterMelee)]
+        [MenuItem(DarkMatterGenesisEditorMenus.RebuildEnemyControllerFromShooterMelee, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Animations_Rebuild_Selected_Controller_from_ShooterMelee_Base)]
         private static void RebuildSelected()
         {
             AnimatorController target = Selection.activeObject as AnimatorController;

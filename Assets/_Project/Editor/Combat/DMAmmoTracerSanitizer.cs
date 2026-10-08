@@ -32,13 +32,13 @@ namespace Project.EditorTools.Combat
             "SFX_PhysicsMotion",
         };
 
-        [MenuItem(Menu + "Report Vendor Tracer Problems", false, 60)]
+        [MenuItem(Menu + "Report Vendor Tracer Problems", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Ammo_Report_Vendor_Tracer_Problems)]
         private static void ReportMenu()
         {
             Debug.Log("[DM Ammo] " + Run(apply: false));
         }
 
-        [MenuItem(Menu + "Sanitize Vendor Tracers (strip AutoDestroy, colliders, rigidbodies)", false, 61)]
+        [MenuItem(Menu + "Sanitize Vendor Tracers (strip AutoDestroy, colliders, rigidbodies)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Ammo_Sanitize_Vendor_Tracers_strip_AutoDestroy_colliders_rigidbodies)]
         private static void SanitizeMenu()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode)
@@ -50,7 +50,7 @@ namespace Project.EditorTools.Combat
             Debug.Log("[DM Ammo] " + Run(apply: true));
         }
 
-        [MenuItem(Menu + "Build Ion Projectile Prefab", false, 62)]
+        [MenuItem(Menu + "Build Ion Projectile Prefab", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Ammo_Build_Ion_Projectile_Prefab)]
         private static void IonMenu()
         {
             Debug.Log("[DM Ammo] " + EnsureIonProjectile());

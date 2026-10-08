@@ -590,7 +590,7 @@ namespace Project.EditorTools
             return Mathf.Approximately(divisor, 0f) ? value : value / divisor;
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Crafting + "Sync Blueprint Icons From Output")]
+        [MenuItem(DarkMatterGenesisEditorMenus.Crafting + "Sync Blueprint Icons From Output", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Crafting_Sync_Blueprint_Icons_From_Output)]
         public static void SyncRecipeIconsFromOutput()
         {
             RecipeDefinition[] recipes = LoadAllRecipeAssets();
@@ -625,7 +625,7 @@ namespace Project.EditorTools
         }
 
         /// <summary>Obsolete menu bookmark — redirects to Sync Blueprint Icons.</summary>
-        [MenuItem(DarkMatterGenesisEditorMenus.Crafting + "Sync Recipe Icons From Output", false, 200)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Crafting + "Sync Recipe Icons From Output", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Crafting_Sync_Recipe_Icons_From_Output)]
         private static void SyncRecipeIconsFromOutputLegacy()
         {
             SyncRecipeIconsFromOutput();

@@ -15,7 +15,7 @@ namespace Project.EditorTools
         private const string PcPipelinePath = "Assets/Settings/PC_RPAsset.asset";
         private const string MobilePipelinePath = "Assets/Settings/Mobile_RPAsset.asset";
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Configure Platform Quality Tiers", false, 10)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Configure Platform Quality Tiers", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Maintenance_Configure_Platform_Quality_Tiers)]
         public static void ConfigurePlatformQualityTiers()
         {
             if (AssetDatabase.LoadAssetAtPath<RenderPipelineAsset>($"{HdrpRoot}/Genesis_HDRP_High.asset") != null)
@@ -27,7 +27,7 @@ namespace Project.EditorTools
             ConfigureLegacyUrpQualityTiers();
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Combat + "Add Combat Zone To Selection", false, 45)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Combat + "Add Combat Zone To Selection", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Add_Combat_Zone_To_Selection)]
         public static void AddCombatZoneToSelection()
         {
             GameObject[] selected = Selection.gameObjects;
@@ -54,7 +54,7 @@ namespace Project.EditorTools
             Debug.Log($"PlatformQualitySetupUtility: added CombatZoneController to {added} object(s).");
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Audit _Project Resources Size", false, 20)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Audit _Project Resources Size", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Maintenance_Audit_Project_Resources_Size)]
         public static void AuditProjectResourcesSize()
         {
             string resourcesRoot = "Assets/_Project/Resources";

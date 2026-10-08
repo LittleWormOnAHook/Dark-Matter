@@ -32,7 +32,7 @@ namespace Project.EditorTools.Combat
             "Gongo"
         };
 
-        [MenuItem(Menu + "Strip Legacy Hit Colliders (enemy prefabs)", false, 50)]
+        [MenuItem(Menu + "Strip Legacy Hit Colliders (enemy prefabs)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Hit_Marks_Strip_Legacy_Hit_Colliders_enemy_prefabs)]
         public static void StripDefaultEnemyPrefabsMenu()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode)

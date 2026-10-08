@@ -18,7 +18,7 @@ namespace Project.EditorTools.Vendor
         private const string CommissaryProfilePath = "Assets/_Project/Resources/Vendors/DM_VendorProfile_Commissary.asset";
         private const string TechProfilePath = "Assets/_Project/Resources/Vendors/DM_VendorProfile_Tech.asset";
 
-        [MenuItem(DarkMatterGenesisEditorMenus.World + "Wire Scene Commissary And Tech Vendors")]
+        [MenuItem(DarkMatterGenesisEditorMenus.World + "Wire Scene Commissary And Tech Vendors", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_World_Wire_Scene_Commissary_And_Tech_Vendors)]
         public static void WireSceneVendors()
         {
             string commissary = WireSelection(CommissaryProfilePath, CommissaryPrefabPath, "Commissary", "Commis");
@@ -26,14 +26,14 @@ namespace Project.EditorTools.Vendor
             SelectProjectPrefabs(commissary, tech);
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.World + "Add Commissary Vendor To Selection")]
+        [MenuItem(DarkMatterGenesisEditorMenus.World + "Add Commissary Vendor To Selection", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_World_Add_Commissary_Vendor_To_Selection)]
         public static void AddCommissary()
         {
             string saved = WireSelection(CommissaryProfilePath, CommissaryPrefabPath, "Commissary", "Commis");
             SelectProjectPrefabs(saved);
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.World + "Add Tech Vendor To Selection")]
+        [MenuItem(DarkMatterGenesisEditorMenus.World + "Add Tech Vendor To Selection", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_World_Add_Tech_Vendor_To_Selection)]
         public static void AddTech()
         {
             string saved = WireSelection(TechProfilePath, TechPrefabPath, "Tech", "Tech");

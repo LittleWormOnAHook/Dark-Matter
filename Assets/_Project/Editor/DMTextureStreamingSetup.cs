@@ -88,13 +88,13 @@ namespace Project.EditorTools
             "GDKEditionAutoGen",
         };
 
-        [MenuItem(DarkMatterGenesisEditorMenus.TextureStreamingPreview, false, 40)]
+        [MenuItem(DarkMatterGenesisEditorMenus.TextureStreamingPreview, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Texture_Streaming_Preview_Gameplay_Streaming)]
         public static void PreviewWorldStreaming()
         {
             Run(apply: false);
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.TextureStreamingApply, false, 41)]
+        [MenuItem(DarkMatterGenesisEditorMenus.TextureStreamingApply, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Texture_Streaming_Apply_Gameplay_Streaming)]
         public static void ApplyWorldStreaming()
         {
             StreamStats preview = Collect(apply: false);

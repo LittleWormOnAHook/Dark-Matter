@@ -26,7 +26,7 @@ public static class BakeTlmImpostors
     static readonly Regex GridName = new Regex(@"Terrain_(\d+)_(\d+)", RegexOptions.Compiled);
     static readonly Dictionary<Texture2D, Texture2D> ReadableLayerCache = new Dictionary<Texture2D, Texture2D>();
 
-    [MenuItem("Dark Matter Genesis/World/Editor: 4 Terrains + Impostors", false, 41)]
+    [MenuItem("Dark Matter Genesis/World/Editor: 4 Terrains + Impostors", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Dark_Matter_Genesis_World_Editor_4_Terrains_Impostors)]
     public static void EditorKeepFourTerrainsAndImpostors()
     {
         if (EditorApplication.isPlaying)
@@ -48,7 +48,7 @@ public static class BakeTlmImpostors
             EditorUtility.DisplayDialog("4 Terrains + Impostors", "Need Player_v7 in the open scene.", "OK");
     }
 
-    [MenuItem("Dark Matter Genesis/World/Bake TLM Impostors", false, 40)]
+    [MenuItem("Dark Matter Genesis/World/Bake TLM Impostors", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Dark_Matter_Genesis_World_Bake_TLM_Impostors)]
     public static void Bake()
     {
         if (EditorApplication.isPlaying)

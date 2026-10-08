@@ -29,7 +29,7 @@ namespace Project.EditorTools.World
             "Terrain_3_0", "Terrain_3_1", "Terrain_3_2", "Terrain_3_3",
         };
 
-        [MenuItem("Dark Matter Genesis/World/Rebuild Splatmaps From Height (Like Gaia)", false, 53)]
+        [MenuItem("Dark Matter Genesis/World/Rebuild Splatmaps From Height (Like Gaia)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Dark_Matter_Genesis_World_Rebuild_Splatmaps_From_Height_Like_Gaia)]
         public static void Rebuild()
         {
             TerrainData teacher = FindTerrainData(TeacherKey);

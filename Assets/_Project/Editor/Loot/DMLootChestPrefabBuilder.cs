@@ -58,7 +58,7 @@ namespace Project.EditorTools.Loot
             return !EditorApplication.isPlayingOrWillChangePlaymode;
         }
 
-        [MenuItem(MenuPath)]
+        [MenuItem(MenuPath, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Loot_Build_Chest_Prefabs)]
         public static void BuildAll()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode)

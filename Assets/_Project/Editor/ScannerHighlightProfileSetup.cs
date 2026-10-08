@@ -8,7 +8,7 @@ namespace Project.EditorTools
     {
         private const string AssetPath = "Assets/_Project/Resources/Scanner/ScannerHighlightProfile.asset";
 
-        [MenuItem("Dark Matter Genesis/Scanner/Create Default Highlight Profile")]
+        [MenuItem("Dark Matter Genesis/Scanner/Create Default Highlight Profile", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Dark_Matter_Genesis_Scanner_Create_Default_Highlight_Profile)]
         public static void CreateDefaultProfile()
         {
             if (!AssetDatabase.IsValidFolder("Assets/_Project/Resources/Scanner"))

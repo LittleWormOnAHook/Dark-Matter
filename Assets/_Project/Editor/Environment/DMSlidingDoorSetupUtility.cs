@@ -13,7 +13,7 @@ namespace Project.EditorTools.Environment
 
         private const string ResourcesFolder = "Assets/_Project/Resources/Environment/SlidingDoors";
 
-        [MenuItem(DarkMatterGenesisEditorMenus.World + "Wire Selected Sliding Door (A + trigger)")]
+        [MenuItem(DarkMatterGenesisEditorMenus.World + "Wire Selected Sliding Door (A + trigger)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_World_Wire_Selected_Sliding_Door_A_trigger)]
         public static void WireSelectedSlidingDoor()
         {
             GameObject selected = Selection.activeGameObject;
@@ -31,7 +31,7 @@ namespace Project.EditorTools.Environment
             EditorUtility.DisplayDialog("Sliding Door", message, "OK");
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.World + "Wire Additional Sliding Door Sets (B/C/D)")]
+        [MenuItem(DarkMatterGenesisEditorMenus.World + "Wire Additional Sliding Door Sets (B/C/D)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_World_Wire_Additional_Sliding_Door_Sets_B_C_D)]
         public static void WireAdditionalSlidingDoorSets()
         {
             GameObject selected = Selection.activeGameObject;
@@ -62,7 +62,7 @@ namespace Project.EditorTools.Environment
                 "OK");
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.World + "Create Default Sliding Door Profile")]
+        [MenuItem(DarkMatterGenesisEditorMenus.World + "Create Default Sliding Door Profile", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_World_Create_Default_Sliding_Door_Profile)]
         public static void CreateDefaultProfileMenu()
         {
             DMSlidingDoorProfile profile = EnsureDefaultProfileAsset();

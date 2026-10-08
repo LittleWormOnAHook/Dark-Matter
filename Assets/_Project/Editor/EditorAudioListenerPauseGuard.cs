@@ -36,7 +36,7 @@ namespace Project.EditorTools
                 AudioListener.pause = false;
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Clear AudioListener Pause", false, 21)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Clear AudioListener Pause", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Maintenance_Clear_AudioListener_Pause)]
         private static void ClearPauseMenu()
         {
             AudioListener.pause = false;

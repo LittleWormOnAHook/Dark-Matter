@@ -63,14 +63,14 @@ public class WeaponPrefabCreatorWindow : EditorWindow
 
     private WeaponPrefabBuilder.PickupOptions pickupOptions = WeaponPrefabBuilder.DefaultPickupOptions;
 
-    [MenuItem(DarkMatterGenesisEditorMenus.WeaponPrefabCreator, false, 10)]
+    [MenuItem(DarkMatterGenesisEditorMenus.WeaponPrefabCreator, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Prefab_Creator_Weapon_Prefab_Creator)]
     public static void ShowWindow()
     {
         WeaponPrefabCreatorWindow window = GetWindow<WeaponPrefabCreatorWindow>("Weapon Prefabs");
         window.minSize = new Vector2(420, 620);
     }
 
-    [MenuItem(DarkMatterGenesisEditorMenus.WeaponPrefabCreatorFromSelection, false, 11)]
+    [MenuItem(DarkMatterGenesisEditorMenus.WeaponPrefabCreatorFromSelection, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Prefab_Creator_Weapon_Prefab_Creator_From_Selection)]
     private static void OpenFromSelection()
     {
         WeaponPrefabCreatorWindow window = GetWindow<WeaponPrefabCreatorWindow>("Weapon Prefabs");

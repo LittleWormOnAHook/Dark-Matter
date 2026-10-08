@@ -14,8 +14,8 @@ namespace Project.EditorTools.World
     {
         private const string StampDateToken = "20260825";
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Root + "World/Remove Stamper Terrain Layers")]
-        [MenuItem("Dark Matter Genesis/World/Remove Stamper Terrain Layers")]
+        [MenuItem(DarkMatterGenesisEditorMenus.Root + "World/Remove Stamper Terrain Layers", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_World_Remove_Stamper_Terrain_Layers)]
+        [MenuItem("Dark Matter Genesis/World/Remove Stamper Terrain Layers", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Dark_Matter_Genesis_World_Remove_Stamper_Terrain_Layers)]
         public static void RemoveTodaysStamperLayers()
         {
             List<TerrainLayer> stampLayers = FindStampLayers();

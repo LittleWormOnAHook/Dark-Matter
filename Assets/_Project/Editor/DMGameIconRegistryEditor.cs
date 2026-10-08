@@ -21,13 +21,13 @@ namespace Project.EditorTools
     {
         private const string GameIconFolder = "Assets/_Project/Resources/UI/Game Icons";
 
-        [MenuItem("Dark Matter Genesis/UI/Game Icons/Import as Sprites")]
+        [MenuItem("Dark Matter Genesis/UI/Game Icons/Import as Sprites", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Dark_Matter_Genesis_UI_Game_Icons_Import_as_Sprites)]
         public static void ImportGameIconsAsSprites()
         {
             ImportFolder(GameIconFolder);
         }
 
-        [MenuItem("Dark Matter Genesis/UI/Game Icons/Rewire Item + Recipe Icons")]
+        [MenuItem("Dark Matter Genesis/UI/Game Icons/Rewire Item + Recipe Icons", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Dark_Matter_Genesis_UI_Game_Icons_Rewire_Item_Recipe_Icons)]
         public static void RewireItemAndRecipeIcons()
         {
             ImportFolder(GameIconFolder);

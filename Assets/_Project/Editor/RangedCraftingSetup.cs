@@ -49,7 +49,7 @@ public static class RangedCraftingSetup
             20)
     };
 
-    [MenuItem(DarkMatterGenesisEditorMenus.Combat + "Setup Phase C Ranged Crafting", false, 1)]
+    [MenuItem(DarkMatterGenesisEditorMenus.Combat + "Setup Phase C Ranged Crafting", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Setup_Phase_C_Ranged_Crafting)]
     public static void SetupPhaseCRangedCraftingMenu()
     {
         int changes = EnsureRangedCraftingRecipes();

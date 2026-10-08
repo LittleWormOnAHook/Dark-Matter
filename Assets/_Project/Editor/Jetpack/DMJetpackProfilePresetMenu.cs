@@ -6,22 +6,22 @@ namespace Project.EditorTools.Jetpack
 {
     public static class DMJetpackProfilePresetMenu
     {
-        [MenuItem("Tools/Dark Matter Genesis/Jetpack/Presets/Apply Smooth (Selected Player)")]
+        [MenuItem("Tools/Dark Matter Genesis/Jetpack/Presets/Apply Smooth (Selected Player)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Jetpack_Presets_Apply_Smooth_Selected_Player)]
         public static void ApplySmooth() => ApplyPreset(DMJetpackProfilePresets.SmoothPath, "Smooth");
 
-        [MenuItem("Tools/Dark Matter Genesis/Jetpack/Presets/Apply Arcade (Selected Player)")]
+        [MenuItem("Tools/Dark Matter Genesis/Jetpack/Presets/Apply Arcade (Selected Player)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Jetpack_Presets_Apply_Arcade_Selected_Player)]
         public static void ApplyArcade() => ApplyPreset(DMJetpackProfilePresets.ArcadePath, "Arcade");
 
-        [MenuItem("Tools/Dark Matter Genesis/Jetpack/Presets/Apply Starfield (Selected Player)")]
+        [MenuItem("Tools/Dark Matter Genesis/Jetpack/Presets/Apply Starfield (Selected Player)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Jetpack_Presets_Apply_Starfield_Selected_Player)]
         public static void ApplyStarfield() => ApplyPreset(DMJetpackProfilePresets.StarfieldPath, "Starfield");
 
-        [MenuItem("Tools/Dark Matter Genesis/Jetpack/Presets/Apply Smooth To Player_v7 Prefab")]
+        [MenuItem("Tools/Dark Matter Genesis/Jetpack/Presets/Apply Smooth To Player_v7 Prefab", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Jetpack_Presets_Apply_Smooth_To_Player_v7_Prefab)]
         public static void ApplySmoothToPrefab() => ApplyPresetToPrefab(DMJetpackProfilePresets.SmoothPath, "Smooth");
 
-        [MenuItem("Tools/Dark Matter Genesis/Jetpack/Presets/Apply Arcade To Player_v7 Prefab")]
+        [MenuItem("Tools/Dark Matter Genesis/Jetpack/Presets/Apply Arcade To Player_v7 Prefab", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Jetpack_Presets_Apply_Arcade_To_Player_v7_Prefab)]
         public static void ApplyArcadeToPrefab() => ApplyPresetToPrefab(DMJetpackProfilePresets.ArcadePath, "Arcade");
 
-        [MenuItem("Tools/Dark Matter Genesis/Jetpack/Presets/Apply Starfield To Player_v7 Prefab")]
+        [MenuItem("Tools/Dark Matter Genesis/Jetpack/Presets/Apply Starfield To Player_v7 Prefab", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Jetpack_Presets_Apply_Starfield_To_Player_v7_Prefab)]
         public static void ApplyStarfieldToPrefab() => ApplyPresetToPrefab(DMJetpackProfilePresets.StarfieldPath, "Starfield");
 
         private static void ApplyPreset(string assetPath, string presetLabel)

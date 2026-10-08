@@ -22,7 +22,7 @@ public static class JournalInputSetupUtility
     private const string CharacterActionId = "a1a1a1a1-b1b1-4c1c-8d1d-111111111006";
     private const string EchoesActionId = "a1a1a1a1-b1b1-4c1c-8d1d-111111111005";
 
-    [MenuItem(DarkMatterGenesisEditorMenus.Scene + "Journal Input Shortcuts", false, 1)]
+    [MenuItem(DarkMatterGenesisEditorMenus.Scene + "Journal Input Shortcuts", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Scene_Journal_Input_Shortcuts)]
     public static void SetupJournalInput()
     {
         Scene scene = SceneManager.GetActiveScene();

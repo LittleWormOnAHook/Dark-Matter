@@ -58,7 +58,7 @@ public static class BakeWorldBorderFence
         SessionState.SetFloat(HeightKey, Height);
     }
 
-    [MenuItem("Dark Matter Genesis/World/Bake Border Fence")]
+    [MenuItem("Dark Matter Genesis/World/Bake Border Fence", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Dark_Matter_Genesis_World_Bake_Border_Fence)]
     public static void Bake()
     {
         Material material = AssetDatabase.LoadAssetAtPath<Material>(MaterialPath);

@@ -25,7 +25,7 @@ namespace Project.EditorTools.Invector
     /// </summary>
     public static class EnemyInvectorRagdollColliderRescaleUtility
     {
-        [MenuItem(DarkMatterGenesisEditorMenus.Combat + "Rescale Oversized Ragdoll Colliders", false, 136)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Combat + "Rescale Oversized Ragdoll Colliders", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Rescale_Oversized_Ragdoll_Colliders)]
         public static void RescaleSelectedOversizedColliders()
         {
             GameObject[] selected = Selection.gameObjects;

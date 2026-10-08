@@ -32,7 +32,7 @@ namespace Project.EditorTools
             _nextSaveAt = EditorApplication.timeSinceStartup + IntervalSeconds;
         }
 
-        [MenuItem(MenuPath)]
+        [MenuItem(MenuPath, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Auto_Save_Scene)]
         private static void ToggleEnabled()
         {
             Enabled = !Enabled;

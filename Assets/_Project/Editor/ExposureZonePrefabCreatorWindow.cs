@@ -14,7 +14,7 @@ namespace Project.EditorTools
         private bool placeInOpenScene = true;
         private bool playAmbientLoop;
 
-        [MenuItem(DarkMatterGenesisEditorMenus.ExposureZonePrefabCreator, false, 12)]
+        [MenuItem(DarkMatterGenesisEditorMenus.ExposureZonePrefabCreator, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Prefab_Creator_Exposure_Zone_Creator)]
         public static void ShowWindow()
         {
             GetWindow<ExposureZonePrefabCreatorWindow>("Exposure Zone Creator").minSize = new Vector2(460f, 520f);

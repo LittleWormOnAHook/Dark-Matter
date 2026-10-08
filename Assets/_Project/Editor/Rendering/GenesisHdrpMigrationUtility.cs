@@ -29,7 +29,7 @@ namespace Project.EditorTools.Rendering
             ("Genesis_HDRP_Ultra.asset", GenesisHdrpTier.Ultra),
         };
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Phase 0/1 - Create Genesis HDRP Foundation", false, 0)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Phase 0/1 - Create Genesis HDRP Foundation", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_HDRP_Phase_0_1_Create_Genesis_HDRP_Foundation)]
         public static void CreateGenesisHdrpFoundation()
         {
             CreateGenesisHdrpFoundationInternal(showDialog: true);
@@ -67,7 +67,7 @@ namespace Project.EditorTools.Rendering
                 "OK");
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Phase 1 - Create HDRP Test Scene", false, 10)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Phase 1 - Create HDRP Test Scene", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_HDRP_Phase_1_Create_HDRP_Test_Scene)]
         public static void CreateHdrpTestScene()
         {
             CreateHdrpTestSceneInternal(showDialog: true);
@@ -122,7 +122,7 @@ namespace Project.EditorTools.Rendering
                 "OK");
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Phase 6 - Switch Global Pipeline To HDRP High", false, 60)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Phase 6 - Switch Global Pipeline To HDRP High", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_HDRP_Phase_6_Switch_Global_Pipeline_To_HDRP_High)]
         public static void SwitchGlobalPipelineToHdrpHigh()
         {
             string highPath = $"{HdrpRoot}/Genesis_HDRP_High.asset";

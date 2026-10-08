@@ -123,7 +123,7 @@ namespace Project.EditorTools.Building
             return PrefabLibraryRoot + "/" + StyleFolderName(style);
         }
 
-        [MenuItem("Tools/Dark Matter Genesis/Buildings/Ensure Style Libraries (Stone, Iron, Silicate)")]
+        [MenuItem("Tools/Dark Matter Genesis/Buildings/Ensure Style Libraries (Stone, Iron, Silicate)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Buildings_Ensure_Style_Libraries_Stone_Iron_Silicate)]
         public static void EnsureStylesMenu()
         {
             List<DMBuildingStyleLibrary> styles = EnsureStyles();
@@ -472,7 +472,7 @@ namespace Project.EditorTools.Building
         static int iconBaked;
         static int iconSkipped;
 
-        [MenuItem("Tools/Dark Matter Genesis/Buildings/Bake Missing Part Icons (All Styles)")]
+        [MenuItem("Tools/Dark Matter Genesis/Buildings/Bake Missing Part Icons (All Styles)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Buildings_Bake_Missing_Part_Icons_All_Styles)]
         public static void BakeAllMissingIconsMenu()
         {
             int queued = 0;

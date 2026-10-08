@@ -32,7 +32,7 @@ namespace Project.EditorTools
             EditorApplication.delayCall += () => RemoveLeftovers(logResult: true);
         }
 
-        [MenuItem(MenuPath)]
+        [MenuItem(MenuPath, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Maintenance_Remove_Orphaned_AudioSource_Clone_Objects)]
         private static void RemoveLeftoversMenu()
         {
             int removed = RemoveLeftovers(logResult: false);

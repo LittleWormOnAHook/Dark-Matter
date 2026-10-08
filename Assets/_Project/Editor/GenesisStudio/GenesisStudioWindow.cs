@@ -49,7 +49,7 @@ namespace Project.EditorTools.GenesisStudio
         private Label modePill;
         private Label savePill;
 
-        [MenuItem(DarkMatterGenesisEditorMenus.GenesisStudio, false, 5)]
+        [MenuItem(DarkMatterGenesisEditorMenus.GenesisStudio, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Profiles_Genesis_Studio)]
         public static void Open()
         {
             GenesisStudioWindow window = GetWindow<GenesisStudioWindow>("Genesis Studio");
@@ -573,6 +573,9 @@ namespace Project.EditorTools.GenesisStudio
             EditorGUILayout.Space(8f);
             if (GUILayout.Button("Open Combat Studio → Roadmap", GUILayout.Height(32f)))
                 DMCombatStudioWindow.OpenTab(DMCombatStudioWindow.TabRoadmap);
+
+            if (GUILayout.Button("Open Project Roadmap (all domains)", GUILayout.Height(28f)))
+                DMProjectRoadmapWindow.Open();
 
             if (!string.IsNullOrEmpty(sub.AssetPath)
                 && GUILayout.Button("Ping master combat plan", GUILayout.Height(26f)))

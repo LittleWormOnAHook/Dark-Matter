@@ -9,7 +9,7 @@ namespace Project.EditorTools
     /// </summary>
     public class RecipeCreatorWindow : EditorWindow
     {
-        [MenuItem(DarkMatterGenesisEditorMenus.Crafting + "Recipe Creator", false, 100)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Crafting + "Recipe Creator", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Crafting_Recipe_Creator)]
         public static void Open()
         {
             CloseAllInstances();

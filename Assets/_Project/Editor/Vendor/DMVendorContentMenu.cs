@@ -20,7 +20,7 @@ namespace Project.EditorTools.Vendor
         private const string CommissaryBuyLogPath = VendorFolder + "/DM_VendorBuyLog_Commissary.asset";
         private const string TechBuyLogPath = VendorFolder + "/DM_VendorBuyLog_Tech.asset";
 
-        [MenuItem(DarkMatterGenesisEditorMenus.EnsureIoClockProfile)]
+        [MenuItem(DarkMatterGenesisEditorMenus.EnsureIoClockProfile, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_World_Ensure_Io_Clock_Profile)]
         public static void EnsureIoClockProfile()
         {
             EnsureFolder("Assets/_Project/Resources/World");
@@ -37,7 +37,7 @@ namespace Project.EditorTools.Vendor
             Debug.Log("[DM] Io clock profile ready at " + ClockAssetPath);
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.ApplyDefaultTradeValues)]
+        [MenuItem(DarkMatterGenesisEditorMenus.ApplyDefaultTradeValues, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Items_Apply_Default_Trade_Values)]
         public static void ApplyDefaultTradeValues()
         {
             string[] guids = AssetDatabase.FindAssets("t:ItemData", new[] { "Assets/_Project/Data/Items" });
@@ -61,7 +61,7 @@ namespace Project.EditorTools.Vendor
             Debug.Log("[DM] Applied trade defaults to " + changed + " items.");
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.EnsureVendorContent)]
+        [MenuItem(DarkMatterGenesisEditorMenus.EnsureVendorContent, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Items_Ensure_Vendor_Content)]
         public static void EnsureVendorContent()
         {
             EnsureIoClockProfile();
@@ -107,7 +107,7 @@ namespace Project.EditorTools.Vendor
             Debug.Log("[DM] Vendor profiles, catalogs, and buy logs are ready under " + VendorFolder);
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.FillVendorBuyLogs)]
+        [MenuItem(DarkMatterGenesisEditorMenus.FillVendorBuyLogs, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Items_Fill_Vendor_Buy_Logs)]
         public static void FillVendorBuyLogs()
         {
             EnsureFolder(VendorFolder);

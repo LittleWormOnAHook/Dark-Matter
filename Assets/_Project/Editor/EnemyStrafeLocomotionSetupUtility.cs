@@ -34,7 +34,7 @@ namespace Project.EditorTools.Combat
             (new Vector2(-0.5f, 1f), $"{StrafeRoot}/Run/Run Left.fbx")
         };
 
-        [MenuItem(DarkMatterGenesisEditorMenus.CombatAnimations + "Setup Enemy Strafe Locomotion", false, 8)]
+        [MenuItem(DarkMatterGenesisEditorMenus.CombatAnimations + "Setup Enemy Strafe Locomotion", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Animations_Setup_Enemy_Strafe_Locomotion)]
         public static void SetupEnemyStrafeLocomotion()
         {
             int updated = ApplyToAllEnemyControllers(showDialog: true);

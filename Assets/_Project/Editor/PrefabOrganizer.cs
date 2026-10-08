@@ -126,7 +126,7 @@ namespace Project.EditorTools
             "Assets/_Project/Prefabs/Ammo Pickups",
         };
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Project + "Organize Prefabs Folders", false, 11)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Project + "Organize Prefabs Folders", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Project_Organize_Prefabs_Folders)]
         public static void OrganizePrefabsMenu()
         {
             if (!EditorUtility.DisplayDialog(

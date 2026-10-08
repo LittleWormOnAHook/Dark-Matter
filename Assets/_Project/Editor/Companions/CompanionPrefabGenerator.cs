@@ -412,7 +412,7 @@ namespace Project.EditorTools.Companions
             return result.Replace(" ", "");
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Root + "Generate All Echo Prefabs", false, 6)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Root + "Generate All Echo Prefabs", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Generate_All_Echo_Prefabs)]
         public static void MenuGenerateAllEchoPrefabs()
         {
             List<NamedPioneerDefinition> definitions = CompanionCatalogRegistryUtility.FindAllDataAssets();
@@ -423,7 +423,7 @@ namespace Project.EditorTools.Companions
                 "OK");
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Root + "Generate All Recruit Prefabs", false, 7)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Root + "Generate All Recruit Prefabs", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Generate_All_Recruit_Prefabs)]
         public static void MenuGenerateAllRecruitPrefabs()
         {
             List<NamedPioneerDefinition> definitions = CompanionCatalogRegistryUtility.FindAllDataAssets();

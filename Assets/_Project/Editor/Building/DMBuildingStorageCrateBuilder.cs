@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Project.Building;
 using Project.Data;
 using Project.Storage;
@@ -20,7 +20,7 @@ namespace Project.EditorTools.Building
         const string MetalScrapPath = "Assets/_Project/Data/Items/Components/metal_scrap.asset";
         const string SourcePrefabPath = "Assets/_Project/Prefabs/Storage/Storage Crate.prefab";
 
-        [MenuItem("Tools/Dark Matter Genesis/Buildings/Add Storage Crate (All Styles)")]
+        [MenuItem("Tools/Dark Matter Genesis/Buildings/Add Storage Crate (All Styles)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Buildings_Add_Storage_Crate_All_Styles)]
         public static void BuildMenu()
         {
             DMStorageCrate source = FindSceneCrate();

@@ -54,7 +54,7 @@ namespace Project.EditorTools.Companions
             AssignAllPortraits();
         }
 
-        [MenuItem("Dark Matter Genesis/Companions/Reimport Portrait Textures")]
+        [MenuItem("Dark Matter Genesis/Companions/Reimport Portrait Textures", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Dark_Matter_Genesis_Companions_Reimport_Portrait_Textures)]
         public static void ReimportPortraitTexturesMenu()
         {
             int count = ReimportAllPortraitTextures();
@@ -62,7 +62,7 @@ namespace Project.EditorTools.Companions
             Debug.Log($"[PioneerPortraits] Reimported {count} portrait texture(s) with bilinear + mipmaps.");
         }
 
-        [MenuItem("Dark Matter Genesis/Companions/Assign Pioneer Portraits")]
+        [MenuItem("Dark Matter Genesis/Companions/Assign Pioneer Portraits", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Dark_Matter_Genesis_Companions_Assign_Pioneer_Portraits)]
         public static void AssignAllPortraitsMenu()
         {
             ReimportAllPortraitTextures();

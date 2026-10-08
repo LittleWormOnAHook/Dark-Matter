@@ -28,13 +28,13 @@ namespace Project.EditorTools.Rendering
         private const string HdrpLitName = "HDRP/Lit";
         private const string HdrpUnlitName = "HDRP/Unlit";
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Inventory _Project Material Shaders", false, 20)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Inventory _Project Material Shaders", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_HDRP_Inventory_Project_Material_Shaders)]
         public static void InventoryProjectMaterialsMenu()
         {
             InventoryProjectMaterials(showDialog: true);
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Convert _Project Materials URP→HDRP", false, 21)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Convert _Project Materials URP→HDRP", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_HDRP_Convert_Project_Materials_URP_HDRP)]
         public static void ConvertProjectMaterialsMenu()
         {
             ConvertProjectMaterialsInternal(showDialog: true);

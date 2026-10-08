@@ -23,13 +23,13 @@ namespace Project.EditorTools
             ExposureZoneKind.ShelterSafe
         };
 
-        [MenuItem(DarkMatterGenesisEditorMenus.PlaceExposureStarterKit, false, 20)]
+        [MenuItem(DarkMatterGenesisEditorMenus.PlaceExposureStarterKit, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Scene_Place_Exposure_Starter_Kit_Open_Scene)]
         public static void PlaceStarterKitInOpenScene()
         {
             PlaceStarterKit(loadPioneerIfNeeded: false);
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.PlaceExposureStarterKitInPioneer, false, 21)]
+        [MenuItem(DarkMatterGenesisEditorMenus.PlaceExposureStarterKitInPioneer, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Scene_Place_Exposure_Starter_Kit_In_Playable_Scene)]
         public static void PlaceStarterKitInPioneerScene()
         {
             PlaceStarterKit(loadPioneerIfNeeded: true);

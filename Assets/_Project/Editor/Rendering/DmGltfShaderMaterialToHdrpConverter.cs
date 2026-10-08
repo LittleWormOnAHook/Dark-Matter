@@ -24,14 +24,14 @@ namespace Project.EditorTools.Rendering
         private const string GltfPbrShaderName = "Shader Graphs/glTF-pbrMetallicRoughness";
         private const string HdrpLitName = "HDRP/Lit";
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Convert glTF-pbr Materials → HDRP Lit (Dry Run)", false, 40)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Convert glTF-pbr Materials → HDRP Lit (Dry Run)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_HDRP_Convert_glTF_pbr_Materials_HDRP_Lit_Dry_Run)]
         public static void ConvertDryRunMenu()
         {
             ConversionReport report = ConvertAll(dryRun: true);
             EditorUtility.DisplayDialog("glTF→HDRP Lit (Dry Run)", report.ToSummary(), "OK");
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Convert glTF-pbr Materials → HDRP Lit (Apply)", false, 41)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Hdrp + "Convert glTF-pbr Materials → HDRP Lit (Apply)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_HDRP_Convert_glTF_pbr_Materials_HDRP_Lit_Apply)]
         public static void ConvertApplyMenu()
         {
             if (!EditorUtility.DisplayDialog(

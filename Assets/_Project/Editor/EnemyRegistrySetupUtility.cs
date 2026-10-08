@@ -11,7 +11,7 @@ namespace Project.EditorTools.Combat
     {
         private const string RegistryPath = "Assets/_Project/Resources/EnemyRegistry.asset";
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Content + "Create Enemy Registry", false, 43)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Content + "Create Enemy Registry", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Content_Create_Enemy_Registry)]
         public static void CreateEnemyRegistry()
         {
             EnsureFolder("Assets/_Project/Resources");

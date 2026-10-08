@@ -22,7 +22,7 @@ namespace Project.EditorTools
             ("Death", $"{MixamoRoot}/Deaths/Standing Death Forward 01.fbx", "mixamo.com"),
         };
 
-        [MenuItem(DarkMatterGenesisEditorMenus.CombatAnimations + "Rebuild Gongo Controller", false, 30)]
+        [MenuItem(DarkMatterGenesisEditorMenus.CombatAnimations + "Rebuild Gongo Controller", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Animations_Rebuild_Gongo_Controller)]
         public static void RebuildGongoController()
         {
             EnemyDefinition definition = ScriptableObject.CreateInstance<EnemyDefinition>();

@@ -14,7 +14,7 @@ namespace Project.EditorTools
         private const string LeanScriptGuid = "a8c3e1f04b2d4a6e9f7c5d8b1a0e3f42";
         private const string LeanClassId = "Assembly-CSharp::Project.Data.MineHarvestItemData";
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Content + "Migrate Mining-Harvest Items To Lean Type", false, 50)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Content + "Migrate Mining-Harvest Items To Lean Type", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Content_Migrate_Mining_Harvest_Items_To_Lean_Type)]
         public static void MigrateMenu()
         {
             int converted = MigrateAll();
@@ -133,7 +133,7 @@ namespace Project.EditorTools
                 ProjectAssetPaths.LootCompleteVfxPrefab);
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Content + "Assign Mine-Harvest Loot Complete VFX Defaults", false, 51)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Content + "Assign Mine-Harvest Loot Complete VFX Defaults", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Content_Assign_Mine_Harvest_Loot_Complete_VFX_Defaults)]
         public static void AssignLootCompleteVfxDefaultsMenu()
         {
             int filled = 0;

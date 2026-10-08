@@ -15,7 +15,7 @@ namespace Project.EditorTools.Vehicles
         private const string OutputPrefabPath = ProjectAssetPaths.PrefabsVehicles + "/Hovercraft_Pioneer.prefab";
         private const string ProfileAssetPath = "Assets/_Project/Data/Vehicles/HovercraftProfile_Default.asset";
 
-        [MenuItem("Tools/Dark Matter Genesis/Vehicles/Repair Hovercraft References", false, 11)]
+        [MenuItem("Tools/Dark Matter Genesis/Vehicles/Repair Hovercraft References", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Vehicles_Repair_Hovercraft_References)]
         public static void RepairHovercraftReferences()
         {
             int repaired = 0;
@@ -49,7 +49,7 @@ namespace Project.EditorTools.Vehicles
                 : "Hovercraft references already wired.");
         }
 
-        [MenuItem("Tools/Dark Matter Genesis/Vehicles/Create Hovercraft In Scene", false, 10)]
+        [MenuItem("Tools/Dark Matter Genesis/Vehicles/Create Hovercraft In Scene", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Vehicles_Create_Hovercraft_In_Scene)]
         public static void CreateHovercraftInScene()
         {
             EnsureFolder(ProjectAssetPaths.PrefabsVehicles);

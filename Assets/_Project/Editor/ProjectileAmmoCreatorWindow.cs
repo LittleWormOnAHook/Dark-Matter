@@ -8,7 +8,7 @@ namespace Project.EditorTools
     /// </summary>
     public static class ProjectileAmmoCreatorWindow
     {
-        [MenuItem(DarkMatterGenesisEditorMenus.ProjectileAmmoCreator, false, 20)]
+        [MenuItem(DarkMatterGenesisEditorMenus.ProjectileAmmoCreator, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Prefab_Creator_Projectile_Ammo_Creator)]
         public static void ShowWindow()
         {
             BlueprintCraftingManagerWindow.OpenAmmoTab();

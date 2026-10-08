@@ -8,7 +8,7 @@ namespace Project.EditorTools
     /// </summary>
     public static class ItemDataCreatorMenu
     {
-        [MenuItem(DarkMatterGenesisEditorMenus.ItemDataCreator, false, 0)]
+        [MenuItem(DarkMatterGenesisEditorMenus.ItemDataCreator, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Prefab_Creator_Item_Data_Creator)]
         public static void ShowWindow()
         {
             BlueprintCraftingManagerWindow.OpenItemDataTab();

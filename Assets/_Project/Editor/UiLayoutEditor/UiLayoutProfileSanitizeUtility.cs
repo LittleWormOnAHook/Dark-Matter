@@ -7,7 +7,7 @@ namespace Project.EditorTools.UiLayout
 {
     public static class UiLayoutProfileSanitizeUtility
     {
-        [MenuItem(DarkMatterGenesisEditorMenus.Ui + "Sanitize Layout Profiles")]
+        [MenuItem(DarkMatterGenesisEditorMenus.Ui + "Sanitize Layout Profiles", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_UI_Sanitize_Layout_Profiles)]
         public static void SanitizeAllProfiles()
         {
             string[] guids = AssetDatabase.FindAssets("t:UiLayoutProfile", new[] { UiLayoutProfileResolver.LayoutProfilesFolder });

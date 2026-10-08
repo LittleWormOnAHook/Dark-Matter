@@ -17,7 +17,7 @@ public static class DmTerrainContentSceneSetup
     const string ScenesFolder = "Assets/_Project/Scenes";
     const string ProbeObjectName = "DmChunkProbe";
 
-    [MenuItem("Dark Matter Genesis/World/Create Terrain Content Scenes", false, 42)]
+    [MenuItem("Dark Matter Genesis/World/Create Terrain Content Scenes", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Dark_Matter_Genesis_World_Create_Terrain_Content_Scenes)]
     public static void CreateAllContentScenes()
     {
         if (EditorApplication.isPlaying)

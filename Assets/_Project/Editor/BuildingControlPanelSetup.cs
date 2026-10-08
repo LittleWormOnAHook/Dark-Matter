@@ -6,7 +6,7 @@ namespace Project.EditorTools
 {
     public static class BuildingControlPanelSetup
     {
-        [MenuItem(DarkMatterGenesisEditorMenus.Content + "Add Building Control Panel to Selected")]
+        [MenuItem(DarkMatterGenesisEditorMenus.Content + "Add Building Control Panel to Selected", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Content_Add_Building_Control_Panel_to_Selected)]
         private static void AddBuildingControlPanelToSelected()
         {
             GameObject[] selection = Selection.gameObjects;

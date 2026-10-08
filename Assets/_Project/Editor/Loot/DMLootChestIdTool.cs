@@ -27,7 +27,7 @@ namespace Project.EditorTools.Loot
             EditorSceneManager.sceneSaving += OnSceneSaving;
         }
 
-        [MenuItem(MenuRoot + "Assign Missing Chest Ids")]
+        [MenuItem(MenuRoot + "Assign Missing Chest Ids", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Loot_Assign_Missing_Chest_Ids)]
         public static void AssignMissingIds()
         {
             HashSet<string> seen = new HashSet<string>(StringComparer.Ordinal);
@@ -58,7 +58,7 @@ namespace Project.EditorTools.Loot
             Debug.Log($"[DMLootChestIdTool] Assigned {assigned} chest id(s). Save the scene to keep them.");
         }
 
-        [MenuItem(MenuRoot + "Validate Loot Chests")]
+        [MenuItem(MenuRoot + "Validate Loot Chests", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Loot_Validate_Loot_Chests)]
         public static void ValidateOpenScenes()
         {
             for (int i = 0; i < SceneManager.sceneCount; i++)

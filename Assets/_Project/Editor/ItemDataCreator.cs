@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class ItemDataCreator : EditorWindow
 {
-    [MenuItem(DarkMatterGenesisEditorMenus.Content + "Create Starting ItemData Assets")]
+    [MenuItem(DarkMatterGenesisEditorMenus.Content + "Create Starting ItemData Assets", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Content_Create_Starting_ItemData_Assets)]
     public static void CreateDefaultItems()
     {
         CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.ItemsConsumables);

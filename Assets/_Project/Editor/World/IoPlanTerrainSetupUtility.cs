@@ -24,7 +24,7 @@ namespace Project.EditorTools.World
         private const int ControlTextureResolution = 1024;
         private const int BaseMapResolution = 1024;
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Scene + "Setup Io Plan Terrain Shell (2048 / 1000m)", false, 20)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Scene + "Setup Io Plan Terrain Shell (2048 / 1000m)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Scene_Setup_Io_Plan_Terrain_Shell_2048_1000m)]
         public static void SetupIoPlanTerrainShell()
         {
             TerrainData terrainData = EnsureTerrainDataShell(out bool created);

@@ -353,7 +353,7 @@ new DMStudioSubtab(
                         new DMStudioSubtab(
                             "combat-studio",
                             "Combat Studio",
-                            "Combat Studio — Core & Melee use Player / Enemy headings; Ranged links, Play (v1.6.5), Roadmap.",
+                            "Combat Studio — Core & Melee use Player / Enemy headings; Ranged links, Play (v1.6.5), §31 Roadmap (Oct 2026 disk sync).",
                             DMStudioPanelMode.ExternalTool,
                             externalMenuPath: "Tools/Dark Matter Genesis/Combat/Combat Studio"),
                         new DMStudioSubtab(
@@ -600,7 +600,7 @@ new DMStudioSubtab(
                         new DMStudioSubtab(
                             "building-studio",
                             "Building Studio",
-                            "Full grouped editor — preview, snap, placement, doors, M-key materials.",
+                            "Full grouped editor — preview, snap, placement, doors, M-key materials, Roadmap tab.",
                             DMStudioPanelMode.ExternalTool,
                             externalMenuPath: "Tools/Dark Matter Genesis/Buildings/Building Studio")
                     }),

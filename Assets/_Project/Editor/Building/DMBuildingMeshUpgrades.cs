@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Project.Building;
@@ -28,7 +28,7 @@ namespace Project.EditorTools.Building
         public const string BakedFolder = UpgradeRoot + "/Baked";
         const string UpgradePrefix = "stone_";
 
-        [MenuItem("Tools/Dark Matter Genesis/Buildings/Apply Mesh Upgrades (All Styles)")]
+        [MenuItem("Tools/Dark Matter Genesis/Buildings/Apply Mesh Upgrades (All Styles)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Buildings_Apply_Mesh_Upgrades_All_Styles)]
         public static void ApplyAllMenu()
         {
             List<DMBuildingStyleLibrary> styles = DMBuildingStyleLibraryBuilder.EnsureStyles();

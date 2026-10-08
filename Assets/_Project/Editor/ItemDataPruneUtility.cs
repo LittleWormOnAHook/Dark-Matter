@@ -209,7 +209,7 @@ namespace Project.EditorTools
             return pruned;
         }
 
-        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Prune Unused ItemData Fields", false, 50)]
+        [MenuItem(DarkMatterGenesisEditorMenus.Maintenance + "Prune Unused ItemData Fields", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Maintenance_Prune_Unused_ItemData_Fields)]
         public static void MenuPruneAll()
         {
             int count = PruneAllProjectItems();
