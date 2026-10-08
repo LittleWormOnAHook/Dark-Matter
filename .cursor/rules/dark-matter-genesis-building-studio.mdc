@@ -38,4 +38,4 @@ When you **add or change** stone hold-B build mode, placement, snap, preview gho
 - [ ] `DMBuildingStudioWindow` section updated
 - [ ] `DMStudioRegistry` + `DMStudioProfileSectionFilter` if profile shape changed
 - [ ] Runtime uses `Profile.Live` / static accessors — not duplicate constants
-- [ ] User reminded **Ctrl+R** (Auto Refresh off)
+- [ ] MCP **`refresh_unity`** run after edits (or user **Ctrl+R** if MCP unavailable)

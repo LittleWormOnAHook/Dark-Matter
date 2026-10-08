@@ -24,5 +24,6 @@ When a skill conflicts with any of the following, **project authority wins**:
 - **HDRP / no NavMesh / no Player_v7 retune** — `dark-matter-genesis-core`, `dark-matter-genesis-unity-hdrp`, `dark-matter-genesis-player-physics`.
 - **Console before done/commit** — wait for compile/domain reload; do not commit with Unity Error console entries.
 - **Building Studio sync** — stone build mode / `DMBuilding*` changes update profile + Building Studio + Genesis Building tabs (`dark-matter-genesis-building-studio`).
+- **Studio/system edit recall** — before non-trivial studio or profile-registration edits, recall git/docs/prior attempts (worked vs failed); refresh Unity and fix console errors after (`dark-matter-genesis-studio-system-edit-recall`).
 
 Skills must not rewrite scenes, prefabs, or gameplay to match generic Unity/VR/networking templates when that would contradict this project's existing systems or GDD.

@@ -1,0 +1,40 @@
+---
+description: Recall prior studio/system edit outcomes; refresh Unity and fix errors after changes.
+alwaysApply: true
+---
+
+# Studio & System Edit Recall
+
+Complements **`unity-agent-workflow.mdc`** (refresh, compile wait, console, commit). Does not replace Genesis/Building Studio registration rules — follow those when profile shape or studio surfaces change.
+
+## When this applies
+
+- **Editor studios:** Genesis Studio (`DMStudioRegistry`, profile adjusters, `DMStudioProfileSectionFilter`), Building Studio (`DMBuildingStudioWindow`), Combat Studio (`DMCombatStudioWindow`), and related tools under `Assets/_Project/Editor/`.
+- **Runtime tied to studios:** ScriptableObject profiles under `Assets/_Project/Resources/`, `Profile.Live` / live refresh, `playModeSave`, subtabs, section filters.
+- **Registered subsystems** (combat, building, climb, survival, companions, etc.) when the change touches **studio registration**, **profile shape**, or the **applier / build menu** that feeds the controller.
+
+## Recall before and while editing
+
+Before **non-trivial** studio or system changes:
+
+1. **Git** — `git log` / `git diff` on the relevant paths (profiles, `Editor/GenesisStudio`, `Editor/Building`, `Editor/Combat`, runtime consumers).
+2. **Docs** — handoffs, system plans, compile audits under `Assets/_Project/Documentation/` (e.g. combat handoff, melee animation plan).
+3. **Prior chat** — if the user referenced earlier behavior, search `agent-transcripts` under the project by keyword; summarize findings, do not paste huge logs.
+
+Classify outcomes as **worked** vs **did not work** (e.g. Base Layer melee crossfade sank the player; Upper Body mask fixed legs but needed exit transitions). **Do not repeat failed approaches** unless the user explicitly asks to retry with a fix.
+
+When a change ships and a **canonical doc already exists** for that system, add a **brief note** there only — do not create new markdown unless the user asked. Prefer an inline commit message when the user commits later.
+
+## After edits (mandatory)
+
+Follow **`unity-agent-workflow.mdc`**:
+
+1. After the last write under `Assets/` or `ProjectSettings/`, MCP **`refresh_unity`** (`mode: if_dirty`, `compile: request` when scripts/asmdef changed, `wait_for_ready: true`).
+2. Wait for compile and domain reload; then **`read_console`** (errors) and fix before claiming done.
+3. Never commit while the Unity console has errors.
+
+## Do not
+
+- Contradict **`skill-precedence.mdc`** — project rules win over imported skills.
+- Duplicate or weaken **`unity-agent-workflow.mdc`** — link and execute it.
+- Skip recall on registration/profile-shape edits that Genesis or Building Studio rules already require.
