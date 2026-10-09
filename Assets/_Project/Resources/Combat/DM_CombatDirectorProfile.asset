@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b4d1c7a02e5f4a8e9c3d6f1a7b2e8d40, type: 3}
+  m_Name: DM_CombatDirectorProfile
+  m_EditorClassIdentifier: Assembly-CSharp::Project.AI.DM_CombatDirectorProfile
+  enableCombatDirector: 1
+  debugLogSlots: 1
+  intensity: 0.5
+  smallGroupMaxEnemies: 4
+  smallGroupSlotsMin: 1
+  smallGroupSlotsMax: 2
+  mediumGroupMaxEnemies: 8
+  mediumGroupSlotsMin: 2
+  mediumGroupSlotsMax: 3
+  largeGroupBaseSlots: 3
+  largeGroupEnemiesPerExtraSlot: 4
+  largeGroupSlotsMax: 5
+  maxSimultaneousAttackers: 5
+  slotMinHoldSeconds: 1.5
+  slotHoldMaxSequences: 2
+  slotHoldMaxSeconds: 5
+  slotEntryGrace: {x: 0.5, y: 1}
+  minSecondsBetweenSlotChanges: 0.6
+  slotReawardCooldown: 1.5
+  enableFlank: 0
+  flankMaxConcurrent: 1
+  flankMinHoldSeconds: 2
+  flankPersonalityBonus: 0.25
+  enableMorale: 0
+  startingMorale: 1
+  retreatMoraleThreshold: 0.35
+  leaderDeathMoraleDrop: 0.4
+  casualtyMoraleDrop: 0.1
+  gruesomeKillMoraleDrop: 0.15
+  moraleRecoverPerSecond: 0.02

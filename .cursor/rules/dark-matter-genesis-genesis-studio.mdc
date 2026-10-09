@@ -15,6 +15,7 @@ When you **add or upgrade** a gameplay system that exposes tunable values via a 
    - If the profile is shared with other tabs, add a **`DMStudioProfileSectionFilter`** + field list in `DMStudioProfileSectionFilter.cs` so the studio shows only the relevant slice.
    - Set **`playModeSave: true`** when Play-mode slider edits should persist (match `DMProfilePlayModeSaver` roots).
 3. **Runtime reads the live profile** (`Profile.Live` / `Resolve(...)`) so Genesis Studio Play tweaks apply immediately — same as climb, dash, and survival pools.
+4. **Documentation INDEX** — if the change adds a new handoff or system doc, update `Assets/_Project/Documentation/INDEX.md` **§2** under the correct system row (same task).
 
 ## Placement guide
 

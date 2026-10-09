@@ -18,7 +18,7 @@ Complements **`unity-agent-workflow.mdc`** (refresh, compile wait, console, comm
 Before **non-trivial** studio or system changes:
 
 1. **Git** — `git log` / `git diff` on the relevant paths (profiles, `Editor/GenesisStudio`, `Editor/Building`, `Editor/Combat`, runtime consumers).
-2. **Docs** — handoffs, system plans, compile audits under `Assets/_Project/Documentation/` (e.g. combat handoff, melee animation plan).
+2. **Docs (index-first)** — open `Assets/_Project/Documentation/INDEX.md` → system **§2.x** → **Primary** then **Related**; combat → **§1b** + `DMG_Combat_Plan_v2.md`; locks → `.cursor/rules/INDEX.md`. If you add a plan/handoff, update INDEX **§2** (and **§4** for Features docs) in the same task.
 3. **Prior chat** — if the user referenced earlier behavior, search `agent-transcripts` under the project by keyword; summarize findings, do not paste huge logs.
 
 Classify outcomes as **worked** vs **did not work** (e.g. Base Layer melee crossfade sank the player; Upper Body mask fixed legs but needed exit transitions). **Do not repeat failed approaches** unless the user explicitly asks to retry with a fix.

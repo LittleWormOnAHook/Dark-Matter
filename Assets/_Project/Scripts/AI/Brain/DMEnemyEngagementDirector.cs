@@ -17,6 +17,10 @@ namespace Project.AI
         public int SequencesThisToken;
         public float LastSequenceEndTime = -999f;
 
+        // Phase 4 attack slot (secondary melee attacker beside the token holder). Role is Engager while true.
+        public bool AttackSlot;
+        public float SlotSince;
+
         // World-anchored hold point (holders only).
         public bool HasAnchor;
         public Vector3 Anchor;
@@ -35,6 +39,11 @@ namespace Project.AI
     /// else is a Holder on a world-anchored outer ring. Re-scores at directorTickHz with anti-thrash rules
     /// (minimum hold, switch margin + confirm time, global hand-off rate limit, post-swing lock, max hold).
     /// Static, no GameObject: ticked by whichever enemy updates first each frame. No per-tick allocations.
+    /// <para>
+    /// Phase 4 start (§31 #4): on top of the single token holder, <see cref="DM_CombatDirectorProfile"/> grants extra
+    /// melee attack slots by enemy count (1v1 = 1, 2-4 = 1-2, 5-8 = 2-3, larger scales). Slot enemies are Engagers
+    /// too; everyone else stays a Holder and cannot commit melee until a slot opens. Director off = Phase 3 only.
+    /// </para>
     /// </summary>
     public static class DMEnemyEngagementDirector
     {
@@ -48,6 +57,11 @@ namespace Project.AI
             public float LastHandoffTime = -999f;
             public EnemyAiController Challenger;
             public float ChallengerSince;
+            // Phase 4: secondary attackers (the token Holder is not in this list).
+            public readonly List<EnemyAiController> Slots = new List<EnemyAiController>(4);
+            public float LastSlotChangeTime = -999f;
+            public int EligibleCount;
+            public int TotalSlots = 1;
             public int ActiveHolderActions;
             public float HolderActionsEnd = -999f;
             public Vector3 LastTargetPosition;
@@ -59,6 +73,10 @@ namespace Project.AI
                 Target = null;
                 Focus = null;
                 Members.Clear();
+                Slots.Clear();
+                LastSlotChangeTime = -999f;
+                EligibleCount = 0;
+                TotalSlots = 1;
                 Holder = null;
                 HolderSince = 0f;
                 LastHandoffTime = -999f;
@@ -111,6 +129,7 @@ namespace Project.AI
                 ring.Members.Add(agent);
                 state.Ring = ring;
                 state.Role = DMEngagementRole.Holder;
+                state.AttackSlot = false;
                 state.JoinTime = Time.time;
                 state.LastTokenTime = Time.time;
                 state.SequencesThisToken = 0;
@@ -132,11 +151,13 @@ namespace Project.AI
             Ring ring = state.Ring;
             state.Ring = null;
             state.Role = DMEngagementRole.None;
+            state.AttackSlot = false;
             state.ClearAnchor();
             if (ring == null)
                 return;
 
             ring.Members.Remove(agent);
+            ring.Slots.Remove(agent);
             if (ring.Challenger == agent)
                 ring.Challenger = null;
             if (ring.Holder == agent)
@@ -335,6 +356,7 @@ namespace Project.AI
                         {
                             ring.Members[m].EngagementState.Ring = null;
                             ring.Members[m].EngagementState.Role = DMEngagementRole.None;
+                            ring.Members[m].EngagementState.AttackSlot = false;
                         }
                     }
 
@@ -347,6 +369,13 @@ namespace Project.AI
 
         private static void TickRing(Ring ring, DM_EnemyEngagementProfile p, float now)
         {
+            TickMeleeToken(ring, p, now);
+            TickAttackSlots(ring, p, now);
+        }
+
+        /// <summary>Phase 3: prune members, award / hand off the single melee token (D1).</summary>
+        private static void TickMeleeToken(Ring ring, DM_EnemyEngagementProfile p, float now)
+        {
             // Prune members that died, disabled, or switched targets.
             for (int i = ring.Members.Count - 1; i >= 0; i--)
             {
@@ -357,9 +386,11 @@ namespace Project.AI
                     {
                         m.EngagementState.Ring = null;
                         m.EngagementState.Role = DMEngagementRole.None;
+                        m.EngagementState.AttackSlot = false;
                     }
 
                     ring.Members.RemoveAt(i);
+                    ring.Slots.Remove(m);
                     if (ring.Holder == m)
                         ring.Holder = null;
                     if (ring.Challenger == m)
@@ -435,6 +466,174 @@ namespace Project.AI
                 Handoff(ring, p, now, challenger, hitImmediate ? "player hit holder" : "focus score");
         }
 
+        // ── Phase 4: attack slots ────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Attackers right now on this enemy's ring: token holder + slot enemies, the slot budget the profile
+        /// resolved for the current eligible enemy count, and that count. False when not in a ring.
+        /// </summary>
+        public static bool TryGetSlotSummary(EnemyAiController agent, out int attackers, out int totalSlots, out int enemyCount)
+        {
+            Ring ring = agent != null ? agent.EngagementState.Ring : null;
+            if (ring == null)
+            {
+                attackers = 0;
+                totalSlots = 0;
+                enemyCount = 0;
+                return false;
+            }
+
+            attackers = (ring.Holder != null ? 1 : 0) + ring.Slots.Count;
+            totalSlots = ring.TotalSlots;
+            enemyCount = ring.EligibleCount;
+            return true;
+        }
+
+        private static bool IsSwingLocked(EnemyAiController agent, DM_EnemyEngagementProfile p, float now)
+        {
+            return agent.IsInAttackSequence || now < agent.EngagementState.LastSequenceEndTime + p.postSwingLockSeconds;
+        }
+
+        /// <summary>
+        /// Keeps <c>ring.Slots</c> at (profile total − 1) secondary attackers beside the token holder. Slot enemies are
+        /// Engagers (may swing); every other ring member stays a Holder and cannot commit melee until a slot opens.
+        /// Director off or no token holder = all slots released (Phase 3 behaviour).
+        /// </summary>
+        private static void TickAttackSlots(Ring ring, DM_EnemyEngagementProfile p, float now)
+        {
+            DM_CombatDirectorProfile d = DM_CombatDirectorProfile.Live;
+            bool active = d != null && d.enableCombatDirector && ring.Target != null && ring.Holder != null;
+            if (!active)
+            {
+                ring.TotalSlots = 1;
+                ring.EligibleCount = ring.Members.Count;
+                for (int i = ring.Slots.Count - 1; i >= 0; i--)
+                    DropSlot(ring, i, now, 0f, d, "director off / no token holder");
+                return;
+            }
+
+            int count = 0;
+            for (int i = 0; i < ring.Members.Count; i++)
+            {
+                EnemyAiController m = ring.Members[i];
+                if (m != null && m.IsTokenEligible(ring.Target, p, asCurrentHolder: true))
+                    count++;
+            }
+
+            ring.EligibleCount = count;
+            int total = d.ResolveTotalSlots(count);
+            ring.TotalSlots = total;
+            int wanted = Mathf.Max(0, total - 1);
+
+            // Invalid / ineligible slot enemies go immediately (dead, far away, retreating, re-targeted).
+            for (int i = ring.Slots.Count - 1; i >= 0; i--)
+            {
+                EnemyAiController s = ring.Slots[i];
+                if (s == null || s == ring.Holder || s.EngagementState.Ring != ring ||
+                    !s.IsTokenEligible(ring.Target, p, asCurrentHolder: true))
+                    DropSlot(ring, i, now, d.slotReawardCooldown, d, "ineligible");
+            }
+
+            // Over budget (enemy count fell, intensity lowered): shed the newest slot that is not mid-swing.
+            while (ring.Slots.Count > wanted)
+            {
+                int drop = -1;
+                for (int i = ring.Slots.Count - 1; i >= 0; i--)
+                {
+                    if (!IsSwingLocked(ring.Slots[i], p, now))
+                    {
+                        drop = i;
+                        break;
+                    }
+                }
+
+                if (drop < 0)
+                    break;
+
+                DropSlot(ring, drop, now, d.slotReawardCooldown, d, "over slot budget");
+            }
+
+            bool gapOk = now - ring.LastSlotChangeTime >= d.minSecondsBetweenSlotChanges;
+
+            // Rotation: a slot enemy that has had its turn yields to a waiting holder.
+            if (gapOk && ring.Slots.Count > 0 && ring.Slots.Count >= wanted)
+            {
+                for (int i = 0; i < ring.Slots.Count; i++)
+                {
+                    EnemyAiController s = ring.Slots[i];
+                    DMEngagementAgentState ss = s.EngagementState;
+                    float held = now - ss.SlotSince;
+                    if (held < d.slotMinHoldSeconds || IsSwingLocked(s, p, now))
+                        continue;
+
+                    if (ss.SequencesThisToken < Mathf.Max(1, d.slotHoldMaxSequences) && held < d.slotHoldMaxSeconds)
+                        continue;
+
+                    if (BestCandidate(ring, p, now, ring.Holder, true, out _, skipSlots: true) == null)
+                        continue;
+
+                    DropSlot(ring, i, now, d.slotReawardCooldown, d, "slot turn over");
+                    gapOk = false;
+                    break;
+                }
+            }
+
+            // Fill: one new slot attacker per change window.
+            if (gapOk && ring.Slots.Count < wanted)
+            {
+                EnemyAiController candidate =
+                    BestCandidate(ring, p, now, ring.Holder, true, out _, skipSlots: true)
+                    ?? BestCandidate(ring, p, now, ring.Holder, false, out _, skipSlots: true);
+                if (candidate != null)
+                    AwardSlot(ring, d, now, candidate);
+            }
+        }
+
+        private static void AwardSlot(Ring ring, DM_CombatDirectorProfile d, float now, EnemyAiController agent)
+        {
+            DMEngagementAgentState s = agent.EngagementState;
+            s.Role = DMEngagementRole.Engager;
+            s.AttackSlot = true;
+            s.SlotSince = now;
+            s.SequencesThisToken = 0;
+            s.ClearAnchor();
+            s.HandoffGraceUntil = now + d.RandomRange(d.slotEntryGrace);
+            ring.Slots.Add(agent);
+            ring.LastSlotChangeTime = now;
+
+            agent.OnEngagementTokenAwarded(true);
+            LogSlot(d, ring, agent, "slot awarded (" + (ring.Slots.Count + 1) + "/" + ring.TotalSlots + " attackers)");
+        }
+
+        private static void DropSlot(Ring ring, int index, float now, float reawardCooldown, DM_CombatDirectorProfile d, string reason)
+        {
+            EnemyAiController agent = ring.Slots[index];
+            ring.Slots.RemoveAt(index);
+            ring.LastSlotChangeTime = now;
+            if (agent == null)
+                return;
+
+            DMEngagementAgentState s = agent.EngagementState;
+            s.AttackSlot = false;
+            if (ring.Holder != agent && s.Role == DMEngagementRole.Engager)
+                s.Role = DMEngagementRole.Holder;
+            s.ReawardBlockedUntil = Mathf.Max(s.ReawardBlockedUntil, now + reawardCooldown);
+            s.LastTokenTime = now;
+            s.HandoffGraceUntil = 0f;
+            s.ClearAnchor();
+            LogSlot(d, ring, agent, "slot released (" + reason + ")");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogSlot(DM_CombatDirectorProfile d, Ring ring, EnemyAiController agent, string message)
+        {
+            if (d == null || !d.debugLogSlots)
+                return;
+
+            Debug.Log("[DMCombatDirector] " + (ring.Target != null ? ring.Target.name : "?") + " " + message +
+                      " -> " + agent.name + " (" + ring.EligibleCount + " enemies)", agent);
+        }
+
         private static void SampleTargetSpeed(Ring ring, float now)
         {
             float dt = now - ring.LastSampleTime;
@@ -452,7 +651,7 @@ namespace Project.AI
         }
 
         private static EnemyAiController BestCandidate(Ring ring, DM_EnemyEngagementProfile p, float now,
-            EnemyAiController exclude, bool respectReaward, out float bestScore)
+            EnemyAiController exclude, bool respectReaward, out float bestScore, bool skipSlots = false)
         {
             EnemyAiController best = null;
             bestScore = float.NegativeInfinity;
@@ -460,6 +659,9 @@ namespace Project.AI
             {
                 EnemyAiController m = ring.Members[i];
                 if (m == null || m == exclude)
+                    continue;
+
+                if (skipSlots && m.EngagementState.AttackSlot)
                     continue;
 
                 if (respectReaward && now < m.EngagementState.ReawardBlockedUntil)
@@ -574,13 +776,17 @@ namespace Project.AI
             DMEngagementAgentState s = agent.EngagementState;
             s.Role = DMEngagementRole.Engager;
             s.SequencesThisToken = 0;
+            // A slot enemy promoted to token holder leaves the slot list (the holder is not counted twice).
+            s.AttackSlot = false;
+            ring.Slots.Remove(agent);
             s.ClearAnchor();
             s.HandoffGraceUntil = withGrace ? now + p.RandomRange(p.handoffGraceBeforeSwing) : 0f;
 
             for (int i = 0; i < ring.Members.Count; i++)
             {
                 EnemyAiController m = ring.Members[i];
-                if (m != null && m != agent && m.EngagementState.Role != DMEngagementRole.Holder)
+                if (m != null && m != agent && !m.EngagementState.AttackSlot &&
+                    m.EngagementState.Role != DMEngagementRole.Holder)
                     m.EngagementState.Role = DMEngagementRole.Holder;
             }
 

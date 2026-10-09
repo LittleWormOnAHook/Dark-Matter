@@ -68,6 +68,14 @@ namespace Project.Player.Invector
         private PlayerInput _playerInput; // stamp: controller-compile-fix 0920
         private static bool _loggedKbmLookStamp;
         private bool _miningScanAimHold;
+        private vShooterWeapon _aimClickSilencedWeapon;
+
+        // ADS edge audio latch (one clip per real press / release; never driven by SetActiveAim / aimConditions).
+        private const float AimEdgeReleaseDebounceSeconds = 0.12f;
+        private bool _adsAudioLatched;          // true after the aim-in edge fired, until the matching release fires
+        private float _adsReleaseSince = -1f;   // unscaled time isAimingByInput first went false; <0 when held
+        private vShooterWeapon _adsAudioWeapon; // weapon whose clips belong to the current ADS hold
+        private AudioSource _adsEdgeSource;
         /// <summary>Scroll zoom the player chose â€” preserved across aim/culling so ChangeState cannot wipe it.</summary>
         private float _preferredCameraZoom = -1f;
         private bool _wasAimingCameraLastFrame;
@@ -253,6 +261,8 @@ namespace Project.Player.Invector
 
             base.Update();
 
+            TickAdsEdgeAudio();
+
             if (!IsGameplayInputDeferred())
             {
                 SyncPioneerCursorState();
@@ -261,6 +271,58 @@ namespace Project.Player.Invector
 
             _locomotionGait?.TickLocomotion();
             RestoreJumpHeightIfJumpFinished();
+        }
+
+        /// <summary>
+        /// Plays the weapon's aim-in clip once when isAimingByInput goes false→true and the aim-out clip once when
+        /// it has stayed false for <see cref="AimEdgeReleaseDebounceSeconds"/>. A single latch makes the pair strictly
+        /// alternate: no further press sound while held (walking/running/flicker) and no release sound without a press.
+        /// Reads only the final player-controlled ADS flag at the end of Update — never aimConditions / SetActiveAim.
+        /// </summary>
+        private void TickAdsEdgeAudio()
+        {
+            bool aiming = isAimingByInput && cc != null && !cc.ragdolled;
+
+            if (aiming)
+            {
+                _adsReleaseSince = -1f; // held again (or still held): cancel any pending release
+                if (_adsAudioLatched)
+                    return;             // already played aim-in for this hold
+
+                _adsAudioLatched = true;
+                _adsAudioWeapon = CurrentActiveWeapon;
+                PlayAdsEdgeClip(PioneerInvectorWeaponBridge.GetAimEnterClip(_adsAudioWeapon));
+                return;
+            }
+
+            if (!_adsAudioLatched)
+                return;                 // nothing pressed, nothing to release
+
+            if (_adsReleaseSince < 0f)
+                _adsReleaseSince = Time.unscaledTime;
+            if (Time.unscaledTime - _adsReleaseSince < AimEdgeReleaseDebounceSeconds)
+                return;                 // ignore one-frame drops; must stay released
+
+            _adsAudioLatched = false;   // re-arm for the next real press
+            _adsReleaseSince = -1f;
+            PlayAdsEdgeClip(PioneerInvectorWeaponBridge.GetAimExitClip(_adsAudioWeapon));
+            _adsAudioWeapon = null;
+        }
+
+        private void PlayAdsEdgeClip(AudioClip clip)
+        {
+            if (clip == null)
+                return;
+
+            if (_adsEdgeSource == null)
+            {
+                _adsEdgeSource = gameObject.AddComponent<AudioSource>();
+                _adsEdgeSource.playOnAwake = false;
+                _adsEdgeSource.loop = false;
+                _adsEdgeSource.spatialBlend = 0f;
+            }
+
+            _adsEdgeSource.PlayOneShot(clip);
         }
 
         /// <summary>
@@ -340,11 +402,17 @@ namespace Project.Player.Invector
 
         public void SetMiningScanAimHold(bool held)
         {
+            bool wasHeld = _miningScanAimHold;
             _miningScanAimHold = held;
             if (held && cc != null && !cc.ragdolled && CurrentActiveWeapon != null)
                 isAimingByInput = true;
-            else if (!held && (aimInput == null || !aimInput.GetButton()))
+            else if (!held && wasHeld && !ReadAimHeld() && (aimInput == null || !aimInput.GetButton()))
+            {
+                // Only release aim we forced. The scanner calls SetMiningScanAimHold(false) EVERY frame when no
+                // mining tool is drawn — clearing here used to wipe RMB/LT ADS (Input System aim, muted aimInput)
+                // for every non-mining ranged weapon.
                 isAimingByInput = false;
+            }
         }
 
         public override void AimInput()
@@ -353,6 +421,14 @@ namespace Project.Player.Invector
             {
                 isAimingByInput = false;
                 return;
+            }
+
+            // Aim click silence: strip AimAudioSource listeners once per weapon instance (reference compare only).
+            vShooterWeapon aimWeapon = CurrentActiveWeapon;
+            if (aimWeapon != null && aimWeapon != _aimClickSilencedWeapon)
+            {
+                _aimClickSilencedWeapon = aimWeapon;
+                PioneerInvectorWeaponBridge.SilenceWeaponAimClicks(aimWeapon);
             }
 
             bool opticsOpen = _playerController != null && _playerController.IsOpticsOpen;

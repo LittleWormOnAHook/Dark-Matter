@@ -41,3 +41,19 @@
 **All created UI is UITK only** (UXML/USS/`DMUiToolkit*` runtime) — `.cursor/rules/dark-matter-genesis-uitk-lock.mdc` and `dark-matter-genesis-ui-toolkit.mdc`. No new uGUI. Hot Cross uses `Assets/_Project/Resources/UI/HotCrossIcons` cutouts only.
 
 Full locks (platforms, AC economy, Echoes, thermal, BCP, DM naming, UI palette) live in `.cursor/rules/dark-matter-genesis-core.mdc` and GDD 5.0.
+
+## When you need more detail
+
+**Index-first (before non-trivial system work):**
+
+1. `Assets/_Project/Documentation/INDEX.md` — find the system **§2.1–§2.19** row; read **Primary**, then **Related**. Features modules also **§4**.
+2. **Combat planning & acceptance** — INDEX **§1b**; phased roadmap `Assets/_Project/Documentation/Design/Combat/DMG_Combat_Plan_v2.md` (**v2.4**); disk authority `Assets/_Project/Features/Combat/Documentation/Dark_Matter_Combat_System.md`.
+3. **Rule locks & workflow** — `.cursor/rules/INDEX.md` (all `.mdc` by topic; start with `dark-matter-genesis-core.mdc`).
+4. **New plan/handoff under Documentation or Features/Documentation** — update INDEX **§2** (and **§4** if Features) in the same task.
+
+Also:
+
+- Framework standard → `Assets/_Project/Features/Communications/Documentation/Dark_Matter_Framework_Engineering_Standard.md`
+- Full GDD canon → `.cursor/rules/dark-matter-genesis-gdd.mdc` or GDD 5.0 file
+- Unity engineering patterns → `.cursor/rules/dark-matter-genesis-unity-hdrp.mdc`
+- Studio/system recall (git, prior outcomes) → `.cursor/rules/dark-matter-genesis-studio-system-edit-recall.mdc`

@@ -406,9 +406,16 @@ new DMStudioSubtab(
                         new DMStudioSubtab(
                             "combat-director-tokens",
                             "Director & tokens",
-                            "Phase 3 spacing — DM_EnemyEngagementProfile (Resources/Combat): one melee attacker per target, token hand-off / anti-thrash, hold ring, holder sidestep / taunt / feint, facing and tracking. Live in Play. Full §31 #4 Director (morale, flanking, intensity) still later.",
+                            "Phase 3 spacing — DM_EnemyEngagementProfile (Resources/Combat): one melee attacker per target, token hand-off / anti-thrash, hold ring, holder sidestep / taunt / feint, facing and tracking. Live in Play. Attack slots by enemy count live under Combat Director.",
                             DMStudioPanelMode.SingletonAsset,
                             "Assets/_Project/Resources/Combat/DM_EnemyEngagementProfile.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "combat-director-slots",
+                            "Combat Director",
+                            "Phase 4 start (§31 #4) — DM_CombatDirectorProfile (Resources/Combat): enable / rollback (off = Phase 3 one-attacker only), attack slots by enemy count (1v1 = 1, 2–4 = 1–2, 5–8 = 2–3, larger scales), intensity dial, hard max, slot rotation. Flank and morale are stub fields. Live in Play.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Combat/DM_CombatDirectorProfile.asset",
                             playModeSave: true),
                         new DMStudioSubtab(
                             "combat-momentum-finishers",

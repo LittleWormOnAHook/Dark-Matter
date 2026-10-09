@@ -96,7 +96,19 @@ namespace Project.Combat
         [Range(1f, 2.5f)] public float enemyMeleeHitboxWidthScale = 2.25f;
         [Range(1f, 2.5f)] public float enemyMeleeHitboxReachScale = 2.15f;
         [Tooltip("Multiplies EnemyCombat.attackRange for AI strike distance (prefab values are often short).")]
-        [Range(1f, 1.5f)] public float enemyMeleeAttackRangeMultiplier = 1.22f;
+        [Range(1f, 1.5f)] public float enemyMeleeAttackRangeMultiplier = 1.26f;
+        [Tooltip("When > 0, overrides each enemy prefab attackStandoffFraction for melee ring / creep stop (lower = stand closer). 0 = prefab only.")]
+        [Range(0f, 0.95f)] public float enemyMeleeStandoffFraction = 0.56f;
+        [Tooltip("Caps combat standoff at effective attack range × this (contact band inside weapon reach).")]
+        [Range(0.75f, 1f)] public float enemyMeleeMaxOrbitFactor = 0.9f;
+        [Tooltip("Per swing sequence: roll to play the attack anim but suppress outgoing melee damage (Invector hitboxes stay on for feedback).")]
+        [Range(0f, 1f)] public float enemyIntentionalMeleeMissChance = 0.1f;
+        [Tooltip("After an intentional miss, the engager brain steps in toward the target for this long (no NavMesh).")]
+        [Range(0.15f, 1.5f)] public float enemyMeleeMissStepSeconds = 0.55f;
+        [Tooltip("Miss recovery creep stops once planar distance is within effective attack range × this.")]
+        [Range(0.5f, 0.95f)] public float enemyMeleeMissStepStopFactor = 0.72f;
+        [Tooltip("Walk speed multiplier while miss-recovery step-in is active.")]
+        [Range(0.5f, 1.2f)] public float enemyMeleeMissStepSpeedMultiplier = 0.95f;
         [Tooltip("Unused (legacy). Forgiveness is handled by scaled primary hitbox + per-swing target dedupe.")]
         [Range(0f, 45f)] public float meleeHitYawForgivenessDegrees = 0f;
 
@@ -191,6 +203,10 @@ namespace Project.Combat
         [Tooltip("Trauma on a successful guard connect that is not a parry. 0 = off. Smallest of the three.")]
         [Range(0f, 2f)] public float blockShakeAmplitude = 0.18f;
         [Range(0f, 0.4f)] public float blockShakeDurationSeconds = 0.08f;
+
+        [Header("Grenades")]
+        [Tooltip("Master switch for throwable grenades (G throw, cook, throw manager). Off = grenade items stay in inventory but cannot be thrown. Default off.")]
+        public bool enableGrenades = false;
 
         [Header("Debug")]
         public bool logCombatEventsInPlay;

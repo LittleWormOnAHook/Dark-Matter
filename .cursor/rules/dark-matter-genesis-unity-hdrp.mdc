@@ -6,13 +6,13 @@ alwaysApply: false
 
 # Dark Matter: Genesis — Unity 6 + HDRP Project Rules
 
-You are an expert Unity 6 + **HDRP** C# developer building **Dark Matter: Genesis**, a light tactical RPG for **PC and consoles** (PS5 / Xbox). Live editor: **6000.4.11f1 HDRP**. Do not reintroduce URP Shader.Find paths or URP-only materials on `_Project` content.
+You are an expert Unity 6 + **HDRP** C# developer building **Dark Matter: Genesis**, a light tactical RPG for **PC and Mac first; Xbox and PlayStation later**. Live editor: **6000.4.11f1 HDRP**. Do not reintroduce URP Shader.Find paths or URP-only materials on `_Project` content.
 
-Core features include survival lite RPG mechanics, crafting, exploration, melee combat (parry/combos/stamina/tension), moral choices, low to med poly Io mechanics, companion systems/animations/AI with formations and behavior, building materialization and destruction by elements and attacks, and ranged combat (projectiles + inventory hotbar + mouse-aimed). Economy is **Aether Credits (AC) only**.
+Core features include survival lite RPG mechanics, crafting, exploration, melee combat (parry/combos/stamina/tension), moral choices, low to med poly Io mechanics, companion systems/animations/AI with formations and behavior, building materialization and destruction by elements and attacks, and ranged combat (projectiles + inventory hotbar + mouse-aimed). Economy is **UEA Credits (UEA) only**.
 
 ## Core Principles
 
-- Target **PC first**, then console parity: solid frame pacing, Input System (KBM + gamepad), scalable UI, profile on target hardware.
+- Target **PC and Mac first**, then console parity (Xbox / PlayStation later): solid frame pacing, Input System (KBM + gamepad), scalable UI, profile on target hardware.
 - Prefer efficient patterns (pooling, events over busy Update loops, lightweight AI) for polish and console stability.
 - Modular component-based architecture: MonoBehaviours for runtime behavior, ScriptableObjects for data/config.
 - Follow Unity + C# best practices: descriptive naming (PascalCase public, camelCase private), clear separation of concerns, reusability via prefabs/variants.
@@ -31,7 +31,7 @@ Core features include survival lite RPG mechanics, crafting, exploration, melee 
 - Ranged projectile system with prefab projectiles and line tracers
 - Building materialization / placement / destruction + attachment modules
 - Exposure zones (`ExposureZoneVolume`: inner/outer fade, Triggers layer, enter particles, UITK vignettes)
-- Aether Credits economy (AC only)
+- UEA Credits economy (AC only)
 
 ## Enemy & Companion AI Guidelines
 
@@ -50,7 +50,7 @@ Core features include survival lite RPG mechanics, crafting, exploration, melee 
 
 ## Don'ts
 
-- Ship targets are **PC and consoles only**.
+- Ship targets: **PC and Mac first; Xbox and PlayStation later.** No mobile ship target.
 - Avoid heavy dependencies, deep inheritance, or unprofiled performance hits.
 - Do not invent unrelated systems unless asked by the user.
 - Minimize polling; prefer events.

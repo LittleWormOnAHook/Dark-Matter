@@ -2,7 +2,9 @@
 
 **Status:** PLAN ONLY, rev 3 (2026-10-07). This revision applies Anthony's answers to the 3 remaining open questions (D6–D8) on top of rev 2's D1–D5. Nothing in the project has been changed.
 
-**Build status (2026-10-07):** Part B (hit marks) was built first today and is untested. **Part A (spacing) is now built too, merged into Combat Plan Phase 3** (utility brain). It compiles clean but is **not play-tested and not committed**.
+**Build status (2026-10-08):** Part A + Part B **shipped and accepted** — Combat Plan **v2.4** / §31 #3 signed off Oct 8, 2026 after v1.6.5 play-test (this doc §10 checklists). Commits: brain + spacing `a94d0d899`; hit marks `6646fdc33`, `e692859f1`, `edfab9a6e`. **Next combat gate:** Phase 4 Combat Director (§31 #4) — not spacing re-work unless regression.
+
+**Historical (2026-10-07 build notes):** Part B built first; Part A merged into Phase 3 same week. Detail below reflects pre-acceptance disk state; defer to plan Reaudit for current truth.
 - A1 + A2 are on disk: `AI/Brain/DMEnemyEngagementDirector.cs`, `DM_EnemyEngagementProfile.cs` (+ `Resources/Combat/DM_EnemyEngagementProfile.asset`), `AI/EnemyAiController.Engagement.cs` (Hold state, hysteresis, facing, holder actions), and edits to `EnemyAiController*.cs`, `EnemyCombat.cs`, `DMEnemyMeleeComboDriver.cs` and `DMILocomotionFacing.cs`.
 - A3 is partial. The profile shows in Genesis Studio → Combat → "Director & tokens", and there are selected-enemy gizmos plus a "DM/Log Brain + Engagement Report" context menu. The UI Toolkit dev overlay is deferred.
 - Differences from this plan:

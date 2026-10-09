@@ -66,6 +66,9 @@ namespace Project.Combat
             if (!Application.isPlaying || !GameSession.HasStarted || Time.timeScale <= 0f)
                 return;
 
+            if (!DMIGrenadeThrowBridge.GrenadesEnabled)
+                return; // grenades off (DM_CombatCoreProfile.enableGrenades)
+
             UpdateCookInput();
         }
 

@@ -369,6 +369,11 @@ namespace Project.AI
                 DMEnemyEngagementDirector.NotifyAttackBegan(this);
         }
 
+        public void NotifyIntentionalMeleeMiss(float stepDuration)
+        {
+            brain?.NotifyIntentionalMeleeMiss(stepDuration);
+        }
+
         private bool IsOffscreenForPlayer(Transform target)
         {
             if (target == null || PlayerReference.Transform != target)
@@ -530,9 +535,16 @@ namespace Project.AI
                 }
 
                 float creepStop = Mathf.Max(standoff, minSep);
-                if (creeping && distance > creepStop)
+                bool missRecovery = combat.WantsForcedMissStep || (brain != null && brain.IsMissRecoveryActive);
+                if (missRecovery)
+                    creepStop = Mathf.Min(creepStop, combat.ResolveMissStepStopDistance(target));
+
+                if ((creeping && distance > creepStop) || missRecovery)
                 {
-                    float speed = walkSpeed * (combat.WantsMeleeReposition ? 0.92f : p.creepSpeedFactor);
+                    float speedMul = combat.WantsMeleeReposition || missRecovery
+                        ? combat.ResolveMissStepSpeedMultiplier()
+                        : p.creepSpeedFactor;
+                    float speed = walkSpeed * speedMul;
                     StepFlat(toTarget, speed, distance - creepStop);
                 }
                 else
@@ -959,6 +971,10 @@ namespace Project.AI
             string report = "AI " + name + " — state " + state + ", awareness " + Awareness + ", role " + engagementState.Role;
             if (engagementState.Ring != null && engagementState.Ring.Target != null)
                 report += ", target " + engagementState.Ring.Target.name;
+            if (engagementState.AttackSlot)
+                report += " (attack slot)";
+            if (DMEnemyEngagementDirector.TryGetSlotSummary(this, out int attackers, out int totalSlots, out int enemyCount))
+                report += ", attackers " + attackers + "/" + totalSlots + " of " + enemyCount + " enemies";
             if (engagementState.Role == DMEngagementRole.Holder)
                 report += ", holder action " + holderAction + ", drift(10s) " + DriftLast10Seconds(Time.time).ToString("0") + "°";
             if (brain != null)
@@ -980,6 +996,9 @@ namespace Project.AI
             Vector3 head = transform.position + Vector3.up * 2.3f;
             Gizmos.color = engagementState.Role == DMEngagementRole.Engager ? Color.red : new Color(1f, 0.85f, 0.2f);
             Gizmos.DrawSphere(head, 0.12f);
+
+            if (engagementState.AttackSlot)
+                Gizmos.DrawWireCube(head + Vector3.up * 0.25f, Vector3.one * 0.2f);
 
             if (engagementState.Role == DMEngagementRole.Holder && engagementState.HasAnchor)
             {

@@ -1,3 +1,4 @@
+using Project.AI;
 using Project.Audio;
 using Project.Combat;
 using Project.EditorTools.GenesisStudio;
@@ -23,12 +24,17 @@ namespace Project.EditorTools.Combat
         public const int TabMelee = 1;
         public const int TabRanged = 2;
         public const int TabPlay = 3;
-        public const int TabRoadmap = 4;
+        public const int TabDirector = 4;
+        public const int TabRoadmap = 5;
 
-        private static readonly string[] Tabs = { "Core", "Melee", "Ranged", "Play", "Roadmap" };
+        private const string DirectorProfilePath = "Assets/_Project/Resources/Combat/DM_CombatDirectorProfile.asset";
+
+        private static readonly string[] Tabs = { "Core", "Melee", "Ranged", "Play", "Director", "Roadmap" };
 
         private DM_CombatCoreProfile profile;
         private SerializedObject serializedProfile;
+        private DM_CombatDirectorProfile directorProfile;
+        private SerializedObject serializedDirector;
         private GameAudioProfile audioProfile;
         private SerializedObject serializedAudioProfile;
         private Vector2 scrollPosition;
@@ -97,6 +103,9 @@ namespace Project.EditorTools.Combat
                     break;
                 case TabPlay:
                     DrawPlayTab();
+                    break;
+                case TabDirector:
+                    DrawDirectorTab();
                     break;
                 case TabRoadmap:
                     DrawRoadmapTab();
@@ -372,13 +381,31 @@ namespace Project.EditorTools.Combat
                 DMStudioStyles.DrawSection("Melee hitboxes & strike range", DMStudioStyles.ContentPanel, () =>
                 {
                     EditorGUILayout.HelpBox(
-                        "Scales humanoid enemy vHitBox and multiplies EnemyCombat.attackRange for AI swing distance.",
+                        "Scales humanoid enemy vHitBox and multiplies EnemyCombat.attackRange for AI swing distance. "
+                        + "enemyMeleeStandoffFraction overrides prefab attackStandoffFraction when > 0 (lower = closer). "
+                        + "enemyMeleeMaxOrbitFactor caps how far holders/engagers orbit inside weapon reach.",
                         MessageType.Info);
                     DMStudioStyles.DrawPropertyFields(
                         serializedProfile,
                         "enemyMeleeHitboxWidthScale",
                         "enemyMeleeHitboxReachScale",
-                        "enemyMeleeAttackRangeMultiplier");
+                        "enemyMeleeAttackRangeMultiplier",
+                        "enemyMeleeStandoffFraction",
+                        "enemyMeleeMaxOrbitFactor");
+                });
+
+                DMStudioStyles.DrawSection("Enemy melee spacing & misses", DMStudioStyles.ContentPanel, () =>
+                {
+                    EditorGUILayout.HelpBox(
+                        "Intentional miss: anim + hitbox feedback play but outgoing melee damage is 0 for that swing sequence. "
+                        + "After a miss, DMEnemyBrain marks Press and the engager steps in (StepFlat, no NavMesh) for enemyMeleeMissStepSeconds.",
+                        MessageType.Info);
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedProfile,
+                        "enemyIntentionalMeleeMissChance",
+                        "enemyMeleeMissStepSeconds",
+                        "enemyMeleeMissStepStopFactor",
+                        "enemyMeleeMissStepSpeedMultiplier");
                 });
 
                 DMStudioStyles.DrawSection("Guard-break stagger (attacker)", DMStudioStyles.ContentPanel, () =>
@@ -490,6 +517,108 @@ namespace Project.EditorTools.Combat
             });
         }
 
+        /// <summary>Phase 4 start: attack slots by enemy count. Same fields as Genesis Studio → Combat → Combat Director.</summary>
+        private void DrawDirectorTab()
+        {
+            if (directorProfile == null)
+            {
+                directorProfile = AssetDatabase.LoadAssetAtPath<DM_CombatDirectorProfile>(DirectorProfilePath);
+                serializedDirector = directorProfile != null ? new SerializedObject(directorProfile) : null;
+            }
+
+            DMStudioStyles.DrawSection("Combat Director (Phase 4 start)", DMStudioStyles.ContentPanel, () =>
+            {
+                EditorGUILayout.ObjectField("Asset", directorProfile, typeof(DM_CombatDirectorProfile), false);
+                EditorGUILayout.HelpBox(
+                    "Play mode reads Resources/Combat/DM_CombatDirectorProfile (Profile.Live). Same fields under Genesis Studio → Combat → Combat Director. "
+                    + "Turn Enable Combat Director off to roll back to Phase 3 (one melee attacker per target). "
+                    + "Flank and morale are stub fields only.",
+                    MessageType.Info);
+                if (GUILayout.Button("Genesis Studio → Combat → Combat Director", GUILayout.Height(24f)))
+                    GenesisStudioWindow.OpenTo("combat", "combat-director-slots");
+            });
+
+            if (serializedDirector == null)
+            {
+                EditorGUILayout.HelpBox("DM_CombatDirectorProfile.asset not found under Resources/Combat.", MessageType.Warning);
+                return;
+            }
+
+            serializedDirector.Update();
+            EditorGUI.BeginChangeCheck();
+            Undo.RecordObject(directorProfile, "Edit Combat Director Profile");
+
+            using (DMStudioStyles.BeginProfileInspector(serializedDirector))
+            {
+                DMStudioStyles.DrawSection("Master / rollback", DMStudioStyles.ContentPanel, () =>
+                {
+                    DMStudioStyles.DrawPropertyFields(serializedDirector, "enableCombatDirector", "debugLogSlots");
+                });
+
+                DMStudioStyles.DrawSection("Attack slots by enemy count", DMStudioStyles.ContentPanel, () =>
+                {
+                    EditorGUILayout.HelpBox(
+                        "Token holder counts as slot 1. 1v1 = 1; small band 2–4 = 1–2; medium 5–8 = 2–3; larger fights scale by extra enemies. "
+                        + "Intensity 0 = band Min, 1 = band Max. Hard max caps every band.",
+                        MessageType.Info);
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedDirector,
+                        "intensity",
+                        "smallGroupMaxEnemies",
+                        "smallGroupSlotsMin",
+                        "smallGroupSlotsMax",
+                        "mediumGroupMaxEnemies",
+                        "mediumGroupSlotsMin",
+                        "mediumGroupSlotsMax",
+                        "largeGroupBaseSlots",
+                        "largeGroupEnemiesPerExtraSlot",
+                        "largeGroupSlotsMax",
+                        "maxSimultaneousAttackers");
+                });
+
+                DMStudioStyles.DrawSection("Slot rotation", DMStudioStyles.ContentPanel, () =>
+                {
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedDirector,
+                        "slotMinHoldSeconds",
+                        "slotHoldMaxSequences",
+                        "slotHoldMaxSeconds",
+                        "slotEntryGrace",
+                        "minSecondsBetweenSlotChanges",
+                        "slotReawardCooldown");
+                });
+
+                DMStudioStyles.DrawSection("Flanking (stub)", DMStudioStyles.ContentPanel, () =>
+                {
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedDirector,
+                        "enableFlank",
+                        "flankMaxConcurrent",
+                        "flankMinHoldSeconds",
+                        "flankPersonalityBonus");
+                });
+
+                DMStudioStyles.DrawSection("Group morale (stub)", DMStudioStyles.ContentPanel, () =>
+                {
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedDirector,
+                        "enableMorale",
+                        "startingMorale",
+                        "retreatMoraleThreshold",
+                        "leaderDeathMoraleDrop",
+                        "casualtyMoraleDrop",
+                        "gruesomeKillMoraleDrop",
+                        "moraleRecoverPerSecond");
+                });
+            }
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                serializedDirector.ApplyModifiedProperties();
+                EditorUtility.SetDirty(directorProfile);
+            }
+        }
+
         private void DrawRoadmapTab()
         {
             const string handoffPath =
@@ -533,8 +662,8 @@ namespace Project.EditorTools.Combat
             DMStudioRoadmapPanel.DrawPhase(
                 "§31 #4",
                 "Combat Director (morale, intensity, flanking)",
-                DMStudioRoadmapPanel.Status.NotStarted,
-                "Engagement tokens are not the full Director. Do not expand until Phase 3 brain is signed off.");
+                DMStudioRoadmapPanel.Status.InProgress,
+                "Start (Oct 8, 2026): DM_CombatDirectorProfile + attack slots by enemy count on DMEnemyEngagementDirector (Director tab). Flank / morale / intensity events still stubs.");
 
             DMStudioRoadmapPanel.DrawPhase(
                 "§31 #5",

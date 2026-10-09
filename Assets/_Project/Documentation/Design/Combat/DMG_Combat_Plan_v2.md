@@ -1,5 +1,7 @@
 # Dark Matter: Genesis — Combat, AI, Companions & Encounters
-## Master Plan v2.2 (Sep 29, 2026 design; code-status sync Oct 5, 2026)
+## Master Plan v2.4 (Sep 29, 2026 design; code-status sync Oct 8, 2026)
+
+**Changelog v2.4 (Oct 8, 2026):** Phase 3 **accepted** — Anthony / user sign-off in chat after v1.6.5 play-test gate. §31 #3 marked **Done**; Reaudit + §0 updated; **Phase 4** (§31 #4 Combat Director) defined as the active next gate. Momentum / Sick Stick remain §31 #6–8, not Phase 4.
 
 Items marked *(fill-in)* are proposals added beyond Anthony's spec. All numbers are starting values exposed in Genesis Studio, never hardcoded.
 
@@ -9,7 +11,26 @@ Canonical copies (keep aligned): this file, Desktop `C:\Users\Teabagger\Desktop\
 
 ---
 
-## 0. Current build status (disk truth, Oct 5, 2026)
+## Reaudit (Oct 8, 2026 — v2.4 acceptance pass)
+
+Disk pass against `Scripts/Combat/`, `Scripts/AI/`, Genesis Combat subtabs, and recent git on combat paths. **Economy:** combat docs use no currency naming; enemy loot fields remain **`acDropMin` / `acDropMax`** on `EnemyDefinition` (internal keys) — player-facing grants are **UEA Credits (UEA)** per GDD 5.0.
+
+| §31 step | Status (Oct 8) | Evidence |
+|---|---|---|
+| 1 Audit | **DONE** (Oct 3) | `DMG_Combat_Audit_Phase1.md`, §4 locked |
+| 2 Core combat | **DONE** (signed off Oct 5) | `59368909c` + v1.6.5 acceptance |
+| 3 Unified brain + spacing Part A + hit marks Part B | **DONE** (signed off Oct 8, 2026) | `a94d0d899` (brain + engagement director); hit marks `6646fdc33`, `e692859f1`, `edfab9a6e`; profiles + Studio tabs (`DM_EnemyBrainProfile`, `DM_EnemyEngagementProfile`, **Enemy hit marks**). **Acceptance:** Anthony / user sign-off in chat after v1.6.5 play-test (spacing + hit-mark checklists — `DM_Enemy_Spacing_And_Hit_Marks_Plan.md` §10). `Humanoid_Enemy.asset` may still use global Duelist default until per-enemy tuning in Phase 4+. |
+| Post–Phase 3 polish | **Shipped (incremental)** | `beb9b9dd8` enemy ranged/HUD fixes; `c53d6bd49` status VFX attach; `09f6f9e1d` combo/camera/sandbox respawn; per-ammo **`fireTrauma` / `impactTrauma`** (`DMAmmoFxProfile`, `DMCombatCameraShake`) |
+| 4 Combat Director (morale, flanking, intensity) | **IN PROGRESS — start on disk (Oct 8, 2026, not play-tested):** `DM_CombatDirectorProfile` + attack slots by enemy count on `DMEnemyEngagementDirector`; flank/morale stubs only | `DMEnemyEngagementDirector` = §31 #3 spacing (D1 one melee engager + Hold ring). **≠** §10 encounter director — **Phase 4 next** |
+| 5 Plasma sword template | **PARTIAL** | Invector sword pipeline + Phase 2 polish; §31 #5 skill branches not started |
+| 6–8 Momentum / Sick Stick / specials | **NOT STARTED** | Placeholder Studio panels only — **after** §31 #4 unless owner reprioritizes |
+| Carve / MT experiment | **DEFERRED (lab)** | `Mesh_Hit_and_Surface_Damage_Plan.md`, `Experiment/Carve/` — not production combat |
+
+**Next phase to start (one gate):** **Phase 4 — Combat Director (§31 #4)** — encounter-level intensity, scaled attack slots, flanking coordination, group morale, reinforcement/retreat hooks. Details under **Phase 4 (Oct 8, 2026)** below §0. **Do not** start §31 #6 Momentum, §31 #7 Sick Stick, or §31 #8 Overdrive until §31 #4 is signed off (§31 order).
+
+---
+
+## 0. Current build status (disk truth, Oct 8, 2026)
 
 **Tuning scene:** `Assets/_Project/Scenes/Dark Matter Genesis v1.6.5.unity`. **Combat_Sandbox is RETIRED** for melee/combat tuning (scene + `DMCombatSandboxSpawner` may still exist as a leftover; do not treat it as the play target).
 
@@ -21,9 +42,11 @@ Canonical copies (keep aligned): this file, Desktop `C:\Users\Teabagger\Desktop\
 
 **Phase 2 = §31 #2 Core combat — SIGNED OFF Oct 5, 2026** (Anthony acceptance in v1.6.5). Shipped: Batch 1 + melee polish — weak chain WeakAttack **A→B→C** + `SwordRandomAttack.B`; strong **charge timing/speed** (`SwordCharge` hold → Strong `SwordAttack.B`); **parry/block stagger** (`DMEnemyGuardBreakStagger`); **SparksLong** parry VFX; **incoming block fix**; **Combat Studio shell** (Core / Melee / Ranged / Play / Roadmap + Genesis placeholders). Primary code commit: `59368909c` (melee polish); earlier Batch 1 / hitbox / charge wiring in branch history (`4524a4069`, `5dcce7743`, etc.).
 
-**Next = §31 #3 utility brain** — one enemy (`Humanoid_Enemy`), **not** Combat Director / Momentum.
+**Phase 3 = §31 #3 — SIGNED OFF Oct 8, 2026** (Anthony / user acceptance in chat after v1.6.5 play-test). Shipped on disk: utility brain + spacing Part A (`a94d0d899`); hit marks Part B (`6646fdc33`, `e692859f1`, `edfab9a6e`). Checklists: `DM_Enemy_Spacing_And_Hit_Marks_Plan.md` §10.
 
-**Phase 3 status (Oct 7, 2026): core BUILT, compiles clean, NOT play-tested, NOT committed.** Built = utility brain core + the spacing half of `DM_Enemy_Spacing_And_Hit_Marks_Plan.md` (Part A) merged in, per Anthony's order (loot → hit marks → Phase 3 + spacing).
+**Next = Phase 4 — Combat Director (§31 #4)** — see **Phase 4 (Oct 8, 2026)** below. **Do not** start §31 #6–8 (Momentum, Sick Stick, Overdrive) until Phase 4 is signed off.
+
+**Phase 3 shipped (reference):**
 - **Brain:** `Scripts/AI/Brain/DMEnemyBrain.cs` (auto-attached to every `EnemyAiController`; no prefab edits) scores Press / Defend / Retreat / Hold = archetype base × personality × condition + seeded randomness. Data: `DM_EnemyBrainProfile` (Resources/Combat; 7 archetype rows, 13 personalities, condition thresholds Healthy/Injured/Severely injured/Critical). Awareness (Unaware/Suspicious/Alert/Combat) is derived from the state machine (no icon yet).
 - **Spacing / tokens:** `DMEnemyEngagementDirector` (static, 5 Hz) gives exactly one melee Engager per target (D1); everyone else uses the new `Hold` state on world-anchored hold points with holder sidestep / taunt / feint and the 30°-per-10 s drift cap (D5). Per-frame ring slot rotation removed; range hysteresis, attack facing cone, per-swing tracking windows, hand-off grace and off-screen wind-up added. Tuning: `DM_EnemyEngagementProfile` (Resources/Combat).
 - **Studio:** Combat → "AI & awareness" and "Director & tokens" now open the two profiles (were placeholders).
@@ -38,7 +61,41 @@ Canonical copies (keep aligned): this file, Desktop `C:\Users\Teabagger\Desktop\
 
 Sep 30 audit snapshot (historical): 68 systems — 8 Built, 28 Partial, 25 Missing, 7 Conflicts. Built through Invector then: melee (light/heavy/combos/block), ranged aim/fire, crits (10%, x2), stamina, dodge roll, dash, 9 ammo types, 5 statuses, Hot Cross, hex skill tree, 3-companion trio, death/loot.
 
-### Shipped vs Not shipped (disk truth, Oct 5, 2026)
+### Phase 4 (Oct 8, 2026) — start here
+
+**Title:** Combat Director — encounter intensity, scaled attack slots, flanking, group morale (§31 #4)
+
+**Canon:** Design targets in **§10 Combat Director**; implementation order **§31 #4**. Phase 3 **`DMEnemyEngagementDirector`** stays the **melee spacing / D1 single-engager** layer — Phase 4 adds an **encounter-level director** (intensity, coordination, flank permission, morale) that **feeds** brain scores and token limits; do not replace D1 with a free-for-all.
+
+**Why now:** Phase 3 signed off Oct 8, 2026. Large fights still read as “one attacker + orbiters” without §10 intensity scaling, flank states, or morale-driven retreat.
+
+**Goals**
+- **Attack slots / intensity:** Scale simultaneous aggressors by enemy count (Studio): 1v1 = 1; 2–4 enemies = 1–2; 5–8 = 2–3; larger fights scale dynamically (§10). Non-slot enemies **circle, reposition, flank, guard, recover, prepare** — wired through utility brain + new director permission flags.
+- **Flanking:** Director marks flank opportunities; enable **Flank** behaviour (§12) for eligible holders — personality-weighted (e.g. Cautious + flank bonus). No NavMesh; use existing locomotion / hold points + authored flank anchors where needed.
+- **Group morale** *(fill-in)*: Shared per encounter group; leader death, ~50% casualties, or gruesome kill nearby lowers morale. Low morale → retreat / flight / surrender weights from personality (§10). Hook events only — full faction AI later.
+- **Coordination:** Overcrowding relief, ranged token pool **use** (deferred in Phase 3), reinforcement / retreat / escalation **hooks** (data + events, minimal v1 behaviour).
+- **Studio:** Replace Genesis **Director & tokens** placeholder slice with a live **Combat Director** profile (or extend engagement profile with a filtered §10 section) + Combat Studio section; `playModeSave: true`; runtime `*.Live` pattern.
+
+**Deliverables (smallest shippable)**
+- Encounter director service (new type beside `DMEnemyEngagementDirector`) reading a Resources profile.
+- Intensity → max melee (+ optional ranged) slots applied on top of engagement hand-off.
+- Morale float per group + event sinks (death, leader tag, finisher placeholder event for later Momentum phase).
+- Brain integration: director **permits/denies** Press vs Flank vs Retreat for non-engagers.
+- **5× `Humanoid_Enemy`** scenario in **v1.6.5** as the acceptance fight (§31 #4 test note).
+
+**Acceptance (done-when)**
+- Anthony sign-off on §31 #4 (Reaudit row + §31 checklist → **Done**).
+- 5-up vs player: never more than Studio max simultaneous melee attackers; visible flank attempts from Hold ring; at least one morale-driven break (retreat/hold back) when morale crosses threshold in a scripted test (leader kill or half-down).
+- Phase 3 spacing **unchanged** when director disabled via profile rollback flag.
+- Unity console **zero errors**; no save version bump (v25 still reserved).
+
+**Primary files/systems (expected):** new director + profile under `Scripts/AI/` and `Resources/Combat/`; extend `DMEnemyBrain` / `EnemyAiController` for Flank + morale listeners; Genesis `DMStudioRegistry` Director tab; `DMProjectRoadmapWindow` Phase 4 gate.
+
+**Out of scope for Phase 4 start (§31 order):** §31 #5 plasma template polish; §31 #6 **Momentum** meter + finishers; §31 #7 **Sick Stick**; §31 #8 specials + **Overdrive**; body dismemberment; companion brain migration; carve production path.
+
+**Do not:** retune **`Player_v7`** capsule/physics; add **NavMesh**; mass-migrate scripts to `Features/Combat/Runtime`.
+
+### Shipped vs Not shipped (disk truth, Oct 8, 2026)
 
 Docs-only or Studio placeholders are **Not started**. Evidence is one class/asset on disk.
 
@@ -67,8 +124,11 @@ Docs-only or Studio placeholders are **Not started**. Evidence is one class/asse
 | v1.6.5 as combat tune scene | **Shipped** (scene exists) | `Dark Matter Genesis v1.6.5.unity` |
 | Combat_Sandbox as tune target | **Retired** | Leftover `Combat_Sandbox.unity` / spawner — do not use |
 | Player hitstop from `hitstopLightFrames` | **Not started** | Profile hooks only; no player TimeScale/hitstop consumer |
-| Utility AI brain (§31 #3) | **Partial-on-disk** (Oct 7, not play-tested) | `DMEnemyBrain` + `DM_EnemyBrainProfile` (Press/Defend/Retreat/Hold utility, archetype × personality × condition) |
-| Combat Director / attack tokens / morale | **Partial-on-disk** (Oct 7, not play-tested) | `DMEnemyEngagementDirector` + `DM_EnemyEngagementProfile`: 1 melee token per target, Hold state, hold ring. No morale / intensity / flanking yet |
+| Per-ammo camera trauma (fire / impact) | **Shipped** | `DMAmmoFxProfile.fireTrauma` / `impactTrauma` → `DMCombatCameraShake` (defaults 0 until tuned in Ammo FX) |
+| Enemy bullet hit marks + DMHitbox ranged refine | **Shipped** (Phase 3, Oct 8 sign-off) | `DMEnemyHitMarks`, `DMEnemyHitQuery`, `DM_EnemyHitMarkProfile`; FRED `overrideBrain` + Android body type on definition |
+| Utility AI brain (§31 #3) | **Shipped** (Phase 3, Oct 8 sign-off) | `DMEnemyBrain` + `DM_EnemyBrainProfile`; `EnemyDefinitionOverrides.ApplyBrain`; auto-attach when `enableUtilityBrain` |
+| Engagement spacing (§31 #3 Part A) | **Shipped** | `DMEnemyEngagementDirector` + `DM_EnemyEngagementProfile`: 1 melee token, Hold ring (D1) |
+| Combat Director / intensity / flanking / morale (§31 #4) | **Not started** | Placeholder Studio panel; **Phase 4** |
 | Momentum / finishers / specials / Overdrive | **Not started** | Skill named "Momentum Strike" is a stat node only |
 | Sick Stick | **Not started** | No weapon / trigger / puke |
 | Body damage / dismemberment | **Not started** | Ragdoll + death dissolve only |
@@ -132,7 +192,7 @@ Brain = Archetype + Personality + Tactical Traits + Perception + Combat + Moveme
 **Invector decision** *(fill-in)*: the audit must decide early whether the new brain wraps Invector's AI/controllers or replaces them, since this drives animation and hit-reaction work. **Locked Oct 3, 2026:** wrap Invector as the Body (motor, melee, shooter, ragdoll, hit reactions via project bridges). Replace only the decision layer later (§31 #3). Do not rip out Invector.
 
 *Current build (audit Sep 30, 2026; execution Oct 4, 2026):*
-- **[Conflicts] Unified utility-scoring brain**: There are three separate hard-coded brains. Gap: The plan wants one utility-scored brain shared by enemies, creatures and companions. **Not started** — next after Phase 2 sign-off.
+- **[Partial] Unified utility-scoring brain**: `DMEnemyBrain` on humanoids when profile enabled (Phase 3 signed off Oct 8, 2026). Gap: creatures and companions still on separate controllers; full shared brain is §31 #11.
 - **[Shipped decision] Invector wrap**: Confirmed. Bridges stay; new Brain / DamageInfo / poise / status / Momentum layers sit above them.
 
 ## 6. Archetypes (behaviour templates, not classes)
@@ -437,8 +497,8 @@ Each phase: hit detection, damage, stagger, death, finishers, dismemberment, tar
 ## 31. Implementation order
 1. **Audit** **[Done Oct 3, 2026]**: architecture and dependency maps; enemy, weapon, damage and animation library inventory (tagged); reuse vs replace candidates; Invector decision (**wrap**); migration table; animation tag sheet.
 2. **Core combat** **[Done — Phase 2 signed off Oct 5, 2026]**: damage profiles, weapon and element interfaces, hit detection, poise/stamina, status framework with immunity, health/damage events. **Tune in v1.6.5; Combat_Sandbox retired.** Batch 1 + melee polish shipped (`59368909c` + branch history). Gate 0 attack yaw regression-only. Combat Studio + Genesis placeholder shell shipped. Jetpack melee: lights → Weak `SwordAttack` A→B→C + `SwordRandomAttack.B`; charge → `SwordCharge` / Strong `SwordAttack.B`; parry/block stagger, SparksLong, incoming block fix.
-3. **Unified brain** **[Core built Oct 7, 2026 — awaiting play-test; spacing/token half of the Spacing plan merged in, see §0]**: utility scoring, archetype, personality, traits, perception/awareness, states. Migrate **one** enemy (`Humanoid_Enemy`). **Not** Director/Momentum yet.
-4. **Combat Director** **[Missing]**: tokens, coordination, flanking, intensity, morale, reinforcement hooks. Test with 5 identical enemies.
+3. **Unified brain** **[Done — Phase 3 signed off Oct 8, 2026]** utility scoring, archetype, personality, condition layer, Hold via engagement director, hit marks Part B. Commits `a94d0d899` + hit-mark chain; acceptance in v1.6.5 per Reaudit.
+4. **Combat Director** **[Next — Phase 4]**: encounter intensity, scaled attack slots, coordination, flanking, group morale, reinforcement/retreat hooks. **Build on** `DMEnemyEngagementDirector` (D1); test with 5 identical enemies. See **Phase 4 (Oct 8, 2026)** under §0.
 5. **Plasma sword template** **[Partial]**: attack, damage, hit react, crit, burn, resource use, upgrade. Start Blade and Survival skill branches.
 6. **Momentum meter and finishers** **[Missing]**: build-up, finisher selection, first finishers on the migrated enemy. Skill-gated finisher rows on `DM_MeleeFinisherCatalog` (library plan §9).
 7. **Sick Stick signature** **[Missing]**: trigger conditions, puke/stun, boss stagger, immunity, upgrades, VFX/audio.

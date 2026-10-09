@@ -641,7 +641,7 @@ namespace Project.Combat
             if (source == null || profile == null || !profile.debugBrightHitMarkEmission)
                 return source;
 
-            int key = source.GetInstanceID()
+            int key = source.GetEntityId().GetHashCode()
                 ^ (emissiveOnly ? 0x40000000 : 0)
                 ^ (bloodCharHot ? 0x20000000 : 0)
                 ^ ((int)bodyType << 24);

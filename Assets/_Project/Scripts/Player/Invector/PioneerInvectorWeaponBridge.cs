@@ -2360,8 +2360,171 @@ namespace Project.Player.Invector
                 // shared dry-fire click as other guns (never the handgun fireClip).
                 ApplySharedEmptyClickClip(weapon);
                 EnsureReloadAudioSource(weapon);
+                SilenceWeaponAimClicks(weapon);
                 PioneerInvectorRecoilUtility.ApplyWeaponRecoilTuning(weapon, weaponItem, ammoItem);
             }
+        }
+
+        /// <summary>
+        /// Invector weapon prefabs wire vShooterWeapon.onEnableAim / onDisableAim to AimAudioSource.PlayOneShot
+        /// (MediumWeaponAim etc.). While ADS is held the muzzle aim check chatters, so SetActiveAim(true/false)
+        /// re-fired the click repeatedly. We prefer silence: swap any aim event whose persistent listeners all
+        /// target AudioSources for an empty event and mute the dedicated aim sources. Idempotent per instance;
+        /// prefab assets are untouched (runtime instance only).
+        /// </summary>
+        public static void SilenceWeaponAimClicks(vShooterWeapon weapon)
+        {
+            if (weapon == null)
+                return;
+
+            // Remember the prefab's aim-in / aim-out clips BEFORE the events are emptied so
+            // PioneerShooterMeleeInput can play each exactly once on the ADS press / release edge.
+            CacheAimEdgeClips(weapon);
+
+            weapon.onEnableAim = StripAudioOnlyAimEvent(weapon.onEnableAim);
+            weapon.onDisableAim = StripAudioOnlyAimEvent(weapon.onDisableAim);
+        }
+
+        private sealed class AimEdgeClips
+        {
+            public AudioClip enter;
+            public AudioClip exit;
+        }
+
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<vShooterWeapon, AimEdgeClips> AimEdgeClipCache =
+            new System.Runtime.CompilerServices.ConditionalWeakTable<vShooterWeapon, AimEdgeClips>();
+
+        /// <summary>Clip played once when ADS starts (weapon's onEnableAim clip, e.g. MediumWeaponAim). May be null.</summary>
+        public static AudioClip GetAimEnterClip(vShooterWeapon weapon)
+        {
+            return weapon != null && AimEdgeClipCache.TryGetValue(weapon, out AimEdgeClips c) ? c.enter : null;
+        }
+
+        /// <summary>
+        /// Clip played once when ADS ends (weapon's onDisableAim clip, e.g. MediumWeaponUmAim).
+        /// Falls back to the aim-in clip when the weapon only has one. May be null.
+        /// </summary>
+        public static AudioClip GetAimExitClip(vShooterWeapon weapon)
+        {
+            if (weapon == null || !AimEdgeClipCache.TryGetValue(weapon, out AimEdgeClips c))
+                return null;
+            return c.exit != null ? c.exit : c.enter;
+        }
+
+        private static void CacheAimEdgeClips(vShooterWeapon weapon)
+        {
+            // Idempotent: once events are stripped they report no clips, so never overwrite good data.
+            if (AimEdgeClipCache.TryGetValue(weapon, out AimEdgeClips existing) && (existing.enter != null || existing.exit != null))
+                return;
+
+            AudioClip enter = ReadAudioOnlyEventClip(weapon.onEnableAim);
+            AudioClip exit = ReadAudioOnlyEventClip(weapon.onDisableAim);
+            if (enter == null && exit == null)
+                return;
+
+            AimEdgeClipCache.Remove(weapon);
+            AimEdgeClipCache.Add(weapon, new AimEdgeClips { enter = enter, exit = exit });
+        }
+
+        private static readonly System.Reflection.BindingFlags AimReflectFlags =
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public;
+
+        private static System.Reflection.FieldInfo FindFieldInHierarchy(System.Type type, string name)
+        {
+            for (System.Type t = type; t != null; t = t.BaseType)
+            {
+                System.Reflection.FieldInfo f = t.GetField(name, AimReflectFlags | System.Reflection.BindingFlags.DeclaredOnly);
+                if (f != null)
+                    return f;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Reads the AudioClip argument of an AudioSource.PlayOneShot persistent listener. Persistent args are not
+        /// public API at runtime, so read the serialized fields; fall back to the target AudioSource's own clip.
+        /// </summary>
+        private static AudioClip ReadAudioOnlyEventClip(UnityEngine.Events.UnityEvent evt)
+        {
+            if (evt == null)
+                return null;
+
+            int count = evt.GetPersistentEventCount();
+            if (count == 0)
+                return null;
+
+            System.Collections.IList calls = null;
+            try
+            {
+                System.Reflection.FieldInfo groupField = FindFieldInHierarchy(evt.GetType(), "m_PersistentCalls");
+                object group = groupField?.GetValue(evt);
+                System.Reflection.FieldInfo callsField = group != null ? FindFieldInHierarchy(group.GetType(), "m_Calls") : null;
+                calls = callsField?.GetValue(group) as System.Collections.IList;
+            }
+            catch (System.Exception)
+            {
+                calls = null;
+            }
+
+            for (int i = 0; i < count; i++)
+            {
+                AudioSource src = evt.GetPersistentTarget(i) as AudioSource;
+                if (src == null)
+                    continue;
+
+                if (calls != null && i < calls.Count && calls[i] != null)
+                {
+                    try
+                    {
+                        object call = calls[i];
+                        object args = FindFieldInHierarchy(call.GetType(), "m_Arguments")?.GetValue(call);
+                        object obj = args != null ? FindFieldInHierarchy(args.GetType(), "m_ObjectArgument")?.GetValue(args) : null;
+                        if (obj is AudioClip argClip && argClip != null)
+                            return argClip;
+                    }
+                    catch (System.Exception)
+                    {
+                        // fall through to the source clip
+                    }
+                }
+
+                if (src.clip != null)
+                    return src.clip;
+            }
+
+            return null;
+        }
+
+        private static UnityEngine.Events.UnityEvent StripAudioOnlyAimEvent(UnityEngine.Events.UnityEvent evt)
+        {
+            if (evt == null)
+                return new UnityEngine.Events.UnityEvent();
+
+            int count = evt.GetPersistentEventCount();
+            if (count == 0)
+                return evt;
+
+            bool audioOnly = true;
+            for (int i = 0; i < count; i++)
+            {
+                UnityEngine.Object target = evt.GetPersistentTarget(i);
+                AudioSource src = target as AudioSource;
+                if (src == null)
+                {
+                    audioOnly = false;
+                    continue;
+                }
+
+                // Dedicated aim sources only; never mute the weapon's shared fire/reload source.
+                if (src.gameObject.name.IndexOf("Aim", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    src.Stop();
+                    src.mute = true;
+                    src.playOnAwake = false;
+                }
+            }
+
+            return audioOnly ? new UnityEngine.Events.UnityEvent() : evt;
         }
 
         private ItemData ResolveLoadedAmmo()

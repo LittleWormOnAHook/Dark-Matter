@@ -7,7 +7,7 @@ alwaysApply: true
 
 ## Live editor
 
-- Unity **6 HDRP 6000.4.11f1**. Playable scene `Assets/_Project/Scenes/Dark Matter Genesis v1.6.2.unity`.
+- Unity **6 HDRP 6000.4.11f1**. Playable scene `Assets/_Project/Scenes/Dark Matter Genesis v1.6.5.unity`.
 - **Auto Refresh is off** (`kAutoRefreshMode=0`). After you finish Unity edits, **you** refresh the Editor via MCP (see **Auto refresh after edits** below). Do not leave disk changes un-imported. Only ask the user for **Ctrl+R** if MCP refresh fails or Unity is disconnected.
 - Work the **live Unity folder** the editor has open (Play uses that path). Do not clone onto an agent VM.
 - Git is agent source of truth. Plastic check-in is the user in the Plastic window (**no `cm` CLI**).

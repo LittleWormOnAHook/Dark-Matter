@@ -36,6 +36,34 @@ namespace Project.Combat
         public ItemData GrenadeItem => grenadeItem;
         public string ThrowableName => throwableName;
 
+        private bool _lastGrenadesEnabled = true;
+
+        /// <summary>Master grenade switch (DM_CombatCoreProfile.enableGrenades, default off).</summary>
+        public static bool GrenadesEnabled
+        {
+            get
+            {
+                DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
+                return profile != null && profile.enableGrenades;
+            }
+        }
+
+        private void Update()
+        {
+            // Re-apply when the flag flips (Genesis Studio Play tweak) or when the throw manager re-enabled itself in Start.
+            bool enabledNow = GrenadesEnabled;
+            if (!enabledNow && throwManager != null && throwManager.canUseThrow)
+                throwManager.CanUseThrow(false);
+
+            if (enabledNow == _lastGrenadesEnabled)
+                return;
+
+            _lastGrenadesEnabled = enabledNow;
+            if (throwManager != null)
+                throwManager.CanUseThrow(enabledNow);
+            SyncThrowAmountFromInventory();
+        }
+
         private void Awake()
         {
             ResolveRefs();
@@ -174,7 +202,7 @@ namespace Project.Combat
             try
             {
                 int count = 0;
-                if (inventory != null && grenadeItem != null
+                if (GrenadesEnabled && inventory != null && grenadeItem != null
                     && LevelUnlockUtility.PassesUseGate(grenadeItem, showToast: false))
                     count = Mathf.Clamp(inventory.CountItem(grenadeItem), 0, Mathf.Max(1, maxCarry));
 
