@@ -10,20 +10,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9b5afd8b56b0e0a42a75d8df8c68bc99, type: 3}
-  m_Name: 
+  m_Name: Axe_Droid
   m_EditorClassIdentifier: Assembly-CSharp::Project.AI.EnemyDefinition
   enemyId: Axe_Droid
   displayName: Axy
   prefabFileName: Axe_Droid
   archetype: 1
-  surfaceThreatKind: 2
+  surfaceThreatKind: 3
   templatePrefab: {fileID: 6565715488936467165, guid: 89ca87f611b180d4791a7ff5f0d9ac66, type: 3}
-  lastModelSource: {fileID: 100000, guid: 425477c2818d8324da3fdbeee25845b6, type: 3}
-  meleeWeaponItem: {fileID: 11400000, guid: 4a8c1d93e7b2456f9c0e2a5d6b8f1c03, type: 2}
+  lastModelSource: {fileID: 919132149155446097, guid: 7923f7b6e8e3b6c42b5bdb2aa3e4a2f6, type: 3}
+  meleeWeaponItem: {fileID: 11400000, guid: 2e8f991038197ef498a21d87d427a3b7, type: 2}
   rangedWeaponItem: {fileID: 0}
   preferRangedWeapon: 0
   enemyCategory: 0
-  bodyType: 0
+  bodyType: 1
   overrideBrain: 0
   brainArchetype: 0
   primaryPersonality: 0
@@ -31,7 +31,7 @@ MonoBehaviour:
   brainProfileOverride: {fileID: 0}
   engagementProfileOverride: {fileID: 0}
   hitMarkProfileOverride: {fileID: 0}
-  maxHealth: 60
+  maxHealth: 250
   destroyOnDeath: 1
   destroyDelay: 3
   respawnTime: 0
@@ -82,10 +82,10 @@ MonoBehaviour:
   searchDuration: 6
   searchRadius: 4
   idleDuration: 3
-  colliderRadius: 0.45
-  colliderHeight: 2
+  colliderRadius: 0.15
+  colliderHeight: 1.88
   colliderCenter: {x: 0, y: 1, z: 0}
-  fitColliderToRenderers: 1
+  fitColliderToRenderers: 0
   idleClips: []
   walkClips: []
   runClips: []

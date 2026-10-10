@@ -23,7 +23,7 @@ MonoBehaviour:
   rangedWeaponItem: {fileID: 11400000, guid: 5791b1d40c5dda44abe9a9770f6cd1e2, type: 2}
   preferRangedWeapon: 0
   enemyCategory: 0
-  bodyType: 0
+  bodyType: 1
   overrideBrain: 0
   brainArchetype: 8
   primaryPersonality: 3
@@ -31,7 +31,7 @@ MonoBehaviour:
   brainProfileOverride: {fileID: 11400000, guid: 68b6602a08614823b7a96c2719601550, type: 2}
   engagementProfileOverride: {fileID: 11400000, guid: 0245e8aa0d6046a090840ff8ec5ad0dd, type: 2}
   hitMarkProfileOverride: {fileID: 11400000, guid: 1feb730fed13f15498d825dcf6cf6348, type: 2}
-  maxHealth: 400
+  maxHealth: 200
   destroyOnDeath: 1
   destroyDelay: 3
   respawnTime: 0
