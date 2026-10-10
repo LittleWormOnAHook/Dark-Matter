@@ -22,6 +22,8 @@ namespace Project.EditorTools.GenesisStudio
 
         readonly PlayerPrefabCreatorPanelState playerState = new PlayerPrefabCreatorPanelState();
         readonly EnemyHumanoidPrefabCreatorPanelState enemyState = new EnemyHumanoidPrefabCreatorPanelState();
+        readonly DMStudioCharacterCreatorPrefabList playerPrefabList = new DMStudioCharacterCreatorPrefabList(DMStudioCharacterCreatorPrefabList.ListKind.Player);
+        readonly DMStudioCharacterCreatorPrefabList enemyPrefabList = new DMStudioCharacterCreatorPrefabList(DMStudioCharacterCreatorPrefabList.ListKind.Enemy);
 
         int selectedPlayerDef = -1;
         int selectedEnemyDef = -1;
@@ -75,6 +77,7 @@ namespace Project.EditorTools.GenesisStudio
 
         void DrawPlayerPage()
         {
+            playerPrefabList.Draw();
             DrawPlayerDefinitionPicker();
             DMCharacterCreatorSharedUi.DrawWrappedHelpBox(
                 "Clone Player_Invector to a new prefab, paste a Humanoid Meshy FBX. " +
@@ -133,6 +136,7 @@ namespace Project.EditorTools.GenesisStudio
 
         void DrawEnemyPage()
         {
+            enemyPrefabList.Draw();
             DrawEnemyDefinitionPicker();
             EnemyPrefabCreatorPanel.DrawIntroHelpBox(compact: true);
 
@@ -172,6 +176,8 @@ namespace Project.EditorTools.GenesisStudio
             {
                 using (DMStudioStyles.BeginProfileInspector(StudioLabelWidth))
                 {
+                    EnemyPrefabCreatorPanel.DrawKindAndBrain(workingEnemyDef);
+                    EditorGUILayout.Space(4f);
                     EnemyPrefabCreatorPanel.DrawHumanoidWeapons(workingEnemyDef);
                     EnemyPrefabCreatorPanel.DrawBehaviorPreset(workingEnemyDef);
                     EnemyPrefabCreatorPanel.DrawMovementAndBehavior(panelCtx);
@@ -487,7 +493,8 @@ namespace Project.EditorTools.GenesisStudio
                 Definition = workingEnemyDef,
                 DefinitionAssetFileName = enemyDefinitionAssetFileName,
                 PatrolPathCreator = patrolPathCreator,
-                ShowDefinitionAssetName = true,
+                ShowDefinitionAssetName = false,
+                ShowArchetype = false,
                 ApplyPatrolPath = () =>
                 {
                     if (patrolPathCreator == null)
@@ -692,18 +699,23 @@ namespace Project.EditorTools.GenesisStudio
 
         void StartNewEnemyCustom()
         {
+            // Blank slate: nothing is copied from the previously selected enemy (name, id, model, weapons, capsule).
             selectedEnemyDef = -1;
+            string unique = DMCharacterCreatorDefinitionLink.MakeUniqueName("NewEnemy");
             workingEnemyDef = ScriptableObject.CreateInstance<EnemyDefinition>();
-            workingEnemyDef.enemyId = EnemyPrefabBuilder.SanitizeFileName(enemyState.prefabFileName, "new_enemy");
-            workingEnemyDef.displayName = enemyState.displayName;
-            workingEnemyDef.prefabFileName = enemyState.prefabFileName;
+            workingEnemyDef.name = string.Empty;
+            workingEnemyDef.enemyId = unique.ToLowerInvariant();
+            workingEnemyDef.displayName = "New Enemy";
+            workingEnemyDef.prefabFileName = unique;
             workingEnemyDef.archetype = EnemyArchetype.HumanoidInvector;
             workingEnemyDef.visualChildName = "Visual";
+            workingEnemyDef.templatePrefab = null;
+            workingEnemyDef.lastModelSource = null;
             workingEnemyDef.ApplyBehaviorPreset(EnemyBehaviorPreset.AggressiveHunter);
             enemyDefinitionAssetFileName = DMCharacterCreatorDefinitionSidebar.SuggestEnemyDefinitionAssetFileName(
-                enemyState.prefabFileName,
+                workingEnemyDef.prefabFileName,
                 workingEnemyDef.enemyId,
-                enemyState.displayName);
+                workingEnemyDef.displayName);
             enemyState.definition = workingEnemyDef;
             SyncEnemyStateFromWorking();
         }
