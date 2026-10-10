@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using Project.Combat;
+using Project.EditorTools;
 using Project.UI;
 using UnityEditor;
 using UnityEngine;
@@ -35,6 +36,8 @@ namespace Project.EditorTools.GenesisStudio
             ScriptableObject asset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(assetPath);
             if (asset == null)
             {
+                var blockers = DMStudioActionValidation.CollectMissingProfileAsset(assetPath, "Profile asset");
+                DMStudioActionValidation.DrawBlockersHelpBox(blockers, "edit this profile");
                 EditorGUILayout.HelpBox($"Missing profile at:\n{assetPath}", MessageType.Error);
                 if (GUILayout.Button("Ping Expected Path"))
                     Debug.Log($"Expected: {assetPath}");
@@ -186,6 +189,10 @@ namespace Project.EditorTools.GenesisStudio
                 return;
 
             EditorGUILayout.Space(8f);
+            DMAmmoFxProfile selectedProfile = Selection.activeObject as DMAmmoFxProfile;
+            var copyBlockers = DMStudioActionValidation.CollectAmmoCopyBlockers(profile, selectedProfile);
+            DMStudioActionValidation.DrawBlockersHelpBox(copyBlockers, "Copy From Selected Profile");
+
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("Seed Hit-Mark Rows From Catalog"))
             {
@@ -194,15 +201,17 @@ namespace Project.EditorTools.GenesisStudio
                 EditorUtility.SetDirty(profile);
             }
 
-            DMAmmoFxProfile selectedProfile = Selection.activeObject as DMAmmoFxProfile;
-            using (new EditorGUI.DisabledScope(selectedProfile == null || selectedProfile == profile))
+            if (GUILayout.Button("Copy From Selected Profile"))
             {
-                if (GUILayout.Button("Copy From Selected Profile"))
-                {
-                    Undo.RecordObject(profile, "Copy ammo profile");
-                    profile.CopyFrom(selectedProfile);
-                    EditorUtility.SetDirty(profile);
-                }
+                DMStudioActionValidation.TryRunPrimaryAction(
+                    DMStudioActionValidation.GenesisStudioDialogTitle,
+                    copyBlockers,
+                    () =>
+                    {
+                        Undo.RecordObject(profile, "Copy ammo profile");
+                        profile.CopyFrom(selectedProfile);
+                        EditorUtility.SetDirty(profile);
+                    });
             }
 
             EditorGUILayout.EndHorizontal();

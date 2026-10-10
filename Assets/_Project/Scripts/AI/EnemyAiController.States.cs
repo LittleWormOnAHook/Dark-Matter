@@ -420,8 +420,9 @@ namespace Project.AI
                 float effectiveRange = combat.ResolveEffectiveAttackRange(target);
                 float creepRing = Mathf.Min(standoff, effectiveRange * 0.84f);
                 float creepSpeed = walkSpeed * 0.62f;
-                if (combat.WantsMeleeReposition)
-                    creepSpeed = walkSpeed * 0.92f;
+                bool missRecovery = combat.WantsForcedMissStep || (brain != null && brain.IsMissRecoveryActive);
+                if (combat.WantsMeleeReposition || missRecovery)
+                    creepSpeed = walkSpeed * combat.ResolveMissStepSpeedMultiplier();
 
                 if (combat.IsAttacking)
                 {
@@ -432,9 +433,10 @@ namespace Project.AI
                 }
                 else
                 {
-                    MoveTowardsCombatRing(target, creepSpeed, creepRing);
-                    if (combat.WantsMeleeReposition && distanceToTarget > effectiveRange * 0.7f)
-                        MoveTowards(target.position, creepSpeed * 0.85f, effectiveRange * 0.58f);
+                    float stepStop = missRecovery ? combat.ResolveMissStepStopDistance(target) : effectiveRange * 0.58f;
+                    MoveTowardsCombatRing(target, creepSpeed, missRecovery ? Mathf.Min(creepRing, stepStop) : creepRing);
+                    if ((combat.WantsMeleeReposition && distanceToTarget > effectiveRange * 0.7f) || missRecovery)
+                        MoveTowards(target.position, creepSpeed * 0.85f, stepStop);
                 }
 
                 FaceTowards(target.position);

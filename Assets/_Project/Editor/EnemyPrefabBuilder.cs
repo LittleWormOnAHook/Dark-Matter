@@ -33,18 +33,13 @@ namespace Project.EditorTools
             if (definition.archetype == EnemyArchetype.HumanoidInvector)
             {
                 GameObject visual = ResolveVisualSourceForBuild(sourceMode, sourceObject);
-                if (File.Exists(prefabPath))
-                {
-                    if (!EnemyInvectorSetupUtility.RebuildHumanoidEnemyAtPath(prefabPath, definition, visual))
-                        return null;
-
-                    return AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
-                }
-
-                return EnemyInvectorSetupUtility.BuildHumanoidEnemyPrefab(
-                    definition,
+                GameObject built = EnemyPrefabVisualSetupUtility.CreateOrRebuildEnemyPrefab(
+                    prefabPath,
                     visual,
-                    prefabPath);
+                    definition.visualChildName,
+                    definition.templatePrefab,
+                    definition);
+                return built;
             }
 
             GameObject root = CreateVisualRoot(definition, sourceMode, sourceObject);

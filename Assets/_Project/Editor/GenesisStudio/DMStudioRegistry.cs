@@ -24,7 +24,8 @@ namespace Project.EditorTools.GenesisStudio
         BuildingLibrary = 15,
         EnvironmentStrata = 16,
         CombatPlanPlaceholder = 17,
-        EnemyTypesTable = 18
+        EnemyTypesTable = 18,
+        CharacterCreatorCombined = 19
     }
 
     public readonly struct DMStudioSubtab
@@ -172,10 +173,25 @@ namespace Project.EditorTools.GenesisStudio
                     "player",
                     "Player",
                     "◆",
-                    "Climb, dash, jetpack, jump/landing, footsteps, camera, and live player wiring.",
+                    "Player/enemy prefab authoring, climb, dash, jetpack, jump/landing, footsteps, camera, and live player wiring.",
                     FromHex("#C02E7A"),
                     new[]
                     {
+                        new DMStudioSubtab(
+                            "character-creator-player",
+                            "Player Prefab",
+                            "Clone Player_Invector, paste a Humanoid Meshy FBX, and save a PlayerVisualDefinition.",
+                            DMStudioPanelMode.CharacterCreatorCombined),
+                        new DMStudioSubtab(
+                            "character-creator-enemy",
+                            "Enemy Prefab",
+                            "Clone HumanoidEnemy_Invector, paste mesh, then tune combat, AI, loot, health, and senses.",
+                            DMStudioPanelMode.CharacterCreatorCombined),
+                        new DMStudioSubtab(
+                            "character-creator-definitions",
+                            "Definitions",
+                            "Inspect saved PlayerVisualDefinition and EnemyDefinition assets. Custom starts an unsaved working copy.",
+                            DMStudioPanelMode.CharacterCreatorCombined),
                         new DMStudioSubtab(
                             "climb",
                             "Climb",

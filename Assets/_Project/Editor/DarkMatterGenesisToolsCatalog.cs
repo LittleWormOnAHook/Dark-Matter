@@ -87,7 +87,7 @@ namespace Project.EditorTools
                 "Combat",
                 "Enemy and weapon prefab tools. One Enemy Prefab Creator entry.",
                 false,
-                new DMToolsEntry(DarkMatterGenesisEditorMenus.EnemyPrefabCreator, "Create or rebuild humanoid and generic enemy prefabs"),
+                new DMToolsEntry(DarkMatterGenesisEditorMenus.EnemyPrefabCreator, "Clone HumanoidEnemy_Invector, paste Meshy mesh, AI/loot; Genesis Studio → Player → Enemy Prefab"),
                 new DMToolsEntry(DarkMatterGenesisEditorMenus.Combat + "Place Test Enemy", "Place HumanoidEnemy_Invector in the scene"),
                 new DMToolsEntry(DarkMatterGenesisEditorMenus.Combat + "Combat Test Dummy", "Place combat training dummy"),
                 new DMToolsEntry(DarkMatterGenesisEditorMenus.Combat + "Update All Enemy Prefabs And Scene", "Apply loot and disintegration to enemies"),

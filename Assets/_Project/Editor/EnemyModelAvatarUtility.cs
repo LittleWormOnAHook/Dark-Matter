@@ -153,9 +153,10 @@ namespace Project.EditorTools
         public static bool TryPrepareModelImport(string assetPath, out string message)
         {
             message = "No changes.";
+            assetPath = ResolveModelImporterPath(assetPath, out string resolveError);
             if (string.IsNullOrWhiteSpace(assetPath))
             {
-                message = "Asset path is empty.";
+                message = string.IsNullOrEmpty(resolveError) ? "Asset path is empty." : resolveError;
                 return false;
             }
 
@@ -199,7 +200,8 @@ namespace Project.EditorTools
 
             if (!dirty)
             {
-                message = $"Import OK ({importer.animationType}, fileScale={importer.fileScale}, useFileScale={importer.useFileScale}).";
+                message =
+                    $"Import OK ({importer.animationType}, fileScale={importer.fileScale}, useFileScale={importer.useFileScale}). {assetPath}";
                 return true;
             }
 
@@ -235,6 +237,15 @@ namespace Project.EditorTools
 
         public static string FindPrimaryModelAssetPath(GameObject root)
         {
+            return ResolvePreferredModelAssetPath(root);
+        }
+
+        /// <summary>
+        /// Prefers the source FBX over wrapper prefabs (Space Lisa, SpaceSuitGirl, Invector outputs).
+        /// Stock VBOT / 3D Model meshes are skipped so a dirty Lisa_Hybrid does not resolve to the template body.
+        /// </summary>
+        public static string ResolvePreferredModelAssetPath(GameObject root)
+        {
             if (root == null)
                 return null;
 
@@ -242,15 +253,77 @@ namespace Project.EditorTools
             if (IsModelAssetPath(direct))
                 return direct;
 
+            Transform visual = root.transform.Find("Visual");
+            if (visual != null)
+            {
+                string fromVisual = FindModelPathFromRenderers(visual.gameObject, skipStockInvectorBody: false);
+                if (IsModelAssetPath(fromVisual))
+                    return fromVisual;
+            }
+
+            string fromCustom = FindModelPathFromRenderers(root, skipStockInvectorBody: true);
+            if (IsModelAssetPath(fromCustom))
+                return fromCustom;
+
+            Animator animator = root.GetComponentInChildren<Animator>(true);
+            if (animator != null && animator.avatar != null)
+            {
+                string avatarPath = AssetDatabase.GetAssetPath(animator.avatar);
+                if (IsModelAssetPath(avatarPath) && !IsStockInvectorModelPath(avatarPath))
+                    return avatarPath;
+            }
+
+            return null;
+        }
+
+        public static GameObject ResolvePreferredVisualModel(GameObject assigned)
+        {
+            if (assigned == null)
+                return null;
+
+            string path = ResolvePreferredModelAssetPath(assigned);
+            if (!IsModelAssetPath(path))
+                return assigned;
+
+            GameObject model = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            return model != null ? model : assigned;
+        }
+
+        public static bool LooksLikeInvectorCharacterPrefab(GameObject root)
+        {
+            if (root == null)
+                return false;
+
+            string name = root.name;
+            if (name.Equals("HumanoidEnemy_Invector", System.StringComparison.OrdinalIgnoreCase) ||
+                name.Equals("Player_Invector", System.StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            bool hasStockModel = root.transform.Find("3D Model") != null;
+            bool hasBodySnaps = root.transform.Find("BodySnaps") != null ||
+                                root.transform.Find("InvectorComponents/BodySnaps") != null;
+            if (hasStockModel && hasBodySnaps)
+                return true;
+
+            return root.GetComponent<global::Invector.vCharacterController.vThirdPersonController>() != null;
+        }
+
+        static string FindModelPathFromRenderers(GameObject root, bool skipStockInvectorBody)
+        {
+            if (root == null)
+                return null;
+
             SkinnedMeshRenderer[] skinnedRenderers = root.GetComponentsInChildren<SkinnedMeshRenderer>(true);
             for (int i = 0; i < skinnedRenderers.Length; i++)
             {
                 SkinnedMeshRenderer renderer = skinnedRenderers[i];
                 if (renderer == null || renderer.sharedMesh == null)
                     continue;
+                if (skipStockInvectorBody && IsStockInvectorBodyRenderer(renderer.transform))
+                    continue;
 
                 string path = AssetDatabase.GetAssetPath(renderer.sharedMesh);
-                if (IsModelAssetPath(path))
+                if (IsModelAssetPath(path) && !IsStockInvectorModelPath(path))
                     return path;
             }
 
@@ -260,21 +333,44 @@ namespace Project.EditorTools
                 MeshFilter filter = meshFilters[i];
                 if (filter == null || filter.sharedMesh == null)
                     continue;
+                if (skipStockInvectorBody && IsStockInvectorBodyRenderer(filter.transform))
+                    continue;
 
                 string path = AssetDatabase.GetAssetPath(filter.sharedMesh);
-                if (IsModelAssetPath(path))
+                if (IsModelAssetPath(path) && !IsStockInvectorModelPath(path))
                     return path;
             }
 
-            Animator animator = root.GetComponentInChildren<Animator>(true);
-            if (animator != null && animator.avatar != null)
+            return null;
+        }
+
+        static bool IsStockInvectorBodyRenderer(Transform node)
+        {
+            Transform cur = node;
+            while (cur != null)
             {
-                string avatarPath = AssetDatabase.GetAssetPath(animator.avatar);
-                if (IsModelAssetPath(avatarPath))
-                    return avatarPath;
+                string name = cur.name;
+                if (name.Equals("Visual", System.StringComparison.Ordinal))
+                    return false;
+                if (name.Equals("3D Model", System.StringComparison.Ordinal))
+                    return true;
+                if (name.StartsWith("VBOT_", System.StringComparison.OrdinalIgnoreCase) ||
+                    name.StartsWith("Mesh-LOD", System.StringComparison.OrdinalIgnoreCase) ||
+                    name.StartsWith("Mesh_LOD", System.StringComparison.OrdinalIgnoreCase))
+                    return true;
+                cur = cur.parent;
             }
 
-            return null;
+            return false;
+        }
+
+        static bool IsStockInvectorModelPath(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return false;
+
+            string normalized = path.Replace('\\', '/');
+            return normalized.IndexOf("VBOT", System.StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         public static Avatar LoadAvatarFromAssetPath(string assetPath)
@@ -344,6 +440,115 @@ namespace Project.EditorTools
                 return "Generic rig — use Enemy Prefab Creator LegacyCreature + Animation Pipeline, or force Humanoid on the FBX Rig tab for players.";
 
             return "Model ready for Prefab Creator.";
+        }
+
+        public static bool TryForceHumanoidImport(string assetPath, out string message)
+        {
+            message = "No changes.";
+            assetPath = ResolveModelImporterPath(assetPath, out string resolveError);
+            if (string.IsNullOrWhiteSpace(assetPath))
+            {
+                message = string.IsNullOrEmpty(resolveError) ? "Asset path is empty." : resolveError;
+                return false;
+            }
+
+            ModelImporter importer = AssetImporter.GetAtPath(assetPath) as ModelImporter;
+            if (importer == null)
+            {
+                message = $"Not a model asset: {assetPath}";
+                return false;
+            }
+
+            importer.animationType = ModelImporterAnimationType.Human;
+            importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
+            importer.SaveAndReimport();
+            message = $"Set Animation Type to Humanoid and reimported. {assetPath}";
+            return true;
+        }
+
+        public static bool IsReadyForHumanoidPaste(GameObject model)
+        {
+            ModelInspection inspection = Inspect(model);
+            return inspection.IsHumanoidAvatar && inspection.IsAvatarValid;
+        }
+
+        /// <summary>
+        /// Prepares FBX import when needed. Returns true when model is valid for humanoid avatar paste.
+        /// </summary>
+        public static bool EnsureRigReadyForHumanoidPaste(
+            GameObject model,
+            bool autoPrepareImport,
+            bool allowForceHumanoid,
+            out GameObject resolvedModel,
+            out string message)
+        {
+            resolvedModel = model;
+            message = string.Empty;
+            if (model == null)
+            {
+                message = "No model assigned.";
+                return false;
+            }
+
+            GameObject preferred = ResolvePreferredVisualModel(model);
+            if (preferred != null)
+            {
+                resolvedModel = preferred;
+                model = preferred;
+            }
+
+            if (IsReadyForHumanoidPaste(model))
+                return true;
+
+            string path = ResolvePreferredModelAssetPath(model);
+            if (string.IsNullOrEmpty(path))
+                path = AssetDatabase.GetAssetPath(model);
+
+            if (autoPrepareImport && !string.IsNullOrEmpty(path))
+            {
+                TryPrepareModelImport(path, out message);
+                resolvedModel = AssetDatabase.LoadAssetAtPath<GameObject>(path) ?? model;
+                if (IsReadyForHumanoidPaste(resolvedModel))
+                    return true;
+            }
+
+            ModelInspection inspection = Inspect(resolvedModel);
+            if (inspection.AnimationType == ModelImporterAnimationType.Generic && allowForceHumanoid &&
+                !string.IsNullOrEmpty(path))
+            {
+                TryForceHumanoidImport(path, out message);
+                resolvedModel = AssetDatabase.LoadAssetAtPath<GameObject>(path) ?? resolvedModel;
+                if (IsReadyForHumanoidPaste(resolvedModel))
+                    return true;
+            }
+
+            message = string.IsNullOrEmpty(message)
+                ? BuildRecommendation(Inspect(resolvedModel))
+                : message;
+            return IsReadyForHumanoidPaste(resolvedModel);
+        }
+
+        static string ResolveModelImporterPath(string assetPath, out string error)
+        {
+            error = null;
+            if (IsModelAssetPath(assetPath))
+                return assetPath;
+
+            if (string.IsNullOrWhiteSpace(assetPath))
+            {
+                error = "Asset path is empty.";
+                return null;
+            }
+
+            GameObject assigned = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+            string resolved = ResolvePreferredModelAssetPath(assigned);
+            if (IsModelAssetPath(resolved))
+                return resolved;
+
+            error =
+                $"Could not resolve an FBX/model asset from '{assetPath}'. " +
+                "Assign Space_suit.fbx (or a prefab whose skinned meshes reference that FBX).";
+            return null;
         }
     }
 }

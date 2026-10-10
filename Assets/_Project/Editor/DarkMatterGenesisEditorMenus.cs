@@ -90,6 +90,7 @@ namespace Project.EditorTools
         public const string BlueprintCraftingManager = Crafting + "Blueprint and Crafting Manager";
         public const string Quests = Root + "Quests/";
         public const string Combat = Root + "Combat/";
+        public const string CombatExperiment = Combat + "Experiment/";
         public const string CombatAnimations = Combat + "Animations/";
         public const string RebuildEnemyControllerFromShooterMelee = CombatAnimations + "Rebuild Selected Controller from ShooterMelee Base";
         public const string RepairAllHumanoidCombatPrefabs = Combat + "Repair All Humanoid Combat Prefabs";
@@ -147,7 +148,9 @@ namespace Project.EditorTools
         public const string SaveWalkerDrillPrefab = World + "Save Walker Drill Prefab";
         public const string BuildLaserBurnMarkPrefab = Combat + "Build Laser Burn Mark Prefab";
         public const string AuditConsole = Diagnostics + "Audit Console";
+        public const string AuditConsoleCopyReport = AuditConsole + " (Copy Report)";
         public const string AuditResourcesPaths = Diagnostics + "Audit Resources Paths";
+        public const string AuditResourcesPathsCopy = AuditResourcesPaths + " (Copy)";
         public const string DebugToggleSulfurCrisisHud = Debug + "Toggle Sulfur Crisis HUD";
         public const string DebugShowEchoRescueReveal = Debug + "Show Echo Rescue Reveal (Test)";
         public const string DebugSpawnTestEchoSignal = Debug + "Spawn Test Echo Signal";

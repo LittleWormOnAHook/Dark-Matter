@@ -229,7 +229,7 @@
 .genesis-root Button.g-subtab:hover { background-color: var(--g-bg3); color: var(--g-text); border-bottom-color: var(--g-line); }
 .genesis-root Button.g-subtab--on, .genesis-root Button.g-subtab--on:hover { background-color: var(--g-bg3); color: var(--g-text); border-bottom-color: var(--g-accent); }
 .genesis-root .g-studio__desc { color: var(--g-dim); font-size: 11px; padding: 6px 12px; white-space: normal; background-color: var(--g-bg1); }
-.genesis-root .g-studio__content { flex-grow: 1; background-color: var(--g-bg0); padding: 6px 8px; }
+.genesis-root .g-studio__content { flex-grow: 1; background-color: var(--g-bg0); padding: 6px 0 6px 0; }
 .genesis-root .g-studio__footer { height: 32px; }
 .genesis-root .g-studio__footer .g-studio__tip { flex-grow: 1; flex-shrink: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 

@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using Project.EditorTools;
 using Project.UI;
 using UnityEditor;
 using UnityEngine;
@@ -19,6 +20,8 @@ namespace Project.EditorTools.GenesisStudio
             Object asset = AssetDatabase.LoadAssetAtPath<Object>(assetPath);
             if (asset == null)
             {
+                var blockers = DMStudioActionValidation.CollectMissingProfileAsset(assetPath, "Profile asset");
+                DMStudioActionValidation.DrawBlockersHelpBox(blockers, "edit or save this profile");
                 EditorGUILayout.HelpBox($"Missing profile at:\n{assetPath}", MessageType.Error);
                 return;
             }

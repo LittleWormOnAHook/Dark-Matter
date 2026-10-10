@@ -26,6 +26,7 @@ namespace Project.AI
         private float nextDefendAllowed;
         private float retreatUntil;
         private float nextRetreatAllowed;
+        private float missRecoveryUntil;
         private bool defendRequested;
         private bool defendPrefersBlock;
         private DMBrainAction currentAction = DMBrainAction.None;
@@ -41,6 +42,7 @@ namespace Project.AI
         public DMBrainAction CurrentAction => currentAction;
         public DMEnemyCondition Condition => condition;
         public bool IsRetreating => Time.time < retreatUntil;
+        public bool IsMissRecoveryActive => Time.time < missRecoveryUntil;
         public string LastReason => lastReason;
 
         public DM_EnemyBrainProfile ProfileOverride
@@ -251,6 +253,17 @@ namespace Project.AI
         public void CancelRetreat()
         {
             retreatUntil = 0f;
+        }
+
+        /// <summary>Engager stepped in after an intentional melee miss (Combat Plan spacing).</summary>
+        public void NotifyIntentionalMeleeMiss(float stepDuration)
+        {
+            if (stepDuration <= 0f)
+                return;
+
+            missRecoveryUntil = Time.time + stepDuration;
+            currentAction = DMBrainAction.Press;
+            lastReason = "intentional miss — step in";
         }
 
         public string BuildDebugReport()

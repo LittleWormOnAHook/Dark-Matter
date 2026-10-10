@@ -62,7 +62,7 @@ Canonical paths live in `Assets/_Project/Editor/ProjectAssetPaths.cs`.
 | Folder | Role today |
 |--------|------------|
 | `Assets/_Project/Models/` | Source kits: Meshy FBX, Tripo convert FBX, jetpack, drill, weapons |
-| `Assets/_Project/Prefabs/Models/` | **Duplicate** Meshy trees (same filenames; called out in `REPAIR_LOG_2026-08-22.md`) |
+| `Assets/_Project/Prefabs/Models/` | **Duplicate** Meshy trees (same filenames; see `Archive/Historical_Engineering_Notes.md` §2 / `Archive/REPAIR_LOG_2026-08-22.md`) |
 | `Assets/_Project/Prefabs/{Combat,Environment,Weapons,Players,Creatures}/` | Game-ready prefabs |
 | `Assets/_Project/Meshes/` | Sparse mesh extras |
 | `Assets/_Project/Materials/` | Project materials (creatures, etc.) |

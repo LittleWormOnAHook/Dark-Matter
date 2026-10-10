@@ -1,0 +1,48 @@
+---
+description: Dark Matter Genesis Unity editor menus — alphabetical sibling order and priority constants
+globs: Assets/_Project/Editor/**/*.cs
+alwaysApply: false
+---
+
+# Editor menu tools — alphabetical order
+
+When adding or moving a **Tools → Dark Matter Genesis** menu item:
+
+## Required
+
+1. **Menu path** — Use **`DarkMatterGenesisEditorMenus.Root`** only (`Tools/Dark Matter Genesis/` — **no colon**). Do not register a second `Tools/Dark Matter: Genesis/` root. Add a new `public const string` in `DarkMatterGenesisEditorMenus.cs` if you introduce a new submenu folder.
+2. **Priority** — Register a **`DarkMatterGenesisMenuPriority`** constant (`Assets/_Project/Editor/DarkMatterGenesisMenuPriority.cs`) and pass it as the third argument to `[MenuItem(..., false, priority)]`.
+3. **Alphabetical siblings** — At **each folder level**, menu items must sort **A → Z** by their **leaf label** (the last path segment). Assign priorities so ascending priority matches alphabetical order (project uses **`Step = 11`** between siblings unless an existing block already defines spacing — match the surrounding group).
+4. **Top-level `Tools/Dark Matter Genesis/` folders** — Submenu position follows item priorities under that folder; a few high-priority leaves can drag the whole folder down. Keep each top-level folder in a tight band (e.g. **Combat** uses shared `Tools_Dark_Matter_Genesis_Combat_Menu_Band = 605` after **Climb** and before **Companion Prefab Tool**). Use one shared priority for all items in that folder when needed, and rely on Unity’s same-priority alphabetical sort for A→Z inside the folder.
+5. **Naming** — Priority constant name mirrors the path: `Tools_Dark_Matter_Genesis_<Section>_..._<Leaf_Words>`.
+
+## Example
+
+```csharp
+// DarkMatterGenesisEditorMenus.cs
+public const string CombatExperiment = Combat + "Experiment/";
+
+// DarkMatterGenesisMenuPriority.cs (Combat folder band — A→Z via same priority + Unity tie-break)
+public const int Tools_Dark_Matter_Genesis_Combat_Menu_Band = 605;
+public const int Tools_Dark_Matter_Genesis_Combat_Experiment_Build_Carve_Experiment_Ammo = Tools_Dark_Matter_Genesis_Combat_Menu_Band;
+
+// Your tool
+[MenuItem(DarkMatterGenesisEditorMenus.CombatExperiment + "Build Carve Experiment Ammo", false,
+    DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Experiment_Build_Carve_Experiment_Ammo)]
+public static void BuildCarveExperimentAmmo() { ... }
+```
+
+## Do not
+
+- Add `[MenuItem("Tools/Dark Matter Genesis/...")]` string literals without a **priority constant** when other tools in that folder use priorities.
+- Insert a new item without **re-checking A→Z** for all siblings in that folder (renumber priorities if needed).
+- Rely on Unity’s default priority `0` for one item in a group where siblings use explicit priorities (it will jump to the top).
+
+## Checklist (new tool)
+
+- [ ] Leaf label fits A→Z among siblings at that menu path  
+- [ ] `DarkMatterGenesisEditorMenus` path const (if new submenu)  
+- [ ] `DarkMatterGenesisMenuPriority` entry in alphabetical position  
+- [ ] `[MenuItem(..., false, priority)]` on the handler  
+
+Reference: file header comment on `DarkMatterGenesisMenuPriority` — *“siblings A→Z at each folder level”*.

@@ -65,6 +65,12 @@ namespace Project.AI
         public SurfaceThreatKind surfaceThreatKind = SurfaceThreatKind.Lifeform;
 
         [Header("Humanoid Invector")]
+        [Tooltip("Optional override of the clone template. Leave empty to use HumanoidEnemy_Invector.prefab.")]
+        public GameObject templatePrefab;
+
+        [Tooltip("Last Model FBX / prefab applied (reference only; re-assign in the creator to apply).")]
+        public GameObject lastModelSource;
+
         public ItemData meleeWeaponItem;
         public ItemData rangedWeaponItem;
         public bool preferRangedWeapon;
@@ -199,13 +205,13 @@ namespace Project.AI
         public bool buildAnimatorFromClips = true;
         public bool addEnemyAnimationController = true;
         public bool lockVisualRootPosition;
-        public string visualChildName = "scene";
+        public string visualChildName = "Visual";
 
         [Header("Loot")]
         public bool enableLoot = true;
 
         [Header("Loot AC")]
-        [Tooltip("Aether Credits (AC) range dropped by this enemy.")]
+        [Tooltip("UEA Credits (UEA) range dropped by this enemy.")]
         [FormerlySerializedAs("piCoinsMin")]
         public int acDropMin = 1;
         [FormerlySerializedAs("piCoinsMax")]

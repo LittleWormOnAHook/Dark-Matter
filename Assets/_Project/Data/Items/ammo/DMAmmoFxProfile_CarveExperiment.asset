@@ -1,0 +1,183 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5f7ef1b383d14f439236ef95cce9326, type: 3}
+  m_Name: DMAmmoFxProfile_CarveExperiment
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.Experiment.Carve.DMCarveExperimentAmmoProfile
+  itemName: Carve Experiment
+  icon: {fileID: 21300000, guid: 91e684c9c8589d843a4ea31f57597823, type: 3}
+  worldPrefab: {fileID: 6153011908416227541, guid: de5e2a9dc3c58354b96b11abb005ec9e, type: 3}
+  maxStack: 500
+  stableItemId: carve0exp3d90e2b2add51ee4ebb1875ec5
+  itemType: 4
+  deployedPrefab: {fileID: 0}
+  weaponGrip: 0
+  heldPrefab: {fileID: 0}
+  equipSocketName: RightHand
+  heldLocalPosition: {x: 0, y: 0, z: 0}
+  heldLocalEuler: {x: 0, y: 0, z: 0}
+  useHeldLocalRotation: 0
+  heldLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  heldLocalScale: {x: 1, y: 1, z: 1}
+  swingEulerAngles: {x: -120, y: 0, z: 0}
+  sheatheSocketName: Spine
+  sheathedLocalPosition: {x: 0.02, y: 0.18, z: -0.22}
+  sheathedLocalEuler: {x: 75, y: 90, z: 90}
+  useSheathedLocalRotation: 0
+  sheathedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  sheathedLocalScale: {x: 1, y: 1, z: 1}
+  invectorWeaponPrefab: {fileID: 0}
+  invectorWeaponId: 
+  meleeDamage: 10
+  meleeDamageRandomRange: 3
+  criticalChance: 0.1
+  criticalDamageMultiplier: 2
+  meleeRange: 2.2
+  meleeCooldown: 0.65
+  attackAnimationSpeed: 0
+  meleeStaminaCost: 0
+  meleeKnockback: 0
+  gatherPower: 1
+  attackTrigger: Attack
+  rangedDamage: 8
+  rangedDamageRandomRange: 4
+  rangedRange: 120
+  projectileSpeed: 200
+  projectileSpreadDegrees: 0.8
+  weaponAccuracy: 92
+  closeRangeFullAccuracyDistance: 12
+  closeRangeSpreadScale: 0.2
+  recoilVertical: 0.5
+  recoilHorizontal: 0.5
+  recoilFireRateScale: 4.5
+  fireRate: 6
+  shotsPerBurst: 1
+  burstFireRate: 10
+  magazineSize: 30
+  reloadTimeSeconds: 1.8
+  defaultAmmoType: 0
+  compatibleAmmoTypes: 00000000
+  defaultAmmoItem: {fileID: 0}
+  grantRandomStartingAmmo: 0
+  startingAmmoMin: 1
+  startingAmmoMax: 12
+  projectilePrefab: {fileID: 43210292418809407, guid: 677c96554679d064ab9d4df997baff2c, type: 3}
+  muzzleSocketName: Muzzle
+  aimFovMultiplier: 0.78
+  hipFireMaxDeviationDegrees: 15
+  hipFireSpreadMultiplier: 1
+  useAimHeldGrip: 0
+  aimHeldLocalPosition: {x: 0, y: 0, z: 0}
+  aimHeldLocalEuler: {x: 0, y: 0, z: 0}
+  useAimHeldLocalRotation: 0
+  aimHeldLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  aimHeldLocalScale: {x: 1, y: 1, z: 1}
+  ammoType: 0
+  ammoPerPickup: 200
+  ammoPickupGrant: 100
+  ammoRecoilProfile:
+    pistolCameraVertical: 0
+    pistolCameraHorizontal: 0
+    pistolAnimationWeight: 0
+    rifleCameraVertical: 0
+    rifleCameraHorizontal: 0
+    rifleAnimationWeight: 0
+  isHitscanBeam: 0
+  projectileGravityScale: 0
+  splashRadius: 0
+  splashDamageFalloff: 0.25
+  fxProfile: {fileID: 11400000}
+  muzzleFlashPrefab: {fileID: 1250043994138880037, guid: 66dd72922f471824ab8c130fe448726b, type: 3}
+  tracerPrefab: {fileID: 3975566894687731992, guid: 16b91d7a47f914f45a59f733295e2b23, type: 3}
+  impactVfxPrefab: {fileID: 0}
+  beamVfxPrefab: {fileID: 0}
+  isMiningTool: 0
+  miningPassesRequired: 2
+  miningDropMin: 1
+  miningDropMax: 5
+  miningLockBreakDegrees: 30
+  miningPassDuration: 1.25
+  miningChunkVfxPrefab: {fileID: 0}
+  miningChargeDrainPerSecond: 4
+  miningChargePerPlasmaFuel: 50
+  fireSound: {fileID: 8300000, guid: 588355d79c1e05645bd2a3c671f004e4, type: 3}
+  projectileTravelSound: {fileID: 0}
+  isContinuousLaser: 0
+  continuousLoopSound: {fileID: 0}
+  continuousStartSound: {fileID: 0}
+  continuousStopSound: {fileID: 0}
+  miningScanLoopSound: {fileID: 0}
+  miningScanSuccessSound: {fileID: 0}
+  miningScanDeniedSound: {fileID: 0}
+  statusEffectOverride: 0
+  statusEffectDamagePerTick: 0
+  statusEffectTickInterval: 1
+  statusEffectDuration: 0
+  statusEffectVfxPrefab: {fileID: 0}
+  componentCategory: 0
+  toolType: 0
+  toolRange: 8
+  scanRange: 24
+  opticsZoomFov: 38
+  opticsMinZoomFov: 18
+  opticsMaxZoomFov: 55
+  healthRestore: 0
+  energyRestore: 0
+  staminaRestore: 0
+  oxygenRestore: 0
+  isAcInfused: 0
+  acValue: 0
+  rarity: 0
+  canSell: 1
+  canBuy: 1
+  vendorClass: 0
+  cannotSellLastCopy: 0
+  grantsXp: 0
+  xpAmount: 10
+  xpSource: 5
+  grantXpEveryPickupOrUse: 0
+  requiredLevelToEquip: 1
+  requiredLevelToCraft: 1
+  requiredLevelToUse: 1
+  requiredLevelToPickup: 1
+  tooltipDescription: 'Lab ammo: slow projectile, orange tracer, aggressive surface
+    carve (Blast). Hits all physics layers except the player. For mesh/carve experiments
+    only.'
+  unlocksInventoryStorageRow: 0
+  delivery: 1
+  spawnLaserBurn: 0
+  enemyBlood: 0
+  enemyBurnMark: 0
+  useHitMarks: 1
+  defaultDecals: []
+  defaultHitEffects: []
+  surfaces: []
+  fallBackToCatalog: 0
+  catalog: {fileID: 0}
+  surfaceDamage:
+    mode: 1
+    custom:
+      style: 2
+      radius: 1.06
+      depth: 0.554
+      roughness: 0.227
+      debrisCount: 5
+      debrisScale: 0.05
+  fireTrauma: 0.102
+  fireTraumaDurationSeconds: 0
+  impactTrauma: 0
+  impactTraumaDurationSeconds: 0
+  impactTraumaRadius: 0
+  impactTraumaMinDistance: 0
+  useAllPhysicsLayers: 1
+  forceMeshDeformation: 1
+  allowCarveOnEnemyReceivers: 1
+  bypassWorldImpactCharacterBlocks: 1

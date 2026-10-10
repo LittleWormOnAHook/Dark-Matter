@@ -1,4 +1,5 @@
 using Project.Combat;
+using Project.Combat.Experiment.Carve;
 using Project.Data;
 using UnityEngine;
 
@@ -39,7 +40,8 @@ namespace Project.SurfaceCarve
             if (damage == null || damage.radius <= 0f)
                 return false;
 
-            if (!settings.ammoDeformsMeshes)
+            bool forceDeform = DMCarveExperimentCombatUtility.ForcesMeshDeformation(ammoItem);
+            if (!settings.ammoDeformsMeshes && !forceDeform)
             {
                 // Meshes stay intact: debris only, point unchanged so hit marks stay on the surface.
                 if (settings.spawnDebris && settings.debrisWithoutDeform)

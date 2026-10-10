@@ -74,7 +74,9 @@ namespace Project.EditorTools.GenesisStudio
             DMPickupProfile profile = AssetDatabase.LoadAssetAtPath<DMPickupProfile>(DMPickupProfile.AssetPath);
             if (profile == null)
             {
-                EditorGUILayout.HelpBox("No pickup profile at " + DMPickupProfile.AssetPath + ".", MessageType.Warning);
+                EditorGUILayout.HelpBox(
+                    "No pickup profile at " + DMPickupProfile.AssetPath + ". Click Create Pickup Profile to author one.",
+                    MessageType.Warning);
                 if (GUILayout.Button("Create Pickup Profile", GUILayout.Height(28f)))
                     profile = CreateProfile();
                 if (profile == null)

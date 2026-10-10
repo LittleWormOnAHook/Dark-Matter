@@ -70,6 +70,10 @@ namespace Project.SurfaceCarve
             if (c != null)
                 return c;
 
+            DMCarveSkinnedCarveTarget skinnedTarget = receiver.GetComponentInParent<DMCarveSkinnedCarveTarget>();
+            if (skinnedTarget != null && skinnedTarget.TryResolveCarvable(out DMCarvable skinnedCarvable))
+                return skinnedCarvable;
+
             if (settings == null || !settings.MatchesAutoCarvable(receiver))
                 return null;
 
@@ -96,6 +100,9 @@ namespace Project.SurfaceCarve
             DMCarveCutter cutter = MakeSurfaceCutter(point, normal, r, damage.depth, damage.style, damage.roughness, seed);
             if (!Carve(cutter))
                 return false;
+
+            DMCarveSkinnedCarveTarget skinnedNotify = GetComponentInParent<DMCarveSkinnedCarveTarget>();
+            skinnedNotify?.NotifyCarveSucceeded();
 
             if (spawnDebris && allowDebris && Application.isPlaying && damage.debrisCount > 0)
                 DMCarveDebris.Spawn(cutter, normal, damage, lastFractureMaterial, gameObject.layer);

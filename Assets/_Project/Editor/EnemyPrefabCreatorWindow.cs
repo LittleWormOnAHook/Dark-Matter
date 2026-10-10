@@ -20,9 +20,11 @@ namespace Project.EditorTools
         private GameObject selectedVisualSource;
         private GameObject existingPrefabSource;
         private GameObject humanoidMeshSource;
+        private GameObject templatePrefab;
         private bool placeInSceneAfterCreate = true;
         private string definitionAssetFileName = "new_enemy";
         private PathCreator patrolPathCreator;
+        private readonly EnemyHumanoidPrefabCreatorPanelState humanoidPanelState = new EnemyHumanoidPrefabCreatorPanelState();
 
         private Vector2 listScroll;
         private Vector2 editorScroll;
@@ -39,6 +41,56 @@ namespace Project.EditorTools
         {
             EnemyPrefabCreatorWindow window = GetWindow<EnemyPrefabCreatorWindow>("Enemy Prefab Creator");
             window.minSize = new Vector2(860f, 620f);
+        }
+
+        [MenuItem(
+            DarkMatterGenesisEditorMenus.EnemyPrefabCreator + "Dedup Weapon Holders On Selected Prefab",
+            false,
+            Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Prefab_Creator_Enemy_Prefab_Creator_Dedup_Weapon_Holders_On_Selected_Prefab)]
+        public static void DedupSelectedHumanoidPrefab()
+        {
+            if (!PlayerV7WeaponHolderDedupUtility.TryResolveHumanoidPrefabPathFromSelection(out string prefabPath))
+            {
+                EditorUtility.DisplayDialog(
+                    "Enemy Prefab Creator",
+                    "Select a humanoid combat prefab asset or scene instance.",
+                    "OK");
+                return;
+            }
+
+            if (!PlayerV7WeaponHolderDedupUtility.DedupAndRepair(prefabPath, out var report, createFileBackup: false))
+            {
+                EditorUtility.DisplayDialog("Enemy Prefab Creator", "Dedup failed. See Console.", "OK");
+                return;
+            }
+
+            EditorUtility.DisplayDialog("Enemy Prefab Creator", "Dedup complete.\n\n" + report, "OK");
+        }
+
+        [MenuItem(
+            DarkMatterGenesisEditorMenus.EnemyPrefabCreator + "Repair Selected Humanoid Enemy Prefab",
+            false,
+            Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Prefab_Creator_Enemy_Prefab_Creator_Repair_Selected_Humanoid_Enemy_Prefab)]
+        public static void RepairSelectedHumanoidPrefab()
+        {
+            if (!PlayerV7WeaponHolderDedupUtility.TryResolveHumanoidPrefabPathFromSelection(out string prefabPath))
+            {
+                EditorUtility.DisplayDialog(
+                    "Enemy Prefab Creator",
+                    "Select a humanoid enemy prefab asset or scene instance.",
+                    "OK");
+                return;
+            }
+
+            EnemyDefinition definition = EnemyInvectorSetupUtility.ResolveDefinitionForPrefab(prefabPath);
+            if (!EnemyPrefabVisualSetupUtility.RepairVisualAtPath(prefabPath, definition))
+            {
+                EditorUtility.DisplayDialog("Enemy Prefab Creator", $"Could not repair {prefabPath}.", "OK");
+                return;
+            }
+
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[Enemy Prefab Creator] Repaired visual + gameplay at {prefabPath}");
         }
 
         private void OnEnable()
@@ -69,111 +121,150 @@ namespace Project.EditorTools
         {
             using var genesisTheme = Project.EditorTools.Theme.GenesisImgui.Window(this);
             EnsureWorkingDefinition();
+            RefreshDefinitionList();
 
+            EditorGUILayout.Space(4f);
             EditorGUILayout.LabelField("Enemy Prefab Creator", EditorStyles.boldLabel);
-            EditorGUILayout.HelpBox(
-                "Humanoid Meshy/character FBXs (Android, etc.): set Archetype = HumanoidInvector, assign Model FBX, Create Prefab. " +
-                "Creator swaps the root Animator avatar, hides the stock VBOT body, and bakes AI/health/ragdoll. " +
-                "Generic/creature FBXs: use LegacyCreature + Animation Pipeline clips. " +
-                "Menu: Tools → Dark Matter Genesis → Prefab Creator → Enemy Prefab Creator.",
-                MessageType.Info);
+            EnemyPrefabCreatorPanel.DrawIntroHelpBox(compact: false);
             EditorGUILayout.Space(6f);
 
             EditorGUILayout.BeginHorizontal();
-            DrawDefinitionListPanel();
+            DrawDefinitionSidebar();
             DrawEditorPanel();
             EditorGUILayout.EndHorizontal();
         }
 
-        private void DrawDefinitionListPanel()
+        private void DrawDefinitionSidebar()
         {
-            EditorGUILayout.BeginVertical(GUILayout.Width(240f));
-            EditorGUILayout.LabelField("Enemy Definitions", EditorStyles.boldLabel);
-
-            listScroll = EditorGUILayout.BeginScrollView(listScroll, GUILayout.ExpandHeight(true));
-            for (int i = 0; i < definitionAssets.Length; i++)
-            {
-                EnemyDefinition asset = definitionAssets[i];
-                if (asset == null)
-                    continue;
-
-                string label = string.IsNullOrEmpty(asset.displayName) ? asset.name : asset.displayName;
-                bool selected = i == selectedDefinitionIndex;
-                if (GUILayout.Toggle(selected, label, "Button") && selectedDefinitionIndex != i)
-                    LoadDefinition(asset, i);
-            }
-            EditorGUILayout.EndScrollView();
-
-            if (GUILayout.Button("New Enemy", GUILayout.Height(28f)))
-                StartNewDefinition();
-
-            if (GUILayout.Button("Refresh List", GUILayout.Height(24f)))
-                RefreshDefinitionList();
-
-            EditorGUILayout.EndVertical();
+            int unusedPlayerSelection = -1;
+            DMCharacterCreatorDefinitionSidebar.Draw(
+                DMCharacterCreatorDefinitionSidebarSections.Enemy,
+                ref listScroll,
+                ref unusedPlayerSelection,
+                ref selectedDefinitionIndex,
+                System.Array.Empty<PlayerVisualDefinition>(),
+                definitionAssets,
+                customPlayerHint: null,
+                customEnemyHint: workingDefinition != null ? workingDefinition.displayName : null,
+                onSelectCustomPlayer: null,
+                onSelectPlayer: null,
+                onSelectCustomEnemy: StartNewDefinition,
+                onSelectEnemy: LoadDefinition,
+                refreshList: RefreshDefinitionList);
         }
 
         private void DrawEditorPanel()
         {
-            editorScroll = EditorGUILayout.BeginScrollView(editorScroll);
+            DMCharacterCreatorSharedUi.PreferMeasuredColumnWidth = false;
+            EditorGUILayout.BeginVertical(DMCharacterCreatorSharedUi.ContentColumnLayoutOptions());
+            editorScroll = EditorGUILayout.BeginScrollView(
+                editorScroll,
+                DMCharacterCreatorSharedUi.ContentColumnScrollOptions());
+            DMCharacterCreatorSharedUi.BeginCreatorContentArea();
+            using var _ = DMCharacterCreatorSharedUi.ScopedCreatorLabelWidth();
+            EditorGUILayout.Space(2f);
+            EnemyPrefabCreatorPanelContext panelCtx = BuildPanelContext();
 
-            DrawIdentitySection();
+            EnemyPrefabCreatorPanel.DrawIdentity(panelCtx);
+            definitionAssetFileName = panelCtx.DefinitionAssetFileName;
             EditorGUILayout.Space(8f);
-            DrawVisualSourceSection();
+            if (workingDefinition.archetype == EnemyArchetype.HumanoidInvector)
+            {
+                SyncHumanoidPanelFromWindow();
+                EnemyHumanoidPrefabCreatorPanel.DrawTemplateAndOutput(humanoidPanelState);
+                EditorGUILayout.Space(8f);
+                EnemyHumanoidPrefabCreatorPanel.DrawModelSection(humanoidPanelState);
+                EditorGUILayout.Space(8f);
+                EnemyHumanoidPrefabCreatorPanel.DrawStatus(humanoidPanelState);
+                EditorGUILayout.Space(8f);
+                EnemyHumanoidPrefabCreatorPanel.DrawActions(
+                    humanoidPanelState,
+                    compact: false,
+                    OnHumanoidPrefabCreatedOrRebuilt);
+                SyncHumanoidPanelToWindow();
+            }
+            else
+            {
+                DrawVisualSourceSection();
+            }
+
             EditorGUILayout.Space(8f);
-            DrawBehaviorPresetSection();
+            EnemyPrefabCreatorPanel.DrawBehaviorPreset(workingDefinition);
             EditorGUILayout.Space(8f);
-            DrawMovementModeSection();
+            EnemyPrefabCreatorPanel.DrawMovementAndBehavior(panelCtx);
+            patrolPathCreator = panelCtx.PatrolPathCreator;
             EditorGUILayout.Space(8f);
             if (workingDefinition.archetype != EnemyArchetype.HumanoidInvector)
                 DrawAnimationSection();
             else
-                EditorGUILayout.HelpBox(
-                    "Humanoid Invector enemies use the Player_Invector animator controller with the assigned model Avatar. " +
-                    "Assign Model FBX (Meshy Humanoid), optional melee/ranged ItemData, then Create/Rebuild.",
-                    MessageType.Info);
+                EnemyPrefabCreatorPanel.DrawHumanoidAnimatorNote(show: true);
             EditorGUILayout.Space(8f);
-            DrawLootSection();
+            EnemyPrefabCreatorPanel.DrawLoot(panelCtx);
             EditorGUILayout.Space(8f);
-            DrawDefinitionFields();
+            EnemyPrefabCreatorPanel.DrawHealth(workingDefinition);
+            EditorGUILayout.Space(4f);
+            EnemyPrefabCreatorPanel.DrawHealthBar(workingDefinition);
+            EditorGUILayout.Space(4f);
+            EnemyPrefabCreatorPanel.DrawSenses(workingDefinition);
+            EditorGUILayout.Space(4f);
+            EnemyPrefabCreatorPanel.DrawCombatStats(workingDefinition);
             EditorGUILayout.Space(12f);
-            DrawSpawnReadyStatus();
+            if (workingDefinition.archetype != EnemyArchetype.HumanoidInvector)
+                DrawSpawnReadyStatus();
             EditorGUILayout.Space(8f);
             DrawActionButtons();
 
+            DMCharacterCreatorSharedUi.EndCreatorContentArea();
             EditorGUILayout.EndScrollView();
+            EditorGUILayout.EndVertical();
         }
 
-        private void DrawIdentitySection()
+        private EnemyPrefabCreatorPanelContext BuildPanelContext()
         {
-            EditorGUILayout.LabelField("Identity", EditorStyles.boldLabel);
-            workingDefinition.enemyId = EditorGUILayout.TextField("Enemy Id", workingDefinition.enemyId);
-            workingDefinition.displayName = EditorGUILayout.TextField("Display Name", workingDefinition.displayName);
-            workingDefinition.prefabFileName = EditorGUILayout.TextField("Prefab File Name", workingDefinition.prefabFileName);
-            workingDefinition.archetype = (EnemyArchetype)EditorGUILayout.EnumPopup("Archetype", workingDefinition.archetype);
-            if (workingDefinition.archetype == EnemyArchetype.HumanoidInvector)
+            return new EnemyPrefabCreatorPanelContext
             {
-                workingDefinition.meleeWeaponItem = (ItemData)EditorGUILayout.ObjectField(
-                    "Melee Weapon Item",
-                    workingDefinition.meleeWeaponItem,
-                    typeof(ItemData),
-                    false);
-                workingDefinition.rangedWeaponItem = (ItemData)EditorGUILayout.ObjectField(
-                    "Ranged Weapon Item",
-                    workingDefinition.rangedWeaponItem,
-                    typeof(ItemData),
-                    false);
-                workingDefinition.preferRangedWeapon = EditorGUILayout.Toggle(
-                    "Prefer Ranged",
-                    workingDefinition.preferRangedWeapon);
-            }
+                Definition = workingDefinition,
+                DefinitionAssetFileName = definitionAssetFileName,
+                PatrolPathCreator = patrolPathCreator,
+                ApplyPatrolPath = () => ApplyPatrolPathToEnemyTargets(),
+                ApplyLoot = () => EnemyPrefabCreatorPanel.ApplyLootToExistingPrefab(workingDefinition)
+            };
+        }
 
-            definitionAssetFileName = EditorGUILayout.TextField("Definition Asset Name", definitionAssetFileName);
+        private void SyncHumanoidPanelFromWindow()
+        {
+            humanoidPanelState.definition = workingDefinition;
+            humanoidPanelState.displayName = workingDefinition.displayName;
+            humanoidPanelState.prefabFileName = workingDefinition.prefabFileName;
+            humanoidPanelState.visualChildName = workingDefinition.visualChildName;
+            humanoidPanelState.templatePrefab = templatePrefab != null
+                ? templatePrefab
+                : workingDefinition.templatePrefab;
+            humanoidPanelState.humanoidMeshSource = humanoidMeshSource != null
+                ? humanoidMeshSource
+                : workingDefinition.lastModelSource;
+        }
+
+        private void SyncHumanoidPanelToWindow()
+        {
+            if (workingDefinition == null)
+                return;
+
+            humanoidMeshSource = humanoidPanelState.humanoidMeshSource;
+            templatePrefab = humanoidPanelState.templatePrefab;
+            workingDefinition.displayName = humanoidPanelState.displayName;
+            workingDefinition.prefabFileName = humanoidPanelState.prefabFileName;
+            workingDefinition.visualChildName = humanoidPanelState.visualChildName;
+            workingDefinition.templatePrefab = humanoidPanelState.templatePrefab;
+            workingDefinition.lastModelSource = humanoidPanelState.humanoidMeshSource;
         }
 
         private void DrawVisualSourceSection()
         {
-            EditorGUILayout.LabelField("Visual Source", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Visual Source (Legacy creature)", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                "Generic/creature rigs: set Archetype = LegacyCreature (Auto-Detect on assign).",
+                MessageType.None);
 
             EditorGUI.BeginChangeCheck();
             humanoidMeshSource = (GameObject)EditorGUILayout.ObjectField(
@@ -184,16 +275,15 @@ namespace Project.EditorTools
             if (EditorGUI.EndChangeCheck() && humanoidMeshSource != null)
                 ApplyModelAutoDetect(humanoidMeshSource);
 
-            DrawModelInspectionPanel(humanoidMeshSource);
+            DMCharacterCreatorSharedUi.DrawModelInspectionPanel(
+                humanoidMeshSource,
+                "Assign a Meshy/character FBX to inspect rig, avatar, and scale.",
+                playerRecommendations: false);
 
-            EditorGUILayout.BeginHorizontal();
-            GUI.enabled = humanoidMeshSource != null;
-            if (GUILayout.Button("Prepare Model Import", GUILayout.Height(22f)))
-                PrepareAssignedModelImport();
-            if (GUILayout.Button("Auto-Detect Archetype", GUILayout.Height(22f)))
-                ApplyModelAutoDetect(humanoidMeshSource);
-            GUI.enabled = true;
-            EditorGUILayout.EndHorizontal();
+            DMCharacterCreatorSharedUi.DrawResponsiveButtonRow(
+                22f,
+                ("Prepare Model Import", PrepareAssignedModelImport, humanoidMeshSource != null),
+                ("Auto-Detect Archetype", () => ApplyModelAutoDetect(humanoidMeshSource), humanoidMeshSource != null));
 
             EditorGUILayout.Space(4f);
             visualSourceMode = (VisualSourceMode)EditorGUILayout.EnumPopup("Source Mode", visualSourceMode);
@@ -225,69 +315,28 @@ namespace Project.EditorTools
                     break;
             }
 
-            EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("Use Current Selection", GUILayout.Width(180f)))
-            {
-                if (Selection.activeGameObject != null)
+            DMCharacterCreatorSharedUi.DrawResponsiveButtonRow(
+                22f,
+                ("Use Current Selection", () =>
                 {
-                    selectedVisualSource = Selection.activeGameObject;
-                    visualSourceMode = VisualSourceMode.SelectedHierarchyObject;
-                }
-            }
-
-            if (GUILayout.Button("Use Model FBX As Source", GUILayout.Width(180f)))
-            {
-                if (humanoidMeshSource != null)
+                    if (Selection.activeGameObject != null)
+                    {
+                        selectedVisualSource = Selection.activeGameObject;
+                        visualSourceMode = VisualSourceMode.SelectedHierarchyObject;
+                    }
+                }, Selection.activeGameObject != null),
+                ("Use Model FBX As Source", () =>
                 {
-                    existingPrefabSource = humanoidMeshSource;
-                    visualSourceMode = VisualSourceMode.ExistingPrefab;
-                }
-            }
-            EditorGUILayout.EndHorizontal();
+                    if (humanoidMeshSource != null)
+                    {
+                        existingPrefabSource = humanoidMeshSource;
+                        visualSourceMode = VisualSourceMode.ExistingPrefab;
+                    }
+                }, humanoidMeshSource != null));
 
-            if (workingDefinition.archetype == EnemyArchetype.HumanoidInvector)
-            {
-                EditorGUILayout.Space(4f);
-                if (humanoidMeshSource != null && string.IsNullOrWhiteSpace(workingDefinition.visualChildName))
-                    workingDefinition.visualChildName =
-                        EnemyInvectorSetupUtility.SuggestVisualChildName(humanoidMeshSource);
-
-                workingDefinition.visualChildName = EditorGUILayout.TextField(
-                    "Visual Child Name",
-                    workingDefinition.visualChildName);
-
-                if (GUILayout.Button("Rebuild With Model", GUILayout.Height(24f)))
-                    RebuildHumanoidPrefabWithModel();
-            }
-
-            placeInSceneAfterCreate = EditorGUILayout.Toggle("Place In Open Scene After Create", placeInSceneAfterCreate);
-        }
-
-        private void DrawModelInspectionPanel(GameObject model)
-        {
-            EnemyModelAvatarUtility.ModelInspection inspection = EnemyModelAvatarUtility.Inspect(model);
-            MessageType messageType = MessageType.None;
-            if (!inspection.HasModel)
-                messageType = MessageType.None;
-            else if (inspection.IsHumanoidAvatar && inspection.IsAvatarValid && inspection.LooksHumanoidSized)
-                messageType = MessageType.Info;
-            else if (inspection.HasModel)
-                messageType = MessageType.Warning;
-
-            EditorGUILayout.BeginVertical("box");
-            EditorGUILayout.LabelField("Model Inspection", EditorStyles.miniBoldLabel);
-            if (!inspection.HasModel)
-            {
-                EditorGUILayout.LabelField("Assign a Meshy/character FBX to inspect rig, avatar, and scale.");
-            }
-            else
-            {
-                EditorGUILayout.LabelField(inspection.Summary);
-                if (!string.IsNullOrEmpty(inspection.AssetPath))
-                    EditorGUILayout.LabelField(inspection.AssetPath, EditorStyles.miniLabel);
-                EditorGUILayout.HelpBox(inspection.Recommendation, messageType);
-            }
-            EditorGUILayout.EndVertical();
+            placeInSceneAfterCreate = DMCharacterCreatorSharedUi.DrawPropertyToggle(
+                "Place In Open Scene After Create",
+                placeInSceneAfterCreate);
         }
 
         private void PrepareAssignedModelImport()
@@ -295,9 +344,7 @@ namespace Project.EditorTools
             if (humanoidMeshSource == null)
                 return;
 
-            string path = AssetDatabase.GetAssetPath(humanoidMeshSource);
-            if (string.IsNullOrEmpty(path))
-                path = EnemyModelAvatarUtility.FindPrimaryModelAssetPath(humanoidMeshSource);
+            string path = EnemyModelAvatarUtility.ResolvePreferredModelAssetPath(humanoidMeshSource);
 
             if (!EnemyModelAvatarUtility.TryPrepareModelImport(path, out string message))
             {
@@ -344,268 +391,6 @@ namespace Project.EditorTools
             }
         }
 
-        private void RebuildHumanoidPrefabWithModel()
-        {
-            GameObject mesh = humanoidMeshSource != null ? humanoidMeshSource : ResolveVisualSource(out _);
-            if (mesh == null)
-            {
-                EditorUtility.DisplayDialog("Enemy Prefab Creator", "Assign a model FBX/prefab to rebuild.", "OK");
-                return;
-            }
-
-            string prefabPath =
-                $"{ProjectAssetPaths.PrefabsCombatEnemies}/{EnemyPrefabBuilder.SanitizeFileName(workingDefinition.prefabFileName, workingDefinition.displayName)}.prefab";
-
-            if (!EnemyInvectorSetupUtility.RebuildHumanoidEnemyAtPath(prefabPath, workingDefinition, mesh))
-            {
-                EditorUtility.DisplayDialog("Enemy Prefab Creator", $"Could not rebuild {prefabPath}.", "OK");
-                return;
-            }
-
-            AssetDatabase.SaveAssets();
-            Debug.Log($"Rebuilt humanoid enemy at {prefabPath}");
-        }
-
-        private void DrawBehaviorPresetSection()
-        {
-            EditorGUILayout.LabelField("AI Preset", EditorStyles.boldLabel);
-            EditorGUI.BeginChangeCheck();
-            workingDefinition.behaviorPreset = (EnemyBehaviorPreset)EditorGUILayout.EnumPopup(
-                "Behavior Preset",
-                workingDefinition.behaviorPreset);
-            if (EditorGUI.EndChangeCheck() && workingDefinition.behaviorPreset != EnemyBehaviorPreset.Custom)
-                workingDefinition.ApplyBehaviorPreset(workingDefinition.behaviorPreset);
-
-            if (GUILayout.Button("Apply Preset Values", GUILayout.Height(24f)) &&
-                workingDefinition.behaviorPreset != EnemyBehaviorPreset.Custom)
-            {
-                workingDefinition.ApplyBehaviorPreset(workingDefinition.behaviorPreset);
-            }
-        }
-
-        private void DrawMovementModeSection()
-        {
-            EditorGUILayout.LabelField("Movement & Behavior", EditorStyles.boldLabel);
-            workingDefinition.movementMode = (EnemyMovementMode)EditorGUILayout.EnumPopup(
-                "Movement Mode",
-                workingDefinition.movementMode);
-            workingDefinition.patrolMode = (EnemyPatrolMode)EditorGUILayout.EnumPopup(
-                "Patrol Mode",
-                workingDefinition.patrolMode);
-            workingDefinition.investigateNoise = EditorGUILayout.Toggle("Investigate Noise", workingDefinition.investigateNoise);
-            workingDefinition.chasePlayer = EditorGUILayout.Toggle("Chase Player", workingDefinition.chasePlayer);
-            workingDefinition.returnToHomeAfterSearch = EditorGUILayout.Toggle(
-                "Return Home After Search",
-                workingDefinition.returnToHomeAfterSearch);
-            workingDefinition.chaseRadius = EditorGUILayout.FloatField(
-                "Chase Radius",
-                workingDefinition.chaseRadius);
-            EditorGUILayout.HelpBox(
-                "Max distance from spawn/home to pursue the player. Beyond this, the enemy gives up and returns home. 0 = unlimited.",
-                MessageType.None);
-
-            EnemyMovementMode mode = workingDefinition.movementMode;
-            if (mode == EnemyMovementMode.Wander)
-            {
-                EditorGUILayout.Space(4f);
-                EditorGUILayout.LabelField("Wander Area", EditorStyles.miniBoldLabel);
-                workingDefinition.wanderRadius = EditorGUILayout.FloatField("Wander Radius", workingDefinition.wanderRadius);
-                workingDefinition.wanderPauseMin = EditorGUILayout.FloatField("Wander Pause Min", workingDefinition.wanderPauseMin);
-                workingDefinition.wanderPauseMax = EditorGUILayout.FloatField("Wander Pause Max", workingDefinition.wanderPauseMax);
-            }
-
-            if (mode == EnemyMovementMode.Patrol)
-            {
-                EditorGUILayout.Space(4f);
-                EditorGUILayout.LabelField("Patrol Route", EditorStyles.miniBoldLabel);
-                patrolPathCreator = (PathCreator)EditorGUILayout.ObjectField(
-                    new GUIContent(
-                        "Path Creator",
-                        "Path Creator or Path Creator Variant. Apply writes onto selected scene AI / placed instance; persistent path assets also bake onto selected prefab assets."),
-                    patrolPathCreator,
-                    typeof(PathCreator),
-                    true);
-                if (GUILayout.Button("Apply Patrol Path To Selection / Prefab"))
-                    ApplyPatrolPathToEnemyTargets();
-
-                workingDefinition.patrolPointCount = EditorGUILayout.IntField("Patrol Point Count", workingDefinition.patrolPointCount);
-                workingDefinition.patrolRadius = EditorGUILayout.FloatField("Patrol Radius", workingDefinition.patrolRadius);
-                workingDefinition.patrolWaitDuration = EditorGUILayout.FloatField(
-                    "Patrol Wait Duration",
-                    workingDefinition.patrolWaitDuration);
-                EditorGUILayout.HelpBox(
-                    "Preferred: place Path Creator Variant, edit anchors with Path Creator's native Scene tools only, " +
-                    "then assign here. Create/Rebuild with Place in Scene applies the path to the instance. " +
-                    "Fallback: circle PatrolPoints when no path is set.",
-                    MessageType.Info);
-            }
-
-            if (mode == EnemyMovementMode.Stationary)
-            {
-                EditorGUILayout.HelpBox(
-                    "Stationary enemies hold position but can still chase, investigate noise, and return home when configured.",
-                    MessageType.None);
-            }
-        }
-
-        private void DrawLootSection()
-        {
-            EditorGUILayout.LabelField("Loot", EditorStyles.boldLabel);
-            EditorGUILayout.HelpBox(
-                "Dead enemies pause respawn for the loot delay (or until fully looted). " +
-                "Press E on the corpse to open the loot menu. Leave the item pool empty to roll random items from the item registry.",
-                MessageType.Info);
-
-            workingDefinition.enableLoot = EditorGUILayout.Toggle("Enable Loot", workingDefinition.enableLoot);
-            workingDefinition.acDropMin = EditorGUILayout.IntField("AC Drop Min", workingDefinition.acDropMin);
-            workingDefinition.acDropMax = EditorGUILayout.IntField("AC Drop Max", workingDefinition.acDropMax);
-            workingDefinition.randomLootCountMin = EditorGUILayout.IntField("Random Items Min", workingDefinition.randomLootCountMin);
-            workingDefinition.randomLootCountMax = EditorGUILayout.IntField("Random Items Max", workingDefinition.randomLootCountMax);
-            workingDefinition.lootRespawnDelay = EditorGUILayout.FloatField("Loot Respawn Delay", workingDefinition.lootRespawnDelay);
-            workingDefinition.lootInteractRange = EditorGUILayout.FloatField("Loot Interact Range", workingDefinition.lootInteractRange);
-
-            EditorGUILayout.Space(4f);
-            EditorGUILayout.LabelField("Loot Item Pool (optional)", EditorStyles.miniBoldLabel);
-            DrawItemPoolArray(ref workingDefinition.lootItemPool);
-
-            if (GUILayout.Button("Apply Loot To Existing Prefab", GUILayout.Height(26f)))
-                ApplyLootToExistingPrefab();
-        }
-
-        private static void DrawItemPoolArray(ref ItemData[] items)
-        {
-            int count = EditorGUILayout.IntField("Pool Count", items?.Length ?? 0);
-            if (count < 0)
-                count = 0;
-
-            if (items == null || items.Length != count)
-                System.Array.Resize(ref items, count);
-
-            for (int i = 0; i < count; i++)
-            {
-                items[i] = (ItemData)EditorGUILayout.ObjectField(
-                    $"  Item {i + 1}",
-                    items[i],
-                    typeof(ItemData),
-                    false);
-            }
-        }
-
-        private void ApplyLootToExistingPrefab()
-        {
-            EnsureWorkingDefinition();
-            string prefabPath =
-                $"{ProjectAssetPaths.PrefabsCombatEnemies}/{EnemyPrefabBuilder.SanitizeFileName(workingDefinition.prefabFileName, workingDefinition.displayName)}.prefab";
-
-            GameObject prefabRoot = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
-            if (prefabRoot == null)
-            {
-                EditorUtility.DisplayDialog(
-                    "Enemy Prefab Creator",
-                    $"Prefab not found at {prefabPath}. Create the prefab first.",
-                    "OK");
-                return;
-            }
-
-            GameObject instance = PrefabUtility.LoadPrefabContents(prefabPath);
-            if (instance == null)
-            {
-                EditorUtility.DisplayDialog("Enemy Prefab Creator", "Could not open prefab for editing.", "OK");
-                return;
-            }
-
-            EnemyPrefabBuilder.ApplyLootToPrefab(instance, workingDefinition);
-            PrefabUtility.SaveAsPrefabAsset(instance, prefabPath);
-            PrefabUtility.UnloadPrefabContents(instance);
-            AssetDatabase.SaveAssets();
-            Debug.Log($"Applied loot setup to {prefabPath}");
-        }
-
-        private void DrawDefinitionFields()
-        {
-            EditorGUILayout.LabelField("Health", EditorStyles.boldLabel);
-            workingDefinition.maxHealth = EditorGUILayout.FloatField("Max Health", workingDefinition.maxHealth);
-            workingDefinition.destroyOnDeath = EditorGUILayout.Toggle("Destroy On Death", workingDefinition.destroyOnDeath);
-            workingDefinition.destroyDelay = EditorGUILayout.FloatField("Destroy Delay", workingDefinition.destroyDelay);
-            workingDefinition.respawnTime = EditorGUILayout.FloatField("Respawn Time", workingDefinition.respawnTime);
-            EditorGUILayout.HelpBox(
-                "Respawn Time > 0 respawns the enemy at its spawn point after death. Destroy On Death is ignored while respawning is enabled.",
-                MessageType.None);
-
-            EditorGUILayout.Space(4f);
-            EditorGUILayout.LabelField("Health Bar", EditorStyles.boldLabel);
-            workingDefinition.showFloatingHealthBar = EditorGUILayout.Toggle(
-                "Show Floating Health Bar",
-                workingDefinition.showFloatingHealthBar);
-            workingDefinition.hideHealthBarUntilDamaged = EditorGUILayout.Toggle(
-                "Hide Until Damaged",
-                workingDefinition.hideHealthBarUntilDamaged);
-            workingDefinition.healthBarOffset = EditorGUILayout.Vector3Field(
-                "Health Bar Offset",
-                workingDefinition.healthBarOffset);
-
-            EditorGUILayout.Space(4f);
-            EditorGUILayout.LabelField("Senses", EditorStyles.boldLabel);
-            workingDefinition.visionRange = EditorGUILayout.FloatField("Vision Range", workingDefinition.visionRange);
-            workingDefinition.visionFov = EditorGUILayout.FloatField("Vision Fov", workingDefinition.visionFov);
-            workingDefinition.eyeHeight = EditorGUILayout.FloatField("Eye Height", workingDefinition.eyeHeight);
-            workingDefinition.senseHearingEnabled = EditorGUILayout.Toggle(
-                "Hearing Enabled",
-                workingDefinition.senseHearingEnabled);
-            workingDefinition.hearingRange = EditorGUILayout.FloatField("Hearing Range", workingDefinition.hearingRange);
-            workingDefinition.hearingAggroChance = EditorGUILayout.Slider(
-                "Hearing Aggro Chance",
-                workingDefinition.hearingAggroChance,
-                0f,
-                1f);
-            workingDefinition.hearingCooldown = EditorGUILayout.FloatField(
-                "Hearing Cooldown",
-                workingDefinition.hearingCooldown);
-            workingDefinition.aggroOnDamaged = EditorGUILayout.Toggle(
-                "Aggro On Damaged",
-                workingDefinition.aggroOnDamaged);
-            workingDefinition.aggroOnHeardHit = EditorGUILayout.Toggle(
-                "Aggro On Heard Hit",
-                workingDefinition.aggroOnHeardHit);
-            workingDefinition.proximityRange = EditorGUILayout.FloatField("Proximity Range", workingDefinition.proximityRange);
-
-            EditorGUILayout.Space(4f);
-            EditorGUILayout.LabelField("Melee Combat", EditorStyles.boldLabel);
-            workingDefinition.attackRange = EditorGUILayout.FloatField("Attack Range", workingDefinition.attackRange);
-            workingDefinition.attackDamage = EditorGUILayout.FloatField("Attack Damage", workingDefinition.attackDamage);
-            workingDefinition.attackCooldown = EditorGUILayout.FloatField("Attack Cooldown", workingDefinition.attackCooldown);
-            workingDefinition.attackWindup = EditorGUILayout.FloatField("Attack Windup", workingDefinition.attackWindup);
-            workingDefinition.meleeDuration = EditorGUILayout.FloatField("Melee Duration", workingDefinition.meleeDuration);
-            workingDefinition.unarmedDuration = EditorGUILayout.FloatField("Unarmed Duration", workingDefinition.unarmedDuration);
-
-            EditorGUILayout.Space(4f);
-            EditorGUILayout.LabelField("Ranged Combat", EditorStyles.boldLabel);
-            workingDefinition.rangedEngageRange = EditorGUILayout.FloatField("Engage Range", workingDefinition.rangedEngageRange);
-            workingDefinition.rangedAttackCooldown = EditorGUILayout.FloatField("Shot Cooldown", workingDefinition.rangedAttackCooldown);
-            workingDefinition.rangedDuration = EditorGUILayout.FloatField("Shot Duration", workingDefinition.rangedDuration);
-            workingDefinition.aimHoldDuration = EditorGUILayout.FloatField("Aim Hold Duration", workingDefinition.aimHoldDuration);
-            workingDefinition.missRate = EditorGUILayout.Slider("Miss Rate", workingDefinition.missRate, 0f, 1f);
-
-            EditorGUILayout.Space(4f);
-            EditorGUILayout.LabelField("AI Timing", EditorStyles.boldLabel);
-            workingDefinition.walkSpeed = EditorGUILayout.FloatField("Walk Speed", workingDefinition.walkSpeed);
-            workingDefinition.runSpeed = EditorGUILayout.FloatField("Run Speed", workingDefinition.runSpeed);
-            workingDefinition.turnSpeed = EditorGUILayout.FloatField("Turn Speed", workingDefinition.turnSpeed);
-            workingDefinition.loseTargetDelay = EditorGUILayout.FloatField("Lose Target Delay", workingDefinition.loseTargetDelay);
-            workingDefinition.searchDuration = EditorGUILayout.FloatField("Search Duration", workingDefinition.searchDuration);
-            workingDefinition.searchRadius = EditorGUILayout.FloatField("Search Radius", workingDefinition.searchRadius);
-            workingDefinition.idleDuration = EditorGUILayout.FloatField("Idle Duration", workingDefinition.idleDuration);
-
-            EditorGUILayout.Space(4f);
-            EditorGUILayout.LabelField("Collider", EditorStyles.boldLabel);
-            workingDefinition.fitColliderToRenderers = EditorGUILayout.Toggle(
-                "Fit Collider To Renderers",
-                workingDefinition.fitColliderToRenderers);
-            workingDefinition.colliderCenter = EditorGUILayout.Vector3Field("Collider Center", workingDefinition.colliderCenter);
-            workingDefinition.colliderRadius = EditorGUILayout.FloatField("Collider Radius", workingDefinition.colliderRadius);
-            workingDefinition.colliderHeight = EditorGUILayout.FloatField("Collider Height", workingDefinition.colliderHeight);
-        }
-
         private void DrawAnimationSection()
         {
             EditorGUILayout.LabelField("Animation Pipeline", EditorStyles.boldLabel);
@@ -639,10 +424,10 @@ namespace Project.EditorTools
             DrawClipArray("Death", ref workingDefinition.deathClips);
 
             EditorGUILayout.Space(6f);
-            workingDefinition.buildAnimatorFromClips = EditorGUILayout.Toggle(
+            workingDefinition.buildAnimatorFromClips = DMCharacterCreatorSharedUi.DrawPropertyToggle(
                 "Build Animator From Clips",
                 workingDefinition.buildAnimatorFromClips);
-            workingDefinition.addEnemyAnimationController = EditorGUILayout.Toggle(
+            workingDefinition.addEnemyAnimationController = DMCharacterCreatorSharedUi.DrawPropertyToggle(
                 "Add Generic Animation Controller",
                 workingDefinition.addEnemyAnimationController);
             workingDefinition.animatorControllerFileName = EditorGUILayout.TextField(
@@ -658,7 +443,7 @@ namespace Project.EditorTools
                 false);
 
             EditorGUILayout.Space(4f);
-            workingDefinition.lockVisualRootPosition = EditorGUILayout.Toggle(
+            workingDefinition.lockVisualRootPosition = DMCharacterCreatorSharedUi.DrawPropertyToggle(
                 "Lock Visual Root To Ground",
                 workingDefinition.lockVisualRootPosition);
             workingDefinition.visualChildName = EditorGUILayout.TextField(
@@ -1019,15 +804,40 @@ namespace Project.EditorTools
             string prefabPath =
                 $"{ProjectAssetPaths.PrefabsCombatEnemies}/{EnemyPrefabBuilder.SanitizeFileName(workingDefinition.prefabFileName, workingDefinition.displayName)}.prefab";
             bool prefabExists = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) != null;
-            string buildLabel = prefabExists ? "Rebuild Prefab" : "Create Prefab";
             string buildAndPlaceLabel = prefabExists ? "Rebuild + Place In Scene" : "Create Prefab + Place In Scene";
+
+            DMCharacterCreatorActionValidation.DrawBlockersHelpBox(
+                DMCharacterCreatorActionValidation.CollectEnemySaveBlockers(
+                    workingDefinition,
+                    definitionAssetFileName));
+
+            if (workingDefinition.archetype == EnemyArchetype.HumanoidInvector &&
+                GUILayout.Button("Save Definition + Create Prefab + Apply Visual", GUILayout.Height(32f)))
+            {
+                SaveHumanoidDefinitionAndCreate();
+            }
 
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("Save Definition Asset", GUILayout.Height(30f)))
-                SaveDefinitionAsset();
+            {
+                if (DMCharacterCreatorActionValidation.TryValidateEnemySaveDefinition(
+                        workingDefinition,
+                        definitionAssetFileName,
+                        out string message))
+                    SaveDefinitionAsset();
+                else
+                    DMCharacterCreatorActionValidation.ShowValidationDialog(
+                        DMCharacterCreatorActionValidation.EnemyDialogTitle,
+                        message);
+            }
 
-            if (GUILayout.Button(buildLabel, GUILayout.Height(30f)))
-                CreateEnemyPrefab(false);
+            if (workingDefinition.archetype != EnemyArchetype.HumanoidInvector)
+            {
+                string buildLabel = prefabExists ? "Rebuild Prefab" : "Create Prefab";
+                if (GUILayout.Button(buildLabel, GUILayout.Height(30f)))
+                    CreateEnemyPrefab(false);
+            }
+
             EditorGUILayout.EndHorizontal();
 
             if (GUILayout.Button(buildAndPlaceLabel, GUILayout.Height(32f)))
@@ -1045,6 +855,9 @@ namespace Project.EditorTools
             workingDefinition.visualChildName = "Visual";
             workingDefinition.ApplyBehaviorPreset(EnemyBehaviorPreset.AggressiveHunter);
             definitionAssetFileName = "new_enemy";
+            templatePrefab = EnemyPrefabVisualSetupUtility.LoadDefaultTemplate();
+            humanoidMeshSource = null;
+            EnemyHumanoidPrefabCreatorPanel.SyncFromDefinition(humanoidPanelState, workingDefinition);
         }
 
         private void LoadDefinition(EnemyDefinition asset, int index)
@@ -1059,36 +872,97 @@ namespace Project.EditorTools
             workingDefinition = Instantiate(asset);
             workingDefinition.name = asset.name;
             definitionAssetFileName = asset.name;
+            templatePrefab = asset.templatePrefab != null
+                ? asset.templatePrefab
+                : EnemyPrefabVisualSetupUtility.LoadDefaultTemplate();
+            humanoidMeshSource = asset.lastModelSource;
+            EnemyHumanoidPrefabCreatorPanel.SyncFromDefinition(humanoidPanelState, workingDefinition);
         }
 
         private void SaveDefinitionAsset()
         {
             EnsureWorkingDefinition();
+            if (workingDefinition.archetype == EnemyArchetype.HumanoidInvector)
+                SyncHumanoidPanelToWindow();
 
-            CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.EnemiesData);
-            string fileName = EnemyPrefabBuilder.SanitizeFileName(definitionAssetFileName, workingDefinition.enemyId);
-            string path = $"{ProjectAssetPaths.EnemiesData}/{fileName}.asset";
+            SyncDefinitionAssetFileNameFromIdentity();
+            if (EnemyPrefabCreatorPanel.SaveDefinitionAsset(ref workingDefinition, definitionAssetFileName))
+                RefreshDefinitionListAndSelectCurrent();
+        }
 
-            EnemyDefinition existing = AssetDatabase.LoadAssetAtPath<EnemyDefinition>(path);
-            if (existing == null)
+        private void SaveHumanoidDefinitionAndCreate()
+        {
+            EnsureWorkingDefinition();
+            SyncHumanoidPanelFromWindow();
+            SyncHumanoidPanelToWindow();
+            SyncDefinitionAssetFileNameFromIdentity();
+            if (!EnemyPrefabCreatorPanel.SaveDefinitionAsset(ref workingDefinition, definitionAssetFileName))
+                return;
+
+            RefreshDefinitionListAndSelectCurrent();
+            humanoidPanelState.definition = workingDefinition;
+            SyncHumanoidPanelFromWindow();
+            if (!EnemyHumanoidPrefabCreatorPanel.TryCreatePrefabFromState(humanoidPanelState, out bool created) || !created)
+                return;
+
+            SyncHumanoidPanelToWindow();
+            SyncDefinitionAssetFileNameFromIdentity();
+            if (EnemyPrefabCreatorPanel.SaveDefinitionAsset(ref workingDefinition, definitionAssetFileName))
+                RefreshDefinitionListAndSelectCurrent();
+        }
+
+        private void OnHumanoidPrefabCreatedOrRebuilt()
+        {
+            SyncHumanoidPanelToWindow();
+            SyncDefinitionAssetFileNameFromIdentity();
+            if (!DMCharacterCreatorActionValidation.TryValidateEnemySaveDefinition(
+                    workingDefinition,
+                    definitionAssetFileName,
+                    out string message))
             {
-                AssetDatabase.CreateAsset(workingDefinition, path);
-            }
-            else
-            {
-                EditorUtility.CopySerialized(workingDefinition, existing);
-                EditorUtility.SetDirty(existing);
-                workingDefinition = existing;
+                DMCharacterCreatorActionValidation.ShowValidationDialog(
+                    DMCharacterCreatorActionValidation.EnemyDialogTitle,
+                    "Prefab was created or rebuilt, but Save Definition could not run:\n\n" + message);
+                return;
             }
 
-            AssetDatabase.SaveAssets();
+            if (EnemyPrefabCreatorPanel.SaveDefinitionAsset(ref workingDefinition, definitionAssetFileName))
+                RefreshDefinitionListAndSelectCurrent();
+        }
+
+        private void SyncDefinitionAssetFileNameFromIdentity()
+        {
+            if (workingDefinition == null)
+                return;
+
+            definitionAssetFileName = DMCharacterCreatorDefinitionSidebar.SuggestEnemyDefinitionAssetFileName(
+                workingDefinition.prefabFileName,
+                workingDefinition.enemyId,
+                workingDefinition.displayName);
+        }
+
+        private void RefreshDefinitionListAndSelectCurrent()
+        {
+            string assetName = definitionAssetFileName;
+            string displayName = workingDefinition != null ? workingDefinition.displayName : null;
+            string prefabFileName = workingDefinition != null ? workingDefinition.prefabFileName : null;
+            string enemyId = workingDefinition != null ? workingDefinition.enemyId : null;
+
             RefreshDefinitionList();
-            Debug.Log($"Saved enemy definition to {path}");
+            selectedDefinitionIndex = DMCharacterCreatorDefinitionSidebar.FindEnemyDefinitionIndex(
+                definitionAssets,
+                assetName,
+                displayName,
+                prefabFileName,
+                enemyId);
         }
 
         private void CreateEnemyPrefab(bool forcePlaceInScene)
         {
             EnsureWorkingDefinition();
+            if (workingDefinition.archetype == EnemyArchetype.HumanoidInvector)
+                SyncHumanoidPanelToWindow();
+
             EnemyAnimationPreviewSession.Stop();
 
             if (!TryResolveBuilderSource(out EnemyPrefabBuilder.VisualSourceMode builderSourceMode, out GameObject source))
@@ -1132,7 +1006,9 @@ namespace Project.EditorTools
             }
 
             AssetDatabase.SaveAssets();
-            RefreshDefinitionList();
+            SyncDefinitionAssetFileNameFromIdentity();
+            if (EnemyPrefabCreatorPanel.SaveDefinitionAsset(ref workingDefinition, definitionAssetFileName))
+                RefreshDefinitionListAndSelectCurrent();
             Debug.Log($"{(existedBefore ? "Rebuilt" : "Created")} enemy prefab at {prefabPath}");
         }
 

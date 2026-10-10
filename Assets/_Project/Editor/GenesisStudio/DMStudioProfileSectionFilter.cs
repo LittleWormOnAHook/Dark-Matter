@@ -228,6 +228,12 @@ namespace Project.EditorTools.GenesisStudio
             "enemyMeleeHitboxWidthScale",
             "enemyMeleeHitboxReachScale",
             "enemyMeleeAttackRangeMultiplier",
+            "enemyMeleeStandoffFraction",
+            "enemyMeleeMaxOrbitFactor",
+            "enemyIntentionalMeleeMissChance",
+            "enemyMeleeMissStepSeconds",
+            "enemyMeleeMissStepStopFactor",
+            "enemyMeleeMissStepSpeedMultiplier",
             "lightComboAnimSpeedA",
             "lightComboAnimSpeedB",
             "lightComboAnimSpeedC",
@@ -302,7 +308,13 @@ namespace Project.EditorTools.GenesisStudio
             "surfaces",
             "fallBackToCatalog",
             "catalog",
-            "surfaceDamage"
+            "surfaceDamage",
+            "fireTrauma",
+            "fireTraumaDurationSeconds",
+            "impactTrauma",
+            "impactTraumaDurationSeconds",
+            "impactTraumaRadius",
+            "impactTraumaMinDistance"
         };
 
         private static readonly string[] DashFields =
@@ -389,7 +401,7 @@ namespace Project.EditorTools.GenesisStudio
                 DMStudioProfileSectionFilter.FootstepsAudioOnly =>
                     "Default fallback, Unity-tag, and terrain-layer 0-10 clip libraries on GameAudioProfile.",
                 DMStudioProfileSectionFilter.CombatAmmoOnly =>
-                    "Live ammo combat fields (Play Mode edits push to the drawn weapon each tick). Fire Rate / burst / reload / mag on the loaded ammo profile win when greater than zero; else the weapon ItemData is used. Recoil Vertical/Horizontal are camera kick; rifle column on Ammo Recoil Profile still overrides two-hand weapons. Invector weapon recoilUp does nothing.",
+                    "Live ammo combat fields (Play Mode edits push to the drawn weapon each tick). Fire Rate / burst / reload / mag on the loaded ammo profile win when greater than zero; else the weapon ItemData is used. Recoil Vertical/Horizontal are aim kick; fireTrauma / impactTrauma feed the CameraShake hub (0 = off). Rifle column on Ammo Recoil Profile still overrides two-hand weapons. Invector weapon recoilUp does nothing.",
                 DMStudioProfileSectionFilter.CombatCoreOnly =>
                     "All DM_CombatCoreProfile combat fields (Resources/Combat). Combat Studio → Core / Melee organizes them under Player vs Enemy.",
                 DMStudioProfileSectionFilter.LandingHeightsOnly =>

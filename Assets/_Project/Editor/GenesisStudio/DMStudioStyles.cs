@@ -23,6 +23,12 @@ namespace Project.EditorTools.GenesisStudio
         /// <summary>Fixed width for float/int boxes at the end of slider rows.</summary>
         public const float ProfileFloatFieldWidth = 56f;
 
+        /// <summary>Left inset for studio content (legacy ContentPanel + themed IMGUI host).</summary>
+        public const float ContentPaddingLeft = 10f;
+
+        /// <summary>Right gutter before the vertical scrollbar (sliders, object fields, buttons).</summary>
+        public const float ContentPaddingRight = 30f;
+
         private static GUIStyle headerPanel;
         private static GUIStyle sidebarPanel;
         private static GUIStyle contentPanel;
@@ -37,6 +43,7 @@ namespace Project.EditorTools.GenesisStudio
         private static GUIStyle listButton;
         private static GUIStyle listButtonSelected;
         private static GUIStyle badge;
+        private static GUIStyle inspectorFoldout;
         private static Texture2D headerTex;
         private static Texture2D sidebarTex;
         private static Texture2D contentTex;
@@ -56,7 +63,21 @@ namespace Project.EditorTools.GenesisStudio
 
         public static GUIStyle HeaderPanel { get { Sync(); return headerPanel ??= Themed ? ThemedPanel(GenesisTheme.Bg2, 10, 10) : CreatePanel(ref headerTex, DarkMatterGenesisUiPalette.DarkNavy, 10, 12); } }
         public static GUIStyle SidebarPanel { get { Sync(); return sidebarPanel ??= Themed ? ThemedPanel(GenesisTheme.Bg1, 8, 8) : CreatePanel(ref sidebarTex, DarkMatterGenesisUiPalette.CharcoalGray, 8, 8); } }
-        public static GUIStyle ContentPanel { get { Sync(); return contentPanel ??= Themed ? ThemedPanel(GenesisTheme.Bg2, 10, 10) : CreatePanel(ref contentTex, DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.97f), 10, 10); } }
+        public static GUIStyle ContentPanel
+        {
+            get
+            {
+                Sync();
+                return contentPanel ??= Themed
+                    ? ThemedPanel(GenesisTheme.Bg2, (int)ContentPaddingLeft, (int)ContentPaddingRight, 10)
+                    : CreatePanel(
+                        ref contentTex,
+                        DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.97f),
+                        (int)ContentPaddingLeft,
+                        (int)ContentPaddingRight,
+                        10);
+            }
+        }
         public static GUIStyle FooterPanel { get { Sync(); return footerPanel ??= Themed ? ThemedPanel(GenesisTheme.Bg1, 6, 6) : CreatePanel(ref footerTex, DarkMatterGenesisUiPalette.CharcoalGray, 6, 6); } }
 
         public static GUIStyle HeroTitle
@@ -132,6 +153,66 @@ namespace Project.EditorTools.GenesisStudio
                 };
                 if (Themed) { badge.fontSize = 9; ApplyHeaderFont(badge); }
                 return badge;
+            }
+        }
+
+        /// <summary>Map Calibration / Footsteps header: bold title, optional subtitle, Ping + Select.</summary>
+        public static void DrawPingSelectHeader(string title, string subtitle, UnityEngine.Object asset)
+        {
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.BeginVertical();
+            EditorGUILayout.LabelField(title, SectionTitle);
+            if (!string.IsNullOrEmpty(subtitle))
+                EditorGUILayout.LabelField(subtitle, HeroSubtitle);
+            EditorGUILayout.EndVertical();
+            using (new EditorGUI.DisabledScope(asset == null))
+            {
+                if (GUILayout.Button("Ping", GUILayout.Width(52f), GUILayout.Height(22f)))
+                    EditorGUIUtility.PingObject(asset);
+                if (GUILayout.Button("Select", GUILayout.Width(56f), GUILayout.Height(22f)))
+                    Selection.activeObject = asset;
+            }
+
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.Space(4f);
+        }
+
+        /// <summary>Bold inspector section label matching Map Calibration "Runtime tuning" / "Map fog of war".</summary>
+        public static void DrawInspectorSectionHeader(string title)
+        {
+            EditorGUILayout.Space(8f);
+            EditorGUILayout.LabelField(title, SectionTitle);
+            EditorGUILayout.Space(2f);
+        }
+
+        public static bool DrawInspectorFoldout(bool foldout, string title)
+        {
+            return EditorGUILayout.Foldout(foldout, title, true, InspectorFoldout);
+        }
+
+        public static GUIStyle InspectorFoldout
+        {
+            get
+            {
+                Sync();
+                if (inspectorFoldout != null)
+                    return inspectorFoldout;
+
+                inspectorFoldout = new GUIStyle(EditorStyles.foldout)
+                {
+                    fontStyle = FontStyle.Bold,
+                    padding = new RectOffset(14, 0, 2, 2)
+                };
+                inspectorFoldout.normal.textColor = SectionTitle.normal.textColor;
+                inspectorFoldout.onNormal.textColor = SectionTitle.normal.textColor;
+                inspectorFoldout.hover.textColor = SectionTitle.normal.textColor;
+                inspectorFoldout.onHover.textColor = SectionTitle.normal.textColor;
+                inspectorFoldout.focused.textColor = SectionTitle.normal.textColor;
+                inspectorFoldout.onFocused.textColor = SectionTitle.normal.textColor;
+                if (Themed)
+                    inspectorFoldout.fontSize = 11;
+                ApplyHeaderFont(inspectorFoldout);
+                return inspectorFoldout;
             }
         }
 
@@ -288,7 +369,7 @@ namespace Project.EditorTools.GenesisStudio
             builtThemed = themed;
             headerPanel = sidebarPanel = contentPanel = footerPanel = null;
             categoryTabActive = categoryTabInactive = subTabActive = subTabInactive = null;
-            heroTitle = heroSubtitle = sectionTitle = listButton = listButtonSelected = badge = null;
+            heroTitle = heroSubtitle = sectionTitle = listButton = listButtonSelected = badge = inspectorFoldout = null;
         }
 
         private static void ApplyHeaderFont(GUIStyle style)
@@ -298,16 +379,50 @@ namespace Project.EditorTools.GenesisStudio
             if (f != null) style.font = f;
         }
 
-        private static GUIStyle ThemedPanel(Color color, int padH, int padV)
+        /// <summary>
+        /// Reserves horizontal space inside scroll views — GUIStyle padding alone does not inset PropertyField rows.
+        /// </summary>
+        public static HorizontalContentGutterScope BeginHorizontalContentGutter(
+            float leftPad = ContentPaddingLeft,
+            float rightPad = ContentPaddingRight)
+        {
+            return new HorizontalContentGutterScope(leftPad, rightPad);
+        }
+
+        public readonly struct HorizontalContentGutterScope : System.IDisposable
+        {
+            readonly float _rightPad;
+
+            public HorizontalContentGutterScope(float leftPad, float rightPad)
+            {
+                _rightPad = rightPad;
+                EditorGUILayout.BeginHorizontal();
+                if (leftPad > 0f)
+                    GUILayout.Space(leftPad);
+                EditorGUILayout.BeginVertical(GUILayout.ExpandWidth(true));
+            }
+
+            public void Dispose()
+            {
+                EditorGUILayout.EndVertical();
+                if (_rightPad > 0f)
+                    GUILayout.Space(_rightPad);
+                EditorGUILayout.EndHorizontal();
+            }
+        }
+
+        private static GUIStyle ThemedPanel(Color color, int padLeft, int padRight, int padV)
         {
             GUIStyle style = new GUIStyle
             {
-                padding = new RectOffset(padH, padH, padV, padV),
+                padding = new RectOffset(padLeft, padRight, padV, padV),
                 margin = new RectOffset(4, 4, 4, 4)
             };
             style.normal.background = Solid(color);
             return style;
         }
+
+        private static GUIStyle ThemedPanel(Color color, int padH, int padV) => ThemedPanel(color, padH, padH, padV);
 
         private static GUIStyle ThemedTab(bool active, int fontSize)
         {
@@ -379,16 +494,19 @@ namespace Project.EditorTools.GenesisStudio
 
         // ---------- Original Dark Matter palette (theme off) ----------
 
-        private static GUIStyle CreatePanel(ref Texture2D tex, Color color, int padH, int padV)
+        private static GUIStyle CreatePanel(ref Texture2D tex, Color color, int padLeft, int padRight, int padV)
         {
             GUIStyle style = new GUIStyle
             {
-                padding = new RectOffset(padH, padH, padV, padV),
+                padding = new RectOffset(padLeft, padRight, padV, padV),
                 margin = new RectOffset(4, 4, 4, 4)
             };
             style.normal.background = GetSolid(ref tex, color);
             return style;
         }
+
+        private static GUIStyle CreatePanel(ref Texture2D tex, Color color, int padH, int padV) =>
+            CreatePanel(ref tex, color, padH, padH, padV);
 
         private static GUIStyle CreateTab(ref Texture2D tex, Color fill, bool active, int fontSize)
         {

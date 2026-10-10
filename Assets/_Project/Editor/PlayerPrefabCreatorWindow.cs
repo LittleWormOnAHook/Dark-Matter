@@ -1,3 +1,4 @@
+using Project.AI;
 using Project.Data;
 using UnityEditor;
 using UnityEngine;
@@ -125,7 +126,7 @@ namespace Project.EditorTools
             EnsureWorkingDefinition();
 
             EditorGUILayout.LabelField("Player Prefab Creator", EditorStyles.boldLabel);
-            EditorGUILayout.HelpBox(
+            DMCharacterCreatorSharedUi.DrawWrappedHelpBox(
                 "Creates a NEW player prefab variant — Player_Invector.prefab is the clone TEMPLATE and is never overwritten.\n" +
                 "Assign a Meshy Humanoid Model FBX → set Prefab File Name (e.g. Player_MeshyAndroid) → Create Prefab / Rebuild.\n" +
                 "Swaps the root Animator avatar on the new prefab, hides the stock VBOT body (weapons stay), rebinds BodySnaps / " +
@@ -137,42 +138,39 @@ namespace Project.EditorTools
             EditorGUILayout.Space(6f);
 
             EditorGUILayout.BeginHorizontal();
-            DrawDefinitionListPanel();
+            DrawDefinitionSidebar();
             DrawEditorPanel();
             EditorGUILayout.EndHorizontal();
         }
 
-        private void DrawDefinitionListPanel()
+        private void DrawDefinitionSidebar()
         {
-            EditorGUILayout.BeginVertical(GUILayout.Width(220f));
-            EditorGUILayout.LabelField("Visual Definitions", EditorStyles.boldLabel);
-
-            listScroll = EditorGUILayout.BeginScrollView(listScroll, GUILayout.ExpandHeight(true));
-            for (int i = 0; i < definitionAssets.Length; i++)
-            {
-                PlayerVisualDefinition asset = definitionAssets[i];
-                if (asset == null)
-                    continue;
-
-                string label = string.IsNullOrEmpty(asset.displayName) ? asset.name : asset.displayName;
-                bool selected = i == selectedDefinitionIndex;
-                if (GUILayout.Toggle(selected, label, "Button") && selectedDefinitionIndex != i)
-                    LoadDefinition(asset, i);
-            }
-            EditorGUILayout.EndScrollView();
-
-            if (GUILayout.Button("New Definition", GUILayout.Height(28f)))
-                StartNewDefinition();
-
-            if (GUILayout.Button("Refresh List", GUILayout.Height(24f)))
-                RefreshDefinitionList();
-
-            EditorGUILayout.EndVertical();
+            int unusedEnemySelection = -1;
+            DMCharacterCreatorDefinitionSidebar.Draw(
+                DMCharacterCreatorDefinitionSidebarSections.Player,
+                ref listScroll,
+                ref selectedDefinitionIndex,
+                ref unusedEnemySelection,
+                definitionAssets,
+                System.Array.Empty<EnemyDefinition>(),
+                customPlayerHint: workingDefinition != null ? workingDefinition.displayName : null,
+                customEnemyHint: null,
+                onSelectCustomPlayer: StartNewDefinition,
+                onSelectPlayer: LoadDefinition,
+                onSelectCustomEnemy: null,
+                onSelectEnemy: null,
+                refreshList: RefreshDefinitionList);
         }
 
         private void DrawEditorPanel()
         {
-            editorScroll = EditorGUILayout.BeginScrollView(editorScroll);
+            DMCharacterCreatorSharedUi.PreferMeasuredColumnWidth = false;
+            EditorGUILayout.BeginVertical(DMCharacterCreatorSharedUi.ContentColumnLayoutOptions());
+            editorScroll = EditorGUILayout.BeginScrollView(
+                editorScroll,
+                DMCharacterCreatorSharedUi.ContentColumnScrollOptions());
+            DMCharacterCreatorSharedUi.BeginCreatorContentArea();
+            using var _ = DMCharacterCreatorSharedUi.ScopedCreatorLabelWidth();
 
             DrawIdentitySection();
             EditorGUILayout.Space(8f);
@@ -184,7 +182,9 @@ namespace Project.EditorTools
             EditorGUILayout.Space(8f);
             DrawActionButtons();
 
+            DMCharacterCreatorSharedUi.EndCreatorContentArea();
             EditorGUILayout.EndScrollView();
+            EditorGUILayout.EndVertical();
         }
 
         private void DrawIdentitySection()
@@ -220,27 +220,26 @@ namespace Project.EditorTools
             if (EditorGUI.EndChangeCheck() && workingDefinition != null)
                 workingDefinition.templatePrefab = templatePrefab;
 
-            EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("Use Player_Invector Template", GUILayout.Height(22f)))
-            {
-                templatePrefab = PlayerPrefabVisualSetupUtility.LoadDefaultPlayerPrefab();
-                if (workingDefinition != null)
-                    workingDefinition.templatePrefab = templatePrefab;
-            }
-
-            if (GUILayout.Button("Ping Template", GUILayout.Height(22f)) && templatePrefab != null)
-            {
-                Selection.activeObject = templatePrefab;
-                EditorGUIUtility.PingObject(templatePrefab);
-            }
-            EditorGUILayout.EndHorizontal();
+            DMCharacterCreatorSharedUi.DrawResponsiveButtonRow(
+                22f,
+                ("Use Player_Invector Template", () =>
+                {
+                    templatePrefab = PlayerPrefabVisualSetupUtility.LoadDefaultPlayerPrefab();
+                    if (workingDefinition != null)
+                        workingDefinition.templatePrefab = templatePrefab;
+                }, true),
+                ("Ping Template", () =>
+                {
+                    Selection.activeObject = templatePrefab;
+                    EditorGUIUtility.PingObject(templatePrefab);
+                }, templatePrefab != null));
 
             string templatePath = PlayerPrefabVisualSetupUtility.ResolveTemplatePath(templatePrefab);
-            EditorGUILayout.LabelField("Template: " + templatePath, EditorStyles.miniLabel);
+            DMCharacterCreatorSharedUi.DrawAssetPathLabel("Template: ", templatePath);
 
             string outputPath = PlayerPrefabVisualSetupUtility.ResolveOutputPrefabPath(
                 prefabFileName, workingDefinition.displayName);
-            EditorGUILayout.LabelField("Output: " + outputPath, EditorStyles.miniLabel);
+            DMCharacterCreatorSharedUi.DrawAssetPathLabel("Output: ", outputPath);
 
             GameObject outputPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(outputPath);
             if (outputPrefab != null)
@@ -284,59 +283,15 @@ namespace Project.EditorTools
             if (workingDefinition != null)
                 workingDefinition.visualChildName = visualChildName;
 
-            DrawModelInspectionPanel(humanoidMeshSource);
+            DMCharacterCreatorSharedUi.DrawModelInspectionPanel(
+                humanoidMeshSource,
+                "Assign a Meshy Humanoid FBX to inspect rig, avatar, and scale.",
+                playerRecommendations: true);
 
-            EditorGUILayout.BeginHorizontal();
-            GUI.enabled = humanoidMeshSource != null;
-            if (GUILayout.Button("Prepare Model Import", GUILayout.Height(22f)))
-                PrepareAssignedModelImport();
-            if (GUILayout.Button("Auto-Detect", GUILayout.Height(22f)))
-                ApplyModelAutoDetect(humanoidMeshSource);
-            GUI.enabled = true;
-            EditorGUILayout.EndHorizontal();
-        }
-
-        private void DrawModelInspectionPanel(GameObject model)
-        {
-            EnemyModelAvatarUtility.ModelInspection inspection = EnemyModelAvatarUtility.Inspect(model);
-            MessageType messageType = MessageType.None;
-            if (!inspection.HasModel)
-                messageType = MessageType.None;
-            else if (inspection.IsHumanoidAvatar && inspection.IsAvatarValid && inspection.LooksHumanoidSized)
-                messageType = MessageType.Info;
-            else if (inspection.HasModel)
-                messageType = MessageType.Warning;
-
-            EditorGUILayout.BeginVertical("box");
-            EditorGUILayout.LabelField("Model Inspection", EditorStyles.miniBoldLabel);
-            if (!inspection.HasModel)
-            {
-                EditorGUILayout.LabelField("Assign a Meshy Humanoid FBX to inspect rig, avatar, and scale.");
-                EditorGUILayout.HelpBox(
-                    "You can still Repair Visual / holders on an existing OUTPUT prefab without a new mesh.",
-                    MessageType.None);
-            }
-            else
-            {
-                EditorGUILayout.LabelField(inspection.Summary);
-                if (!string.IsNullOrEmpty(inspection.AssetPath))
-                    EditorGUILayout.LabelField(inspection.AssetPath, EditorStyles.miniLabel);
-
-                string recommendation = inspection.Recommendation;
-                if (recommendation != null &&
-                    recommendation.IndexOf("Enemy Prefab Creator", System.StringComparison.Ordinal) >= 0)
-                {
-                    recommendation = recommendation.Replace(
-                        "Enemy Prefab Creator",
-                        "Player Prefab Creator");
-                    recommendation = recommendation.Replace(
-                        "use Archetype HumanoidInvector and Create Prefab",
-                        "set Prefab File Name and click Create Prefab / Rebuild");
-                }
-
-                EditorGUILayout.HelpBox(recommendation, messageType);
-            }
-            EditorGUILayout.EndVertical();
+            DMCharacterCreatorSharedUi.DrawResponsiveButtonRow(
+                22f,
+                ("Prepare Model Import", PrepareAssignedModelImport, humanoidMeshSource != null),
+                ("Auto-Detect", () => ApplyModelAutoDetect(humanoidMeshSource), humanoidMeshSource != null));
         }
 
         private void DrawStatusSection()
@@ -379,10 +334,32 @@ namespace Project.EditorTools
             bool outputExists = AssetDatabase.LoadAssetAtPath<GameObject>(outputPath) != null;
             bool blocked = PlayerPrefabVisualSetupUtility.IsProtectedTemplatePath(outputPath);
             string createLabel = outputExists ? "Rebuild Prefab" : "Create Prefab";
+            bool requireModel = humanoidMeshSource != null;
+            var panelState = BuildPanelStateForValidation();
+            DMCharacterCreatorActionValidation.DrawBlockersHelpBox(
+                DMCharacterCreatorActionValidation.CollectPlayerSaveBlockers(
+                    workingDefinition,
+                    definitionAssetFileName,
+                    prefabFileName,
+                    workingDefinition != null ? workingDefinition.displayName : null));
+            DMCharacterCreatorActionValidation.DrawBlockersHelpBox(
+                DMCharacterCreatorActionValidation.CollectPlayerCreateBlockers(panelState, requireModel));
 
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("Save Definition Asset", GUILayout.Height(30f)))
-                SaveDefinitionAsset();
+            {
+                if (DMCharacterCreatorActionValidation.TryValidatePlayerSaveDefinition(
+                        workingDefinition,
+                        definitionAssetFileName,
+                        prefabFileName,
+                        workingDefinition != null ? workingDefinition.displayName : null,
+                        out string message))
+                    SaveDefinitionAsset();
+                else
+                    DMCharacterCreatorActionValidation.ShowValidationDialog(
+                        DMCharacterCreatorActionValidation.PlayerDialogTitle,
+                        message);
+            }
 
             GUI.enabled = outputExists && !blocked;
             if (GUILayout.Button("Repair Visual (No Mesh Change)", GUILayout.Height(30f)))
@@ -397,11 +374,45 @@ namespace Project.EditorTools
                         : createLabel,
                     GUILayout.Height(34f)))
             {
-                if (humanoidMeshSource != null)
-                    ApplyVisualRebuild();
-                else
-                    CreatePrefabFromTemplateOnly();
+                bool succeeded = humanoidMeshSource != null
+                    ? ApplyVisualRebuild()
+                    : CreatePrefabFromTemplateOnly();
+                if (succeeded)
+                {
+                    EnsureWorkingDefinition();
+                    SyncWorkingDefinitionFields();
+                    definitionAssetFileName = DMCharacterCreatorDefinitionSidebar.SuggestPlayerDefinitionAssetFileName(
+                        prefabFileName,
+                        workingDefinition.displayName);
+                    if (DMCharacterCreatorActionValidation.TryValidatePlayerSaveDefinition(
+                            workingDefinition,
+                            definitionAssetFileName,
+                            prefabFileName,
+                            workingDefinition.displayName,
+                            out string saveMessage))
+                    {
+                        SaveDefinitionAsset();
+                    }
+                    else
+                    {
+                        DMCharacterCreatorActionValidation.ShowValidationDialog(
+                            DMCharacterCreatorActionValidation.PlayerDialogTitle,
+                            "Prefab was created or rebuilt, but Save Definition could not run:\n\n" + saveMessage);
+                    }
+                }
             }
+            GUI.enabled = !blocked && humanoidMeshSource != null;
+            if (GUILayout.Button("Rebuild From Template + Apply Visual", GUILayout.Height(30f)))
+            {
+                panelState = BuildPanelStateForValidation();
+                if (PlayerPrefabCreatorPanel.RebuildFromTemplateApplyVisual(panelState))
+                {
+                    humanoidMeshSource = panelState.humanoidMeshSource;
+                    EnsureWorkingDefinition();
+                    SyncWorkingDefinitionFields();
+                }
+            }
+
             GUI.enabled = true;
 
             if (blocked)
@@ -417,9 +428,7 @@ namespace Project.EditorTools
             if (humanoidMeshSource == null)
                 return;
 
-            string path = AssetDatabase.GetAssetPath(humanoidMeshSource);
-            if (string.IsNullOrEmpty(path))
-                path = EnemyModelAvatarUtility.FindPrimaryModelAssetPath(humanoidMeshSource);
+            string path = EnemyModelAvatarUtility.ResolvePreferredModelAssetPath(humanoidMeshSource);
 
             if (!EnemyModelAvatarUtility.TryPrepareModelImport(path, out string message))
             {
@@ -493,19 +502,31 @@ namespace Project.EditorTools
             workingDefinition.lastModelSource = humanoidMeshSource;
         }
 
-        private void ApplyVisualRebuild()
+        private PlayerPrefabCreatorPanelState BuildPanelStateForValidation()
         {
-            if (humanoidMeshSource == null)
+            return new PlayerPrefabCreatorPanelState
             {
-                EditorUtility.DisplayDialog(
-                    "Player Prefab Creator",
-                    "Assign a Model FBX / Prefab first, or use Create Prefab without a mesh / Repair Visual.",
-                    "OK");
-                return;
+                templatePrefab = templatePrefab,
+                humanoidMeshSource = humanoidMeshSource,
+                visualChildName = visualChildName,
+                prefabFileName = prefabFileName,
+                displayName = workingDefinition != null ? workingDefinition.displayName : "Player Custom"
+            };
+        }
+
+        private bool ApplyVisualRebuild()
+        {
+            PlayerPrefabCreatorPanelState panelState = BuildPanelStateForValidation();
+            if (!DMCharacterCreatorActionValidation.TryValidatePlayerCreatePrefab(panelState, requireModel: true, out string validationMessage))
+            {
+                DMCharacterCreatorActionValidation.ShowValidationDialog(
+                    DMCharacterCreatorActionValidation.PlayerDialogTitle,
+                    validationMessage);
+                return false;
             }
 
             if (!TryGetValidatedOutputPath(out string outputPath))
-                return;
+                return false;
 
             GameObject created = PlayerPrefabVisualSetupUtility.CreateOrRebuildPlayerPrefab(
                 outputPath,
@@ -519,7 +540,7 @@ namespace Project.EditorTools
                     "Player Prefab Creator",
                     $"Could not create/rebuild player prefab at {outputPath}.",
                     "OK");
-                return;
+                return false;
             }
 
             if (workingDefinition != null)
@@ -531,12 +552,22 @@ namespace Project.EditorTools
             Debug.Log(
                 $"[Player Prefab Creator] Wrote visual from '{humanoidMeshSource.name}' to {outputPath} " +
                 $"(template preserved: {PlayerPrefabVisualSetupUtility.ResolveTemplatePath(templatePrefab)})");
+            return true;
         }
 
-        private void CreatePrefabFromTemplateOnly()
+        private bool CreatePrefabFromTemplateOnly()
         {
+            PlayerPrefabCreatorPanelState panelState = BuildPanelStateForValidation();
+            if (!DMCharacterCreatorActionValidation.TryValidatePlayerCreatePrefab(panelState, requireModel: false, out string validationMessage))
+            {
+                DMCharacterCreatorActionValidation.ShowValidationDialog(
+                    DMCharacterCreatorActionValidation.PlayerDialogTitle,
+                    validationMessage);
+                return false;
+            }
+
             if (!TryGetValidatedOutputPath(out string outputPath))
-                return;
+                return false;
 
             GameObject created = PlayerPrefabVisualSetupUtility.CreateOrRebuildPlayerPrefab(
                 outputPath,
@@ -550,7 +581,7 @@ namespace Project.EditorTools
                     "Player Prefab Creator",
                     $"Could not create player prefab at {outputPath}.",
                     "OK");
-                return;
+                return false;
             }
 
             if (workingDefinition != null)
@@ -562,6 +593,7 @@ namespace Project.EditorTools
             Debug.Log(
                 $"[Player Prefab Creator] Created {outputPath} from template " +
                 $"(template preserved: {PlayerPrefabVisualSetupUtility.ResolveTemplatePath(templatePrefab)})");
+            return true;
         }
 
         private void RepairWithoutMesh()
@@ -646,6 +678,23 @@ namespace Project.EditorTools
         {
             EnsureWorkingDefinition();
             SyncWorkingDefinitionFields();
+            definitionAssetFileName = DMCharacterCreatorDefinitionSidebar.SuggestPlayerDefinitionAssetFileName(
+                prefabFileName,
+                workingDefinition.displayName);
+
+            if (!DMCharacterCreatorActionValidation.TryValidatePlayerSaveDefinition(
+                    workingDefinition,
+                    definitionAssetFileName,
+                    prefabFileName,
+                    workingDefinition.displayName,
+                    out string validationMessage))
+            {
+                DMCharacterCreatorActionValidation.ShowValidationDialog(
+                    DMCharacterCreatorActionValidation.PlayerDialogTitle,
+                    validationMessage);
+                return;
+            }
+
             CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.PlayersData);
 
             string fileName = SanitizeFileName(definitionAssetFileName, "Player_Default");
@@ -669,8 +718,20 @@ namespace Project.EditorTools
             }
 
             AssetDatabase.SaveAssets();
-            RefreshDefinitionList();
+            RefreshDefinitionListAndSelectCurrent();
             Debug.Log($"Saved player visual definition to {path} (output={outputPath})");
+        }
+
+        private void RefreshDefinitionListAndSelectCurrent()
+        {
+            string assetName = definitionAssetFileName;
+            string displayName = workingDefinition != null ? workingDefinition.displayName : null;
+            RefreshDefinitionList();
+            selectedDefinitionIndex = DMCharacterCreatorDefinitionSidebar.FindPlayerDefinitionIndex(
+                definitionAssets,
+                assetName,
+                displayName,
+                prefabFileName);
         }
 
         private static string SanitizeFileName(string preferred, string fallback)

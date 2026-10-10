@@ -66,6 +66,7 @@ namespace Project.EditorTools.Invector
                 RepairHumanoidRoot(root, definition);
 
                 CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.PrefabsCombat);
+                DMHumanoidPrefabSaveUtility.PrepareOutputPrefabForSave(root, definition.visualChildName);
                 return PrefabUtility.SaveAsPrefabAsset(root, outputPrefabPath);
             }
             finally
@@ -82,8 +83,21 @@ namespace Project.EditorTools.Invector
             if (string.IsNullOrEmpty(prefabPath) || definition == null)
                 return false;
 
+            if (!EnemyPrefabVisualSetupUtility.TryValidateOutputPath(prefabPath, out string validateError))
+            {
+                Debug.LogError($"[EnemyInvectorSetup] {validateError}");
+                return false;
+            }
+
             if (!File.Exists(prefabPath))
-                return BuildHumanoidEnemyPrefab(definition, visualSource, prefabPath) != null;
+            {
+                return EnemyPrefabVisualSetupUtility.CreateOrRebuildEnemyPrefab(
+                    prefabPath,
+                    visualSource,
+                    definition.visualChildName,
+                    definition.templatePrefab,
+                    definition) != null;
+            }
 
             GameObject root = PrefabUtility.LoadPrefabContents(prefabPath);
             if (root == null)
@@ -92,9 +106,13 @@ namespace Project.EditorTools.Invector
             try
             {
                 if (visualSource != null)
+                {
                     AttachVisualModel(root, visualSource, definition.visualChildName);
+                    DMHumanoidVisualFinalizeUtility.FinalizeVisualCommon(root);
+                }
 
                 RepairHumanoidRoot(root, definition);
+                DMHumanoidPrefabSaveUtility.PrepareOutputPrefabForSave(root, definition.visualChildName);
                 PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
                 return true;
             }
@@ -424,6 +442,7 @@ namespace Project.EditorTools.Invector
             {
                 EnemyDefinition definition = ResolveDefinitionForPrefab(prefabPath);
                 RepairHumanoidRoot(root, definition);
+                DMHumanoidPrefabSaveUtility.PrepareOutputPrefabForSave(root, definition?.visualChildName);
                 PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
                 return true;
             }
@@ -532,6 +551,11 @@ namespace Project.EditorTools.Invector
             }
         }
 
+        public static void EnsureHumanoidTemplatePrefabExists()
+        {
+            EnsureHumanoidBaseExists();
+        }
+
         private static void EnsureHumanoidBaseExists()
         {
             if (AssetDatabase.LoadAssetAtPath<GameObject>(HumanoidBasePrefabPath) == null)
@@ -627,126 +651,32 @@ namespace Project.EditorTools.Invector
         /// Valid humanoid avatars replace the root Animator avatar and hide the stock VBOT body;
         /// generic meshes nest as an overlay under <paramref name="visualChildName"/>.
         /// </summary>
-        public static void AttachVisualModel(GameObject root, GameObject visualSource, string visualChildName)
+        public static void AttachVisualModel(
+            GameObject root,
+            GameObject visualSource,
+            string visualChildName,
+            GameObject templateForBoneNames = null,
+            string avatarPersistPath = null)
         {
-            if (root == null || visualSource == null)
-                return;
-
-            string childName = string.IsNullOrWhiteSpace(visualChildName) ? "Visual" : visualChildName;
-            ClearPreviousCustomVisual(root, childName);
-
-            GameObject visualInstance = InstantiateVisualSource(visualSource);
-            if (visualInstance == null)
-                return;
-
-            visualInstance.name = childName;
-            visualInstance.transform.SetParent(root.transform, false);
-            visualInstance.transform.localPosition = Vector3.zero;
-            visualInstance.transform.localRotation = Quaternion.identity;
-            visualInstance.transform.localScale = Vector3.one;
-
-            EnemyModelAvatarUtility.PrepareModelInstance(visualInstance, preferHumanoidAvatar: true);
-            EnemyModelAvatarUtility.ModelInspection inspection = EnemyModelAvatarUtility.Inspect(visualInstance);
-
-            if (inspection.IsHumanoidAvatar && inspection.IsAvatarValid && inspection.Avatar != null)
-            {
-                IntegrateHumanoidVisual(root, visualInstance, inspection.Avatar);
-                Debug.Log(
-                    $"[EnemyInvectorSetup] Humanoid visual '{visualSource.name}' bound to root Animator " +
-                    $"(avatar={inspection.Avatar.name}, {inspection.Summary}).",
-                    root);
-            }
-            else
-            {
-                HideStockBodyMeshes(root);
-                Debug.LogWarning(
-                    $"[EnemyInvectorSetup] Visual '{visualSource.name}' is not a valid Humanoid avatar " +
-                    $"({inspection.Summary}). Nested under '{childName}' and stock VBOT meshes were hidden. " +
-                    inspection.Recommendation,
-                    root);
-            }
+            DMHumanoidVisualAttachUtility.AttachVisualModel(
+                root,
+                visualSource,
+                visualChildName,
+                DMHumanoidVisualTarget.Enemy,
+                templateForBoneNames,
+                avatarPersistPath);
         }
 
-        private static GameObject InstantiateVisualSource(GameObject visualSource)
+        public static void ClearSerializedInvectorDeadFlagPublic(GameObject root)
         {
-            GameObject visualInstance = PrefabUtility.InstantiatePrefab(visualSource) as GameObject;
-            if (visualInstance != null)
-            {
-                if (PrefabUtility.IsPartOfPrefabInstance(visualInstance))
-                    PrefabUtility.UnpackPrefabInstance(
-                        visualInstance,
-                        PrefabUnpackMode.Completely,
-                        InteractionMode.AutomatedAction);
-                return visualInstance;
-            }
-
-            return Object.Instantiate(visualSource);
-        }
-
-        private static void ClearPreviousCustomVisual(GameObject root, string childName)
-        {
-            Transform existing = root.transform.Find(childName);
-            if (existing != null)
-                Object.DestroyImmediate(existing.gameObject);
-
-            // Prior Meshy flatten left Armature/char1 on the root — remove only when stock 3D Model is present.
-            Transform stockModel = root.transform.Find("3D Model");
-            if (stockModel == null)
-                return;
-
-            Transform leftoverArmature = root.transform.Find("Armature");
-            if (leftoverArmature != null)
-                Object.DestroyImmediate(leftoverArmature.gameObject);
-
-            Transform leftoverMesh = root.transform.Find("char1");
-            if (leftoverMesh != null)
-                Object.DestroyImmediate(leftoverMesh.gameObject);
-        }
-
-        private static void IntegrateHumanoidVisual(GameObject root, GameObject visualInstance, Avatar avatar)
-        {
-            HideStockBodyMeshes(root);
-
-            Animator rootAnimator = root.GetComponent<Animator>();
-            if (rootAnimator == null)
-                rootAnimator = root.AddComponent<Animator>();
-
-            RuntimeAnimatorController keepController = rootAnimator.runtimeAnimatorController;
-
-            // Strip nested Animators so only the root drives the humanoid.
-            Animator[] nestedAnimators = visualInstance.GetComponentsInChildren<Animator>(true);
-            for (int i = 0; i < nestedAnimators.Length; i++)
-            {
-                if (nestedAnimators[i] != null && nestedAnimators[i].gameObject != root)
-                    Object.DestroyImmediate(nestedAnimators[i]);
-            }
-
-            rootAnimator.avatar = avatar;
-            if (keepController != null)
-                rootAnimator.runtimeAnimatorController = keepController;
-            rootAnimator.applyRootMotion = false;
-            rootAnimator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-            rootAnimator.Rebind();
-            rootAnimator.Update(0f);
-
-            EnableVisualUpdateWhenOffscreen(visualInstance);
             ClearSerializedInvectorDeadFlag(root);
+        }
 
-            if (rootAnimator.GetBoneTransform(HumanBodyBones.Hips) == null)
-            {
-                Debug.LogWarning(
-                    "[EnemyInvectorSetup] Root Animator did not bind Hips after avatar swap. " +
-                    "Check FBX Humanoid mapping. Visual remains nested; stock body stays hidden.",
-                    root);
-            }
-            else
-            {
-                // Holders / Drawn_ slots were authored on VBOT bones — move them onto Meshy bones.
-                EnemyInvectorWeaponHolderRebind.RebindToAnimatorBones(root);
-                EnemyInvectorBodySnapSetup.ApplyRuntime(root);
-            }
+        public static void RepairWeaponSlotVisualsFromLoadout(GameObject root)
+        {
+            if (root == null)
+                return;
 
-            // Remount ItemData visuals after VBOT hide so GreatSword leftovers stay component-disabled.
             EnemyInvectorLoadoutBridge loadout = root.GetComponent<EnemyInvectorLoadoutBridge>();
             ItemData preferredMelee = null;
             ItemData preferredRanged = null;
@@ -824,76 +754,6 @@ namespace Project.EditorTools.Invector
             }
 
             Debug.Log($"[EnemyInvectorSetup] Synced weapon slot visuals on '{root.name}' ({synced} slot(s)).", root);
-        }
-
-        private static void HideStockBodyMeshes(GameObject root)
-        {
-            Transform stockModel = root.transform.Find("3D Model");
-            if (stockModel == null)
-                return;
-
-            // Keep the GameObject for weapon-holder hierarchy references, but hide body renderers.
-            // Weapons live under VBOT_* bones before rebind — never treat "VBOT_" path alone as body.
-            SkinnedMeshRenderer[] skinned = stockModel.GetComponentsInChildren<SkinnedMeshRenderer>(true);
-            for (int i = 0; i < skinned.Length; i++)
-            {
-                if (skinned[i] == null || IsWeaponVisualNode(skinned[i].transform))
-                    continue;
-                skinned[i].enabled = false;
-                skinned[i].gameObject.SetActive(false);
-            }
-
-            MeshRenderer[] meshes = stockModel.GetComponentsInChildren<MeshRenderer>(true);
-            for (int i = 0; i < meshes.Length; i++)
-            {
-                if (meshes[i] == null || IsWeaponVisualNode(meshes[i].transform))
-                    continue;
-
-                // Only hide LOD / VBOT body meshes — never Drawn_/Holstered_/weapon meshes.
-                string path = AnimationUtility.CalculateTransformPath(meshes[i].transform, stockModel);
-                if (path.IndexOf("Mesh_LOD", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
-                    path.IndexOf("VBOT_", System.StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    meshes[i].enabled = false;
-                    meshes[i].gameObject.SetActive(false);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Weapon slots are authored under VBOT bones, so stock-body hide must skip them
-        /// (and PioneerVisual mounts / melee hit volumes) before holders rebind to Meshy.
-        /// </summary>
-        private static bool IsWeaponVisualNode(Transform node)
-        {
-            Transform cur = node;
-            while (cur != null)
-            {
-                string name = cur.name;
-                if (name.Equals("3D Model", System.StringComparison.Ordinal))
-                    return false;
-
-                if (name.StartsWith("Drawn_", System.StringComparison.Ordinal) ||
-                    name.StartsWith("Holstered_", System.StringComparison.Ordinal) ||
-                    name.StartsWith("PioneerVisual_", System.StringComparison.Ordinal) ||
-                    name.Equals("WeaponHolders", System.StringComparison.Ordinal) ||
-                    name.Equals("RightHandlers", System.StringComparison.Ordinal) ||
-                    name.Equals("LeftHandlers", System.StringComparison.Ordinal) ||
-                    name.Equals("HandgunHolder", System.StringComparison.Ordinal) ||
-                    name.Equals("RifleHolder", System.StringComparison.Ordinal) ||
-                    name.Equals("meleeHandler", System.StringComparison.OrdinalIgnoreCase) ||
-                    name.Equals("defaultHandler", System.StringComparison.OrdinalIgnoreCase))
-                    return true;
-
-                if (cur.GetComponent<global::Invector.vMelee.vMeleeWeapon>() != null ||
-                    cur.GetComponent<global::Invector.vShooter.vShooterWeapon>() != null ||
-                    cur.GetComponent<global::Invector.vMelee.vHitBox>() != null)
-                    return true;
-
-                cur = cur.parent;
-            }
-
-            return false;
         }
 
         public static GameObject ExtractVisualSource(GameObject enemyPrefab, string visualChildName)

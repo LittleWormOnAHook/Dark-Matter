@@ -34,13 +34,19 @@ namespace Project.AI
                 return minSep;
 
             float effectiveRange = combat.ResolveEffectiveAttackRange(target);
-            float standoff = Mathf.Max(minSep, combat.AttackRange * attackStandoffFraction);
+            DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
+            float standoffFraction = attackStandoffFraction;
+            if (profile != null && profile.enemyMeleeStandoffFraction > 0.001f)
+                standoffFraction = profile.enemyMeleeStandoffFraction;
+
+            float standoff = Mathf.Max(minSep, combat.AttackRange * standoffFraction);
             if (IsCombatTargetPlayer(target))
                 standoff += playerStandoffBonus;
 
             // Prefer a contact band inside weapon reach so Meshy-proportion swings (shorter arms)
             // still connect; never orbit farther than we can strike.
-            float maxOrbit = Mathf.Max(minSep, effectiveRange * 0.86f);
+            float orbitFactor = profile != null ? profile.enemyMeleeMaxOrbitFactor : 0.86f;
+            float maxOrbit = Mathf.Max(minSep, effectiveRange * orbitFactor);
             return Mathf.Min(standoff, maxOrbit);
         }
 

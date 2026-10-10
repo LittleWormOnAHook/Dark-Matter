@@ -118,7 +118,7 @@ Use this when two sources disagree. **Do not delete or move rules** — update c
 
 | Rule file | Mode | When agents must read it | Key locks | Related |
 |---|---|---|---|---|
-| `unity-agent-workflow.mdc` | Always | After `Assets/` edits, before commit | Auto Refresh off → MCP `refresh_unity`; wait compile; `read_console` errors; stage content assets | Referenced by core, cloud safeguards, studio recall |
+| `unity-agent-workflow.mdc` | Always | After `Assets/` edits, before commit | Auto Refresh off → MCP `refresh_unity`; poll editor state up to **240s** (60s in-tool cap); `read_console` errors; stage content assets | Referenced by core, cloud safeguards, studio recall |
 
 ## 3. Overlap & duplication (index only — no rule merges)
 

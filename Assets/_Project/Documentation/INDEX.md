@@ -62,7 +62,7 @@ Quick map — full lists in **§2.1–§2.19**.
 ### 2.2 Player / climb / dash / jetpack
 
 - **Primary:** `Architecture/Audits/Audit_02_Player.md`; `../Features/Climb/CLIMB_PROBE_BAKER.md` (climb probe bake tool v3)
-- **Related:** `.cursor/rules/dark-matter-genesis-player-physics.mdc` (capsule/climb/jetpack locks — not under Documentation); `Design/Combat/DM_Melee_Locomotion_Layer_Policy.md` (melee-on-locomotion layers — cross-ref combat)
+- **Related:** `.cursor/rules/dark-matter-genesis-player-physics.mdc` (capsule/climb/jetpack locks — not under Documentation); `Design/Combat/DM_Melee_Locomotion_Layer_Policy.md` (melee-on-locomotion layers — cross-ref combat); **Genesis Studio → Player → Player Prefab / Enemy Prefab / Definitions** (Meshy Invector prefab swap + definition library; Tools → Prefab Creator windows keep the left Custom list)
 
 ### 2.3 Combat
 

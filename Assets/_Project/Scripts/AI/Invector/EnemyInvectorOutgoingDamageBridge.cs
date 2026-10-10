@@ -38,9 +38,21 @@ namespace Project.AI.Invector
 
                 if (item.itemType == ItemType.MeleeWeapon)
                 {
+                    if (_combat != null && _combat.IsIntentionalMissActive)
+                    {
+                        isCritical = false;
+                        return 0f;
+                    }
+
                     isCritical = item.RollCriticalHit();
                     return item.RollMeleeDamage(isCritical);
                 }
+            }
+
+            if (_combat != null && _combat.IsIntentionalMissActive)
+            {
+                isCritical = false;
+                return 0f;
             }
 
             float baseDamage = _combat != null ? _combat.AttackDamage : (damage != null ? damage.damageValue : 0f);
