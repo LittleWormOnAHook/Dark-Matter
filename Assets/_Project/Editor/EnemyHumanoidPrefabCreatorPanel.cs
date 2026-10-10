@@ -133,7 +133,7 @@ namespace Project.EditorTools
             {
                 EditorGUILayout.BeginHorizontal();
                 GUI.enabled = outputExists && !blocked;
-                if (GUILayout.Button("Repair Visual (No Mesh Change)", GUILayout.Height(30f)))
+                if (GUILayout.Button("Re-apply Definition + Repair Visual (No Mesh)", GUILayout.Height(30f)))
                     RepairWithoutMesh(state);
                 GUI.enabled = true;
                 EditorGUILayout.EndHorizontal();
@@ -150,6 +150,10 @@ namespace Project.EditorTools
             {
                 if (TryCreatePrefabFromState(state, out bool succeeded) && succeeded)
                     onPrimarySucceeded?.Invoke();
+
+                // Modal dialogs / asset imports above desync the IMGUI layout stack; unwind cleanly.
+                GUI.enabled = true;
+                GUIUtility.ExitGUI();
             }
 
             GUI.enabled = !blocked && state.humanoidMeshSource != null;
@@ -160,6 +164,9 @@ namespace Project.EditorTools
             {
                 if (RebuildFromTemplateApplyVisual(state))
                     onPrimarySucceeded?.Invoke();
+
+                GUI.enabled = true;
+                GUIUtility.ExitGUI();
             }
 
             GUI.enabled = true;
@@ -265,6 +272,8 @@ namespace Project.EditorTools
 
             string outputPath = EnemyPrefabVisualSetupUtility.ResolveOutputPrefabPath(
                 state.prefabFileName, state.displayName);
+            if (!DMCharacterCreatorActionValidation.ConfirmEnemyOverwrite(outputPath, state.definition))
+                return false;
 
             SyncToDefinition(state);
             GameObject model = state.humanoidMeshSource;
@@ -304,6 +313,7 @@ namespace Project.EditorTools
             }
 
             AssetDatabase.SaveAssets();
+            DMCharacterCreatorActionValidation.ShowBuildReportIfNeeded(DMCharacterCreatorActionValidation.EnemyDialogTitle);
             Selection.activeObject = created;
             EditorGUIUtility.PingObject(created);
             return true;
@@ -330,8 +340,8 @@ namespace Project.EditorTools
             GameObject model = EnemyModelAvatarUtility.ResolvePreferredVisualModel(state.humanoidMeshSource);
             if (!EnemyModelAvatarUtility.EnsureRigReadyForHumanoidPaste(
                     model,
-                    autoPrepareImport: true,
-                    allowForceHumanoid: true,
+                    autoPrepareImport: state.autoPrepareOnApply,
+                    allowForceHumanoid: false,
                     out model,
                     out string rigMessage) &&
                 !EnemyModelAvatarUtility.IsReadyForHumanoidPaste(model))
@@ -339,7 +349,7 @@ namespace Project.EditorTools
                 DMCharacterCreatorActionValidation.ShowValidationDialog(
                     DMCharacterCreatorActionValidation.EnemyDialogTitle,
                     string.IsNullOrEmpty(rigMessage)
-                        ? "Model is not Humanoid-ready for visual paste. Use Prepare Model Import or Force Humanoid Rig."
+                        ? "Model is not Humanoid-ready for visual paste. Use Prepare Model Import / Force Humanoid Rig, or enable Auto-prepare import on Apply."
                         : rigMessage);
                 return false;
             }
@@ -353,7 +363,9 @@ namespace Project.EditorTools
                 model,
                 state.visualChildName,
                 state.templatePrefab,
-                state.definition);
+                state.definition,
+                autoPrepareImport: state.autoPrepareOnApply,
+                allowForceHumanoid: false);
 
             if (created == null)
             {
@@ -365,6 +377,7 @@ namespace Project.EditorTools
             }
 
             AssetDatabase.SaveAssets();
+            DMCharacterCreatorActionValidation.ShowBuildReportIfNeeded(DMCharacterCreatorActionValidation.EnemyDialogTitle);
             Selection.activeObject = created;
             EditorGUIUtility.PingObject(created);
             return true;
@@ -391,6 +404,9 @@ namespace Project.EditorTools
             string outputPath = EnemyPrefabVisualSetupUtility.ResolveOutputPrefabPath(
                 state.prefabFileName, state.displayName);
 
+            if (!DMCharacterCreatorActionValidation.ConfirmEnemyOverwrite(outputPath, state.definition))
+                return false;
+
             SyncToDefinition(state);
             GameObject created = EnemyPrefabVisualSetupUtility.CreateOrRebuildEnemyPrefab(
                 outputPath,
@@ -409,6 +425,7 @@ namespace Project.EditorTools
             }
 
             AssetDatabase.SaveAssets();
+            DMCharacterCreatorActionValidation.ShowBuildReportIfNeeded(DMCharacterCreatorActionValidation.EnemyDialogTitle);
             Selection.activeObject = created;
             EditorGUIUtility.PingObject(created);
             return true;
@@ -429,6 +446,7 @@ namespace Project.EditorTools
             }
 
             AssetDatabase.SaveAssets();
+            DMCharacterCreatorActionValidation.ShowBuildReportIfNeeded(DMCharacterCreatorActionValidation.EnemyDialogTitle);
             GameObject repaired = AssetDatabase.LoadAssetAtPath<GameObject>(outputPath);
             Selection.activeObject = repaired;
             EditorGUIUtility.PingObject(repaired);

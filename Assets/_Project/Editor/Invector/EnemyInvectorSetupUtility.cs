@@ -139,7 +139,12 @@ namespace Project.EditorTools.Invector
             WireBootstrapDefinition(root, definition);
             EnemyInvectorWeaponHolderRebind.RebindToAnimatorBones(root);
             EnemyInvectorBodySnapSetupEditor.EnsurePresentEditor(root);
-            RepairWeaponSlotVisuals(root, definition.meleeWeaponItem, definition.rangedWeaponItem);
+            // Arm the slot the loadout will start with (Prefer Ranged picks the ranged weapon).
+            bool armRanged = definition.preferRangedWeapon && definition.rangedWeaponItem != null;
+            RepairWeaponSlotVisuals(
+                root,
+                armRanged ? null : definition.meleeWeaponItem,
+                definition.rangedWeaponItem);
             EnemyInvectorBodySnapSetupEditor.ConfigureEditor(root);
             EnemyInvectorTargetLayers.Apply(root);
             EnemyInvectorRagdollAudit.Repair(root);
@@ -507,20 +512,72 @@ namespace Project.EditorTools.Invector
 
         private static void WireBootstrapDefinition(GameObject root, EnemyDefinition definition)
         {
+            if (!TryWireBootstrapDefinition(root, definition, out string error))
+                Debug.LogError($"[EnemyInvectorSetup] Definition link FAILED on '{root.name}': {error}", root);
+        }
+
+        /// <summary>
+        /// Links the SAVED EnemyDefinition asset on the bootstrap (never an in-memory copy) and bakes the definition's
+        /// hit capsule into the bootstrap fallback fields. Returns false with a clear message when the link cannot be set.
+        /// </summary>
+        public static bool TryWireBootstrapDefinition(GameObject root, EnemyDefinition definition, out string error)
+        {
+            error = null;
+            if (root == null)
+            {
+                error = "No prefab root.";
+                return false;
+            }
+
             EnemyInvectorBootstrap bootstrap = root.GetComponent<EnemyInvectorBootstrap>();
             if (bootstrap == null)
-                return;
+            {
+                error = "EnemyInvectorBootstrap is missing on the prefab root.";
+                return false;
+            }
+
+            if (definition == null || !EditorUtility.IsPersistent(definition))
+            {
+                error = "The definition is not a saved asset (it is an in-memory copy). Save the definition first.";
+                return false;
+            }
 
             SerializedObject serialized = new SerializedObject(bootstrap);
             SerializedProperty definitionProperty = serialized.FindProperty("enemyDefinition");
-            if (definitionProperty != null)
-                definitionProperty.objectReferenceValue = definition;
+            if (definitionProperty == null)
+            {
+                error = "EnemyInvectorBootstrap has no 'enemyDefinition' field.";
+                return false;
+            }
+
+            definitionProperty.objectReferenceValue = definition;
 
             SerializedProperty infiniteAmmo = serialized.FindProperty("infiniteAmmo");
             if (infiniteAmmo != null)
                 infiniteAmmo.boolValue = true;
 
+            // Fallback-only copies of the definition's capsule (runtime reads the definition when linked).
+            SerializedProperty radius = serialized.FindProperty("hitCapsuleRadius");
+            SerializedProperty height = serialized.FindProperty("hitCapsuleHeight");
+            SerializedProperty center = serialized.FindProperty("hitCapsuleCenter");
+            if (radius != null)
+                radius.floatValue = definition.colliderRadius;
+            if (height != null)
+                height.floatValue = definition.colliderHeight;
+            if (center != null)
+                center.vector3Value = definition.colliderCenter;
+
             serialized.ApplyModifiedPropertiesWithoutUndo();
+
+            var verify = new SerializedObject(bootstrap).FindProperty("enemyDefinition");
+            if (verify == null || verify.objectReferenceValue != definition)
+            {
+                error =
+                    $"enemyDefinition did not stick on the bootstrap (asset {AssetDatabase.GetAssetPath(definition)}).";
+                return false;
+            }
+
+            return true;
         }
 
         private static GameObject BuildHumanoidBaseRoot(string rootName)

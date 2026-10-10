@@ -713,6 +713,7 @@ namespace Project.EditorTools
             else
             {
                 EditorUtility.CopySerialized(workingDefinition, existing);
+                existing.name = System.IO.Path.GetFileNameWithoutExtension(path); // keep m_Name matching the filename
                 EditorUtility.SetDirty(existing);
                 workingDefinition = existing;
             }

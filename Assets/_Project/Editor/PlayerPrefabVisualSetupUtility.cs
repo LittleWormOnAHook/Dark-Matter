@@ -62,7 +62,8 @@ namespace Project.EditorTools
                 return true;
 
             string fileName = Path.GetFileNameWithoutExtension(normalized);
-            return string.Equals(fileName, ProtectedTemplateFileName, System.StringComparison.OrdinalIgnoreCase);
+            return string.Equals(fileName, ProtectedTemplateFileName, System.StringComparison.OrdinalIgnoreCase) ||
+                   DMCharacterCreatorProtection.IsProtectedPrefabName(fileName);
         }
 
         public static bool TryValidateOutputPath(string outputPath, out string errorMessage)

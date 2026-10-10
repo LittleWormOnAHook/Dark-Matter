@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Project.AI;
 using Project.Data;
+using Project.EditorTools.Invector;
 using UnityEditor;
 using UnityEngine;
 
@@ -112,7 +113,84 @@ namespace Project.EditorTools
                 definition.enemyId,
                 EnemyPrefabBuilder.SanitizeFileName);
 
+            if (DMCharacterCreatorDefinitionLink.TryFindCollision(definition, out string collision))
+                blockers.Add(collision);
+
+            AddEnemyNumberAndWeaponBlockers(blockers, definition);
             return blockers;
+        }
+
+        static void AddEnemyNumberAndWeaponBlockers(List<string> blockers, EnemyDefinition d)
+        {
+            if (d.maxHealth <= 0f)
+                blockers.Add("Max Health must be greater than 0.");
+            if (d.xpReward < 0)
+                blockers.Add("XP Reward cannot be negative.");
+            if (d.colliderRadius < 0.02f)
+                blockers.Add("Collider Radius must be at least 0.02.");
+            if (d.colliderHeight < d.colliderRadius * 2f)
+                blockers.Add("Collider Height must be at least twice the Collider Radius.");
+            if (d.acDropMin < 0 || d.acDropMax < d.acDropMin)
+                blockers.Add("Loot AC range is invalid (min must be >= 0 and <= max).");
+            if (d.randomLootCountMin < 0 || d.randomLootCountMax < d.randomLootCountMin)
+                blockers.Add("Random loot count range is invalid (min must be >= 0 and <= max).");
+            if (d.wanderPauseMin < 0f || d.wanderPauseMax < d.wanderPauseMin)
+                blockers.Add("Wander pause range is invalid (min must be >= 0 and <= max).");
+            if (d.visionRange <= 0f)
+                blockers.Add("Vision Range must be greater than 0.");
+            if (d.attackCooldown <= 0f)
+                blockers.Add("Attack Cooldown must be greater than 0.");
+
+            if (d.meleeWeaponItem != null)
+            {
+                if (d.meleeWeaponItem.itemType != ItemType.MeleeWeapon)
+                    blockers.Add($"Melee Weapon '{d.meleeWeaponItem.name}' is not a melee weapon item.");
+                else if (PioneerInvectorPlayerSetupUtility.ResolveMeleeWeaponPrefab(d.meleeWeaponItem) == null)
+                    blockers.Add($"Melee Weapon '{d.meleeWeaponItem.name}' has no Invector weapon prefab (it would spawn unarmed).");
+            }
+
+            if (d.rangedWeaponItem != null)
+            {
+                if (!d.rangedWeaponItem.IsRangedWeapon)
+                    blockers.Add($"Ranged Weapon '{d.rangedWeaponItem.name}' is not a ranged weapon item.");
+                else if (PioneerInvectorPlayerSetupUtility.ResolveRangedWeaponPrefab(d.rangedWeaponItem) == null)
+                    blockers.Add($"Ranged Weapon '{d.rangedWeaponItem.name}' has no Invector weapon prefab (it would spawn unarmed).");
+            }
+
+            if (d.preferRangedWeapon && d.rangedWeaponItem == null)
+                blockers.Add("Prefer Ranged is on but no Ranged Weapon is assigned.");
+        }
+
+        /// <summary>Confirm before an existing enemy prefab is modified/replaced by Create / Apply Visual.</summary>
+        public static bool ConfirmEnemyOverwrite(string outputPath, EnemyDefinition definition)
+        {
+            if (string.IsNullOrEmpty(outputPath) || !File.Exists(outputPath))
+                return true;
+
+            string defPath = definition != null ? DMCharacterCreatorDefinitionLink.ResolveAssetPath(definition) : null;
+            return EditorUtility.DisplayDialog(
+                EnemyDialogTitle,
+                $"'{outputPath}' already exists and will be modified (its GUID is kept).\n\n" +
+                (string.IsNullOrEmpty(defPath) ? string.Empty : $"Definition asset: {defPath} (will be updated).\n\n") +
+                "Continue?",
+                "Continue",
+                "Cancel");
+        }
+
+        /// <summary>Shows post-build warnings (weapon not equippable, bespoke components, ...) after a create/rebuild/re-apply.</summary>
+        public static void ShowBuildReportIfNeeded(string title)
+        {
+            DMCharacterCreatorBuildReport report = DMCharacterCreatorPostBuildCheck.LastReport;
+            if (report == null || report.Warnings.Count == 0)
+                return;
+
+            var sb = new System.Text.StringBuilder();
+            for (int i = 0; i < report.Warnings.Count; i++)
+                sb.AppendLine("• " + report.Warnings[i]);
+            EditorUtility.DisplayDialog(
+                title + (report.HasWeaponWarning ? " - WEAPON WARNING" : " - warnings"),
+                "The prefab was saved, but the post-build check found issues:\n\n" + sb,
+                "OK");
         }
 
         public static List<string> CollectPlayerSaveBlockers(

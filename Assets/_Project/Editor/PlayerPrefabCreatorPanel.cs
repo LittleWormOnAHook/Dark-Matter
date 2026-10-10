@@ -245,6 +245,7 @@ namespace Project.EditorTools
             else
             {
                 EditorUtility.CopySerialized(workingDefinition, existing);
+                existing.name = fileName; // keep m_Name matching the filename
                 EditorUtility.SetDirty(existing);
                 workingDefinition = existing;
             }
@@ -301,6 +302,10 @@ namespace Project.EditorTools
             {
                 if (TryCreatePrefabFromState(state, out bool succeeded) && succeeded)
                     onPrimarySucceeded?.Invoke();
+
+                // Modal dialogs / asset imports above desync the IMGUI layout stack; unwind cleanly.
+                GUI.enabled = true;
+                GUIUtility.ExitGUI();
             }
 
             GUI.enabled = !blocked && state.humanoidMeshSource != null;
@@ -311,6 +316,9 @@ namespace Project.EditorTools
             {
                 if (RebuildFromTemplateApplyVisual(state))
                     onPrimarySucceeded?.Invoke();
+
+                GUI.enabled = true;
+                GUIUtility.ExitGUI();
             }
 
             GUI.enabled = true;
@@ -462,8 +470,8 @@ namespace Project.EditorTools
             GameObject model = EnemyModelAvatarUtility.ResolvePreferredVisualModel(state.humanoidMeshSource);
             if (!EnemyModelAvatarUtility.EnsureRigReadyForHumanoidPaste(
                     model,
-                    autoPrepareImport: true,
-                    allowForceHumanoid: true,
+                    autoPrepareImport: state.autoPrepareOnApply,
+                    allowForceHumanoid: false,
                     out model,
                     out string rigMessage) &&
                 !EnemyModelAvatarUtility.IsReadyForHumanoidPaste(model))
@@ -481,7 +489,9 @@ namespace Project.EditorTools
                 outputPath,
                 model,
                 state.visualChildName,
-                state.templatePrefab);
+                state.templatePrefab,
+                autoPrepareImport: state.autoPrepareOnApply,
+                allowForceHumanoid: false);
 
             if (created == null)
             {

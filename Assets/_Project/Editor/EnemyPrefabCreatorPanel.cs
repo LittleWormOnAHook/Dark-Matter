@@ -14,6 +14,7 @@ namespace Project.EditorTools
         public string DefinitionAssetFileName;
         public PathCreator PatrolPathCreator;
         public bool ShowDefinitionAssetName = true;
+        public bool ShowArchetype = true;
         public bool ShowIdentityFields = true;
         public bool ShowHumanoidInfoBox = true;
         public Action ApplyPatrolPath;
@@ -56,10 +57,12 @@ namespace Project.EditorTools
             def.enemyId = EditorGUILayout.TextField("Enemy Id", def.enemyId);
             def.displayName = EditorGUILayout.TextField("Display Name", def.displayName);
             def.prefabFileName = EditorGUILayout.TextField("Prefab File Name", def.prefabFileName);
-            def.archetype = (EnemyArchetype)EditorGUILayout.EnumPopup("Archetype", def.archetype);
-
-            if (def.archetype == EnemyArchetype.HumanoidInvector)
-                DrawHumanoidWeapons(def);
+            if (ctx.ShowArchetype)
+            {
+                def.archetype = (EnemyArchetype)EditorGUILayout.EnumPopup("Archetype", def.archetype);
+                if (def.archetype == EnemyArchetype.HumanoidInvector)
+                    DrawHumanoidWeapons(def);
+            }
 
             if (ctx.ShowDefinitionAssetName)
                 ctx.DefinitionAssetFileName = EditorGUILayout.TextField("Definition Asset Name", ctx.DefinitionAssetFileName);
@@ -82,6 +85,64 @@ namespace Project.EditorTools
                 typeof(ItemData),
                 false);
             def.preferRangedWeapon = DMCharacterCreatorSharedUi.DrawPropertyToggle("Prefer Ranged", def.preferRangedWeapon);
+        }
+
+        /// <summary>Applies an Enemy Kind: body type (hit FX), threat kind and category defaults.</summary>
+        public static void ApplyEnemyKind(EnemyDefinition def, Project.Combat.DMEnemyBodyType kind)
+        {
+            if (def == null)
+                return;
+
+            def.bodyType = kind;
+            switch (kind)
+            {
+                case Project.Combat.DMEnemyBodyType.Android:
+                    def.surfaceThreatKind = SurfaceThreatKind.Android;
+                    def.enemyCategory = EnemyCategory.Hybrid;
+                    break;
+                case Project.Combat.DMEnemyBodyType.Robot:
+                    def.surfaceThreatKind = SurfaceThreatKind.Android;
+                    def.enemyCategory = EnemyCategory.Tank;
+                    break;
+                default:
+                    def.surfaceThreatKind = SurfaceThreatKind.Lifeform;
+                    def.enemyCategory = EnemyCategory.Grunt;
+                    break;
+            }
+        }
+
+        /// <summary>Enemy Kind + brain/profile overrides + XP. All of it lives on the EnemyDefinition (the authority).</summary>
+        public static void DrawKindAndBrain(EnemyDefinition def)
+        {
+            if (def == null)
+                return;
+
+            using var _ = DMCharacterCreatorSharedUi.ScopedCreatorLabelWidth();
+            EditorGUILayout.LabelField("Enemy Kind & Brain", EditorStyles.boldLabel);
+
+            EditorGUI.BeginChangeCheck();
+            var kind = (Project.Combat.DMEnemyBodyType)EditorGUILayout.EnumPopup("Enemy Kind (Humanoid / Android / Robot)", def.bodyType);
+            if (EditorGUI.EndChangeCheck())
+                ApplyEnemyKind(def, kind);
+
+            def.enemyCategory = (EnemyCategory)EditorGUILayout.EnumPopup("Category", def.enemyCategory);
+            def.surfaceThreatKind = (SurfaceThreatKind)EditorGUILayout.EnumPopup("Threat Kind", def.surfaceThreatKind);
+
+            def.overrideBrain = DMCharacterCreatorSharedUi.DrawPropertyToggle("Override Brain (else profile default)", def.overrideBrain);
+            if (def.overrideBrain)
+            {
+                def.brainArchetype = (DMEnemyArchetype)EditorGUILayout.EnumPopup("Brain Archetype", def.brainArchetype);
+                def.primaryPersonality = (DMEnemyPersonality)EditorGUILayout.EnumPopup("Primary Personality", def.primaryPersonality);
+                def.secondaryPersonality = (DMEnemyPersonality)EditorGUILayout.EnumPopup("Secondary Personality", def.secondaryPersonality);
+            }
+
+            def.brainProfileOverride = (DM_EnemyBrainProfile)EditorGUILayout.ObjectField(
+                "Brain Profile Override", def.brainProfileOverride, typeof(DM_EnemyBrainProfile), false);
+            def.engagementProfileOverride = (DM_EnemyEngagementProfile)EditorGUILayout.ObjectField(
+                "Engagement Profile Override", def.engagementProfileOverride, typeof(DM_EnemyEngagementProfile), false);
+            def.hitMarkProfileOverride = (Project.Combat.DM_EnemyHitMarkProfile)EditorGUILayout.ObjectField(
+                "Hit Mark Profile Override", def.hitMarkProfileOverride, typeof(Project.Combat.DM_EnemyHitMarkProfile), false);
+            def.xpReward = Mathf.Max(0, EditorGUILayout.IntField("XP Reward", def.xpReward));
         }
 
         public static void DrawHumanoidAnimatorNote(bool show)
@@ -442,28 +503,17 @@ namespace Project.EditorTools
                 return false;
             }
 
-            CraftingEditorUtility.EnsureFolder(ProjectAssetPaths.EnemiesData);
-            string fileName = EnemyPrefabBuilder.SanitizeFileName(definitionAssetFileName, workingDefinition.enemyId);
-            string path = $"{ProjectAssetPaths.EnemiesData}/{fileName}.asset";
-
             string prefabPath = EnemyPrefabVisualSetupUtility.ResolveOutputPrefabPath(workingDefinition);
-
-            EnemyDefinition existing = AssetDatabase.LoadAssetAtPath<EnemyDefinition>(path);
-            if (existing == null)
+            if (!DMCharacterCreatorDefinitionLink.TryEnsureSaved(workingDefinition, out EnemyDefinition saved, out string saveError))
             {
-                EnemyDefinition asset = UnityEngine.Object.Instantiate(workingDefinition);
-                asset.name = fileName;
-                AssetDatabase.CreateAsset(asset, path);
-                workingDefinition = asset;
-            }
-            else
-            {
-                EditorUtility.CopySerialized(workingDefinition, existing);
-                EditorUtility.SetDirty(existing);
-                workingDefinition = existing;
+                DMCharacterCreatorActionValidation.ShowValidationDialog(
+                    DMCharacterCreatorActionValidation.EnemyDialogTitle,
+                    saveError);
+                return false;
             }
 
-            AssetDatabase.SaveAssets();
+            workingDefinition = saved;
+            string path = AssetDatabase.GetAssetPath(saved);
             AssetDatabase.ImportAsset(path);
             EditorGUIUtility.PingObject(workingDefinition);
             Debug.Log($"Saved enemy definition to {path} (output prefab: {prefabPath})");

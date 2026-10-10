@@ -56,7 +56,8 @@ namespace Project.EditorTools
                 return true;
 
             string fileName = Path.GetFileNameWithoutExtension(normalized);
-            return string.Equals(fileName, ProtectedTemplateFileName, System.StringComparison.OrdinalIgnoreCase);
+            return string.Equals(fileName, ProtectedTemplateFileName, System.StringComparison.OrdinalIgnoreCase) ||
+                   DMCharacterCreatorProtection.IsProtectedPrefabName(fileName);
         }
 
         public static bool TryValidateOutputPath(string outputPath, out string errorMessage)
@@ -72,7 +73,7 @@ namespace Project.EditorTools
             {
                 errorMessage =
                     $"Refusing to write over the protected template '{ProtectedTemplateFileName}.prefab'. " +
-                    "Choose a different Prefab File Name. HumanoidEnemy_Invector is the clone source only.";
+                    "Choose a different Prefab File Name. HumanoidEnemy_Invector, Player_v7* and Player_Invector* are protected templates.";
                 return false;
             }
 
@@ -95,6 +96,20 @@ namespace Project.EditorTools
                 return null;
             }
 
+            // The EnemyDefinition is the authority and must be the SAVED asset (never the panel's in-memory copy).
+            if (definition != null)
+            {
+                if (!DMCharacterCreatorDefinitionLink.TryEnsureSaved(definition, out EnemyDefinition savedDefinition, out string linkError))
+                {
+                    Debug.LogError(
+                        $"[EnemyPrefabVisualSetup] Build stopped: the saved definition link cannot be set. {linkError}");
+                    return null;
+                }
+
+                definition = savedDefinition;
+                DMCharacterCreatorPostBuildCheck.LastSavedDefinition = savedDefinition;
+            }
+
             string templatePath = ResolveTemplatePath(templateOverride);
             if (!File.Exists(templatePath))
             {
@@ -103,6 +118,24 @@ namespace Project.EditorTools
                 if (!File.Exists(templatePath))
                 {
                     Debug.LogError($"[EnemyPrefabVisualSetup] Template prefab not found: {templatePath}");
+                    return null;
+                }
+            }
+
+            // Rig check BEFORE any destructive step (a failed check must never cost the user an existing prefab).
+            GameObject resolvedModel = modelSource;
+            if (modelSource != null)
+            {
+                resolvedModel = EnemyModelAvatarUtility.ResolvePreferredVisualModel(modelSource);
+                if (!EnemyModelAvatarUtility.EnsureRigReadyForHumanoidPaste(
+                        resolvedModel,
+                        autoPrepareImport,
+                        allowForceHumanoid,
+                        out resolvedModel,
+                        out string rigMessage) &&
+                    !EnemyModelAvatarUtility.IsReadyForHumanoidPaste(resolvedModel))
+                {
+                    Debug.LogWarning($"[EnemyPrefabVisualSetup] Model not ready for humanoid paste: {rigMessage}");
                     return null;
                 }
             }
@@ -123,23 +156,6 @@ namespace Project.EditorTools
                 }
             }
 
-            GameObject resolvedModel = modelSource;
-            if (modelSource != null)
-            {
-                resolvedModel = EnemyModelAvatarUtility.ResolvePreferredVisualModel(modelSource);
-                if (!EnemyModelAvatarUtility.EnsureRigReadyForHumanoidPaste(
-                        resolvedModel,
-                        autoPrepareImport,
-                        allowForceHumanoid,
-                        out resolvedModel,
-                        out string rigMessage) &&
-                    !EnemyModelAvatarUtility.IsReadyForHumanoidPaste(resolvedModel))
-                {
-                    Debug.LogWarning($"[EnemyPrefabVisualSetup] Model not ready for humanoid paste: {rigMessage}");
-                    return null;
-                }
-            }
-
             GameObject root = PrefabUtility.LoadPrefabContents(outputPath);
             if (root == null)
                 return null;
@@ -147,10 +163,10 @@ namespace Project.EditorTools
             try
             {
                 root.name = Path.GetFileNameWithoutExtension(outputPath);
+                GameObject templateAsset = AssetDatabase.LoadAssetAtPath<GameObject>(templatePath);
 
                 if (resolvedModel != null)
                 {
-                    GameObject templateAsset = AssetDatabase.LoadAssetAtPath<GameObject>(templatePath);
                     EnemyInvectorSetupUtility.AttachVisualModel(
                         root,
                         resolvedModel,
@@ -162,6 +178,21 @@ namespace Project.EditorTools
 
                 if (definition != null)
                     EnemyInvectorSetupUtility.RepairHumanoidRoot(root, definition);
+
+                DMCharacterCreatorBuildReport report =
+                    DMCharacterCreatorPostBuildCheck.Run(root, definition, outputPath, templateAsset);
+                string reportText = report.Format();
+                if (report.Failed)
+                {
+                    Debug.LogError(
+                        $"[EnemyPrefabVisualSetup] Post-build check FAILED for '{outputPath}'. The prefab was NOT saved with this build.\n{reportText}");
+                    return null;
+                }
+
+                if (report.Warnings.Count > 0)
+                    Debug.LogWarning($"[EnemyPrefabVisualSetup] Post-build check for '{outputPath}':\n{reportText}");
+                else
+                    Debug.Log($"[EnemyPrefabVisualSetup] Post-build check passed for '{outputPath}'.\n{reportText}");
 
                 DMHumanoidPrefabSaveUtility.PrepareOutputPrefabForSave(root, visualChildName);
                 PrefabUtility.SaveAsPrefabAsset(root, outputPath);
@@ -196,16 +227,38 @@ namespace Project.EditorTools
 
             try
             {
-                DMHumanoidVisualFinalizeUtility.FinalizeVisualCommon(root);
-                if (definition != null)
-                    EnemyInvectorSetupUtility.RepairHumanoidRoot(root, definition);
-                else
+                EnemyDefinition target = definition ?? EnemyInvectorSetupUtility.ResolveDefinitionForPrefab(prefabPath);
+                if (target != null)
                 {
-                    EnemyDefinition resolved = EnemyInvectorSetupUtility.ResolveDefinitionForPrefab(prefabPath);
-                    EnemyInvectorSetupUtility.RepairHumanoidRoot(root, resolved);
+                    if (!DMCharacterCreatorDefinitionLink.TryEnsureSaved(target, out EnemyDefinition saved, out string linkError))
+                    {
+                        Debug.LogError($"[EnemyPrefabVisualSetup] Repair stopped: the saved definition link cannot be set. {linkError}");
+                        return false;
+                    }
+
+                    target = saved;
+                    DMCharacterCreatorPostBuildCheck.LastSavedDefinition = saved;
+                    if (DMCharacterCreatorRepair.RebuildAvatarTPose(root, target, prefabPath, out string avatarMessage))
+                        Debug.Log($"[EnemyPrefabVisualSetup] {avatarMessage}");
+                    else if (!string.IsNullOrEmpty(avatarMessage))
+                        Debug.LogWarning($"[EnemyPrefabVisualSetup] {avatarMessage}");
                 }
 
-                DMHumanoidPrefabSaveUtility.PrepareOutputPrefabForSave(root, definition?.visualChildName);
+                DMHumanoidVisualFinalizeUtility.FinalizeVisualCommon(root);
+                EnemyInvectorSetupUtility.RepairHumanoidRoot(root, target);
+
+                DMCharacterCreatorBuildReport report = DMCharacterCreatorPostBuildCheck.Run(
+                    root, target, prefabPath, AssetDatabase.LoadAssetAtPath<GameObject>(ResolveTemplatePath(target != null ? target.templatePrefab : null)));
+                if (report.Failed)
+                {
+                    Debug.LogError($"[EnemyPrefabVisualSetup] Repair check FAILED for '{prefabPath}'. Not saved.\n{report.Format()}");
+                    return false;
+                }
+
+                if (report.Warnings.Count > 0)
+                    Debug.LogWarning($"[EnemyPrefabVisualSetup] Repair check for '{prefabPath}':\n{report.Format()}");
+
+                DMHumanoidPrefabSaveUtility.PrepareOutputPrefabForSave(root, target?.visualChildName);
                 PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
                 return true;
             }

@@ -186,10 +186,10 @@ namespace Project.AI
         public float idleDuration = 3f;
 
         [Header("Collider")]
-        public float colliderRadius = 0.45f;
-        public float colliderHeight = 2f;
+        public float colliderRadius = 0.15f;
+        public float colliderHeight = 1.88f;
         public Vector3 colliderCenter = new Vector3(0f, 1f, 0f);
-        public bool fitColliderToRenderers = true;
+        public bool fitColliderToRenderers = false;
 
         [Header("Animation Clips")]
         public AnimationClip[] idleClips = System.Array.Empty<AnimationClip>();

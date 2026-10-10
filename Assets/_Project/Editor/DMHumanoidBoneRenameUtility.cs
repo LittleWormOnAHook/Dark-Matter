@@ -189,6 +189,9 @@ namespace Project.EditorTools
                 return null;
 
             HumanBone[] humans = desc.human;
+            // old (source FBX) bone name -> new (template) bone name, so the source avatar's authored
+            // T-pose skeleton entries can be re-keyed after the Visual bones were renamed.
+            var renameMap = new Dictionary<string, string>(StringComparer.Ordinal);
             if (humans != null && templateNames != null)
             {
                 for (int i = 0; i < humans.Length; i++)
@@ -198,6 +201,8 @@ namespace Project.EditorTools
                         continue;
                     if (!templateNames.TryGetValue(bodyBone, out string newName) || string.IsNullOrEmpty(newName))
                         continue;
+                    if (!string.IsNullOrEmpty(bone.boneName))
+                        renameMap[bone.boneName] = newName;
                     bone.boneName = newName;
                     humans[i] = bone;
                 }
@@ -205,7 +210,11 @@ namespace Project.EditorTools
                 desc.human = humans;
             }
 
-            desc.skeleton = BuildSkeleton(visual.transform);
+            // ROOT CAUSE OF "CROSSED ARMS": the FBX hierarchy is stored in its authored (often A-) pose while the
+            // imported Avatar stores a corrected T-pose in humanDescription.skeleton. Rebuilding the avatar from the
+            // live transforms baked the A-pose in as the T-pose reference, so every humanoid clip pulled the arms in.
+            // Keep the live hierarchy (names/parents) but take pose data from the source avatar's T-pose skeleton.
+            desc.skeleton = BuildSkeleton(visual.transform, sourceAvatar.humanDescription.skeleton, renameMap);
 
             Avatar built = AvatarBuilder.BuildHumanAvatar(visual, desc);
             if (built == null || !built.isValid)
@@ -234,7 +243,23 @@ namespace Project.EditorTools
 
             Avatar existing = AssetDatabase.LoadAssetAtPath<Avatar>(assetPath);
             if (existing != null)
-                AssetDatabase.DeleteAsset(assetPath);
+            {
+                // Replace the avatar file's contents but keep its .meta, so every prefab / scene reference
+                // (GUID + fileID 9000000) keeps resolving.
+                string tempPath = (string.IsNullOrEmpty(dir) ? "Assets" : dir) + "/__dm_tmp_avatar.asset";
+                AssetDatabase.CreateAsset(avatar, tempPath);
+                AssetDatabase.SaveAssets();
+                File.Copy(tempPath, assetPath, true);
+                AssetDatabase.DeleteAsset(tempPath);
+                // The copied main object is still named after the temp file; rename it so the importer does not warn.
+                string yaml = File.ReadAllText(assetPath);
+                string fixedYaml = yaml.Replace("m_Name: __dm_tmp_avatar", "m_Name: " + Path.GetFileNameWithoutExtension(assetPath));
+                if (!ReferenceEquals(yaml, fixedYaml) && yaml != fixedYaml)
+                    File.WriteAllText(assetPath, fixedYaml);
+                AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate);
+                Avatar kept = AssetDatabase.LoadAssetAtPath<Avatar>(assetPath);
+                return kept != null ? kept : existing;
+            }
 
             AssetDatabase.CreateAsset(avatar, assetPath);
             AssetDatabase.ImportAsset(assetPath);
@@ -359,7 +384,7 @@ namespace Project.EditorTools
             return map.Count > 0 ? map : fromAvatar;
         }
 
-        static Dictionary<HumanBodyBones, string> SnapshotNamesFromAvatar(Avatar avatar)
+        public static Dictionary<HumanBodyBones, string> SnapshotNamesFromAvatar(Avatar avatar)
         {
             var map = new Dictionary<HumanBodyBones, string>();
             if (avatar == null || !avatar.isHuman)
@@ -465,20 +490,47 @@ namespace Project.EditorTools
             }
         }
 
-        static SkeletonBone[] BuildSkeleton(Transform visual)
+        static SkeletonBone[] BuildSkeleton(
+            Transform visual,
+            SkeletonBone[] sourceTPose,
+            Dictionary<string, string> renameMap)
         {
+            Dictionary<string, SkeletonBone> tpose = null;
+            if (sourceTPose != null && sourceTPose.Length > 0)
+            {
+                tpose = new Dictionary<string, SkeletonBone>(sourceTPose.Length, StringComparer.Ordinal);
+                for (int i = 0; i < sourceTPose.Length; i++)
+                {
+                    string key = sourceTPose[i].name;
+                    if (renameMap != null && renameMap.TryGetValue(key, out string renamed))
+                        key = renamed;
+                    if (!tpose.ContainsKey(key))
+                        tpose[key] = sourceTPose[i];
+                }
+            }
+
             Transform[] transforms = visual.GetComponentsInChildren<Transform>(true);
             var bones = new SkeletonBone[transforms.Length];
             for (int i = 0; i < transforms.Length; i++)
             {
                 Transform t = transforms[i];
-                bones[i] = new SkeletonBone
+                var bone = new SkeletonBone
                 {
                     name = t.name,
                     position = t.localPosition,
                     rotation = t.localRotation,
                     scale = t.localScale
                 };
+
+                // Index 0 is the Visual root (renamed/placed by the creator): keep the live pose.
+                if (i > 0 && tpose != null && tpose.TryGetValue(t.name, out SkeletonBone src))
+                {
+                    bone.position = src.position;
+                    bone.rotation = src.rotation;
+                    bone.scale = src.scale;
+                }
+
+                bones[i] = bone;
             }
 
             return bones;

@@ -20,6 +20,13 @@ namespace Project.AI.Invector
         [SerializeField] private float hitCapsuleRadius = 0.45f;
 
         public EnemyDefinition Definition => enemyDefinition;
+
+        // The EnemyDefinition is the authority for the hit capsule. The serialized hitCapsule* fields below are
+        // FALLBACKS ONLY (no definition linked). The creator also bakes the definition's values into them so a
+        // prefab opened without the asset still matches.
+        public float CapsuleRadius => enemyDefinition != null ? Mathf.Max(0.05f, enemyDefinition.colliderRadius) : hitCapsuleRadius;
+        public float CapsuleHeight => enemyDefinition != null ? Mathf.Max(0.5f, enemyDefinition.colliderHeight) : hitCapsuleHeight;
+        public Vector3 CapsuleCenter => enemyDefinition != null ? enemyDefinition.colliderCenter : hitCapsuleCenter;
         [SerializeField] private float hitCapsuleHeight = 2f;
         [SerializeField] private Vector3 hitCapsuleCenter = new Vector3(0f, 1f, 0f);
         [SerializeField] private bool infiniteAmmo = true;
@@ -64,14 +71,14 @@ namespace Project.AI.Invector
 
             EnemyInvectorHitSetup.EnsureRootCapsule(
                 gameObject,
-                hitCapsuleRadius,
-                hitCapsuleHeight,
-                hitCapsuleCenter,
+                CapsuleRadius,
+                CapsuleHeight,
+                CapsuleCenter,
                 fitToRenderers: false);
             // Before hit/ragdoll caches: remount orphan VBOT physics onto the live avatar.
             EnemyInvectorRagdollRigRepair.TryRemountOrphanRagdollOntoAvatar(gameObject);
             EnsureInvectorInitialized();
-            EnemyInvectorHitSetup.Apply(gameObject, hitCapsuleRadius, hitCapsuleHeight, hitCapsuleCenter);
+            EnemyInvectorHitSetup.Apply(gameObject, CapsuleRadius, CapsuleHeight, CapsuleCenter);
             if (GetComponent<EnemyInvectorPhysicsCache>() == null)
                 gameObject.AddComponent<EnemyInvectorPhysicsCache>();
             EnsureInvectorPhysicsReady();
@@ -121,7 +128,7 @@ namespace Project.AI.Invector
             yield return new WaitForFixedUpdate();
             DisableInvectorHealthDeath();
             EnsureInvectorInitialized();
-            EnemyInvectorHitSetup.Apply(gameObject, hitCapsuleRadius, hitCapsuleHeight, hitCapsuleCenter);
+            EnemyInvectorHitSetup.Apply(gameObject, CapsuleRadius, CapsuleHeight, CapsuleCenter);
             EnsureInvectorPhysicsReady();
             EnemyInvectorHitSetup.RestoreRagdollPhysicsLayers(gameObject);
 
@@ -158,9 +165,9 @@ namespace Project.AI.Invector
             {
                 EnemyInvectorHitSetup.EnsureRootCapsule(
                     gameObject,
-                    hitCapsuleRadius,
-                    hitCapsuleHeight,
-                    hitCapsuleCenter);
+                    CapsuleRadius,
+                    CapsuleHeight,
+                    CapsuleCenter);
             }
 
             DisableInvectorHealthDeath();

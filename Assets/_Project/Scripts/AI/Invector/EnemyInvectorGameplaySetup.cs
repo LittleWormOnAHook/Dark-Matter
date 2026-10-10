@@ -91,6 +91,12 @@ namespace Project.AI.Invector
             SetField(health, "respawnTime", definition.respawnTime);
             SetField(health, "healthBarOffset", definition.healthBarOffset);
 
+            // XP reward is owned by the definition (was never wired before).
+            EnemyProgressionXp xp = root.GetComponent<EnemyProgressionXp>();
+            if (xp == null)
+                xp = root.AddComponent<EnemyProgressionXp>();
+            xp.Configure(definition.xpReward);
+
             SetField(senses, "visionRange", definition.visionRange);
             SetField(senses, "visionFov", definition.visionFov);
             SetField(senses, "eyeHeight", definition.eyeHeight);
