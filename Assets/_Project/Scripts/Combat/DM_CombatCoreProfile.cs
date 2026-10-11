@@ -187,6 +187,71 @@ namespace Project.Combat
         [Range(0.6f, 2f)] public float damageNumberCritScale = 1.25f;
         [Range(0.6f, 2f)] public float damageNumberHeavyScale = 1.4f;
 
+        [Header("Slice 2 hit reactions (B1-B4)")]
+        [Tooltip("Master switch for the Slice 2 hit reactions: directional flinch / backstep (B1), hit-chain escalation (B2), heavy hit slide-back + waist bend (B3) and hit recovery before the enemy swings again (B4). Off = Slice 1 behaviour.")]
+        public bool enableHitReactions = true;
+        [Tooltip("B4: seconds the enemy cannot start a new swing after a poise break, a heavy-hit Big reaction or a chain stumble. Extends the attack lockout only; postSwingLockSeconds is not touched.")]
+        [Range(0f, 4f)] public float hitRecoverySeconds = 1.6f;
+        public bool hitRecoveryOnPoiseBreak = true;
+        public bool hitRecoveryOnHeavyHit = true;
+        public bool hitRecoveryOnChainStumble = true;
+
+        [Header("Slice 2: directional flinch (B1)")]
+        [Tooltip("On = a normal player melee hit twists the enemy's torso toward the swing direction and gives a tiny backstep (procedural, on top of the existing light flinch).")]
+        public bool directionalFlinchEnabled = true;
+        [Tooltip("Swing side of the player's light combo steps: +1 = left-to-right slash, -1 = right-to-left, 0 = overhead / thrust (no sideways twist).")]
+        [Range(-1f, 1f)] public float swingSideLightA = 1f;
+        [Range(-1f, 1f)] public float swingSideLightB = -1f;
+        [Range(-1f, 1f)] public float swingSideLightC = 0f;
+        [Tooltip("Swing side of charged / heavy swings.")]
+        [Range(-1f, 1f)] public float swingSideCharged = 0f;
+        [Tooltip("Torso twist (degrees) at full swing side.")]
+        [Range(0f, 25f)] public float swingTwistDegrees = 10f;
+        [Tooltip("Lean-back (degrees) and duration of the directional flinch on a plain hit.")]
+        [Range(0f, 15f)] public float directionalFlinchDegrees = 6f;
+        [Range(0.15f, 0.5f)] public float directionalFlinchSeconds = 0.28f;
+        [Tooltip("Share of the backstep that follows the swing sideways (0 = straight away from the player).")]
+        [Range(0f, 1f)] public float swingLateralBias = 0.35f;
+        [Tooltip("Backstep on a plain hit (meters) and how long it takes. 0.08 m = 8 cm.")]
+        [Range(0f, 0.5f)] public float lightBackstepMeters = 0.08f;
+        [Range(0.05f, 0.5f)] public float lightBackstepSeconds = 0.18f;
+        [Tooltip("Extra backstep (meters) on a poise break.")]
+        [Range(0f, 1.5f)] public float poiseBreakBackstepMeters = 0.35f;
+
+        [Header("Slice 2: hit-chain escalation (B2)")]
+        public bool chainReactionsEnabled = true;
+        [Tooltip("Hits in a row on the same enemy inside this window count as a chain (resets when it lapses).")]
+        [Range(0.3f, 3f)] public float hitChainWindowSeconds = 1.2f;
+        [Tooltip("Chain hit number that gets the stronger flinch + backstep.")]
+        [Range(2, 6)] public int chainStrongHitCount = 2;
+        [Tooltip("Chain hit number that gets the full-body stumble (Big reaction, two backsteps, lean back).")]
+        [Range(2, 8)] public int chainStumbleHitCount = 3;
+        [Range(1f, 3f)] public float chainStrongFlinchMultiplier = 1.6f;
+        [Range(0f, 1f)] public float chainStrongBackstepMeters = 0.25f;
+        [Range(0.3f, 2f)] public float chainStumbleSeconds = 0.9f;
+        [Range(0f, 2f)] public float chainStumbleBackstepMeters = 0.8f;
+        [Range(0f, 30f)] public float chainStumbleLeanDegrees = 18f;
+        [Tooltip("After a stumble, heavy-hit Big reaction or poise break the enemy cannot be Big-staggered again by hit chains / heavy hits for this long (cap against stun-lock). Poise breaks still always work.")]
+        [Range(0f, 8f)] public float bigReactionImmunitySeconds = 2.5f;
+
+        [Header("Slice 2: heavy hit slide-back + waist bend (B3)")]
+        public bool heavyReactionEnabled = true;
+        [Tooltip("Big reaction length on a charged / heavy hit (seconds).")]
+        [Range(0.3f, 2f)] public float heavyBigReactionSeconds = 0.7f;
+        [Tooltip("Slide-back distance (meters) and duration on a heavy hit. 0.5 - 1.0 m reads as a shove.")]
+        [Range(0f, 2f)] public float heavySlideMeters = 0.8f;
+        [Range(0.1f, 1f)] public float heavySlideSeconds = 0.35f;
+        [Tooltip("Procedural waist bend (degrees) and duration on a heavy hit.")]
+        [Range(0f, 40f)] public float heavyWaistBendDegrees = 20f;
+        [Range(0.2f, 1f)] public float heavyWaistBendSeconds = 0.5f;
+        [Tooltip("On = a heavy hit does not Big-stagger an enemy that is committed to a swing (swing not interrupted) or has attackArmor AllAttacks; it only bends the waist.")]
+        public bool heavyRespectsCommitment = true;
+        [Tooltip("Slide distance multiplier when a heavy hit does not Big-stagger (immunity window).")]
+        [Range(0f, 1f)] public float heavyFallbackScale = 0.4f;
+        [Tooltip("Slides stop at a ledge: max ground drop (meters) under the next step. Total distance of stacked slides is capped at Max Total Slide.")]
+        [Range(0.1f, 2f)] public float hitSlideMaxLedgeDrop = 0.5f;
+        [Range(0.2f, 3f)] public float hitSlideMaxTotalMeters = 1.2f;
+
         [Header("Future tuning hooks")]
         [Range(0, 12)] public int hitstopLightFrames = 2;
         [Range(0, 12)] public int hitstopHeavyFrames = 6;

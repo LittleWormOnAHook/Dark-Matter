@@ -167,6 +167,7 @@ namespace Project.Combat
             if (melee == null)
                 return false;
 
+            swingStep = melee.CurrentLightComboStep;
             return melee.IsStrongMeleeDamageActive || melee.IsChargedStrongSwingActive;
         }
     }

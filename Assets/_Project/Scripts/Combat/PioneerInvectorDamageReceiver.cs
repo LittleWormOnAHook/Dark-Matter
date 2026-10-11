@@ -149,6 +149,7 @@ namespace Project.Combat
                                 staggerSeconds);
                             NotifyAttackInterrupt(enemyHealth, damage, source, isCritical, hitPoint, staggerSnapshot);
                             bool poiseBreak = hitPoise != null && hitPoise.LastBreakFrame == Time.frameCount;
+                            DMEnemyHitReaction.OnPlayerMeleeHit(enemyHealth, ragdollBridge, staggerSnapshot, damage, source, isCritical, poiseBreak);
                             DMCombatCameraShake.TryPlayMeleeHit(source, isCritical, poiseBreak);
                             DMMeleeHitStop.OnPlayerMeleeHit(source, enemyHealth, isCritical);
                         }

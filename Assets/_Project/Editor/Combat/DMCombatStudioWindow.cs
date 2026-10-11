@@ -271,6 +271,68 @@ namespace Project.EditorTools.Combat
                         "damageNumberCritScale",
                         "damageNumberHeavyScale");
                 });
+                DMStudioStyles.DrawSection("Hit reactions: overview and recovery (Slice 2 / B4)", DMStudioStyles.ContentPanel, () =>
+                {
+                    EditorGUILayout.HelpBox("Procedural reactions to a landed PLAYER melee hit. B4: poise break / heavy Big reaction / chain stumble lock the enemy's next swing for Hit Recovery Seconds (postSwingLock untouched). B1: torso twist toward the swing side + small backstep. B2: hit 2 in a chain = stronger flinch, hit 3 = full-body stumble, capped by the Big Reaction Immunity. B3: heavy hits slide the enemy back and bend the waist; committed swings and super-armor enemies only bend.", MessageType.Info);
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedProfile,
+                        "enableHitReactions",
+                        "hitRecoverySeconds",
+                        "hitRecoveryOnPoiseBreak",
+                        "hitRecoveryOnHeavyHit",
+                        "hitRecoveryOnChainStumble",
+                        "bigReactionImmunitySeconds",
+                        "hitSlideMaxLedgeDrop",
+                        "hitSlideMaxTotalMeters");
+                });
+
+                DMStudioStyles.DrawSection("Directional flinch (Slice 2 / B1)", DMStudioStyles.ContentPanel, () =>
+                {
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedProfile,
+                        "directionalFlinchEnabled",
+                        "swingSideLightA",
+                        "swingSideLightB",
+                        "swingSideLightC",
+                        "swingSideCharged",
+                        "swingTwistDegrees",
+                        "directionalFlinchDegrees",
+                        "directionalFlinchSeconds",
+                        "swingLateralBias",
+                        "lightBackstepMeters",
+                        "lightBackstepSeconds",
+                        "poiseBreakBackstepMeters");
+                });
+
+                DMStudioStyles.DrawSection("Hit-chain escalation (Slice 2 / B2)", DMStudioStyles.ContentPanel, () =>
+                {
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedProfile,
+                        "chainReactionsEnabled",
+                        "hitChainWindowSeconds",
+                        "chainStrongHitCount",
+                        "chainStumbleHitCount",
+                        "chainStrongFlinchMultiplier",
+                        "chainStrongBackstepMeters",
+                        "chainStumbleSeconds",
+                        "chainStumbleBackstepMeters",
+                        "chainStumbleLeanDegrees");
+                });
+
+                DMStudioStyles.DrawSection("Heavy hit slide-back and waist bend (Slice 2 / B3)", DMStudioStyles.ContentPanel, () =>
+                {
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedProfile,
+                        "heavyReactionEnabled",
+                        "heavyBigReactionSeconds",
+                        "heavySlideMeters",
+                        "heavySlideSeconds",
+                        "heavyWaistBendDegrees",
+                        "heavyWaistBendSeconds",
+                        "heavyRespectsCommitment",
+                        "heavyFallbackScale");
+                });
+
             }
 
             if (EditorGUI.EndChangeCheck())

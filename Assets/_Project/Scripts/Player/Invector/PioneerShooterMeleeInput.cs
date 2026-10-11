@@ -983,6 +983,9 @@ namespace Project.Player.Invector
         /// <summary>Hold past charge threshold, before or during charge pose crossfade.</summary>
         public bool IsStrongChargeHoldActive => _strongChargeArmed && _lightAttackHeldLast;
 
+        /// <summary>1-based light combo step (A=1, B=2, C=3) of the swing in progress or just finished; 0 when none (hit reactions read it for the swing side).</summary>
+        public int CurrentLightComboStep => _lastLightSlot >= 0 && Time.time - _lastLightSlotSeenAt <= 0.9f ? _lastLightSlot + 1 : 0;
+
         /// <summary>Charged release swing (Strong SwordAttack B) — covers clip even if FullBody state hash mismatches.</summary>
         public bool IsChargedStrongSwingActive =>
             _strongSwingStartedAt > float.NegativeInfinity

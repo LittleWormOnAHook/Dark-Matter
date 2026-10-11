@@ -240,6 +240,32 @@ namespace Project.AI.Invector
                 hitstopSeconds: 0f));
         }
 
+        /// <summary>
+        /// Slice 2 / B4: hit recovery. Cancels any swing in progress and keeps the enemy from starting a new one for
+        /// <paramref name="seconds"/> (attack lockout only; token / slot untouched, postSwingLockSeconds untouched).
+        /// </summary>
+        public void ApplyHitRecovery(float seconds)
+        {
+            if (seconds <= 0f || (_health != null && _health.IsDead))
+                return;
+
+            if (_controller != null && (_controller.isDead || IsCorpseRagdolled))
+                return;
+
+            InterruptEnemyCombatForStagger(seconds);
+        }
+
+        /// <summary>Slice 2 / B1-B3: procedural flinch with a fixed torso twist (see DMEnemyHitFlinch.Play).</summary>
+        public void PlayDirectionalFlinch(Vector3 hitFromWorld, float degrees, float seconds, float twistDegrees)
+        {
+            if (HasActiveRagdoll || _isKnockdownActive)
+                return;
+
+            DMEnemyHitFlinch flinch = EnsureFlinch();
+            if (flinch != null)
+                flinch.Play(hitFromWorld, degrees, seconds, twistDegrees);
+        }
+
         public void TryHitStaggerFromRanged(
             Vector3 hitPoint,
             Vector3 hitDirection,

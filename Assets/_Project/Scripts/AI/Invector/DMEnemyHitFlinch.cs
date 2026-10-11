@@ -42,6 +42,12 @@ namespace Project.AI.Invector
         /// <summary>Starts (or restarts) a flinch leaning away from <paramref name="hitFromWorld"/>.</summary>
         public void Play(Vector3 hitFromWorld, float degrees, float duration)
         {
+            Play(hitFromWorld, degrees, duration, float.NaN);
+        }
+
+        /// <summary>Same flinch with a fixed torso twist (degrees, signed: + turns toward the enemy's right). NaN = the old small random twist.</summary>
+        public void Play(Vector3 hitFromWorld, float degrees, float duration, float twistDegrees)
+        {
             if (!ResolveBones() || degrees <= 0f || duration <= 0f)
                 return;
 
@@ -54,7 +60,7 @@ namespace Project.AI.Invector
             _leanAxis = Vector3.Cross(Vector3.up, away.normalized);
             _degrees = degrees;
             _duration = Mathf.Max(duration, attackSeconds + 0.05f);
-            _twistDegrees = Random.Range(-maxTwistDegrees, maxTwistDegrees);
+            _twistDegrees = float.IsNaN(twistDegrees) ? Random.Range(-maxTwistDegrees, maxTwistDegrees) : twistDegrees;
             _startTime = Time.time;
         }
 

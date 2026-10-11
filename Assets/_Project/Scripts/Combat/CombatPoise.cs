@@ -23,6 +23,11 @@ namespace Project.Combat
         public float LastInterruptTime { get; set; } = float.NegativeInfinity;
         public float LastPlayerHitTime { get; set; } = float.NegativeInfinity;
         public int ChainHitCount { get; set; }
+
+        // Slice 2 hit reactions (DMEnemyHitReaction).
+        public int ReactionChainCount { get; set; }
+        public float LastReactionHitTime { get; set; } = float.NegativeInfinity;
+        public float BigReactionImmuneUntil { get; set; } = float.NegativeInfinity;
         public float MaxPoise => maxPoise;
 
         private void Awake()

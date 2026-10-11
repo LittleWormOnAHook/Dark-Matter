@@ -93,6 +93,43 @@ MonoBehaviour:
   damageNumberHeavyColor: {r: 1, g: 0.4, b: 0.05, a: 1}
   damageNumberCritScale: 1.25
   damageNumberHeavyScale: 1.4
+  enableHitReactions: 1
+  hitRecoverySeconds: 1.6
+  hitRecoveryOnPoiseBreak: 1
+  hitRecoveryOnHeavyHit: 1
+  hitRecoveryOnChainStumble: 1
+  directionalFlinchEnabled: 1
+  swingSideLightA: 1
+  swingSideLightB: -1
+  swingSideLightC: 0
+  swingSideCharged: 0
+  swingTwistDegrees: 10
+  directionalFlinchDegrees: 6
+  directionalFlinchSeconds: 0.28
+  swingLateralBias: 0.35
+  lightBackstepMeters: 0.08
+  lightBackstepSeconds: 0.18
+  poiseBreakBackstepMeters: 0.35
+  chainReactionsEnabled: 1
+  hitChainWindowSeconds: 1.2
+  chainStrongHitCount: 2
+  chainStumbleHitCount: 3
+  chainStrongFlinchMultiplier: 1.6
+  chainStrongBackstepMeters: 0.25
+  chainStumbleSeconds: 0.9
+  chainStumbleBackstepMeters: 0.8
+  chainStumbleLeanDegrees: 18
+  bigReactionImmunitySeconds: 2.5
+  heavyReactionEnabled: 1
+  heavyBigReactionSeconds: 0.7
+  heavySlideMeters: 0.8
+  heavySlideSeconds: 0.35
+  heavyWaistBendDegrees: 20
+  heavyWaistBendSeconds: 0.5
+  heavyRespectsCommitment: 1
+  heavyFallbackScale: 0.4
+  hitSlideMaxLedgeDrop: 0.5
+  hitSlideMaxTotalMeters: 1.2
   hitstopLightFrames: 2
   hitstopHeavyFrames: 6
   parryWindowSeconds: 0.2
