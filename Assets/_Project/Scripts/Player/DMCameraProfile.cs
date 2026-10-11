@@ -52,6 +52,8 @@ namespace Project.Player
         [Header("Tight spaces (tents, corners, single walls)")]
         [Tooltip("When geometry blocks the lens closer than Min Follow, allow pulling in to this distance (meters from pivot).")]
         public float tightSpaceMinFollow = 0.4f;
+        [Tooltip("Minimum lens distance (meters from pivot) when a wall/block behind the camera pushes it in out in the open (NOT inside a tent/room). Keeps the lens outside the player's head/body mesh. Also the floor for any sudden Invector culling pull-in (charge wind-up, weapon triggers).")]
+        public float openAirMinFollow = 1.35f;
         [Tooltip("Hide the player mesh when the lens is closer than this to the pivot (prevents clipping through the body).")]
         public float playerMeshHideDistance = 0.85f;
         [Tooltip("Hysteresis before re-showing the player mesh after a hide.")]
@@ -88,6 +90,7 @@ namespace Project.Player
                 defaultDistance = minFollow;
             nearClipPlane = Mathf.Clamp(nearClipPlane, 0.01f, 1f);
             tightSpaceMinFollow = Mathf.Clamp(tightSpaceMinFollow, 0.15f, minFollow - 0.05f);
+            openAirMinFollow = Mathf.Clamp(openAirMinFollow, tightSpaceMinFollow, minFollow);
             playerMeshHideDistance = Mathf.Clamp(playerMeshHideDistance, tightSpaceMinFollow + 0.05f, minFollow);
             playerMeshShowHysteresis = Mathf.Max(0.05f, playerMeshShowHysteresis);
             tightSpaceReleaseSpeed = Mathf.Max(1f, tightSpaceReleaseSpeed);

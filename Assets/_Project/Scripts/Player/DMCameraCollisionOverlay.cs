@@ -32,6 +32,7 @@ namespace Project.Player
         private const float DefaultClimbNearRadius = 4.25f;
         private const float DefaultFloorProbe = 3.0f;
         private const float DefaultTightSpaceMinFollow = 0.4f;
+        private const float DefaultOpenAirMinFollow = 1.35f;
         private const float DefaultPlayerMeshHideDistance = 0.85f;
         private const float DefaultPlayerMeshShowHysteresis = 0.18f;
         private const float DefaultTightSpaceReleaseSpeed = 7.5f;
@@ -79,6 +80,7 @@ namespace Project.Player
         private float ClimbNearRadius => Profile != null ? Profile.climbNearRadius : DefaultClimbNearRadius;
         private float FloorProbe => Profile != null ? Profile.floorProbe : DefaultFloorProbe;
         private float TightSpaceMinFollow => Profile != null ? Profile.tightSpaceMinFollow : DefaultTightSpaceMinFollow;
+        private float OpenAirMinFollow => Mathf.Max(TightSpaceMinFollow, Profile != null ? Profile.openAirMinFollow : DefaultOpenAirMinFollow);
         private float PlayerMeshHideDistance =>
             Profile != null ? Profile.playerMeshHideDistance : DefaultPlayerMeshHideDistance;
         private float PlayerMeshShowHysteresis =>
@@ -257,7 +259,8 @@ namespace Project.Player
                 {
                     _inTightSpace = true;
                     tightWall = true;
-                    targetDist = Mathf.Max(TightSpaceMinFollow, allowed);
+                    // Open-air wall/block: keep the lens outside the player's mesh (tents/rooms use the pivot-enclosed path below).
+                    targetDist = Mathf.Max(_pivotEnclosed ? TightSpaceMinFollow : OpenAirMinFollow, allowed);
                 }
                 else
                 {
@@ -381,9 +384,14 @@ namespace Project.Player
             float placedDist = placed.magnitude;
             float zoomNow = tpCamera.CurrentZoom > 0.01f ? tpCamera.CurrentZoom : tpCamera.distance;
             bool pulledBelowZoom = placedDist < zoomNow - 0.08f;
+            // Invector culling (or a state change at charge wind-up) can yank the lens in without our own wall probe seeing anything.
+            // Treat that as a pull-in we own: re-place the lens at the damped distance instead of letting it snap in.
+            bool invectorSnappedIn = !_pivotEnclosed && !_inTightSpace && !mantling && !nearClimb
+                && desiredDist < placedDist - 0.05f;
             bool needsInvectorSync = _pivotEnclosed
                 || _inTightSpace
                 || pulledBelowZoom
+                || invectorSnappedIn
                 || _restoreComfortDist > 0f;
 
             if (!needsInvectorSync)
@@ -403,7 +411,7 @@ namespace Project.Player
                 _smoothDist = Mathf.Max(placedDist, activeMinFollow);
 
             tpCamera.distance = _smoothDist;
-            if (pulledBelowZoom)
+            if (pulledBelowZoom || invectorSnappedIn)
                 SetCullingDistance(_smoothDist);
         }
 
@@ -413,8 +421,10 @@ namespace Project.Player
                 return MantleMinFollow;
             if (nearClimb)
                 return ClimbMinFollow;
-            if (pivotEnclosed || tightSpace)
+            if (pivotEnclosed)
                 return TightSpaceMinFollow;
+            if (tightSpace)
+                return OpenAirMinFollow;
             return MinFollow;
         }
 
@@ -1237,6 +1247,7 @@ namespace Project.Player
                 "Ignore Raycast",
                 "PW_VFX",
                 "HeadTrack",
+                "DMHitbox",
                 "BodyPart",
                 "Enemy",
                 "CompanionAI",

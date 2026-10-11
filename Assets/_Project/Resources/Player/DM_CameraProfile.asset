@@ -22,8 +22,8 @@ MonoBehaviour:
   minFollow: 2.5
   climbMinFollow: 2.8
   mantleMinFollow: 2.8
-  pullSpeed: 16
-  releaseSpeed: 5.5
+  pullSpeed: 6
+  releaseSpeed: 3.5
   collisionHysteresis: 0.12
   climbPullSpeed: 5.5
   climbReleaseSpeed: 2.8
@@ -34,9 +34,10 @@ MonoBehaviour:
   extraSkin: 0.08
   floorProbe: 3
   tightSpaceMinFollow: 0.4
+  openAirMinFollow: 1.35
   playerMeshHideDistance: 0.85
   playerMeshShowHysteresis: 0.18
-  tightSpaceReleaseSpeed: 7.5
+  tightSpaceReleaseSpeed: 4.5
   interiorMaxFollow: 1.35
   interiorFirstPersonDistance: 0.35
   interiorEnclosureProbeDistance: 2.75
