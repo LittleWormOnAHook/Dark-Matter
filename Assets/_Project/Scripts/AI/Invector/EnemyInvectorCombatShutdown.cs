@@ -129,6 +129,12 @@ namespace Project.AI.Invector
             if (meleeManager == null)
                 return;
 
+            // Never restore (and SetActive) a weapon the loadout bridge did not equip: vMeleeManager.Init points
+            // rightWeapon at the template's first sword slot, which would pop a second weapon into view.
+            EnemyInvectorLoadoutBridge loadout = root.GetComponent<EnemyInvectorLoadoutBridge>();
+            if (loadout != null)
+                loadout.SyncMeleeBinding();
+
             // Fast path: already equipped — skip GetComponentsInChildren every swing.
             if (meleeManager.rightWeapon != null)
             {

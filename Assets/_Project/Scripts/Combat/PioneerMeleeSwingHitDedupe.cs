@@ -772,6 +772,21 @@ namespace Project.Combat
             if (_animator == null)
                 return;
 
+            if (DMMeleeHitStop.PlayerHoldActive)
+            {
+                // Slice 1 / A1: hit stop on the player's swing (blade sticks for a few frames).
+                if (!_meleeAnimSpeedOverrideApplied)
+                {
+                    // Base speed only: never capture a swing multiplier or a stale held value as the speed to return to.
+                    float cur = _animator.speed;
+                    _savedAnimatorSpeed = cur >= 0.9f && cur <= 1.05f ? cur : 1f;
+                    _meleeAnimSpeedOverrideApplied = true;
+                }
+
+                _animator.speed = DMMeleeHitStop.PlayerHoldSpeed;
+                return;
+            }
+
             if (TryResolveMeleeAnimSpeedMultiplier(out float multiplier))
             {
                 if (!_meleeAnimSpeedOverrideApplied)

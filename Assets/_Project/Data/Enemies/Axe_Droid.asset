@@ -22,6 +22,7 @@ MonoBehaviour:
   meleeWeaponItem: {fileID: 11400000, guid: 2e8f991038197ef498a21d87d427a3b7, type: 2}
   rangedWeaponItem: {fileID: 0}
   preferRangedWeapon: 0
+  canThrowGrenades: 0
   enemyCategory: 0
   bodyType: 1
   overrideBrain: 0
@@ -51,11 +52,14 @@ MonoBehaviour:
   aggroOnHeardHit: 1
   attackRange: 1.8
   attackDamage: 12
-  attackCooldown: 1.2
+  attackCooldown: 0.9
   attackWindup: 0.35
   meleeDuration: 0.85
   unarmedDuration: 0.55
   rangedEngageRange: 12
+  rangedHoldDistance: 0
+  rangedRetreatFraction: 0.6
+  kiterRetreatBoost: 1.5
   rangedAttackCooldown: 1.2
   rangedDuration: 0.35
   aimHoldDuration: 1.5
@@ -76,8 +80,8 @@ MonoBehaviour:
   walkSpeed: 2.4
   runSpeed: 5.2
   chaseSpeed: 0
-  chaseSpeedMultiplier: 0.88
-  turnSpeed: 5
+  chaseSpeedMultiplier: 0.95
+  turnSpeed: 9
   loseTargetDelay: 5
   searchDuration: 6
   searchRadius: 4
@@ -106,6 +110,6 @@ MonoBehaviour:
   lootItemPool: []
   lootRespawnDelay: 20
   lootInteractRange: 2.75
-  lootBagPrefab: {fileID: 0}
+  lootBagPrefab: {fileID: 5070942837361520457, guid: 171f2890153a93c4c9421280816d02de, type: 3}
   lootBagMesh: {fileID: 0}
   lootBagTexture: {fileID: 0}

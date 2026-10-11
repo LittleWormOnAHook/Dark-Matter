@@ -3,6 +3,7 @@ using Project.AI;
 using Project.AI.Invector;
 using Project.Data;
 using Project.Player.Invector;
+using Project.UI;
 using UnityEngine;
 
 namespace Project.Combat
@@ -121,13 +122,23 @@ namespace Project.Combat
                     {
                         // Killing blows must feed corpse impulse before Died runs death presentation.
                         ragdollBridge.RememberHitForDeath(staggerSnapshot);
+                        bool heavyHit = AttackInterruptEvaluator.IsPlayerChargedHit(source, out _);
+                        CombatPoise hitPoise = enemyHealth.GetComponent<CombatPoise>();
+                        CombatUiSpawner.NextEnemyDamageHeavy = heavyHit;
                         enemyHealth.TakeDamage(damage, source, isCritical);
+                        CombatUiSpawner.NextEnemyDamageHeavy = false;
+                        DMEnemyHitMarks.MeleeHeavyContext = heavyHit;
+                        DMEnemyHitMarks.MeleeChainContext = hitPoise != null ? hitPoise.ChainHitCount : 0;
                         SpawnHitVfx(damage, source, hitPoint);
+                        DMEnemyHitMarks.MeleeHeavyContext = false;
+                        DMEnemyHitMarks.MeleeChainContext = 0;
                         PlayMeleeHitAudio(hitPoint, isCritical);
-                        DMCombatCameraShake.TryPlayChargedHit(source);
 
                         if (enemyHealth.IsDead)
+                        {
+                            DMCombatCameraShake.TryPlayMeleeHit(source, true, true);
                             ragdollBridge.ActivateCorpseRagdoll(staggerSnapshot);
+                        }
                         else
                         {
                             ragdollBridge.TryHitStagger(
@@ -136,15 +147,21 @@ namespace Project.Combat
                                 isCritical,
                                 wantsHitStagger,
                                 staggerSeconds);
+                            NotifyAttackInterrupt(enemyHealth, damage, source, isCritical, hitPoint, staggerSnapshot);
+                            bool poiseBreak = hitPoise != null && hitPoise.LastBreakFrame == Time.frameCount;
+                            DMCombatCameraShake.TryPlayMeleeHit(source, isCritical, poiseBreak);
+                            DMMeleeHitStop.OnPlayerMeleeHit(source, enemyHealth, isCritical);
                         }
 
                         return;
                     }
 
+                    CombatUiSpawner.NextEnemyDamageHeavy = AttackInterruptEvaluator.IsPlayerChargedHit(source, out _);
                     enemyHealth.TakeDamage(damage, source, isCritical);
+                    CombatUiSpawner.NextEnemyDamageHeavy = false;
                     SpawnHitVfx(damage, source, hitPoint);
                     PlayMeleeHitAudio(hitPoint, isCritical);
-                    DMCombatCameraShake.TryPlayChargedHit(source);
+                    DMCombatCameraShake.TryPlayMeleeHit(source, isCritical, false);
                     return;
                 }
             }
@@ -155,6 +172,34 @@ namespace Project.Combat
                 PioneerInvectorDamageBridge.ApplyPioneerDamageToCollider(collider, damage, source, isCritical, hitPoint);
                 PlayMeleeHitAudio(hitPoint, isCritical);
             }
+        }
+
+        /// <summary>Hands the landed player hit to the attack interrupt evaluator (beside CombatPoise).</summary>
+        private static void NotifyAttackInterrupt(
+            EnemyHealth enemyHealth,
+            float damage,
+            GameObject source,
+            bool isCritical,
+            Vector3? hitPoint,
+            vDamage damageSnapshot)
+        {
+            if (enemyHealth == null || enemyHealth.IsDead || source == null)
+                return;
+
+            // Player attacks only (companion hits do not interrupt).
+            if (source.GetComponentInParent<PioneerShooterMeleeInput>() == null)
+                return;
+
+            var info = new DamageInfo
+            {
+                Amount = damage,
+                IsCritical = isCritical,
+                Source = source,
+                HitPoint = hitPoint ?? enemyHealth.transform.position,
+                IsChargedHit = AttackInterruptEvaluator.IsPlayerChargedHit(source, out int swingStep),
+                SwingStep = swingStep
+            };
+            AttackInterruptEvaluator.TryInterruptFromPlayerHit(enemyHealth, in info, damageSnapshot);
         }
 
         private void PlayMeleeHitAudio(Vector3? hitPoint, bool isCritical)

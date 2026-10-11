@@ -84,7 +84,7 @@ namespace Project.AI
                 EnemyHealthBarPresenter.RequestEngagedHudFocus(this);
 
             Vector3 feedbackPosition = transform.position + Vector3.up * 1.5f;
-            CombatUiSpawner.ShowDamage(damage, feedbackPosition, isCritical);
+            CombatUiSpawner.ShowEnemyDamage(damage, feedbackPosition, isCritical);
             ApplyPoiseFromHealthDamage(damage, source, isCritical, feedbackPosition);
 
             if (currentHealth <= 0f)

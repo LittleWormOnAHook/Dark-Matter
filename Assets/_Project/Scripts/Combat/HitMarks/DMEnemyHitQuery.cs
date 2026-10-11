@@ -53,7 +53,7 @@ namespace Project.Combat
             (Physics.DefaultRaycastLayers & ~(1 << PlayerLayerIndex)) | HitboxMask;
 
         /// <summary>True when any enemy has a live hitbox rig (otherwise callers can skip the second query).</summary>
-        public static bool AnyRigActive => DMEnemyHitboxRig.ActiveRigCount > 0;
+        public static bool AnyRigActive => DMEnemyHitboxRig.ActiveRigCount > 0 || DMPlayerHitboxRig.ActiveRigCount > 0;
 
         public static float HitboxSweepRadius
         {
@@ -76,7 +76,17 @@ namespace Project.Combat
                 return false;
 
             DMEnemyHitboxRig rig = collider.GetComponentInParent<DMEnemyHitboxRig>();
-            return rig != null && rig.IsActive;
+            if (rig != null && rig.IsActive)
+                return true;
+
+            // Player body: while the player's per-bone rig is live its capsule / ragdoll / weapon colliders are skipped.
+            if (DMPlayerHitboxRig.ActiveRigCount > 0)
+            {
+                DMPlayerHitboxRig playerRig = collider.GetComponentInParent<DMPlayerHitboxRig>();
+                return playerRig != null && playerRig.IsActive;
+            }
+
+            return false;
         }
 
         /// <summary>Hitbox behind this collider, when it is a live DM hitbox.</summary>

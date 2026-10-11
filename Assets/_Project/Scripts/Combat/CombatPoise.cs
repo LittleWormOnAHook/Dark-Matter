@@ -1,4 +1,5 @@
 using Invector;
+using Project.AI;
 using Project.AI.Invector;
 using UnityEngine;
 
@@ -15,6 +16,13 @@ namespace Project.Combat
         private EnemyInvectorRagdollBridge ragdollBridge;
 
         public float CurrentPoise => currentPoise;
+
+        // Attack interrupt bookkeeping (read / written by AttackInterruptEvaluator).
+        /// <summary>Frame number of the last poise break (== Time.frameCount when the current hit broke poise).</summary>
+        public int LastBreakFrame { get; private set; } = -1;
+        public float LastInterruptTime { get; set; } = float.NegativeInfinity;
+        public float LastPlayerHitTime { get; set; } = float.NegativeInfinity;
+        public int ChainHitCount { get; set; }
         public float MaxPoise => maxPoise;
 
         private void Awake()
@@ -71,6 +79,7 @@ namespace Project.Combat
                 return;
 
             currentPoise = maxPoise;
+            LastBreakFrame = Time.frameCount;
             TriggerPoiseBreak(in info);
         }
 
@@ -146,7 +155,13 @@ namespace Project.Combat
             if (GetComponent<TrainingDummy>() != null)
                 maxPoise = profile.trainingDummyPoiseMax;
             else
-                maxPoise = profile.humanoidPoiseMax;
+            {
+                // EnemyDefinition.poiseMultiplier scales the humanoid max (definitions are the authority).
+                EnemyAiController ai = GetComponent<EnemyAiController>();
+                EnemyDefinition def = ai != null ? ai.AppliedDefinition : null;
+                float mult = def != null ? Mathf.Max(0.25f, def.poiseMultiplier) : 1f;
+                maxPoise = profile.humanoidPoiseMax * mult;
+            }
         }
     }
 }

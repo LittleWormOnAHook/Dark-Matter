@@ -182,9 +182,22 @@ namespace Project.Combat
                     fxAmmoItem != null ? fxAmmoItem : ammoItem,
                     fxWeapon);
             }
+            else if (enemyHealth == null
+                     && rangedHitMarks
+                     && DMPlayerHitboxRig.TryHandleRangedHit(
+                         collider,
+                         hitPoint,
+                         surfaceNormal,
+                         fxTravel,
+                         damage,
+                         fxAmmoItem != null ? fxAmmoItem : ammoItem,
+                         fxWeapon))
+            {
+                // Player body hitbox (DMPlayerHitboxRig): body-type marks on the struck bone, no legacy splatter.
+            }
             else if (enemyHealth == null)
             {
-                // Non-enemy targets (player, companions, nodes) keep legacy splatter VFX.
+                // Non-enemy targets (player capsule fallback, companions, nodes) keep legacy splatter VFX.
                 Vector3 normal = surfaceNormal.sqrMagnitude > 0.0001f
                     ? surfaceNormal.normalized
                     : (fxTravel != Vector3.zero ? -fxTravel : Vector3.up);

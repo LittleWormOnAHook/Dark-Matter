@@ -15,16 +15,55 @@ namespace Project.AI
     // scans used for opportunistic retargeting. Split out of EnemyAiController.cs.
     public partial class EnemyAiController
     {
+        /// <summary>
+        /// Ranged hold rule: an enemy whose active weapon is ranged-preferred keeps well beyond melee reach of the player. It holds at
+        /// <see cref="EnemyInvectorCombatBridge.RangedHoldDistance"/> (EnemyDefinition.rangedHoldDistance, 0 = auto 80% of rangedEngageRange)
+        /// and backs off once the player is closer than the retreat distance (kiting archetypes retreat sooner).
+        /// </summary>
+        internal bool UsesRangedHold(Transform target)
+        {
+            return combatBridge != null && target != null && IsCombatTargetPlayer(target) && combatBridge.IsArmedRangedPreferred();
+        }
+
+        /// <summary>Distance below which a ranged-holding enemy retreats from the player.</summary>
+        internal float ResolveRangedRetreatDistance()
+        {
+            float hold = combatBridge.RangedHoldDistance;
+            float frac = combatBridge.RangedRetreatFraction;
+            if (brain != null && brain.Archetype == DMEnemyArchetype.Kiter)
+                frac = Mathf.Min(0.95f, frac * combatBridge.KiterRetreatBoost);
+            return hold * frac;
+        }
+
+        private float crowdRoll = float.NaN;
+
+        /// <summary>Per-instance back-off / crowding variety: definition multiplier x (1 + profile spread x this enemy's fixed random roll).</summary>
+        internal float CrowdingVariationFactor()
+        {
+            if (float.IsNaN(crowdRoll)) crowdRoll = UnityEngine.Random.Range(-1f, 1f);
+            DM_EnemyEngagementProfile p = EngagementProfile;
+            float spread = p != null ? p.crowdingVariationSpread : 0f;
+            EnemyDefinition def = AppliedDefinition;
+            float defMult = def != null ? def.backoffDistanceMultiplier : 1f;
+            return Mathf.Max(0.3f, defMult * (1f + spread * crowdRoll));
+        }
+
         internal float ResolveMinCombatSeparation(Transform target)
         {
             float minSep = minCombatSeparation;
+            DM_EnemyEngagementProfile crowd = EngagementProfile;
+            if (crowd != null && crowd.applyCrowdingToAllEnemies && crowd.minCombatSeparation > 0.01f)
+                minSep = crowd.minCombatSeparation;
             if (target == null || !IsCombatTargetPlayer(target))
-                return minSep;
+                return minSep * CrowdingVariationFactor();
 
             DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
-            return profile != null
+            float result = profile != null
                 ? profile.ResolveMinCombatSeparationVsPlayer(minSep)
                 : minSep;
+            if (UsesRangedHold(target))
+                result = Mathf.Max(result, ResolveRangedRetreatDistance());
+            return result * CrowdingVariationFactor();
         }
 
         internal float ResolveCombatStandoffFor(Transform target)
@@ -32,6 +71,8 @@ namespace Project.AI
             float minSep = ResolveMinCombatSeparation(target);
             if (combat == null)
                 return minSep;
+            if (UsesRangedHold(target))
+                return Mathf.Max(minSep, combatBridge.RangedHoldDistance);
 
             float effectiveRange = combat.ResolveEffectiveAttackRange(target);
             DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
@@ -102,12 +143,47 @@ namespace Project.AI
             return toSelf;
         }
 
+        private Vector3 cachedSeparationDir;
+        private float cachedSeparationDepth;
+
+        private float CrowdingDepthScale(float depth)
+        {
+            DM_EnemyEngagementProfile p = EngagementProfile;
+            float gain = p != null ? p.crowdingDepthGain : 0f;
+            return 1f + gain * Mathf.Clamp01(depth);
+        }
+
+        /// <summary>Waiting enemies (Hold / Holder, or standing between swings) get nudged apart directly; the push grows with overlap depth.</summary>
+        private void TickCrowdingDrift()
+        {
+            DM_EnemyEngagementProfile p = EngagementProfile;
+            if (p == null || !p.applyCrowdingToAllEnemies || p.waitingCrowdingStrength <= 0.01f || IsStationary)
+                return;
+
+            bool waiting = state == AiState.Hold;
+            bool betweenSwings = (state == AiState.Attack || state == AiState.Defensive) && combat != null && !combat.IsAttacking;
+            if (!waiting && !betweenSwings)
+                return;
+
+            ComputeEnemySeparationOffset();
+            if (cachedSeparationDepth <= 0.001f || cachedSeparationDir.sqrMagnitude < 0.0001f)
+                return;
+
+            Vector3 step = cachedSeparationDir * (p.waitingCrowdingStrength * CrowdingDepthScale(cachedSeparationDepth) * Time.deltaTime);
+            step.y = 0f;
+            transform.position += step;
+        }
+
         private Vector3 ComputeEnemySeparationOffset()
         {
-            if (enemyAvoidanceRadius <= 0.01f || enemyAvoidanceStrength <= 0.01f)
+            float avoidRadius = enemyAvoidanceRadius, avoidStrength = enemyAvoidanceStrength;
+            DM_EnemyEngagementProfile crowd = EngagementProfile;
+            if (crowd != null && crowd.applyCrowdingToAllEnemies) { avoidRadius = crowd.enemyAvoidanceRadius; avoidStrength = crowd.enemyAvoidanceStrength; }
+            avoidRadius *= CrowdingVariationFactor();
+            if (avoidRadius <= 0.01f || avoidStrength <= 0.01f)
                 return Vector3.zero;
 
-            if (state != AiState.Chase && state != AiState.Attack && state != AiState.Defensive)
+            if (state != AiState.Chase && state != AiState.Attack && state != AiState.Defensive && state != AiState.Hold)
                 return Vector3.zero;
 
             if (((Time.frameCount + perfPhase) % 3) != 0)
@@ -117,12 +193,13 @@ namespace Project.AI
             int mask = enemyLayer >= 0 ? 1 << enemyLayer : Physics.AllLayers;
             int hitCount = Physics.OverlapSphereNonAlloc(
                 transform.position,
-                enemyAvoidanceRadius,
+                avoidRadius,
                 AvoidanceHits,
                 mask,
                 QueryTriggerInteraction.Ignore);
 
             Vector3 push = Vector3.zero;
+            float maxDepth = 0f;
             for (int i = 0; i < hitCount; i++)
             {
                 Collider hit = AvoidanceHits[i];
@@ -132,19 +209,25 @@ namespace Project.AI
                 Vector3 away = transform.position - hit.transform.position;
                 away.y = 0f;
                 float distance = away.magnitude;
-                if (distance <= 0.01f || distance >= enemyAvoidanceRadius)
+                if (distance <= 0.01f || distance >= avoidRadius)
                     continue;
 
-                push += away.normalized * (1f - distance / enemyAvoidanceRadius);
+                float depth = 1f - distance / avoidRadius;
+                maxDepth = Mathf.Max(maxDepth, depth);
+                push += away.normalized * depth;
             }
 
             if (push.sqrMagnitude < 0.0001f)
             {
                 cachedSeparationOffset = Vector3.zero;
+                cachedSeparationDir = Vector3.zero;
+                cachedSeparationDepth = 0f;
                 return cachedSeparationOffset;
             }
 
-            cachedSeparationOffset = push.normalized * enemyAvoidanceStrength;
+            cachedSeparationDir = push.normalized;
+            cachedSeparationDepth = maxDepth;
+            cachedSeparationOffset = cachedSeparationDir * (avoidStrength * CrowdingDepthScale(maxDepth));
             return cachedSeparationOffset;
         }
 

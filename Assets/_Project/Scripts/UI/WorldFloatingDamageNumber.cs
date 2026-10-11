@@ -28,13 +28,14 @@ namespace Project.UI
         private Camera worldCamera;
         private Color damageColor = DefaultDamageColor;
         private float elapsed;
+        private float sizeScaleMul = 1f;
 
-        public static void Spawn(float damage, Vector3 worldPosition, Color? color = null)
+        public static void Spawn(float damage, Vector3 worldPosition, Color? color = null, float sizeScale = 1f, bool? crit = null)
         {
             if (damage <= 0f)
                 return;
 
-            if (DMUiToolkitDamage.TrySpawn(damage, worldPosition, color))
+            if (DMUiToolkitDamage.TrySpawn(damage, worldPosition, color, sizeScale, crit))
                 return;
 
             GameObject root = PoolManager.Spawn(EnsureTemplate(), worldPosition, Quaternion.identity);
@@ -42,6 +43,7 @@ namespace Project.UI
                 return;
 
             WorldFloatingDamageNumber popup = root.GetComponent<WorldFloatingDamageNumber>();
+            popup.sizeScaleMul = Mathf.Max(0.1f, sizeScale);
             popup.Activate(damage, worldPosition, color ?? DefaultDamageColor);
         }
 
@@ -154,7 +156,7 @@ namespace Project.UI
 
             float lifeT = Mathf.Clamp01(elapsed / lifetime);
             float scaleMul = Mathf.Lerp(startScale, endScale, lifeT);
-            transform.localScale = Vector3.one * (worldScale * scaleMul);
+            transform.localScale = Vector3.one * (worldScale * scaleMul * sizeScaleMul);
 
             if (canvasGroup != null)
             {

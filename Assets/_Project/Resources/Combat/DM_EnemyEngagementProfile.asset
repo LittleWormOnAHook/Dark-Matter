@@ -17,15 +17,15 @@ MonoBehaviour:
   debugLogHandoffs: 1
   directorTickHz: 5
   agentRoleTickHz: 10
-  tokenMinHoldSeconds: 2.5
+  tokenMinHoldSeconds: 1.8
   switchScoreMargin: 2
-  switchConfirmSeconds: 0.35
-  minSecondsBetweenHandoffs: 1.5
-  postSwingLockSeconds: 0.25
+  switchConfirmSeconds: 0.25
+  minSecondsBetweenHandoffs: 1
+  postSwingLockSeconds: 0.6
   tokenHoldMaxSequences: 2
   tokenHoldMaxSeconds: 6
-  handoffGraceBeforeSwing: {x: 0.6, y: 1.2}
-  reawardCooldown: 1.5
+  handoffGraceBeforeSwing: {x: 0.3, y: 0.7}
+  reawardCooldown: 1
   candidateMaxDistance: 8
   weightPlayerHit: 5
   playerHitMemory: 1.5
@@ -41,40 +41,59 @@ MonoBehaviour:
   engageInFactor: 1
   engageOutFactor: 1.35
   engageOutGrace: 0.4
-  creepStartFactor: 0.95
+  creepStartFactor: 0.98
   creepGrace: 0.25
-  creepSpeedFactor: 0.62
+  creepSpeedFactor: 0.75
   attackFacingConeHalfAngle: 25
   attackFacingMaxTurnSeconds: 0.5
-  engagerTurnRate: 200
-  lightTrackRate: 120
-  lightTrackUntil: 0.3
+  engagerTurnRate: 300
+  nonAttackTurnRate: 360
+  lightTrackRate: 180
+  lightTrackUntil: 0.4
   chargedTrackRate: 60
   chargedTrackUntil: 0.28
   offscreenAttackExtraWindup: 0.25
-  holdRingRadius: 4
-  holdRingRadiusMin: 3.2
+  meleeRecoveryPauseMin: 0.25
+  meleeRecoveryPauseMax: 0.9
+  chaseStaminaPauseChance: 0.15
+  chaseStaminaPauseMin: 0.2
+  chaseStaminaPauseMax: 0.4
+  chaseStaminaPauseMinTargetDistance: 6
+  comboSecondHitChance: 0.7
+  comboThirdHitChance: 0.55
+  turnRateClampMax: 360
+  facingMoveScaleFloor: 0.45
+  lightSwingSpeedMultiplier: 1.1
+  applyCrowdingToAllEnemies: 1
+  enemyAvoidanceRadius: 1.8
+  enemyAvoidanceStrength: 1.6
+  waitingCrowdingStrength: 1.2
+  crowdingDepthGain: 1.5
+  minCombatSeparation: 0
+  crowdingVariationSpread: 0.2
+  holdRingRadius: 4.4
+  holdRingRadiusMin: 3.5
   holdRingRadiusMax: 5.5
   holdBandMin: 3
   holdBandMax: 6.5
   holdBandGrace: 0.6
   holdReanchorPlayerMove: 2
   holdReanchorCooldown: {x: 2.5, y: 4}
-  holderMinSpacing: 1.6
+  holderMinSpacing: 2.4
   holderEngagerLineHalfAngle: 20
-  holderWalkSpeed: 1.4
+  holderWalkSpeed: 1.9
   holderRunToAnchorDistance: 3
-  holderTurnRate: 90
+  holderTurnRate: 150
   holderFacingDeadZone: 35
   holderFacingSettle: 10
-  holderActionInterval: {x: 3.5, y: 6}
+  holderActionInterval: {x: 2, y: 4}
   holderWeightSidestep: 0.45
   holderWeightTaunt: 0.3
   holderWeightFeint: 0.15
   holderWeightNone: 0.1
   sidestepDistance: {x: 0.6, y: 1.2}
   sidestepMaxArc: 15
-  sidestepCooldown: 4
+  sidestepCooldown: 2.5
   tauntCooldown: 6
   tauntDuration: {x: 1, y: 2}
   feintDistance: 0.5

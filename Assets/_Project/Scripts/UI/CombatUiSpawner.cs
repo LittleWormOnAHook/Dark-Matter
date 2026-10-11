@@ -16,6 +16,26 @@ namespace Project.UI
         private static GameObject damagePrefab;
         private static GameObject healthBarPrefab;
 
+        /// <summary>Set by the player melee receiver right before EnemyHealth.TakeDamage; consumed by ShowEnemyDamage.</summary>
+        public static bool NextEnemyDamageHeavy;
+
+        /// <summary>Slice 1 / A3: damage number on an enemy, tiered normal / crit / heavy from DM_CombatCoreProfile.</summary>
+        public static void ShowEnemyDamage(float damage, Vector3 worldPosition, bool isCritical)
+        {
+            bool heavy = NextEnemyDamageHeavy;
+            NextEnemyDamageHeavy = false;
+            DM_CombatCoreProfile p = DM_CombatCoreProfile.Live;
+            if (p == null || !p.useDamageNumberTiers)
+            {
+                ShowDamage(damage, worldPosition, isCritical);
+                return;
+            }
+
+            Color color = heavy ? p.damageNumberHeavyColor : (isCritical ? p.damageNumberCritColor : p.damageNumberNormalColor);
+            float scale = heavy ? p.damageNumberHeavyScale : (isCritical ? p.damageNumberCritScale : 1f);
+            WorldFloatingDamageNumber.Spawn(damage, worldPosition, color, scale, isCritical || heavy);
+        }
+
         public static void ShowDamage(float damage, Vector3 worldPosition, bool isCritical = false)
         {
             Color color = isCritical

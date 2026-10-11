@@ -1,4 +1,5 @@
 using Project.AI;
+using Project.Combat.Experiment.Carve;
 using Project.Data;
 using UnityEngine;
 
@@ -32,13 +33,18 @@ namespace Project.Combat
             GameObject owner,
             out RaycastHit hit,
             float startSkin = 0f,
-            float minHitDistance = 0f)
+            float minHitDistance = 0f,
+            ItemData ammoItem = null)
         {
+            int mask = SharedLayerMask;
+            if (DMCarveExperimentCombatUtility.UsesAllPhysicsLayers(ammoItem))
+                mask = DMCarveExperimentCombatUtility.AllLayersExceptPlayer;
+
             return RangedFireSolver.TryRaycastAim(
                 origin,
                 direction,
                 maxDistance,
-                SharedLayerMask,
+                mask,
                 owner,
                 out hit,
                 startSkin,
@@ -151,8 +157,19 @@ namespace Project.Combat
             if (ammoItem != null && ammoItem.HasSplashDamage)
                 CombatHitResolver.ApplySplash(ammoItem, hitPoint, damage, owner, collider);
 
+            DMCombatCameraShake.TryPlayAmmoImpact(owner, ammoItem, weapon, hitPoint);
+
             GameObject receiver = collider.gameObject;
-            if (!ShouldPlayWorldImpact(receiver))
+            if (DMPlayerHitboxRig.IsPlayerBodyHitbox(receiver) && !DMCarveExperimentCombatUtility.BypassesWorldImpactCharacterBlocks(ammoItem))
+            {
+                // Player body hit: marks only (no world impact FX). Keep the hit sound and combat-impact noise.
+                if (playImpactAudio)
+                    CombatHitResolver.PlayImpactHitAudio(hitPoint);
+                EnemyNoiseEvents.RaiseCombatImpactNoise(hitPoint, CombatHitResolver.DefaultImpactNoiseRadius, owner);
+                return;
+            }
+
+            if (!ShouldPlayWorldImpact(receiver, ammoItem))
                 return;
 
             Vector3 impactNormal = surfaceNormal.sqrMagnitude > 0.0001f ? surfaceNormal : -fxTravel;
@@ -167,9 +184,12 @@ namespace Project.Combat
                 impactVfxOverride: impactVfxOverride);
         }
 
-        public static bool ShouldPlayWorldImpact(GameObject receiver)
+        public static bool ShouldPlayWorldImpact(GameObject receiver, ItemData ammoItem = null)
         {
             if (receiver == null)
+                return true;
+
+            if (DMCarveExperimentCombatUtility.BypassesWorldImpactCharacterBlocks(ammoItem))
                 return true;
 
             return receiver.GetComponentInParent<EnemyHealth>() == null;

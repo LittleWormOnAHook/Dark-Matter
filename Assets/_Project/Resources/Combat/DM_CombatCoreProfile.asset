@@ -49,7 +49,13 @@ MonoBehaviour:
   meleeAttackAutoFaceHalfAngle: 22
   enemyMeleeHitboxWidthScale: 2.25
   enemyMeleeHitboxReachScale: 2.15
-  enemyMeleeAttackRangeMultiplier: 1.22
+  enemyMeleeAttackRangeMultiplier: 1.26
+  enemyMeleeStandoffFraction: 0.56
+  enemyMeleeMaxOrbitFactor: 0.9
+  enemyIntentionalMeleeMissChance: 0.1
+  enemyMeleeMissStepSeconds: 0.4
+  enemyMeleeMissStepStopFactor: 0.72
+  enemyMeleeMissStepSpeedMultiplier: 0.95
   meleeHitYawForgivenessDegrees: 0
   lightComboAnimSpeedA: 1.05
   lightComboAnimSpeedB: 1.18
@@ -73,6 +79,20 @@ MonoBehaviour:
   strongReleaseWeightC: 0.497
   interactHoldComboAnimSpeed: 1.75
   chargedHitsIgnoreEnemyWeapons: 1
+  enableMeleeHitstop: 1
+  hitstopCritBonusFrames: 2
+  hitstopHoldSpeed: 0.05
+  hitstopFreezesAttacker: 1
+  lightHitShakeAmplitude: 0.05
+  lightHitShakeDurationSeconds: 0.04
+  heavyHitShakeAmplitude: 0.2
+  heavyHitShakeDurationSeconds: 0.08
+  useDamageNumberTiers: 1
+  damageNumberNormalColor: {r: 1, g: 0.96, b: 0.78, a: 1}
+  damageNumberCritColor: {r: 1, g: 0.55, b: 0.1, a: 1}
+  damageNumberHeavyColor: {r: 1, g: 0.4, b: 0.05, a: 1}
+  damageNumberCritScale: 1.25
+  damageNumberHeavyScale: 1.4
   hitstopLightFrames: 2
   hitstopHeavyFrames: 6
   parryWindowSeconds: 0.2
@@ -89,4 +109,30 @@ MonoBehaviour:
   parryShakeDurationSeconds: 0.1249
   blockShakeAmplitude: 0.403
   blockShakeDurationSeconds: 0.0927
+  enableGrenades: 0
+  enableAttackInterrupts: 1
+  interruptBaseChanceLight: 0.12
+  interruptBaseChanceFollowUp: 0.06
+  interruptBaseChanceCharged: 0.1
+  interruptEarlyWindowNormalized: 0.2
+  interruptEarlyWindowGuaranteed: 1
+  interruptEarlyBonus: 0.25
+  interruptCritBonus: 0.2
+  interruptHeavyHitBonus: 0.4
+  interruptChainWindowSeconds: 1.5
+  interruptChainBonusPerHit: 0.1
+  interruptChainBonusMax: 0.3
+  interruptLowPoiseThreshold: 0.5
+  interruptLowPoiseBonus: 0.15
+  interruptLowHealthThreshold: 0.25
+  interruptLowHealthBonus: 0.1
+  interruptMaxChance: 0.85
+  interruptGuaranteedOnPoiseBreak: 1
+  interruptGuaranteedOnHeavyVsLight: 1
+  interruptCommitStartLight: 0.45
+  interruptCommitStartCharged: 0.35
+  interruptImmunitySeconds: 2
+  interruptRecoverySeconds: 1.5
+  interruptReactionSeconds: 0.45
+  logInterruptsInPlay: 0
   logCombatEventsInPlay: 1

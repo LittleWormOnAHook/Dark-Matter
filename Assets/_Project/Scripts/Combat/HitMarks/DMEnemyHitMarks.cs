@@ -24,6 +24,10 @@ namespace Project.Combat
 
         [Tooltip("Picks the body type response on DM_EnemyHitMarkProfile (Genesis Studio → Combat → Hit Marks): Humanoid = red blood + blood-spot char; Android = coolant + sparks + glowing burn; Robot = sparks + glowing burn. Ammo element rules (§16) still override.")]
         [SerializeField] private DMEnemyBodyType bodyType = DMEnemyBodyType.Humanoid;
+
+        /// <summary>Slice 1 / A4: set by the player melee receiver around its hit VFX call so blood scales with heavy / chained hits. False / 0 for everything else.</summary>
+        public static bool MeleeHeavyContext;
+        public static int MeleeChainContext;
         [Tooltip("Optional per-type profile (set from EnemyDefinition.hitMarkProfileOverride). Empty = Resources/Combat/DM_EnemyHitMarkProfile.")]
         [SerializeField] private DM_EnemyHitMarkProfile profileOverride;
 
@@ -39,6 +43,7 @@ namespace Project.Combat
             public float GlowStart;
             public bool FadingOut;
             public float FadeStart;
+            public float FadeLen;
         }
 
         private static readonly Vector2[] AtlasBias =
@@ -59,6 +64,8 @@ namespace Project.Combat
         private float lastBurstTime = -10f;
         private float lastHealth = -1f;
         private int animatingCount;
+        private int playerCache = -1;
+        private bool playerLifetimePending;
         private int appliedProfileRevision = -1;
 
         public DMEnemyBodyType BodyType
@@ -78,7 +85,21 @@ namespace Project.Combat
         }
 
         /// <summary>Per-type override when set, else the global Resources profile (or built-in defaults).</summary>
+        /// <summary>True on the player's rig: marks expire after <see cref="DM_EnemyHitMarkProfile.playerMarkLifetimeSeconds"/>, are smaller and shallow.</summary>
+        public bool IsPlayerMarks
+        {
+            get
+            {
+                if (playerCache < 0)
+                    playerCache = GetComponent<DMPlayerHitboxRig>() != null ? 1 : 0;
+                return playerCache == 1;
+            }
+        }
+
         public DM_EnemyHitMarkProfile Profile => profileOverride != null ? profileOverride : DM_EnemyHitMarkProfile.LiveOrDefault;
+
+        /// <summary>Monotonic number of marks stamped on this body (unlike <see cref="ActiveMarkCount" />, never drops on rotate-out, regen fade or expiry): tests compare deltas of this.</summary>
+        public int StampCount { get; private set; }
 
         public int ActiveMarkCount
         {
@@ -141,6 +162,29 @@ namespace Project.Combat
 #endif
             }
 
+            marks.OnRangedHit(hitCollider, hitPoint, surfaceNormal, travelDirection, damage, ammoItem, weapon);
+        }
+
+        /// <summary>
+        /// Ranged hit marks for a body that has no EnemyHealth (the player, via <see cref="DMPlayerHitboxRig"/>).
+        /// Same body-type response, profile and A16 element rules as enemies; health-based regen fade is skipped.
+        /// </summary>
+        public static void HandleRangedHitOnBody(
+            GameObject root,
+            DMEnemyBodyType type,
+            Collider hitCollider,
+            Vector3 hitPoint,
+            Vector3 surfaceNormal,
+            Vector3 travelDirection,
+            float damage,
+            ItemData ammoItem,
+            ItemData weapon)
+        {
+            DMEnemyHitMarks marks = Ensure(root);
+            if (marks == null)
+                return;
+
+            marks.bodyType = type;
             marks.OnRangedHit(hitCollider, hitPoint, surfaceNormal, travelDirection, damage, ammoItem, weapon);
         }
 
@@ -270,6 +314,7 @@ namespace Project.Combat
 
                 slots[i].FadingOut = true;
                 slots[i].FadeStart = Time.time;
+                slots[i].FadeLen = 0f;
                 animatingCount++;
             }
         }
@@ -300,7 +345,10 @@ namespace Project.Combat
                 out Vector3 normal);
             if (travel == Vector3.zero)
                 travel = normal.sqrMagnitude > 0.0001f ? -normal : transform.forward;
-            hitPoint = ApplyMarkSurfaceOffset(profile, surfacePoint, normal, profile.burnProjectionDepth);
+            // Player marks: the (small) projector box is centred on the struck surface, not pushed out by half the nominal enemy depth.
+            hitPoint = IsPlayerMarks && normal.sqrMagnitude > 0.0001f
+                ? surfacePoint + normal.normalized * profile.markSurfaceNormalOffset
+                : ApplyMarkSurfaceOffset(profile, surfacePoint, normal, profile.burnProjectionDepth);
 
             DMEnemyHitbox hitbox = null;
             DMEnemyHitQuery.TryGetHitbox(hitCollider, out hitbox);
@@ -382,13 +430,14 @@ namespace Project.Combat
             if (splatter != null)
             {
                 float splatterScale = scale * Mathf.Max(0.05f, response.splatterScale);
+                splatterScale *= profile.ResolveGoreMultiplier(MeleeHeavyContext, MeleeChainContext, response.splatter);
                 DMEnemyHitFx.SpawnBurst(splatter, spawnPoint, entry, splatterScale);
                 if (response.exitSpray && damage >= profile.exitSprayDamageThreshold && profile.exitSprayStrength > 0.01f)
                     DMEnemyHitFx.SpawnBurst(splatter, point + travel * 0.02f, travel, splatterScale * Mathf.Max(0.3f, profile.exitSprayStrength));
             }
 
             if (sparks != null)
-                DMEnemyHitFx.SpawnBurst(sparks, spawnPoint, Vector3.Slerp(normal, entry, 0.5f), scale * Mathf.Max(0.05f, response.sparkScale));
+                DMEnemyHitFx.SpawnBurst(sparks, spawnPoint, Vector3.Slerp(normal, entry, 0.5f), scale * Mathf.Max(0.05f, response.sparkScale) * profile.ResolveGoreMultiplier(MeleeHeavyContext, MeleeChainContext, response.sparks));
         }
 
         private void OnMeleeHit(
@@ -535,6 +584,10 @@ namespace Project.Combat
             slot.Used = true;
             slot.FadingOut = false;
             slot.StampTime = Time.time;
+            slot.FadeLen = 0f;
+            StampCount++;
+            if (IsPlayerMarks)
+                playerLifetimePending = true;
             slot.HealthAtStamp = health != null ? health.CurrentHealth : 0f;
             if (!slot.Root.activeSelf)
                 slot.Root.SetActive(true);
@@ -583,6 +636,11 @@ namespace Project.Combat
             float size = Random.Range(Mathf.Min(profile.burnSize.x, profile.burnSize.y), Mathf.Max(profile.burnSize.x, profile.burnSize.y)) * ammoScale;
             size = Mathf.Max(0.02f, size);
             float depth = Mathf.Max(0.01f, profile.burnProjectionDepth * ammoScale);
+            if (IsPlayerMarks)
+            {
+                size = Mathf.Max(0.02f, size * profile.playerMarkSizeScale);
+                depth = Mathf.Max(0.02f, profile.playerMarkProjectionDepth);
+            }
             Vector2 bias = AtlasBias[Random.Range(0, AtlasBias.Length)];
 
             ConfigureProjector(slot.Base, baseMaterial, new Vector3(size, size, depth), bias, profile);
@@ -614,6 +672,10 @@ namespace Project.Combat
             slot.Used = true;
             slot.FadingOut = false;
             slot.StampTime = Time.time;
+            slot.FadeLen = 0f;
+            StampCount++;
+            if (IsPlayerMarks)
+                playerLifetimePending = true;
             slot.HealthAtStamp = health != null ? health.CurrentHealth : 0f;
             if (!slot.Root.activeSelf)
                 slot.Root.SetActive(true);
@@ -814,20 +876,39 @@ namespace Project.Combat
             if (appliedProfileRevision != DM_EnemyHitMarkProfile.Revision)
                 ApplyLiveProfile();
 
-            if (animatingCount <= 0)
+            if (animatingCount <= 0 && !playerLifetimePending)
                 return;
 
             DM_EnemyHitMarkProfile profile = Profile;
             float now = Time.time;
             int stillAnimating = 0;
+            bool playerMarks = IsPlayerMarks;
+            float lifeSeconds = playerMarks ? profile.playerMarkLifetimeSeconds : 0f;
+            bool waitingLife = false;
             for (int i = 0; i < slots.Length; i++)
             {
                 if (!slots[i].Used)
                     continue;
 
+                if (lifeSeconds > 0.05f && !slots[i].FadingOut)
+                {
+                    // Player marks expire: fade over the last playerMarkFadeSeconds, then ClearSlot below.
+                    float fade = Mathf.Clamp(profile.playerMarkFadeSeconds, 0.05f, lifeSeconds);
+                    if (now - slots[i].StampTime >= lifeSeconds - fade)
+                    {
+                        slots[i].FadingOut = true;
+                        slots[i].FadeStart = now;
+                        slots[i].FadeLen = fade;
+                        slots[i].Glowing = false;
+                    }
+                    else
+                        waitingLife = true;
+                }
+
                 if (slots[i].FadingOut)
                 {
-                    float t = Mathf.Clamp01((now - slots[i].FadeStart) / Mathf.Max(0.05f, profile.regenFadeSeconds));
+                    float fadeLen = slots[i].FadeLen > 0f ? slots[i].FadeLen : profile.regenFadeSeconds;
+                    float t = Mathf.Clamp01((now - slots[i].FadeStart) / Mathf.Max(0.05f, fadeLen));
                     float f = 1f - t;
                     if (slots[i].Base != null)
                         slots[i].Base.fadeFactor = f;
@@ -853,6 +934,7 @@ namespace Project.Combat
             }
 
             animatingCount = stillAnimating;
+            playerLifetimePending = waitingLife;
         }
 
         /// <summary>

@@ -489,6 +489,31 @@ namespace Project.AI
             return true;
         }
 
+        /// <summary>
+        /// Hard cap behind the role gate (EnemyCombat.TryAttack -> CanEngagementAttack): a swing may only start while fewer than the
+        /// ring's attack budget are mid-swing. The budget is the Phase 4 slot total (token holder + Combat Director slots by enemy count,
+        /// 1 when the Combat Director is off), so slots greater than 1 stay allowed per the Studio settings. Director off = no cap (Phase 3 off = legacy).
+        /// </summary>
+        public static bool CanStartSwing(EnemyAiController agent)
+        {
+            Ring ring = agent != null ? agent.EngagementState.Ring : null;
+            if (ring == null || !IsEnabled)
+                return true;
+
+            int budget = Mathf.Max(1, ring.TotalSlots);
+            int swinging = 0;
+            for (int i = 0; i < ring.Members.Count; i++)
+            {
+                EnemyAiController m = ring.Members[i];
+                if (m == null || m == agent)
+                    continue;
+                if (m.IsInAttackSequence)
+                    swinging++;
+            }
+
+            return swinging < budget;
+        }
+
         private static bool IsSwingLocked(EnemyAiController agent, DM_EnemyEngagementProfile p, float now)
         {
             return agent.IsInAttackSequence || now < agent.EngagementState.LastSequenceEndTime + p.postSwingLockSeconds;

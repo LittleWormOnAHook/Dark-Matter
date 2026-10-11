@@ -61,7 +61,7 @@ namespace Project.AI
         [Tooltip("At most one hand-off per target in this window.")]
         [Range(0f, 10f)] public float minSecondsBetweenHandoffs = 1.5f;
         [Tooltip("Token can't move for this long after a swing / combo / charged attack ends.")]
-        [Range(0f, 2f)] public float postSwingLockSeconds = 0.25f;
+        [Range(0f, 2f)] public float postSwingLockSeconds = 0.6f;
         [Tooltip("Holder releases the token after this many attack sequences (if anyone else is eligible).")]
         [Range(1, 10)] public int tokenHoldMaxSequences = 2;
         [Tooltip("Holder releases the token after this long (if anyone else is eligible).")]
@@ -108,6 +108,8 @@ namespace Project.AI
         [Range(5f, 90f)] public float attackFacingConeHalfAngle = 25f;
         [Range(0f, 2f)] public float attackFacingMaxTurnSeconds = 0.5f;
         [Range(30f, 720f)] public float engagerTurnRate = 200f;
+        [Tooltip("Turn rate (deg/s) while chasing / defending / searching with a combat target, i.e. outside the Attack state, so an enemy swings round to a player who moves behind it (180 deg in about 0.7 s). Only used while the engagement director is enabled; the legacy turnSpeed applies otherwise.")]
+        [Range(30f, 720f)] public float nonAttackTurnRate = 260f;
         [Tooltip("Light swings track the target at this rate until trackUntil (normalized), then lock.")]
         [Range(0f, 720f)] public float lightTrackRate = 120f;
         [Range(0f, 1f)] public float lightTrackUntil = 0.30f;
@@ -115,6 +117,45 @@ namespace Project.AI
         [Range(0f, 1f)] public float chargedTrackUntil = 0.28f;
         [Tooltip("Extra wind-up when the Engager attacks from outside the camera view (fairness).")]
         [Range(0f, 2f)] public float offscreenAttackExtraWindup = 0.25f;
+
+        [Header("Cadence and responsiveness (Slice 0b)")]
+        [Tooltip("Extra wait (s) after a melee swing ends before the next one, random between Min and Max. Replaces the hard-coded EnemyCombat prefab values (were 0.6 - 1.8).")]
+        [Range(0f, 3f)] public float meleeRecoveryPauseMin = 0.25f;
+        [Range(0f, 3f)] public float meleeRecoveryPauseMax = 0.9f;
+        [Tooltip("Chance a chase stamina roll stops the enemy briefly (was 0.38 on the prefab).")]
+        [Range(0f, 1f)] public float chaseStaminaPauseChance = 0.15f;
+        [Tooltip("Chase pause length range in seconds (was 0.5 - 0.9 on the prefab).")]
+        [Range(0f, 2f)] public float chaseStaminaPauseMin = 0.2f;
+        [Range(0f, 2f)] public float chaseStaminaPauseMax = 0.4f;
+        [Tooltip("The chase stamina pause only happens while the target is farther than this (m). 0 = allow at any range.")]
+        [Range(0f, 20f)] public float chaseStaminaPauseMinTargetDistance = 6f;
+        [Tooltip("Chance a light attack continues into a 2nd swing (was 0.6 on the combo driver prefab).")]
+        [Range(0f, 1f)] public float comboSecondHitChance = 0.7f;
+        [Tooltip("Chance a two-swing chain continues into a 3rd swing (was 0.45).")]
+        [Range(0f, 1f)] public float comboThirdHitChance = 0.55f;
+        [Tooltip("Upper clamp (deg/s) for the legacy turnSpeed -> degrees conversion on enemies (was hard-coded 220). 220 = old behaviour.")]
+        [Range(220f, 720f)] public float turnRateClampMax = 360f;
+        [Tooltip("Lowest fraction of move speed while the enemy is turned away from its move direction (was hard-coded 0.18). 1 = never slows to turn.")]
+        [Range(0.1f, 1f)] public float facingMoveScaleFloor = 0.45f;
+        [Tooltip("Animator speed multiplier during enemy LIGHT swings only (never the charged wind-up). 1 = off, 1.08-1.15 = snappier.")]
+        [Range(1f, 1.3f)] public float lightSwingSpeedMultiplier = 1.10f;
+
+        [Header("Enemy-vs-enemy crowding (applies to every enemy; prefab values are fallback only)")]
+        [Tooltip("On = enemyAvoidanceRadius/Strength (and minCombatSeparation when > 0) below replace each enemy prefab's own values. Off = prefab values. A definition engagementProfileOverride still wins.")]
+        public bool applyCrowdingToAllEnemies = true;
+        [Tooltip("Enemies inside this radius (m) of another enemy get pushed apart while chasing / attacking. Prefab default was 1.45.")]
+        [Range(0.5f, 4f)] public float enemyAvoidanceRadius = 1.8f;
+        [Tooltip("Push strength (m/s) of that separation. Prefab default was 0.85.")]
+        [Range(0f, 4f)] public float enemyAvoidanceStrength = 1.6f;
+        [Tooltip("Push (m/s) applied to enemies that are waiting (Hold / Holder) or standing between swings when another enemy overlaps them. Moving enemies keep using enemyAvoidanceStrength. 0 = waiting enemies are never pushed.")]
+        [Range(0f, 4f)] public float waitingCrowdingStrength = 1.2f;
+        [Tooltip("The push grows with overlap depth: strength x (1 + gain x depth), depth 0 = at the radius edge, 1 = fully overlapping. 0 = fixed push like before; 1.5 = up to 2.5x when fully overlapping.")]
+        [Range(0f, 4f)] public float crowdingDepthGain = 1.5f;
+        [Tooltip("Closest an enemy tries to stand to its combat target (m). 0 = keep each prefab's own minCombatSeparation (0.95 on SwordMaster).")]
+        [Range(0f, 3f)] public float minCombatSeparation = 0f;
+
+        [Tooltip("Per-enemy random variety: each enemy instance rolls a fixed -1..1 value at spawn; its back-off distance (min combat separation / ranged retreat) and crowding radius are scaled by 1 + spread * roll. 0.2 = +/-20%. 0 = every enemy identical. Per-type multiplier: EnemyDefinition.backoffDistanceMultiplier.")]
+        [Range(0f, 0.5f)] public float crowdingVariationSpread = 0.2f;
 
         [Header("Holders (world-anchored hold points)")]
         [Range(1.5f, 12f)] public float holdRingRadius = 4f;

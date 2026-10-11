@@ -17,9 +17,12 @@ MonoBehaviour:
   prefabFileName: The_Evil_One
   archetype: 1
   surfaceThreatKind: 3
+  templatePrefab: {fileID: 0}
+  lastModelSource: {fileID: 0}
   meleeWeaponItem: {fileID: 11400000, guid: b4c5d6e7f8094a1b8c7d6e5f4a3b2c10, type: 2}
   rangedWeaponItem: {fileID: 11400000, guid: 5791b1d40c5dda44abe9a9770f6cd1e2, type: 2}
   preferRangedWeapon: 1
+  canThrowGrenades: 1
   enemyCategory: 1
   bodyType: 0
   overrideBrain: 0
@@ -29,7 +32,7 @@ MonoBehaviour:
   brainProfileOverride: {fileID: 0}
   engagementProfileOverride: {fileID: 0}
   hitMarkProfileOverride: {fileID: 0}
-  maxHealth: 100
+  maxHealth: 500
   destroyOnDeath: 1
   destroyDelay: 1
   respawnTime: 2
@@ -49,11 +52,14 @@ MonoBehaviour:
   aggroOnHeardHit: 1
   attackRange: 1.8
   attackDamage: 12
-  attackCooldown: 1.4
+  attackCooldown: 1
   attackWindup: 0.35
   meleeDuration: 0.85
   unarmedDuration: 0.55
   rangedEngageRange: 12
+  rangedHoldDistance: 0
+  rangedRetreatFraction: 0.6
+  kiterRetreatBoost: 1.5
   rangedAttackCooldown: 1.2
   rangedDuration: 0.35
   aimHoldDuration: 1.5
@@ -72,16 +78,16 @@ MonoBehaviour:
   patrolWaitDuration: 2
   behaviorPreset: 1
   walkSpeed: 2.4
-  runSpeed: 4.8
+  runSpeed: 5.2
   chaseSpeed: 0
-  chaseSpeedMultiplier: 0.88
-  turnSpeed: 8
+  chaseSpeedMultiplier: 0.95
+  turnSpeed: 12
   loseTargetDelay: 4
   searchDuration: 6
   searchRadius: 4
   idleDuration: 3
-  colliderRadius: 0.45
-  colliderHeight: 2
+  colliderRadius: 0.15
+  colliderHeight: 1.88
   colliderCenter: {x: 0, y: 1, z: 0}
   fitColliderToRenderers: 1
   idleClips: []
@@ -104,6 +110,6 @@ MonoBehaviour:
   lootItemPool: []
   lootRespawnDelay: 20
   lootInteractRange: 2.75
-  lootBagPrefab: {fileID: 0}
+  lootBagPrefab: {fileID: 5070942837361520457, guid: 171f2890153a93c4c9421280816d02de, type: 3}
   lootBagMesh: {fileID: 0}
   lootBagTexture: {fileID: 0}

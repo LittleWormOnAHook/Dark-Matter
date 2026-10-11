@@ -17,7 +17,7 @@ MonoBehaviour:
   defaultArchetype: 0
   defaultPersonality: 0
   debugLogDecisions: 0
-  decisionInterval: 0.8
+  decisionInterval: 0.4
   scoreRandomness: 0.25
   defendThreatMemory: 1.2
   defendWhenHitBonus: 0.6

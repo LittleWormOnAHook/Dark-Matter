@@ -14,6 +14,10 @@ namespace Project.Combat
         public GameObject Source;
         public Vector3 HitPoint;
         public CombatBodyPart BodyPart;
+        /// <summary>Player charged / heavy melee hit (attack interrupts).</summary>
+        public bool IsChargedHit;
+        /// <summary>Player light-combo step that produced the hit (1-based, 0 = unknown).</summary>
+        public int SwingStep;
 
         public static DamageInfo FromHit(
             float amount,

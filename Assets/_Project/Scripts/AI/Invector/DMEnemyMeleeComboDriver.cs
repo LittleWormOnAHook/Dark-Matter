@@ -117,9 +117,16 @@ namespace Project.AI.Invector
         private bool _subscribedMelee;
         private bool _subscribedHealth;
         private EnemyFloatingText _windupTell;
+        private EnemyAiController _ai;
+        private bool _lightSpeedApplied;
+        private bool _lightSpeedOrphaned;
+        private float _lightSpeedValue = 1f;
 
         public bool IsSequenceActive => _sequenceActive;
         public bool IsChargedAttackActive => _sequenceActive && _isCharged;
+
+        /// <summary>1-based number of the swing currently playing in the chain (0 before the first swing enters).</summary>
+        public int CurrentSwingStep => _swingsStarted;
 
         /// <summary>Punish rule armed (N qualifying hits inside the window). Read by the engagement director for token priority.</summary>
         public bool HasPunishArmed => IsPunishArmed();
@@ -140,6 +147,7 @@ namespace Project.AI.Invector
             _meleeManager = GetComponent<vMeleeManager>();
             _health = GetComponent<EnemyHealth>();
             _combat = GetComponent<EnemyCombat>();
+            _ai = GetComponent<EnemyAiController>();
             _ragdollBridge = GetComponent<EnemyInvectorRagdollBridge>();
             ResolveAnimator();
         }
@@ -154,6 +162,7 @@ namespace Project.AI.Invector
             Unsubscribe();
             EndSequence("disabled");
             ForceRestoreWindupSpeed();
+            ForceRestoreLightSpeed();
         }
 
         /// <summary>Holds EnemyCombat's attack-pending flag while the swing sequence is still playing.</summary>
@@ -174,11 +183,15 @@ namespace Project.AI.Invector
             if (_sequenceActive)
                 EndSequence("superseded", resetAttackTrigger: false);
 
+            // Chances come from DM_EnemyEngagementProfile (Combat Studio); the prefab values are the fallback.
+            DM_EnemyEngagementProfile cadence = _ai != null ? _ai.EngagementProfile : DM_EnemyEngagementProfile.Live;
+            float second = cadence != null ? cadence.comboSecondHitChance : secondHitChance;
+            float third = cadence != null ? cadence.comboThirdHitChance : thirdHitChance;
             int swings = 1;
-            if (enableCombos && Random.value < secondHitChance)
+            if (enableCombos && Random.value < second)
             {
                 swings = 2;
-                if (Random.value < thirdHitChance)
+                if (Random.value < third)
                     swings = 3;
             }
 
@@ -256,6 +269,7 @@ namespace Project.AI.Invector
         private void Update()
         {
             TickOrphanedWindupSpeed();
+            TickOrphanedLightSpeed();
 
             if (!_sequenceActive)
                 return;
@@ -299,6 +313,8 @@ namespace Project.AI.Invector
                 TickChargedWindup(swing);
                 return;
             }
+
+            TickLightSwingSpeed();
 
             if (_followUpQueued || inTransition || _swingsStarted >= _plannedSwings)
                 return;
@@ -373,6 +389,74 @@ namespace Project.AI.Invector
             }
         }
 
+        /// <summary>Light swings only: animator speed x DM_EnemyEngagementProfile.lightSwingSpeedMultiplier. Never touches the charged wind-up.</summary>
+        private void TickLightSwingSpeed()
+        {
+            if (_lightSpeedApplied || _animator == null)
+                return;
+
+            DM_EnemyEngagementProfile cadence = _ai != null ? _ai.EngagementProfile : DM_EnemyEngagementProfile.Live;
+            float mult = cadence != null ? cadence.lightSwingSpeedMultiplier : 1f;
+            if (mult < 1.001f)
+                return;
+
+            // Only when nothing else (hit-stop, wind-up slow-down) owns the animator speed.
+            if (Mathf.Abs(_animator.speed - 1f) > 0.01f)
+                return;
+
+            _lightSpeedValue = mult;
+            _animator.speed = mult;
+            _lightSpeedApplied = true;
+        }
+
+        private void EndLightSwingSpeed()
+        {
+            if (!_lightSpeedApplied)
+                return;
+
+            _lightSpeedApplied = false;
+            if (_animator == null)
+                return;
+
+            if (Mathf.Abs(_animator.speed - _lightSpeedValue) < 0.001f)
+            {
+                _animator.speed = 1f;
+                return;
+            }
+
+            // Hit-stop froze the animator mid swing and will restore our sped-up value later.
+            if (_animator.speed < 0.001f)
+                _lightSpeedOrphaned = true;
+        }
+
+        private void TickOrphanedLightSpeed()
+        {
+            if (!_lightSpeedOrphaned || _animator == null)
+                return;
+
+            if (Mathf.Abs(_animator.speed - _lightSpeedValue) < 0.001f)
+            {
+                _animator.speed = 1f;
+                _lightSpeedOrphaned = false;
+            }
+            else if (_animator.speed > 0.001f)
+            {
+                _lightSpeedOrphaned = false;
+            }
+        }
+
+        private void ForceRestoreLightSpeed()
+        {
+            if (_animator != null && (_lightSpeedApplied || _lightSpeedOrphaned) &&
+                Mathf.Abs(_animator.speed - _lightSpeedValue) < 0.001f)
+            {
+                _animator.speed = 1f;
+            }
+
+            _lightSpeedApplied = false;
+            _lightSpeedOrphaned = false;
+        }
+
         private void ForceRestoreWindupSpeed()
         {
             if (_animator != null && (_windupSpeedApplied || _windupSpeedOrphaned) &&
@@ -401,6 +485,7 @@ namespace Project.AI.Invector
 
             HideWindupTell();
             EndWindupSpeed();
+            EndLightSwingSpeed();
             RestoreChargedDamage();
 
             if (wasActive && _combat != null)

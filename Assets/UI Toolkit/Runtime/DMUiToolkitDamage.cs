@@ -33,6 +33,7 @@ namespace Project.UI
             public Vector3 Drift;
             public float Elapsed;
             public bool Crit;
+            public float SizeScale = 1f;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -66,7 +67,7 @@ namespace Project.UI
             return host;
         }
 
-        public static bool TrySpawn(float damage, Vector3 worldPosition, Color? color = null)
+        public static bool TrySpawn(float damage, Vector3 worldPosition, Color? color = null, float sizeScale = 1f, bool? crit = null)
         {
             if (!DMUiToolkitHud.IsDriving)
                 return false;
@@ -78,7 +79,7 @@ namespace Project.UI
             if (host == null)
                 return false;
 
-            host.SpawnInternal(damage, worldPosition, color);
+            host.SpawnInternal(damage, worldPosition, color, sizeScale, crit);
             return true;
         }
 
@@ -127,7 +128,7 @@ namespace Project.UI
             bound = root != null;
         }
 
-        private void SpawnInternal(float damage, Vector3 worldPosition, Color? color)
+        private void SpawnInternal(float damage, Vector3 worldPosition, Color? color, float sizeScale = 1f, bool? critOverride = null)
         {
             BindTree();
             if (layer == null)
@@ -136,7 +137,7 @@ namespace Project.UI
             Label label = new Label(Mathf.RoundToInt(damage).ToString());
             label.AddToClassList("dmg-dmg-num");
             label.pickingMode = PickingMode.Ignore;
-            bool crit = color.HasValue && color.Value.g > 0.5f;
+            bool crit = critOverride ?? (color.HasValue && color.Value.g > 0.5f);
             if (crit)
                 label.AddToClassList("dmg-dmg-crit");
             if (color.HasValue)
@@ -149,7 +150,8 @@ namespace Project.UI
                 World = worldPosition,
                 Drift = new Vector3(Random.Range(-0.08f, 0.08f), 0f, Random.Range(-0.08f, 0.08f)),
                 Elapsed = 0f,
-                Crit = crit
+                Crit = crit,
+                SizeScale = Mathf.Max(0.1f, sizeScale)
             });
         }
 
@@ -201,6 +203,7 @@ namespace Project.UI
                 float lifeT = Mathf.Clamp01(popup.Elapsed / Lifetime);
                 // Grow steadily while rising; keep large through fade-out.
                 float scale = Mathf.Lerp(StartScale, EndScale, lifeT);
+                scale *= popup.SizeScale;
                 popup.Label.style.scale = new Scale(new Vector3(scale, scale, 1f));
 
                 float fadeStart = Lifetime - FadeDuration;

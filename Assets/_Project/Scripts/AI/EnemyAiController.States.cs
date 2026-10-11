@@ -347,11 +347,25 @@ namespace Project.AI
         private void TryStartChaseStaminaPause()
         {
             ScheduleNextChaseStaminaRoll();
-            if (Random.value > chaseStaminaPauseChance)
+            DM_EnemyEngagementProfile p = EngagementProfile;
+            float chance = p != null ? p.chaseStaminaPauseChance : chaseStaminaPauseChance;
+            float pauseMin = p != null ? p.chaseStaminaPauseMin : chaseStaminaPauseMin;
+            float pauseMax = p != null ? p.chaseStaminaPauseMax : chaseStaminaPauseMax;
+            float minDistance = p != null ? p.chaseStaminaPauseMinTargetDistance : 0f;
+            Transform pauseTarget = combat != null ? combat.CurrentTarget : null;
+            if (minDistance > 0.01f && pauseTarget != null)
+            {
+                // Never stop dead right next to the player: the pause only happens while far away.
+                Vector3 toTarget = pauseTarget.position - transform.position;
+                toTarget.y = 0f;
+                if (toTarget.sqrMagnitude <= minDistance * minDistance)
+                    return;
+            }
+
+            if (Random.value > chance)
                 return;
 
-            chaseStaminaPauseUntil = Time.time + Random.Range(chaseStaminaPauseMin, chaseStaminaPauseMax);
-        }
+            chaseStaminaPauseUntil = Time.time + Random.Range(pauseMin, Mathf.Max(pauseMin, pauseMax));        }
 
         private void ScheduleNextChaseStaminaRoll()
         {
@@ -442,6 +456,21 @@ namespace Project.AI
                 FaceTowards(target.position);
                 combat.TryAttack();
                 return;
+            }
+
+            // Ranged hold rule: a ranged-preferred enemy never lets the player stand inside its retreat distance; it backs off
+            // (kiting archetypes retreat sooner) instead of trading shots at melee reach.
+            if (UsesRangedHold(target) && !combat.IsAttacking)
+            {
+                float retreatBelow = ResolveRangedRetreatDistance();
+                if (distanceToTarget < retreatBelow)
+                {
+                    Vector3 away = transform.position - target.position;
+                    away.y = 0f;
+                    StepFlat(away, walkSpeed * combatBridge.RangedRetreatSpeedMultiplier, retreatBelow - distanceToTarget);
+                    FaceTowards(target.position);
+                    return;
+                }
             }
 
             // Too close for a ranged shot — back off instead of clipping through the target.

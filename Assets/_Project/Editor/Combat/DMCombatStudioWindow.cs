@@ -1,6 +1,7 @@
 using Project.AI;
 using Project.Audio;
 using Project.Combat;
+using Project.EditorTools;
 using Project.EditorTools.GenesisStudio;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -121,6 +122,14 @@ namespace Project.EditorTools.Combat
         private void DrawCoreTab()
         {
             DrawProfileHeader("Combat Core profile");
+            if (profile == null)
+            {
+                var blockers = DMStudioActionValidation.CollectMissingProfileAsset(
+                    ProfileResourcesPath,
+                    "DM_CombatCoreProfile");
+                DMStudioActionValidation.DrawBlockersHelpBox(blockers, "edit Combat Core");
+            }
+
             if (serializedProfile == null)
                 return;
 
@@ -168,6 +177,45 @@ namespace Project.EditorTools.Combat
                         "humanoidPoiseStaggerSeconds");
                 });
 
+                DMStudioStyles.DrawSection("Attack interrupts", DMStudioStyles.ContentPanel, () =>
+                {
+                    EditorGUILayout.HelpBox(
+                        "A player melee hit that lands while an enemy is mid-swing can interrupt it. "
+                        + "Always: poise break; hit inside the early window; heavy/charged hit vs a light swing. "
+                        + "Otherwise a chance roll (base + early + crit + heavy + chain + low poise + low health - enemy resistance, capped at Max Chance). "
+                        + "From the commit window on, only a poise break interrupts. Charged swing: super-armor from its commit start. "
+                        + "After an interrupt: immunity (no more chance interrupts) and a recovery lock. "
+                        + "Per-enemy: EnemyDefinition interruptResistance / attackArmor / poiseMultiplier. Parry and guard break use their own stagger.",
+                        MessageType.Info);
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedProfile,
+                        "enableAttackInterrupts",
+                        "interruptBaseChanceLight",
+                        "interruptBaseChanceFollowUp",
+                        "interruptBaseChanceCharged",
+                        "interruptEarlyWindowNormalized",
+                        "interruptEarlyWindowGuaranteed",
+                        "interruptEarlyBonus",
+                        "interruptCritBonus",
+                        "interruptHeavyHitBonus",
+                        "interruptChainWindowSeconds",
+                        "interruptChainBonusPerHit",
+                        "interruptChainBonusMax",
+                        "interruptLowPoiseThreshold",
+                        "interruptLowPoiseBonus",
+                        "interruptLowHealthThreshold",
+                        "interruptLowHealthBonus",
+                        "interruptMaxChance",
+                        "interruptGuaranteedOnPoiseBreak",
+                        "interruptGuaranteedOnHeavyVsLight",
+                        "interruptCommitStartLight",
+                        "interruptCommitStartCharged",
+                        "interruptImmunitySeconds",
+                        "interruptRecoverySeconds",
+                        "interruptReactionSeconds",
+                        "logInterruptsInPlay");
+                });
+
                 DMStudioStyles.DrawSection("Training dummy poise", DMStudioStyles.ContentPanel, () =>
                 {
                     EditorGUILayout.HelpBox(
@@ -205,7 +253,23 @@ namespace Project.EditorTools.Combat
                         serializedProfile,
                         "hitstopLightFrames",
                         "hitstopHeavyFrames",
+                        "enableMeleeHitstop",
+                        "hitstopCritBonusFrames",
+                        "hitstopHoldSpeed",
+                        "hitstopFreezesAttacker",
                         "logCombatEventsInPlay");
+                });
+
+                DMStudioStyles.DrawSection("Damage number tiers", DMStudioStyles.ContentPanel, () =>
+                {
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedProfile,
+                        "useDamageNumberTiers",
+                        "damageNumberNormalColor",
+                        "damageNumberCritColor",
+                        "damageNumberHeavyColor",
+                        "damageNumberCritScale",
+                        "damageNumberHeavyScale");
                 });
             }
 
@@ -371,7 +435,11 @@ namespace Project.EditorTools.Combat
                         "parryShakeAmplitude",
                         "parryShakeDurationSeconds",
                         "blockShakeAmplitude",
-                        "blockShakeDurationSeconds");
+                        "blockShakeDurationSeconds",
+                        "lightHitShakeAmplitude",
+                        "lightHitShakeDurationSeconds",
+                        "heavyHitShakeAmplitude",
+                        "heavyHitShakeDurationSeconds");
                 });
 
                 DrawCombatActorHeader(
@@ -486,8 +554,15 @@ namespace Project.EditorTools.Combat
                 if (GUILayout.Button("Open Genesis Studio (Combat Core)", GUILayout.Height(28f)))
                     GenesisStudioWindow.OpenTo("combat", "combat-core");
 
+                var meleeBlockers = DMStudioActionValidation.CollectMeleeBuildAndApplyBlockers();
+                DMStudioActionValidation.DrawBlockersHelpBox(meleeBlockers, "Build and apply melee animation set");
                 if (GUILayout.Button("Build and apply melee animation set", GUILayout.Height(28f)))
-                    DMMeleeAnimationSetApplier.BuildAndApply();
+                {
+                    DMStudioActionValidation.TryRunPrimaryAction(
+                        DMStudioActionValidation.CombatStudioDialogTitle,
+                        meleeBlockers,
+                        DMMeleeAnimationSetApplier.BuildAndApply);
+                }
             });
         }
 
@@ -540,6 +615,10 @@ namespace Project.EditorTools.Combat
 
             if (serializedDirector == null)
             {
+                var blockers = DMStudioActionValidation.CollectMissingProfileAsset(
+                    DirectorProfilePath,
+                    "DM_CombatDirectorProfile");
+                DMStudioActionValidation.DrawBlockersHelpBox(blockers, "edit Combat Director");
                 EditorGUILayout.HelpBox("DM_CombatDirectorProfile.asset not found under Resources/Combat.", MessageType.Warning);
                 return;
             }

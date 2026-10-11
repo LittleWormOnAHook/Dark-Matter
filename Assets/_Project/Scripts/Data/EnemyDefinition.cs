@@ -4,6 +4,13 @@ using Project.Data;
 
 namespace Project.AI
 {
+    public enum EnemyAttackArmor
+    {
+        None = 0,
+        ChargedOnly = 1,
+        AllAttacks = 2
+    }
+
     public enum EnemyMovementMode
     {
         Stationary,
@@ -75,6 +82,25 @@ namespace Project.AI
         public ItemData rangedWeaponItem;
         public bool preferRangedWeapon;
 
+        private void OnValidate()
+        {
+            // Mining tools (isMiningTool) are player utility items and never valid enemy weapons (no drawn enemy visual, fallback damage).
+            if (meleeWeaponItem != null && meleeWeaponItem.isMiningTool)
+            {
+                Debug.LogWarning($"EnemyDefinition '{name}': '{meleeWeaponItem.name}' is a mining tool and cannot be an enemy weapon; cleared.", this);
+                meleeWeaponItem = null;
+            }
+
+            if (rangedWeaponItem != null && rangedWeaponItem.isMiningTool)
+            {
+                Debug.LogWarning($"EnemyDefinition '{name}': '{rangedWeaponItem.name}' is a mining tool and cannot be an enemy weapon; cleared.", this);
+                rangedWeaponItem = null;
+            }
+        }
+
+        [Tooltip("Adds the player-style grenade components (DMIGrenadeCookController + DMIGrenadeThrowBridge) to this enemy through Sync to Template; Sync and Check treat them as allowed only while this is on. Default off. No throw or AI behaviour yet: the brain uses this as its hook later.")]
+        public bool canThrowGrenades;
+
         [Header("Type, Body & Brain (empty overrides = global Resources/Combat profiles)")]
         [Tooltip("Enemy type / category shown in Genesis Studio → Combat → AI & Awareness → Enemy Types.")]
         public EnemyCategory enemyCategory = EnemyCategory.Grunt;
@@ -94,6 +120,18 @@ namespace Project.AI
 
         public bool HasAnyProfileOverride =>
             brainProfileOverride != null || engagementProfileOverride != null || hitMarkProfileOverride != null;
+
+        [Header("Back-off variety")]
+        [Tooltip("Multiplier on this enemy type's back-off / standoff distance and crowding radius (on top of the per-instance random spread in DM_EnemyEngagementProfile). 1 = profile value, >1 = backs off more, <1 = stays closer.")]
+        [Range(0.5f, 2f)] public float backoffDistanceMultiplier = 1f;
+
+        [Header("Attack interrupts (player hits)")]
+        [Tooltip("0-1. Subtracted from the chance a player hit interrupts this enemy's attack (see DM_CombatCoreProfile 'Attack interrupts'). Guaranteed interrupts (poise break, early window, heavy vs light) are not reduced.")]
+        [Range(0f, 1f)] public float interruptResistance = 0f;
+        [Tooltip("Super-armor: None = interruptible by the profile rules. ChargedOnly = the charged swing cannot be interrupted except by a poise break. AllAttacks = no attack can be interrupted except by a poise break.")]
+        public EnemyAttackArmor attackArmor = EnemyAttackArmor.None;
+        [Tooltip("Scales this enemy's max poise (1 = DM_CombatCoreProfile humanoid poise; 1.5 = tougher to break; 0.7 = easier).")]
+        [Range(0.25f, 4f)] public float poiseMultiplier = 1f;
 
         [Header("Health")]
         public float maxHealth = 60f;
@@ -139,6 +177,12 @@ namespace Project.AI
         [Header("Ranged Combat")]
         [Tooltip("Distance at which the enemy stops chasing and starts shooting.")]
         public float rangedEngageRange = 12f;
+        [Tooltip("Ranged hold rule: distance a ranged-preferred enemy holds from the player (always beyond melee reach). 0 = auto: 80% of Ranged Engage Range.")]
+        [Min(0f)] public float rangedHoldDistance = 0f;
+        [Tooltip("The enemy backs off when the player is closer than hold distance x this fraction.")]
+        [Range(0.2f, 0.95f)] public float rangedRetreatFraction = 0.6f;
+        [Tooltip("Kiting archetype (brain Kiter): multiplies the retreat fraction, so it retreats sooner.")]
+        [Range(1f, 2f)] public float kiterRetreatBoost = 1.5f;
         [Tooltip("Cooldown between ranged shots.")]
         public float rangedAttackCooldown = 1.2f;
         [Tooltip("Duration the shoot animation occupies before the next action is allowed.")]

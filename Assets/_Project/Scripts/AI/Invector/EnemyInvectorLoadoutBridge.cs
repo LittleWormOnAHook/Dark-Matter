@@ -10,16 +10,44 @@ using UnityEngine.Events;
 
 namespace Project.AI.Invector
 {
+    public enum EnemyWeaponSlot { Melee, Ranged }
+
+    /// <summary>Who asked for a weapon switch. Brain holds win over AI distance switching while the hold lasts.</summary>
+    public enum EnemyWeaponRequester { Spawn, Ai, Brain, Spawner, Restore }
+
+    /// <summary>Where a resolved weapon came from.</summary>
+    public enum EnemyWeaponSource { None, Definition, Override }
+
+    public enum EnemyPreferRangedOverride { UseDefinition, ForceOn, ForceOff }
+
     /// <summary>
-    /// Equips preloaded Drawn/Holstered weapon slots on humanoid enemies from EnemyDefinition ItemData.
+    /// SINGLE AUTHORITY for enemy weapons. Resolved weapon = this bridge's field when set (per-instance OVERRIDE),
+    /// otherwise the linked EnemyDefinition's weapon (DEFAULT). Only the resolved weapons are ever equipped and
+    /// every other weapon object (template Drawn_/Holstered_ slots, baked holder meshes) is hidden.
+    /// Weapon switching goes through <see cref="TrySwitchTo"/> / <see cref="TrySwitchToSlot"/> only.
     /// </summary>
     [DisallowMultipleComponent]
     public class EnemyInvectorLoadoutBridge : MonoBehaviour
     {
+        [Header("Per-instance weapon OVERRIDES (empty = use the EnemyDefinition's weapon)")]
+        [Tooltip("Melee weapon OVERRIDE. Leave empty to use the EnemyDefinition's melee weapon.")]
         [SerializeField] private ItemData meleeWeaponItem;
+        [Tooltip("Ranged weapon OVERRIDE. Leave empty to use the EnemyDefinition's ranged weapon.")]
         [SerializeField] private ItemData rangedWeaponItem;
+        [Tooltip("UseDefinition = follow EnemyDefinition.preferRangedWeapon.")]
+        [SerializeField] private EnemyPreferRangedOverride preferRangedOverride = EnemyPreferRangedOverride.UseDefinition;
+
+        [Header("Fallbacks (only used when NO EnemyDefinition is linked)")]
         [SerializeField] private bool preferRangedAtRange = true;
         [SerializeField] private bool startWithMeleeWeapon = true;
+
+        [Header("Holster")]
+        [Tooltip("Show the OTHER resolved weapon (melee or ranged) on its holster while the first one is drawn. Every non-resolved weapon stays hidden.")]
+        [SerializeField] private bool showHolsteredSecondary = true;
+
+        [Header("Weapon switching")]
+        [Tooltip("How long a Brain-requested weapon stays drawn before AI distance switching may change it.")]
+        [SerializeField] private float brainHoldSeconds = 1.5f;
 
         private vShooterManager _shooterManager;
         private vMeleeManager _meleeManager;
@@ -27,62 +55,205 @@ namespace Project.AI.Invector
         private ItemData _activeItem;
         private GameObject _activeDrawnInstance;
         private GameObject _lastDroppedWeapon;
+        /// <summary>The vMeleeWeapon this bridge last bound to vMeleeManager.rightWeapon (null = none/ranged/unarmed).</summary>
+        private vMeleeWeapon _boundMelee;
+        private EnemyDefinition _definition;
+        private EnemyHealth _health;
+        private int _startMeleeOverride = -1;
+        private float _brainHoldUntil;
+        private ItemData _brainHoldItem;
+        private float _nextEnforceTime;
+        private Transform[] _slotRoots;
+        private Transform[] _strayRoots;
+        private GameObject _holsterKeep;
+
+        public EnemyWeaponRequester LastSwitchBy { get; private set; } = EnemyWeaponRequester.Spawn;
+        public bool BrainHoldActive => _brainHoldItem != null && Time.time < _brainHoldUntil;
 
         public ItemData ActiveItem => _activeItem;
         public GameObject ActiveDrawnInstance => _activeDrawnInstance;
         public GameObject LastDroppedWeapon => _lastDroppedWeapon;
-        public bool PrefersRangedAtRange => preferRangedAtRange;
-        public ItemData MeleeWeaponItem => meleeWeaponItem;
-        public ItemData RangedWeaponItem => rangedWeaponItem;
+
+        // ---- Resolved weapons (override, else definition) -------------------------------------------------
+        /// <summary>The linked EnemyDefinition (runtime-configured, else the Bootstrap's serialized link).</summary>
+        public EnemyDefinition ResolveDefinition()
+        {
+            if (_definition != null)
+                return _definition;
+
+            EnemyInvectorBootstrap bootstrap = GetComponent<EnemyInvectorBootstrap>();
+            return bootstrap != null ? bootstrap.Definition : null;
+        }
+
+        /// <summary>Serialized per-instance override (null = use the definition).</summary>
+        public ItemData MeleeOverride => meleeWeaponItem;
+        public ItemData RangedOverride => rangedWeaponItem;
+        public EnemyPreferRangedOverride PreferRangedOverride => preferRangedOverride;
+
+        /// <summary>Mining tools (DM_Mining_Tool, isMiningTool) are player utility items, never enemy weapons: they are skipped by the loadout
+        /// (they have no drawn enemy visual and deal fallback damage). Applies to definition weapons and per-instance overrides.</summary>
+        public static ItemData EnemyUsable(ItemData item) => item != null && item.isMiningTool ? null : item;
+
+        public ItemData ResolvedMelee
+        {
+            get
+            {
+                if (EnemyUsable(meleeWeaponItem) != null)
+                    return meleeWeaponItem;
+                EnemyDefinition d = ResolveDefinition();
+                return d != null ? EnemyUsable(d.meleeWeaponItem) : null;
+            }
+        }
+
+        public ItemData ResolvedRanged
+        {
+            get
+            {
+                if (EnemyUsable(rangedWeaponItem) != null)
+                    return rangedWeaponItem;
+                EnemyDefinition d = ResolveDefinition();
+                return d != null ? EnemyUsable(d.rangedWeaponItem) : null;
+            }
+        }
+
+        public bool ResolvedPreferRanged
+        {
+            get
+            {
+                if (preferRangedOverride == EnemyPreferRangedOverride.ForceOn)
+                    return true;
+                if (preferRangedOverride == EnemyPreferRangedOverride.ForceOff)
+                    return false;
+                EnemyDefinition d = ResolveDefinition();
+                return d != null ? d.preferRangedWeapon : preferRangedAtRange;
+            }
+        }
+
+        public EnemyWeaponSource MeleeSource =>
+            meleeWeaponItem != null ? EnemyWeaponSource.Override
+            : (ResolveDefinition() != null && ResolveDefinition().meleeWeaponItem != null ? EnemyWeaponSource.Definition : EnemyWeaponSource.None);
+
+        public EnemyWeaponSource RangedSource =>
+            rangedWeaponItem != null ? EnemyWeaponSource.Override
+            : (ResolveDefinition() != null && ResolveDefinition().rangedWeaponItem != null ? EnemyWeaponSource.Definition : EnemyWeaponSource.None);
+
+        public bool PrefersRangedAtRange => ResolvedPreferRanged;
+        public ItemData MeleeWeaponItem => ResolvedMelee;
+        public ItemData RangedWeaponItem => ResolvedRanged;
+        public EnemyWeaponSlot ActiveSlot =>
+            _activeItem != null && _activeItem.IsRangedWeapon ? EnemyWeaponSlot.Ranged : EnemyWeaponSlot.Melee;
+
+        public ItemData ItemForSlot(EnemyWeaponSlot slot) =>
+            slot == EnemyWeaponSlot.Ranged ? ResolvedRanged : ResolvedMelee;
 
         private void Awake()
         {
             _shooterManager = GetComponent<vShooterManager>();
             _meleeManager = GetComponent<vMeleeManager>();
             _controller = GetComponent<vThirdPersonController>();
+            _health = GetComponent<EnemyHealth>();
         }
 
+        /// <summary>
+        /// The definition SEEDS the loadout (default weapons / prefer-ranged). Nothing is copied into the serialized
+        /// override fields, so a later definition edit still flows through unless an override is set.
+        /// </summary>
         public void ConfigureFromDefinition(EnemyDefinition definition)
         {
             if (definition == null)
                 return;
 
-            meleeWeaponItem = definition.meleeWeaponItem;
-            rangedWeaponItem = definition.rangedWeaponItem;
-            preferRangedAtRange = definition.preferRangedWeapon;
+            _definition = definition;
             EquipStartingWeapon();
         }
 
+        /// <summary>
+        /// Spawner / EnemySpawnConfigurator path: per-spawn OVERRIDES (items equal to the definition's are not treated
+        /// as overrides, so they keep following the definition).
+        /// </summary>
         public void ConfigureSpawnLoadout(
             ItemData melee,
             ItemData ranged,
             bool equipMeleeOnStart,
             bool preferRangedWhenFar)
         {
+            EnemyDefinition def = ResolveDefinition();
+            melee = EnemyUsable(melee);     // mining tools are never enemy weapons
+            ranged = EnemyUsable(ranged);
+            // An item equal to the definition's is not an override: clear any earlier override so the slot follows the definition.
             if (melee != null)
-                meleeWeaponItem = melee;
+                meleeWeaponItem = (def == null || melee != def.meleeWeaponItem) ? melee : null;
             if (ranged != null)
-                rangedWeaponItem = ranged;
+                rangedWeaponItem = (def == null || ranged != def.rangedWeaponItem) ? ranged : null;
 
+            if (def != null && preferRangedWhenFar == def.preferRangedWeapon)
+                preferRangedOverride = EnemyPreferRangedOverride.UseDefinition;
+            else
+                preferRangedOverride = preferRangedWhenFar
+                    ? EnemyPreferRangedOverride.ForceOn
+                    : EnemyPreferRangedOverride.ForceOff;
+
+            _startMeleeOverride = equipMeleeOnStart ? 1 : 0;
             startWithMeleeWeapon = equipMeleeOnStart;
-            preferRangedAtRange = preferRangedWhenFar;
-            EquipStartingWeapon();
+            LastSwitchBy = EnemyWeaponRequester.Spawner;
+            _brainHoldItem = null;
+            _brainHoldUntil = 0f;
+            EquipWeapon(ResolveStartingWeapon());
         }
 
         public void EquipStartingWeapon()
         {
-            ItemData weapon = ResolveStartingWeapon();
-            EquipWeapon(weapon);
+            _brainHoldItem = null;
+            _brainHoldUntil = 0f;
+            LastSwitchBy = EnemyWeaponRequester.Restore;
+            EquipWeapon(ResolveStartingWeapon());
         }
 
         public void RefreshFromSerializedWeapons()
         {
-            EquipWeapon(ResolveStartingWeapon());
+            EquipStartingWeapon();
         }
 
+        /// <summary>Legacy entry point (AI distance switching). Same as <c>TrySwitchTo(weapon, Ai)</c>.</summary>
         public void EquipSpecificWeapon(ItemData weapon)
         {
+            TrySwitchTo(weapon, EnemyWeaponRequester.Ai);
+        }
+
+        /// <summary>
+        /// THE one switch call. AI (distance) and Brain (decisions) both use it. A Brain request holds the weapon for
+        /// <see cref="brainHoldSeconds"/>; AI requests for a different weapon are refused during the hold, so the two
+        /// can never flip-flop. Only resolved weapons (override, else definition) can be drawn.
+        /// </summary>
+        public bool TrySwitchTo(ItemData weapon, EnemyWeaponRequester who, float holdSeconds = -1f)
+        {
+            if (weapon == null)
+                return false;
+
+            if (weapon != ResolvedMelee && weapon != ResolvedRanged)
+                return false;
+
+            if (who == EnemyWeaponRequester.Brain)
+            {
+                _brainHoldItem = weapon;
+                _brainHoldUntil = Time.time + (holdSeconds >= 0f ? holdSeconds : brainHoldSeconds);
+            }
+            else if (who == EnemyWeaponRequester.Ai && BrainHoldActive && weapon != _brainHoldItem)
+            {
+                return false;
+            }
+
+            LastSwitchBy = who;
+            if (weapon == _activeItem && _activeDrawnInstance != null)
+                return true;
+
             EquipWeapon(weapon);
+            return _activeItem == weapon;
+        }
+
+        public bool TrySwitchToSlot(EnemyWeaponSlot slot, EnemyWeaponRequester who, float holdSeconds = -1f)
+        {
+            return TrySwitchTo(ItemForSlot(slot), who, holdSeconds);
         }
 
         /// <summary>
@@ -276,10 +447,20 @@ namespace Project.AI.Invector
 
         public ItemData ResolveStartingWeapon()
         {
-            if (startWithMeleeWeapon)
-                return meleeWeaponItem != null ? meleeWeaponItem : rangedWeaponItem;
+            ItemData melee = ResolvedMelee;
+            ItemData ranged = ResolvedRanged;
+            bool startMelee;
+            if (_startMeleeOverride >= 0)
+                startMelee = _startMeleeOverride == 1;
+            else if (ResolveDefinition() != null || preferRangedOverride != EnemyPreferRangedOverride.UseDefinition)
+                startMelee = !(ResolvedPreferRanged && ranged != null);
+            else
+                startMelee = startWithMeleeWeapon;
 
-            return rangedWeaponItem != null ? rangedWeaponItem : meleeWeaponItem;
+            if (startMelee)
+                return melee != null ? melee : ranged;
+
+            return ranged != null ? ranged : melee;
         }
 
         public ItemData ResolvePreferredWeapon()
@@ -289,20 +470,205 @@ namespace Project.AI.Invector
 
         public ItemData ResolveWeaponForTargetDistance(float distance, float meleeRange)
         {
-            if (preferRangedAtRange && rangedWeaponItem != null && distance > meleeRange * 1.15f)
-                return rangedWeaponItem;
+            ItemData melee = ResolvedMelee;
+            ItemData ranged = ResolvedRanged;
 
-            if (meleeWeaponItem != null)
-                return meleeWeaponItem;
+            // One owner at a time: while the Brain holds a weapon, distance switching follows it.
+            if (BrainHoldActive && (_brainHoldItem == melee || _brainHoldItem == ranged))
+                return _brainHoldItem;
 
-            return rangedWeaponItem;
+            if (ResolvedPreferRanged && ranged != null)
+            {
+                // Hysteresis: once on the gun, stay on it until clearly inside melee reach (no flip-flop at the edge).
+                float threshold = _activeItem == ranged ? meleeRange * 0.9f : meleeRange * 1.15f;
+                if (distance > threshold)
+                    return ranged;
+            }
+
+            return melee != null ? melee : ranged;
+        }
+
+        // ---- Weapon visibility enforcement ---------------------------------------------------------------
+        private void LateUpdate()
+        {
+            if (_lastDroppedWeapon != null || (_health != null && _health.IsDead))
+                return;
+
+            // Cheap reference check every frame: vMeleeManager must never point at a weapon this bridge did not equip.
+            SyncMeleeBinding();
+
+            if (Time.time < _nextEnforceTime)
+                return;
+
+            _nextEnforceTime = Time.time + 0.25f;
+            EnforceWeaponVisibility();
+        }
+
+        /// <summary>
+        /// vMeleeManager.Init (its Start, which runs AFTER our first equip) re-binds rightWeapon to the FIRST
+        /// vMeleeWeapon under the right arm, i.e. the template's default weap2_sword slot, whatever the enemy's
+        /// resolved weapon is. EnemyInvectorCombatShutdown.EnableMeleeIfSafe then SetActive(true)s that stale sword
+        /// on every swing, so a second weapon appeared next to the real one (and hits used the wrong weapon).
+        /// This re-asserts the resolved weapon (or none when ranged/unarmed) whenever the binding drifts.
+        /// </summary>
+        public void SyncMeleeBinding()
+        {
+            if (_meleeManager == null)
+                return;
+
+            vMeleeWeapon current = _meleeManager.rightWeapon;
+            if (current == _boundMelee)
+                return;
+
+            if (_boundMelee != null && _activeItem != null && _activeItem.itemType == ItemType.MeleeWeapon &&
+                _activeDrawnInstance != null)
+            {
+                EquipMelee(_activeDrawnInstance, _activeItem);
+                return;
+            }
+
+            if (_boundMelee == null && current != null)
+                _meleeManager.SetRightWeapon((GameObject)null);
+        }
+
+        /// <summary>
+        /// Hides every weapon object that is not the currently drawn, resolved weapon: all other Drawn_ slots, every
+        /// Holstered_ slot, and stray baked weapon meshes parented under holder transforms.
+        /// </summary>
+        public void EnforceWeaponVisibility()
+        {
+            if (_slotRoots == null)
+                CacheWeaponObjects();
+
+            for (int i = 0; i < _slotRoots.Length; i++)
+            {
+                Transform t = _slotRoots[i];
+                if (t == null || !t.gameObject.activeSelf)
+                    continue;
+
+                if (_activeDrawnInstance != null && t.gameObject == _activeDrawnInstance)
+                    continue;
+                if (_holsterKeep != null && t.gameObject == _holsterKeep)
+                    continue;
+
+                t.gameObject.SetActive(false);
+            }
+
+            for (int i = 0; i < _strayRoots.Length; i++)
+            {
+                Transform t = _strayRoots[i];
+                if (t != null && t.gameObject.activeSelf)
+                    t.gameObject.SetActive(false);
+            }
+
+            EnforceActiveDrawnVisuals();
+        }
+
+        private void CacheWeaponObjects()
+        {
+            var slots = new System.Collections.Generic.List<Transform>();
+            var stray = new System.Collections.Generic.List<Transform>();
+            Transform[] all = GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < all.Length; i++)
+            {
+                Transform t = all[i];
+                if (t == null || t == transform)
+                    continue;
+
+                if (t.name.StartsWith("Drawn_", StringComparison.Ordinal) ||
+                    t.name.StartsWith("Holstered_", StringComparison.Ordinal))
+                    slots.Add(t);
+            }
+
+            Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer r = renderers[i];
+                if (r == null || r is SkinnedMeshRenderer || IsUnderWeaponSlot(r.transform))
+                    continue;
+
+                Transform holderChild = FindHolderChild(r.transform);
+                if (holderChild != null && !stray.Contains(holderChild))
+                    stray.Add(holderChild);
+            }
+
+            _slotRoots = slots.ToArray();
+            _strayRoots = stray.ToArray();
+        }
+
+        private static bool IsUnderWeaponSlot(Transform t)
+        {
+            while (t != null)
+            {
+                if (t.name.StartsWith("Drawn_", StringComparison.Ordinal) ||
+                    t.name.StartsWith("Holstered_", StringComparison.Ordinal))
+                    return true;
+                t = t.parent;
+            }
+
+            return false;
+        }
+
+        private static Transform FindHolderChild(Transform t)
+        {
+            Transform c = t;
+            while (c != null && c.parent != null)
+            {
+                string parentName = c.parent.name;
+                if (parentName.EndsWith("Holder", StringComparison.Ordinal) ||
+                    parentName.Equals("WeaponHolders", StringComparison.Ordinal))
+                    return c;
+                c = c.parent;
+            }
+
+            return null;
+        }
+
+        /// <summary>Inside the drawn slot only the PioneerVisual mesh may render (vendor GreatSword leftovers stay off).</summary>
+        private void EnforceActiveDrawnVisuals()
+        {
+            if (_activeDrawnInstance == null)
+                return;
+
+            Transform pioneerVisual = null;
+            Transform[] kids = _activeDrawnInstance.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < kids.Length; i++)
+            {
+                if (kids[i] != null && kids[i].name.StartsWith("PioneerVisual_", StringComparison.Ordinal))
+                {
+                    pioneerVisual = kids[i];
+                    break;
+                }
+            }
+
+            if (pioneerVisual == null)
+                return;
+
+            Renderer[] renderers = _activeDrawnInstance.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer r = renderers[i];
+                if (r == null || !r.enabled)
+                    continue;
+
+                if (r.transform != pioneerVisual && !r.transform.IsChildOf(pioneerVisual))
+                    r.enabled = false;
+            }
         }
 
         private void EquipWeapon(ItemData weapon)
         {
+            EquipWeaponCore(weapon);
+            // Nothing but the resolved, drawn weapon may stay visible.
+            EnforceWeaponVisibility();
+        }
+
+        private void EquipWeaponCore(ItemData weapon)
+        {
             EnemyInvectorCombatShutdown.SanitizeStaleHitBoxes(gameObject);
 
             _activeItem = weapon;
+            _holsterKeep = null;
             ClearInvectorWeapons();
             DeactivateAllWeaponVisuals();
             _activeDrawnInstance = null;
@@ -345,6 +711,25 @@ namespace Project.AI.Invector
             }
 
             SyncAnimatorWeaponState(weapon);
+            ShowSecondaryHolster(weapon);
+        }
+
+        /// <summary>Keeps the other resolved weapon visible on its holster (one drawn, the other holstered).</summary>
+        private void ShowSecondaryHolster(ItemData drawnWeapon)
+        {
+            if (!showHolsteredSecondary || drawnWeapon == null)
+                return;
+
+            ItemData other = drawnWeapon == ResolvedMelee ? ResolvedRanged : ResolvedMelee;
+            if (other == null || other == drawnWeapon)
+                return;
+
+            GameObject holster = PioneerInvectorWeaponBridge.FindPreloadedHolsteredSlot(transform, other);
+            if (holster == null)
+                return;
+
+            holster.SetActive(true);
+            _holsterKeep = holster;
         }
 
         private void DeactivateAllWeaponVisuals()
@@ -390,6 +775,7 @@ namespace Project.AI.Invector
             weapon.enabled = true;
             EnemyInvectorCombatShutdown.SanitizeMeleeDamageEvents(weapon);
             _meleeManager.SetRightWeapon(weapon);
+            _boundMelee = weapon;
         }
 
         private static Transform FindDrawnSlotRoot(Transform node)
@@ -552,6 +938,7 @@ namespace Project.AI.Invector
         {
             _shooterManager?.SetRightWeapon((GameObject)null);
             _meleeManager?.SetRightWeapon((GameObject)null);
+            _boundMelee = null;
         }
 
         private void SyncAnimatorWeaponState(ItemData weapon)

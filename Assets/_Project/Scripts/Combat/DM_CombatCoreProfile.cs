@@ -160,6 +160,33 @@ namespace Project.Combat
         [Tooltip("Charged Strong B / AttackC ignores the defender's sword and other outgoing weapon volumes. Damage waits for a real body / dummy hit. Block and parry still register as guard.")]
         public bool chargedHitsIgnoreEnemyWeapons = true;
 
+        [Header("Slice 1 feel pack: melee hit stop (A1)")]
+        [Tooltip("On = a landed player melee hit briefly freezes the HIT enemy's animator (and the player's swing) for hitstopLightFrames / hitstopHeavyFrames below. Local animator speed dip only, never Time.timeScale. Other enemies keep moving.")]
+        public bool enableMeleeHitstop = true;
+        [Tooltip("Extra freeze frames (60 fps) on a critical hit, added to the light/heavy frames.")]
+        [Range(0, 6)] public int hitstopCritBonusFrames = 2;
+        [Tooltip("Animator speed during the freeze. 0 = fully frozen, 0.05 = near-frozen (keeps the pose alive).")]
+        [Range(0f, 0.5f)] public float hitstopHoldSpeed = 0.05f;
+        [Tooltip("Also freeze the player's own swing for the same time (the blade 'sticks'). Off = victim only.")]
+        public bool hitstopFreezesAttacker = true;
+
+        [Header("Slice 1 feel pack: light / heavy melee hit shake (A2)")]
+        [Tooltip("Trauma on a normal player melee hit that damages an enemy. Very subtle by default. 0 = off.")]
+        [Range(0f, 1f)] public float lightHitShakeAmplitude = 0.05f;
+        [Range(0f, 0.4f)] public float lightHitShakeDurationSeconds = 0.04f;
+        [Tooltip("Trauma on a heavy non-charged hit: a critical, a poise break or a killing blow. Charged hits keep chargedHitShake*.")]
+        [Range(0f, 1f)] public float heavyHitShakeAmplitude = 0.20f;
+        [Range(0f, 0.4f)] public float heavyHitShakeDurationSeconds = 0.08f;
+
+        [Header("Slice 1 feel pack: damage number tiers (A3)")]
+        [Tooltip("On = damage numbers on enemies use the tier colors/sizes below (normal / crit / heavy). Off = legacy red and yellow. Orange is a number colour only, not a telegraph.")]
+        public bool useDamageNumberTiers = true;
+        public Color damageNumberNormalColor = new Color(1f, 0.96f, 0.78f, 1f);
+        public Color damageNumberCritColor = new Color(1f, 0.55f, 0.10f, 1f);
+        public Color damageNumberHeavyColor = new Color(1f, 0.40f, 0.05f, 1f);
+        [Range(0.6f, 2f)] public float damageNumberCritScale = 1.25f;
+        [Range(0.6f, 2f)] public float damageNumberHeavyScale = 1.4f;
+
         [Header("Future tuning hooks")]
         [Range(0, 12)] public int hitstopLightFrames = 2;
         [Range(0, 12)] public int hitstopHeavyFrames = 6;
@@ -208,7 +235,53 @@ namespace Project.Combat
         [Tooltip("Master switch for throwable grenades (G throw, cook, throw manager). Off = grenade items stay in inventory but cannot be thrown. Default off.")]
         public bool enableGrenades = false;
 
+        [Header("Attack interrupts (player hit interrupts an enemy attack)")]
+        [Tooltip("Master switch. Off = enemy attacks are never interrupted by a player hit (poise break / parry / guard break still stagger).")]
+        public bool enableAttackInterrupts = true;
+        [Tooltip("Base chance (0-1) a player hit interrupts an enemy light swing (first swing of a chain).")]
+        [Range(0f, 1f)] public float interruptBaseChanceLight = 0.12f;
+        [Tooltip("Base chance for combo follow-up swings (2nd / 3rd). Lower = follow-ups are harder to interrupt.")]
+        [Range(0f, 1f)] public float interruptBaseChanceFollowUp = 0.06f;
+        [Tooltip("Base chance for the enemy charged swing before its commit window.")]
+        [Range(0f, 1f)] public float interruptBaseChanceCharged = 0.10f;
+        [Tooltip("Swing progress (0-1 normalized) below which a hit counts as 'early': earlyBonus applies, and the hit is a guaranteed interrupt when Early Window Guaranteed is on.")]
+        [Range(0f, 1f)] public float interruptEarlyWindowNormalized = 0.35f;
+        [Tooltip("A hit inside the early window always interrupts (unless super-armor or interrupt immunity). Replaces the old 'hit interrupts a wind-up' idea (B6).")]
+        public bool interruptEarlyWindowGuaranteed = true;
+        [Range(0f, 1f)] public float interruptEarlyBonus = 0.25f;
+        [Tooltip("Added chance on a critical hit.")]
+        [Range(0f, 1f)] public float interruptCritBonus = 0.20f;
+        [Tooltip("Added chance on a player charged / heavy hit.")]
+        [Range(0f, 1f)] public float interruptHeavyHitBonus = 0.40f;
+        [Tooltip("Player hits closer together than this (seconds) count as a chain on the same enemy.")]
+        [Range(0.2f, 5f)] public float interruptChainWindowSeconds = 1.5f;
+        [Range(0f, 0.5f)] public float interruptChainBonusPerHit = 0.10f;
+        [Range(0f, 1f)] public float interruptChainBonusMax = 0.30f;
+        [Tooltip("Poise fraction (0-1) below which the low-poise bonus applies.")]
+        [Range(0f, 1f)] public float interruptLowPoiseThreshold = 0.5f;
+        [Range(0f, 1f)] public float interruptLowPoiseBonus = 0.15f;
+        [Tooltip("Health fraction (0-1) below which the low-health bonus applies.")]
+        [Range(0f, 1f)] public float interruptLowHealthThreshold = 0.25f;
+        [Range(0f, 1f)] public float interruptLowHealthBonus = 0.10f;
+        [Tooltip("Hard cap on the chance interrupt probability.")]
+        [Range(0f, 1f)] public float interruptMaxChance = 0.85f;
+        [Tooltip("Guaranteed interrupt when a player hit breaks poise (ignores super-armor, commit window and immunity).")]
+        public bool interruptGuaranteedOnPoiseBreak = true;
+        [Tooltip("Guaranteed interrupt when a player charged / heavy hit lands on an enemy light swing before its commit window.")]
+        public bool interruptGuaranteedOnHeavyVsLight = true;
+        [Tooltip("Light swing progress (0-1) where the damage window is committed: from here only a poise break (or parry / guard break) can interrupt.")]
+        [Range(0f, 1f)] public float interruptCommitStartLight = 0.45f;
+        [Tooltip("Enemy charged swing progress (0-1) where super-armor starts (its damage window opens at 0.35).")]
+        [Range(0f, 1f)] public float interruptCommitStartCharged = 0.35f;
+        [Tooltip("After an interrupt, no further chance interrupts for this long (anti-stunlock). A poise break still interrupts.")]
+        [Range(0f, 6f)] public float interruptImmunitySeconds = 2.0f;
+        [Tooltip("Enemy cannot start another attack for this long after an interrupt (hit recovery lock).")]
+        [Range(0.2f, 4f)] public float interruptRecoverySeconds = 1.5f;
+        [Tooltip("How long the Small hit reaction holds the enemy in place (locomotion paused) after a chance / guaranteed interrupt.")]
+        [Range(0.2f, 1.5f)] public float interruptReactionSeconds = 0.45f;
+        [Tooltip("Logs every interrupt decision (enemy, class, swing progress, chance, roll) to the console in Play.")]
+        public bool logInterruptsInPlay;
+
         [Header("Debug")]
-        public bool logCombatEventsInPlay;
-    }
+        public bool logCombatEventsInPlay;    }
 }

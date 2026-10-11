@@ -180,10 +180,10 @@ namespace Project.AI
 
             float moveScale = 1f;
             if (navAgent.desiredVelocity.sqrMagnitude > 0.01f)
-                moveScale = DMILocomotionFacing.FacingMoveScale(transform, navAgent.desiredVelocity);
+                moveScale = DMILocomotionFacing.FacingMoveScale(transform, navAgent.desiredVelocity, ResolveFacingMoveScaleFloor());
 
             navAgent.speed = speed * moveScale;
-            navAgent.angularSpeed = DMILocomotionFacing.ToAgentAngularSpeed(turnSpeed);
+            navAgent.angularSpeed = Mathf.Max(DMILocomotionFacing.ToAgentAngularSpeed(turnSpeed), ResolveTurnDegreesPerSecond() > LegacyTurnDegreesPerSecond() + 0.01f ? ResolveTurnDegreesPerSecond() : 0f);
             navAgent.stoppingDistance = Mathf.Max(0.05f, arriveDistance);
 
             float repathThresholdSq = navDestinationRepathThreshold * navDestinationRepathThreshold;
@@ -287,7 +287,7 @@ namespace Project.AI
             float distance = toTarget.magnitude;
             if (distance > arriveDistance)
             {
-                float moveScale = DMILocomotionFacing.FacingMoveScale(transform, toTarget);
+                float moveScale = DMILocomotionFacing.FacingMoveScale(transform, toTarget, ResolveFacingMoveScaleFloor());
                 float scaledSpeed = speed * moveScale;
                 Vector3 step = toTarget.normalized * (scaledSpeed * Time.deltaTime);
                 float maxStep = distance - arriveDistance;
@@ -317,9 +317,46 @@ namespace Project.AI
                 FaceTowards(flatTarget);
         }
 
+        /// <summary>
+        /// Turn rate outside the Attack state: while chasing / defending / searching with a combat target and the engagement director on,
+        /// use the engagement profile's nonAttackTurnRate (a player who moves behind the enemy is faced in under ~1 s). Otherwise legacy turnSpeed.
+        /// </summary>
+        private float ResolveTurnDegreesPerSecond()
+        {
+            float legacy = LegacyTurnDegreesPerSecond();
+            if ((state == AiState.Chase || state == AiState.Defensive || state == AiState.Search) &&
+                DMEnemyEngagementDirector.IsEnabled && combat != null && combat.HasLivingTarget())
+            {
+                DM_EnemyEngagementProfile p = EngagementProfile;
+                if (p != null)
+                    return Mathf.Max(legacy, p.nonAttackTurnRate);
+            }
+
+            return legacy;
+        }
+
         private void FaceTowards(Vector3 worldPosition)
         {
-            DMILocomotionFacing.FaceToward(transform, worldPosition, turnSpeed);
+            float rate = ResolveTurnDegreesPerSecond();
+            if (rate > LegacyTurnDegreesPerSecond() + 0.01f)
+                DMILocomotionFacing.FaceTowardDegrees(transform, worldPosition, rate);
+            else
+                DMILocomotionFacing.FaceTowardDegrees(transform, worldPosition, LegacyTurnDegreesPerSecond());
+        }
+
+        /// <summary>Legacy turnSpeed -> deg/s using the engagement profile's clamp (default 360, was hard-coded 220).</summary>
+        private float LegacyTurnDegreesPerSecond()
+        {
+            DM_EnemyEngagementProfile p = EngagementProfile;
+            float clampMax = p != null ? Mathf.Max(220f, p.turnRateClampMax) : 220f;
+            return DMILocomotionFacing.ToDegreesPerSecond(turnSpeed, clampMax);
+        }
+
+        /// <summary>Lowest move-speed fraction while turned away from the move direction (profile, was 0.18).</summary>
+        private float ResolveFacingMoveScaleFloor()
+        {
+            DM_EnemyEngagementProfile p = EngagementProfile;
+            return p != null ? Mathf.Clamp(p.facingMoveScaleFloor, 0.1f, 1f) : 0.18f;
         }
 
         private void SnapToGround()

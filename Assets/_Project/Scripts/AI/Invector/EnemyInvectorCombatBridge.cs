@@ -21,6 +21,14 @@ namespace Project.AI.Invector
         [SerializeField] private float defaultUnarmedDuration = 0.55f;
         [Tooltip("Distance at which ranged enemies stop chasing and start shooting.")]
         [SerializeField] private float rangedEngageRange = 12f;
+        [Tooltip("Ranged hold rule: distance a ranged-preferred enemy holds from the player. 0 = use the EnemyDefinition value, or auto (80% of Ranged Engage Range). Always kept beyond melee reach.")]
+        [SerializeField] private float rangedHoldDistance;
+        [Tooltip("Ranged enemies back off when the player is closer than hold distance x this fraction (the EnemyDefinition value wins when set).")]
+        [SerializeField] [Range(0.2f, 0.95f)] private float rangedRetreatFraction = 0.6f;
+        [Tooltip("Kiting archetypes (brain archetype Kiter) multiply the retreat fraction by this, so they retreat sooner.")]
+        [SerializeField] [Range(1f, 2f)] private float kiterRetreatBoost = 1.5f;
+        [Tooltip("Backpedal speed while retreating, as a fraction of walk speed.")]
+        [SerializeField] [Range(0.3f, 1.5f)] private float rangedRetreatSpeedMultiplier = 0.8f;
         [Tooltip("Seconds the aim pose is held after the enemy leaves a ranged engagement. Also the aim-in time: the first shot only fires once the aim pose has been held this long.")]
         [SerializeField] private float aimHoldDuration = 1.5f;
         [Tooltip("Max degrees the chest bone tilts up/down to track the target vertically while aiming. Keeps the rifle pointed at the player's torso rather than straight ahead.")]
@@ -32,8 +40,8 @@ namespace Project.AI.Invector
         [SerializeField] private ItemData enemyPistolAmmo;
         [SerializeField] private ItemData enemyRifleAmmo;
 
-        private const string StandardAmmoPath = "Assets/_Project/Data/Items/Ammo/Standard.asset";
-        private const string PlasmaAmmoPath = "Assets/_Project/Data/Items/Ammo/Plasma.asset";
+        private const string StandardAmmoPath = "Assets/_Project/Data/Items/Ammo/DMAmmoFxProfile_Standard.asset";
+        private const string PlasmaAmmoPath = "Assets/_Project/Data/Items/Ammo/DMAmmoFxProfile_Plasma.asset";
 
         private vThirdPersonController _controller;
         private vMeleeManager _meleeManager;
@@ -182,6 +190,39 @@ namespace Project.AI.Invector
         }
 
         public float RangedEngageRange => rangedEngageRange;
+
+        /// <summary>Ranged hold distance (definition field when set, else this bridge's field, else 80% of the engage range), kept beyond melee reach.</summary>
+        public float RangedHoldDistance
+        {
+            get
+            {
+                EnemyDefinition d = _loadoutBridge != null ? _loadoutBridge.ResolveDefinition() : null;
+                float v = d != null && d.rangedHoldDistance > 0.01f ? d.rangedHoldDistance : rangedHoldDistance;
+                if (v <= 0.01f)
+                    v = rangedEngageRange * 0.8f;
+                return Mathf.Clamp(v, 4f, Mathf.Max(4f, rangedEngageRange));
+            }
+        }
+
+        public float RangedRetreatFraction
+        {
+            get
+            {
+                EnemyDefinition d = _loadoutBridge != null ? _loadoutBridge.ResolveDefinition() : null;
+                return d != null && d.rangedRetreatFraction > 0.01f ? d.rangedRetreatFraction : rangedRetreatFraction;
+            }
+        }
+
+        public float KiterRetreatBoost
+        {
+            get
+            {
+                EnemyDefinition d = _loadoutBridge != null ? _loadoutBridge.ResolveDefinition() : null;
+                return d != null && d.kiterRetreatBoost > 0.01f ? d.kiterRetreatBoost : kiterRetreatBoost;
+            }
+        }
+
+        public float RangedRetreatSpeedMultiplier => rangedRetreatSpeedMultiplier;
 
         public bool HasRangedWeaponEquipped()
         {

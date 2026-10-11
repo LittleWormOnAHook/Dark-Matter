@@ -12,7 +12,13 @@ namespace Project.AI
         /// <summary>Legacy slerp-factor → deg/sec. turnSpeed 8 ≈ 144°/s.</summary>
         public static float ToDegreesPerSecond(float turnSpeed)
         {
-            return Mathf.Clamp(turnSpeed * 18f, 40f, 220f);
+            return ToDegreesPerSecond(turnSpeed, 220f);
+        }
+
+        /// <summary>Same conversion with an explicit upper clamp (enemies use DM_EnemyEngagementProfile.turnRateClampMax).</summary>
+        public static float ToDegreesPerSecond(float turnSpeed, float maxDegreesPerSecond)
+        {
+            return Mathf.Clamp(turnSpeed * 18f, 40f, Mathf.Max(40f, maxDegreesPerSecond));
         }
 
         /// <summary>NavMeshAgent.angularSpeed from the same legacy turnSpeed field.</summary>

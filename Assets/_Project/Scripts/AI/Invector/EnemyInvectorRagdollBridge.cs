@@ -215,6 +215,31 @@ namespace Project.AI.Invector
                 animatorHitstopSeconds: Mathf.Max(0f, hitstop));
         }
 
+        /// <summary>
+        /// Player hit interrupts the enemy's attack (AttackInterruptEvaluator). Cancels the swing sequence and
+        /// locks attacks for <paramref name="recoverySeconds"/>; optionally plays the Small directional reaction.
+        /// Does not touch poise, the token or the slot: the enemy keeps its place until recovery ends.
+        /// </summary>
+        public void InterruptAttackFromPlayerHit(vDamage sourceDamage, float recoverySeconds, float reactionSeconds, bool playReaction)
+        {
+            if (_health != null && _health.IsDead)
+                return;
+
+            if (_controller != null && (_controller.isDead || IsCorpseRagdolled))
+                return;
+
+            InterruptEnemyCombatForStagger(Mathf.Max(0f, recoverySeconds));
+            if (!playReaction)
+                return;
+
+            RestartStaggerRoutine(AnimatorStaggerRoutine(
+                sourceDamage,
+                isCritical: false,
+                Mathf.Max(0.2f, reactionSeconds),
+                pauseLocomotion: false,
+                hitstopSeconds: 0f));
+        }
+
         public void TryHitStaggerFromRanged(
             Vector3 hitPoint,
             Vector3 hitDirection,

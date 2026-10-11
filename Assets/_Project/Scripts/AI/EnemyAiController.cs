@@ -250,6 +250,7 @@ namespace Project.AI
             patrolWorldPoints = null;
             patrolPoints = points;
             patrolMode = mode;
+            CaptureChildPatrolAnchors();
             RefreshPatrolRouteFlag();
             if (!hasPatrolRoute)
                 return;
@@ -310,6 +311,55 @@ namespace Project.AI
             provider.TryAssignEnemy(this);
         }
 
+        // Patrol anchors that are CHILDREN of this enemy (e.g. a "PatrolPoints" child baked into the prefab) move and
+        // rotate with the enemy, so walking toward them is chasing its own tail: the enemy circles in place. Such
+        // anchors are captured as spawn-pose offsets and turned into fixed world points when the enemy is enabled.
+        private Vector3[] patrolChildLocal;
+        private bool[] patrolChildHas;
+        private Vector3[] patrolChildWorld;
+
+        private void CaptureChildPatrolAnchors()
+        {
+            patrolChildLocal = null;
+            patrolChildHas = null;
+            patrolChildWorld = null;
+            if (patrolPoints == null || patrolPoints.Length == 0)
+                return;
+
+            for (int i = 0; i < patrolPoints.Length; i++)
+            {
+                Transform anchor = patrolPoints[i];
+                if (anchor == null || anchor == transform || !anchor.IsChildOf(transform))
+                    continue;
+
+                if (patrolChildLocal == null)
+                {
+                    patrolChildLocal = new Vector3[patrolPoints.Length];
+                    patrolChildHas = new bool[patrolPoints.Length];
+                }
+
+                patrolChildLocal[i] = transform.InverseTransformPoint(anchor.position);
+                patrolChildHas[i] = true;
+            }
+
+            BuildChildPatrolWorldPoints();
+        }
+
+        private void BuildChildPatrolWorldPoints()
+        {
+            if (patrolChildLocal == null)
+                return;
+
+            if (patrolChildWorld == null || patrolChildWorld.Length != patrolChildLocal.Length)
+                patrolChildWorld = new Vector3[patrolChildLocal.Length];
+
+            for (int i = 0; i < patrolChildLocal.Length; i++)
+            {
+                if (patrolChildHas[i])
+                    patrolChildWorld[i] = transform.TransformPoint(patrolChildLocal[i]);
+            }
+        }
+
         private void RefreshPatrolRouteFlag()
         {
             hasPatrolRoute = (patrolWorldPoints != null && patrolWorldPoints.Length > 0) ||
@@ -346,6 +396,12 @@ namespace Project.AI
                 return false;
             }
 
+            if (patrolChildWorld != null && index < patrolChildWorld.Length && patrolChildHas[index])
+            {
+                point = patrolChildWorld[index];
+                return true;
+            }
+
             Transform anchor = patrolPoints[index];
             if (anchor == null)
             {
@@ -368,6 +424,7 @@ namespace Project.AI
             health = GetComponent<EnemyHealth>();
             combat = GetComponent<EnemyCombat>();
             combatBridge = GetComponent<EnemyInvectorCombatBridge>();
+            CaptureChildPatrolAnchors();
             RefreshPatrolRouteFlag();
             ConfigureNavMeshAgent();
             InitializeCrowdProfile();
@@ -386,6 +443,7 @@ namespace Project.AI
         private void OnEnable()
         {
             homePosition = transform.position;
+            BuildChildPatrolWorldPoints();
             currentLocomotionSpeed = 0f;
             currentLocalMoveDirection = Vector3.zero;
 
@@ -513,6 +571,8 @@ namespace Project.AI
 
             if (state == AiState.Attack || state == AiState.Chase)
                 TryCorrectIllegalPlayerTarget();
+
+            TickCrowdingDrift();
 
             switch (state)
             {

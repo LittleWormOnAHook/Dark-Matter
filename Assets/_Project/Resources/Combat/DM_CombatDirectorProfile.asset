@@ -24,13 +24,13 @@ MonoBehaviour:
   largeGroupBaseSlots: 3
   largeGroupEnemiesPerExtraSlot: 4
   largeGroupSlotsMax: 5
-  maxSimultaneousAttackers: 5
-  slotMinHoldSeconds: 1.5
+  maxSimultaneousAttackers: 1
+  slotMinHoldSeconds: 1
   slotHoldMaxSequences: 2
   slotHoldMaxSeconds: 5
-  slotEntryGrace: {x: 0.5, y: 1}
-  minSecondsBetweenSlotChanges: 0.6
-  slotReawardCooldown: 1.5
+  slotEntryGrace: {x: 0.3, y: 0.6}
+  minSecondsBetweenSlotChanges: 0.4
+  slotReawardCooldown: 1
   enableFlank: 0
   flankMaxConcurrent: 1
   flankMinHoldSeconds: 2

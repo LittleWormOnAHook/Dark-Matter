@@ -35,6 +35,8 @@ namespace Project.AI
         public float AttackRange => attackRange;
         public float AttackDamage => attackDamage;
         public bool IsAttacking => attackPending;
+        /// <summary>Swing sequencer (light chain / charged swing). Used by the attack interrupt evaluator.</summary>
+        public DMEnemyMeleeComboDriver ComboDriver => comboDriver;
         public Transform CurrentTarget => target;
 
         /// <summary>Raised when the combat target changes (event-driven consumers such as the engaged health HUD).</summary>
@@ -47,8 +49,12 @@ namespace Project.AI
         private bool pendingInvectorAttack;
         private bool _wasAttackPending;
         private float _meleeRepositionUntil;
+        private float _forceMissStepUntil;
+        private bool _intentionalMissActive;
 
         public bool WantsMeleeReposition => Time.time < _meleeRepositionUntil;
+        public bool WantsForcedMissStep => Time.time < _forceMissStepUntil;
+        public bool IsIntentionalMissActive => _intentionalMissActive;
 
         /// <summary>
         /// Clears in-flight swings and pushes the next attack attempt until stagger ends.
@@ -59,6 +65,8 @@ namespace Project.AI
             attackPending = false;
             pendingInvectorAttack = false;
             pendingMeleeRecovery = false;
+            _intentionalMissActive = false;
+            _forceMissStepUntil = 0f;
             if (lockoutSeconds > 0f)
                 nextAttackTime = Mathf.Max(nextAttackTime, Time.time + lockoutSeconds);
         }
@@ -178,6 +186,8 @@ namespace Project.AI
             if (invectorCombat != null && invectorCombat.TryDeferRangedAttack(target))
                 return;
 
+            bool rollIntentionalMiss = ShouldRollIntentionalMeleeMiss();
+
             nextAttackTime = Time.time + attackCooldown;
 
             // Charged swing (random roll after cooldown, or forced by the punish rule). Melee range only.
@@ -196,8 +206,16 @@ namespace Project.AI
 
             if (invectorCombat != null && invectorCombat.TryBeginAttack(target, out float invectorDuration))
             {
-                if (!invectorCombat.LastAttackWasRanged && comboDriver != null)
-                    comboDriver.BeginLightSequence();
+                if (!invectorCombat.LastAttackWasRanged)
+                {
+                    _intentionalMissActive = rollIntentionalMiss;
+                    if (comboDriver != null)
+                        comboDriver.BeginLightSequence();
+                }
+                else
+                {
+                    _intentionalMissActive = false;
+                }
 
                 attackPending = true;
                 pendingInvectorAttack = true;
@@ -210,6 +228,7 @@ namespace Project.AI
 
             pendingInvectorAttack = false;
             pendingMeleeRecovery = true;
+            _intentionalMissActive = rollIntentionalMiss;
             attackPending = true;
             attackStartTime = Time.time;
             windupEndTime = Time.time + attackWindup;
@@ -233,8 +252,9 @@ namespace Project.AI
 
         private float SampleMeleeRecoveryPause()
         {
-            float min = Mathf.Max(0f, meleeRecoveryPauseMin);
-            float max = Mathf.Max(min, meleeRecoveryPauseMax);
+            DM_EnemyEngagementProfile p = aiController != null ? aiController.EngagementProfile : DM_EnemyEngagementProfile.Live;
+            float min = Mathf.Max(0f, p != null ? p.meleeRecoveryPauseMin : meleeRecoveryPauseMin);
+            float max = Mathf.Max(min, p != null ? p.meleeRecoveryPauseMax : meleeRecoveryPauseMax);
             return Random.Range(min, max);
         }
 
@@ -242,11 +262,16 @@ namespace Project.AI
         {
             if (_wasAttackPending && !attackPending)
             {
-                if (HasLivingTarget() && target != null)
+                if (_intentionalMissActive)
                 {
-                    float connectRange = ResolveEffectiveAttackRange(target) * 0.82f;
+                    BeginMissRecoveryStep();
+                    _intentionalMissActive = false;
+                }
+                else if (HasLivingTarget() && target != null)
+                {
+                    float connectRange = ResolveEffectiveAttackRange(target) * 0.88f;
                     if (HorizontalDistance(transform.position, target.position) > connectRange)
-                        _meleeRepositionUntil = Time.time + 0.65f;
+                        BeginMissRecoveryStep();
                 }
             }
 
@@ -284,7 +309,54 @@ namespace Project.AI
             if (aiController != null && !aiController.AllowsCombatTarget(target))
                 return;
 
+            if (_intentionalMissActive)
+            {
+                _intentionalMissActive = false;
+                BeginMissRecoveryStep();
+                return;
+            }
+
             ApplyDamageToTarget(attackDamage);
+        }
+
+        private bool ShouldRollIntentionalMeleeMiss()
+        {
+            if (!IsTargetInRange())
+                return false;
+
+            DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
+            if (profile == null || profile.enemyIntentionalMeleeMissChance <= 0.001f)
+                return false;
+
+            return Random.value < profile.enemyIntentionalMeleeMissChance;
+        }
+
+        private void BeginMissRecoveryStep()
+        {
+            DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
+            float duration = profile != null ? profile.enemyMeleeMissStepSeconds : 0.55f;
+            if (duration <= 0f)
+                return;
+
+            _meleeRepositionUntil = Time.time + duration;
+            _forceMissStepUntil = Time.time + duration;
+            aiController?.NotifyIntentionalMeleeMiss(duration);
+        }
+
+        internal float ResolveMissStepStopDistance(Transform stepTarget)
+        {
+            if (stepTarget == null)
+                return 0f;
+
+            DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
+            float factor = profile != null ? profile.enemyMeleeMissStepStopFactor : 0.72f;
+            return ResolveEffectiveAttackRange(stepTarget) * factor;
+        }
+
+        internal float ResolveMissStepSpeedMultiplier()
+        {
+            DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
+            return profile != null ? profile.enemyMeleeMissStepSpeedMultiplier : 0.95f;
         }
 
         public bool IsInAttackRange(Transform candidate)

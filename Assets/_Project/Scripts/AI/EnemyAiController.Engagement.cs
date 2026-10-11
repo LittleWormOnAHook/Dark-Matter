@@ -358,7 +358,8 @@ namespace Project.AI
                 offscreenReadySince = -1f;
             }
 
-            return true;
+            // One attacker at a time (per the Phase 4 slot budget): never start a swing while the ring's budget is already mid-swing.
+            return DMEnemyEngagementDirector.CanStartSwing(this);
         }
 
         public void NotifyEngagementAttackBegan()

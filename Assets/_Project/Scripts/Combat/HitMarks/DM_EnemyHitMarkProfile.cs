@@ -123,6 +123,16 @@ namespace Project.Combat
         [Tooltip("If an enemy's health goes back up (regen), marks stamped at or below the new health fade out over this time.")]
         [Range(0.1f, 5f)] public float regenFadeSeconds = 1.5f;
 
+        [Header("Player marks (enemy ranged hits on the player hitbox rig)")]
+        [Tooltip("Seconds a hit mark stays on the PLAYER before it is removed (fades out during the last Player Mark Fade seconds). 0 = keep until death / revive. Enemy marks are unaffected (they persist until death or regen).")]
+        [Range(0f, 60f)] public float playerMarkLifetimeSeconds = 10f;
+        [Tooltip("Fade-out time at the end of the player mark lifetime.")]
+        [Range(0.1f, 5f)] public float playerMarkFadeSeconds = 1.5f;
+        [Tooltip("Player marks are this fraction of the enemy mark size (a 0.1 m x 2 enemy bullet mark is far too big for a head).")]
+        [Range(0.1f, 1f)] public float playerMarkSizeScale = 0.4f;
+        [Tooltip("Real projection depth (metres) of a player mark, centred on the struck surface, so it cannot paint through the body onto the far side.")]
+        [Range(0.02f, 0.5f)] public float playerMarkProjectionDepth = 0.16f;
+
         [Header("Glow & cool-down")]
         [Tooltip("Seconds for a glowing burn to cool from hot to the dim residual.")]
         [Range(0.2f, 6f)] public float glowCoolSeconds = 2f;
@@ -166,6 +176,19 @@ namespace Project.Combat
         [Min(1f)] public float splatterFullScaleDamage = 30f;
         [Tooltip("How much the entry spray leans toward the surface normal (0) vs back at the shooter (1).")]
         [Range(0f, 1f)] public float bloodEntryNormalBlend = 0.35f;
+        [Header("Hit FX scaling (Slice 1 / A4) - one shared path for blood (Humanoid), coolant (Android) and sparks (Robot)")]
+        [Tooltip("Master slider: multiplies every blood splatter, coolant splatter and spark burst size. 1 = as before, 0.25 = barely, 2.5 = gory.")]
+        [Range(0.25f, 2.5f)] public float goreIntensity = 1f;
+        [Tooltip("Extra splatter size on a heavy / charged player hit.")]
+        [Range(1f, 3f)] public float heavyHitSplatterMultiplier = 1.35f;
+        [Tooltip("Extra splatter size per hit already chained on the enemy (poise chain counter), added to 1.")]
+        [Range(0f, 0.3f)] public float chainHitSplatterBonus = 0.05f;
+        [Tooltip("Cap on the total chain bonus.")]
+        [Range(0f, 1f)] public float chainHitSplatterMaxBonus = 0.3f;
+        [Tooltip("Extra multiplier on top of the shared scaling for Android coolant splatter. 1 = same as blood.")]
+        [Range(0.25f, 3f)] public float coolantScaleMultiplier = 1f;
+        [Tooltip("Extra multiplier on top of the shared scaling for Robot / Android sparks. 1 = same as blood.")]
+        [Range(0.25f, 3f)] public float sparkScaleMultiplier = 1f;
         [Tooltip("Hits at or above this damage also play an exit spray (per body type toggle below).")]
         public float exitSprayDamageThreshold = 25f;
         [Range(0f, 1f)] public float exitSprayStrength = 0.3f;
@@ -280,6 +303,16 @@ namespace Project.Combat
         }
 
         /// <summary>Splatter burst scale for a hit's damage.</summary>
+        /// <summary>goreIntensity x (heavy multiplier) x (1 + capped chain bonus).</summary>
+        public float ResolveGoreMultiplier(bool heavy, int chainHits, DMEnemyHitFxKind kind = DMEnemyHitFxKind.Blood)
+        {
+            float kindMul = 1f;
+            if (kind == DMEnemyHitFxKind.Coolant) kindMul = coolantScaleMultiplier;
+            else if (kind == DMEnemyHitFxKind.SparksSmall || kind == DMEnemyHitFxKind.SparksLarge) kindMul = sparkScaleMultiplier;
+            float chain = Mathf.Min(chainHitSplatterMaxBonus, Mathf.Max(0, chainHits) * chainHitSplatterBonus);
+            return Mathf.Max(0.05f, goreIntensity * kindMul * (heavy ? heavyHitSplatterMultiplier : 1f) * (1f + chain));
+        }
+
         public float ResolveSplatterScale(float damage)
         {
             float t = Mathf.Clamp01(damage / Mathf.Max(1f, splatterFullScaleDamage));
@@ -304,6 +337,10 @@ namespace Project.Combat
             meleeSlashMarkSizeMultiplier = Mathf.Clamp(meleeSlashMarkSizeMultiplier, 1f, 4f);
             slashProjectionDepth = Mathf.Clamp(slashProjectionDepth, 0.02f, 1f);
             burnProjectionDepth = Mathf.Clamp(burnProjectionDepth, 0.02f, 1f);
+            playerMarkLifetimeSeconds = Mathf.Clamp(playerMarkLifetimeSeconds, 0f, 60f);
+            playerMarkFadeSeconds = Mathf.Clamp(playerMarkFadeSeconds, 0.1f, 5f);
+            playerMarkSizeScale = Mathf.Clamp(playerMarkSizeScale, 0.1f, 1f);
+            playerMarkProjectionDepth = Mathf.Clamp(playerMarkProjectionDepth, 0.02f, 0.5f);
             Revision++;
         }
     }
