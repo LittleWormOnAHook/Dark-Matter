@@ -89,6 +89,12 @@ namespace Project.EditorTools.Audit
             if (_player == null) return;
             var c = _player.GetComponent<vThirdPersonController>();
             if (c != null) c.ResetHealth(c.maxHealth);
+            if (c != null)
+            {
+                const System.Reflection.BindingFlags bf = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+                var ft = c.GetType(); var cur = ft.GetField("currentStamina", bf); var mx = ft.GetField("maxStamina", bf);
+                if (cur != null && mx != null && cur.FieldType == typeof(float) && mx.FieldType == typeof(float)) cur.SetValue(c, (float)mx.GetValue(c)); // melee swings cost stamina: keep it full so the audit player can always swing
+            }
             var s = _player.GetComponent<Project.Survival.SurvivalStats>();
             if (s != null) s.DevSetHealth(s.maxHealth);
             if (_live != null) _live.ResyncHp();

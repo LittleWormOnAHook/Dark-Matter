@@ -287,5 +287,8 @@ namespace Project.EditorTools
         public const int Tools_Dark_Matter_Genesis_Diagnostics_Audit_Console_Copy_Report = 1422;
         public const int Tools_Dark_Matter_Genesis_Diagnostics_Audit_Resources_Paths = 1433;
         public const int Tools_Dark_Matter_Genesis_Diagnostics_Audit_Resources_Paths_Copy = 1444;
+        public const int Tools_Dark_Matter_Genesis_Audit_Audit_Hub = 1500;
+        public const int Tools_Dark_Matter_Genesis_Audit_Run_Enemy_Runtime_Audit = 1511;
+        public const int Tools_Dark_Matter_Genesis_Audit_Open_Latest_Enemy_Audit_Report = 1522;
     }
 }

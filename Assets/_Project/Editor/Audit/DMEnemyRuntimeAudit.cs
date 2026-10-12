@@ -53,7 +53,9 @@ namespace Project.EditorTools.Audit
         public bool updateBaseline = false; // overwrite the regression baseline with this run
         public string mode = "full";    // full: run every unit, quick: skip units unchanged since they last passed, fewer ammo-specific cases
         public bool force = false;       // ignore the unit store
+        public string mix = "";            // interruptsOnly: comma separated prefab names used for the 2nd, 3rd... enemy instead of copies (e.g. "Humadroid,Robot"); the rest are copies of the filtered enemy
         public int enemyCount = 1;          // interruptsOnly: how many copies of the enemy to fight at once (1-5), for token rotation / hand-off / spacing checks
+        public string sceneEnemies = "";   // interruptsOnly: comma separated names of pre-placed (disabled) scene enemies to use instead of spawned prefab copies, optional "@x;z" picks the one nearest that XZ (e.g. "SwordMaster,Humadroid@-780;-75"). First = primary. Scene is never saved: play-mode changes revert on exit.
         public bool interruptsOnly = false; // run only the Slice 0b attack-interrupt / cadence scenario on the filtered enemies
     }
 
