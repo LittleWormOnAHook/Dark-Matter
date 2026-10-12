@@ -34,7 +34,17 @@ namespace Project.AI.Invector
             "Spine2",
         };
 
+        /// <summary>Editor hook (set by DMWeaponPlacementBake): applies baked weapon placements after every holder rebind, so Rebuild / Fix keep hand-tweaked placements.</summary>
+        public static System.Action<GameObject> AfterRebind;
+
         public static void RebindToAnimatorBones(GameObject root)
+        {
+            RebindToAnimatorBonesCore(root);
+            if (root != null && AfterRebind != null)
+                AfterRebind(root);
+        }
+
+        private static void RebindToAnimatorBonesCore(GameObject root)
         {
             if (root == null)
                 return;

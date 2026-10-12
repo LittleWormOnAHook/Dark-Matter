@@ -239,19 +239,24 @@ namespace Project.EditorTools
 
             if (def == null)
             {
-                r.Warnings.Add(
-                    "No EnemyDefinition was linked: prefab-side values are the only source (no authority).");
+                if (templateAsset != null && root.name == templateAsset.name)
+                    r.Info.Add("This is the singular template: it carries no EnemyDefinition by design (each enemy links its own).");
+                else
+                    r.Warnings.Add(
+                        "No EnemyDefinition was linked: prefab-side values are the only source (no authority).");
             }
             else
             {
                 CheckDefinitionLink(root, def, r);
                 CheckWeapons(root, def, r);
                 CheckCapsule(root, def, r);
+                DMCharacterCreatorWeaponAudit.CheckValueDrift(root, def, r);
                 AddLiveVersusBakedInfo(r);
             }
 
             CheckRig(root, r);
-            CheckSingularTemplate(root, templateAsset, r);
+            CheckSingularTemplate(root, templateAsset, r, def);
+            CheckTemplateSync(root, def, templateAsset, r);
             return r;
         }
 
@@ -301,23 +306,27 @@ namespace Project.EditorTools
                 return;
             }
 
-            var so = new SerializedObject(loadout);
-            var melee = so.FindProperty("meleeWeaponItem")?.objectReferenceValue as ItemData;
-            var ranged = so.FindProperty("rangedWeaponItem")?.objectReferenceValue as ItemData;
-            if (melee != def.meleeWeaponItem || ranged != def.rangedWeaponItem)
-            {
-                r.Errors.Add(
-                    "The definition's melee/ranged weapon was not copied into EnemyInvectorLoadoutBridge " +
-                    $"(definition: melee={Name(def.meleeWeaponItem)}, ranged={Name(def.rangedWeaponItem)}; " +
-                    $"loadout: melee={Name(melee)}, ranged={Name(ranged)}).");
-            }
+            // WEAPON FLOW: LoadoutBridge fields are per-instance OVERRIDES; empty = the definition's weapon (default).
+            ItemData melee = loadout.ResolvedMelee;
+            ItemData ranged = loadout.ResolvedRanged;
+            ItemData start = loadout.ResolveStartingWeapon();
+            r.Info.Add(
+                $"Weapon flow (LoadoutBridge is the authority): melee = {Name(melee)} [{Source(loadout.MeleeSource)}], " +
+                $"ranged = {Name(ranged)} [{Source(loadout.RangedSource)}], " +
+                $"prefer ranged = {loadout.ResolvedPreferRanged} [{(loadout.PreferRangedOverride == EnemyPreferRangedOverride.UseDefinition ? "Definition default" : "Bridge override")}], " +
+                $"starts with {Name(start)}.");
 
-            CheckWeaponSlot(root, def.meleeWeaponItem, "melee", r);
-            CheckWeaponSlot(root, def.rangedWeaponItem, "ranged", r);
+            // A set bridge field is an intentional override and is never a mismatch, unless it merely copies the definition.
+            if (loadout.MeleeOverride != null && loadout.MeleeOverride == def.meleeWeaponItem)
+                r.Warnings.Add(
+                    $"Redundant weapon override: the LoadoutBridge melee field ('{loadout.MeleeOverride.name}') only copies the definition's weapon, so it will not follow a later definition edit. Fix clears it.");
+            if (loadout.RangedOverride != null && loadout.RangedOverride == def.rangedWeaponItem)
+                r.Warnings.Add(
+                    $"Redundant weapon override: the LoadoutBridge ranged field ('{loadout.RangedOverride.name}') only copies the definition's weapon, so it will not follow a later definition edit. Fix clears it.");
 
-            ItemData start = def.preferRangedWeapon && def.rangedWeaponItem != null
-                ? def.rangedWeaponItem
-                : (def.meleeWeaponItem != null ? def.meleeWeaponItem : def.rangedWeaponItem);
+            CheckWeaponSlot(root, melee, "melee", r);
+            CheckWeaponSlot(root, ranged, "ranged", r);
+
             if (start != null)
             {
                 GameObject drawn = PioneerInvectorWeaponBridge.FindPreloadedDrawnSlot(root.transform, start);
@@ -327,11 +336,16 @@ namespace Project.EditorTools
                         $"Starting weapon '{start.name}' has a Drawn_ slot but it is not active in the prefab (it is drawn at spawn by the LoadoutBridge).");
                 }
             }
-            else if (def.meleeWeaponItem == null && def.rangedWeaponItem == null)
+            else if (melee == null && ranged == null)
             {
-                r.Info.Add("Definition lists no weapon: the enemy spawns unarmed by design.");
+                r.Info.Add("No weapon resolved (override or definition): the enemy spawns unarmed by design.");
             }
+
+            DMCharacterCreatorWeaponAudit.CheckUnlistedWeapons(root, start, r);
         }
+
+        static string Source(EnemyWeaponSource s) =>
+            s == EnemyWeaponSource.Override ? "Bridge override" : (s == EnemyWeaponSource.Definition ? "Definition default" : "none");
 
         static void CheckWeaponSlot(GameObject root, ItemData item, string kind, DMCharacterCreatorBuildReport r)
         {
@@ -343,7 +357,7 @@ namespace Project.EditorTools
             {
                 r.HasWeaponWarning = true;
                 r.Warnings.Add(
-                    $"WEAPON NOT EQUIPPABLE: the definition lists {kind} weapon '{item.name}' but the prefab has no " +
+                    $"WEAPON NOT EQUIPPABLE: the resolved {kind} weapon '{item.name}' (override or definition) has no " +
                     $"Drawn_ slot for it (weapon holders / Drawn_* objects are missing from the rig). Rebuild From Template.");
             }
         }
@@ -385,7 +399,7 @@ namespace Project.EditorTools
                 r.Warnings.Add("The humanoid avatar is not a saved asset (it will be lost on reload).");
         }
 
-        static void CheckSingularTemplate(GameObject root, GameObject templateAsset, DMCharacterCreatorBuildReport r)
+        static void CheckSingularTemplate(GameObject root, GameObject templateAsset, DMCharacterCreatorBuildReport r, EnemyDefinition def = null)
         {
             if (templateAsset == null)
                 return;
@@ -400,8 +414,11 @@ namespace Project.EditorTools
             var extras = new List<string>();
             foreach (Component c in root.GetComponents<Component>())
             {
-                if (c != null && !templateTypes.Contains(c.GetType()))
-                    extras.Add(c.GetType().Name);
+                if (c == null || templateTypes.Contains(c.GetType()))
+                    continue;
+                if (def != null && def.canThrowGrenades && DMEnemyTemplateSync.IsGrenadeType(c.GetType().Name))
+                    continue; // allowed by the definition's Can Throw Grenades
+                extras.Add(c.GetType().Name);
             }
 
             if (extras.Count > 0)
@@ -410,6 +427,13 @@ namespace Project.EditorTools
                     "Singular-template rule: root has components that are not on the template (" +
                     string.Join(", ", extras) + "). Variation must live in the EnemyDefinition / profiles.");
             }
+        }
+
+        static void CheckTemplateSync(GameObject root, EnemyDefinition def, GameObject templateAsset, DMCharacterCreatorBuildReport r)
+        {
+            bool isTemplate = templateAsset != null && root.name == templateAsset.name;
+            foreach (DMSyncItem it in DMEnemyTemplateSync.Analyze(root, def, templateAsset, isTemplate))
+                r.Warnings.Add("Template sync: " + it.Text + (it.Auto ? string.Empty : " (manual)"));
         }
 
         static void AddLiveVersusBakedInfo(DMCharacterCreatorBuildReport r)
@@ -561,6 +585,240 @@ namespace Project.EditorTools
             {
                 PrefabUtility.UnloadPrefabContents(root);
             }
+        }
+    }
+
+    /// <summary>
+    /// Weapon-object and prefab-vs-definition drift audit shared by the post-build check, the Fixer and the prefab
+    /// list. The LoadoutBridge hides everything but the resolved weapon at runtime; this reports/repairs the prefab
+    /// side so the asset matches what the runtime enforces.
+    /// </summary>
+    public static class DMCharacterCreatorWeaponAudit
+    {
+        /// <summary>Active Drawn_/Holstered_ slots (other than the resolved start weapon) and baked holder meshes.</summary>
+        public static List<Transform> FindUnlistedActive(GameObject root, ItemData start)
+        {
+            var found = new List<Transform>();
+            if (root == null)
+                return found;
+
+            GameObject keep = start != null
+                ? PioneerInvectorWeaponBridge.FindPreloadedDrawnSlot(root.transform, start)
+                : null;
+
+            // The OTHER resolved weapon may stay on its holster (one drawn, the other holstered).
+            GameObject keepHolster = null;
+            var lb = root.GetComponent<EnemyInvectorLoadoutBridge>();
+            if (lb != null && start != null)
+            {
+                ItemData other = start == lb.ResolvedMelee ? lb.ResolvedRanged : lb.ResolvedMelee;
+                if (other != null && other != start)
+                    keepHolster = PioneerInvectorWeaponBridge.FindPreloadedHolsteredSlot(root.transform, other);
+            }
+
+            Transform[] all = root.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < all.Length; i++)
+            {
+                Transform t = all[i];
+                if (t == null || t == root.transform)
+                    continue;
+
+                bool drawn = t.name.StartsWith("Drawn_", StringComparison.Ordinal);
+                bool holstered = t.name.StartsWith("Holstered_", StringComparison.Ordinal);
+                if (!drawn && !holstered)
+                    continue;
+                if (!t.gameObject.activeInHierarchy)
+                    continue;
+                if (drawn && keep != null && t.gameObject == keep)
+                    continue;
+                if (holstered && keepHolster != null && t.gameObject == keepHolster)
+                    continue;
+
+                found.Add(t);
+            }
+
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer rend = renderers[i];
+                if (rend == null || rend is SkinnedMeshRenderer || IsUnderSlot(rend.transform))
+                    continue;
+
+                Transform holderChild = FindHolderChild(rend.transform);
+                if (holderChild != null && holderChild.gameObject.activeInHierarchy && !found.Contains(holderChild))
+                    found.Add(holderChild);
+            }
+
+            return found;
+        }
+
+        static bool IsUnderSlot(Transform t)
+        {
+            while (t != null)
+            {
+                if (t.name.StartsWith("Drawn_", StringComparison.Ordinal) ||
+                    t.name.StartsWith("Holstered_", StringComparison.Ordinal))
+                    return true;
+                t = t.parent;
+            }
+
+            return false;
+        }
+
+        static Transform FindHolderChild(Transform t)
+        {
+            Transform c = t;
+            while (c != null && c.parent != null)
+            {
+                string parentName = c.parent.name;
+                if (parentName.EndsWith("Holder", StringComparison.Ordinal) ||
+                    parentName.Equals("WeaponHolders", StringComparison.Ordinal))
+                    return c;
+                c = c.parent;
+            }
+
+            return null;
+        }
+
+        public static void CheckUnlistedWeapons(GameObject root, ItemData start, DMCharacterCreatorBuildReport r)
+        {
+            List<Transform> extra = FindUnlistedActive(root, start);
+            if (extra.Count == 0)
+                return;
+
+            var names = new List<string>();
+            int drawnExtra = 0;
+            for (int i = 0; i < extra.Count; i++)
+                if (extra[i].name.StartsWith("Drawn_", StringComparison.Ordinal))
+                    drawnExtra++;
+            for (int i = 0; i < extra.Count && i < 5; i++)
+                names.Add(extra[i].name);
+
+            if (drawnExtra > 0)
+                r.Warnings.Add(
+                    $"Both drawn at once: {drawnExtra} extra Drawn_ weapon slot(s) are active next to the resolved weapon ({names[0]}). Only one weapon may be drawn; Fix deactivates the extras.");
+
+            r.Warnings.Add(
+                $"Weapon objects: {extra.Count} weapon object(s) are active on the prefab but are not the resolved weapon ({string.Join(", ", names)}" +
+                (extra.Count > 5 ? ", ..." : string.Empty) +
+                "). The LoadoutBridge hides them at runtime; Fix deactivates them on the prefab.");
+        }
+
+        public static int DeactivateUnlisted(GameObject root, ItemData start)
+        {
+            List<Transform> extra = FindUnlistedActive(root, start);
+            for (int i = 0; i < extra.Count; i++)
+                extra[i].gameObject.SetActive(false);
+            return extra.Count;
+        }
+
+        // ---- prefab value vs definition -----------------------------------------------------------------
+        struct Field
+        {
+            public string Component;
+            public string Name;
+            public Func<EnemyDefinition, float> Value;
+        }
+
+        static readonly Field[] Fields =
+        {
+            new Field { Component = "EnemyHealth", Name = "maxHealth", Value = d => d.maxHealth },
+            new Field { Component = "EnemyHealth", Name = "destroyDelay", Value = d => d.destroyDelay },
+            new Field { Component = "EnemySenses", Name = "visionRange", Value = d => d.visionRange },
+            new Field { Component = "EnemySenses", Name = "visionFov", Value = d => d.visionFov },
+            new Field { Component = "EnemySenses", Name = "hearingRange", Value = d => d.hearingRange },
+            new Field { Component = "EnemySenses", Name = "proximityRange", Value = d => d.proximityRange },
+            new Field { Component = "EnemyCombat", Name = "attackRange", Value = d => d.attackRange },
+            new Field { Component = "EnemyCombat", Name = "attackDamage", Value = d => d.attackDamage },
+            new Field { Component = "EnemyCombat", Name = "attackCooldown", Value = d => d.attackCooldown },
+            new Field { Component = "EnemyCombat", Name = "attackWindup", Value = d => d.attackWindup },
+            new Field { Component = "EnemyAiController", Name = "walkSpeed", Value = d => d.walkSpeed },
+            new Field { Component = "EnemyAiController", Name = "runSpeed", Value = d => d.runSpeed },
+            new Field { Component = "EnemyAiController", Name = "chaseSpeed", Value = d => d.chaseSpeed },
+            new Field { Component = "EnemyAiController", Name = "wanderRadius", Value = d => d.wanderRadius },
+            new Field { Component = "EnemyAiController", Name = "chaseRadius", Value = d => d.chaseRadius },
+            new Field { Component = "EnemyAiController", Name = "turnSpeed", Value = d => d.turnSpeed },
+        };
+
+        static bool TryRead(SerializedProperty p, out float value)
+        {
+            value = 0f;
+            if (p == null)
+                return false;
+            if (p.propertyType == SerializedPropertyType.Float) { value = p.floatValue; return true; }
+            if (p.propertyType == SerializedPropertyType.Integer) { value = p.intValue; return true; }
+            return false;
+        }
+
+        /// <summary>Prefab-side values that differ from the definition (runtime uses the definition; these are fallbacks).</summary>
+        public static List<string> FindValueDrift(GameObject root, EnemyDefinition def)
+        {
+            var diffs = new List<string>();
+            if (root == null || def == null)
+                return diffs;
+
+            for (int i = 0; i < Fields.Length; i++)
+            {
+                Component c = root.GetComponent(Fields[i].Component);
+                if (c == null)
+                    continue;
+
+                SerializedProperty p = new SerializedObject(c).FindProperty(Fields[i].Name);
+                if (!TryRead(p, out float prefabValue))
+                    continue;
+
+                float defValue = Fields[i].Value(def);
+                if (Mathf.Abs(prefabValue - defValue) > 0.001f)
+                    diffs.Add($"{Fields[i].Component}.{Fields[i].Name} prefab={prefabValue:0.##} vs definition={defValue:0.##}");
+            }
+
+            return diffs;
+        }
+
+        public static void CheckValueDrift(GameObject root, EnemyDefinition def, DMCharacterCreatorBuildReport r)
+        {
+            List<string> diffs = FindValueDrift(root, def);
+            if (diffs.Count == 0)
+                return;
+
+            int shown = Mathf.Min(diffs.Count, 4);
+            r.Warnings.Add(
+                $"Prefab value differs from definition: {diffs.Count} field(s) ({string.Join("; ", diffs.GetRange(0, shown))}" +
+                (diffs.Count > shown ? "; ..." : string.Empty) +
+                "). Runtime uses the definition; Fix syncs the prefab fallback values (the definition is never changed).");
+        }
+
+        /// <summary>Writes the definition's values into the prefab-side fallback fields. Returns the count changed.</summary>
+        public static int SyncValues(GameObject root, EnemyDefinition def)
+        {
+            int changed = 0;
+            if (root == null || def == null)
+                return 0;
+
+            for (int i = 0; i < Fields.Length; i++)
+            {
+                Component c = root.GetComponent(Fields[i].Component);
+                if (c == null)
+                    continue;
+
+                var so = new SerializedObject(c);
+                SerializedProperty p = so.FindProperty(Fields[i].Name);
+                if (!TryRead(p, out float prefabValue))
+                    continue;
+
+                float defValue = Fields[i].Value(def);
+                if (Mathf.Abs(prefabValue - defValue) <= 0.001f)
+                    continue;
+
+                if (p.propertyType == SerializedPropertyType.Float)
+                    p.floatValue = defValue;
+                else
+                    p.intValue = Mathf.RoundToInt(defValue);
+                so.ApplyModifiedPropertiesWithoutUndo();
+                changed++;
+            }
+
+            return changed;
         }
     }
 }

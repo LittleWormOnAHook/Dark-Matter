@@ -44,7 +44,17 @@ namespace Project.EditorTools.GenesisStudio
             public string RootCapsule = "-";
             public DMCreatorFixPlan Plan;
             public string BeforeAfter;
+            public string Tooltip = string.Empty;
+            public string FixTip = "Nothing auto-fixable";
+            public string WeaponFlow = "-";
         }
+
+        /// <summary>
+        /// Set by the Studio panel: clicking a row loads that enemy's definition into the editing panel below
+        /// (Enemy Definition field, library selection, Identity, Mesh and Prefab, combat, AI, loot, health sections).
+        /// </summary>
+        public Action<EnemyDefinition> OnLoadEnemyDefinition;
+        public Action<PlayerVisualDefinition> OnLoadPlayerDefinition;
 
         const string IdleFbx =
             "Assets/Invector-3rdPersonController/Basic Locomotion/3D Models/Animations/Basic_FreeMovement.fbx";
@@ -168,22 +178,27 @@ namespace Project.EditorTools.GenesisStudio
                             Select(row);
                         }
 
-                        GUILayout.Label(row.KindLabel, GUILayout.Width(86f));
-                        GUILayout.Label(row.DefLabel, GUILayout.Width(150f));
+                        GUILayout.Label(new GUIContent(row.KindLabel, row.KindLabel), GUILayout.Width(86f));
+                        GUILayout.Label(new GUIContent(row.DefLabel, row.DefLabel), GUILayout.Width(150f));
                         DMStudioStyles.DrawBadge(row.StatusText, StatusColor(row.Status), 70f);
+                        // Hover the check badge: exactly what is wrong, what is needed, and whether Fix can repair it.
+                        GUI.Label(GUILayoutUtility.GetLastRect(), new GUIContent(string.Empty, row.Tooltip));
                         if (kind == ListKind.Enemy)
                         {
                             bool hasFix = row.Plan != null && row.Plan.HasAuto && !row.Protected;
                             using (new EditorGUI.DisabledScope(!hasFix))
                             {
-                                var fixContent = new GUIContent("Fix", hasFix ? string.Join("\n", row.Plan.Auto) : "Nothing auto-fixable");
+                                var fixContent = new GUIContent("Fix", row.FixTip);
                                 if (GUILayout.Button(fixContent, GUILayout.Width(46f), GUILayout.Height(22f)))
                                 {
                                     Row captured = row;
-                                    Select(captured);
+                                    Select(captured, load: false);
                                     Queue(() => DoFix(captured));
                                 }
                             }
+
+                            // Tooltips do not always show on disabled controls: overlay one so the reason is always readable.
+                            GUI.Label(GUILayoutUtility.GetLastRect(), new GUIContent(string.Empty, row.FixTip));
                         }
                     }
                 }
@@ -202,6 +217,19 @@ namespace Project.EditorTools.GenesisStudio
                 DMCharacterCreatorSharedUi.DrawWrappedHelpBox(
                     "Protected template (Player_v7*, Player_Invector*, HumanoidEnemy_Invector): listed for reference; Rebuild / Re-apply are blocked.",
                     MessageType.Info);
+
+            if (kind == ListKind.Enemy)
+            {
+                // Weapon placement bake: always visible right under the header (not inside the scrolled detail, not disabled for protected rows: it only writes the placement asset).
+                DMStudioStyles.DrawInspectorSectionHeader("Weapon placements (Keep / Bake)");
+                DMCharacterCreatorSharedUi.DrawToolbarButtonsWrapped(
+                    24f,
+                    ("Bake placements (this prefab)", () => Queue(() => { lastMessage = DMWeaponPlacementBake.BakeInteractive(new[] { row.Path }); })),
+                    ("Bake placements (all enemies)", () => Queue(() => { lastMessage = DMWeaponPlacementBake.BakeInteractive(DMWeaponPlacementBake.EnemyPrefabPaths()); })),
+                    ("Placement window", () => Queue(() => EditorWindow.GetWindow<DMWeaponPlacementBakeWindow>("Weapon Placement"))));
+                if (!string.IsNullOrEmpty(lastMessage))
+                    DMCharacterCreatorSharedUi.DrawWrappedHelpBox(lastMessage, MessageType.None);
+            }
 
             using (var sv = new EditorGUILayout.ScrollViewScope(detailScroll, GUILayout.MaxHeight(620f)))
             {
@@ -328,8 +356,10 @@ namespace Project.EditorTools.GenesisStudio
 
             DMCreatorFixPlan planBefore = row.Plan;
             RefreshRow(row);
-            string integrity = (guidSame ? "GUID kept" : "GUID CHANGED") + $", {lost} object id(s) lost" +
-                               (lost > 0 || !guidSame ? $" - RESTORE FROM BACKUP {backup}" : string.Empty);
+            bool syncRemoves = (planBefore.Fixes & DMCreatorFix.TemplateSync) != 0;
+            string integrity = (guidSame ? "GUID kept" : "GUID CHANGED") +
+                               (syncRemoves ? $", {lost} object id(s) removed by the template sync (expected)" : $", {lost} object id(s) lost") +
+                               ((lost > 0 && !syncRemoves) || !guidSame ? $" - RESTORE FROM BACKUP {backup}" : string.Empty);
             row.BeforeAfter = $"{(ok ? "Fixed" : "Fix had errors")} ({integrity}). Backup: {backup}\nBEFORE: {before}\nAFTER: {IssueSummary(row)}\n{msg}";
             summary = $"{row.Name}: {(ok ? "fixed" : "ERRORS")} ({before.Split('|')[0].Trim()} -> {row.StatusText}); {integrity}";
             return ok;
@@ -430,7 +460,8 @@ namespace Project.EditorTools.GenesisStudio
                 float chase = def.chaseSpeed > 0f ? def.chaseSpeed : def.runSpeed * def.chaseSpeedMultiplier;
                 Stat("Walk / run / chase speed", $"{def.walkSpeed:0.##} / {def.runSpeed:0.##} / {chase:0.##}");
                 Stat("Vision / hearing / proximity", $"{def.visionRange:0.#} m @ {def.visionFov:0}deg / {def.hearingRange:0.#} m / {def.proximityRange:0.#} m");
-                Stat("Weapons", $"melee: {Nm(def.meleeWeaponItem)}, ranged: {Nm(def.rangedWeaponItem)}, prefer ranged: {def.preferRangedWeapon}");
+                Stat("Weapons (resolved by LoadoutBridge)", row.WeaponFlow.Replace("\n", "  |  "));
+                Stat("Where weapons are changed", "Default: this definition (panel below, Combat). Per instance: LoadoutBridge > Weapon OVERRIDES (Inspector, prefab or scene copy). Spawners: spawn weapon override.");
                 Stat("Brain", def.overrideBrain
                     ? $"override: {def.brainArchetype} / {def.primaryPersonality} / {def.secondaryPersonality}"
                     : "profile default (no override)");
@@ -580,7 +611,8 @@ namespace Project.EditorTools.GenesisStudio
                     26f,
                     ("Dry Run (check only)", () => Queue(() => DoDryRun(row))),
                     (kind == ListKind.Enemy ? "Re-apply Definition" : "Repair Visual (re-bind holders)", () => Queue(() => DoReapply(row))),
-                    ("Rebuild From Template + Apply Visual", () => Queue(() => DoRebuild(row))));
+                    ("Rebuild From Template + Apply Visual", () => Queue(() => DoRebuild(row))),
+                    (kind == ListKind.Enemy ? "Sync to Template" : "Sync to Template (enemy only)", () => Queue(() => DoSyncToTemplate(row))));
             }
 
             DMCharacterCreatorSharedUi.DrawWrappedHelpBox(
@@ -591,6 +623,46 @@ namespace Project.EditorTools.GenesisStudio
                 DMCharacterCreatorSharedUi.DrawWrappedHelpBox(dryRunText, MessageType.None);
             if (!string.IsNullOrEmpty(lastMessage))
                 DMCharacterCreatorSharedUi.DrawWrappedHelpBox(lastMessage, MessageType.Info);
+        }
+
+        /// <summary>Adds missing / removes player-only template components in place (GUID kept, backup first).</summary>
+        void DoSyncToTemplate(Row row)
+        {
+            if (row.Protected || kind != ListKind.Enemy)
+                return;
+
+            dryRunText = null;
+            EnemyDefinition def = row.EnemyDef ?? row.CandidateDef;
+            if (def == null)
+            {
+                lastMessage = "Link a definition first (Sync keeps definition-driven values).";
+                return;
+            }
+
+            if (row.Plan == null || (row.Plan.Fixes & DMCreatorFix.TemplateSync) == 0)
+            {
+                lastMessage = "Already in sync with the template.";
+                return;
+            }
+
+            SceneUsage usage = CountSceneUsage(row.Path);
+            if (!EditorUtility.DisplayDialog(
+                    "Sync to Template",
+                    "Sync '" + row.Name + "' to the singular template in place?\n\n- " + string.Join("\n- ", row.Plan.Auto.FindAll(x => x.StartsWith("Template sync:", StringComparison.Ordinal))) +
+                    "\n\nOnly root components and weapon slot children change. Definition values, tuning, vSnapToBody, vDamageReceiver and scene-placed children are never touched. GUID kept; backup to Library/DMCreatorBackups first.\n" + usage.Format(),
+                    "Sync",
+                    "Cancel"))
+                return;
+
+            string backup = DMHumanoidVisualRebuildUtility.BackupExistingOutput(row.Path);
+            string guidBefore = AssetDatabase.AssetPathToGUID(row.Path);
+            string before = IssueSummary(row);
+            bool ok = DMCharacterCreatorFixer.Apply(row.Path, def, DMCreatorFix.TemplateSync, out string msg);
+            AssetDatabase.SaveAssets();
+            bool guidSame = guidBefore == AssetDatabase.AssetPathToGUID(row.Path);
+            RefreshRow(row);
+            row.BeforeAfter = $"{(ok ? "Synced" : "Sync had errors")} ({(guidSame ? "GUID kept" : "GUID CHANGED")}). Backup: {backup}\nBEFORE: {before}\nAFTER: {IssueSummary(row)}\n{msg}";
+            lastMessage = row.BeforeAfter;
         }
 
         void DoDryRun(Row row)
@@ -912,7 +984,7 @@ namespace Project.EditorTools.GenesisStudio
 
         // ------------------------------------------------------------------ Data
 
-        void Select(Row row)
+        void Select(Row row, bool load = true)
         {
             selectedPath = row.Path;
             dryRunText = null;
@@ -923,6 +995,29 @@ namespace Project.EditorTools.GenesisStudio
             {
                 UnityEngine.Object.DestroyImmediate(workingDef);
                 workingDef = null;
+            }
+
+            // Load the row's definition into the editing panel below (deferred: the panel changes layout state).
+            if (load)
+            {
+                Row captured = row;
+                Queue(() => LoadIntoEditor(captured));
+            }
+        }
+
+        void LoadIntoEditor(Row row)
+        {
+            if (row == null)
+                return;
+            if (kind == ListKind.Enemy)
+            {
+                EnemyDefinition def = row.EnemyDef != null ? row.EnemyDef : row.CandidateDef;
+                if (def != null)
+                    OnLoadEnemyDefinition?.Invoke(def);
+            }
+            else if (row.PlayerDef != null)
+            {
+                OnLoadPlayerDefinition?.Invoke(row.PlayerDef);
             }
         }
 
@@ -1062,6 +1157,94 @@ namespace Project.EditorTools.GenesisStudio
                 row.Status = RowStatus.Ok;
                 row.StatusText = "OK";
             }
+
+            BuildTips(row);
+        }
+
+        // ---------------------------------------------------------------- Tooltips
+
+        /// <summary>What is needed to fix this message, and whether the Fix button can do it.</summary>
+        static string HintFor(string msg, bool isError)
+        {
+            string m = msg ?? string.Empty;
+            if (m.StartsWith("Template sync:", StringComparison.Ordinal))
+                return m.EndsWith("(manual)", StringComparison.Ordinal)
+                    ? "Fix: MANUAL. Add the missing piece by hand (see the message)."
+                    : "Fix: AUTO. Press Fix or Sync to Template (adds/removes template components in place, GUID kept, backup first).";
+            if (m.StartsWith("No definition link", StringComparison.Ordinal))
+                return "Fix: AUTO when a matching definition exists (links it). Otherwise pick the definition in the panel below and press Link / Re-apply Definition.";
+            if (m.StartsWith("Crossed-arm", StringComparison.Ordinal))
+                return "Fix: AUTO (rebuilds the humanoid avatar T-pose in place, GUID kept). If it persists: Rebuild From Template + Apply Visual.";
+            if (m.IndexOf("culling", StringComparison.OrdinalIgnoreCase) >= 0)
+                return "Fix: AUTO. Press Fix to set Animator culling to AlwaysAnimate.";
+            if (m.IndexOf("holder", StringComparison.OrdinalIgnoreCase) >= 0 && m.IndexOf("weapon", StringComparison.OrdinalIgnoreCase) >= 0)
+                return "Fix: MANUAL. No weapon holders on this prefab: use Rebuild From Template + Apply Visual (may orphan scene children, so it is never automatic).";
+            if (m.IndexOf("Redundant", StringComparison.OrdinalIgnoreCase) >= 0)
+                return "Fix: AUTO. Clears the bridge override that only repeats the definition default.";
+            if (m.IndexOf("Weapon objects", StringComparison.OrdinalIgnoreCase) >= 0 || m.IndexOf("unlisted", StringComparison.OrdinalIgnoreCase) >= 0)
+                return "Fix: AUTO. Deactivates every weapon object that is not the resolved weapon.";
+            if (m.IndexOf("differs from definition", StringComparison.OrdinalIgnoreCase) >= 0 || m.IndexOf("Prefab value", StringComparison.OrdinalIgnoreCase) >= 0)
+                return "Fix: AUTO. Syncs the prefab-side value to the definition (the definition is the authority).";
+            if (m.IndexOf("capsule", StringComparison.OrdinalIgnoreCase) >= 0)
+                return "Fix: AUTO. Re-applies the definition's hit capsule to the prefab fallbacks.";
+            if (m.IndexOf("weapon", StringComparison.OrdinalIgnoreCase) >= 0 && (m.IndexOf("not equipped", StringComparison.OrdinalIgnoreCase) >= 0 || m.IndexOf("Drawn_", StringComparison.Ordinal) >= 0 || m.IndexOf("slot", StringComparison.OrdinalIgnoreCase) >= 0))
+                return "Fix: AUTO when the weapon holders exist (restores the Drawn_/Holstered_ slots from the resolved weapon); otherwise Rebuild From Template.";
+            if (m.StartsWith("Definition:", StringComparison.Ordinal))
+                return "Fix: MANUAL. A data decision: edit the definition in the panel below and Save.";
+            if (m.IndexOf("Singular", StringComparison.OrdinalIgnoreCase) >= 0 || m.IndexOf("template", StringComparison.OrdinalIgnoreCase) >= 0)
+                return "Fix: MANUAL. Per-prefab extras should move into the definition or a profile (listed in the review doc).";
+            if (m.IndexOf("avatar", StringComparison.OrdinalIgnoreCase) >= 0)
+                return "Fix: MANUAL. Re-run Apply Visual (or Rebuild) so a valid Humanoid avatar asset is generated.";
+            return isError
+                ? "Fix: not auto-repairable. Rebuild From Template + Apply Visual, or fix by hand."
+                : "Fix: not auto-repairable (see Needs manual action in the detail panel).";
+        }
+
+        void BuildTips(Row row)
+        {
+            DMCharacterCreatorBuildReport r = row.Report;
+            var sb = new StringBuilder();
+            if (r == null || (r.Errors.Count == 0 && r.Warnings.Count == 0))
+            {
+                row.Tooltip = "All checks passed.";
+            }
+            else
+            {
+                for (int i = 0; i < r.Errors.Count; i++)
+                    sb.Append("ERROR: ").Append(r.Errors[i]).Append("\n   ").Append(HintFor(r.Errors[i], true)).Append("\n");
+                for (int i = 0; i < r.Warnings.Count; i++)
+                    sb.Append("WARN: ").Append(r.Warnings[i]).Append("\n   ").Append(HintFor(r.Warnings[i], false)).Append("\n");
+                row.Tooltip = sb.ToString().TrimEnd();
+            }
+
+            if (row.Protected)
+                row.FixTip = "Protected template: Fix is disabled. Edit a copy instead.";
+            else if (kind != ListKind.Enemy)
+                row.FixTip = "Auto-fix is available on the enemy list only.";
+            else if (row.Plan != null && row.Plan.HasAuto)
+                row.FixTip = "Fix will (safe, GUID kept, backup first):\n- " + string.Join("\n- ", row.Plan.Auto)
+                    + (row.Plan.Manual.Count > 0 ? "\nStill manual:\n- " + string.Join("\n- ", row.Plan.Manual) : string.Empty);
+            else if (row.Plan != null && row.Plan.Manual.Count > 0)
+                row.FixTip = "Fix is disabled: nothing here is auto-repairable. Needs manual action:\n- " + string.Join("\n- ", row.Plan.Manual);
+            else
+                row.FixTip = "Fix is disabled: no issues found that Fix can repair.";
+        }
+
+        /// <summary>Resolved weapons as the LoadoutBridge sees them (override, else definition) with their source.</summary>
+        static string BuildWeaponFlow(GameObject contents, EnemyDefinition def)
+        {
+            var lb = contents.GetComponent<EnemyInvectorLoadoutBridge>();
+            if (lb == null)
+                return "No EnemyInvectorLoadoutBridge on the prefab.";
+            ItemData mo = lb.MeleeOverride;
+            ItemData ro = lb.RangedOverride;
+            ItemData melee = mo != null ? mo : (def != null ? def.meleeWeaponItem : null);
+            ItemData ranged = ro != null ? ro : (def != null ? def.rangedWeaponItem : null);
+            string ms = mo != null ? "Bridge override" : (melee != null ? "Definition default" : "none");
+            string rs = ro != null ? "Bridge override" : (ranged != null ? "Definition default" : "none");
+            bool preferOverride = lb.PreferRangedOverride != EnemyPreferRangedOverride.UseDefinition;
+            bool prefer = lb.ResolvedPreferRanged;
+            return $"melee: {Nm(melee)} [{ms}]\nranged: {Nm(ranged)} [{rs}]\nprefer ranged: {prefer} [{(preferOverride ? "Bridge override" : "Definition default")}]";
         }
 
         void CheckEnemy(Row row, GameObject contents)
@@ -1106,6 +1289,7 @@ namespace Project.EditorTools.GenesisStudio
                     $"Crossed-arm idle: hand distance {row.HandDistance:0.00} (relaxed is about 0.57). Re-apply Definition (avatar T-pose fix) or Rebuild.");
 
             row.Report = report;
+            row.WeaponFlow = BuildWeaponFlow(contents, shown);
             row.Plan = DMCharacterCreatorFixer.Analyze(contents, row.Path, linked, row.CandidateDef, row.HandDistance, template, report);
         }
 

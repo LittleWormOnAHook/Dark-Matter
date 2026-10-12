@@ -35,6 +35,9 @@ namespace Project.EditorTools
         /// <summary>Copies the existing output to Library/DMCreatorBackups (outside Assets). Returns the backup path or null.</summary>
         public static string BackupExistingOutput(string outputPath)
         {
+            // Every Studio rebuild / fix / sync backs the prefab up right before it changes it: remember the current Drawn_ / Holstered_ placements
+            // so they are put back afterwards (existing placements are never reset, only missing slots are created).
+            Project.EditorTools.DMWeaponPlacementBake.SnapshotExisting(outputPath);
             try
             {
                 string projectRoot = Directory.GetParent(Application.dataPath).FullName;

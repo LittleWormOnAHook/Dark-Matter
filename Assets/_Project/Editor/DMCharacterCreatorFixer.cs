@@ -22,9 +22,12 @@ namespace Project.EditorTools
         RootCapsule = 4,
         Culling = 8,
         Controller = 16,
-        LoadoutCopy = 32,
+        ClearRedundantOverride = 32,
         WeaponSlots = 64,
-        AvatarTPose = 128
+        AvatarTPose = 128,
+        WeaponCleanup = 256,
+        SyncValues = 512,
+        TemplateSync = 1024
     }
 
     public sealed class DMCreatorFixPlan
@@ -78,6 +81,19 @@ namespace Project.EditorTools
             if (def != null)
             {
                 AnalyzeDefinitionDriven(contents, prefabPath, linked, def, handDistance, plan);
+            }
+
+            if (def != null)
+            {
+                foreach (DMSyncItem it in DMEnemyTemplateSync.Analyze(contents, def, template))
+                {
+                    if (it.Id == "Culling")
+                        continue; // covered by the Culling fix below
+                    if (it.Auto)
+                        plan.AddAuto(DMCreatorFix.TemplateSync, "Template sync: " + it.Text);
+                    else
+                        plan.Manual.Add("Template sync (by hand): " + it.Text);
+                }
             }
 
             Animator anim = contents.GetComponent<Animator>();
@@ -159,25 +175,37 @@ namespace Project.EditorTools
             }
             else
             {
-                var so = new SerializedObject(loadout);
-                var melee = so.FindProperty("meleeWeaponItem")?.objectReferenceValue as ItemData;
-                var ranged = so.FindProperty("rangedWeaponItem")?.objectReferenceValue as ItemData;
-                if (melee != def.meleeWeaponItem || ranged != def.rangedWeaponItem)
-                    plan.AddAuto(DMCreatorFix.LoadoutCopy, "Copy the definition's melee/ranged weapon into the LoadoutBridge.");
+                // A set bridge field is an intentional override and is left alone; one that only copies the
+                // definition's weapon would stop following the definition, so it is cleared.
+                if ((loadout.MeleeOverride != null && loadout.MeleeOverride == def.meleeWeaponItem) ||
+                    (loadout.RangedOverride != null && loadout.RangedOverride == def.rangedWeaponItem))
+                    plan.AddAuto(
+                        DMCreatorFix.ClearRedundantOverride,
+                        "Clear LoadoutBridge weapon field(s) that only copy the definition (empty = follow the definition; real overrides are kept).");
             }
 
+            ItemData start = ResolveStart(loadout, def, out ItemData melee, out ItemData ranged);
             bool slotMissing = false;
-            slotMissing |= SlotMissing(contents, def.meleeWeaponItem, "melee", plan);
-            slotMissing |= SlotMissing(contents, def.rangedWeaponItem, "ranged", plan);
-            ItemData start = def.preferRangedWeapon && def.rangedWeaponItem != null
-                ? def.rangedWeaponItem
-                : (def.meleeWeaponItem != null ? def.meleeWeaponItem : def.rangedWeaponItem);
+            slotMissing |= SlotMissing(contents, melee, "melee", plan);
+            slotMissing |= SlotMissing(contents, ranged, "ranged", plan);
             if (!slotMissing && start != null)
             {
                 GameObject drawn = PioneerInvectorWeaponBridge.FindPreloadedDrawnSlot(contents.transform, start);
                 if (drawn != null && !drawn.activeSelf)
                     plan.AddAuto(DMCreatorFix.WeaponSlots, $"Sync weapon slot visuals and arm '{start.name}' (active Drawn_ slot).");
             }
+
+            int unlisted = DMCharacterCreatorWeaponAudit.FindUnlistedActive(contents, start).Count;
+            if (unlisted > 0)
+                plan.AddAuto(
+                    DMCreatorFix.WeaponCleanup,
+                    $"Deactivate {unlisted} weapon object(s) that are active on the prefab but are not the resolved weapon.");
+
+            List<string> drift = DMCharacterCreatorWeaponAudit.FindValueDrift(contents, def);
+            if (drift.Count > 0)
+                plan.AddAuto(
+                    DMCreatorFix.SyncValues,
+                    $"Sync {drift.Count} prefab-side fallback value(s) to the definition (e.g. {drift[0]}). The definition is not changed.");
 
             if (handDistance >= 0f && handDistance < CrossedArmHandDistance)
             {
@@ -193,6 +221,27 @@ namespace Project.EditorTools
                     plan.Manual.Add(
                         $"Crossed-arm idle (hand distance {handDistance:0.00}) but the avatar is not a creator-generated asset or the definition has no Last Model Source: Rebuild From Template.");
             }
+        }
+
+        /// <summary>
+        /// Resolved weapons the way the LoadoutBridge resolves them: bridge field if set, else the definition.
+        /// </summary>
+        public static ItemData ResolveStart(
+            EnemyInvectorLoadoutBridge loadout,
+            EnemyDefinition def,
+            out ItemData melee,
+            out ItemData ranged)
+        {
+            melee = loadout != null && loadout.MeleeOverride != null ? loadout.MeleeOverride : def.meleeWeaponItem;
+            ranged = loadout != null && loadout.RangedOverride != null ? loadout.RangedOverride : def.rangedWeaponItem;
+            bool prefer = def.preferRangedWeapon;
+            if (loadout != null && loadout.PreferRangedOverride == EnemyPreferRangedOverride.ForceOn)
+                prefer = true;
+            else if (loadout != null && loadout.PreferRangedOverride == EnemyPreferRangedOverride.ForceOff)
+                prefer = false;
+
+            bool startMelee = !(prefer && ranged != null);
+            return startMelee ? (melee != null ? melee : ranged) : (ranged != null ? ranged : melee);
         }
 
         static bool SlotMissing(GameObject contents, ItemData item, string kind, DMCreatorFixPlan plan)
@@ -285,7 +334,7 @@ namespace Project.EditorTools
                         }
                     }
 
-                    if ((contentFixes & DMCreatorFix.LoadoutCopy) != 0)
+                    if ((contentFixes & DMCreatorFix.ClearRedundantOverride) != 0)
                     {
                         EnemyInvectorLoadoutBridge loadout = root.GetComponent<EnemyInvectorLoadoutBridge>();
                         if (loadout != null)
@@ -293,25 +342,54 @@ namespace Project.EditorTools
                             var so = new SerializedObject(loadout);
                             SerializedProperty melee = so.FindProperty("meleeWeaponItem");
                             SerializedProperty ranged = so.FindProperty("rangedWeaponItem");
-                            SerializedProperty prefer = so.FindProperty("preferRangedAtRange");
-                            SerializedProperty startMelee = so.FindProperty("startWithMeleeWeapon");
-                            if (melee != null) melee.objectReferenceValue = def.meleeWeaponItem;
-                            if (ranged != null) ranged.objectReferenceValue = def.rangedWeaponItem;
-                            if (prefer != null) prefer.boolValue = def.preferRangedWeapon;
-                            if (startMelee != null) startMelee.boolValue = !def.preferRangedWeapon;
+                            int cleared = 0;
+                            if (melee != null && melee.objectReferenceValue != null && melee.objectReferenceValue == def.meleeWeaponItem)
+                            {
+                                melee.objectReferenceValue = null;
+                                cleared++;
+                            }
+
+                            if (ranged != null && ranged.objectReferenceValue != null && ranged.objectReferenceValue == def.rangedWeaponItem)
+                            {
+                                ranged.objectReferenceValue = null;
+                                cleared++;
+                            }
+
                             so.ApplyModifiedPropertiesWithoutUndo();
-                            sb.AppendLine("Weapons copied from the definition into the LoadoutBridge.");
+                            sb.AppendLine($"Cleared {cleared} LoadoutBridge weapon field(s) that only copied the definition (they now follow it).");
                         }
                     }
 
                     if ((contentFixes & DMCreatorFix.WeaponSlots) != 0)
                     {
-                        bool armRanged = def.preferRangedWeapon && def.rangedWeaponItem != null;
+                        ItemData start = ResolveStart(root.GetComponent<EnemyInvectorLoadoutBridge>(), def, out ItemData m, out ItemData rg);
+                        bool startIsRanged = start != null && start == rg && start != m;
                         EnemyInvectorSetupUtility.RepairWeaponSlotVisuals(
                             root,
-                            armRanged ? null : def.meleeWeaponItem,
-                            def.rangedWeaponItem);
+                            startIsRanged ? null : m,
+                            rg);
                         sb.AppendLine("Weapon slot visuals synced; starting weapon armed.");
+                    }
+
+                    if ((contentFixes & DMCreatorFix.WeaponCleanup) != 0)
+                    {
+                        ItemData start = ResolveStart(root.GetComponent<EnemyInvectorLoadoutBridge>(), def, out ItemData m2, out ItemData r2);
+                        int n = DMCharacterCreatorWeaponAudit.DeactivateUnlisted(root, start);
+                        sb.AppendLine($"Deactivated {n} unlisted weapon object(s).");
+                    }
+
+                    if ((contentFixes & DMCreatorFix.SyncValues) != 0)
+                    {
+                        int n = DMCharacterCreatorWeaponAudit.SyncValues(root, def);
+                        sb.AppendLine($"Synced {n} prefab-side fallback value(s) to the definition.");
+                    }
+
+                    if ((contentFixes & DMCreatorFix.TemplateSync) != 0)
+                    {
+                        var syncLog = new StringBuilder();
+                        int n = DMEnemyTemplateSync.ApplyToContents(root, def, false, syncLog);
+                        sb.AppendLine($"Template sync: {n} change(s).");
+                        sb.Append(syncLog);
                     }
 
                     PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
