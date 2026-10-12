@@ -401,6 +401,29 @@ namespace Project.Combat
 
         internal static float Interval => PollSeconds;
 
+        /// <summary>shakefix: runtime-only Rigidbody interpolation on the live player root (DM_CombatCoreProfile.playerRigidbodyInterpolation, old value logged once).</summary>
+        private static void ApplyPlayerRigidbodyInterpolation(GameObject player)
+        {
+            DM_CombatCoreProfile cc = DM_CombatCoreProfile.Live;
+            if (cc == null || cc.playerRigidbodyInterpolation == PlayerRigidbodyInterpolationMode.Keep)
+                return;
+
+            Rigidbody body = player.GetComponent<Rigidbody>();
+            if (body == null)
+                return;
+
+            RigidbodyInterpolation wanted = cc.playerRigidbodyInterpolation == PlayerRigidbodyInterpolationMode.None ? RigidbodyInterpolation.None
+                : cc.playerRigidbodyInterpolation == PlayerRigidbodyInterpolationMode.Extrapolate ? RigidbodyInterpolation.Extrapolate
+                : RigidbodyInterpolation.Interpolate;
+            if (body.interpolation == wanted)
+                return;
+
+#if UNITY_EDITOR
+            Debug.Log("[PlayerInterpolation] " + body.name + " Rigidbody.interpolation " + body.interpolation + " -> " + wanted);
+#endif
+            body.interpolation = wanted;
+        }
+
         /// <summary>One-shot: build the rig on the live player now (used by Boot and the poll).</summary>
         public static DMPlayerHitboxRig EnsureOnLivePlayer()
         {
@@ -412,6 +435,8 @@ namespace Project.Combat
                 return null;
             if (player.GetComponent<SurvivalStats>() == null)
                 return null;
+
+            ApplyPlayerRigidbodyInterpolation(player);
 
             DMPlayerHitboxRig rig = player.GetComponent<DMPlayerHitboxRig>();
             if (rig != null && rig.HitboxCount > 0)

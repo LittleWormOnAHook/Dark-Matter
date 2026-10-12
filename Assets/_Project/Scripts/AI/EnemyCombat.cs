@@ -56,6 +56,9 @@ namespace Project.AI
         public bool WantsForcedMissStep => Time.time < _forceMissStepUntil;
         public bool IsIntentionalMissActive => _intentionalMissActive;
 
+        /// <summary>Seconds until the attack cooldown / recovery lockout ends (0 = ready). Cooldown movement reads it.</summary>
+        public float AttackReadyIn => Mathf.Max(0f, nextAttackTime - Time.time);
+
         /// <summary>
         /// Clears in-flight swings and pushes the next attack attempt until stagger ends.
         /// </summary>
@@ -174,11 +177,19 @@ namespace Project.AI
             if (Time.time < nextAttackTime)
                 return;
 
+            // Swing start distance: melee swings start only inside the weapon's real reach (the engager closes in first).
+            if (aiController != null && (invectorCombat == null || !invectorCombat.HasRangedWeaponEquipped()) && !aiController.IsInSwingStartReach(target))
+                return;
+
             if (comboDriver != null && comboDriver.IsSequenceActive)
                 return;
 
             // Phase 3 spacing: only the melee token holder swings, after its hand-off grace, inside the facing cone.
             if (aiController != null && !aiController.CanEngagementAttack(target))
+                return;
+
+            // One attacker at a time across every enemy type (ranged / android / robot included), also while another swing is still finishing.
+            if (aiController != null && !aiController.CanStartAttackGlobal(target))
                 return;
 
             // Ranged aim gate: draw the gun / hold the aim pose first. Never consumes the cooldown and
@@ -255,7 +266,7 @@ namespace Project.AI
             DM_EnemyEngagementProfile p = aiController != null ? aiController.EngagementProfile : DM_EnemyEngagementProfile.Live;
             float min = Mathf.Max(0f, p != null ? p.meleeRecoveryPauseMin : meleeRecoveryPauseMin);
             float max = Mathf.Max(min, p != null ? p.meleeRecoveryPauseMax : meleeRecoveryPauseMax);
-            return Random.Range(min, max);
+            return Random.Range(min, max) * (aiController != null ? DMEnemyEngagementDirector.PaceFor(aiController) : 1f);
         }
 
         private void Update()
@@ -385,6 +396,12 @@ namespace Project.AI
             DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
             if (profile != null && profile.enemyMeleeAttackRangeMultiplier > 0f)
                 range *= profile.enemyMeleeAttackRangeMultiplier;
+
+            // Real weapon reach: never start a melee swing from further than the equipped weapon (or fists) can touch.
+            DM_EnemyEngagementProfile ep = aiController != null ? aiController.EngagementProfile : null;
+            if (ep != null && ep.capAttackRangeToWeaponReach && invectorCombat != null && !invectorCombat.HasRangedWeaponEquipped()
+                && invectorCombat.TryGetKnownTipReach(ep, out float tipReach))
+                range = Mathf.Min(range, Mathf.Max(0.9f, tipReach + ep.attackRangeReachSlack));
             return range;
         }
 

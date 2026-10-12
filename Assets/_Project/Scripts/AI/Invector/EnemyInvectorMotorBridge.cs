@@ -112,6 +112,7 @@ namespace Project.AI.Invector
         {
             // Sample every frame (even while blocked) so the first frame after a stagger has no spike.
             SampleMeasuredVelocity();
+            TrackSlide();
 
             if (_health != null && _health.IsDead)
                 return;
@@ -147,6 +148,15 @@ namespace Project.AI.Invector
                 ApplyMeasuredVelocityLocomotion();
 
             _controller.UpdateAnimator();
+
+            // shakefix: crowd / separation pushes are short and fast. The animator damps InputMagnitude, so the legs would lag the push and the body would
+            // slide. For a push in the last 0.25 s write the blend un-damped so the leg cycle starts with the displacement.
+            if (driveLocomotionFromMeasuredVelocity && _aiController.PushSnapsLegs && Time.time - _aiController.LastPushTime < 0.25f && _measuredVelocity.magnitude > MoveSpeedThreshold)
+            {
+                _controller.animator.SetFloat(InputMagnitudeHash, _controller.inputMagnitude);
+                _controller.animator.SetFloat(InputVerticalHash, _controller.verticalSpeed);
+                _controller.animator.SetFloat(InputHorizontalHash, _controller.horizontalSpeed);
+            }
         }
 
         private void SampleMeasuredVelocity()
@@ -161,8 +171,12 @@ namespace Project.AI.Invector
                 if (velocity.sqrMagnitude > MaxPlausibleSpeed * MaxPlausibleSpeed)
                     velocity = Vector3.zero; // teleport / spawn snap / ragdoll get-up
 
-                float blend = measuredVelocitySmoothing > 0.0001f
-                    ? 1f - Mathf.Exp(-dt / measuredVelocitySmoothing)
+                float smoothing = measuredVelocitySmoothing;
+                if (_aiController != null && _aiController.IsQuickStepActive)
+                    smoothing = Mathf.Min(smoothing, DM_EnemyEngagementProfile.Live.stepVelocitySmoothing);
+
+                float blend = smoothing > 0.0001f
+                    ? 1f - Mathf.Exp(-dt / smoothing)
                     : 1f;
                 _measuredVelocity = Vector3.Lerp(_measuredVelocity, velocity, blend);
                 if (_measuredVelocity.sqrMagnitude < 0.0004f)
@@ -189,8 +203,36 @@ namespace Project.AI.Invector
             bool engaged = _aiController != null && _aiController.IsEngagedWithTarget;
             float speed = _measuredVelocity.magnitude;
 
+            // Quick steps (strafe / backstep / sidestep): leg-cycle exaggeration, see DM_EnemyEngagementProfile "Step animation".
+            bool quick = _aiController != null && _aiController.IsQuickStepActive;
+            DM_EnemyEngagementProfile stepProfile = quick ? DM_EnemyEngagementProfile.Live : null;
+            if (!quick)
+                ReleaseStepPlaybackBoost(animator);
+            float animSpeed = quick ? speed * stepProfile.stepAnimSpeedScale : speed;
+
+            // Step-end tracking: the legs must stop with the body (audit log [StepAnimEnd] reports the lag).
+            if (quick) { _stepWasQuick = true; _stepEndTime = -1f; }
+            else if (_stepWasQuick) { _stepWasQuick = false; _stepEndTime = Time.time; _stepLagArmed = true; }
+
+            if (!quick && _stepEndTime >= 0f)
+            {
+                float blendOut = DM_EnemyEngagementProfile.Live.stepAnimBlendOut;
+                if (Time.time - _stepEndTime < 0.5f && speed <= MoveSpeedThreshold)
+                {
+                    if (blendOut <= 0.0001f) { animator.SetFloat(InputMagnitudeHash, 0f); animator.SetFloat(InputHorizontalHash, 0f); animator.SetFloat(InputVerticalHash, 0f); }
+                    else { float dtb = Time.deltaTime; animator.SetFloat(InputMagnitudeHash, 0f, blendOut, dtb); animator.SetFloat(InputHorizontalHash, 0f, blendOut, dtb); animator.SetFloat(InputVerticalHash, 0f, blendOut, dtb); }
+                }
+                if (_stepLagArmed && (animator.GetFloat(InputMagnitudeHash) < 0.05f || Time.time - _stepEndTime > 0.6f))
+                {
+                    _stepLagArmed = false;
+                    var cc0 = Project.Combat.DM_CombatCoreProfile.Live;
+                    if (cc0 != null && cc0.logInterruptsInPlay) Debug.Log($"[StepAnimEnd] {name} lag={(Time.time - _stepEndTime):0.000}s magnitude={animator.GetFloat(InputMagnitudeHash):0.00}", this);
+                }
+            }
+
             if (speed <= MoveSpeedThreshold)
             {
+                ReleaseStepPlaybackBoost(animator);
                 _controller.isSprinting = false;
                 _controller.inputMagnitude = 0f;
                 _controller.verticalSpeed = 0f;
@@ -212,15 +254,16 @@ namespace Project.AI.Invector
             float strafeWalk = Mathf.Max(0.1f, strafeWalkClipSpeed * scale);
             float strafeRun = Mathf.Max(strafeWalk + 0.1f, strafeRunClipSpeed * scale);
             float angleGate = _strafeLatched ? Mathf.Max(0f, strafeAngleThreshold - 10f) : strafeAngleThreshold;
-            bool strafe = aiming || (engaged && offFacing > angleGate && speed <= strafeRun * 1.15f);
+            bool strafe = aiming || (engaged && offFacing > angleGate && (quick || speed <= strafeRun * 1.15f));
             _strafeLatched = strafe;
             _controller.isStrafing = strafe;
 
             if (strafe)
             {
-                float magnitude = speed <= strafeWalk
-                    ? 0.5f * speed / strafeWalk
-                    : Mathf.Lerp(0.5f, 1f, Mathf.Clamp01((speed - strafeWalk) / (strafeRun - strafeWalk)));
+                float magnitude = animSpeed <= strafeWalk
+                    ? 0.5f * animSpeed / strafeWalk
+                    : Mathf.Lerp(0.5f, 1f, Mathf.Clamp01((animSpeed - strafeWalk) / (strafeRun - strafeWalk)));
+                ApplyStepPlaybackBoost(animator, quick ? animSpeed / strafeRun : 1f, stepProfile);
                 float ring = Mathf.Max(0.5f, magnitude);
                 _controller.isSprinting = false;
                 _controller.inputMagnitude = magnitude;
@@ -229,11 +272,97 @@ namespace Project.AI.Invector
                 return;
             }
 
-            float freeMagnitude = FreeInputMagnitudeForSpeed(speed, scale);
+            float freeMagnitude = FreeInputMagnitudeForSpeed(animSpeed, scale);
+            ApplyStepPlaybackBoost(animator, quick ? animSpeed / Mathf.Max(0.1f, freeSprintClipSpeed * scale) : 1f, stepProfile);
             _controller.isSprinting = freeMagnitude > 1.001f;
             _controller.inputMagnitude = freeMagnitude;
             _controller.verticalSpeed = localDirection.z;
             _controller.horizontalSpeed = 0f;
+        }
+
+        private float _stepBoostValue;
+        // Audit-mode diagnostic (logInterruptsInPlay): the body translates but the locomotion animator has no leg cycle (a visible slide).
+        private float _slideTime, _slideNextLog;
+        private void TrackSlide()
+        {
+            Project.Combat.DM_CombatCoreProfile cc = Project.Combat.DM_CombatCoreProfile.Live;
+            if (cc == null || !cc.logInterruptsInPlay || _aiController == null || _controller == null || _controller.animator == null)
+                return;
+
+            Animator an = _controller.animator;
+            bool exempt = _aiController.IsDodgeRollActive || _aiController.IsDodgeStrikeActive || (_health != null && _health.IsDead);
+            float speed = _measuredVelocity.magnitude;
+            float legs = an.GetFloat(InputMagnitudeHash);
+            if (speed > 0.4f && legs < 0.05f && !exempt)
+            {
+                _slideTime += Time.deltaTime;
+                if (_slideTime > 0.15f && Time.time >= _slideNextLog)
+                {
+                    _slideNextLog = Time.time + 0.5f;
+                    var ci = an.GetCurrentAnimatorClipInfo(0);
+                    string clip = ci != null && ci.Length > 0 && ci[0].clip != null ? ci[0].clip.name : "none";
+                    NavMeshAgentVelocity(out float navSpeed, out _);
+                    string moverName = _aiController.DominantMover();
+                    if (moverName == "none" && navSpeed > 0.3f) moverName = "NavAgent(" + navSpeed.ToString("0.00") + ")";
+                    else if (moverName == "none" && _body != null && !_body.isKinematic && _body.linearVelocity.sqrMagnitude > 0.09f) moverName = "Rigidbody(" + _body.linearVelocity.magnitude.ToString("0.00") + ")";
+                    else if (moverName == "none") moverName = "unknown(rootmotion/other)";
+                    Debug.Log($"[SlideNoLegs] {name} speed={speed:0.00} legs={legs:0.00} mover={moverName.Replace(" ", "")} ctrlMag={(_controller != null ? _controller.inputMagnitude : -1f):0.00} animSpeed={an.speed:0.00} shouldTick={(ShouldTickAnimator() ? 1 : 0)} state={_aiController.CurrentStateName} blocked={(IsMotorBlocked ? 1 : 0)} stagger={(_ragdollBridge != null && _ragdollBridge.IsHitStaggerActive ? 1 : 0)} quick={(_aiController.IsQuickStepActive ? 1 : 0)} attacking={(_aiController.IsInAttackSequence ? 1 : 0)} suppress={(ShouldSuppressLocomotionAnimator() ? 1 : 0)} clip={clip}", this);
+                }
+            }
+            else
+            {
+                _slideTime = 0f;
+            }
+        }
+
+        private bool _stepWasQuick, _stepLagArmed; private float _stepEndTime = -1f;
+        private static readonly int InputMagnitudeHash = Animator.StringToHash("InputMagnitude");
+        private static readonly int InputHorizontalHash = Animator.StringToHash("InputHorizontal");
+        private static readonly int InputVerticalHash = Animator.StringToHash("InputVertical");
+
+        /// <summary>Raises Animator.speed while a quick step is faster than the fastest locomotion clip. Only touches the speed while it is exactly 1 (or our own value), same guard as the combo driver.</summary>
+        private void ApplyStepPlaybackBoost(Animator animator, float ratio, DM_EnemyEngagementProfile p)
+        {
+            if (animator == null)
+                return;
+
+            float boost = p != null ? Mathf.Clamp(ratio, 1f, Mathf.Max(1f, p.stepAnimMaxPlaybackBoost)) : 1f;
+            if (boost <= 1.001f)
+            {
+                ReleaseStepPlaybackBoost(animator);
+                return;
+            }
+
+            if (_stepBoostValue > 0f)
+            {
+                if (Mathf.Abs(animator.speed - _stepBoostValue) < 0.001f || Mathf.Abs(animator.speed - 1f) < 0.01f)
+                {
+                    animator.speed = boost;
+                    _stepBoostValue = boost;
+                }
+                else
+                {
+                    _stepBoostValue = 0f;
+                }
+
+                return;
+            }
+
+            if (Mathf.Abs(animator.speed - 1f) < 0.01f)
+            {
+                animator.speed = boost;
+                _stepBoostValue = boost;
+            }
+        }
+
+        private void ReleaseStepPlaybackBoost(Animator animator)
+        {
+            if (_stepBoostValue <= 0f)
+                return;
+
+            if (animator != null && Mathf.Abs(animator.speed - _stepBoostValue) < 0.001f)
+                animator.speed = 1f;
+            _stepBoostValue = 0f;
         }
 
         private float FreeInputMagnitudeForSpeed(float speed, float scale)

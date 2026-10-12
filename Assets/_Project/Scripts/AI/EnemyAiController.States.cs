@@ -239,6 +239,10 @@ namespace Project.AI
                 return;
             }
 
+            // A dodge roll owns facing + movement until it ends (the old FaceTowards below turned the body back toward the player mid-roll).
+            if (TickDodgeRoll())
+                return;
+
             // A player standing in melee range should be swung at, not held in a guard pause.
             bool meleeThreat = combatBridge == null || !combatBridge.IsArmedRangedPreferred();
             if (meleeThreat && combat != null && combat.IsInAttackRange(target) && Time.time >= defensiveActionUntil)
@@ -309,8 +313,9 @@ namespace Project.AI
                 return;
             }
 
-            if (roll < rollThreshold && combatBridge != null &&
-                combatBridge.TryBeginDodgeRoll(target, out float rollDuration))
+            // Legacy fallback only (engagement director off): the brain owns the dodge roll when the utility brain is on.
+            if (roll < rollThreshold && combatBridge != null && (brain == null || !brain.BrainEnabled) &&
+                TryBrainDodgeRoll(target, out float rollDuration))
             {
                 defensiveActionUntil = Time.time + rollDuration;
                 if (!combat.IsTargetInRange())

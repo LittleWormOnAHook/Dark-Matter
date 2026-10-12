@@ -348,7 +348,7 @@ namespace Project.Combat
                     if (damagedEnemies.Add(enemy) && !enemy.IsDead)
                     {
                         enemy.TakeDamage(damage, _damageSource, isCritical: false);
-                        SpawnHitFeedback(col, damage);
+                        SpawnHitFeedback(col, damage, enemy);
                     }
 
                     continue;
@@ -407,9 +407,31 @@ namespace Project.Combat
             return collider.bounds.ClosestPoint(point);
         }
 
-        private static void SpawnHitFeedback(Collider col, float damage)
+        private static void SpawnHitFeedback(Collider col, float damage, EnemyHealth enemy = null)
         {
             Vector3 point = col.bounds.center;
+            // Body type aware (clipfix): Androids / Robots never get the legacy red blood splatter; they use the hit-mark profile's
+            // coolant / spark slots (the same prefabs the melee and bullet hit-mark path uses).
+            DMEnemyHitMarks marks = enemy != null ? enemy.GetComponent<DMEnemyHitMarks>() : null;
+            if (marks != null && marks.BodyType != DMEnemyBodyType.Humanoid)
+            {
+                DM_EnemyHitMarkProfile profile = DM_EnemyHitMarkProfile.LiveOrDefault;
+                if (profile != null)
+                {
+                    DMEnemyBodyHitResponse response = profile.GetResponse(marks.BodyType);
+                    foreach (DMEnemyHitFxKind kind in new[] { response.splatter, response.sparks })
+                    {
+                        GameObject prefab = kind == DMEnemyHitFxKind.None || kind == DMEnemyHitFxKind.Blood ? null : profile.ResolveFxPrefab(kind);
+                        if (prefab == null)
+                            continue;
+                        GameObject fx = Object.Instantiate(prefab, point, Quaternion.LookRotation(Vector3.up));
+                        Object.Destroy(fx, 4f);
+                    }
+                }
+
+                return;
+            }
+
             CombatHitVfx.SpawnBloodSplatter(point, Vector3.up, Vector3.down, damage);
         }
 

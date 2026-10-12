@@ -39,6 +39,9 @@ namespace Project.AI
         private float anchorRadius;
         private DMHolderAction holderAction = DMHolderAction.None;
         private float holderActionUntil;
+        private float holderActionStart;
+        private float holderActionTotal = 1f;
+        private float holderSidestepSpeed = 3f;
         private Vector3 holderFeintPoint;
         private int holderFeintPhase;
         private bool holderTauntBlocking;
@@ -58,6 +61,62 @@ namespace Project.AI
             (combat != null && combat.IsAttacking) || (comboDriver != null && comboDriver.IsSequenceActive);
 
         public bool HasPunishPriority => comboDriver != null && comboDriver.HasPunishArmed;
+
+        /// <summary>Every enabled enemy (registry for the global one-attacker cap and the hard separation).</summary>
+        internal static readonly System.Collections.Generic.List<EnemyAiController> ActiveEnemies = new System.Collections.Generic.List<EnemyAiController>(16);
+
+        // shakefix: which code path translated this enemy lately (audit [SlideNoLegs] names the dominant mover).
+        private readonly System.Collections.Generic.Dictionary<string, float> moverDist = new System.Collections.Generic.Dictionary<string, float>(8);
+        private float moverWindowStart;
+        /// <summary>Time of the last crowd / separation push (the motor bridge snaps the leg blend to the push so pushes never slide).</summary>
+        internal float LastPushTime = -10f;
+        internal Vector3 LastPushDirection;
+        internal string CurrentStateName => state.ToString();
+        internal bool PushSnapsLegs { get { DM_EnemyEngagementProfile ep = EngagementProfile; return ep == null || ep.pushSnapsLegs; } }
+
+        internal void NoteMover(string tag, float distance)
+        {
+            float now = Time.time;
+            if (tag == "CrowdPush" || tag == "HardSeparation")
+                LastPushTime = now;
+
+            Project.Combat.DM_CombatCoreProfile cc = Project.Combat.DM_CombatCoreProfile.Live;
+            if (cc == null || !cc.logInterruptsInPlay)
+                return;
+
+            if (now - moverWindowStart > 0.6f)
+            {
+                moverDist.Clear();
+                moverWindowStart = now;
+            }
+
+            moverDist.TryGetValue(tag, out float d);
+            moverDist[tag] = d + distance;
+        }
+
+        internal string DominantMover()
+        {
+            if (Time.time - moverWindowStart > 0.8f || moverDist.Count == 0)
+                return "none";
+            string best = "none";
+            float bestD = 0f;
+            var sb = new System.Text.StringBuilder();
+            foreach (var kv in moverDist)
+            {
+                sb.Append(kv.Key).Append(kv.Value.ToString("0.00")).Append("/");
+                if (kv.Value > bestD) { bestD = kv.Value; best = kv.Key; }
+            }
+
+            return best + "[" + sb.ToString() + "]";
+        }
+
+        /// <summary>One attacker at a time across ALL enemy types (melee, android, robot, ranged): false while another enemy on the same target is still in its attack sequence.</summary>
+        public Transform CurrentCombatTarget => combat != null ? combat.CurrentTarget : null;
+
+        public bool CanStartAttackGlobal(Transform target)
+        {
+            return DMEnemyEngagementDirector.CanStartAttackGlobal(this, target);
+        }
 
         public float BrainTokenBias => brain != null ? brain.TokenBias : 0f;
 
@@ -257,7 +316,8 @@ namespace Project.AI
 
             DM_EnemyEngagementProfile p = EngagementProfile;
             nextBrainTickTime = now + 1f / Mathf.Max(1f, p.agentRoleTickHz);
-            brain.Tick(role == DMEngagementRole.Engager, threatInReach, IsInAttackSequence, LastHitByTargetTime);
+            brain.Tick(role == DMEngagementRole.Engager, threatInReach, IsInAttackSequence, LastHitByTargetTime,
+                combat != null && combat.AttackReadyIn > p.engagerMoveMinCooldown);
         }
 
         /// <summary>Director eligibility (§5.4 penalties). The current holder keeps the token through stagger.</summary>
@@ -303,6 +363,7 @@ namespace Project.AI
             engageOutTimer = 0f;
             creepTimer = 0f;
             creeping = false;
+            ResetEngagerCooldownMove();
             coneBlockedSince = -1f;
             offscreenReadySince = -1f;
             if (brain != null)
@@ -479,6 +540,7 @@ namespace Project.AI
             }
 
             transform.position += step;
+            NoteMover("StepFlat", step.magnitude);
             currentLocomotionSpeed = speed;
             currentLocalMoveDirection = transform.InverseTransformDirection(direction);
         }
@@ -496,6 +558,7 @@ namespace Project.AI
             {
                 ClearLocomotion();
                 creeping = false;
+                NoteDodgeStrikeSwing();
                 ApplySwingTracking(target, p);
                 combat.TryAttack();
                 return;
@@ -508,11 +571,24 @@ namespace Project.AI
                 return;
             }
 
+            float minSep = ResolveMinCombatSeparation(target);
+            SampleSwingTarget(target);
+            if (brain != null && TryBeginDodgeStrike(target, distance, effective, minSep))
+                return;
+
             float standoff = ResolveCombatStandoffFor(target);
             Vector3 toTarget = target.position - transform.position;
             toTarget.y = 0f;
 
-            float minSep = ResolveMinCombatSeparation(target);
+            if (distance >= minSep && TickEngagerCooldownMove(target, distance, effective, minSep, p))
+            {
+                creeping = false;
+                creepTimer = 0f;
+                FaceTowardsRate(target.position, p.engagerTurnRate);
+                combat.TryAttack();
+                return;
+            }
+
             if (distance < minSep)
             {
                 creeping = false;
@@ -536,6 +612,16 @@ namespace Project.AI
                 }
 
                 float creepStop = Mathf.Max(standoff, minSep);
+
+                // Close in before the swing: attack nearly ready but the target is outside the weapon's real reach -> creep now (no grace).
+                float swingGate = ResolveSwingStartDistance(target);
+                if (p.swingStartUseWeaponReach && combat.AttackReadyIn <= p.swingCloseInReadySeconds && distance > swingGate + 0.02f &&
+                    (combatBridge == null || !combatBridge.HasRangedWeaponEquipped()))
+                {
+                    creeping = true;
+                    creepStop = Mathf.Max(minSep, Mathf.Min(creepStop, swingGate - 0.05f));
+                }
+
                 bool missRecovery = combat.WantsForcedMissStep || (brain != null && brain.IsMissRecoveryActive);
                 if (missRecovery)
                     creepStop = Mathf.Min(creepStop, combat.ResolveMissStepStopDistance(target));
@@ -560,24 +646,71 @@ namespace Project.AI
             combat.TryAttack();
         }
 
+        private float nextDodgeRollAllowed;
+        private float nextBlockAllowed;
+
+        /// <summary>Single owner of the enemy block: the brain picks it (defendBlockShare); cooldown / duration / per-definition scale come from DM_EnemyBrainProfile "Enemy block".</summary>
+        private bool TryBrainBlock(out float blockDuration)
+        {
+            blockDuration = 0f;
+            DM_EnemyBrainProfile bp = DM_EnemyBrainProfile.Live;
+            if (combatBridge == null || !bp.enableEnemyBlock || Time.time < nextBlockAllowed)
+                return false;
+
+            float scale = AppliedDefinition != null ? AppliedDefinition.blockChanceMultiplier : 1f;
+            if (scale < 0.999f && Random.value >= scale)
+                return false;
+
+            float wanted = bp.blockDurationSeconds > 0f ? bp.blockDurationSeconds : defensiveBlockDuration;
+            if (!combatBridge.TryBeginBlock(wanted, out blockDuration))
+                return false;
+
+            nextBlockAllowed = Time.time + blockDuration + bp.blockCooldown;
+            return true;
+        }
+
+        /// <summary>Drops the guard now (a charged hit or poise break broke it); the Defensive state ends next frame.</summary>
+        public void BreakGuard()
+        {
+            combatBridge?.EndBlock();
+            if (state == AiState.Defensive)
+                defensiveActionUntil = Time.time;
+        }
+
+        /// <summary>Single owner of the enemy dodge roll: chance / cooldown / direction weights come from DM_EnemyBrainProfile "Dodge roll".</summary>
+        private bool TryBrainDodgeRoll(Transform target, out float rollDuration)
+        {
+            rollDuration = 0f;
+            DM_EnemyBrainProfile bp = DM_EnemyBrainProfile.Live;
+            if (combatBridge == null || Time.time < nextDodgeRollAllowed || Random.value >= bp.dodgeRollChance)
+                return false;
+
+            if (!combatBridge.TryBeginDodgeRoll(target, out rollDuration))
+                return false;
+
+            nextDodgeRollAllowed = Time.time + bp.dodgeRollCooldown;
+            BeginDodgeRollMotion(target, combatBridge.LastRollDirection, rollDuration, bp, combatBridge.LastRollUsedBackClip, combatBridge.LastRollClipId);
+            return true;
+        }
+
         private void BeginBrainDefend(Transform target, bool preferBlock)
         {
             EnterState(AiState.Defensive);
             if (combatBridge != null)
             {
-                if (preferBlock && combatBridge.TryBeginBlock(defensiveBlockDuration, out float blockDuration))
+                if (preferBlock && TryBrainBlock(out float blockDuration))
                 {
                     defensiveActionUntil = Time.time + blockDuration;
                     return;
                 }
 
-                if (combatBridge.TryBeginDodgeRoll(target, out float rollDuration))
+                if (TryBrainDodgeRoll(target, out float rollDuration))
                 {
                     defensiveActionUntil = Time.time + rollDuration;
                     return;
                 }
 
-                if (!preferBlock && combatBridge.TryBeginBlock(defensiveBlockDuration, out float fallbackBlock))
+                if (!preferBlock && TryBrainBlock(out float fallbackBlock))
                 {
                     defensiveActionUntil = Time.time + fallbackBlock;
                     return;
@@ -843,7 +976,8 @@ namespace Project.AI
                     return;
             }
 
-            float duration = stepDistance / Mathf.Max(0.2f, p.holderWalkSpeed) + 0.6f;
+            holderSidestepSpeed = Mathf.Max(0.8f, p.sidestepSpeed * MoveVariation());
+            float duration = stepDistance / holderSidestepSpeed + p.sidestepDurationPad;
             if (!DMEnemyEngagementDirector.TryBeginHolderAction(this, duration))
             {
                 nextHolderActionRoll = now + 0.5f;
@@ -862,7 +996,12 @@ namespace Project.AI
             lastSidestepSign = sign;
             nextSidestepAllowed = now + p.sidestepCooldown;
             holderAction = DMHolderAction.Sidestep;
+            holderActionStart = now;
+            holderActionStartPos = transform.position;
+            holderActionTotal = stepDistance;
             holderActionUntil = now + duration;
+            NoteQuickStep(duration);
+            LogCooldownMove("HolderSidestep", sign * arc, 0f, p);
         }
 
         private void TryBeginTaunt(DM_EnemyEngagementProfile p, float now)
@@ -905,9 +1044,11 @@ namespace Project.AI
         /// <summary>Returns true while a holder action still owns movement this frame.</summary>
         private bool TickHolderAction(Transform target, DM_EnemyEngagementProfile p, float now, Vector3 toAnchor, float anchorDistance)
         {
-            if (now >= holderActionUntil)
+            // A sidestep that is still on its way to the anchor gets a short grace so the movement finishes with the step animation instead of stopping early.
+            bool sidestepUnfinished = holderAction == DMHolderAction.Sidestep && anchorDistance > 0.1f && now < holderActionUntil + 0.6f;
+            if (now >= holderActionUntil && !sidestepUnfinished)
             {
-                CancelHolderAction();
+                CancelHolderAction("timeout");
                 return false;
             }
 
@@ -916,11 +1057,15 @@ namespace Project.AI
                 case DMHolderAction.Sidestep:
                     if (anchorDistance <= 0.1f)
                     {
-                        CancelHolderAction();
+                        CancelHolderAction("complete");
                         return false;
                     }
 
-                    StepFlat(toAnchor, p.holderWalkSpeed, anchorDistance);
+                    {
+                        float eased = EaseInOutFactor(now - holderActionStart, anchorDistance / Mathf.Max(0.05f, holderActionTotal), p.moveEaseSeconds);
+                        StepFlat(toAnchor, holderSidestepSpeed * eased, anchorDistance);
+                    }
+
                     return true;
 
                 case DMHolderAction.Taunt:
@@ -953,8 +1098,21 @@ namespace Project.AI
             return false;
         }
 
-        private void CancelHolderAction()
+        private Vector3 holderActionStartPos;
+
+        private void CancelHolderAction(string reason = "cancel")
         {
+            if (holderAction == DMHolderAction.Sidestep)
+            {
+                Project.Combat.DM_CombatCoreProfile core = Project.Combat.DM_CombatCoreProfile.Live;
+                if (core != null && core.logInterruptsInPlay)
+                {
+                    Vector3 moved = transform.position - holderActionStartPos;
+                    moved.y = 0f;
+                    Debug.Log($"[CooldownMoveEnd] {name} kind=HolderSidestep moved={moved.magnitude:0.00} planned={holderActionTotal:0.00} elapsed={Time.time - holderActionStart:0.00} reason={reason}", this);
+                }
+            }
+
             if (holderTauntBlocking)
             {
                 holderTauntBlocking = false;

@@ -125,6 +125,20 @@ namespace Project.AI
         [Tooltip("Multiplier on this enemy type's back-off / standoff distance and crowding radius (on top of the per-instance random spread in DM_EnemyEngagementProfile). 1 = profile value, >1 = backs off more, <1 = stays closer.")]
         [Range(0.5f, 2f)] public float backoffDistanceMultiplier = 1f;
 
+        [Header("Block (brain Defend)")]
+        [Tooltip("Scales the chance this enemy type actually blocks when its brain decides to block (0 = never blocks, 1 = as the brain rolled with defendBlockShare). The block rules themselves live in DM_EnemyBrainProfile 'Enemy block'.")]
+        [Range(0f, 1f)] public float blockChanceMultiplier = 1f;
+
+        [Header("Dodge strike (brain)")]
+        [Tooltip("Multiplies the chance this enemy type opens a swing with a dodge strike (0 = never, 1 = DM_EnemyBrainProfile dodgeStrikeChance). The rules live in DM_EnemyBrainProfile 'Dodge strike'.")]
+        [Range(0f, 1f)] public float dodgeStrikeChanceMultiplier = 1f;
+
+        [Header("Attack token / pace (room for bosses; defaults = trash mob behaviour)")]
+        [Tooltip("Multiplies this enemy's own recovery pause between swings and its share of the group pace slowdown (1 = normal, >1 = slower, <1 = faster / pushier).")]
+        [Range(0.3f, 3f)] public float attackPaceMultiplier = 1f;
+        [Tooltip("Added to this enemy's token focus score (0 = none). Higher = gets the attack token more often (e.g. an elite or boss).")]
+        [Range(-5f, 10f)] public float tokenPriorityBonus = 0f;
+
         [Header("Attack interrupts (player hits)")]
         [Tooltip("0-1. Subtracted from the chance a player hit interrupts this enemy's attack (see DM_CombatCoreProfile 'Attack interrupts'). Guaranteed interrupts (poise break, early window, heavy vs light) are not reduced.")]
         [Range(0f, 1f)] public float interruptResistance = 0f;

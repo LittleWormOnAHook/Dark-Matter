@@ -2,6 +2,14 @@ using UnityEngine;
 
 namespace Project.Combat
 {
+    public enum PlayerRigidbodyInterpolationMode
+    {
+        Keep = 0,
+        None = 1,
+        Interpolate = 2,
+        Extrapolate = 3
+    }
+
     [CreateAssetMenu(menuName = "Dark Matter/Combat/Combat Core Profile", fileName = "DM_CombatCoreProfile")]
     public sealed class DM_CombatCoreProfile : ScriptableObject
     {
@@ -165,8 +173,10 @@ namespace Project.Combat
         public bool enableMeleeHitstop = true;
         [Tooltip("Extra freeze frames (60 fps) on a critical hit, added to the light/heavy frames.")]
         [Range(0, 6)] public int hitstopCritBonusFrames = 2;
-        [Tooltip("Animator speed during the freeze. 0 = fully frozen, 0.05 = near-frozen (keeps the pose alive).")]
-        [Range(0f, 0.5f)] public float hitstopHoldSpeed = 0.05f;
+        [Tooltip("Animator speed during the freeze (enemy and, with Hitstop Freezes Attacker, the player swing). 0 = fully frozen. Was 0.05 (near-frozen) which made the player judder when root motion / the motor stopped and restarted; 0.3 is a soft hold (shakefix).")]
+        [Range(0f, 0.5f)] public float hitstopHoldSpeed = 0.3f;
+        [Tooltip("Rigidbody interpolation applied at runtime to the live player root (Player_v7 prefab untouched). The prefab ships with None: the motor moves in FixedUpdate (60 Hz) while rendering runs at the frame rate, which shows up as a small shake / judder. Interpolate smooths it. Keep = leave as the prefab has it.")]
+        public PlayerRigidbodyInterpolationMode playerRigidbodyInterpolation = PlayerRigidbodyInterpolationMode.Interpolate;
         [Tooltip("Also freeze the player's own swing for the same time (the blade 'sticks'). Off = victim only.")]
         public bool hitstopFreezesAttacker = true;
 

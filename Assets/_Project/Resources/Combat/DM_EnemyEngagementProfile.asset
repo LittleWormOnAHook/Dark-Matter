@@ -71,6 +71,27 @@ MonoBehaviour:
   crowdingDepthGain: 1.5
   minCombatSeparation: 0
   crowdingVariationSpread: 0.2
+  enableEngagerCooldownMove: 1
+  engagerMoveChance: 0.7
+  engagerMoveRollInterval: {x: 0.35, y: 0.9}
+  engagerMoveCooldown: {x: 0.8, y: 1.8}
+  engagerMoveMinCooldown: 0.3
+  engagerMoveStopBeforeAttack: 0.15
+  engagerStrafeSpeedFactor: 0.95
+  engagerStrafeSeconds: {x: 0.4, y: 0.8}
+  engagerStrafeMaxArc: 34
+  engagerStrafeMaxNetArc: 45
+  engagerStrafeFlipChance: 0.7
+  engagerStrafeMaxDistanceFactor: 1.35
+  engagerBackstepChance: 0.3
+  engagerBackstepDistance: {x: 0.5, y: 1.1}
+  engagerBackstepSpeedFactor: 1.3
+  moveVariationScale: 1
+  moveEaseSeconds: 0.08
+  stepAnimSpeedScale: 1.35
+  stepAnimMaxPlaybackBoost: 1.3
+  stepVelocitySmoothing: 0.03
+  stepAnimBlendOut: 0.06
   holdRingRadius: 4.4
   holdRingRadiusMin: 3.5
   holdRingRadiusMax: 5.5
@@ -91,8 +112,10 @@ MonoBehaviour:
   holderWeightTaunt: 0.3
   holderWeightFeint: 0.15
   holderWeightNone: 0.1
-  sidestepDistance: {x: 0.6, y: 1.2}
-  sidestepMaxArc: 15
+  sidestepDistance: {x: 0.9, y: 1.7}
+  sidestepSpeed: 3.4
+  sidestepDurationPad: 0.2
+  sidestepMaxArc: 22
   sidestepCooldown: 2.5
   tauntCooldown: 6
   tauntDuration: {x: 1, y: 2}
@@ -105,3 +128,25 @@ MonoBehaviour:
   noSidestepAfterReanchor: 2
   chargedTokensPerTarget: 1
   rangedShotTokensPerTarget: 2
+  swingStartUseWeaponReach: 1
+  weaponReachArm: 0.9
+  weaponReachArmMech: 0.55
+  pushSnapsLegs: 1
+  unarmedTipReach: 1.1
+  swingStartInnerMargin: 0.25
+  swingStartLeadSeconds: 0.2
+  swingCloseInReadySeconds: 0.5
+  fairnessEnabled: 1
+  fairnessTemperature: 2.5
+  starvationBonusPerSecond: 1
+  starvationBonusMax: 6
+  starvationBonusPerMissedTurn: 1.5
+  groupPaceStartCount: 3
+  groupPaceExtraPerEnemy: 0.15
+  groupPaceMaxMultiplier: 2
+  fairnessFirstTurnBonus: 8
+  fairnessLargeMobCount: 4
+  capAttackRangeToWeaponReach: 1
+  attackRangeReachSlack: 0.1
+  hardEnemySeparation: 0.95
+  hardSeparationMaxSpeed: 3.5

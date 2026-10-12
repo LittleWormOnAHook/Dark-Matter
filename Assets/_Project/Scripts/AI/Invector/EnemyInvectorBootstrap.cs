@@ -17,7 +17,7 @@ namespace Project.AI.Invector
     public class EnemyInvectorBootstrap : MonoBehaviour
     {
         [SerializeField] private EnemyDefinition enemyDefinition;
-        [SerializeField] private float hitCapsuleRadius = 0.45f;
+        [SerializeField] private float hitCapsuleRadius = 0.15f;
 
         public EnemyDefinition Definition => enemyDefinition;
 
@@ -27,7 +27,7 @@ namespace Project.AI.Invector
         public float CapsuleRadius => enemyDefinition != null ? Mathf.Max(0.05f, enemyDefinition.colliderRadius) : hitCapsuleRadius;
         public float CapsuleHeight => enemyDefinition != null ? Mathf.Max(0.5f, enemyDefinition.colliderHeight) : hitCapsuleHeight;
         public Vector3 CapsuleCenter => enemyDefinition != null ? enemyDefinition.colliderCenter : hitCapsuleCenter;
-        [SerializeField] private float hitCapsuleHeight = 2f;
+        [SerializeField] private float hitCapsuleHeight = 1.88f;
         [SerializeField] private Vector3 hitCapsuleCenter = new Vector3(0f, 1f, 0f);
         [SerializeField] private bool infiniteAmmo = true;
 

@@ -81,7 +81,8 @@ MonoBehaviour:
   chargedHitsIgnoreEnemyWeapons: 1
   enableMeleeHitstop: 1
   hitstopCritBonusFrames: 2
-  hitstopHoldSpeed: 0.05
+  hitstopHoldSpeed: 0.3
+  playerRigidbodyInterpolation: 2
   hitstopFreezesAttacker: 1
   lightHitShakeAmplitude: 0.05
   lightHitShakeDurationSeconds: 0.04
@@ -172,4 +173,4 @@ MonoBehaviour:
   interruptRecoverySeconds: 1.5
   interruptReactionSeconds: 0.45
   logInterruptsInPlay: 0
-  logCombatEventsInPlay: 1
+  logCombatEventsInPlay: 0

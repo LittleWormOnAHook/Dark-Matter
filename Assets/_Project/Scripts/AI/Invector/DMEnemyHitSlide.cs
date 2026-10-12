@@ -36,11 +36,20 @@ namespace Project.AI.Invector
             if (direction.sqrMagnitude < 0.0001f)
                 return;
 
+            EnemyAiController rollAi = enemy.GetComponent<EnemyAiController>();
+            if (rollAi != null && rollAi.DodgeRollBlocksHitReactions)
+                return; // a dodge roll is never pushed around by a hit slide
+
             DMEnemyHitSlide slide = enemy.GetComponent<DMEnemyHitSlide>();
             if (slide == null)
                 slide = enemy.AddComponent<DMEnemyHitSlide>();
 
             slide.Restart(direction.normalized, meters, seconds, Mathf.Max(1, pulses), maxLedgeDrop, maxTotalMeters);
+
+            // Slice 3: the leg animation exaggerates quick steps (stepAnimSpeedScale), hit backsteps included.
+            EnemyAiController ai = enemy.GetComponent<EnemyAiController>();
+            if (ai != null)
+                ai.NoteQuickStep(seconds);
         }
 
         private void Restart(Vector3 direction, float meters, float seconds, int pulses, float maxLedgeDrop, float maxTotalMeters)
@@ -125,6 +134,7 @@ namespace Project.AI.Invector
             }
 
             transform.position = next;
+            { EnemyAiController slideAi = GetComponent<EnemyAiController>(); if (slideAi != null) slideAi.NoteMover("HitSlide", delta); }
             _moved = want;
             if (t >= 1f)
                 enabled = false;

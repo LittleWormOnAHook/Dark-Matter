@@ -30,6 +30,11 @@ namespace Project.Combat
             if (p == null || !p.enableHitReactions || enemy == null || bridge == null || enemy.IsDead || source == null)
                 return;
 
+            // A dodge roll plays to the end: no flinch / stagger / hit slide cuts the clip mid-roll (damage still applied by the caller).
+            EnemyAiController rollAi = enemy.GetComponent<EnemyAiController>();
+            if (rollAi != null && rollAi.DodgeRollBlocksHitReactions)
+                return;
+
             PioneerShooterMeleeInput melee = source.GetComponentInParent<PioneerShooterMeleeInput>();
             if (melee == null)
                 return; // player attacks only (companions do not trigger these)
@@ -70,6 +75,8 @@ namespace Project.Combat
             EnemyAiController ai = enemy.GetComponent<EnemyAiController>();
             EnemyDefinition def = ai != null ? ai.AppliedDefinition : null;
             bool armored = def != null && def.attackArmor == EnemyAttackArmor.AllAttacks;
+            // Slice 3: per-enemy variety of the backsteps (engagement profile moveVariationScale x crowding variation roll).
+            float variety = ai != null ? ai.MoveVariation() : 1f;
 
             // Committed = still mid-swing after the interrupt evaluator ran (it did not interrupt).
             EnemyCombat combat = enemy.GetComponent<EnemyCombat>();
@@ -87,7 +94,7 @@ namespace Project.Combat
                 kind = "poiseBreak";
                 if (p.hitRecoveryOnPoiseBreak)
                     bridge.ApplyHitRecovery(p.hitRecoverySeconds);
-                DMEnemyHitSlide.Begin(enemy.gameObject, slideDir, p.poiseBreakBackstepMeters, p.lightBackstepSeconds * 2f, 1, p.hitSlideMaxLedgeDrop, p.hitSlideMaxTotalMeters);
+                DMEnemyHitSlide.Begin(enemy.gameObject, slideDir, p.poiseBreakBackstepMeters * variety, p.lightBackstepSeconds * 2f, 1, p.hitSlideMaxLedgeDrop, p.hitSlideMaxTotalMeters);
                 MarkBig(poise, p, now);
             }
             else if (doHeavyBig)
@@ -107,7 +114,7 @@ namespace Project.Combat
                 if (p.hitRecoveryOnChainStumble)
                     bridge.ApplyHitRecovery(p.hitRecoverySeconds);
                 bridge.PlayDirectionalFlinch(from, p.chainStumbleLeanDegrees, p.heavyWaistBendSeconds, twist);
-                DMEnemyHitSlide.Begin(enemy.gameObject, slideDir, p.chainStumbleBackstepMeters, p.chainStumbleSeconds * 0.8f, 2, p.hitSlideMaxLedgeDrop, p.hitSlideMaxTotalMeters);
+                DMEnemyHitSlide.Begin(enemy.gameObject, slideDir, p.chainStumbleBackstepMeters * variety, p.chainStumbleSeconds * 0.8f, 2, p.hitSlideMaxLedgeDrop, p.hitSlideMaxTotalMeters);
                 MarkBig(poise, p, now);
                 if (poise != null)
                     poise.ReactionChainCount = 0;
@@ -124,7 +131,7 @@ namespace Project.Combat
             {
                 kind = "chainStrong";
                 bridge.PlayDirectionalFlinch(from, p.directionalFlinchDegrees * p.chainStrongFlinchMultiplier, p.directionalFlinchSeconds, twist);
-                DMEnemyHitSlide.Begin(enemy.gameObject, slideDir, p.chainStrongBackstepMeters, p.lightBackstepSeconds * 1.4f, 1, p.hitSlideMaxLedgeDrop, p.hitSlideMaxTotalMeters);
+                DMEnemyHitSlide.Begin(enemy.gameObject, slideDir, p.chainStrongBackstepMeters * variety, p.lightBackstepSeconds * 1.4f, 1, p.hitSlideMaxLedgeDrop, p.hitSlideMaxTotalMeters);
             }
             else
             {
@@ -132,7 +139,7 @@ namespace Project.Combat
                 if (!bridge.IsHitStaggerActive)
                 {
                     bridge.PlayDirectionalFlinch(from, p.directionalFlinchDegrees * (isCritical ? 1.3f : 1f), p.directionalFlinchSeconds, twist);
-                    DMEnemyHitSlide.Begin(enemy.gameObject, slideDir, p.lightBackstepMeters, p.lightBackstepSeconds, 1, p.hitSlideMaxLedgeDrop, p.hitSlideMaxTotalMeters);
+                    DMEnemyHitSlide.Begin(enemy.gameObject, slideDir, p.lightBackstepMeters * variety, p.lightBackstepSeconds, 1, p.hitSlideMaxLedgeDrop, p.hitSlideMaxTotalMeters);
                 }
             }
 

@@ -14,15 +14,21 @@ namespace Project.Combat
 
         public static void TryPlay(vDamage damage, Transform defender, Transform attackerRoot)
         {
+            TryPlay(damage, defender, attackerRoot, 0f, null);
+        }
+
+        /// <summary>Same sparks with an own scale (&gt;0) and/or prefab (enemy block uses DM_EnemyBrainProfile blockSparkScale / blockSparkPrefab).</summary>
+        public static void TryPlay(vDamage damage, Transform defender, Transform attackerRoot, float scaleOverride, GameObject prefabOverride)
+        {
             if (defender == null)
                 return;
 
             DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
-            GameObject prefab = ResolveSparksPrefab(profile);
+            GameObject prefab = prefabOverride != null ? prefabOverride : ResolveSparksPrefab(profile);
             if (prefab == null)
                 return;
 
-            float scale = profile != null ? profile.parryClashVfxScale : 1.15f;
+            float scale = scaleOverride > 0f ? scaleOverride : (profile != null ? profile.parryClashVfxScale : 1.15f);
             float lifetime = profile != null ? profile.parryClashVfxLifetimeSeconds : 0.45f;
 
             Vector3 clashPoint = ResolveClashPoint(damage, defender, attackerRoot);

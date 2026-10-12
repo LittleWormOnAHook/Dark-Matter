@@ -424,6 +424,12 @@ namespace Project.Combat
 
             lastBurstTime = now;
             float scale = profile.ResolveSplatterScale(damage);
+            if (Project.Combat.DM_CombatCoreProfile.Live != null && Project.Combat.DM_CombatCoreProfile.Live.logInterruptsInPlay)
+            {
+                DMEnemyHitFxKind fxKind = splatter != null ? response.splatter : response.sparks;
+                Debug.Log($"[HitFx] {name} kind={fxKind} heavy={(MeleeHeavyContext ? 1 : 0)} chain={MeleeChainContext} mult={profile.ResolveGoreMultiplier(MeleeHeavyContext, MeleeChainContext, fxKind):0.00} scale={scale:0.00}", this);
+            }
+
             Vector3 entry = DMEnemyHitFx.ResolveEntrySprayDirection(normal, travel, profile.bloodEntryNormalBlend);
             Vector3 spawnPoint = point + normal * 0.015f;
 

@@ -23,6 +23,36 @@ MonoBehaviour:
   defendWhenHitBonus: 0.6
   defendCooldown: 3
   defendBlockShare: 0.6
+  enableEnemyBlock: 1
+  blockCooldown: 4
+  blockDurationSeconds: 1
+  blockDamageFraction: 0.1
+  blockArcDegrees: 150
+  blockLightHits: 1
+  blockChargedHits: 1
+  chargedBreaksBlock: 1
+  playerBlockedRecoilChance: 0.6
+  playerBlockedRecoilId: 2
+  playerBlockedRecoilImmunitySeconds: 1.5
+  blockSparkScale: 0.8
+  blockSparkPrefab: {fileID: 0}
+  blockedHitShakeAmplitude: 0.3
+  blockedHitShakeDurationSeconds: 0.1
+  dodgeRollChance: 1
+  dodgeRollCooldown: 2
+  dodgeRollSideWeight: 1
+  dodgeRollBackWeight: 1
+  dodgeRollForwardWeight: 0
+  dodgeRollDistance: 3.2
+  dodgeRollMoveEndNormalized: 0.75
+  dodgeBackMoveEndNormalized: 0.85
+  dodgeRollSeconds: 1.1
+  dodgeBackUseClip: 1
+  dodgeBackSeconds: 0.75
+  dodgeBackDistance: 2.2
+  dodgeBackBlendIn: 0.08
+  dodgeBackBlendOut: 0.15
+  dodgeRollSnapFacing: 1
   retreatSeconds: 5
   retreatCooldown: 10
   injuredBelow: 0.75

@@ -305,6 +305,7 @@ namespace Project.AI
                 }
 
                 transform.position += step;
+                NoteMover("ChaseMove", step.magnitude);
                 currentLocomotionSpeed = scaledSpeed;
                 currentLocalMoveDirection = transform.InverseTransformDirection(step.normalized);
             }

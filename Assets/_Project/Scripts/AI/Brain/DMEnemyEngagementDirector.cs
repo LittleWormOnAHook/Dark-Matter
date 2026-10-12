@@ -16,6 +16,8 @@ namespace Project.AI
         public float HandoffGraceUntil;
         public int SequencesThisToken;
         public float LastSequenceEndTime = -999f;
+        public int TokensAwarded;
+        public float FirstAwardTime = -1f;
 
         // Phase 4 attack slot (secondary melee attacker beside the token holder). Role is Engager while true.
         public bool AttackSlot;
@@ -412,20 +414,21 @@ namespace Project.AI
 
             if (holder == null)
             {
-                EnemyAiController first = BestCandidate(ring, p, now, null, respectReaward: true, out _)
-                                          ?? BestCandidate(ring, p, now, null, respectReaward: false, out _);
+                EnemyAiController first = BestCandidate(ring, p, now, null, respectReaward: true, out _, randomize: true)
+                                          ?? BestCandidate(ring, p, now, null, respectReaward: false, out _, randomize: true);
                 if (first != null)
                     Award(ring, p, now, first, now - ring.LastHandoffTime < 4f, "free token");
                 return;
             }
 
             DMEngagementAgentState hs = holder.EngagementState;
-            bool locked = holder.IsInAttackSequence || now < hs.LastSequenceEndTime + p.postSwingLockSeconds;
+            bool locked = holder.IsInAttackSequence || holder.IsDodgeStrikeActive || now < hs.LastSequenceEndTime + p.postSwingLockSeconds;
             float held = now - ring.HolderSince;
 
-            if (!locked && (hs.SequencesThisToken >= Mathf.Max(1, p.tokenHoldMaxSequences) || held >= p.tokenHoldMaxSeconds))
+            int maxSequences = p.fairnessEnabled && ring.Members.Count >= p.fairnessLargeMobCount ? 1 : Mathf.Max(1, p.tokenHoldMaxSequences);
+            if (!locked && (hs.SequencesThisToken >= maxSequences || held >= p.tokenHoldMaxSeconds))
             {
-                EnemyAiController next = BestCandidate(ring, p, now, holder, respectReaward: true, out _);
+                EnemyAiController next = BestCandidate(ring, p, now, holder, respectReaward: true, out _, randomize: true);
                 if (next != null)
                 {
                     Handoff(ring, p, now, next, "max hold");
@@ -494,6 +497,31 @@ namespace Project.AI
         /// ring's attack budget are mid-swing. The budget is the Phase 4 slot total (token holder + Combat Director slots by enemy count,
         /// 1 when the Combat Director is off), so slots greater than 1 stay allowed per the Studio settings. Director off = no cap (Phase 3 off = legacy).
         /// </summary>
+        /// <summary>Global one-attacker cap across every enemy type: counts any enemy on the same target still in its attack sequence (melee swing, ranged shot, finishing swing).</summary>
+        public static bool CanStartAttackGlobal(EnemyAiController agent, Transform target)
+        {
+            if (agent == null || !IsEnabled)
+                return true;
+
+            Ring ring = agent.EngagementState.Ring;
+            int budget = ring != null ? Mathf.Max(1, ring.TotalSlots) : 1;
+            int attacking = 0;
+            var all = EnemyAiController.ActiveEnemies;
+            for (int i = 0; i < all.Count; i++)
+            {
+                EnemyAiController m = all[i];
+                if (m == null || m == agent || !m.isActiveAndEnabled || !m.IsInAttackSequence)
+                    continue;
+                if (target != null && m.CurrentCombatTarget != null && m.CurrentCombatTarget != target)
+                    continue;
+                if (Vector3.SqrMagnitude(m.transform.position - agent.transform.position) > 30f * 30f)
+                    continue;
+                attacking++;
+            }
+
+            return attacking < budget;
+        }
+
         public static bool CanStartSwing(EnemyAiController agent)
         {
             Ring ring = agent != null ? agent.EngagementState.Ring : null;
@@ -675,11 +703,29 @@ namespace Project.AI
             ring.LastSampleTime = now;
         }
 
+        private static readonly float[] PickScratch = new float[16];
+        private static readonly float[] PickWeights = new float[16];
+        private static readonly EnemyAiController[] PickMembers = new EnemyAiController[16];
+
+        /// <summary>Attack pace multiplier (>= 1 for trash mobs) for this enemy's ring size: bigger mobs attack slower. Includes the per-definition multiplier.</summary>
+        public static float PaceFor(EnemyAiController agent)
+        {
+            DM_EnemyEngagementProfile p = DM_EnemyEngagementProfile.Live;
+            float def = agent != null && agent.AppliedDefinition != null ? agent.AppliedDefinition.attackPaceMultiplier : 1f;
+            Ring ring = agent != null ? agent.EngagementState.Ring : null;
+            if (p == null || !p.fairnessEnabled || ring == null)
+                return def;
+
+            int extra = Mathf.Max(0, ring.Members.Count - (p.groupPaceStartCount - 1));
+            return def * Mathf.Clamp(1f + extra * p.groupPaceExtraPerEnemy, 1f, Mathf.Max(1f, p.groupPaceMaxMultiplier));
+        }
+
         private static EnemyAiController BestCandidate(Ring ring, DM_EnemyEngagementProfile p, float now,
-            EnemyAiController exclude, bool respectReaward, out float bestScore, bool skipSlots = false)
+            EnemyAiController exclude, bool respectReaward, out float bestScore, bool skipSlots = false, bool randomize = false)
         {
             EnemyAiController best = null;
             bestScore = float.NegativeInfinity;
+            int eligible = 0;
             for (int i = 0; i < ring.Members.Count; i++)
             {
                 EnemyAiController m = ring.Members[i];
@@ -696,10 +742,41 @@ namespace Project.AI
                     continue;
 
                 float s = Score(ring, p, now, m);
+                if (eligible < PickScratch.Length)
+                {
+                    PickScratch[eligible] = s;
+                    PickMembers[eligible] = m;
+                }
+
+                eligible++;
                 if (s > bestScore)
                 {
                     bestScore = s;
                     best = m;
+                }
+            }
+
+            // Fairness: weighted random pick (softmax of the focus score, which already carries the target / hit bias and the starvation bonus).
+            if (randomize && p.fairnessEnabled && eligible > 1 && eligible <= PickScratch.Length)
+            {
+                float temperature = Mathf.Max(0.05f, p.fairnessTemperature);
+                float total = 0f;
+                for (int i = 0; i < eligible; i++)
+                {
+                    PickWeights[i] = Mathf.Exp((PickScratch[i] - bestScore) / temperature);
+                    total += PickWeights[i];
+                }
+
+                float r = Random.value * total;
+                for (int i = 0; i < eligible; i++)
+                {
+                    r -= PickWeights[i];
+                    if (r <= 0f || i == eligible - 1)
+                    {
+                        best = PickMembers[i];
+                        bestScore = PickScratch[i];
+                        break;
+                    }
                 }
             }
 
@@ -747,6 +824,23 @@ namespace Project.AI
                 score += p.weightPunishPriority;
 
             score += m.BrainTokenBias;
+            if (m.AppliedDefinition != null)
+                score += m.AppliedDefinition.tokenPriorityBonus;
+
+            // Starvation: time since the last turn (or since joining) and turns missed vs the most-served enemy.
+            if (p.fairnessEnabled && ring.Holder != m)
+            {
+                float since = now - Mathf.Max(m.EngagementState.LastTokenTime, m.EngagementState.JoinTime);
+                score += Mathf.Min(p.starvationBonusMax, Mathf.Max(0f, since) * p.starvationBonusPerSecond);
+                int most = 0;
+                for (int i = 0; i < ring.Members.Count; i++)
+                    if (ring.Members[i] != null)
+                        most = Mathf.Max(most, ring.Members[i].EngagementState.TokensAwarded);
+                score += p.starvationBonusPerMissedTurn * Mathf.Max(0, most - m.EngagementState.TokensAwarded);
+                if (m.EngagementState.TokensAwarded == 0)
+                    score += p.fairnessFirstTurnBonus;
+            }
+
             return score;
         }
 
@@ -801,11 +895,14 @@ namespace Project.AI
             DMEngagementAgentState s = agent.EngagementState;
             s.Role = DMEngagementRole.Engager;
             s.SequencesThisToken = 0;
+            s.TokensAwarded++;
+            if (s.FirstAwardTime < 0f)
+                s.FirstAwardTime = now;
             // A slot enemy promoted to token holder leaves the slot list (the holder is not counted twice).
             s.AttackSlot = false;
             ring.Slots.Remove(agent);
             s.ClearAnchor();
-            s.HandoffGraceUntil = withGrace ? now + p.RandomRange(p.handoffGraceBeforeSwing) : 0f;
+            s.HandoffGraceUntil = withGrace ? now + p.RandomRange(p.handoffGraceBeforeSwing) * PaceFor(agent) : 0f;
 
             for (int i = 0; i < ring.Members.Count; i++)
             {

@@ -442,6 +442,8 @@ namespace Project.AI
 
         private void OnEnable()
         {
+            if (!ActiveEnemies.Contains(this))
+                ActiveEnemies.Add(this);
             homePosition = transform.position;
             BuildChildPatrolWorldPoints();
             currentLocomotionSpeed = 0f;
@@ -465,6 +467,7 @@ namespace Project.AI
 
         private void OnDisable()
         {
+            ActiveEnemies.Remove(this);
             if (health != null)
             {
                 health.Died -= HandleDeath;
@@ -511,6 +514,11 @@ namespace Project.AI
             if (locomotionPaused)
                 return;
 
+            // A dodge roll owns the enemy until it ends: state changes (target lost while facing sideways, token hand-off, ...) must not cancel its movement.
+            if ((dodgeRollUntil > 0f && TickDodgeRoll()) || (dodgeStrikeUntil > 0f && TickDodgeStrike()))
+                return;
+
+            TickHardSeparation();
             TrySubscribePlayerEvents();
 
             Transform visiblePlayer = senses.GetVisiblePlayerTarget();

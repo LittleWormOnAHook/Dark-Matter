@@ -703,12 +703,24 @@ namespace Project.Player
             int layer = c.gameObject.layer;
             if (layer == PlayerLayer)
                 return false;
+            if (IsLivingBodyCollider(c))
+                return false;
             if (layer == ClimbableLayer && !_treatClimbableAsWall)
                 return false;
             if (c is TerrainCollider)
                 return false;
 
             return true;
+        }
+
+        /// <summary>Colliders that belong to an enemy / companion character (body, ragdoll bones, drawn / holstered weapons) are never camera obstructions.</summary>
+        private static bool IsLivingBodyCollider(Collider c)
+        {
+            if (c == null)
+                return false;
+            return c.GetComponentInParent<Project.AI.EnemyAiController>() != null
+                || c.GetComponentInParent<Project.AI.EnemyHealth>() != null
+                || c.GetComponentInParent<Project.Companions.CompanionHealth>() != null;
         }
 
         /// <summary>
@@ -1205,6 +1217,8 @@ namespace Project.Player
             int layer = hit.collider.gameObject.layer;
             if (layer == PlayerLayer)
                 return false;
+            if (IsLivingBodyCollider(hit.collider))
+                return false; // enemies / companions / their held weapons never pull the lens in
             if (layer == ClimbableLayer && !_treatClimbableAsWall)
                 return false;
             if (hit.collider is TerrainCollider)

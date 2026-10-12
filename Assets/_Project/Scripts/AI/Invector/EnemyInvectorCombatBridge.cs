@@ -274,11 +274,18 @@ namespace Project.AI.Invector
 
             _controller.isStrafing = true;
             _animator.SetBool(vAnimatorParameters.IsBlocking, true);
+            _blockActive = true;
             return true;
         }
 
+        private bool _blockActive;
+
+        /// <summary>True while the brain-driven block (TryBeginBlock .. EndBlock) is up. Player melee hits read it (DMEnemyBlock).</summary>
+        public bool IsBlockActive => _blockActive;
+
         public void EndBlock()
         {
+            _blockActive = false;
             if (_animator != null)
                 _animator.SetBool(vAnimatorParameters.IsBlocking, false);
 
@@ -286,9 +293,12 @@ namespace Project.AI.Invector
                 _controller.isStrafing = false;
         }
 
+        /// <summary>World direction (flat) chosen by the last TryBeginDodgeRoll.</summary>
+        public Vector3 LastRollDirection { get; private set; }
+
         public bool TryBeginDodgeRoll(Transform threat, out float duration)
         {
-            duration = 0.65f;
+            duration = DM_EnemyBrainProfile.Live.dodgeRollSeconds;
             if (_controller == null || threat == null)
                 return false;
 
@@ -304,23 +314,273 @@ namespace Project.AI.Invector
                 right = transform.right;
             right.Normalize();
 
-            // Side and backward only — never roll toward the threat.
-            int pick = Random.Range(0, 3);
-            Vector3 rollDir = pick switch
+            DM_EnemyBrainProfile bp = DM_EnemyBrainProfile.Live;
+            float wSide = Mathf.Max(0f, bp.dodgeRollSideWeight), wBack = Mathf.Max(0f, bp.dodgeRollBackWeight), wFwd = Mathf.Max(0f, bp.dodgeRollForwardWeight);
+            float wTotal = wSide * 2f + wBack + wFwd;
+            Vector3 rollDir;
+            if (wTotal <= 0.0001f)
             {
-                0 => away,
-                1 => right,
-                _ => -right,
-            };
+                rollDir = away;
+            }
+            else
+            {
+                float pickW = Random.value * wTotal;
+                if (pickW < wBack) rollDir = away;
+                else if (pickW < wBack + wSide) rollDir = right;
+                else if (pickW < wBack + wSide * 2f) rollDir = -right;
+                else rollDir = wFwd > 0.0001f ? toThreat : away;
+            }
 
-            if (Vector3.Dot(rollDir, toThreat) > 0.01f)
+            // Safety (runs BEFORE the facing snap / back clip so the body can never be turned toward the threat): never roll toward it unless the profile weights it.
+            if (wFwd <= 0.0001f && Vector3.Dot(rollDir, toThreat) > 0.05f)
                 rollDir = away;
 
+            // Clear path first: a roll that would hit a wall / body / the player stops dead mid-clip (the "invisible wall"). Try the other side / back
+            // (never toward the threat) when the picked direction has less room than planned.
+            float plannedMax = Mathf.Max(bp.dodgeSideDistance, Mathf.Max(bp.dodgeBackDistance, bp.dodgeRollDistance));
+            float pickedClear = RollClearance(rollDir, plannedMax);
+            if (pickedClear < plannedMax - 0.05f)
+            {
+                Vector3 bestDir = rollDir;
+                float bestClear = pickedClear;
+                Vector3[] alts = { right, -right, away };
+                for (int ai = 0; ai < alts.Length; ai++)
+                {
+                    float cd = RollClearance(alts[ai], plannedMax);
+                    if (cd > bestClear + 0.05f)
+                    {
+                        bestClear = cd;
+                        bestDir = alts[ai];
+                    }
+                }
+
+                rollDir = bestDir;
+            }
+
+            LastRollUsedBackClip = false;
+            LastRollClipId = 0;
+            bool backward = Vector3.Dot(rollDir, away) > 0.9f;
+            bool sideRight = Vector3.Dot(rollDir, right) > 0.9f;
+            bool sideLeft = Vector3.Dot(rollDir, -right) > 0.9f;
+            Vector3 faceThreat = new Vector3(toThreat.x, 0f, toThreat.z);
+            if (backward && bp.dodgeBackUseClip && _animator != null && _animator.HasState(0, DodgeBackHash))
+            {
+                // Backward dodge clip: the body faces the threat and the AI moves it away (EnemyAiController.TickDodgeRoll).
+                LastRollUsedBackClip = true;
+                LastRollClipId = 1;
+                duration = Mathf.Max(0.3f, bp.dodgeBackSeconds);
+                _animator.SetFloat(DodgeBackSpeedHash, DodgeBackClipSeconds / duration);
+                if (faceThreat.sqrMagnitude > 0.0001f)
+                    transform.rotation = Quaternion.LookRotation(faceThreat.normalized, Vector3.up);
+            }
+            else if ((sideRight || sideLeft) && bp.dodgeSideUseClip && _animator != null && _animator.HasState(0, sideRight ? DodgeRightHash : DodgeLeftHash))
+            {
+                // Side dodge clip: the body faces the threat and sidesteps (never the forward Roll clip turned sideways, which looks like a roll toward the player).
+                LastRollUsedBackClip = true; // "faces the threat" family (back / left / right)
+                LastRollClipId = sideRight ? 3 : 2;
+                duration = Mathf.Max(0.3f, bp.dodgeSideSeconds);
+                _animator.SetFloat(DodgeSideSpeedHash, DodgeSideClipSeconds / duration);
+                if (faceThreat.sqrMagnitude > 0.0001f)
+                    transform.rotation = Quaternion.LookRotation(faceThreat.normalized, Vector3.up);
+            }
+            else if (bp.dodgeRollSnapFacing)
+            {
+                Vector3 flat = new Vector3(rollDir.x, 0f, rollDir.z);
+                if (flat.sqrMagnitude > 0.0001f)
+                    transform.rotation = Quaternion.LookRotation(flat.normalized, Vector3.up);
+            }
+
+            if (LastRollClipId == 0)
+            {
+                Project.Combat.DM_CombatCoreProfile ccf = Project.Combat.DM_CombatCoreProfile.Live;
+                if (ccf != null && ccf.logInterruptsInPlay)
+                    Debug.Log($"[RollFallback] {name} no dodge clip chosen: backward={(backward ? 1 : 0)} right={(sideRight ? 1 : 0)} left={(sideLeft ? 1 : 0)} hasBack={(_animator != null && _animator.HasState(0, DodgeBackHash) ? 1 : 0)} hasLeft={(_animator != null && _animator.HasState(0, DodgeLeftHash) ? 1 : 0)} hasRight={(_animator != null && _animator.HasState(0, DodgeRightHash) ? 1 : 0)} useBack={(bp.dodgeBackUseClip ? 1 : 0)} useSide={(bp.dodgeSideUseClip ? 1 : 0)} dotAway={Vector3.Dot(rollDir, away):0.00} dotRight={Vector3.Dot(rollDir, right):0.00} animEnabled={(_animator != null && _animator.isActiveAndEnabled ? 1 : 0)} init={(_animator != null && _animator.isInitialized ? 1 : 0)} layers={(_animator != null ? _animator.layerCount : -1)} ctrl={(_animator != null && _animator.runtimeAnimatorController != null ? _animator.runtimeAnimatorController.name : "none")} inTransition={(_animator != null && _animator.IsInTransition(0) ? 1 : 0)}", this);
+            }
+
+            LastRollDirection = rollDir.normalized;
+            // (old hard-coded pick, now weights above) Side and backward only — never roll toward the threat.
             rollDir.Normalize();
             _controller.input = transform.InverseTransformDirection(rollDir);
             _controller.moveDirection = rollDir;
             _controller.Roll();
+            if (LastRollClipId == 1)
+                _animator.CrossFadeInFixedTime(DodgeBackHash, bp.dodgeBackBlendIn, 0);
+            else if (LastRollClipId == 2)
+                _animator.CrossFadeInFixedTime(DodgeLeftHash, Mathf.Max(0.01f, bp.dodgeSideBlendIn), 0);
+            else if (LastRollClipId == 3)
+                _animator.CrossFadeInFixedTime(DodgeRightHash, Mathf.Max(0.01f, bp.dodgeSideBlendIn), 0);
             return true;
+        }
+
+        /// <summary>Free distance (m, capped at max) along dir from the chest, ignoring this enemy's own colliders.</summary>
+        private float RollClearance(Vector3 dir, float max)
+        {
+            Vector3 chest = transform.position + Vector3.up * 0.9f;
+            const float pad = 0.35f;
+            RaycastHit[] hits = Physics.RaycastAll(chest, dir.normalized, max + pad, ~0, QueryTriggerInteraction.Ignore);
+            float nearest = max + pad;
+            for (int i = 0; i < hits.Length; i++)
+            {
+                if (hits[i].collider == null || hits[i].transform.root == transform.root)
+                    continue;
+                nearest = Mathf.Min(nearest, hits[i].distance);
+            }
+
+            return Mathf.Clamp(nearest - pad, 0f, max);
+        }
+
+        /// <summary>0 = forward Roll clip, 1 = DM_DodgeBack, 2 = DM_DodgeLeft, 3 = DM_DodgeRight (set by the last TryBeginDodgeRoll).</summary>
+        public int LastRollClipId { get; private set; }
+
+        public static string RollClipName(int id) => id == 1 ? "back" : id == 2 ? "left" : id == 3 ? "right" : "roll";
+
+        public bool TryGetDodgeProgress(int clipId, out float normalizedTime)
+        {
+            normalizedTime = 0f;
+            if (_animator == null)
+                return false;
+
+            int hash = clipId == 1 ? DodgeBackHash : clipId == 2 ? DodgeLeftHash : clipId == 3 ? DodgeRightHash : RollStateHash;
+            return TryGetStateProgress(hash, out normalizedTime);
+        }
+
+        private static readonly int DodgeLeftHash = Animator.StringToHash("DM_DodgeLeft");
+        private static readonly int DodgeRightHash = Animator.StringToHash("DM_DodgeRight");
+        private static readonly int DodgeSideSpeedHash = Animator.StringToHash("DMDodgeSideSpeed");
+        private const float DodgeSideClipSeconds = 0.9667f; // Standing Dodge Left / Right clip length
+
+        /// <summary>Tip reach when known. False while a weapon is assigned but not drawn yet (reach unknown, do not cap).</summary>
+        public bool TryGetKnownTipReach(DM_EnemyEngagementProfile p, out float tip)
+        {
+            tip = 0f;
+            if (p == null)
+                return false;
+            if (_loadoutBridge != null && _loadoutBridge.ActiveDrawnInstance == null && _loadoutBridge.ActiveItem != null)
+                return false;
+            tip = WeaponTipReach(p);
+            return true;
+        }
+
+        private GameObject _reachInstance;
+        private DMEnemyHitMarks _reachMarks;
+        private float _reachLength;
+
+        /// <summary>Tip reach (m from the enemy root) of the equipped melee weapon: arm extension + the weapon's hitbox length from its grip. Unarmed: profile value.</summary>
+        public float WeaponTipReach(DM_EnemyEngagementProfile p)
+        {
+            GameObject inst = _loadoutBridge != null ? _loadoutBridge.ActiveDrawnInstance : null;
+            if (inst == null)
+                return p.unarmedTipReach;
+
+            if (inst != _reachInstance)
+            {
+                _reachInstance = inst;
+                _reachLength = 0f;
+                Vector3 grip = inst.transform.position;
+                foreach (vHitBox hb in inst.GetComponentsInChildren<vHitBox>(true))
+                {
+                    BoxCollider bc = hb.GetComponent<BoxCollider>();
+                    if (bc == null)
+                        continue;
+
+                    for (int cx = -1; cx <= 1; cx += 2)
+                        for (int cy = -1; cy <= 1; cy += 2)
+                            for (int cz = -1; cz <= 1; cz += 2)
+                            {
+                                Vector3 corner = bc.transform.TransformPoint(bc.center + Vector3.Scale(bc.size * 0.5f, new Vector3(cx, cy, cz)));
+                                _reachLength = Mathf.Max(_reachLength, Vector3.Distance(corner, grip));
+                            }
+                }
+            }
+
+            float arm = p.weaponReachArm;
+            if (_reachMarks == null)
+                _reachMarks = GetComponentInParent<DMEnemyHitMarks>();
+            if (_reachMarks != null && _reachMarks.BodyType != DMEnemyBodyType.Humanoid)
+                arm = p.weaponReachArmMech;
+            return _reachLength > 0.05f ? arm + _reachLength : p.unarmedTipReach;
+        }
+
+        public float LastWeaponLength => _reachLength;
+
+        private static readonly int RollStateHash = Animator.StringToHash("Roll");
+
+        /// <summary>
+        /// Normalized time of the roll / backward-dodge animator state (current state, or the state being blended in).
+        /// False while the state has not started yet or after it has been left. The roll movement follows this instead of a fixed timer.
+        /// </summary>
+        public bool TryGetDodgeProgress(bool back, out float normalizedTime)
+        {
+            normalizedTime = 0f;
+            if (_animator == null)
+                return false;
+
+            return TryGetStateProgress(back ? DodgeBackHash : RollStateHash, out normalizedTime);
+        }
+
+        /// <summary>Starts the HumanM@Dodge01 dodge-strike clip (DM_DodgeStrike state) at clipSeconds total length. False if the controller lacks the state.</summary>
+        public bool TryBeginDodgeStrikeClip(float clipSeconds, float blendIn)
+        {
+            if (_animator == null || !_animator.HasState(0, DodgeStrikeHash))
+                return false;
+
+            _animator.SetFloat(DodgeStrikeSpeedHash, DodgeStrikeClipSeconds / Mathf.Max(0.2f, clipSeconds));
+            _animator.CrossFadeInFixedTime(DodgeStrikeHash, Mathf.Max(0.01f, blendIn), 0);
+            return true;
+        }
+
+        public bool TryGetDodgeStrikeProgress(out float normalizedTime)
+        {
+            return TryGetStateProgress(DodgeStrikeHash, out normalizedTime);
+        }
+
+        private static readonly int DodgeStrikeHash = Animator.StringToHash("DM_DodgeStrike");
+        private static readonly int DodgeStrikeSpeedHash = Animator.StringToHash("DMDodgeStrikeSpeed");
+        private const float DodgeStrikeClipSeconds = 1.0667f;
+
+        private bool TryGetStateProgress(int hash, out float normalizedTime)
+        {
+            normalizedTime = 0f;
+            if (_animator == null)
+                return false;
+
+            AnimatorStateInfo cur = _animator.GetCurrentAnimatorStateInfo(0);
+            if (cur.shortNameHash == hash)
+            {
+                normalizedTime = cur.normalizedTime;
+                return true;
+            }
+
+            if (_animator.IsInTransition(0))
+            {
+                AnimatorStateInfo next = _animator.GetNextAnimatorStateInfo(0);
+                if (next.shortNameHash == hash)
+                {
+                    normalizedTime = next.normalizedTime;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static readonly int DodgeBackHash = Animator.StringToHash("DM_DodgeBack");
+        private static readonly int DodgeBackSpeedHash = Animator.StringToHash("DMDodgeBackSpeed");
+        private static readonly int FreeMovementHash = Animator.StringToHash("Free Movement");
+        private static readonly int StrafingMovementHash = Animator.StringToHash("Strafing Movement");
+        private const float DodgeBackClipSeconds = 1.4f; // Humanoid@DodgeBackwardsCombat clip length
+
+        /// <summary>True when the last TryBeginDodgeRoll played the backward dodge clip (body faces the threat, moves away).</summary>
+        public bool LastRollUsedBackClip { get; private set; }
+
+        /// <summary>Cross-fades the backward dodge clip out to locomotion (blend-out time from the brain profile).</summary>
+        public void EndDodgeBackClip(float blendOut)
+        {
+            if (_animator == null)
+                return;
+
+            bool strafing = _animator.GetBool("IsStrafing");
+            _animator.CrossFadeInFixedTime(strafing ? StrafingMovementHash : FreeMovementHash, Mathf.Max(0.01f, blendOut), 0);
         }
 
         private const float defensiveBlockDurationFallback = 1.2f;

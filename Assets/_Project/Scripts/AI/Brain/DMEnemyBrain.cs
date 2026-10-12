@@ -35,6 +35,9 @@ namespace Project.AI
         private float scoreDefend;
         private float scoreRetreat;
         private string lastReason = "idle";
+        private float nextEngagerMoveRoll;
+        private float engagerMoveRequestedAt;
+        private bool engagerMoveRequested;
 
         public DMEnemyArchetype Archetype => archetype;
         public DMEnemyPersonality PrimaryPersonality => primaryPersonality;
@@ -62,7 +65,7 @@ namespace Project.AI
             secondaryPersonality = secondary;
         }
 
-        private bool BrainEnabled
+        internal bool BrainEnabled
         {
             get
             {
@@ -160,7 +163,7 @@ namespace Project.AI
         /// <summary>
         /// Called by EnemyAiController at the agent role tick. Re-scores at the profile decision interval.
         /// </summary>
-        public void Tick(bool isEngager, bool threatInReach, bool midSwing, float lastHitByTargetTime)
+        public void Tick(bool isEngager, bool threatInReach, bool midSwing, float lastHitByTargetTime, bool attackOnCooldown = false)
         {
             DM_EnemyBrainProfile profile = Profile;
             if (profile == null || !profile.enableUtilityBrain)
@@ -232,8 +235,56 @@ namespace Project.AI
             if (pick != currentAction && profile.debugLogDecisions)
                 LogDecision(pick);
 
+            // Slice 3 / C1: engager cooldown move (strafe / backstep) roll. Only while the engager keeps pressing and its attack is cooling down.
+            if (isEngager && pick == DMBrainAction.Press && attackOnCooldown && !midSwing && now >= nextEngagerMoveRoll)
+            {
+                DM_EnemyEngagementProfile ep = DM_EnemyEngagementProfile.Live;
+                if (ep != null && ep.enableEngagerCooldownMove)
+                {
+                    nextEngagerMoveRoll = now + Mathf.Max(0.2f, ep.RandomRange(ep.engagerMoveRollInterval));
+                    ResolvePersonality(profile, out _, out _, out _, out _, out float sideMul, out _, out _);
+                    if (rng.NextDouble() < ep.engagerMoveChance * sideMul)
+                    {
+                        engagerMoveRequestedAt = now;
+                        engagerMoveRequested = true;
+                    }
+                }
+            }
+
             currentAction = pick;
             lastReason = condition + (hitRecently ? ", hit recently" : string.Empty) + (threatInReach ? ", in reach" : string.Empty);
+        }
+
+        /// <summary>Returns true once per cooldown-move decision (Slice 3 / C1); a request older than 0.6 s is dropped.</summary>
+        private float nextDodgeStrikeRoll;
+        private float nextDodgeStrikeAllowed;
+
+        /// <summary>One roll of the dodge strike (chance per opportunity, cooldown per enemy). Conditions (token, range, melee) are checked by the caller first.</summary>
+        public bool TryRollDodgeStrike(float definitionScale)
+        {
+            DM_EnemyBrainProfile bp = DM_EnemyBrainProfile.Live;
+            if (!BrainEnabled || bp == null || !bp.enableDodgeStrike)
+                return false;
+
+            float now = Time.time;
+            if (now < nextDodgeStrikeAllowed || now < nextDodgeStrikeRoll)
+                return false;
+
+            nextDodgeStrikeRoll = now + bp.dodgeStrikeRollInterval;
+            if (Random.value >= bp.dodgeStrikeChance * Mathf.Clamp01(definitionScale))
+                return false;
+
+            nextDodgeStrikeAllowed = now + bp.dodgeStrikeCooldown;
+            return true;
+        }
+
+        public bool ConsumeEngagerMoveRequest()
+        {
+            if (!engagerMoveRequested)
+                return false;
+
+            engagerMoveRequested = false;
+            return BrainEnabled && Time.time - engagerMoveRequestedAt <= 0.6f;
         }
 
         /// <summary>Returns true once per Defend decision.</summary>

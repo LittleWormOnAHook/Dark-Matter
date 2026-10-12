@@ -302,6 +302,13 @@ namespace Project.AI.Invector
         {
             bool poiseBreak = weaponRequestsStagger;
 
+            EnemyAiController rollAi = GetComponent<EnemyAiController>();
+            if (rollAi != null && rollAi.DodgeRollBlocksHitReactions)
+            {
+                LogStaggerDev(poiseBreak, "dodge roll active (reactions ignored)");
+                return;
+            }
+
             if (_health != null && _health.IsDead)
             {
                 LogStaggerDev(poiseBreak, "target dead");

@@ -157,6 +157,49 @@ namespace Project.AI
         [Tooltip("Per-enemy random variety: each enemy instance rolls a fixed -1..1 value at spawn; its back-off distance (min combat separation / ranged retreat) and crowding radius are scaled by 1 + spread * roll. 0.2 = +/-20%. 0 = every enemy identical. Per-type multiplier: EnemyDefinition.backoffDistanceMultiplier.")]
         [Range(0f, 0.5f)] public float crowdingVariationSpread = 0.2f;
 
+        [Header("Engager cooldown movement (Slice 3 / C1: strafe + backstep between swings)")]
+        [Tooltip("On = the engager (the one enemy allowed to swing) no longer stands still while its attack is on cooldown: the brain may roll a short slow strafe or a small backstep. Stays inside the melee band (see Max Distance Factor); never delays a swing; Phase 3 one-attacker spacing is untouched. Off = old standing-still behaviour.")]
+        public bool enableEngagerCooldownMove = true;
+        [Tooltip("Chance per roll (brain decision) that a cooldown move starts. Multiplied by the brain personality sidestep weight.")]
+        [Range(0f, 1f)] public float engagerMoveChance = 0.7f;
+        [Tooltip("Seconds between brain rolls while the engager is on attack cooldown.")]
+        public Vector2 engagerMoveRollInterval = new Vector2(0.35f, 0.9f);
+        [Tooltip("Seconds between the end of one cooldown move and the start of the next.")]
+        public Vector2 engagerMoveCooldown = new Vector2(0.8f, 1.8f);
+        [Tooltip("A move only starts when the attack still needs at least this many seconds to become ready.")]
+        [Range(0.1f, 2f)] public float engagerMoveMinCooldown = 0.3f;
+        [Tooltip("A running move ends when the attack is ready within this many seconds, so the engager faces and swings on time.")]
+        [Range(0f, 1f)] public float engagerMoveStopBeforeAttack = 0.15f;
+        [Tooltip("Slow strafe: speed as a fraction of walk speed, duration (s) and the maximum arc (degrees) around the target per move.")]
+        [Range(0.2f, 1.6f)] public float engagerStrafeSpeedFactor = 0.95f;
+        public Vector2 engagerStrafeSeconds = new Vector2(0.3f, 0.6f);
+        [Range(5f, 60f)] public float engagerStrafeMaxArc = 24f;
+        [Tooltip("Anti-orbit: running total of strafed degrees (left minus right) is kept inside +/- this value; beyond it the next strafe flips side. The total halves at every move start and resets when the token is awarded.")]
+        [Range(10f, 120f)] public float engagerStrafeMaxNetArc = 45f;
+        [Tooltip("Chance the next strafe goes the opposite way from the previous one.")]
+        [Range(0f, 1f)] public float engagerStrafeFlipChance = 0.7f;
+        [Tooltip("Cooldown moves only run while the target is within effective attack range x this (the melee band).")]
+        [Range(1f, 2f)] public float engagerStrafeMaxDistanceFactor = 1.35f;
+        [Tooltip("Chance a cooldown move is a small backstep instead of a strafe. Never backs out past the creep-start distance.")]
+        [Range(0f, 1f)] public float engagerBackstepChance = 0.3f;
+        [Tooltip("Backstep distance (m) and speed as a fraction of walk speed.")]
+        public Vector2 engagerBackstepDistance = new Vector2(0.35f, 0.8f);
+        [Range(0.3f, 2f)] public float engagerBackstepSpeedFactor = 1.3f;
+        [Tooltip("How much of the per-enemy crowding variety (crowdingVariationSpread roll x definition backoffDistanceMultiplier) applies to cooldown move speed / distance / arc and to the post-hit backstep. 0 = every enemy identical, 1 = full variety.")]
+        [Range(0f, 2f)] public float moveVariationScale = 1f;
+        [Tooltip("Quick ease-in / ease-out time (s) of cooldown moves and holder sidesteps: the step starts at ~30% speed and reaches full speed in this time, and slows over the last quarter of the distance. 0 = constant speed.")]
+        [Range(0f, 0.3f)] public float moveEaseSeconds = 0.08f;
+
+        [Header("Step animation (quick steps: strafe / backstep / holder sidestep / hit backstep)")]
+        [Tooltip("Leg-cycle exaggeration. While an enemy quick-steps, the locomotion blend (walk/strafe clip) is fed this x the real step speed, so the legs cycle faster than the root moves and the feet read as quick steps instead of a glide. 1 = feet matched exactly to ground speed.")]
+        [Range(1f, 2.5f)] public float stepAnimSpeedScale = 1.35f;
+        [Tooltip("When the step is faster than the fastest strafe / run clip, the animator playback speed is raised up to this multiplier (only while it is exactly 1 = no swing / hit stop / windup speed change running). 1 = never change playback speed.")]
+        [Range(1f, 2f)] public float stepAnimMaxPlaybackBoost = 1.3f;
+        [Tooltip("Smoothing time (s) of the measured root velocity that drives the locomotion clip during quick steps (normal 0.08 lags a 0.3-0.6 s step).")]
+        [Range(0.005f, 0.1f)] public float stepVelocitySmoothing = 0.03f;
+        [Tooltip("Blend-out (s) of the leg animation when a quick step ends: the locomotion animator inputs are pulled to 0 in this time (instead of Invector's slow input damping) so the legs stop with the body. 0 = snap to idle at the step end.")]
+        [Range(0f, 0.3f)] public float stepAnimBlendOut = 0.06f;
+
         [Header("Holders (world-anchored hold points)")]
         [Range(1.5f, 12f)] public float holdRingRadius = 4f;
         [Range(1.5f, 12f)] public float holdRingRadiusMin = 3.2f;
@@ -190,6 +233,10 @@ namespace Project.AI
         [Range(0f, 1f)] public float holderWeightFeint = 0.15f;
         [Range(0f, 1f)] public float holderWeightNone = 0.10f;
         public Vector2 sidestepDistance = new Vector2(0.6f, 1.2f);
+        [Tooltip("Holder sidestep speed (m/s). Was holderWalkSpeed 1.4 (a slow glide); now its own value. Scaled per enemy by moveVariationScale.")]
+        [Range(0.8f, 8f)] public float sidestepSpeed = 3.4f;
+        [Tooltip("Seconds added to distance / speed for the sidestep action length (was a fixed 0.6 s pad). Keep it short so the step stays snappy.")]
+        [Range(0f, 1f)] public float sidestepDurationPad = 0.2f;
         [Range(1f, 45f)] public float sidestepMaxArc = 15f;
         [Range(0f, 20f)] public float sidestepCooldown = 4f;
         [Range(0f, 20f)] public float tauntCooldown = 6f;
@@ -219,5 +266,56 @@ namespace Project.AI
             float b = Mathf.Max(range.x, range.y);
             return Random.Range(a, b);
         }
-    }
+    
+        [Header("Swing start distance (first swing starts inside the weapon's real reach)")]
+        [Tooltip("Master switch. The melee swing only starts when the target is inside the equipped weapon's real reach (instead of the generic attack range); the engager closes in first. Off = old behaviour (swing at the generic range).")]
+        public bool swingStartUseWeaponReach = true;
+        [Tooltip("Metres from the enemy root to the weapon grip when the arm is extended in a swing. Weapon tip reach = this + the weapon's hitbox length. Calibrated on the Blade of Chaos swing animations.")]
+        [Range(0f, 2f)] public float weaponReachArm = 0.9f;
+        [Tooltip("Same as Weapon Reach Arm but for Androids / Robots (non-Humanoid body types): their swing clips do not extend the arm as far, measured tip about 1.6-1.7 m with a 1.08 m sword (shakefix, was 0.9 for everyone).")]
+        [Range(0f, 2f)] public float weaponReachArmMech = 0.55f;
+        [Tooltip("Crowd / hard-separation pushes write the leg locomotion blend un-damped for 0.25 s so the legs cycle with the push instead of lagging behind it (no sliding).")]
+        public bool pushSnapsLegs = true;
+        [Tooltip("Tip reach (m from the root) of an unarmed enemy (fists / no melee weapon hitbox).")]
+        [Range(0.3f, 2.5f)] public float unarmedTipReach = 1.1f;
+        [Tooltip("The swing starts when the target is closer than tip reach minus this margin (so the hit window lands on the body, not on its edge). Small tolerance: lower = starts later / closer.")]
+        [Range(-0.5f, 1f)] public float swingStartInnerMargin = 0.25f;
+        [Tooltip("A target moving away is compensated by this many seconds of its outward speed (the swing needs ~this long to connect), so a kiting player is not swung at from the edge.")]
+        [Range(0f, 0.6f)] public float swingStartLeadSeconds = 0.2f;
+        [Tooltip("An engager whose attack becomes ready within this many seconds closes in (creeps) until it is inside the swing start distance.")]
+        [Range(0f, 1.5f)] public float swingCloseInReadySeconds = 0.5f;
+
+        [Header("Token fairness (random but starvation-free rotation, focus bias, group pace)")]
+        [Tooltip("Master switch. On: the token is awarded by a weighted random pick among eligible enemies (softmax of the focus score), a starvation bonus favours enemies that waited longest / got fewer turns, and bigger mobs attack at a slower pace. Off = old behaviour (highest score always wins).")]
+        public bool fairnessEnabled = true;
+        [Tooltip("Randomness of the pick, in focus-score units. Small = the best score nearly always wins; large = almost uniform. The enemy the player targets / hit gets its focus-score bonus (weightPlayerTargeting / weightPlayerHit), so it is picked more often but the others still get turns.")]
+        [Range(0.3f, 10f)] public float fairnessTemperature = 2.5f;
+        [Tooltip("Starvation: focus-score bonus per second since this enemy last held the token (or joined the ring).")]
+        [Range(0f, 3f)] public float starvationBonusPerSecond = 0.6f;
+        [Tooltip("Cap of the time-based starvation bonus (focus-score units).")]
+        [Range(0f, 20f)] public float starvationBonusMax = 6f;
+        [Tooltip("Starvation: focus-score bonus for every token this enemy has had fewer than the ring's most-served enemy.")]
+        [Range(0f, 5f)] public float starvationBonusPerMissedTurn = 1.5f;
+        [Tooltip("Group pace: from this many enemies in the ring the attack pace slows (longer hand-off grace and recovery pause).")]
+        [Range(2, 12)] public int groupPaceStartCount = 3;
+        [Tooltip("Group pace: extra gap per enemy at or above the start count (0.25 = +25% gap per extra enemy).")]
+        [Range(0f, 1f)] public float groupPaceExtraPerEnemy = 0.25f;
+        [Tooltip("Group pace: cap of the gap multiplier (1 = no slowing). Per enemy type: EnemyDefinition.attackPaceMultiplier.")]
+        [Range(1f, 4f)] public float groupPaceMaxMultiplier = 2f;
+        [Tooltip("Extra focus score for an enemy that has never had an attack turn yet (clipfix: nobody in a big mob waits for the first swing).")]
+        [Range(0f, 20f)] public float fairnessFirstTurnBonus = 8f;
+        [Tooltip("At or above this many enemies in the ring a token holder keeps the token for only ONE attack sequence before handing off.")]
+        [Range(2, 12)] public int fairnessLargeMobCount = 4;
+
+        [Header("Real weapon reach (clipfix): the generic attack range is capped to the equipped weapon's real reach")]
+        [Tooltip("On = melee attack range = min(prefab attackRange, weapon tip reach + slack). Unarmed enemies (Humadroid, Robot fists) no longer swing from the generic 2.2 m.")]
+        public bool capAttackRangeToWeaponReach = true;
+        [Range(0f, 1f)] public float attackRangeReachSlack = 0.1f;
+
+        [Header("Hard enemy separation (clipfix): enemies never merge into the same spot")]
+        [Tooltip("Hard minimum distance between any two enemies (m, root to root). Overlap is pushed apart every frame (not during rolls / staggers / swings). 0 = off.")]
+        [Range(0f, 2f)] public float hardEnemySeparation = 0.95f;
+        [Tooltip("Max speed (m/s) of the hard separation push. The push never goes below ~0.9 m/s while active so the legs animate.")]
+        [Range(0.5f, 6f)] public float hardSeparationMaxSpeed = 3.5f;
+}
 }

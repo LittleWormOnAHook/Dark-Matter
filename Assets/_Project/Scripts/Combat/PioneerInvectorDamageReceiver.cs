@@ -125,8 +125,25 @@ namespace Project.Combat
                         bool heavyHit = AttackInterruptEvaluator.IsPlayerChargedHit(source, out _);
                         CombatPoise hitPoise = enemyHealth.GetComponent<CombatPoise>();
                         CombatUiSpawner.NextEnemyDamageHeavy = heavyHit;
+                        // Brain-driven enemy block: reduced damage while the guard is up (DMEnemyBlock), a charged hit breaks it.
+                        DMEnemyBlock.Result blockResult = DMEnemyBlock.Evaluate(enemyHealth, source, ref damage);
+                        if (blockResult == DMEnemyBlock.Result.Blocked)
+                            isCritical = false;
                         enemyHealth.TakeDamage(damage, source, isCritical);
                         CombatUiSpawner.NextEnemyDamageHeavy = false;
+                        if (blockResult == DMEnemyBlock.Result.Blocked)
+                        {
+                            bool guardPoiseBreak = hitPoise != null && hitPoise.LastBreakFrame == Time.frameCount;
+                            if (!enemyHealth.IsDead && !guardPoiseBreak)
+                            {
+                                DMEnemyBlock.OnBlocked(enemyHealth, source, staggerSnapshot);
+                                return;
+                            }
+
+                            if (guardPoiseBreak)
+                                DMEnemyBlock.BreakGuard(enemyHealth, "poise break");
+                        }
+
                         DMEnemyHitMarks.MeleeHeavyContext = heavyHit;
                         DMEnemyHitMarks.MeleeChainContext = hitPoise != null ? hitPoise.ChainHitCount : 0;
                         SpawnHitVfx(damage, source, hitPoint);

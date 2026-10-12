@@ -153,12 +153,64 @@ namespace Project.AI
             return 1f + gain * Mathf.Clamp01(depth);
         }
 
+        /// <summary>
+        /// Hard minimum separation (DM_EnemyEngagementProfile.hardEnemySeparation): any two enemies closer than this are pushed apart every frame
+        /// at a speed that keeps the legs animating (measured velocity drives locomotion). Skipped during rolls, staggers, swings and dodge strikes.
+        /// </summary>
+        private void TickHardSeparation()
+        {
+            DM_EnemyEngagementProfile p = EngagementProfile;
+            if (p == null || p.hardEnemySeparation <= 0.01f || IsStationary || dodgeRollUntil > 0f || dodgeStrikeUntil > 0f)
+                return;
+            if (ragdollBridge != null && (ragdollBridge.IsHitStaggerActive || ragdollBridge.IsCorpseRagdolled))
+                return;
+            bool swinging = IsInAttackSequence;
+
+            Vector3 me = transform.position;
+            Vector3 push = Vector3.zero;
+            float deepest = 0f;
+            for (int i = 0; i < ActiveEnemies.Count; i++)
+            {
+                EnemyAiController o = ActiveEnemies[i];
+                if (o == null || o == this || !o.isActiveAndEnabled || o.IsStationary)
+                    continue;
+                if (o.health != null && o.health.IsDead)
+                    continue;
+
+                Vector3 d = me - o.transform.position;
+                d.y = 0f;
+                float dist = d.magnitude;
+                if (dist >= p.hardEnemySeparation)
+                    continue;
+
+                d = dist < 0.01f ? transform.right * ((GetHashCode() & 1) == 0 ? 1f : -1f) : d / dist;
+                float overlap = p.hardEnemySeparation - dist;
+                push += d * overlap;
+                deepest = Mathf.Max(deepest, overlap);
+            }
+
+            if (deepest <= 0.001f || push.sqrMagnitude < 0.000001f)
+                return;
+            if (swinging && deepest < p.hardEnemySeparation * 0.5f)
+                return; // a swinging enemy only gives way when the overlap is deep
+
+            float speed = Mathf.Clamp(deepest * 6f, 0.9f, p.hardSeparationMaxSpeed);
+            Vector3 step = push.normalized * Mathf.Min(speed * Time.deltaTime, deepest);
+            step = ClampStepAwayFromNonTargetPlayer(step);
+            transform.position += step;
+            LastPushDirection = step;
+            NoteMover("HardSeparation", step.magnitude);
+        }
+
         /// <summary>Waiting enemies (Hold / Holder, or standing between swings) get nudged apart directly; the push grows with overlap depth.</summary>
         private void TickCrowdingDrift()
         {
             DM_EnemyEngagementProfile p = EngagementProfile;
             if (p == null || !p.applyCrowdingToAllEnemies || p.waitingCrowdingStrength <= 0.01f || IsStationary)
                 return;
+
+            if (ragdollBridge != null && ragdollBridge.IsHitStaggerActive)
+                return; // a staggered body is not animated by locomotion: no legs, so no sliding pushes
 
             bool waiting = state == AiState.Hold;
             bool betweenSwings = (state == AiState.Attack || state == AiState.Defensive) && combat != null && !combat.IsAttacking;
@@ -172,6 +224,8 @@ namespace Project.AI
             Vector3 step = cachedSeparationDir * (p.waitingCrowdingStrength * CrowdingDepthScale(cachedSeparationDepth) * Time.deltaTime);
             step.y = 0f;
             transform.position += step;
+            LastPushDirection = step;
+            NoteMover("CrowdPush", step.magnitude);
         }
 
         private Vector3 ComputeEnemySeparationOffset()
