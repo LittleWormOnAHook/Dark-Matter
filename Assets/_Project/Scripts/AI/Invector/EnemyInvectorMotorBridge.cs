@@ -75,6 +75,29 @@ namespace Project.AI.Invector
             _ragdollBridge != null &&
             (_ragdollBridge.IsHitStaggerActive || _ragdollBridge.IsCorpseRagdolled);
 
+        // Stiff-pose fix (2026-10-12): a re-enabled / freshly spawned enemy showed its bind pose for the first frames. Evaluate the animator now.
+        // 2026-10-12 crash fix: Animator.Update inside OnEnable ran synchronously inside the Inspector's activate-toggle
+        // (SerializedObject.ApplyModifiedProperties -> native crash in DidTypeTreeChange). Now deferred to the first LateUpdate, once.
+        private bool _pendingEnableEvaluate;
+        private bool _evaluatingEnable;
+
+        private void OnEnable()
+        {
+            _pendingEnableEvaluate = true;
+        }
+
+        private void RunPendingEnableEvaluate()
+        {
+            if (!_pendingEnableEvaluate || _evaluatingEnable) return;
+            _pendingEnableEvaluate = false;
+            if (_health != null && _health.IsDead) return;
+            Animator an = _controller != null && _controller.animator != null ? _controller.animator : GetComponentInChildren<Animator>();
+            if (an == null || !an.isActiveAndEnabled || !an.isInitialized || (_ragdollBridge != null && _ragdollBridge.HasActiveRagdoll)) return;
+            _evaluatingEnable = true;
+            try { an.Update(0f); }
+            finally { _evaluatingEnable = false; }
+        }
+
         private void Start()
         {
             CacheAnimatorParameters();
@@ -110,6 +133,7 @@ namespace Project.AI.Invector
 
         private void LateUpdate()
         {
+            RunPendingEnableEvaluate(); // 2026-10-12 deferred stiff-pose evaluate
             // Sample every frame (even while blocked) so the first frame after a stagger has no spike.
             SampleMeasuredVelocity();
             TrackSlide();
@@ -151,7 +175,12 @@ namespace Project.AI.Invector
 
             // shakefix: crowd / separation pushes are short and fast. The animator damps InputMagnitude, so the legs would lag the push and the body would
             // slide. For a push in the last 0.25 s write the blend un-damped so the leg cycle starts with the displacement.
-            if (driveLocomotionFromMeasuredVelocity && _aiController.PushSnapsLegs && Time.time - _aiController.LastPushTime < 0.25f && _measuredVelocity.magnitude > MoveSpeedThreshold)
+            // Legs fix (2026-10-12): StepFlat / ChaseMove / hold repositions are short bursts (0.3-0.6 s); Invector's damped InputMagnitude never got past
+            // ~0.05 before the move ended, so the body slid on the Idle / AimedIdle clip. Snap the blend whenever the body moves and the legs lag behind.
+            bool legsLag = DM_EnemyEngagementProfile.Live.snapLegsToMovement && _controller.inputMagnitude > 0.2f
+                && _controller.animator.GetFloat(InputMagnitudeHash) < _controller.inputMagnitude * 0.6f;
+            if (driveLocomotionFromMeasuredVelocity && _measuredVelocity.magnitude > MoveSpeedThreshold
+                && (legsLag || (_aiController.PushSnapsLegs && Time.time - _aiController.LastPushTime < 0.25f)))
             {
                 _controller.animator.SetFloat(InputMagnitudeHash, _controller.inputMagnitude);
                 _controller.animator.SetFloat(InputVerticalHash, _controller.verticalSpeed);

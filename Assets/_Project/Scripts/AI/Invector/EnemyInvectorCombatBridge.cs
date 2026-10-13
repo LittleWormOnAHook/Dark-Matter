@@ -302,6 +302,15 @@ namespace Project.AI.Invector
             if (_controller == null || threat == null)
                 return false;
 
+            // Animator off / not initialised (ragdoll or hit-stagger recovery): HasState is false for every clip, which used to fall back to
+            // the forward Roll and slide the capsule with no animation. Skip; the brain tries again on its next decision.
+            if (_animator == null || !_animator.isActiveAndEnabled || !_animator.isInitialized)
+            {
+                if (Project.Combat.DM_CombatCoreProfile.Live != null && Project.Combat.DM_CombatCoreProfile.Live.logInterruptsInPlay)
+                    Debug.Log($"[DodgeSkipped] {name} reason=animatorNotReady enabled={(_animator != null && _animator.isActiveAndEnabled ? 1 : 0)} init={(_animator != null && _animator.isInitialized ? 1 : 0)}", this);
+                return false;
+            }
+
             Vector3 toThreat = threat.position - transform.position;
             toThreat.y = 0f;
             if (toThreat.sqrMagnitude < 0.01f)
@@ -370,7 +379,7 @@ namespace Project.AI.Invector
                 LastRollClipId = 1;
                 duration = Mathf.Max(0.3f, bp.dodgeBackSeconds);
                 _animator.SetFloat(DodgeBackSpeedHash, DodgeBackClipSeconds / duration);
-                if (faceThreat.sqrMagnitude > 0.0001f)
+                if (faceThreat.sqrMagnitude > 0.0001f && bp.dodgeTurnDegPerSec <= 0f) // 2026-10-12: >0 = AI turns smoothly (TickDodgeRoll)
                     transform.rotation = Quaternion.LookRotation(faceThreat.normalized, Vector3.up);
             }
             else if ((sideRight || sideLeft) && bp.dodgeSideUseClip && _animator != null && _animator.HasState(0, sideRight ? DodgeRightHash : DodgeLeftHash))
@@ -380,14 +389,21 @@ namespace Project.AI.Invector
                 LastRollClipId = sideRight ? 3 : 2;
                 duration = Mathf.Max(0.3f, bp.dodgeSideSeconds);
                 _animator.SetFloat(DodgeSideSpeedHash, DodgeSideClipSeconds / duration);
-                if (faceThreat.sqrMagnitude > 0.0001f)
+                if (faceThreat.sqrMagnitude > 0.0001f && bp.dodgeTurnDegPerSec <= 0f)
                     transform.rotation = Quaternion.LookRotation(faceThreat.normalized, Vector3.up);
             }
             else if (bp.dodgeRollSnapFacing)
             {
                 Vector3 flat = new Vector3(rollDir.x, 0f, rollDir.z);
-                if (flat.sqrMagnitude > 0.0001f)
+                if (flat.sqrMagnitude > 0.0001f && bp.dodgeTurnDegPerSec <= 0f)
                     transform.rotation = Quaternion.LookRotation(flat.normalized, Vector3.up);
+            }
+
+            if (LastRollClipId == 0 && !bp.allowForwardRollFallback)
+            {
+                if (Project.Combat.DM_CombatCoreProfile.Live != null && Project.Combat.DM_CombatCoreProfile.Live.logInterruptsInPlay)
+                    Debug.Log($"[DodgeSkipped] {name} reason=noDodgeClip backward={(backward ? 1 : 0)} right={(sideRight ? 1 : 0)} left={(sideLeft ? 1 : 0)} dotAway={Vector3.Dot(rollDir, away):0.00}", this);
+                return false;
             }
 
             if (LastRollClipId == 0)
@@ -409,6 +425,8 @@ namespace Project.AI.Invector
                 _animator.CrossFadeInFixedTime(DodgeLeftHash, Mathf.Max(0.01f, bp.dodgeSideBlendIn), 0);
             else if (LastRollClipId == 3)
                 _animator.CrossFadeInFixedTime(DodgeRightHash, Mathf.Max(0.01f, bp.dodgeSideBlendIn), 0);
+            if (Project.Combat.DM_CombatCoreProfile.Live != null && Project.Combat.DM_CombatCoreProfile.Live.logInterruptsInPlay)
+                Debug.Log($"[DodgePlayed] {name} state={(LastRollClipId == 1 ? "DM_DodgeBack" : LastRollClipId == 2 ? "DM_DodgeLeft" : LastRollClipId == 3 ? "DM_DodgeRight" : "Roll")} clipOk={(LastRollClipId != 0 ? 1 : 0)}", this);
             return true;
         }
 
@@ -493,12 +511,29 @@ namespace Project.AI.Invector
                 }
             }
 
+            // Weapon length: the weapon definition (ItemData.meleeBladeLength) wins; else the measured hitbox; else the mesh bounds. Never prefab placements.
+            if (_reachLength <= 0.05f && inst != null)
+            {
+                Vector3 grip = inst.transform.position;
+                foreach (Renderer r in inst.GetComponentsInChildren<Renderer>(true))
+                {
+                    if (r is ParticleSystemRenderer) continue;
+                    Bounds b = r.bounds;
+                    for (int cx = -1; cx <= 1; cx += 2) for (int cy = -1; cy <= 1; cy += 2) for (int cz = -1; cz <= 1; cz += 2)
+                        _reachLength = Mathf.Max(_reachLength, Vector3.Distance(b.center + Vector3.Scale(b.extents, new Vector3(cx, cy, cz)), grip));
+                }
+            }
+            Project.Data.ItemData def = _loadoutBridge != null ? _loadoutBridge.ActiveItem : null;
+            float len = def != null && def.meleeBladeLength > 0.05f ? def.meleeBladeLength : _reachLength;
+
             float arm = p.weaponReachArm;
             if (_reachMarks == null)
                 _reachMarks = GetComponentInParent<DMEnemyHitMarks>();
-            if (_reachMarks != null && _reachMarks.BodyType != DMEnemyBodyType.Humanoid)
+            if (_reachMarks != null && _reachMarks.BodyType == DMEnemyBodyType.Robot)
+                arm = p.weaponReachArmRobot;
+            else if (_reachMarks != null && _reachMarks.BodyType != DMEnemyBodyType.Humanoid)
                 arm = p.weaponReachArmMech;
-            return _reachLength > 0.05f ? arm + _reachLength : p.unarmedTipReach;
+            return len > 0.05f ? arm + len : p.unarmedTipReach;
         }
 
         public float LastWeaponLength => _reachLength;

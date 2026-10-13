@@ -8,6 +8,7 @@ using Project.Data;
 using Project.Echoes;
 using Project.Interaction;
 using Project.PPT;
+using Project.Combat.Experiment.Carve;
 using Project.Quests;
 using UnityEngine;
 
@@ -140,11 +141,27 @@ namespace Project.Combat
             GameObject receiver,
             GameObject impactVfxOverride = null)
         {
-            // Enemies never get world impacts, surface decals, laser burns, or carve — only DMEnemyHitMarks body FX.
-            if (IsEnemyReceiver(receiver))
-                return;
-
             DMAmmoFxProfile profile = ResolveProfile(ammoItem, weapon);
+
+            // Enemies never get world impacts, surface decals, laser burns, or carve — only DMEnemyHitMarks body FX.
+            // Experiment carve ammo may still deform carvable mesh on enemies (carve-only path).
+            if (IsEnemyReceiver(receiver))
+            {
+                if (DMCarveExperimentCombatUtility.AllowsCarveOnEnemyReceivers(ammoItem)
+                    && profile != null
+                    && Project.SurfaceCarve.DMCarveImpacts.TryCarveFromAmmo(
+                        ammoItem,
+                        profile,
+                        point,
+                        normal,
+                        receiver,
+                        out _))
+                {
+                    // Carve applied; skip decals / world marks on living enemies.
+                }
+
+                return;
+            }
 
             bool skipDecal = ShouldSkipImpactDecal(receiver);
             // Carve first so hit marks / burns land on the crater floor instead of the surface that was just removed.

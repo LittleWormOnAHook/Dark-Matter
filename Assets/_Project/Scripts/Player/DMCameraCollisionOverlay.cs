@@ -173,6 +173,7 @@ namespace Project.Player
 
         private void OnDisable()
         {
+            RestoreOccluders();
             SetPlayerMeshVisible(true);
         }
 
@@ -183,6 +184,7 @@ namespace Project.Player
 
             CacheRefs();
             ApplyLensTuning();
+            UpdateCharacterOcclusion();
             // Binoculars disable vThirdPersonCamera (eye pose). Skip third-person push while frozen/disabled
             // or the lens gets yanked from the eye out to CurrentZoom (often high above terrain).
             if (tpCamera == null || tpCamera.isFreezed || !tpCamera.enabled)
@@ -408,7 +410,7 @@ namespace Project.Player
                 _body.position = pos;
 
             if (placedDist > 0.001f)
-                _smoothDist = Mathf.Max(placedDist, activeMinFollow);
+                _smoothDist = Mathf.Max(placedDist, activeMinFollow, _pivotEnclosed ? 0f : AbsoluteMinDistance); // 2026-10-12: 0.4 m floor outside interiors
 
             tpCamera.distance = _smoothDist;
             if (pulledBelowZoom || invectorSnappedIn)
@@ -436,6 +438,27 @@ namespace Project.Player
             float hideDist = pivotEnclosed
                 ? Mathf.Max(PlayerMeshHideDistance, InteriorFirstPersonDistance + 0.05f)
                 : PlayerMeshHideDistance;
+
+            // Tight combat (2026-10-12): the player can step / roll / be knocked back into the lens faster than the follow catches up, in open air,
+            // where the wall checks above never hide the mesh. Hide while the near plane is inside (or skimming) the player's body capsule.
+            float lensGap = LensGapToPlayerBody();
+            if (lensGap < LensBodyHideGap)
+            {
+                _lensHidMesh = true;
+                SetPlayerMeshVisible(false);
+                return;
+            }
+            if (_lensHidMesh)
+            {
+                if (lensGap < LensBodyHideGap + PlayerMeshShowHysteresis)
+                    return;
+                _lensHidMesh = false;
+                if (_smoothDist >= hideDist)
+                {
+                    SetPlayerMeshVisible(true);
+                    return;
+                }
+            }
             if (!_playerMeshHidden && (_smoothDist < hideDist || pivotEnclosed && _smoothDist <= InteriorFirstPersonDistance + 0.1f))
             {
                 if (_restoreComfortDist < 0f)
@@ -455,6 +478,107 @@ namespace Project.Player
             {
                 SetPlayerMeshVisible(true);
             }
+        }
+
+        // 2026-10-12 step 10: characters between the player and the lens are hidden (ShadowsOnly) and restored when clear.
+        private static readonly RaycastHit[] OccHits = new RaycastHit[16];
+        private static readonly Collider[] OccOverlap = new Collider[16];
+        private readonly System.Collections.Generic.Dictionary<Renderer, UnityEngine.Rendering.ShadowCastingMode> _occHidden = new System.Collections.Generic.Dictionary<Renderer, UnityEngine.Rendering.ShadowCastingMode>();
+        private readonly System.Collections.Generic.HashSet<Renderer> _occNow = new System.Collections.Generic.HashSet<Renderer>();
+        private readonly System.Collections.Generic.Dictionary<Transform, Renderer[]> _occRenderers = new System.Collections.Generic.Dictionary<Transform, Renderer[]>();
+        private readonly System.Collections.Generic.List<Renderer> _occRestore = new System.Collections.Generic.List<Renderer>();
+        private float AbsoluteMinDistance => Profile != null ? Profile.absoluteMinDistance : 0.4f;
+
+        private static int CharacterMask()
+        {
+            return LayerBits("Enemy", "CompanionAI", "Animal", "BodyPart", "DMHitbox") | 1;
+        }
+
+        private void AddOccluder(Collider c)
+        {
+            if (c == null || !IsLivingBodyCollider(c)) return;
+            Component owner = c.GetComponentInParent<Project.AI.EnemyAiController>();
+            if (owner == null) owner = c.GetComponentInParent<Project.AI.EnemyHealth>();
+            if (owner == null) owner = c.GetComponentInParent<Project.Companions.CompanionHealth>();
+            Transform root = owner != null ? owner.transform : c.transform.root;
+            if (playerRoot != null && (root == playerRoot || root.IsChildOf(playerRoot))) return;
+            if (!_occRenderers.TryGetValue(root, out Renderer[] rs) || rs == null)
+            {
+                rs = root.GetComponentsInChildren<Renderer>(false);
+                _occRenderers[root] = rs;
+            }
+
+            for (int i = 0; i < rs.Length; i++)
+            {
+                Renderer r = rs[i];
+                if (r == null || r is ParticleSystemRenderer || r is TrailRenderer || r is LineRenderer) continue;
+                _occNow.Add(r);
+                if (!_occHidden.ContainsKey(r))
+                {
+                    _occHidden[r] = r.shadowCastingMode;
+                    r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly;
+                }
+            }
+        }
+
+        private void UpdateCharacterOcclusion()
+        {
+            _occNow.Clear();
+            DMCameraProfile pf = Profile;
+            if (pf != null && pf.fadeBlockingCharacters && eye != null && playerRoot != null)
+            {
+                if (_playerBody == null) _playerBody = playerRoot.GetComponent<CapsuleCollider>();
+                Vector3 cam = eye.transform.position;
+                Vector3 from = _playerBody != null ? _playerBody.bounds.center : playerRoot.position + Vector3.up * 1.4f;
+                Vector3 d = cam - from;
+                float len = d.magnitude;
+                int mask = CharacterMask();
+                if (len > 0.05f)
+                {
+                    int n = Physics.SphereCastNonAlloc(from, pf.characterBlockRadius, d / len, OccHits, len, mask, QueryTriggerInteraction.Ignore);
+                    for (int i = 0; i < n; i++) AddOccluder(OccHits[i].collider);
+                }
+
+                if (pf.characterLensHideDistance > 0.001f)
+                {
+                    int m = Physics.OverlapSphereNonAlloc(cam, pf.characterLensHideDistance, OccOverlap, mask, QueryTriggerInteraction.Ignore);
+                    for (int i = 0; i < m; i++) AddOccluder(OccOverlap[i]);
+                }
+            }
+
+            if (_occHidden.Count == 0) return;
+            _occRestore.Clear();
+            foreach (var kv in _occHidden)
+                if (!_occNow.Contains(kv.Key)) _occRestore.Add(kv.Key);
+            for (int i = 0; i < _occRestore.Count; i++)
+            {
+                Renderer r = _occRestore[i];
+                if (r != null) r.shadowCastingMode = _occHidden[r];
+                _occHidden.Remove(r);
+            }
+        }
+
+        private void RestoreOccluders()
+        {
+            foreach (var kv in _occHidden) if (kv.Key != null) kv.Key.shadowCastingMode = kv.Value;
+            _occHidden.Clear();
+        }
+
+        private const float LensBodyHideGap = 0.06f;
+        private bool _lensHidMesh;
+        private CapsuleCollider _playerBody;
+
+        /// <summary>Distance from the camera near-plane sphere to the player's root capsule (padded 0.08 m for arms); 99 when unknown.</summary>
+        private float LensGapToPlayerBody()
+        {
+            if (eye == null || playerRoot == null) return 99f;
+            if (_playerBody == null) _playerBody = playerRoot.GetComponent<CapsuleCollider>();
+            if (_playerBody == null || !_playerBody.enabled) return 99f;
+            float n = eye.nearClipPlane, hh = Mathf.Tan(eye.fieldOfView * 0.5f * Mathf.Deg2Rad) * n, hw = hh * eye.aspect;
+            float r = Mathf.Sqrt(n * n + hh * hh + hw * hw);
+            Vector3 p = eye.transform.position;
+            Vector3 cp = Physics.ClosestPoint(p, _playerBody, _playerBody.transform.position, _playerBody.transform.rotation);
+            return Vector3.Distance(cp, p) - r - 0.08f;
         }
 
         private void SetPlayerMeshVisible(bool visible)

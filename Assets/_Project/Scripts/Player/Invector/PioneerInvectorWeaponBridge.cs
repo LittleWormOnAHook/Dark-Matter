@@ -663,7 +663,84 @@ namespace Project.Player.Invector
             return fallback;
         }
 
+        private bool _refreshingEquipped; // 2026-10-12 reentrancy guard (equip events fired from inside a refresh)
+
         public void RefreshEquippedWeapon()
+        {
+            if (_refreshingEquipped) return;
+            _refreshingEquipped = true;
+            try
+            {
+                RefreshEquippedWeaponCore();
+                ApplyHotbarHolsters(); // 2026-10-12: all hotbar weapons holstered on the body (DM_CombatCoreProfile, Player holsters)
+            }
+            finally { _refreshingEquipped = false; }
+        }
+
+        private enum HolsterLocation { Other, Spine, LeftLeg, RightLeg }
+
+        private static HolsterLocation ResolveHolsterLocation(GameObject holstered, ItemData item)
+        {
+            for (Transform t = holstered != null ? holstered.transform.parent : null; t != null; t = t.parent)
+            {
+                string n = t.name;
+                if (n.IndexOf("LeftUpLeg", StringComparison.OrdinalIgnoreCase) >= 0 || n.IndexOf("LeftLeg", StringComparison.OrdinalIgnoreCase) >= 0 || n.IndexOf("Thigh_L", StringComparison.OrdinalIgnoreCase) >= 0) return HolsterLocation.LeftLeg;
+                if (n.IndexOf("RightUpLeg", StringComparison.OrdinalIgnoreCase) >= 0 || n.IndexOf("RightLeg", StringComparison.OrdinalIgnoreCase) >= 0 || n.IndexOf("Thigh_R", StringComparison.OrdinalIgnoreCase) >= 0) return HolsterLocation.RightLeg;
+                if (n.IndexOf("Spine", StringComparison.OrdinalIgnoreCase) >= 0 || n.IndexOf("Chest", StringComparison.OrdinalIgnoreCase) >= 0) return HolsterLocation.Spine;
+                if (n.IndexOf("Hips", StringComparison.OrdinalIgnoreCase) >= 0) break;
+            }
+            string socket = ResolveHolsterSocketName(item) ?? string.Empty;
+            if (socket.IndexOf("Left", StringComparison.OrdinalIgnoreCase) >= 0) return HolsterLocation.LeftLeg;
+            if (socket.IndexOf("Right", StringComparison.OrdinalIgnoreCase) >= 0) return HolsterLocation.RightLeg;
+            if (socket.IndexOf("Spine", StringComparison.OrdinalIgnoreCase) >= 0) return HolsterLocation.Spine;
+            return HolsterLocation.Other;
+        }
+
+        /// <summary>2026-10-12: shows the Holstered_ slot of every hotbar weapon that is not drawn.
+        /// Melee: one per location (Spine / Left leg / Right leg), max holsterMaxMeleeVisible incl. the drawn one. Never moves slots (hand-set placements kept).</summary>
+        private void ApplyHotbarHolsters()
+        {
+            DM_CombatCoreProfile p = DM_CombatCoreProfile.Live;
+            if (p == null || !p.holsterAllHotbarWeapons || _equipment == null || _holsterPreviewActive)
+                return;
+
+            ItemData drawn = _equipment.IsWeaponDrawn ? _equipment.DrawnWeaponItem : null;
+            ItemData equipped = _equipment.EquippedItem;
+            int meleeVisible = drawn != null && drawn.itemType == ItemType.MeleeWeapon ? 1 : 0;
+            var usedMelee = new HashSet<HolsterLocation>();
+            var usedRanged = new HashSet<HolsterLocation>();
+            var seen = new HashSet<ItemData>();
+
+            // the equipped (not drawn) weapon claims its location first, then hotbar order
+            for (int k = -1; k < EquipmentController.WeaponSlotCount; k++)
+            {
+                ItemData item = k < 0 ? equipped : _equipment.GetHotbarItem(_equipment.GetWeaponHotbarSlot(k));
+                if (item == null || !seen.Add(item) || item == drawn)
+                    continue;
+
+                if (item.itemType == ItemType.MeleeWeapon)
+                {
+                    if (!TryGetMeleeSlot(item, out MeleeWeaponSlot ms) || ms.holsteredInstance == null)
+                        continue;
+                    HolsterLocation loc = ResolveHolsterLocation(ms.holsteredInstance, item);
+                    bool show = meleeVisible < Mathf.Max(1, p.holsterMaxMeleeVisible)
+                        && (!p.holsterOneMeleePerLocation || loc == HolsterLocation.Other || usedMelee.Add(loc));
+                    if (show) { ShowMeleeHolsteredSlot(item, ms); meleeVisible++; }
+                    else ms.holsteredInstance.SetActive(false);
+                }
+                else if (item.IsRangedWeapon)
+                {
+                    if (!TryGetRangedSlot(item, out RangedWeaponSlot rs) || rs.holsteredInstance == null)
+                        continue;
+                    HolsterLocation loc = ResolveHolsterLocation(rs.holsteredInstance, item);
+                    bool show = !p.holsterOneRangedPerLocation || loc == HolsterLocation.Other || usedRanged.Add(loc);
+                    if (show) ShowRangedHolsteredSlot(item, rs);
+                    else rs.holsteredInstance.SetActive(false);
+                }
+            }
+        }
+
+        private void RefreshEquippedWeaponCore()
         {
             if (_holsterPreviewActive && _holsterPreviewItem != null)
             {

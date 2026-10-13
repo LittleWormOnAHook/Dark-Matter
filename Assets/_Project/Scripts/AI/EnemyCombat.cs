@@ -210,7 +210,9 @@ namespace Project.AI
                 pendingInvectorAttack = true;
                 pendingMeleeRecovery = true;
                 attackStartTime = Time.time;
-                windupEndTime = Time.time + chargedHoldSeconds;
+                Project.Combat.DM_CombatCoreProfile holdProfile = Project.Combat.DM_CombatCoreProfile.Live; // 2026-10-12: shared max charged hold
+                float maxHold = holdProfile != null ? holdProfile.chargedMaxHoldSeconds : 1f;
+                windupEndTime = Time.time + (maxHold > 0f ? Mathf.Min(chargedHoldSeconds, maxHold) : chargedHoldSeconds);
                 aiController?.NotifyEngagementAttackBegan();
                 return;
             }

@@ -433,6 +433,12 @@ namespace Project.Combat
             Vector3 entry = DMEnemyHitFx.ResolveEntrySprayDirection(normal, travel, profile.bloodEntryNormalBlend);
             Vector3 spawnPoint = point + normal * 0.015f;
 
+            // KriptoFX volumetric fluid replaces the blood / coolant particle (flesh needs blood allowed; mechs always); sparks stay.
+            bool fleshBlocked = bodyType == DMEnemyBodyType.Humanoid && !allowsBlood;
+            if (!fleshBlocked && DMVolumetricBlood.TrySpawn(profile, bodyType, transform, point, normal, travel)
+                && (response.splatter == DMEnemyHitFxKind.Blood || response.splatter == DMEnemyHitFxKind.Coolant))
+                splatter = null;
+
             if (splatter != null)
             {
                 float splatterScale = scale * Mathf.Max(0.05f, response.splatterScale);
@@ -706,7 +712,10 @@ namespace Project.Combat
             bool bloodCharHot = false,
             DMEnemyBodyType bodyType = DMEnemyBodyType.Humanoid)
         {
-            if (source == null || profile == null || !profile.debugBrightHitMarkEmission)
+            if (source == null || profile == null)
+                return source;
+            bool mechTint = !emissiveOnly && bodyType != DMEnemyBodyType.Humanoid;
+            if (!profile.debugBrightHitMarkEmission && !mechTint)
                 return source;
 
             int key = source.GetEntityId().GetHashCode()
@@ -720,7 +729,10 @@ namespace Project.Combat
                 DebugMaterialCache[key] = inst;
             }
 
-            ApplyDebugEmission(inst, profile, emissiveOnly, bloodCharHot, bodyType);
+            if (profile.debugBrightHitMarkEmission)
+                ApplyDebugEmission(inst, profile, emissiveOnly, bloodCharHot, bodyType);
+            if (mechTint && inst.HasProperty("_BaseColor"))
+                inst.SetColor("_BaseColor", bodyType == DMEnemyBodyType.Robot ? profile.robotMarkTint : profile.androidMarkTint);
             return inst;
         }
 

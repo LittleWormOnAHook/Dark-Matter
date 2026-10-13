@@ -124,7 +124,7 @@ namespace Project.EditorTools
             {
                 int missing = MissingSlots(root, template, out int unplaceable);
                 if (missing > 0)
-                    items.Add(Item("AddSlots", $"Add {missing} weapon slot(s) that the template has (e.g. Blade_Of_Chaos Drawn_/Holstered_)."));
+                    items.Add(new DMSyncItem { Id = "AddSlots", Auto = false, Text = $"{missing} weapon slot(s) the template has are missing (e.g. Blade_Of_Chaos Drawn_/Holstered_): add by hand if wanted (Fix / Fix All never write Drawn_/Holstered_ slots or holder placements on existing prefabs)." });
                 if (unplaceable > 0)
                     items.Add(new DMSyncItem { Id = "SlotsManual", Auto = false, Text = $"{unplaceable} template weapon slot(s) have no matching holder bone on this rig: add by hand." });
             }
@@ -213,7 +213,8 @@ namespace Project.EditorTools
                 if (!isTemplate)
                 {
                     templateContents = PrefabUtility.LoadPrefabContents(TemplatePath);
-                    changes += AddSlots(root, templateContents, log);
+                    // 2026-10-12: never add / place weapon slots on an existing prefab (hand-set); only a NEW character gets template slots.
+                    log.AppendLine("Weapon slots: skipped (existing prefab; slots and placements are hand-set).");
                 }
 
                 var br = root.GetComponent<EnemyInvectorLoadoutBridge>();

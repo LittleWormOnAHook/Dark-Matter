@@ -47,11 +47,19 @@ namespace Project.AI
             float effective = combat != null ? combat.ResolveEffectiveAttackRange(target) : 2f;
             DM_EnemyEngagementProfile p = EngagementProfile;
             // Only the engagement engager closes in before swinging; legacy / non-engagement attackers keep the generic range (they have no close-in step).
-            if (p == null || !p.swingStartUseWeaponReach || combatBridge == null || !engagementActiveThisFrame || engagementState.Role != DMEngagementRole.Engager)
+            // 2026-10-12: swingGateAllAttackers applies the weapon-reach gate to every melee attacker (the Robot swung from 1.44 m with 0.96 m reach as a non-engager).
+            if (p == null || !p.swingStartUseWeaponReach || combatBridge == null)
+                return effective;
+            if (!p.swingGateAllAttackers && (!engagementActiveThisFrame || engagementState.Role != DMEngagementRole.Engager))
                 return effective;
 
             float tip = combatBridge.WeaponTipReach(p);
-            float gate = tip - p.swingStartInnerMargin - Mathf.Max(0f, swingTargetOutSpeed) * p.swingStartLeadSeconds;
+            // Cut depth: approach so the blade passes at least swingCutDepthFraction of the target's body radius inside it.
+            float targetRadius = 0.3f;
+            if (target != null) { CapsuleCollider tc = target.GetComponent<CapsuleCollider>(); if (tc != null) targetRadius = tc.radius; }
+            // 2026-10-12: tip reaches the body surface (d - r) plus cut*r: d = tip + r*(1-cut). Old: tip - max(innerMargin, cut*r) (put the hilt in the body).
+            float inner = Mathf.Clamp01(p.swingCutDepthFraction) * targetRadius;
+            float gate = tip + targetRadius - inner - Mathf.Max(0f, swingTargetOutSpeed) * p.swingStartLeadSeconds;
             float floor = ResolveMinCombatSeparation(target) + 0.15f;
             return Mathf.Min(effective, Mathf.Max(gate, floor));
         }

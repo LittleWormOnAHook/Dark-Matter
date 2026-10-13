@@ -12,6 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b4d1c7a02e5f4a8e9c3d6f1a7b2e8d40, type: 3}
   m_Name: DM_CombatDirectorProfile
   m_EditorClassIdentifier: Assembly-CSharp::Project.AI.DM_CombatDirectorProfile
+  attackMode: 0
+  extraAttackerChance: 0.25
+  extraAttackersMax: 1
+  extraAttackerRollSeconds: 6
   enableCombatDirector: 1
   debugLogSlots: 1
   intensity: 0.5
@@ -24,7 +28,7 @@ MonoBehaviour:
   largeGroupBaseSlots: 3
   largeGroupEnemiesPerExtraSlot: 4
   largeGroupSlotsMax: 5
-  maxSimultaneousAttackers: 1
+  maxSimultaneousAttackers: 3
   slotMinHoldSeconds: 1
   slotHoldMaxSequences: 2
   slotHoldMaxSeconds: 5

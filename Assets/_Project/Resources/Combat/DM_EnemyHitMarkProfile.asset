@@ -14,9 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.DM_EnemyHitMarkProfile
   maxBurnMarksPerEnemy: 5
   regenFadeSeconds: 1.5
+  playerMarkLifetimeSeconds: 10
+  playerMarkFadeSeconds: 1.5
+  playerMarkSizeScale: 0.4
+  playerMarkProjectionDepth: 0.16
   glowCoolSeconds: 2
   glowResidual: 0.15
-  glowSizeScale: 0.7
+  glowSizeScale: 0.3
   emberGlowSeconds: 1.5
   laserAlwaysGlowBurn: 1
   burnSize: {x: 0.1, y: 0.1}
@@ -32,6 +36,12 @@ MonoBehaviour:
   splatterDamageScale: {x: 0.8, y: 1.3}
   splatterFullScaleDamage: 30
   bloodEntryNormalBlend: 0.35
+  goreIntensity: 1
+  heavyHitSplatterMultiplier: 1.35
+  chainHitSplatterBonus: 0.05
+  chainHitSplatterMaxBonus: 0.3
+  coolantScaleMultiplier: 1
+  sparkScaleMultiplier: 1
   exitSprayDamageThreshold: 25
   exitSprayStrength: 0.3
   humanoidResponse:
@@ -65,21 +75,179 @@ MonoBehaviour:
   burnEmberPrefab: {fileID: 8868438038499838756, guid: 42618d34d92bf814c84d9822aa7e41ed, type: 3}
   slashSize: {x: 0.6, y: 0.1}
   slashProjectionDepth: 0.6
-  meleeSlashMarkSizeMultiplier: 3
+  meleeSlashMarkSizeMultiplier: 1.5
+  androidMarkTint: {r: 0.32, g: 0.34, b: 0.32, a: 1}
+  robotMarkTint: {r: 0.34, g: 0.33, b: 0.3, a: 1}
+  useVolumetricBlood: 1
+  fleshVolumetric:
+    any:
+    - {fileID: 3151080748080959035, guid: 09ec677f2a2c350498005606f5b923fc, type: 3}
+    - {fileID: 490285590385808841, guid: 6166b3aad3d4e7b42a03e17477ef0098, type: 3}
+    - {fileID: 5193887549686464762, guid: b35b556b5290ce24b8aee7066a7cab04, type: 3}
+    - {fileID: 7516670908306987106, guid: af8e5d08129b2014daa4e0a092c60563, type: 3}
+    - {fileID: 6821269441950491009, guid: de89add6c9eddb54ea2123b84e8de843, type: 3}
+    - {fileID: 4210296067323972617, guid: 2679e11272beb124a9d6bc6b509eaed9, type: 3}
+    - {fileID: 5331135391598599017, guid: bbdff6c2e5397d34a89e7eb909c5ee42, type: 3}
+    - {fileID: 5036427353665726989, guid: fe608394bb6c6ea43bb82fdb72bbd0e4, type: 3}
+    - {fileID: 1501675817041419901, guid: 3df01622a9fabd94084d77c4e2f0bf7c, type: 3}
+    - {fileID: 77017958424312473, guid: 11f3b8ad007b94c45ac6b45be38dcc20, type: 3}
+    - {fileID: 993970385933502846, guid: d6a3b9a32f6bb7f4588f7ae153683372, type: 3}
+    - {fileID: 9029704431711673066, guid: 221ce3966a24ceb41916e3db7090d8b2, type: 3}
+    - {fileID: 8432463099037699730, guid: 51d982a22bb9a104db9efad9b87fec00, type: 3}
+    - {fileID: 7731546400460362011, guid: 8ddb8b03223745c4aa9fa0756e0dc504, type: 3}
+    - {fileID: 8602140134785688188, guid: 253ff41048e019048a47a0e13ba017fc, type: 3}
+    left:
+    - {fileID: 6396052275115658025, guid: cb7c8a658ad15c34d8425ade86e5f764, type: 3}
+    right:
+    - {fileID: 8648875327532807678, guid: 44600b7bb57f97b4091d1a8ae14d3525, type: 3}
+  androidVolumetric:
+    any:
+    - {fileID: 8216205728514188157, guid: d9a911ec83864a94abaabdebf1160afd, type: 3}
+    - {fileID: 2261425961089883388, guid: 27ede028e9175b14cb5cb7faedce0ce6, type: 3}
+    - {fileID: 5976515546270133286, guid: 1a564246d1b025b4b92db622e9bdd657, type: 3}
+    - {fileID: 4434078022592478954, guid: 01c0300b186057647b7d2ee4bf566133, type: 3}
+    - {fileID: 1472050193378528726, guid: 12f829a4677ebfa4d8fa536dba6d65dd, type: 3}
+    - {fileID: 766574809397265301, guid: df572fb3d5a5638428cb79fdc94baec1, type: 3}
+    - {fileID: 5345773721431396839, guid: 0de36b5dc2604c046b9ce2cda89abaab, type: 3}
+    - {fileID: 6172564688818837130, guid: 93857f10ff27be2418c4b94a1b4bf3d4, type: 3}
+    - {fileID: 3670651262955373587, guid: e40b4a216c7237d478f400910896a9e9, type: 3}
+    - {fileID: 3849591344236965855, guid: e3e21049def299b4ba25fa082e6cc787, type: 3}
+    - {fileID: 6053553088082164522, guid: f11a6dd85bec58c4c949ac81c034e34a, type: 3}
+    - {fileID: 2543060948962038667, guid: a8cfb3049a9ef9d429aecc3fe42441d2, type: 3}
+    - {fileID: 2401196906600296360, guid: 1bfdd49be1eadad45b2cde81e0cc2aa2, type: 3}
+    - {fileID: 7472886811895339284, guid: 5159607b8a542c7499e7b5cdfa1dc951, type: 3}
+    - {fileID: 1482471564398873952, guid: 3e123776cea3a8d41bc83dcbdaed0d69, type: 3}
+    left:
+    - {fileID: 6079680004879782685, guid: e09c956944256224ab876e76a721c2e7, type: 3}
+    right:
+    - {fileID: 7729291797620814770, guid: 4d842cf308550664db8bd44f3ef0782c, type: 3}
+  mechVolumetric:
+    any:
+    - {fileID: 3414119768086340032, guid: ee2dc7e24151aa84c9168e259a38af74, type: 3}
+    - {fileID: 5573653370243193187, guid: b34e5db7a466db64291b65889c3cc38a, type: 3}
+    - {fileID: 1160794633408132758, guid: 88c007377114b9d449d80b7f360b1fab, type: 3}
+    - {fileID: 5063026242573111218, guid: 478370d20488095408f3a008986a35bc, type: 3}
+    - {fileID: 3951210194146739662, guid: 807aff4920eaf0540b15061e85432760, type: 3}
+    - {fileID: 3680003655717162940, guid: 9567edc222d46984b80f8c54fbb995c5, type: 3}
+    - {fileID: 5478163406171632475, guid: 1dff2bdee7297ca41ae791a7634b0664, type: 3}
+    - {fileID: 3703077905439421193, guid: 35e6e3a88aaacb549bc46accc79f8426, type: 3}
+    - {fileID: 7854278203245527255, guid: adc30e99f98e40045a5540e2fc5dd5cd, type: 3}
+    - {fileID: 3646990664482840641, guid: 8b4f1c57ff614894fbd76bb7d5a2ddae, type: 3}
+    - {fileID: 4776919403204208509, guid: 5ffe1efeaddf7934ea3d40e6c31028ba, type: 3}
+    - {fileID: 2083619924137462104, guid: b542c94c9ad0b9441802d3544cdcf747, type: 3}
+    - {fileID: 3985859551217414356, guid: 1de87c55f32e7dc409662cae99c0520b, type: 3}
+    - {fileID: 5674744909894281273, guid: 7003ff47632b1954eb5530268ba58793, type: 3}
+    - {fileID: 2387301935549222058, guid: e8ed2c0c73166514a844549f2ae8eb13, type: 3}
+    left:
+    - {fileID: 6866908786638434279, guid: 432d4a0dd84d8ee4382d0efd2133847c, type: 3}
+    right:
+    - {fileID: 8867213404314574105, guid: bc73362c962a52e489ae2d28d4845785, type: 3}
+  volumetricDecalMode: 0
+  volumetricPlaneLodDistance: 12
+  fleshPlaneDecal:
+    any:
+    - {fileID: 8651402550580543809, guid: f9d1314d664a4134781b78f57e202597, type: 3}
+    - {fileID: 5685143003724588085, guid: 4a3c7260413ba4c4690a073129f06192, type: 3}
+    - {fileID: 363797568217045040, guid: 2053cc3c8d6e6504cb454327ddb0976d, type: 3}
+    - {fileID: 2740008376590542570, guid: 90cbc3043100c7040aaec0b4c422aa0a, type: 3}
+    - {fileID: 8386448070431595707, guid: 8b60f2c82acf62e4c9d2de4e819b4725, type: 3}
+    - {fileID: 8318008531432522473, guid: efe321f1f539d79479c13c9e99d5bb92, type: 3}
+    - {fileID: 5618675027380989284, guid: 709c5ff9b5194c446b3cb873ad0a73f3, type: 3}
+    - {fileID: 5526016203282421485, guid: ddadf5586494d4b4386e7a9dfa5067f9, type: 3}
+    - {fileID: 2002837078770391751, guid: a282744463714cb48a3d85cd6b67e595, type: 3}
+    - {fileID: 1545255847196076781, guid: 46b9e512c505d25488ea54593c76b962, type: 3}
+    - {fileID: 5705393221105122434, guid: a8ba11455dfd2044aa6e12237f896bb7, type: 3}
+    - {fileID: 1788963462639859565, guid: a4d88ead1611e86439e876560ee7ddb6, type: 3}
+    - {fileID: 5072704348436540556, guid: 33490c30bf060944f84d8b7a9f2eaecb, type: 3}
+    - {fileID: 4406813246011093013, guid: b3401544ee823f24aa83f48da80da2ad, type: 3}
+    - {fileID: 3311538054282130729, guid: 9c025593e31aee648a87d832d645d02f, type: 3}
+    left:
+    - {fileID: 494227254582850957, guid: 4bc00d3d43490c84d95d69558fb3cb39, type: 3}
+    right:
+    - {fileID: 7442946353558684905, guid: d5060cebc0303b54f84c9fd175013b21, type: 3}
+  androidPlaneDecal:
+    any:
+    - {fileID: 137802858537249875, guid: d8e5855e210937547aa32c75e77e2b0c, type: 3}
+    - {fileID: 4321881112602561757, guid: 9dbfd2450896e424ea69e2e372e65f01, type: 3}
+    - {fileID: 3217535672640281325, guid: 4ca4a5f155063d241b5e296c956195ea, type: 3}
+    - {fileID: 8619253938022249210, guid: 599ee2780cb540d488e501a616930c71, type: 3}
+    - {fileID: 6655708263809922804, guid: 95c5b585f4fd78f4bb71a63fe35f04f0, type: 3}
+    - {fileID: 8461482341565340436, guid: 40f47de6eee847d4bb3db92c598b578c, type: 3}
+    - {fileID: 5599731025613063223, guid: 293eac913b9a4ea49bee6d957502e92d, type: 3}
+    - {fileID: 5906574017558034065, guid: 2c90aae39f120ba4c880b090694ab37d, type: 3}
+    - {fileID: 4709548323317034751, guid: 52b3d0c92abcb154ab9b7b763251a67d, type: 3}
+    - {fileID: 8672045803361648211, guid: 6072164b1e65ec846977a79a99583fc9, type: 3}
+    - {fileID: 8163871768823715744, guid: 213ae720fbde5b842bab877fa35b0a46, type: 3}
+    - {fileID: 3540641772218659460, guid: 7fb88da302475e04390ded256ee97a7d, type: 3}
+    - {fileID: 5686896941267013064, guid: 64aa70c68e7510b4ebe33a5551ca3635, type: 3}
+    - {fileID: 2417671151230006048, guid: 9065b96a6bc0b8340b35bcd8f5554729, type: 3}
+    - {fileID: 3599895708167913553, guid: 5cdb1f2cc6651ae43a3bd6f1909ae9be, type: 3}
+    left:
+    - {fileID: 1527244875189664071, guid: 4726b0a5d8df6554594a8f9c0329192a, type: 3}
+    right:
+    - {fileID: 729086215560878628, guid: c35308cbaac9a5144a9f1ec8407c1317, type: 3}
+  mechPlaneDecal:
+    any:
+    - {fileID: 3968773752928208435, guid: 4a5c5a7dbe5c7a74c8608ed6c1247123, type: 3}
+    - {fileID: 6645877261252244265, guid: d135b6a618809c84781cc21e9bf2ff36, type: 3}
+    - {fileID: 7975561160488727124, guid: a17b6c135bb1ec24f94b0d10801aef87, type: 3}
+    - {fileID: 2151946684992766251, guid: 72fc22e679f2cc64c9140222b4eaf83f, type: 3}
+    - {fileID: 719244436311962686, guid: bf43e2613e814f74ba8d8c86d0097fc8, type: 3}
+    - {fileID: 7195098819444610641, guid: 6be24dd560e035d41a584837e9e75c7f, type: 3}
+    - {fileID: 7176446915120203006, guid: d6b8de91b4d32014698a3d54337adf6f, type: 3}
+    - {fileID: 1011642135670607053, guid: 00e28d376d0168b4598c4a2a61bc1b8d, type: 3}
+    - {fileID: 8806948040425227563, guid: c1c8a545cd0965c4c961b9deff7ad616, type: 3}
+    - {fileID: 806835527935528778, guid: 95df90748d3d28d42b94adab6c0db1ae, type: 3}
+    - {fileID: 1308088165100539208, guid: 3c35ddaceaf817a40bccc3930bd9d4c6, type: 3}
+    - {fileID: 7667223170813626872, guid: e5d9f716c005e9b448a8417a19dd6640, type: 3}
+    - {fileID: 5254076717671772478, guid: fd99744b3c6aed34d9f37d42494fe8c3, type: 3}
+    - {fileID: 8279260387434057846, guid: f0f8f484ec593ef46b6ef6e6bfbf41a4, type: 3}
+    - {fileID: 7235539812372339292, guid: 2005905a830c32b499bff04f19c500f4, type: 3}
+    left:
+    - {fileID: 234289048964699128, guid: 6623c5725784bd84d97f3e8368deb0f0, type: 3}
+    right:
+    - {fileID: 6906153036507293747, guid: 891923e73ac3e1949a5fcdf7b22250da, type: 3}
+  androidFluidColor: {r: 0.35, g: 2.4, b: 0.5, a: 1}
+  androidDecalTint: {r: 0.1, g: 1.4, b: 0.2, a: 1}
+  mechFluidColor: {r: 2.4, g: 2.1, b: 0.2, a: 1}
+  mechDecalTint: {r: 1.4, g: 1.2, b: 0.08, a: 1}
+  volumetricSideThreshold: 0.2
+  volumetricSwapSides: 0
+  volumetricBudget: 6
+  volumetricMaxDistance: 20
+  volumetricLifetime: 8
+  volumetricLightIntensity: 1
+  volumetricFollowSwing: 1
+  volumetricYawOffset: 90
+  volumetricOnPlayer: 1
+  volumetricGroundSnap: 1
+  volumetricGroundMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  volumetricGroundRayDistance: 6
+  volumetricDecalRandomRotation: 1
+  volumetricDecalScaleMin: 0.85
+  volumetricDecalScaleMax: 1.15
+  volumetricFluidExposureComp: 1
+  volumetricFluidBrightness: 0.1
+  fluidMaxChannel: 0.212
+  fluidGlowFlesh: 0.3
+  fluidGlowAndroid: 0.3
+  fluidGlowMech: 0.3
   bulletBurnMaterial: {fileID: 2100000, guid: 87aa0e93593d2d3449a6161e96211efb, type: 2}
   glowBurnMaterial: {fileID: 2100000, guid: 9231581d189384549bc858a7e2c490a1, type: 2}
   glowBurnHotMaterial: {fileID: 2100000, guid: 625b0d19717ac9146980562c874f73e0, type: 2}
   bulletBurnHotMaterial: {fileID: 2100000, guid: a7c3e9f1b2d4485091e6f7a8b4c2d901, type: 2}
-  hitboxInflate: 1.05
   hitboxTemplateScale: 1
+  hitboxInflate: 1.05
   hitboxSweepRadius: 0.02
   addFillerHitboxes: 1
-  debugBrightHitMarkEmission: 1
+  debugBrightHitMarkEmission: 0
   debugHitMarkEmissionIntensity: 10
-  debugMeleeSlashEmissiveGlow: 1
-  debugBrightRangedMarks: 1
+  debugMeleeSlashEmissiveGlow: 0
+  debugBrightRangedMarks: 0
   debugHotGlowSizeScale: 1.25
-  debugRangedImpactSpark: 1
+  debugRangedImpactSpark: 0
   headMultiplier: 1.75
   torsoMultiplier: 1.25
   armMultiplier: 1

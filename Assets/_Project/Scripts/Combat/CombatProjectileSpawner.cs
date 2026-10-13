@@ -38,6 +38,7 @@ namespace Project.Combat
                 CombatHitResolver.SpawnMuzzleFlash(ammoItem, weapon, muzzle);
 
             CombatHitResolver.PlayFireSound(ammoItem, weapon, muzzle);
+            DMCombatCameraShake.TryPlayAmmoFire(owner, ammoItem, weapon);
 
             float damage = ResolveShotDamage(weapon, ammoItem, damageOverride);
 
@@ -113,7 +114,9 @@ namespace Project.Combat
                     range,
                     owner,
                     out RaycastHit hit,
-                    RangedFireSolver.MuzzleRayStartSkin))
+                    RangedFireSolver.MuzzleRayStartSkin,
+                    minHitDistance: 0f,
+                    ammoItem: ammoItem))
             {
                 endPoint = hit.point;
                 DMCombatRangedResolver.ApplyHitOutcome(

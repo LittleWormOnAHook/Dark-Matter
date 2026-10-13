@@ -53,6 +53,15 @@ MonoBehaviour:
   dodgeBackBlendIn: 0.08
   dodgeBackBlendOut: 0.15
   dodgeRollSnapFacing: 1
+  allowForwardRollFallback: 0
+  dodgeTurnDegPerSec: 720
+  dodgeSideUseClip: 1
+  dodgeSideSeconds: 0.95
+  dodgeSideDistance: 2.6
+  dodgeSideMoveEndNormalized: 0.85
+  dodgeSideBlendIn: 0.08
+  dodgeSideBlendOut: 0.15
+  dodgeRollBlocksHitReactions: 1
   retreatSeconds: 5
   retreatCooldown: 10
   injuredBelow: 0.75
@@ -216,3 +225,15 @@ MonoBehaviour:
     holderSidestepMul: 1.2
     holderTauntMul: 0.8
     holderFeintMul: 1.2
+  enableDodgeStrike: 1
+  dodgeStrikeChance: 0.15
+  dodgeStrikeRollInterval: 1.5
+  dodgeStrikeCooldown: 6
+  dodgeStrikeMaxRangeFactor: 1.1
+  dodgeStrikeSideDistance: {x: 0.6, y: 1}
+  dodgeStrikeSeconds: 0.8
+  dodgeStrikeAttackAtNormalized: 0.6
+  dodgeStrikeMoveEndNormalized: 0.5
+  dodgeStrikeBlendIn: 0.08
+  dodgeStrikeBlendOut: 0.12
+  dodgeStrikeTurnRate: 540

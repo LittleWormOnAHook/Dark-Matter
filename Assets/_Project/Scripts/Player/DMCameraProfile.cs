@@ -67,6 +67,16 @@ namespace Project.Player
         [Tooltip("Horizontal ray length used to detect enclosed spaces around the pivot.")]
         public float interiorEnclosureProbeDistance = 2.75f;
 
+        [Header("Characters in the camera path (2026-10-12)")]
+        [Tooltip("Hard floor for the lens distance (m) outside interiors; interior first-person keeps interiorFirstPersonDistance.")]
+        [Range(0.2f, 1.5f)] public float absoluteMinDistance = 0.4f;
+        [Tooltip("Enemies / companions / animals between the player and the lens (or around the lens) are hidden, shadows kept, instead of the lens clipping into them. Characters never pull the camera in.")]
+        public bool fadeBlockingCharacters = true;
+        [Tooltip("Sphere radius of the player->lens character probe (m).")]
+        [Range(0.05f, 0.6f)] public float characterBlockRadius = 0.2f;
+        [Tooltip("Characters within this distance of the lens are hidden too (lens inside an enemy).")]
+        [Range(0f, 1f)] public float characterLensHideDistance = 0.35f;
+
         [Header("Lens")]
         [Tooltip("Gameplay camera near clip plane. Too small + max zoom-in can make world UI swim.")]
         public float nearClipPlane = 0.05f;

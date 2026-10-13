@@ -287,11 +287,27 @@ namespace Project.AI
             // The backward dodge clip faces the threat while the body moves away; rolls face the roll direction.
             Vector3 flatToTarget = dodgeRollToTarget.sqrMagnitude > 0.0001f ? dodgeRollToTarget.normalized : -dodgeRollDir;
             dodgeRollFace = dodgeRollClipId == 1 ? -dodgeRollDir : dodgeRollClipId >= 2 ? flatToTarget : dodgeRollDir;
-            transform.rotation = Quaternion.LookRotation(dodgeRollFace, Vector3.up);
+            if (DM_EnemyBrainProfile.Live == null || DM_EnemyBrainProfile.Live.dodgeTurnDegPerSec <= 0f)
+                transform.rotation = Quaternion.LookRotation(dodgeRollFace, Vector3.up); // 2026-10-12: else turned smoothly in TickDodgeRoll
             NoteQuickStep(dodgeRollTimerSeconds);
             Project.Combat.DM_CombatCoreProfile core = Project.Combat.DM_CombatCoreProfile.Live;
             if (core != null && core.logInterruptsInPlay)
                 Debug.Log($"[DodgeRollStart] {name} clip={Project.AI.Invector.EnemyInvectorCombatBridge.RollClipName(dodgeRollClipId)} planned={dodgeRollPlanned:0.00}", this);
+        }
+
+        /// <summary>2026-10-12: dodge turn step (deg this frame) from DM_EnemyBrainProfile.dodgeTurnDegPerSec; fallback when it is 0.</summary>
+        private float DodgeTurnStep(float fallbackDegPerSec)
+        {
+            DM_EnemyBrainProfile b = DM_EnemyBrainProfile.Live;
+            float r = b != null ? b.dodgeTurnDegPerSec : 0f;
+            return (r > 0f ? r : fallbackDegPerSec) * Time.deltaTime;
+        }
+
+        private Quaternion DodgeTurn(Vector3 face)
+        {
+            Quaternion want = Quaternion.LookRotation(face, Vector3.up);
+            DM_EnemyBrainProfile b = DM_EnemyBrainProfile.Live;
+            return b == null || b.dodgeTurnDegPerSec <= 0f ? want : Quaternion.RotateTowards(transform.rotation, want, b.dodgeTurnDegPerSec * Time.deltaTime);
         }
 
         /// <summary>Runs while a dodge roll is active (called first in Update). Returns true while it owns the enemy.</summary>
@@ -370,7 +386,7 @@ namespace Project.AI
                         dodgeRollFace = faceNow.normalized;
                 }
 
-                transform.rotation = Quaternion.LookRotation(dodgeRollFace, Vector3.up);
+                transform.rotation = DodgeTurn(dodgeRollFace);
                 float blendOutSeconds = dodgeRollClipId >= 2 ? DM_EnemyBrainProfile.Live.dodgeSideBlendOut : DM_EnemyBrainProfile.Live.dodgeBackBlendOut;
                 if (progress > 0.001f && dodgeRollFadeAt == float.MaxValue && elapsed >= dodgeRollTimerSeconds - Mathf.Max(0.01f, blendOutSeconds))
                 {
@@ -386,11 +402,11 @@ namespace Project.AI
                     Vector3 face = dodgeRollTarget.position - transform.position;
                     face.y = 0f;
                     if (face.sqrMagnitude > 0.01f)
-                        transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(face.normalized, Vector3.up), 540f * Time.deltaTime);
+                        transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(face.normalized, Vector3.up), DodgeTurnStep(540f));
                 }
                 else
                 {
-                    transform.rotation = Quaternion.LookRotation(dodgeRollDir, Vector3.up);
+                    transform.rotation = DodgeTurn(dodgeRollDir);
                 }
             }
 

@@ -166,6 +166,7 @@ namespace Project.EditorTools.GenesisStudio
                 while (iterator.NextVisible(enterChildren))
                 {
                     enterChildren = false;
+                    if (!DMStudioSearch.MatchesProperty(iterator)) continue; // 2026-10-12 Studio search
                     if (!DMStudioProfileSections.IncludesField(iterator.propertyPath, section))
                         continue;
 
@@ -241,8 +242,14 @@ namespace Project.EditorTools.GenesisStudio
                 return;
 
             inspectorScroll = EditorGUILayout.BeginScrollView(inspectorScroll);
+            UnityEditor.Editor ed = GetOrCreateEditor(target);
             using (DMStudioStyles.BeginProfileInspector(280f))
-                GetOrCreateEditor(target)?.OnInspectorGUI();
+            {
+                if (DMStudioSearch.Active && ed != null && !DMStudioSearch.HandlesSearch(ed))
+                    DMStudioSearch.DrawFilteredDefault(ed.serializedObject); // 2026-10-12 Studio search
+                else
+                    ed?.OnInspectorGUI();
+            }
             EditorGUILayout.EndScrollView();
 
             if (GUI.changed && target != null)

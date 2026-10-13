@@ -260,5 +260,11 @@ MonoBehaviour:
       radius: 0.12
       depth: 0.45
       roughness: 1
-      debrisCount: 1
-      debrisScale: 0.35
+      debrisCount: 3
+      debrisScale: 0.054
+  fireTrauma: 0.2
+  fireTraumaDurationSeconds: 0.0146
+  impactTrauma: 0.057
+  impactTraumaDurationSeconds: 0.0225
+  impactTraumaRadius: 1.7
+  impactTraumaMinDistance: 0.27

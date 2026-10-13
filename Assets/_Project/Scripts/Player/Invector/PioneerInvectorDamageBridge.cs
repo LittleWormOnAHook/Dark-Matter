@@ -122,7 +122,7 @@ namespace Project.Player.Invector
                     ResolveEquippedWeapon(source),
                     source);
             }
-            else
+            else if (!CombatHitVfx.IsNonFleshEnemy(hitCollider))
             {
                 CombatHitVfx.SpawnBloodSplatter(hitPoint, direction, -direction, damage);
             }

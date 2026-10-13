@@ -262,3 +262,9 @@ MonoBehaviour:
       roughness: 1
       debrisCount: 1
       debrisScale: 0.35
+  fireTrauma: 0.06
+  fireTraumaDurationSeconds: 0
+  impactTrauma: 0
+  impactTraumaDurationSeconds: 0
+  impactTraumaRadius: 0
+  impactTraumaMinDistance: 0

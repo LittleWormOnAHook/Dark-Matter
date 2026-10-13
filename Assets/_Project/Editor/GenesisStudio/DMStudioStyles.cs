@@ -389,25 +389,44 @@ namespace Project.EditorTools.GenesisStudio
             return new HorizontalContentGutterScope(leftPad, rightPad);
         }
 
-        public readonly struct HorizontalContentGutterScope : System.IDisposable
+        public sealed class HorizontalContentGutterScope : System.IDisposable
         {
             readonly float _rightPad;
+            bool _disposed;
+            bool _verticalOpen;
+            bool _horizontalOpen;
 
             public HorizontalContentGutterScope(float leftPad, float rightPad)
             {
                 _rightPad = rightPad;
                 EditorGUILayout.BeginHorizontal();
+                _horizontalOpen = true;
                 if (leftPad > 0f)
                     GUILayout.Space(leftPad);
                 EditorGUILayout.BeginVertical(GUILayout.ExpandWidth(true));
+                _verticalOpen = true;
             }
 
             public void Dispose()
             {
-                EditorGUILayout.EndVertical();
-                if (_rightPad > 0f)
+                if (_disposed)
+                    return;
+                _disposed = true;
+
+                if (_verticalOpen)
+                {
+                    EditorGUILayout.EndVertical();
+                    _verticalOpen = false;
+                }
+
+                if (_horizontalOpen && _rightPad > 0f)
                     GUILayout.Space(_rightPad);
-                EditorGUILayout.EndHorizontal();
+
+                if (_horizontalOpen)
+                {
+                    EditorGUILayout.EndHorizontal();
+                    _horizontalOpen = false;
+                }
             }
         }
 
@@ -614,7 +633,7 @@ namespace Project.EditorTools.GenesisStudio
             for (int i = 0; i < propertyPaths.Length; i++)
             {
                 SerializedProperty property = serialized.FindProperty(propertyPaths[i]);
-                if (property != null)
+                if (property != null && DMStudioSearch.MatchesProperty(property)) // 2026-10-12 Studio search
                     EditorGUILayout.PropertyField(property, includeChildren: true);
             }
         }

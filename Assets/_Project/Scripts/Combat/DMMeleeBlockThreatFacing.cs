@@ -15,6 +15,7 @@ namespace Project.Combat
         private static Transform _cachedNearestThreat;
         private static int _cachedPlayerId;
         private static float _nearestThreatExpiresUnscaled;
+        private static float _threatLockUntilUnscaled;
 
         public static bool TryGetNearestThreat(Transform player, float maxDistance, out Transform threat)
         {
@@ -25,10 +26,35 @@ namespace Project.Combat
             int playerId = player.gameObject.GetEntityId().GetHashCode();
             float now = Time.unscaledTime;
 
-            if (_cachedPlayerId == playerId
-                && now < _nearestThreatExpiresUnscaled
-                && IsLivingThreatInRange(_cachedNearestThreat, player, maxDistance))
+            bool cachedValid = _cachedPlayerId == playerId && IsLivingThreatInRange(_cachedNearestThreat, player, maxDistance);
+            if (cachedValid && (now < _nearestThreatExpiresUnscaled || now < _threatLockUntilUnscaled))
             {
+                threat = _cachedNearestThreat;
+                return true;
+            }
+
+            DM_CombatCoreProfile prof = DM_CombatCoreProfile.Live;
+            if (cachedValid && TryFindNearestThreat(player, maxDistance, out Transform candidate) && candidate != _cachedNearestThreat)
+            {
+                // 2026-10-13 hysteresis: keep the current target unless the new one is clearly closer.
+                float frac = prof != null ? prof.meleeFacingSwitchCloserFraction : 0.7f;
+                float cur = (_cachedNearestThreat.position - player.position).sqrMagnitude;
+                float nw = (candidate.position - player.position).sqrMagnitude;
+                if (nw >= cur * frac * frac)
+                {
+                    _nearestThreatExpiresUnscaled = now + NearestThreatRescanSeconds;
+                    threat = _cachedNearestThreat;
+                    return true;
+                }
+                _threatLockUntilUnscaled = now + (prof != null ? prof.meleeFacingTargetLockSeconds : 1.5f);
+                _cachedNearestThreat = candidate;
+                _nearestThreatExpiresUnscaled = now + NearestThreatRescanSeconds;
+                threat = candidate;
+                return true;
+            }
+            if (cachedValid)
+            {
+                _nearestThreatExpiresUnscaled = now + NearestThreatRescanSeconds;
                 threat = _cachedNearestThreat;
                 return true;
             }
@@ -44,6 +70,7 @@ namespace Project.Combat
             _cachedNearestThreat = threat;
             _cachedPlayerId = playerId;
             _nearestThreatExpiresUnscaled = now + NearestThreatRescanSeconds;
+            _threatLockUntilUnscaled = now + (prof != null ? prof.meleeFacingTargetLockSeconds : 1.5f);
             return true;
         }
 

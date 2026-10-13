@@ -84,6 +84,9 @@ namespace Project.Player.Invector
         private bool _strafeForBackwardLocomotion;
         private float _lastBlockPressTime = float.NegativeInfinity;
         private Coroutine _guardImpactRoutine;
+        private float _lastGuardImpactTime = -99f;
+        private float _lastBlockShakeTime = -99f;
+        public bool IsChargeHoldActive => _strongChargePoseActive;
         private const float BlockGuardPoseSeconds = 0.12f;
         private const float StrongAttackBlockSuppressSeconds = 0.2f;
         private const float StrongDamageWindowSeconds = 4.0f; // Strong B runs ~3.7 s at 1.25x; disarms early when the swing ends.
@@ -140,6 +143,7 @@ namespace Project.Player.Invector
         private bool _strongChargeArmed;
         private bool _strongChargePoseActive;
         private float _chargeArmedTime;
+        private bool _chargeAutoReleased; // 2026-10-12: max charged hold reached, waiting for the button to come up
         private float _suppressBlockUntil;
         private bool _strongDamageArmed;
         private bool _strongDamageSawSwing;
@@ -1024,6 +1028,7 @@ namespace Project.Player.Invector
                     CancelChargePose();
                 _strongChargeArmed = false;
                 _strongChargePoseActive = false;
+                _chargeAutoReleased = false;
                 return;
             }
 
@@ -1048,6 +1053,14 @@ namespace Project.Player.Invector
                 ResetDrawnMeleeAttackTriggers();
             }
 
+            // 2026-10-12: after an auto-release the held button does nothing until it is released (no re-charge, no extra light attack).
+            if (_chargeAutoReleased)
+            {
+                if (!held) _chargeAutoReleased = false;
+                _lightAttackHeldLast = held;
+                return;
+            }
+
             if (held && !released)
                 ResetDrawnMeleeAttackTriggers();
 
@@ -1056,6 +1069,21 @@ namespace Project.Player.Invector
                 if (!_strongChargeArmed)
                     _chargeArmedTime = Time.time;
                 _strongChargeArmed = true;
+            }
+
+            // 2026-10-12: max charged hold (DM_CombatCoreProfile.chargedMaxHoldSeconds, from the press): auto-release into the strong attack.
+            if (held && _strongChargeArmed)
+            {
+                DM_CombatCoreProfile holdProfile = DM_CombatCoreProfile.Live;
+                float maxHold = holdProfile != null ? holdProfile.chargedMaxHoldSeconds : 1f;
+                if (maxHold > 0f && Time.time - _lightAttackHoldStart >= maxHold)
+                {
+                    TryReleaseStrongMelee();
+                    _strongChargeArmed = false;
+                    _chargeAutoReleased = true;
+                    _lightAttackHeldLast = held;
+                    return;
+                }
             }
 
             if (released)
@@ -1988,8 +2016,11 @@ namespace Project.Player.Invector
                 float cycle = current.normalizedTime;
                 if (cycle >= 1f)
                     cycle -= Mathf.Floor(cycle);
-                if (cycle >= ChargeHoldNormalizedTime || current.normalizedTime >= ChargeHoldNormalizedTime)
-                    animator.Play(standingChargeHash, layer, ChargeHoldNormalizedTime);
+                DM_CombatCoreProfile feelP = DM_CombatCoreProfile.Live;
+                float pinTol = feelP != null ? Mathf.Max(0f, feelP.chargeHoldPinTolerance) : 0f;
+                // Re-pinning every frame re-entered the state each frame (state behaviours + pose snap = jitter).
+                if (cycle >= ChargeHoldNormalizedTime + pinTol || current.normalizedTime >= 1f)
+                    animator.Play(standingChargeHash, layer, Mathf.Max(0f, ChargeHoldNormalizedTime - pinTol));
                 _strongChargePoseActive = true;
                 _meleeOverlayProtectUntil = Time.time + MeleeOverlayProtectSeconds;
                 return;
@@ -2228,6 +2259,7 @@ namespace Project.Player.Invector
         public override void OnReceiveAttack(vDamage damage, vIMeleeFighter attacker)
         {
             bool successfulBlock = IsSuccessfulMeleeBlock(damage);
+            DMHitchMonitor.Mark(successfulBlock ? "player blocked hit" : "player hit received");
             bool isParry = successfulBlock && IsParryWindowOpen();
             Transform damageSender = damage != null ? damage.sender : null;
             if (successfulBlock)
@@ -2266,8 +2298,19 @@ namespace Project.Player.Invector
             }
             else
             {
-                PlayGuardImpactReaction();
-                DMCombatCameraShake.PlayBlock();
+                DM_CombatCoreProfile feel = DM_CombatCoreProfile.Live;
+                float impactGap = feel != null ? feel.guardImpactMinIntervalSeconds : 0f;
+                float shakeGap = feel != null ? feel.blockShakeMinIntervalSeconds : 0f;
+                if (Time.time - _lastGuardImpactTime >= impactGap)
+                {
+                    _lastGuardImpactTime = Time.time;
+                    PlayGuardImpactReaction();
+                }
+                if (Time.time - _lastBlockShakeTime >= shakeGap)
+                {
+                    _lastBlockShakeTime = Time.time;
+                    DMCombatCameraShake.PlayBlock();
+                }
             }
 
             DMEnemyGuardBreakStagger.TryApplyFromBlock(attacker, transform, isParry, damageSender);

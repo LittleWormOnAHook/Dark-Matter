@@ -38,6 +38,8 @@ namespace Project.Player.Invector
             _melee = GetComponent<MeleeCombatController>();
             _ranged = GetComponent<RangedCombatController>();
             _invectorInput = GetComponent<PioneerInvectorInputBridge>();
+            if (GetComponent<DMPlayerQuickStep>() == null)
+                gameObject.AddComponent<DMPlayerQuickStep>(); // runtime only, no prefab edit
 
             if (_playerInput != null && _playerInput.notificationBehavior != PlayerNotifications.InvokeCSharpEvents)
                 _playerInput.notificationBehavior = PlayerNotifications.InvokeCSharpEvents;
@@ -264,7 +266,7 @@ namespace Project.Player.Invector
                 return;
 
             // Mirror Invector RollConditions without GenericInput (pad uses Input System, not rollInput).
-            if (cc.isRolling && !cc.canRollAgain)
+            if (cc.isRolling && (!cc.canRollAgain || RollBeforeMin(cc)))
                 return;
             if (!cc.isGrounded || cc.customAction)
                 return;
@@ -286,6 +288,55 @@ namespace Project.Player.Invector
 
             cc.Roll();
             GrantDodgeIFrames();
+        }
+
+        // 2026-10-12 roll guard (Anthony approved): the Roll clip may not be cut (snap back to standing) before playerRollMinNormalized; if it is, re-enter it at the same time. Profile: DM_CombatCoreProfile.
+        private static readonly int RollStateHash = Animator.StringToHash("Roll");
+        private vThirdPersonController _rollCc;
+        private float _rollLastNt = -1f;
+        private int _rollReentries;
+
+        private static bool RollBeforeMin(vThirdPersonController cc)
+        {
+            DM_CombatCoreProfile prof = DM_CombatCoreProfile.Live;
+            if (prof == null || !prof.playerRollGuard || cc.animator == null) return false;
+            AnimatorStateInfo st = cc.animator.GetCurrentAnimatorStateInfo(0);
+            return st.shortNameHash == RollStateHash && st.normalizedTime < prof.playerRollMinNormalized;
+        }
+
+        private void LateUpdate()
+        {
+            DM_CombatCoreProfile prof = DM_CombatCoreProfile.Live;
+            if (prof == null || !prof.playerRollGuard) { _rollLastNt = -1f; return; }
+            if (_rollCc == null)
+            {
+                _rollCc = GetComponent<vThirdPersonController>();
+                if (_rollCc == null) _rollCc = GetComponentInChildren<vThirdPersonController>();
+                if (_rollCc == null) return;
+            }
+
+            Animator an = _rollCc.animator;
+            if (an == null || !an.isActiveAndEnabled || _rollCc.isDead) { _rollLastNt = -1f; return; }
+            AnimatorStateInfo cur = an.GetCurrentAnimatorStateInfo(0);
+            bool next = an.IsInTransition(0) && an.GetNextAnimatorStateInfo(0).shortNameHash == RollStateHash;
+            if (cur.shortNameHash == RollStateHash || next)
+            {
+                if (cur.shortNameHash == RollStateHash) _rollLastNt = cur.normalizedTime;
+                else if (_rollLastNt < 0f) { _rollLastNt = 0f; _rollReentries = 0; }
+                return;
+            }
+
+            if (_rollLastNt >= 0f && _rollLastNt < prof.playerRollMinNormalized && _rollReentries < 2 && _rollCc.isGrounded && !_rollCc.customAction)
+            {
+                _rollReentries++;
+                if (prof.logInterruptsInPlay)
+                    Debug.Log($"[PlayerRollGuard] roll cut at {_rollLastNt:0.00} -> re-entered (now {(an.GetCurrentAnimatorClipInfo(0).Length > 0 ? an.GetCurrentAnimatorClipInfo(0)[0].clip.name : "none")})", this);
+                an.CrossFade(RollStateHash, 0.05f, 0, _rollLastNt);
+                return;
+            }
+
+            _rollLastNt = -1f;
+            _rollReentries = 0;
         }
 
         private void GrantDodgeIFrames()

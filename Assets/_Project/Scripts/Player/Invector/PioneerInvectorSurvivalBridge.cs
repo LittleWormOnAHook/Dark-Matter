@@ -223,6 +223,7 @@ namespace Project.Player.Invector
         /// </summary>
         private void TryApplyHitReactionChance(vDamage damage)
         {
+            DMHitchMonitor.Mark("enemy hit -> player");
             PioneerAnimationPlanSettings settings = PioneerAnimationPlanSettings.Resolve(gameObject);
             if (settings == null || !settings.enableHitReactionChance)
                 return;
@@ -233,16 +234,52 @@ namespace Project.Player.Invector
             if (_survivalStats != null && _survivalStats.IsDead)
                 return;
 
-            if (TryRollHitReaction(settings, damage, out int reactionId))
+            DM_CombatCoreProfile core = DM_CombatCoreProfile.Live;
+            bool immune = core != null && core.playerStaggerUseProfile && Time.time < _staggerImmuneUntil;
+            if (!immune && TryRollHitReaction(settings, damage, out int reactionId))
             {
                 damage.hitReaction = true;
                 damage.reaction_id = reactionId;
                 ApplyHitDirection(damage);
-                TryShakeOnReaction(reactionId);
-                return;
+                if (TriggerReactionDirect(damage, core))
+                {
+                    if (core != null)
+                        _staggerImmuneUntil = Time.time + core.playerStaggerImmunitySeconds;
+                    TryShakeOnReaction(reactionId);
+                    return;
+                }
             }
 
             SuppressStockDamageReaction();
+        }
+
+        private float _staggerImmuneUntil;
+
+        /// <summary>The player controller is isImmortal, so Invector TakeDamage never reaches TriggerDamageReaction: fire it here.</summary>
+        private bool TriggerReactionDirect(vDamage damage, DM_CombatCoreProfile core)
+        {
+            if (_controller == null || !_controller.isImmortal)
+                return true; // stock Invector path plays it
+            Animator animator = _controller.animator != null ? _controller.animator : GetComponent<Animator>();
+            bool realCustomAction = _holdingCustomAction ? _savedCustomAction : _controller.customAction;
+            if (animator == null || !animator.enabled || realCustomAction || _controller.isRolling)
+                return false;
+            var melee = GetComponent<PioneerShooterMeleeInput>();
+            if (melee != null && melee.isBlocking)
+                return false;
+            if (melee != null && core != null && !core.playerStaggerInterruptsCharge && melee.IsChargeHoldActive)
+                return false;
+            if (HasAnimatorParam(animator, "ReactionID"))
+                animator.SetInteger("ReactionID", damage.reaction_id);
+            if (_holdingCustomAction)
+                RestoreCustomActionNow();
+            if (HasAnimatorParam(animator, "TriggerReaction"))
+                animator.SetTrigger("TriggerReaction");
+            else
+                return false;
+            if (HasAnimatorParam(animator, "ResetState"))
+                animator.SetTrigger("ResetState");
+            return true;
         }
 
         private bool TryRollHitReaction(PioneerAnimationPlanSettings settings, vDamage damage, out int reactionId)
@@ -250,6 +287,12 @@ namespace Project.Player.Invector
             reactionId = 0;
             float min = settings.smallHitChanceMin;
             float max = settings.smallHitChanceMax;
+            DM_CombatCoreProfile coreP = DM_CombatCoreProfile.Live;
+            if (coreP != null && coreP.playerStaggerUseProfile)
+            {
+                min = coreP.playerStaggerChanceMin;
+                max = coreP.playerStaggerChanceMax;
+            }
             if (min > max)
             {
                 float swap = min;

@@ -266,6 +266,7 @@ namespace Project.EditorTools.Audit
                 return;
             }
 
+            if (_bypassDone && _player != null) GuardFloor();
             double now = EditorApplication.timeSinceStartup;
             if (!_bypassDone) _lastProgressReal = now; // watchdog only after the menu bypass succeeded
             if (Time.time > _lastGameTime + 0.001f) { _lastGameTime = Time.time; _lastProgressReal = now; }

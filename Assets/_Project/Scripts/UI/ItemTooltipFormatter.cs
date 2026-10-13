@@ -48,7 +48,7 @@ namespace Project.UI
             return SanitizeForTmp(text.ToString().TrimEnd());
         }
 
-        /// <summary>Short vendor buy/sell card: name lives in the title; body is ID, stack, and AC only.</summary>
+        /// <summary>Short vendor buy/sell card: name lives in the title; body is ID, stack, and UEA price only.</summary>
         public static string BuildTradeBody(ItemData item, int amount)
         {
             if (item == null)

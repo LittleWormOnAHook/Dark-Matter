@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &2665435755844039760
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1640539744, guid: 70ead61ff20b23b4e97b90d8e8997ecd, type: 3}
+      propertyPath: m_Version
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1640539744, guid: 70ead61ff20b23b4e97b90d8e8997ecd, type: 3}
+      propertyPath: m_Material
+      value: 
+      objectReference: {fileID: 2100000, guid: 86072265756fc6742916003c190e8118, type: 2}
+    - target: {fileID: 6113261778007742878, guid: 70ead61ff20b23b4e97b90d8e8997ecd, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: b5b17aaad728e504e89f37a78a40b0bf, type: 2}
+    - target: {fileID: 6122868367958573710, guid: 70ead61ff20b23b4e97b90d8e8997ecd, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6122868367958573710, guid: 70ead61ff20b23b4e97b90d8e8997ecd, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6122868367958573710, guid: 70ead61ff20b23b4e97b90d8e8997ecd, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6122868367958573710, guid: 70ead61ff20b23b4e97b90d8e8997ecd, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6122868367958573710, guid: 70ead61ff20b23b4e97b90d8e8997ecd, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6122868367958573710, guid: 70ead61ff20b23b4e97b90d8e8997ecd, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6122868367958573710, guid: 70ead61ff20b23b4e97b90d8e8997ecd, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6122868367958573710, guid: 70ead61ff20b23b4e97b90d8e8997ecd, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6122868367958573710, guid: 70ead61ff20b23b4e97b90d8e8997ecd, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6122868367958573710, guid: 70ead61ff20b23b4e97b90d8e8997ecd, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6463355840203370170, guid: 70ead61ff20b23b4e97b90d8e8997ecd, type: 3}
+      propertyPath: m_Name
+      value: Blood6_Flesh
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 70ead61ff20b23b4e97b90d8e8997ecd, type: 3}

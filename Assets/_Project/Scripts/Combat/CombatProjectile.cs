@@ -1,3 +1,4 @@
+using Project.Combat.Experiment.Carve;
 using Project.Core;
 using Project.Data;
 using UnityEngine;
@@ -73,6 +74,9 @@ namespace Project.Combat
             hasHit = false;
             launched = true;
             deferMotionOneFrame = true;
+
+            if (DMCarveExperimentCombatUtility.UsesAllPhysicsLayers(ammoItem))
+                hitLayers = DMCarveExperimentCombatUtility.AllLayersExceptPlayer;
 
             SpawnTracer();
             SpawnTravelAudio();

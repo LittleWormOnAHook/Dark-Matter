@@ -76,7 +76,69 @@ namespace Project.Combat
 
         [Header("I-Frames")]
         [Range(0.05f, 1f)] public float dodgeIFrameSeconds = 0.25f;
+        [Tooltip("Max charged-attack hold (s), player and enemies, counted from the press / charged start. When reached the attack auto-releases and follows through. 0 = no cap.")]
+        [Range(0f, 5f)] public float chargedMaxHoldSeconds = 1f;
+        [Tooltip("Player roll guard: the Roll clip cannot be cut (snap back to standing) or re-triggered before playerRollMinNormalized.")]
+        public bool playerRollGuard = true;
+        [Range(0f, 1f)] public float playerRollMinNormalized = 0.7f;
         [Range(0.05f, 1f)] public float dashIFrameSeconds = 0.25f;
+
+        [Header("Player holsters (2026-10-12)")]
+        [Tooltip("Every weapon in the 4 hotbar weapon slots (mining tool, pistol, rifles, melee) shows holstered on the body when it is not the drawn one. Off = only the equipped weapon shows (old rule).")]
+        public bool holsterAllHotbarWeapons = true;
+        [Tooltip("Melee: only one holstered melee per body location (Spine / Left leg / Right leg). Location comes from where the Holstered_ slot is placed in the rig.")]
+        public bool holsterOneMeleePerLocation = true;
+        [Tooltip("Max melee weapons visible at once, the drawn one included (1 spine + 1 left leg + 1 right leg + 1 in hand = 4).")]
+        [Range(1, 4)] public int holsterMaxMeleeVisible = 4;
+        [Tooltip("Also allow only one ranged weapon per location (off = all hotbar ranged weapons show).")]
+        public bool holsterOneRangedPerLocation = false;
+
+        [Header("Player stagger (enemy hits on the player)")]
+        [Tooltip("On = these chances drive the player hit reaction (the player controller is immortal, so Invector never played it; the reaction is now triggered directly). Off = PioneerAnimationPlanSettings small-hit chances.")]
+        public bool playerStaggerUseProfile = true;
+        [Tooltip("Stagger chance at full health / normal hit.")]
+        [Range(0f, 1f)] public float playerStaggerChanceMin = 0.2f;
+        [Tooltip("Stagger chance at low health or on a crit.")]
+        [Range(0f, 1f)] public float playerStaggerChanceMax = 0.4f;
+        [Tooltip("After a stagger, no new stagger for this long (no stun-lock in group fights).")]
+        [Range(0f, 6f)] public float playerStaggerImmunitySeconds = 1.5f;
+        [Tooltip("Allow a stagger while the player holds a charged attack (interrupts the charge).")]
+        public bool playerStaggerInterruptsCharge = true;
+
+        [Header("Player feel guards (shake while blocking / charging)")]
+        [Tooltip("Min seconds between guard-impact recoil poses while holding block. Hits inside the window are still absorbed, just no new pose (group fights re-triggered it every hit = shaking).")]
+        [Range(0f, 2f)] public float guardImpactMinIntervalSeconds = 0.45f;
+        [Tooltip("Min seconds between block camera shakes.")]
+        [Range(0f, 2f)] public float blockShakeMinIntervalSeconds = 0.35f;
+        [Tooltip("Charged-attack hold: the charge clip is re-pinned only after it drifts this far (normalized) past the hold frame. 0 = old behaviour (re-pinned every frame = jitter).")]
+        [Range(0f, 0.15f)] public float chargeHoldPinTolerance = 0.05f;
+
+        [Header("Melee facing target stickiness (block / attack auto-face)")]
+        [Tooltip("Once auto-face picks an enemy it keeps it at least this long (unless it dies / leaves range). Stops the body flipping between enemies of a group between swings.")]
+        [Range(0f, 5f)] public float meleeFacingTargetLockSeconds = 1.5f;
+        [Tooltip("After the lock, switch only when another enemy is closer than this fraction of the current target's distance (0.7 = 30% closer).")]
+        [Range(0.1f, 1f)] public float meleeFacingSwitchCloserFraction = 0.7f;
+
+        [Header("Hitch monitor (lightweight, play mode)")]
+        [Tooltip("Logs any frame longer than hitchThresholdMs with GC counts and the last combat event (blood spawn, hit, etc.). Off = zero cost.")]
+        public bool logHitchesInPlay = false;
+        [Range(30f, 1000f)] public float hitchThresholdMs = 120f;
+
+        [Header("Player quick step (triple-tap A / D = sidestep, triple-tap S = backstep; pad: triple stick flick)")]
+        [Tooltip("Master switch. Dash (B) and jetpack (Space double-tap) are separate and unchanged. No roll fallback.")]
+        public bool quickStepEnabled = true;
+        [Tooltip("All three taps must land within this many seconds.")]
+        [Range(0.2f, 1.2f)] public float quickStepTapWindowSeconds = 0.5f;
+        [Range(0.3f, 5f)] public float sidestepDistance = 1.8f;
+        [Range(0.3f, 5f)] public float backstepDistance = 1.5f;
+        [Tooltip("Seconds the step takes (eased).")]
+        [Range(0.05f, 0.6f)] public float quickStepDurationSeconds = 0.2f;
+        [Range(0f, 3f)] public float quickStepCooldownSeconds = 0.4f;
+        [Tooltip("Gamepad: stick must pass this to count a flick, and drop below quickStepStickRelease to re-arm.")]
+        [Range(0.3f, 1f)] public float quickStepStickFlick = 0.8f;
+        [Range(0f, 0.6f)] public float quickStepStickRelease = 0.3f;
+        [Tooltip("Stamina cost per step (0 = free).")]
+        [Range(0f, 100f)] public float quickStepStaminaCost = 0f;
 
         [Header("Status (global rules)")]
         [Range(1, 10)] public int statusMaxStacks = 3;

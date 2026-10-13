@@ -1,7 +1,7 @@
 namespace Project.Quests
 {
     /// <summary>
-    /// Display helpers for quest/loot rewards. QuestRewardType.Pi grants in-game Aether Credits (AC).
+    /// Display helpers for quest/loot rewards. QuestRewardType.Pi grants in-game UEA Credits (UEA).
     /// </summary>
     public static class QuestRewardFormatter
     {
@@ -41,12 +41,12 @@ namespace Project.Quests
 
         public static string FormatAetherCredits(int amount)
         {
-            return amount == 1 ? "1 AC" : $"{amount} AC";
+            return amount == 1 ? "1 UEA" : $"{amount} UEA";
         }
 
         public static string FormatAetherCreditsLong(int amount)
         {
-            return amount == 1 ? "1 Aether Credit" : $"{amount} Aether Credits";
+            return amount == 1 ? "1 UEA Credit" : $"{amount} UEA Credits";
         }
     }
 }

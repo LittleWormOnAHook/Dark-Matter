@@ -53,6 +53,19 @@ namespace Project.Combat
         [Tooltip("How this ammo carves rocks / carvable surfaces. Auto = built-in preset for the ammo type. Per-tag rows above can override it.")]
         public DMAmmoSurfaceDamage surfaceDamage = new DMAmmoSurfaceDamage();
 
+        [Header("Camera shake (trauma)")]
+        [Tooltip("Trauma when the player fires this ammo. 0 = off. Aim kick stays on Recoil Vertical/Horizontal — this is the CameraShake hub only.")]
+        [Range(0f, 2f)] public float fireTrauma;
+        [Tooltip("Hold fire trauma this long, then decay. 0 = one-shot punch only.")]
+        [Range(0f, 0.4f)] public float fireTraumaDurationSeconds;
+        [Tooltip("Trauma when the player's shot resolves a hit (enemy or world). 0 = off.")]
+        [Range(0f, 2f)] public float impactTrauma;
+        [Range(0f, 0.4f)] public float impactTraumaDurationSeconds;
+        [Tooltip("When > 0, impact shake uses CameraShake proximity falloff at the hit point (meters). 0 = global trauma at the listener.")]
+        [Range(0f, 80f)] public float impactTraumaRadius;
+        [Tooltip("When > 0, skip impact trauma if the hit is closer than this distance to the active camera (meters). Suppresses muzzle-adjacent jitter.")]
+        [Range(0f, 8f)] public float impactTraumaMinDistance;
+
         private void OnEnable()
         {
             itemType = ItemType.Ammo;

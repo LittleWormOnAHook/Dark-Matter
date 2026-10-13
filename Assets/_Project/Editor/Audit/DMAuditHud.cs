@@ -56,7 +56,11 @@ namespace Project.EditorTools.Audit
         public static void End()
         {
             _on = false;
-            if (_go != null) UnityEngine.Object.Destroy(_go);
+            if (_go != null)
+            {
+                if (Application.isPlaying) UnityEngine.Object.Destroy(_go);
+                else UnityEngine.Object.DestroyImmediate(_go); // audit can finish after play stopped
+            }
             _go = null; _b = null;
         }
 

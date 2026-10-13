@@ -1,0 +1,87 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &5088000788871046560
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 71045087, guid: db51fe09adf27d640b4e10018c2d76ba, type: 3}
+      propertyPath: m_Version
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 71045087, guid: db51fe09adf27d640b4e10018c2d76ba, type: 3}
+      propertyPath: m_Material
+      value: 
+      objectReference: {fileID: 2100000, guid: 122e9cbca8eec0d43b1bcc2bc82d106c, type: 2}
+    - target: {fileID: 71045088, guid: db51fe09adf27d640b4e10018c2d76ba, type: 3}
+      propertyPath: m_Version
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 71045088, guid: db51fe09adf27d640b4e10018c2d76ba, type: 3}
+      propertyPath: m_Material
+      value: 
+      objectReference: {fileID: 2100000, guid: 122e9cbca8eec0d43b1bcc2bc82d106c, type: 2}
+    - target: {fileID: 2977960289128496793, guid: db51fe09adf27d640b4e10018c2d76ba, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: d67e0b471284e4649a7d8e33333ee155, type: 2}
+    - target: {fileID: 4446750283014985810, guid: db51fe09adf27d640b4e10018c2d76ba, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: d67e0b471284e4649a7d8e33333ee155, type: 2}
+    - target: {fileID: 5418071635730995960, guid: db51fe09adf27d640b4e10018c2d76ba, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: d67e0b471284e4649a7d8e33333ee155, type: 2}
+    - target: {fileID: 5494213943435191860, guid: db51fe09adf27d640b4e10018c2d76ba, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5494213943435191860, guid: db51fe09adf27d640b4e10018c2d76ba, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5494213943435191860, guid: db51fe09adf27d640b4e10018c2d76ba, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5494213943435191860, guid: db51fe09adf27d640b4e10018c2d76ba, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5494213943435191860, guid: db51fe09adf27d640b4e10018c2d76ba, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5494213943435191860, guid: db51fe09adf27d640b4e10018c2d76ba, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5494213943435191860, guid: db51fe09adf27d640b4e10018c2d76ba, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5494213943435191860, guid: db51fe09adf27d640b4e10018c2d76ba, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5494213943435191860, guid: db51fe09adf27d640b4e10018c2d76ba, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5494213943435191860, guid: db51fe09adf27d640b4e10018c2d76ba, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5494213943435191861, guid: db51fe09adf27d640b4e10018c2d76ba, type: 3}
+      propertyPath: m_Name
+      value: Blood14_Android
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: db51fe09adf27d640b4e10018c2d76ba, type: 3}

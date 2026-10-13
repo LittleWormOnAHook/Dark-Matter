@@ -19,7 +19,7 @@ namespace Project.EditorTools
             EditorGUILayout.LabelField("Ammo Profile Sync", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
                 "This asset is the full ammo authoring profile (stats + FX + per-ammo hit marks). " +
-                "Recoil Vertical/Horizontal are the live camera kick. " +
+                "Recoil Vertical/Horizontal are the live camera kick; fireTrauma / impactTrauma use the CameraShake hub (0 = off). " +
                 "Rifle Camera fields on Ammo Recoil Profile still override two-hand weapons. " +
                 "Invector weapon recoilUp / recoilLeft / recoilRight do nothing. " +
                 "Fire Rate is shots or burst groups per second and overrides the weapon when > 0. " +

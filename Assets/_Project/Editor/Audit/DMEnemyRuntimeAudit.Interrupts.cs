@@ -28,7 +28,7 @@ namespace Project.EditorTools.Audit
     {
         private const float InterruptRunSeconds = 96f; // 8 phases of 12 s for the player shake study (was 75)
         private static System.Action _shakeRestore;
-        private static readonly Regex InterruptedRx = new Regex(@"^(?<t>[\d.]+) \[AttackInterrupt\] (?<name>\S+) (?<cls>\w+) @ (?<p>[\d.]+): INTERRUPTED \((?<why>[^,)]+)", RegexOptions.Compiled);
+        private static readonly Regex InterruptedRx = new Regex(@"^(?<t>[\d.]+) \[AttackInterrupt\] (?<name>.+?) (?<cls>\w+) @ (?<p>[\d.]+): INTERRUPTED \((?<why>[^,)]+)", RegexOptions.Compiled);
 
         /// <summary>Resolves "Name" or "Name@x;z" entries to pre-placed scene enemies (inactive ones included).</summary>
         private static List<GameObject> ResolveSceneEnemies(string spec)
@@ -91,7 +91,7 @@ namespace Project.EditorTools.Audit
                     return;
                 }
 
-                if (msg.StartsWith("[AttackInterrupt]") || msg.StartsWith("[DMEnemyCombo]") || msg.StartsWith("[CombatStagger]") || msg.StartsWith("[CooldownMove]") || msg.StartsWith("[CooldownMoveEnd]") || msg.StartsWith("[DodgeStrike") || msg.StartsWith("[SwingReach]") || msg.StartsWith("[AuditStart]") || msg.StartsWith("[HitFx]") || msg.StartsWith("[StepAnimEnd]") || msg.StartsWith("[PlayerHits]") || msg.StartsWith("[FairnessSample]") || msg.StartsWith("[EnemyBlock]") || msg.StartsWith("[DodgeRoll") || msg.StartsWith("[SlideNoLegs]") || msg.StartsWith("[AuditOverlap]") || msg.StartsWith("[AuditCamera]") || msg.StartsWith("[AuditSpawnPose]") || msg.StartsWith("[AuditPlayerMotion]") || msg.StartsWith("[AuditShake]") || msg.StartsWith("[AuditShakeStatic]") || msg.StartsWith("[RollClipLeft]") || msg.StartsWith("[RollFallback]") || msg.StartsWith("[AuditShakePhase]") || msg.StartsWith("[PlayerInterpolation]"))
+                if (msg.StartsWith("[AttackInterrupt]") || msg.StartsWith("[DMEnemyCombo]") || msg.StartsWith("[CombatStagger]") || msg.StartsWith("[CooldownMove]") || msg.StartsWith("[CooldownMoveEnd]") || msg.StartsWith("[DodgeStrike") || msg.StartsWith("[SwingReach]") || msg.StartsWith("[AuditStart]") || msg.StartsWith("[HitFx]") || msg.StartsWith("[StepAnimEnd]") || msg.StartsWith("[PlayerHits]") || msg.StartsWith("[FairnessSample]") || msg.StartsWith("[EnemyBlock]") || msg.StartsWith("[DodgeRoll") || msg.StartsWith("[SlideNoLegs]") || msg.StartsWith("[AuditOverlap]") || msg.StartsWith("[AuditCamera]") || msg.StartsWith("[AuditSpawnPose]") || msg.StartsWith("[AuditPlayerMotion]") || msg.StartsWith("[AuditShake]") || msg.StartsWith("[AuditShakeStatic]") || msg.StartsWith("[RollClipLeft]") || msg.StartsWith("[RollFallback]") || msg.StartsWith("[AuditShakePhase]") || msg.StartsWith("[PlayerInterpolation]") || msg.StartsWith("[AuditBodyOverlap]") || msg.StartsWith("[AuditForceBlock]") || msg.StartsWith("[AuditAnimReady]") || msg.StartsWith("[Dodge") || msg.StartsWith("[HitMarkMat]") || msg.StartsWith("[Block"))
                     logs.Add(Time.time.ToString("0.00", CultureInfo.InvariantCulture) + " " + msg);
             };
 
@@ -168,7 +168,8 @@ namespace Project.EditorTools.Audit
                 AimCameraAt(epos);
                 yield return new WaitGame(0.8f);
                 L.BeginPhase();
-                Debug.Log("[AuditStart] t=" + Time.time.ToString("0.00", CultureInfo.InvariantCulture));
+                Project.AI.DM_CombatDirectorProfile.ForceTestingMode = true; // audit runs in Testing attack mode
+            Debug.Log("[AuditStart] t=" + Time.time.ToString("0.00", CultureInfo.InvariantCulture));
                 var hitBy = new Dictionary<string, int>(); int attackFrames = 0; float minStam = 9999f; int pressedFrames = 0, lightClicks = 0; var blockFlags = new Dictionary<string, int>(); int armedAtStart = PlayerIsArmed() ? 1 : 0;
                 foreach (Live hx in new[] { L }.Concat(extras))
                 {
@@ -182,6 +183,7 @@ namespace Project.EditorTools.Audit
                 var spawnN = new Dictionary<string, int>(); var spawnLow = new Dictionary<string, int>(); var spawnFirstLow = new Dictionary<string, float>(); var spawnLowInfo = new Dictionary<string, string>();
                 int trGi(Animator a, string n) { foreach (var pr in a.parameters) if (pr.name == n && pr.type == AnimatorControllerParameterType.Int) return a.GetInteger(n); return -99; }
                 var spawnHand = new Dictionary<string, float>(); var spawnSeen = new Dictionary<string, string>(); float auditT0 = Time.time;
+                int bodyFrames = 0, bodyWindows = 0, camInFrames = 0, camInWindows = 0; bool bodyActive = false, camInActive = false; float camSurfMin = 99f; var bodySamples = new List<string>(); var camInSamples = new List<string>(); var animNotReady = new Dictionary<string, int>(); var animNotReadyAt = new Dictionary<string, string>();
                 // player motion tracker (lightweight timers only): frame time, timeScale, animator speed / locomotion params, root speed, W key chatter
                 Animator pmAn = _player != null ? _player.GetComponentInChildren<Animator>() : null; Vector3 pmLast = _player != null ? _player.transform.position : Vector3.zero;
                 int pmFrames = 0, pmHitch = 0, pmTs = 0, pmAnimSpeed = 0, pmWFlips = 0, pmImFlips = 0; float pmSumDt = 0f, pmMaxDt = 0f, pmAnimMin = 1f, pmImPrev = 0f, pmImMaxStep = 0f, pmImDirPrev = 0f; bool pmWPrev = false; var pmSpeeds = new List<float>(); var pmHitchInfo = new List<string>();
@@ -264,7 +266,7 @@ namespace Project.EditorTools.Audit
                     else if (t[0] > 0.5f)
                     {
                         t[0] = 0f;
-                        Debug.Log("[SwingReach] " + nm + " n=" + swingCounts[nm] + " startDist=" + t[1].ToString("0.00", CultureInfo.InvariantCulture) + " range=" + (x.combat != null ? x.combat.ResolveEffectiveAttackRange(_player.transform) : 0f).ToString("0.00", CultureInfo.InvariantCulture) + " gate=" + x.ai.ResolveSwingStartDistance(_player.transform).ToString("0.00", CultureInfo.InvariantCulture) + " wlen=" + (x.go.GetComponent<Project.AI.Invector.EnemyInvectorCombatBridge>() != null ? x.go.GetComponent<Project.AI.Invector.EnemyInvectorCombatBridge>().LastWeaponLength : 0f).ToString("0.00", CultureInfo.InvariantCulture) + " t=" + Time.time.ToString("0.00", CultureInfo.InvariantCulture) + " tip=" + t[3].ToString("0.00", CultureInfo.InvariantCulture) + " minGap=" + (t[2] > 1000f ? 99f : t[2]).ToString("0.00", CultureInfo.InvariantCulture));
+                        Debug.Log("[SwingReach] " + nm + " n=" + swingCounts[nm] + " startDist=" + t[1].ToString("0.00", CultureInfo.InvariantCulture) + " range=" + (x.combat != null ? x.combat.ResolveEffectiveAttackRange(_player.transform) : 0f).ToString("0.00", CultureInfo.InvariantCulture) + " gate=" + x.ai.ResolveSwingStartDistance(_player.transform).ToString("0.00", CultureInfo.InvariantCulture) + " wlen=" + (x.go.GetComponent<Project.AI.Invector.EnemyInvectorCombatBridge>() != null ? x.go.GetComponent<Project.AI.Invector.EnemyInvectorCombatBridge>().LastWeaponLength : 0f).ToString("0.00", CultureInfo.InvariantCulture) + " t=" + Time.time.ToString("0.00", CultureInfo.InvariantCulture) + " tip=" + t[3].ToString("0.00", CultureInfo.InvariantCulture) + " minGap=" + (t[2] > 1000f ? 99f : t[2]).ToString("0.00", CultureInfo.InvariantCulture) + " cut=" + CutFraction(t[2]).ToString("0.00", CultureInfo.InvariantCulture));
                     }
                 }
 
@@ -275,13 +277,14 @@ namespace Project.EditorTools.Audit
                     while (Time.time < until && L.go != null)
                     {
                         // Aim at / chase whichever enemy currently holds the attack token (falls back to the first enemy), so the player fights who is attacking him.
-                        Live tgt = L;
+                        Live cand = L;
                         if (extras.Count > 0)
                         {
                             if (L.ai == null || L.ai.EngagementRole != DMEngagementRole.Engager)
-                                foreach (Live x in extras) if (x.go != null && x.ai != null && x.ai.EngagementRole == DMEngagementRole.Engager) { tgt = x; break; }
+                                foreach (Live x in extras) if (x.go != null && x.ai != null && x.ai.EngagementRole == DMEngagementRole.Engager) { cand = x; break; }
                         }
-                        if (tgt.go != null) AimCameraAt(tgt.go.transform.position);
+                        Live tgt = StickyAuditTarget(cand);
+                        if (tgt.go != null) AimCameraAtSmooth(tgt.go.transform.position);
                         EnemyTopUpTick(L);
                         foreach (Live x in extras) EnemyTopUpNow(x);
                         if (Time.time >= nextForcedRoll && _player != null && tgt.go != null && tgt.ai != null && !tgt.ai.IsInAttackSequence)
@@ -362,7 +365,30 @@ namespace Project.EditorTools.Audit
                             if (trCam != null && _player != null)
                             {
                                 float trCd = Vector3.Distance(trCam.transform.position, _player.transform.position + Vector3.up * 1.5f);
-                                camMin = Mathf.Min(camMin, trCd); camFrames++; if (trCd < 1.0f) camClose++;
+                                camMin = Mathf.Min(camMin, trCd); camFrames++;
+                                float trGap = CameraSurfaceGap(trCam, _player); camSurfMin = Mathf.Min(camSurfMin, trGap); if (trGap < 0.15f) camClose++;
+                                if (trGap <= 0f) { camInFrames++; if (!camInActive) { camInActive = true; camInWindows++; if (camInSamples.Count < 10) camInSamples.Add((Time.time - auditT0).ToString("0.0", CultureInfo.InvariantCulture) + "s"); } }
+                                else camInActive = false;
+                            }
+                            {
+                                // body overlap: capsule penetration enemy-enemy and enemy-player (horizontal, 5 cm tolerance)
+                                var boGos = new List<GameObject>(); foreach (Live lv in trAll) if (lv != null && lv.go != null && lv.go.activeInHierarchy && !(lv.health != null && lv.health.IsDead)) boGos.Add(lv.go);
+                                if (_player != null) boGos.Add(_player);
+                                string boPair = null;
+                                for (int ba = 0; ba < boGos.Count && boPair == null; ba++)
+                                    for (int bb = ba + 1; bb < boGos.Count; bb++)
+                                    {
+                                        Vector3 bd = boGos[ba].transform.position - boGos[bb].transform.position; bd.y = 0f;
+                                        if (Mathf.Abs(boGos[ba].transform.position.y - boGos[bb].transform.position.y) < 1.2f && bd.magnitude < BodyRadius(boGos[ba]) + BodyRadius(boGos[bb]) - 0.05f) { boPair = boGos[ba].name + "+" + boGos[bb].name; break; }
+                                    }
+                                if (boPair != null) { bodyFrames++; if (!bodyActive) { bodyActive = true; bodyWindows++; if (bodySamples.Count < 10) bodySamples.Add((Time.time - auditT0).ToString("0.0", CultureInfo.InvariantCulture) + "s " + boPair.Replace(" ", "_")); } }
+                                else bodyActive = false;
+                                foreach (Live lv in trAll)
+                                    if (lv != null && lv.go != null && AnimatorNotReady(lv.go, lv.health))
+                                    {
+                                        string an0 = lv.go.name.Replace(" ", "_"); animNotReady[an0] = (animNotReady.TryGetValue(an0, out int anc) ? anc : 0) + 1;
+                                        if (!animNotReadyAt.ContainsKey(an0)) animNotReadyAt[an0] = (Time.time - auditT0).ToString("0.0", CultureInfo.InvariantCulture) + "s";
+                                    }
                             }
                             if (Time.frameCount % 6 == 0)
                                 foreach (Live lv in trAll)
@@ -404,7 +430,7 @@ namespace Project.EditorTools.Audit
                             }
                             { float pmSp = pmDp.magnitude / Mathf.Max(0.0001f, Time.deltaTime); if (pmSp > 0.3f && (pmAn == null || pmAn.speed > 0.5f)) { pmSpeeds.Add(pmSp); if (pmPrevSp > 0.3f && Mathf.Abs(pmSp - pmPrevSp) > 1.5f) pmPosFlips++; } pmPrevSp = pmSp; pmPosJump = Mathf.Max(pmPosJump, pmDp.magnitude); }
                             {
-                                int shP = Mathf.Clamp((int)((Time.time - auditT0) / shLen), 0, shN - 1);
+                                int shP = AuditShakePhases ? Mathf.Clamp((int)((Time.time - auditT0) / shLen), 0, shN - 1) : 0;
                                 if (shP != shCur) { shCur = shP; ShApply(shP); }
                                 Transform shPt = _player.transform; Vector3 shDp = pmDp; float shYaw = shPt.eulerAngles.y; float shDYaw = shHave ? Mathf.DeltaAngle(shPrevYaw, shYaw) : 0f;
                                 bool shAttk = PlayerAttacking(); bool shHold = DMMeleeHitStop.PlayerHoldActive; float shMag = shDp.magnitude;
@@ -429,7 +455,7 @@ namespace Project.EditorTools.Audit
                         {
                             // Face the attacking enemy like a human would (the camera aim alone does not always turn the body), so swings can land.
                             Vector3 fl = tgt.go.transform.position - _player.transform.position; fl.y = 0f;
-                            if (fl.sqrMagnitude > 0.01f && fl.magnitude < 5f) { float shYb = _player.transform.eulerAngles.y; _player.transform.rotation = Quaternion.RotateTowards(_player.transform.rotation, Quaternion.LookRotation(fl.normalized, Vector3.up), 900f * Time.deltaTime); shAuditYaw[Mathf.Clamp(shCur, 0, shN - 1)] += Mathf.Abs(Mathf.DeltaAngle(shYb, _player.transform.eulerAngles.y)); }
+                            if (AuditYawInjection && fl.sqrMagnitude > 0.01f && fl.magnitude < 5f) { float shYb = _player.transform.eulerAngles.y; _player.transform.rotation = Quaternion.RotateTowards(_player.transform.rotation, Quaternion.LookRotation(fl.normalized, Vector3.up), 900f * Time.deltaTime); shAuditYaw[Mathf.Clamp(shCur, 0, shN - 1)] += Mathf.Abs(Mathf.DeltaAngle(shYb, _player.transform.eulerAngles.y)); }
                         }
                         float d = PlayerEnemyDist(tgt);
                         if (d > 1.9f) KeyDown(Key.W); else KeyUp(Key.W); // close in to melee reach (2.5 left the player out of reach of the engager)
@@ -447,6 +473,7 @@ namespace Project.EditorTools.Audit
                 while (Time.time < tEnd && L.go != null && !L.health.IsDead)
                 {
                     SetStatus($"interrupts {prefab.name}: {Mathf.Max(0f, tEnd - Time.time):0}s left, swings {swingsLight}L/{swingsCharged}C");
+                    if (AuditForceBlockSeconds > 0f && !Project.Combat.DMEnemyBlock.ForceBlockTest && Time.time > tEnd - AuditForceBlockSeconds) { Project.Combat.DMEnemyBlock.ForceBlockTest = true; Debug.Log("[AuditForceBlock] start"); }
                     i++;
                     if (i % 7 == 0)
                     {
@@ -480,7 +507,9 @@ namespace Project.EditorTools.Audit
                 for (int sp = 0; sp < shN; sp++)
                     Debug.Log("[AuditShake] p=" + sp + " name=" + shNames[sp] + " frames=" + shFrames[sp] + " att=" + shAtt[sp] + " hold=" + shHoldF[sp] + " posRev=" + shPosRev[sp] + " attPosRev=" + shAttPosRev[sp] + " holdPosRev=" + shHoldPosRev[sp] + " fwdRev=" + shFwdRev[sp] + " yawRev=" + shYawRev[sp] + " camRev=" + shCamRev[sp] + " auditYaw=" + shAuditYaw[sp].ToString("0", CultureInfo.InvariantCulture) + " totYaw=" + shTotYaw[sp].ToString("0", CultureInfo.InvariantCulture) + " speedJitter=" + (shSpN[sp] > 0 ? shSpDelta[sp] / shSpN[sp] : 0f).ToString("0.00", CultureInfo.InvariantCulture) + " maxStep=" + shMaxStep[sp].ToString("0.000", CultureInfo.InvariantCulture));
                 if (_shakeRestore != null) { _shakeRestore(); _shakeRestore = null; }
-                Debug.Log("[AuditCamera] min=" + camMin.ToString("0.00", CultureInfo.InvariantCulture) + " closeFrames=" + camClose + " of=" + camFrames);
+                Debug.Log("[AuditCamera] surfMin=" + camSurfMin.ToString("0.00", CultureInfo.InvariantCulture) + " inFrames=" + camInFrames + " inWindows=" + camInWindows + " closeFrames=" + camClose + " of=" + camFrames + " pivotMin=" + camMin.ToString("0.00", CultureInfo.InvariantCulture) + " at=" + string.Join(",", camInSamples));
+                Debug.Log("[AuditBodyOverlap] windows=" + bodyWindows + " frames=" + bodyFrames + " samples=" + string.Join(";", bodySamples));
+                Debug.Log("[AuditAnimReady] notReadyEnemies=" + animNotReady.Count + " detail=" + string.Join(";", animNotReady.Select(kv => kv.Key + ":" + kv.Value + "f@" + animNotReadyAt[kv.Key])));
                 foreach (var kv in spawnHand) Debug.Log("[AuditSpawnPose] " + kv.Key + " minHand=" + kv.Value.ToString("0.00", CultureInfo.InvariantCulture) + " clip=" + spawnSeen[kv.Key].Replace(" ", "_") + " lowSamples=" + (spawnLow.TryGetValue(kv.Key, out int pl) ? pl : 0) + "/" + (spawnN.TryGetValue(kv.Key, out int pn) ? pn : 0) + (spawnFirstLow.TryGetValue(kv.Key, out float pf) ? " firstLowAt=" + pf.ToString("0.0", CultureInfo.InvariantCulture) + "s " + spawnLowInfo[kv.Key] : ""));
                 KeyUp(Key.W);
                 SetMouse(0);
@@ -489,6 +518,8 @@ namespace Project.EditorTools.Audit
             finally
             {
                 ReleaseAllInput();
+                Project.Combat.DMEnemyBlock.ForceBlockTest = false;
+            Project.AI.DM_CombatDirectorProfile.ForceTestingMode = false;
                 if (_shakeRestore != null) { _shakeRestore(); _shakeRestore = null; }
                 foreach (Live x in extras) if (x.go != null) Object.Destroy(x.go);
                 Application.logMessageReceived -= cb;
@@ -645,7 +676,7 @@ namespace Project.EditorTools.Audit
                     {
                         var l = g.ToList(); if (l.Count == 0) return "none";
                         float ms = l.Average(x => F(x, "startDist")), mx = l.Max(x => F(x, "startDist")), mr = l.Average(x => F(x, "range")), mg = l.Average(x => F(x, "minGap")), tp = l.Average(x => F(x, "tip")); int off = l.Count(x => F(x, "minGap") > 0.15f);
-                        return l.Count + " swings: start distance mean " + ms.ToString("0.00", CultureInfo.InvariantCulture) + "m (max " + mx.ToString("0.00", CultureInfo.InvariantCulture) + "), attack range " + mr.ToString("0.00", CultureInfo.InvariantCulture) + ", swing-start gate mean " + l.Average(x => F(x, "gate")).ToString("0.00", CultureInfo.InvariantCulture) + ", weapon length " + l.Average(x => F(x, "wlen")).ToString("0.00", CultureInfo.InvariantCulture) + "m, weapon tip reach from root mean " + tp.ToString("0.00", CultureInfo.InvariantCulture) + "m, closest weapon-to-player gap mean " + mg.ToString("0.00", CultureInfo.InvariantCulture) + "m, out of reach (gap>0.15m) " + off + " (" + (100 * off / l.Count) + "%)";
+                        return l.Count + " swings: start distance mean " + ms.ToString("0.00", CultureInfo.InvariantCulture) + "m (max " + mx.ToString("0.00", CultureInfo.InvariantCulture) + "), attack range " + mr.ToString("0.00", CultureInfo.InvariantCulture) + ", swing-start gate mean " + l.Average(x => F(x, "gate")).ToString("0.00", CultureInfo.InvariantCulture) + ", weapon length " + l.Average(x => F(x, "wlen")).ToString("0.00", CultureInfo.InvariantCulture) + "m, weapon tip reach from root mean " + tp.ToString("0.00", CultureInfo.InvariantCulture) + "m, closest weapon-to-player gap mean " + mg.ToString("0.00", CultureInfo.InvariantCulture) + "m, out of reach (gap>0.15m) " + off + " (" + (100 * off / l.Count) + "%), cut depth >=30% of torso radius " + l.Count(x => F(x, "cut") >= 0.3f) + "/" + l.Count;
                     }
                     var firstS = reach.Where(x => F(x, "n") < 1.5f); var laterS = reach.Where(x => F(x, "n") >= 1.5f);
                     int offFirst = firstS.Count(x => F(x, "minGap") > 0.15f);
@@ -662,7 +693,7 @@ namespace Project.EditorTools.Audit
                     var rows = new List<string>(); int minSw = int.MaxValue, maxSw = 0; float maxFirst = 0f; bool anyZero = false;
                     foreach (string sm in samples)
                     {
-                        string en = sm.Substring(sm.IndexOf("[FairnessSample] ", System.StringComparison.Ordinal) + 17); en = en.Substring(0, en.IndexOf(' '));
+                        string en = sm.Substring(sm.IndexOf("[FairnessSample] ", System.StringComparison.Ordinal) + 17); en = en.Substring(0, en.IndexOf(" n=", System.StringComparison.Ordinal));
                         var mine = reach2.Where(x => x.Contains("[SwingReach] " + en + " ")).ToList();
                         int sw = mine.Count; float first = sw > 0 ? mine.Min(x => F(x, "t")) - t0 : -1f;
                         minSw = Mathf.Min(minSw, sw); maxSw = Mathf.Max(maxSw, sw); if (sw == 0) anyZero = true; maxFirst = Mathf.Max(maxFirst, first);
@@ -732,7 +763,25 @@ namespace Project.EditorTools.Audit
             {
                 string ovl = logs.LastOrDefault(x => x.Contains("[AuditOverlap]")); string cam = logs.LastOrDefault(x => x.Contains("[AuditCamera]"));
                 if (ovl != null) R.Add("Interrupts", "int.overlap", "Overlapping attack windows (one attacker at a time, all enemy types, swings still finishing)", F(ovl, "windows") < 0.5f ? "PASS" : "FAIL", ovl.Substring(ovl.IndexOf("[AuditOverlap]", System.StringComparison.Ordinal) + 14).Trim(), F(ovl, "windows") < 0.5f ? "" : "two enemies were in an attack sequence at the same time");
-                if (cam != null) R.Add("Interrupts", "int.camera", "Camera distance to the player pivot during the fight (enemies never pull the lens into the player)", F(cam, "min") >= 1.2f ? "PASS" : (F(cam, "closeFrames") > 0.5f ? "FAIL" : "WARN"), cam.Substring(cam.IndexOf("[AuditCamera]", System.StringComparison.Ordinal) + 13).Trim(), "");
+                if (cam != null) R.Add("Interrupts", "int.camera", "Camera lens vs player body (near plane inside a player collider = clip-through)", F(cam, "inFrames") < 0.5f ? (F(cam, "closeFrames") < 0.5f ? "PASS" : "WARN") : "FAIL", cam.Substring(cam.IndexOf("[AuditCamera]", System.StringComparison.Ordinal) + 13).Trim(), "");
+                {
+                    int fbIdx = logs.FindIndex(x => x.Contains("[AuditForceBlock] start"));
+                    var nat = (fbIdx < 0 ? logs : logs.Take(fbIdx)).Where(x => x.Contains("[EnemyBlock]")).ToList();
+                    var forced = fbIdx < 0 ? new List<string>() : logs.Skip(fbIdx).Where(x => x.Contains("[EnemyBlock]")).ToList();
+                    int fOk = forced.Count(x => x.Contains("blocked hit") || x.Contains("guard broken")); int fMiss = forced.Count(x => x.Contains("miss reason"));
+                    string Reasons(List<string> l) => string.Join(", ", l.Where(x => x.Contains("miss reason=")).GroupBy(x => S(x, "reason")).Select(g => g.Key + " x" + g.Count()));
+                    R.Add("Interrupts", "int.block", "Enemy block (natural part of the run; forced block in the last " + AuditForceBlockSeconds.ToString("0", CultureInfo.InvariantCulture) + " s)", fbIdx < 0 ? "WARN" : (fOk >= 1 && fOk >= (fOk + fMiss) * 0.9f ? "PASS" : "FAIL"),
+                        "natural: blocked " + nat.Count(x => x.Contains("blocked hit")) + ", guard broken " + nat.Count(x => x.Contains("guard broken")) + ", misses " + nat.Count(x => x.Contains("miss reason")) + " (" + Reasons(nat) + ") | forced: blocked/broken " + fOk + " of " + (fOk + fMiss) + " player hits (" + Reasons(forced) + ")", "");
+                }
+                string bov = logs.LastOrDefault(x => x.Contains("[AuditBodyOverlap]"));
+                if (bov != null) R.Add("Interrupts", "int.bodyoverlap", "Body overlap (capsules of enemies / player interpenetrating by more than 5 cm)", F(bov, "windows") < 0.5f ? "PASS" : "FAIL", bov.Substring(bov.IndexOf("[AuditBodyOverlap]", System.StringComparison.Ordinal) + 18).Trim(), "");
+                string ard = logs.LastOrDefault(x => x.Contains("[AuditAnimReady]"));
+                if (ard != null) R.Add("Interrupts", "int.animready", "Stiff pose (alive, not ragdolled, animator off / not initialised)", F(ard, "notReadyEnemies") < 0.5f ? "PASS" : "FAIL", ard.Substring(ard.IndexOf("[AuditAnimReady]", System.StringComparison.Ordinal) + 16).Trim(), "");
+                {
+                    var dodges = logs.Where(x => x.Contains("[DodgePlayed]") || x.Contains("[DodgeSkipped]") || x.Contains("[RollFallback]")).ToList();
+                    int fwd = dodges.Count(x => x.Contains("[RollFallback]") || x.Contains("state=Roll ")); int played = dodges.Count(x => x.Contains("[DodgePlayed]")); int skipped = dodges.Count(x => x.Contains("[DodgeSkipped]")); int noclip = dodges.Count(x => x.Contains("[DodgePlayed]") && S(x, "clipOk") == "0");
+                    R.Add("Interrupts", "int.dodge", "Enemy dodges play a DM_Dodge clip (never forward roll, never a clipless slide)", fwd == 0 && noclip == 0 ? "PASS" : "FAIL", "played " + played + ", skipped (animator not ready) " + skipped + ", forward-roll " + fwd + ", played without clip " + noclip + (dodges.Count > 0 ? " | " + string.Join(" || ", dodges.Take(6).Select(x => x.Substring(x.IndexOf("[Dodge", System.StringComparison.Ordinal) < 0 ? 0 : x.IndexOf("[Dodge", System.StringComparison.Ordinal)))) : ""), "");
+                }
                 var slides = logs.Where(x => x.Contains("[SlideNoLegs]")).ToList();
                 string SlideName(string x) { int a0 = x.IndexOf("[SlideNoLegs] ", System.StringComparison.Ordinal) + 14; int e0 = x.IndexOf(" speed=", a0, System.StringComparison.Ordinal); return e0 < 0 ? "?" : x.Substring(a0, e0 - a0); }
                 R.Add("Interrupts", "int.slide", "Sliding without leg animation (body moving > 0.4 m/s with no locomotion blend, rolls / dodge strikes excluded)", slides.Count == 0 ? "PASS" : "WARN",
@@ -754,7 +803,7 @@ namespace Project.EditorTools.Audit
                 }
                 string pmLine = logs.LastOrDefault(x => x.Contains("[AuditPlayerMotion]"));                if (pmLine != null) R.Add("Interrupts", "int.playermotion", "Player motion smoothness (frame time, timeScale, animator speed, locomotion param jitter, root speed jitter, W key chatter)", F(pmLine, "relHitchFrames") > 40f || F(pmLine, "wFlips") > 40f || F(pmLine, "inputMagFlips") > 60f || F(pmLine, "speedJumps") > 20f ? "WARN" : "PASS", pmLine.Substring(pmLine.IndexOf("[AuditPlayerMotion]", System.StringComparison.Ordinal) + 19).Trim(), "");
                 var poses = logs.Where(x => x.Contains("[AuditSpawnPose]")).ToList();
-                if (poses.Count > 0) R.Add("Interrupts", "int.spawnpose", "Spawn pose (idle hand distance in the first 4 s; under 0.35 = crossed arms)", poses.Any(x => F(x, "minHand") < 0.35f) ? "FAIL" : "PASS", string.Join(" | ", poses.Select(x => { int a0 = x.IndexOf("[AuditSpawnPose] ", System.StringComparison.Ordinal) + 17; return x.Substring(a0); })), "");
+                if (poses.Count > 0) R.Add("Interrupts", "int.spawnpose", "Hand distance (info only; minHand gave false positives, see int.animready for stiff poses)", "INFO", string.Join(" | ", poses.Select(x => { int a0 = x.IndexOf("[AuditSpawnPose] ", System.StringComparison.Ordinal) + 17; return x.Substring(a0); })), "");
             }
             R.Add("Interrupts", "int.errors", "Console errors during the run", errorCount == 0 ? "PASS" : "FAIL",
                 errorCount == 0 ? "0 errors/exceptions" : errorCount + " error(s): " + string.Join(" | ", errorSamples), errorCount == 0 ? "" : "see samples");

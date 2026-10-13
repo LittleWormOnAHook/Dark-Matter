@@ -60,7 +60,7 @@ namespace Project.EditorTools.UiLayout
                 Description = "Center-screen zone entry popup (3s hold + fade)."
             },
             new UiPanelDefinition { Label = "Pickup Aim Reticle", Category = "HUD", SearchNames = new[] { "PickupAimReticle" }, ComponentType = typeof(PickupAimReticleUI), PlayModeOnly = true },
-            new UiPanelDefinition { Label = "AC Balance", Category = "HUD", SearchNames = new[] { "AcBalanceText", "PiBalanceText", "CurrencyHudText" } },
+            new UiPanelDefinition { Label = "UEA balance", Category = "HUD", SearchNames = new[] { "AcBalanceText", "PiBalanceText", "CurrencyHudText" } },
             new UiPanelDefinition { Label = "Interaction Prompt", Category = "HUD", SearchNames = new[] { "InteractionPrompt" } },
             new UiPanelDefinition { Label = "Active Quest HUD", Category = "HUD", SearchNames = new[] { "ActiveQuestHud" }, ComponentType = typeof(ActiveQuestHudUI), PlayModeOnly = true },
             new UiPanelDefinition { Label = "Pickup Proximity Dots", Category = "HUD", SearchNames = new[] { "PickupProximityDots" }, PlayModeOnly = true },
@@ -327,11 +327,11 @@ namespace Project.EditorTools.UiLayout
             },
             new UiPanelDefinition
             {
-                Label = "AC Reward Popup Prefab",
+                Label = "UEA Credits reward Popup Prefab",
                 Category = "Prefabs",
                 ComponentType = typeof(AcRewardPopup),
                 PrefabAssetPath = "Assets/_Project/Prefabs/UI/AcRewardPopup.prefab",
-                Description = "Animated scale/fade-in AC reward popup, instantiated from a prefab."
+                Description = "Animated scale/fade-in UEA Credits reward popup, instantiated from a prefab."
             },
         };
 
@@ -471,7 +471,7 @@ namespace Project.EditorTools.UiLayout
                     return PrepareHotbarLayout();
                 case "Toolbar":
                     return PrepareToolbarLayout();
-                case "AC Balance":
+                case "UEA balance":
                 case "Interaction Prompt":
                     return PrepareHudLabelLayout();
                 case "Active Quest HUD":

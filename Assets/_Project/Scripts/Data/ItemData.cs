@@ -145,6 +145,8 @@ namespace Project.Data
         [Tooltip("Damage multiplier applied to power / critical hits.")]
         public float criticalDamageMultiplier = 2f;
         public float meleeRange = 2.2f;
+        [Tooltip("Blade length in metres (grip to tip) for enemy swing reach / approach. -1 = measure the drawn weapon. Guide: dagger 0.35, one-hand sword 0.85, Blade of Chaos 0.75, greatsword 1.25, spear 1.7.")]
+        public float meleeBladeLength = -1f;
         public float meleeCooldown = 0.65f;
         [Tooltip("Animator playback multiplier for melee attacks. 0 uses grip + held scale.")]
         public float attackAnimationSpeed;
@@ -332,8 +334,8 @@ namespace Project.Data
         public float staminaRestore = 0;
         public float oxygenRestore = 0;
 
-        [Header("Aether Credits")]
-        [Tooltip("World pickup grants this AC into the player wallet when collected.")]
+        [Header("UEA Credits")]
+        [Tooltip("World pickup grants this UEA into the player wallet when collected.")]
         [FormerlySerializedAs("isPiInfused")]
         public bool isAcInfused = false;
         [Tooltip("Vendor buy/sell base price and infused pickup amount. Always authored.")]

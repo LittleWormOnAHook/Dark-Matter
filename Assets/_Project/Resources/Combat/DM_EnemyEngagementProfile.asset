@@ -131,9 +131,13 @@ MonoBehaviour:
   swingStartUseWeaponReach: 1
   weaponReachArm: 0.9
   weaponReachArmMech: 0.55
+  weaponReachArmRobot: 0.55
   pushSnapsLegs: 1
+  snapLegsToMovement: 1
   unarmedTipReach: 1.1
   swingStartInnerMargin: 0.25
+  swingCutDepthFraction: 0.2
+  swingGateAllAttackers: 1
   swingStartLeadSeconds: 0.2
   swingCloseInReadySeconds: 0.5
   fairnessEnabled: 1
@@ -145,6 +149,7 @@ MonoBehaviour:
   groupPaceExtraPerEnemy: 0.15
   groupPaceMaxMultiplier: 2
   fairnessFirstTurnBonus: 8
+  fairnessFirstTurnGuaranteed: 0
   fairnessLargeMobCount: 4
   capAttackRangeToWeaponReach: 1
   attackRangeReachSlack: 0.1

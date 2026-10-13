@@ -33,7 +33,8 @@ namespace Project.Combat
 
             Vector3 point = ResolveHitPoint(damage.hitPosition, receiver);
             Vector3 direction = ResolveHitDirection(damage.sender, receiver, point);
-            SpawnBloodSplatter(point, direction, -direction, damage.damageValue);
+            if (!TryPlayerVolumetric(receiver, point, direction))
+                SpawnBloodSplatter(point, direction, -direction, damage.damageValue);
         }
 
         /// <summary>
@@ -49,11 +50,35 @@ namespace Project.Combat
 
             Vector3 point = ResolveHitPoint(Vector3.zero, receiver);
             Vector3 direction = ResolveHitDirection(attacker, receiver, point);
-            SpawnBloodSplatter(point, direction, -direction, damage);
+            if (!TryPlayerVolumetric(receiver, point, direction))
+                SpawnBloodSplatter(point, direction, -direction, damage);
+        }
+
+        /// <summary>2026-10-12: KriptoFX red volumetric blood on the player (pool + budget of DMVolumetricBlood). False = use the old splatter.</summary>
+        private static bool TryPlayerVolumetric(Transform receiver, Vector3 point, Vector3 direction)
+        {
+            DM_EnemyHitMarkProfile p = DM_EnemyHitMarkProfile.Live;
+            return p != null && p.volumetricOnPlayer && DMVolumetricBlood.TrySpawn(p, DMEnemyBodyType.Humanoid, receiver, point, -direction, direction);
+        }
+
+
+        /// <summary>True when the component belongs to an Android / Robot enemy (red flesh splatter must never spawn on it).</summary>
+        public static bool IsNonFleshEnemy(Component c)
+        {
+            if (c == null) return false;
+            DMEnemyHitMarks hm = c.GetComponentInParent<DMEnemyHitMarks>();
+            if (hm == null) hm = c.transform.root.GetComponentInChildren<DMEnemyHitMarks>(true);
+            if (hm == null || hm.BodyType == DMEnemyBodyType.Humanoid) return false;
+            Debug.Log("[HitMarkMat] redSkipped target=" + c.transform.root.name + " body=" + hm.BodyType);
+            return true;
         }
 
         public static void SpawnBloodSplatter(Vector3 hitPoint, Vector3 hitDirection, Vector3 hitNormal, float damage = 1f)
         {
+            // 2026-10-12: every flesh splatter goes through KriptoFX first (pools + budget); the old particle is the fallback.
+            DM_EnemyHitMarkProfile vp = DM_EnemyHitMarkProfile.Live;
+            if (vp != null && DMVolumetricBlood.TrySpawn(vp, DMEnemyBodyType.Humanoid, null, hitPoint, hitNormal, hitDirection))
+                return;
             GameObject prefab = GetBloodSplatterPrefab();
             if (prefab == null)
                 return;

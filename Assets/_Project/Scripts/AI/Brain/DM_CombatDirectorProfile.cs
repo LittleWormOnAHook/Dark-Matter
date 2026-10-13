@@ -2,6 +2,8 @@ using UnityEngine;
 
 namespace Project.AI
 {
+    public enum DMCombatAttackMode { Gameplay, Testing }
+
     /// <summary>
     /// Combat Plan Phase 4 start (§31 #4): encounter-level attack slot rules layered on top of the Phase 3
     /// <see cref="DMEnemyEngagementDirector"/>. Resources/Combat/DM_CombatDirectorProfile, read live every tick
@@ -45,6 +47,17 @@ namespace Project.AI
             }
         }
 
+        [Header("Attack mode (testing vs gameplay)")]
+        [Tooltip("Testing: one attacker per target and every enemy gets a first turn before anyone gets a second (audit / clip checks). Gameplay: random token picks, up to maxSimultaneousAttackers at once plus a random chance for extra attackers.")]
+        public DMCombatAttackMode attackMode = DMCombatAttackMode.Gameplay;
+        [Tooltip("Gameplay mode: chance, rolled every extraAttackerRollSeconds per target, that extra enemies attack on top of the cap.")]
+        [Range(0f, 1f)] public float extraAttackerChance = 0.25f;
+        [Range(1, 4)] public int extraAttackersMax = 1;
+        [Range(1f, 30f)] public float extraAttackerRollSeconds = 6f;
+        /// <summary>Set by the runtime audit: forces Testing mode whatever the asset says.</summary>
+        public static bool ForceTestingMode;
+        public bool IsTestingMode => ForceTestingMode || attackMode == DMCombatAttackMode.Testing;
+
         [Header("Master / rollback")]
         [Tooltip("Off = Phase 3 only: exactly one melee Engager per target, everyone else Holds. Rollback switch for attack slots.")]
         public bool enableCombatDirector = true;
@@ -68,7 +81,7 @@ namespace Project.AI
         [Range(1, 16)] public int largeGroupEnemiesPerExtraSlot = 4;
         [Tooltip("Large band never exceeds this many slots.")]
         [Range(1, 12)] public int largeGroupSlotsMax = 5;
-        [Tooltip("Studio hard cap: never more simultaneous melee attackers than this per target, whatever the bands say.")]
+        [Tooltip("Gameplay mode cap: never more simultaneous melee attackers than this per target (before the random extra attackers). Testing mode always uses 1.")]
         [Range(1, 12)] public int maxSimultaneousAttackers = 5;
 
         [Header("Slot rotation (secondary attackers)")]
@@ -106,7 +119,7 @@ namespace Project.AI
         /// </summary>
         public int ResolveTotalSlots(int enemyCount)
         {
-            if (!enableCombatDirector || enemyCount <= 1)
+            if (!enableCombatDirector || enemyCount <= 1 || IsTestingMode)
                 return 1;
 
             int slots;

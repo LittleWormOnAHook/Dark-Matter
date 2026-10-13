@@ -93,6 +93,7 @@ namespace Project.EditorTools.Combat
                 }
             });
 
+            Project.EditorTools.GenesisStudio.DMStudioSearch.DrawField("CombatStudioSearch"); // 2026-10-12 global Studio search
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
             switch (tab)
             {

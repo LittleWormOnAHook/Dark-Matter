@@ -165,9 +165,15 @@ MonoBehaviour:
   surfaceDamage:
     mode: 0
     custom:
-      style: 0
-      radius: 0.12
+      style: 2
+      radius: 0.48
       depth: 0.45
-      roughness: 1
-      debrisCount: 1
-      debrisScale: 0.35
+      roughness: 0.678
+      debrisCount: 5
+      debrisScale: 0.05
+  fireTrauma: 0.276
+  fireTraumaDurationSeconds: 0
+  impactTrauma: 0
+  impactTraumaDurationSeconds: 0
+  impactTraumaRadius: 0
+  impactTraumaMinDistance: 0

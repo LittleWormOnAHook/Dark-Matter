@@ -274,12 +274,20 @@ namespace Project.AI
         [Range(0f, 2f)] public float weaponReachArm = 0.9f;
         [Tooltip("Same as Weapon Reach Arm but for Androids / Robots (non-Humanoid body types): their swing clips do not extend the arm as far, measured tip about 1.6-1.7 m with a 1.08 m sword (shakefix, was 0.9 for everyone).")]
         [Range(0f, 2f)] public float weaponReachArmMech = 0.55f;
+        [Tooltip("Arm extension for Robots / machines (their own swing reach). Tip reach = this + weapon blade length.")]
+        [Range(0f, 2f)] public float weaponReachArmRobot = 0.55f;
         [Tooltip("Crowd / hard-separation pushes write the leg locomotion blend un-damped for 0.25 s so the legs cycle with the push instead of lagging behind it (no sliding).")]
         public bool pushSnapsLegs = true;
+        [Tooltip("Write the leg blend un-damped whenever the body moves faster than the legs show (step / chase / hold moves). Fixes idle-leg sliding.")]
+        public bool snapLegsToMovement = true;
         [Tooltip("Tip reach (m from the root) of an unarmed enemy (fists / no melee weapon hitbox).")]
         [Range(0.3f, 2.5f)] public float unarmedTipReach = 1.1f;
         [Tooltip("The swing starts when the target is closer than tip reach minus this margin (so the hit window lands on the body, not on its edge). Small tolerance: lower = starts later / closer.")]
         [Range(-0.5f, 1f)] public float swingStartInnerMargin = 0.25f;
+        [Tooltip("Visual blade cut into the target body radius at swing start (0.2 = 20%; Anthony's window 10-30%). Gate = arm + ItemData.meleeBladeLength + radius*(1-fraction).")]
+        [Range(0f, 1f)] public float swingCutDepthFraction = 0.2f;
+        [Tooltip("Apply the weapon-reach swing gate to every melee attacker, not only the token engager.")]
+        public bool swingGateAllAttackers = true;
         [Tooltip("A target moving away is compensated by this many seconds of its outward speed (the swing needs ~this long to connect), so a kiting player is not swung at from the edge.")]
         [Range(0f, 0.6f)] public float swingStartLeadSeconds = 0.2f;
         [Tooltip("An engager whose attack becomes ready within this many seconds closes in (creeps) until it is inside the swing start distance.")]
@@ -304,6 +312,8 @@ namespace Project.AI
         [Range(1f, 4f)] public float groupPaceMaxMultiplier = 2f;
         [Tooltip("Extra focus score for an enemy that has never had an attack turn yet (clipfix: nobody in a big mob waits for the first swing).")]
         [Range(0f, 20f)] public float fairnessFirstTurnBonus = 8f;
+        [Tooltip("Always on in Testing attack mode. On here = also in Gameplay: an enemy that never held the token goes before anyone's second turn.")]
+        public bool fairnessFirstTurnGuaranteed = false; // testing mode (DM_CombatDirectorProfile.attackMode) forces it on
         [Tooltip("At or above this many enemies in the ring a token holder keeps the token for only ONE attack sequence before handing off.")]
         [Range(2, 12)] public int fairnessLargeMobCount = 4;
 

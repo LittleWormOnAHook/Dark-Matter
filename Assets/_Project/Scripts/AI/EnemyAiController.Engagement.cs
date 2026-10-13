@@ -669,6 +669,33 @@ namespace Project.AI
             return true;
         }
 
+        /// <summary>Reactive block (DMEnemyBlock): rolls chance x definition multiplier; front arc, cooldown, not mid-swing / staggered.</summary>
+        public bool TryReactiveBlock(Transform attacker, float chance)
+        {
+            if (combatBridge == null || attacker == null || Time.time < nextBlockAllowed)
+                return false;
+            if (state == AiState.Defensive || IsInAttackSequence || (combat != null && combat.IsAttacking))
+                return false;
+            var rag = GetComponent<Project.AI.Invector.EnemyInvectorRagdollBridge>();
+            if (rag != null && rag.IsHitStaggerActive)
+                return false;
+            Vector3 to = attacker.position - transform.position;
+            to.y = 0f;
+            float cos = Mathf.Cos(Mathf.Clamp(DM_EnemyBrainProfile.Live.blockArcDegrees, 0f, 360f) * 0.5f * Mathf.Deg2Rad);
+            if (to.sqrMagnitude > 0.0001f && Vector3.Dot(transform.forward, to.normalized) < cos)
+                return false;
+            if (Random.value >= chance)
+            {
+                nextBlockAllowed = Time.time + 0.5f;
+                return false;
+            }
+            if (!TryBrainBlock(out float blockDuration))
+                return false;
+            EnterState(AiState.Defensive);
+            defensiveActionUntil = Time.time + blockDuration;
+            return true;
+        }
+
         /// <summary>Drops the guard now (a charged hit or poise break broke it); the Defensive state ends next frame.</summary>
         public void BreakGuard()
         {

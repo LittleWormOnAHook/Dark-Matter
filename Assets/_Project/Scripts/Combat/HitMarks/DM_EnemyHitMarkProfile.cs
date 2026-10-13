@@ -214,6 +214,74 @@ namespace Project.Combat
         [Range(0.02f, 1f)] public float slashProjectionDepth = 0.6f;
         [Tooltip("Multiplies melee slash decal length, width, and projection depth (default 3×).")]
         [Range(1f, 4f)] public float meleeSlashMarkSizeMultiplier = 3f;
+        [Tooltip("Albedo tint for burn / slash decals on Androids (GlowBurn base is red; this keeps mech marks a scorch, not blood).")]
+        public Color androidMarkTint = new Color(0.32f, 0.34f, 0.32f, 1f);
+        [Tooltip("Albedo tint for burn / slash decals on Robots / machines.")]
+        public Color robotMarkTint = new Color(0.34f, 0.33f, 0.3f, 1f);
+
+        [Header("Volumetric blood (KriptoFX) - flesh = originals, Android = _Android, Robot / machines = _Mech")]
+        [Tooltip("Spawn KriptoFX volumetric fluid on enemy hits (replaces the small blood / coolant particle; sparks stay).")]
+        public bool useVolumetricBlood = true;
+        [Tooltip("Pre-instantiates one of every blood prefab below (one per frame, hidden, after scene load) so the first hit of each type does not hitch while assets / shaders load.")]
+        public bool prewarmVolumetricBlood = true;
+        public DMVolumetricBloodSet fleshVolumetric = new DMVolumetricBloodSet();
+        public DMVolumetricBloodSet androidVolumetric = new DMVolumetricBloodSet();
+        public DMVolumetricBloodSet mechVolumetric = new DMVolumetricBloodSet();
+        [Tooltip("Projector = HDRP decal projector prefabs; Plane = SimplePlaneDecals (cheaper, mesh decal); PlaneBeyondDistance = projector up close, plane beyond volumetricPlaneLodDistance.")]
+        public DMVolumetricDecalMode volumetricDecalMode = DMVolumetricDecalMode.PlaneBeyondDistance;
+        public float volumetricPlaneLodDistance = 12f;
+        public DMVolumetricBloodSet fleshPlaneDecal = new DMVolumetricBloodSet();
+        public DMVolumetricBloodSet androidPlaneDecal = new DMVolumetricBloodSet();
+        public DMVolumetricBloodSet mechPlaneDecal = new DMVolumetricBloodSet();
+        [Tooltip("Fluid colour of the _Android variants (BFX_Blood _Color; values above 1 read brighter). Apply with Tools > Dark Matter Genesis > Combat > Hit Marks > Blood FX - Recolor.")]
+        [ColorUsage(false, true)] public Color androidFluidColor = new Color(0.35f, 2.4f, 0.5f, 1f);
+        [ColorUsage(true, true)] public Color androidDecalTint = new Color(0.1f, 1.4f, 0.2f, 1f);
+        [ColorUsage(false, true)] public Color mechFluidColor = new Color(2.4f, 2.1f, 0.2f, 1f);
+        [ColorUsage(true, true)] public Color mechDecalTint = new Color(1.4f, 1.2f, 0.08f, 1f);
+        [Tooltip("|dot(swing, enemy right)| above this picks the left / right list; below = straight (any list).")]
+        [Range(0f, 1f)] public float volumetricSideThreshold = 0.2f;
+        [Tooltip("Swap left / right if the vendor naming reads mirrored in game.")]
+        public bool volumetricSwapSides = false;
+        [Tooltip("Max volumetric fluids alive at once (pooled).")]
+        [Range(1, 24)] public int volumetricBudget = 6;
+        [Tooltip("No volumetric fluid beyond this camera distance (falls back to the small particle).")]
+        public float volumetricMaxDistance = 20f;
+        [Tooltip("Seconds before a pooled fluid is recycled.")]
+        public float volumetricLifetime = 8f;
+        [Tooltip("BFX_BloodSettings.LightIntensityMultiplier for spawned fluids.")]
+        public float volumetricLightIntensity = 1f;
+        [Tooltip("Volumetric fluid sprays along the blade swing (weapon travel at the hit point); off = away from the surface normal (KriptoFX demo rule). Left/right list is picked from the same swing vector.")]
+        public bool volumetricFollowSwing = true;
+        [Tooltip("Yaw added to the spray direction (90 = KriptoFX demo convention).")]
+        [Range(-180f, 180f)] public float volumetricYawOffset = 90f;
+        [Tooltip("Red (flesh) KriptoFX volumetric blood on hits taken by the player; the old splatter is the fallback (budget / distance).")]
+        public bool volumetricOnPlayer = true;
+        [Header("KriptoFX HDRP fixes (2026-10-12)")]
+        [Tooltip("Place the floor decal on the ground under the hit (terrain included, characters skipped) instead of the vendor RaycastAll.")]
+        public bool volumetricGroundSnap = true;
+        public LayerMask volumetricGroundMask = ~0;
+        [Range(1f, 20f)] public float volumetricGroundRayDistance = 6f;
+        [Tooltip("Landed decals get a random 0-360 yaw around the surface normal so splats don't stack aligned.")]
+        public bool volumetricDecalRandomRotation = true;
+        [Tooltip("Random landed-decal scale range per spawn (min).")]
+        [Range(0.3f, 2f)] public float volumetricDecalScaleMin = 0.85f;
+        [Tooltip("Random landed-decal scale range per spawn (max).")]
+        [Range(0.3f, 2f)] public float volumetricDecalScaleMax = 1.15f;
+        [Tooltip("Ground decal projection box depth (m). Thin = no blood on legs / boots; too thin can miss sloped terrain. 0 = vendor depth.")]
+        [Range(0f, 2f)] public float volumetricDecalDepth = 0.25f;
+        [Tooltip("How far the decal box reaches above the ground snap point (m). The box spans [ground + offset - depth, ground + offset].")]
+        [Range(0f, 0.5f)] public float volumetricDecalGroundOffset = 0.08f;        [Tooltip("BFX_Blood is unlit: under HDRP physical exposure it renders black. On = its color is scaled by the sun intensity (lux / pi) at spawn.")]
+        public bool volumetricFluidExposureComp = true;
+        [Tooltip("Fluid brightness multiplier on top of the exposure compensation (1 = lit like a 100% albedo surface).")]
+        [Range(0f, 4f)] public float volumetricFluidBrightness = 0.07f;
+        [Tooltip("Airborne fluid: the material color is brought down to this max channel before the glow (hue kept). The Android / Mech copies are HDR (2.4) and bloomed into a screen-filling glow; 0.75 = the vendor red's brightness.")]
+        [Range(0.1f, 4f)] public float fluidMaxChannel = 0.75f;
+        [Tooltip("Per body type glow multiplier on the airborne fluid brightness (hue unchanged). 1 = natural.")]
+        [Range(0f, 4f)] public float fluidGlowFlesh = 1f;
+        [Range(0f, 4f)] public float fluidGlowAndroid = 1.4f;
+        [Range(0f, 4f)] public float fluidGlowMech = 1.4f;
+
+
 
         [Header("Burn mark materials")]
         [Tooltip("BloodChar look: bright red blood spot with a circular char ring. 2x2 atlas.")]

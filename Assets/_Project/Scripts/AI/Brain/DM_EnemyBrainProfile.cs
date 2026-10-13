@@ -95,6 +95,8 @@ namespace Project.AI
         [Header("Enemy block (extends Defend: the brain picks block with defendBlockShare = the block chance)")]
         [Tooltip("Master switch. Off = the guard pose is cosmetic again (hits are not absorbed, the player is not recoiled).")]
         public bool enableEnemyBlock = true;
+        [Tooltip("Reactive block: chance an enemy facing the player snaps its guard up as a player melee hit arrives (when the brain guard is not already up). Uses blockCooldown, blockArcDegrees and the definition blockChanceMultiplier. 0 = brain-only blocks (rare).")]
+        [Range(0f, 1f)] public float reactiveBlockChance = 0.25f;
         [Tooltip("Seconds before THIS enemy may start another block. Blocks only start between swings while the enemy holds the attack token, so the one-attacker cap is untouched.")]
         [Range(0f, 30f)] public float blockCooldown = 4f;
         [Tooltip("How long a block lasts (s). 0 = use the prefab defensiveBlockDuration (1.2).")]
@@ -154,6 +156,10 @@ namespace Project.AI
         [Range(0f, 0.5f)] public float dodgeBackBlendOut = 0.15f;
         [Tooltip("Turn the enemy to the roll direction instantly when the roll starts, so the roll animation (a forward roll) does not first travel toward the threat.")]
         public bool dodgeRollSnapFacing = true;
+        [Tooltip("When no DM_Dodge clip fits (or the animator is not ready), play the forward Roll instead of skipping the dodge. Off = never forward roll.")]
+        public bool allowForwardRollFallback = false;
+        [Tooltip("Dodge start / in-dodge turn rate (deg/s): the body turns toward the dodge facing instead of snapping. 0 = old instant snap.")]
+        [Range(0f, 2000f)] public float dodgeTurnDegPerSec = 720f;
 
         [Header("Side dodge clip (clipfix): side rolls use a real side-dodge clip, the body faces the threat and never plays the forward roll")]
         [Tooltip("On = a side roll plays DM_DodgeLeft / DM_DodgeRight (Standing Dodge Left/Right) with the body facing the threat. Off = old forward Roll clip turned sideways.")]

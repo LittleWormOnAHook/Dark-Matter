@@ -8,7 +8,7 @@ using UnityEngine.UI;
 namespace Project.UI
 {
     /// <summary>
-    /// Full-screen new-game flow: pick one starter Skilled Pioneer using 5000 AC grant.
+    /// Full-screen new-game flow: pick one starter Skilled Pioneer using 5000 UEA Credits grant.
     /// Shown after Main Menu → New Game, before the welcome start popup.
     /// </summary>
     public class StarterPioneerSelectUI : MonoBehaviour
@@ -90,7 +90,7 @@ namespace Project.UI
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 
-            creditsLabel = MenuUiBuilder.CreateTitle(contentArea, "Aether Credits: 5000", 20f);
+            creditsLabel = MenuUiBuilder.CreateTitle(contentArea, "UEA Credits: 5000", 20f);
             creditsLabel.color = new Color(0.78f, 0.86f, 0.95f, 1f);
             statusLabel = MenuUiBuilder.CreateTitle(contentArea, string.Empty, 16f);
             statusLabel.color = new Color(0.72f, 0.78f, 0.86f, 1f);
@@ -159,7 +159,7 @@ namespace Project.UI
 
             Button recruitButton = MenuUiBuilder.CreateButton(
                 card.transform,
-                $"Recruit ({offer.acCost} AC)",
+                $"Recruit ({offer.acCost} UEA)",
                 new Vector2(220f, 42f),
                 16f);
             recruitButton.onClick.AddListener(() => HandleRecruitClicked(offer));
@@ -190,7 +190,7 @@ namespace Project.UI
         {
             PioneerRosterManager roster = PioneerRosterManager.EnsureExists();
             float credits = roster != null ? roster.AetherCredits : StarterPioneerCatalog.StarterAcGrant;
-            creditsLabel.text = $"Aether Credits: {Mathf.RoundToInt(credits)}";
+            creditsLabel.text = $"UEA Credits: {Mathf.RoundToInt(credits)}";
         }
     }
 }

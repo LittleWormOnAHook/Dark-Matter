@@ -255,7 +255,8 @@ namespace Project.Combat
                 return;
             }
 
-            CombatHitVfx.SpawnBloodSplatter(point, direction, -direction, damage);
+            if (!CombatHitVfx.IsNonFleshEnemy(receiverCollider != null ? (Component)receiverCollider : this))
+                CombatHitVfx.SpawnBloodSplatter(point, direction, -direction, damage);
         }
     }
 }

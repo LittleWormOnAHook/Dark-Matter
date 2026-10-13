@@ -19,6 +19,16 @@ namespace Project.Combat
 
         private static float lastPlayerRecoilTime = -999f;
 
+        /// <summary>Runtime-only test switch: every player melee hit meets a raised guard (block or guard break). Never saved.</summary>
+        public static bool ForceBlockTest;
+
+#if UNITY_EDITOR
+        [UnityEditor.MenuItem("Tools/Dark Matter Genesis/Combat/Test/Force Enemy Block (toggle)")]
+        private static void ToggleForce() { ForceBlockTest = !ForceBlockTest; Debug.Log("[EnemyBlock] ForceBlockTest=" + ForceBlockTest); }
+        [UnityEditor.MenuItem("Tools/Dark Matter Genesis/Combat/Test/Force Enemy Block (toggle)", true)]
+        private static bool ToggleForceCheck() { UnityEditor.Menu.SetChecked("Tools/Dark Matter Genesis/Combat/Test/Force Enemy Block (toggle)", ForceBlockTest); return true; }
+#endif
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Reset()
         {
@@ -30,30 +40,54 @@ namespace Project.Combat
             if (enemy == null || source == null)
                 return Result.None;
 
+            DMHitchMonitor.Mark("player hit -> " + enemy.name);
             DM_EnemyBrainProfile bp = DM_EnemyBrainProfile.Live;
             if (!bp.enableEnemyBlock)
                 return Result.None;
 
             EnemyInvectorCombatBridge bridge = enemy.GetComponent<EnemyInvectorCombatBridge>();
-            if (bridge == null || !bridge.IsBlockActive)
+            if (bridge == null)
                 return Result.None;
 
             // Player melee only (companion hits and other sources land normally).
             if (source.GetComponentInParent<PioneerShooterMeleeInput>() == null)
                 return Result.None;
 
+            // Forced block test (Tools > Dark Matter Genesis > Combat > Test > Force Enemy Block, runtime only): every player melee hit meets a raised guard.
+            if (ForceBlockTest && !bridge.IsBlockActive)
+                bridge.TryBeginBlock(Mathf.Max(0.4f, bp.blockDurationSeconds), out _);
+
+            if (!bridge.IsBlockActive && bp.reactiveBlockChance > 0f)
+            {
+                EnemyAiController ai = enemy.GetComponent<EnemyAiController>();
+                if (ai != null && ai.TryReactiveBlock(source.transform, bp.reactiveBlockChance))
+                    Log("[EnemyBlock] reactive block raised on " + enemy.name);
+            }
+
+            if (!bridge.IsBlockActive)
+            {
+                Log("[EnemyBlock] miss reason=guardNotRaised on " + enemy.name);
+                return Result.None;
+            }
+
             Vector3 toSource = source.transform.position - enemy.transform.position;
             toSource.y = 0f;
-            if (toSource.sqrMagnitude > 0.0001f)
+            if (!ForceBlockTest && toSource.sqrMagnitude > 0.0001f)
             {
                 float cos = Mathf.Cos(Mathf.Clamp(bp.blockArcDegrees, 0f, 360f) * 0.5f * Mathf.Deg2Rad);
                 if (Vector3.Dot(enemy.transform.forward, toSource.normalized) < cos)
+                {
+                    Log("[EnemyBlock] miss reason=outsideArc on " + enemy.name);
                     return Result.None;
+                }
             }
 
             bool charged = AttackInterruptEvaluator.IsPlayerChargedHit(source, out _);
             if (charged ? !bp.blockChargedHits : !bp.blockLightHits)
+            {
+                Log("[EnemyBlock] miss reason=" + (charged ? "chargedNotBlockable" : "lightNotBlockable") + " on " + enemy.name);
                 return Result.None;
+            }
 
             if (charged && bp.chargedBreaksBlock)
             {

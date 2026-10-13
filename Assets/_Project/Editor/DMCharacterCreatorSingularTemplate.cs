@@ -327,16 +327,8 @@ namespace Project.EditorTools
             CheckWeaponSlot(root, melee, "melee", r);
             CheckWeaponSlot(root, ranged, "ranged", r);
 
-            if (start != null)
-            {
-                GameObject drawn = PioneerInvectorWeaponBridge.FindPreloadedDrawnSlot(root.transform, start);
-                if (drawn != null && !drawn.activeSelf)
-                {
-                    r.Warnings.Add(
-                        $"Starting weapon '{start.name}' has a Drawn_ slot but it is not active in the prefab (it is drawn at spawn by the LoadoutBridge).");
-                }
-            }
-            else if (melee == null && ranged == null)
+            // 2026-10-12: all weapon slots (drawn included) are inactive in edit mode by design; the LoadoutBridge draws the start weapon at spawn. No warning.
+            if (start == null && melee == null && ranged == null)
             {
                 r.Info.Add("No weapon resolved (override or definition): the enemy spawns unarmed by design.");
             }
@@ -358,7 +350,7 @@ namespace Project.EditorTools
                 r.HasWeaponWarning = true;
                 r.Warnings.Add(
                     $"WEAPON NOT EQUIPPABLE: the resolved {kind} weapon '{item.name}' (override or definition) has no " +
-                    $"Drawn_ slot for it (weapon holders / Drawn_* objects are missing from the rig). Rebuild From Template.");
+                    $"Drawn_ slot for it (weapon holders / Drawn_* objects are missing from the rig). Add the slot by hand (Fix / Fix All never write Drawn_/Holstered_ slots or holder placements on existing prefabs).");
             }
         }
 
@@ -696,12 +688,12 @@ namespace Project.EditorTools
 
             if (drawnExtra > 0)
                 r.Warnings.Add(
-                    $"Both drawn at once: {drawnExtra} extra Drawn_ weapon slot(s) are active next to the resolved weapon ({names[0]}). Only one weapon may be drawn; Fix deactivates the extras.");
+                    $"Both drawn at once: {drawnExtra} extra Drawn_ weapon slot(s) are active next to the resolved weapon ({names[0]}). Only one weapon may be drawn; deactivate the extras by hand (Fix / Fix All never write Drawn_/Holstered_ slots or holder placements on existing prefabs).");
 
             r.Warnings.Add(
                 $"Weapon objects: {extra.Count} weapon object(s) are active on the prefab but are not the resolved weapon ({string.Join(", ", names)}" +
                 (extra.Count > 5 ? ", ..." : string.Empty) +
-                "). The LoadoutBridge hides them at runtime; Fix deactivates them on the prefab.");
+                "). Weapons are inactive in edit mode by design (the LoadoutBridge activates them at spawn); deactivate by hand (Fix / Fix All never write Drawn_/Holstered_ slots or holder placements on existing prefabs).");
         }
 
         public static int DeactivateUnlisted(GameObject root, ItemData start)

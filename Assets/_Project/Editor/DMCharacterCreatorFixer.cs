@@ -191,15 +191,13 @@ namespace Project.EditorTools
             if (!slotMissing && start != null)
             {
                 GameObject drawn = PioneerInvectorWeaponBridge.FindPreloadedDrawnSlot(contents.transform, start);
-                if (drawn != null && !drawn.activeSelf)
-                    plan.AddAuto(DMCreatorFix.WeaponSlots, $"Sync weapon slot visuals and arm '{start.name}' (active Drawn_ slot).");
+                // 2026-10-12: inactive Drawn_ slot is by design (LoadoutBridge draws at spawn); Fix never writes weapon slots / placements on existing prefabs.
+                _ = drawn;
             }
 
             int unlisted = DMCharacterCreatorWeaponAudit.FindUnlistedActive(contents, start).Count;
             if (unlisted > 0)
-                plan.AddAuto(
-                    DMCreatorFix.WeaponCleanup,
-                    $"Deactivate {unlisted} weapon object(s) that are active on the prefab but are not the resolved weapon.");
+                plan.Manual.Add($"By hand: {unlisted} weapon object(s) are active on the prefab but are not the resolved weapon (Fix / Fix All never write Drawn_/Holstered_ slots or holder placements on existing prefabs).");
 
             List<string> drift = DMCharacterCreatorWeaponAudit.FindValueDrift(contents, def);
             if (drift.Count > 0)
@@ -251,7 +249,7 @@ namespace Project.EditorTools
             if (PioneerInvectorWeaponBridge.FindPreloadedDrawnSlot(contents.transform, item) != null)
                 return false;
             plan.Manual.Add(
-                $"Needs manual rebuild: the {kind} weapon '{item.name}' has no Drawn_ slot (weapon holders are missing from the rig). Rebuild From Template restores them but may orphan scene children placed on the old visual.");
+                $"By hand: the {kind} weapon '{item.name}' has no Drawn_ slot on this prefab. Add and place it by hand (Fix / Fix All never write Drawn_/Holstered_ slots or holder placements on existing prefabs; only a NEW character gets template slots).");
             return true;
         }
 

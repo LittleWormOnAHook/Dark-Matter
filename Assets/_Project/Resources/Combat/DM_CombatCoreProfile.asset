@@ -35,6 +35,8 @@ MonoBehaviour:
   trainingDummyMaxRotationOffset: 52.6
   trainingDummyPoiseStaggerImpulseScale: 3.019
   dodgeIFrameSeconds: 0.25
+  playerRollGuard: 1
+  playerRollMinNormalized: 0.7
   dashIFrameSeconds: 0.25
   statusMaxStacks: 3
   statusImmunityWindowSeconds: 2

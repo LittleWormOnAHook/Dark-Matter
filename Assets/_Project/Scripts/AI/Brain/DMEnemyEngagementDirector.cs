@@ -64,6 +64,8 @@ namespace Project.AI
             public float LastSlotChangeTime = -999f;
             public int EligibleCount;
             public int TotalSlots = 1;
+            public int ExtraAttackers;
+            public float ExtraRollAt = -999f;
             public int ActiveHolderActions;
             public float HolderActionsEnd = -999f;
             public Vector3 LastTargetPosition;
@@ -575,6 +577,16 @@ namespace Project.AI
 
             ring.EligibleCount = count;
             int total = d.ResolveTotalSlots(count);
+            // 2026-10-12 gameplay mode: sometimes extra enemies attack at once (rolled per target every extraAttackerRollSeconds).
+            if (!d.IsTestingMode && count > total)
+            {
+                if (now >= ring.ExtraRollAt)
+                {
+                    ring.ExtraAttackers = Random.value < d.extraAttackerChance ? Random.Range(1, d.extraAttackersMax + 1) : 0;
+                    ring.ExtraRollAt = now + d.extraAttackerRollSeconds;
+                }
+                total = Mathf.Min(total + ring.ExtraAttackers, count);
+            }
             ring.TotalSlots = total;
             int wanted = Mathf.Max(0, total - 1);
 
@@ -754,6 +766,17 @@ namespace Project.AI
                     bestScore = s;
                     best = m;
                 }
+            }
+
+            // 2026-10-12: first-turn guarantee: an eligible enemy that never held the token goes before anyone's second turn.
+            if ((p.fairnessFirstTurnGuaranteed || (DM_CombatDirectorProfile.Live != null && DM_CombatDirectorProfile.Live.IsTestingMode)) && eligible > 1 && eligible <= PickScratch.Length)
+            {
+                int fresh = -1;
+                for (int i = 0; i < eligible; i++)
+                    if (PickMembers[i] != null && PickMembers[i].EngagementState.TokensAwarded == 0 && (fresh < 0 || PickScratch[i] > PickScratch[fresh]))
+                        fresh = i;
+                if (fresh >= 0)
+                    return PickMembers[fresh];
             }
 
             // Fairness: weighted random pick (softmax of the focus score, which already carries the target / hit bias and the starvation bonus).

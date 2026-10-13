@@ -53,6 +53,7 @@ namespace Project.EditorTools.GenesisStudio
                 while (iterator.NextVisible(enterChildren))
                 {
                     enterChildren = false;
+                    if (!DMStudioSearch.MatchesProperty(iterator)) continue; // 2026-10-12 Studio search
                     if (!DMStudioProfileSections.IncludesField(iterator.propertyPath, section))
                         continue;
 

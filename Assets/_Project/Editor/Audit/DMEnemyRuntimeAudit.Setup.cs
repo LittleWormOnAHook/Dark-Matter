@@ -204,6 +204,7 @@ namespace Project.EditorTools.Audit
 
             _player = GameObject.FindGameObjectWithTag("Player");
             if (_player == null) { Finish("aborted", "no GameObject tagged Player in the scene"); yield break; }
+            EnforceTestTerrain(true); // Gaia terrain off before any spawn / Ground() snap
             _run.environment.Add($"Player: {_player.name} at {_player.transform.position:F1}, hp {Fmt(PlayerHpInvector())}/{Fmt(PlayerHpSurvival())}");
             _origin = Ground(_player.transform.position);
             yield return ArmPlayerRoutine();

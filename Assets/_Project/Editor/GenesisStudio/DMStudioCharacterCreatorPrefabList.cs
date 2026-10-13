@@ -222,11 +222,21 @@ namespace Project.EditorTools.GenesisStudio
             {
                 // Weapon placement bake: always visible right under the header (not inside the scrolled detail, not disabled for protected rows: it only writes the placement asset).
                 DMStudioStyles.DrawInspectorSectionHeader("Weapon placements (Keep / Bake)");
-                DMCharacterCreatorSharedUi.DrawToolbarButtonsWrapped(
-                    24f,
-                    ("Bake placements (this prefab)", () => Queue(() => { lastMessage = DMWeaponPlacementBake.BakeInteractive(new[] { row.Path }); })),
-                    ("Bake placements (all enemies)", () => Queue(() => { lastMessage = DMWeaponPlacementBake.BakeInteractive(DMWeaponPlacementBake.EnemyPrefabPaths()); })),
-                    ("Placement window", () => Queue(() => EditorWindow.GetWindow<DMWeaponPlacementBakeWindow>("Weapon Placement"))));
+                // 2026-10-12: plain layout rows (the wrapped toolbar reserved too little height and overlapped the stats below).
+                using (new EditorGUILayout.VerticalScope())
+                {
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        if (GUILayout.Button("Bake placements (this prefab)", GUILayout.Height(24f), GUILayout.MinWidth(140f)))
+                            Queue(() => { lastMessage = DMWeaponPlacementBake.BakeInteractive(new[] { row.Path }); });
+                        if (GUILayout.Button("Bake placements (all enemies)", GUILayout.Height(24f), GUILayout.MinWidth(140f)))
+                            Queue(() => { lastMessage = DMWeaponPlacementBake.BakeInteractive(DMWeaponPlacementBake.EnemyPrefabPaths()); });
+                    }
+
+                    if (GUILayout.Button("Placement window", GUILayout.Height(24f)))
+                        Queue(() => EditorWindow.GetWindow<DMWeaponPlacementBakeWindow>("Weapon Placement"));
+                    EditorGUILayout.Space(4f);
+                }
                 if (!string.IsNullOrEmpty(lastMessage))
                     DMCharacterCreatorSharedUi.DrawWrappedHelpBox(lastMessage, MessageType.None);
             }

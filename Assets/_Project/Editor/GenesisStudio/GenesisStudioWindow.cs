@@ -301,6 +301,7 @@ namespace Project.EditorTools.GenesisStudio
             if (category.Subtabs.Length == 0)
                 return;
 
+            DMStudioSearch.DrawField("GenesisStudioSearch"); // 2026-10-12 global Studio search (themed layout)
             DrawContentBody(category.Subtabs[subtabIndex], false);
             strataPanel.EndGUI();
         }
@@ -396,6 +397,7 @@ namespace Project.EditorTools.GenesisStudio
                 }
 
                 EditorGUILayout.EndHorizontal();
+                DMStudioSearch.DrawField("GenesisStudioSearch"); // 2026-10-12 global Studio search
             }, category.Accent);
         }
 
@@ -438,18 +440,28 @@ namespace Project.EditorTools.GenesisStudio
         {
             if (ManagesOwnOuterScroll(sub.Mode))
             {
-                using (DMStudioStyles.BeginHorizontalContentGutter())
-                    DrawContentBodyCore(sub, showDescription, ownsOuterScroll: true);
+                DrawContentBodyWithGutter(sub, showDescription);
                 return;
             }
 
             contentScroll = EditorGUILayout.BeginScrollView(contentScroll, GUILayout.ExpandHeight(true));
-            using (DMStudioStyles.BeginHorizontalContentGutter())
-                DrawContentBodyCore(sub, showDescription, ownsOuterScroll: false);
-            EditorGUILayout.EndScrollView();
+            try
+            {
+                DrawContentBodyWithGutter(sub, showDescription);
+            }
+            finally
+            {
+                EditorGUILayout.EndScrollView();
+            }
         }
 
-        private void DrawContentBodyCore(DMStudioSubtab sub, bool showDescription, bool ownsOuterScroll)
+        private void DrawContentBodyWithGutter(DMStudioSubtab sub, bool showDescription)
+        {
+            using (DMStudioStyles.BeginHorizontalContentGutter())
+                DrawContentBodyCore(sub, showDescription);
+        }
+
+        private void DrawContentBodyCore(DMStudioSubtab sub, bool showDescription)
         {
             if (showDescription && !string.IsNullOrEmpty(sub.Description))
             {
@@ -474,27 +486,11 @@ namespace Project.EditorTools.GenesisStudio
 
                     break;
                 case DMStudioPanelMode.AssetFolder:
-                    if (!ownsOuterScroll)
-                    {
-                        contentScroll = Vector2.zero;
-                        EditorGUILayout.EndScrollView();
-                        assetPanel.DrawFolder(
-                            sub.SearchFolder,
-                            sub.TypeFilter,
-                            null,
-                            sub.SectionFilter);
-                        contentScroll = Vector2.zero;
-                        EditorGUILayout.BeginScrollView(contentScroll, GUILayout.ExpandHeight(true));
-                    }
-                    else
-                    {
-                        assetPanel.DrawFolder(
-                            sub.SearchFolder,
-                            sub.TypeFilter,
-                            null,
-                            sub.SectionFilter);
-                    }
-
+                    assetPanel.DrawFolder(
+                        sub.SearchFolder,
+                        sub.TypeFilter,
+                        null,
+                        sub.SectionFilter);
                     break;
                 case DMStudioPanelMode.EmbeddedItemData:
                     itemDataPanel.Draw();
@@ -512,18 +508,7 @@ namespace Project.EditorTools.GenesisStudio
                     buildingLibraryPanel.Draw();
                     break;
                 case DMStudioPanelMode.EnvironmentStrata:
-                    if (!ownsOuterScroll)
-                    {
-                        contentScroll = Vector2.zero;
-                        EditorGUILayout.EndScrollView();
-                        strataPanel.Draw(this);
-                        EditorGUILayout.BeginScrollView(contentScroll, GUILayout.ExpandHeight(true));
-                    }
-                    else
-                    {
-                        strataPanel.Draw(this);
-                    }
-
+                    strataPanel.Draw(this);
                     break;
                 case DMStudioPanelMode.ExternalBlueprintTab:
                     DrawExternalBlueprint(sub);
@@ -547,32 +532,10 @@ namespace Project.EditorTools.GenesisStudio
                     cameraPanel.Draw();
                     break;
                 case DMStudioPanelMode.EmbeddedCompanionEditor:
-                    if (!ownsOuterScroll)
-                    {
-                        contentScroll = Vector2.zero;
-                        EditorGUILayout.EndScrollView();
-                        companionEditorPanel.Draw();
-                        EditorGUILayout.BeginScrollView(contentScroll, GUILayout.ExpandHeight(true));
-                    }
-                    else
-                    {
-                        companionEditorPanel.Draw();
-                    }
-
+                    companionEditorPanel.Draw();
                     break;
                 case DMStudioPanelMode.EmbeddedCompanionSystems:
-                    if (!ownsOuterScroll)
-                    {
-                        contentScroll = Vector2.zero;
-                        EditorGUILayout.EndScrollView();
-                        companionSystemsPanel.Draw();
-                        EditorGUILayout.BeginScrollView(contentScroll, GUILayout.ExpandHeight(true));
-                    }
-                    else
-                    {
-                        companionSystemsPanel.Draw();
-                    }
-
+                    companionSystemsPanel.Draw();
                     break;
                 case DMStudioPanelMode.CombatPlanPlaceholder:
                     DrawCombatPlanPlaceholder(sub);

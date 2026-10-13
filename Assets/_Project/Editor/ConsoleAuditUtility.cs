@@ -5,18 +5,17 @@ using System.Reflection;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
+using Project.EditorTools;
 
 namespace Project.EditorTools.Diagnostics
 {
     /// <summary>
     /// Counts and exports Unity Console errors/warnings (Editor log buffer).
-    /// Menu: Tools → Dark Matter: Genesis → Diagnostics → Audit Console.
+    /// Menu: Tools → Dark Matter Genesis → Diagnostics → Audit Console.
     /// </summary>
     public static class ConsoleAuditUtility
     {
-        private const string MenuRoot = "Tools/Dark Matter: Genesis/Diagnostics/Audit Console";
-
-        [MenuItem(MenuRoot, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Diagnostics_Audit_Console)]
+        [MenuItem(DarkMatterGenesisEditorMenus.AuditConsole, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Diagnostics_Audit_Console)]
         public static void AuditAndLogSummary()
         {
             ConsoleAuditResult result = Collect();
@@ -27,7 +26,7 @@ namespace Project.EditorTools.Diagnostics
                 "OK");
         }
 
-        [MenuItem(MenuRoot + " (Copy Report)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Diagnostics_Audit_Console_Copy_Report)]
+        [MenuItem(DarkMatterGenesisEditorMenus.AuditConsoleCopyReport, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Diagnostics_Audit_Console_Copy_Report)]
         public static void AuditAndCopyReport()
         {
             ConsoleAuditResult result = Collect();
@@ -35,7 +34,7 @@ namespace Project.EditorTools.Diagnostics
             Debug.Log("[ConsoleAudit] Report copied to clipboard.\n" + result.ToReport());
         }
 
-        [MenuItem("Tools/Dark Matter: Genesis/Diagnostics/Audit Resources Paths", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Diagnostics_Audit_Resources_Paths)]
+        [MenuItem(DarkMatterGenesisEditorMenus.AuditResourcesPaths, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Diagnostics_Audit_Resources_Paths)]
         public static void AuditResourcesPaths()
         {
             string report = ResourcesPathAudit.BuildReport();
@@ -43,7 +42,7 @@ namespace Project.EditorTools.Diagnostics
             EditorUtility.DisplayDialog("Resources Path Audit", report, "OK");
         }
 
-        [MenuItem("Tools/Dark Matter: Genesis/Diagnostics/Audit Resources Paths (Copy)", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Diagnostics_Audit_Resources_Paths_Copy)]
+        [MenuItem(DarkMatterGenesisEditorMenus.AuditResourcesPathsCopy, false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Diagnostics_Audit_Resources_Paths_Copy)]
         public static void AuditResourcesPathsCopy()
         {
             string report = ResourcesPathAudit.BuildReport();
