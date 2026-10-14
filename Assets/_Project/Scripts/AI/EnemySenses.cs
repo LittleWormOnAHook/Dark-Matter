@@ -243,7 +243,11 @@ namespace Project.AI
                 return;
 
             float distance = Vector3.Distance(transform.position, noiseEvent.Position);
-            if (distance > hearingRange + noiseEvent.Radius)
+            // 2026-10-14 (a): player gunshots and player-shot impacts use their exact Studio radius
+            // (DM_CombatCoreProfile gunshotHearingRadius / rangedImpactAlertRadius), not hearing range + radius.
+            bool exactRadius = noiseEvent.Kind == EnemyNoiseKind.Gunshot
+                || (noiseEvent.Kind == EnemyNoiseKind.CombatImpact && Project.Combat.CombatPlayerSourceUtility.IsPlayerOrPioneerSource(noiseEvent.Source));
+            if (distance > (exactRadius ? noiseEvent.Radius : hearingRange + noiseEvent.Radius))
                 return;
 
             lastNoisePosition = noiseEvent.Position;

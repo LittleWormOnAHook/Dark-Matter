@@ -43,7 +43,7 @@ namespace Project.AI
 
         private void Start()
         {
-            if (!showFloatingHealthBar || health == null)
+            if (health == null)
                 return;
 
             _canvasRoot = ResolveCanvasRoot();
@@ -93,8 +93,17 @@ namespace Project.AI
             if (health == null)
                 return;
 
+            bool dropped = lastSeenHealth >= 0f && current < lastSeenHealth - 0.001f;
             lastSeenHealth = current;
-            EngagedEnemyHealthHud.Instance?.UpdateHealthIfBound(health, current, max);
+
+            EngagedEnemyHealthHud hud = EngagedEnemyHealthHud.Instance
+                ?? EngagedEnemyHealthHud.EnsureExists(_canvasRoot ?? ResolveCanvasRoot());
+
+            // Always refresh fill when this enemy owns the HUD (ranged often skips a second Focus call).
+            if (hud.IsFocused(health))
+                hud.UpdateHealthIfBound(health, current, max);
+            else if (dropped && showFloatingHealthBar && !health.IsDead)
+                hud.TryFocusIfIdle(health, ResolveDisplayName(), current, max, _stillEngaged);
         }
 
         /// <summary>Latest player damage wins the engaged HUD (melee, ranged, lock-on).</summary>
@@ -103,23 +112,23 @@ namespace Project.AI
             if (target == null || target.IsDead)
                 return;
 
+            EngagedEnemyHealthHud hud = EngagedEnemyHealthHud.EnsureExists(ResolveCanvasRoot());
             EnemyHealthBarPresenter presenter = target.GetComponent<EnemyHealthBarPresenter>();
             if (presenter != null)
             {
-                presenter.PushHealthHudImmediate();
+                presenter.PushHealthHudImmediate(hud);
                 return;
             }
 
-            EngagedEnemyHealthHud hud = EngagedEnemyHealthHud.EnsureExists(ResolveCanvasRoot());
             hud.Focus(target, target.name, target.CurrentHealth, target.MaxHealth, null);
         }
 
-        private void PushHealthHudImmediate()
+        private void PushHealthHudImmediate(EngagedEnemyHealthHud hud = null)
         {
-            if (!showFloatingHealthBar || health == null || health.IsDead)
+            if (health == null || health.IsDead)
                 return;
 
-            EngagedEnemyHealthHud hud = EngagedEnemyHealthHud.EnsureExists(_canvasRoot ?? ResolveCanvasRoot());
+            hud ??= EngagedEnemyHealthHud.EnsureExists(_canvasRoot ?? ResolveCanvasRoot());
             hud.Focus(
                 health,
                 ResolveDisplayName(),

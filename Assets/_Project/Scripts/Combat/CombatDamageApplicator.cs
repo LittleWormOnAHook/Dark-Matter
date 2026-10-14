@@ -1,3 +1,4 @@
+using Project.AI;
 using Project.Interaction;
 using UnityEngine;
 
@@ -34,6 +35,16 @@ namespace Project.Combat
 
             ApplyPoise(targetRoot, in info);
             CombatEvents.RaiseHitApplied(in info, targetRoot);
+
+            // Ranged (CombatHitResolver) and melee share this path; retarget/fill even when the
+            // presenter skipped an early Focus (same singleton the UITK bar reads).
+            if (damageable is EnemyHealth enemyHealth
+                && CombatPlayerSourceUtility.IsPlayerOrPioneerSource(
+                    CombatPlayerSourceUtility.NormalizeForDamageEvents(info.Source) ?? info.Source))
+            {
+                EnemyHealthBarPresenter.RequestEngagedHudFocus(enemyHealth);
+            }
+
             return true;
         }
 

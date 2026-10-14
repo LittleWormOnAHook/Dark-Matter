@@ -174,6 +174,18 @@ namespace Project.AI
 
         public float enemyAimCorrectionSpeed = 360f;
 
+        [Tooltip("Horizontal metres from target at which barrel aim correction reaches full strength.")]
+        [Range(1f, 24f)] public float enemyAimCorrectionFullDistance = 8f;
+
+        [Tooltip("Below this horizontal distance (metres), barrel aim correction fades out (avoids close-range hunch / spin).")]
+        [Range(0.5f, 8f)] public float enemyAimCorrectionCloseDisableDistance = 2.5f;
+
+        [Tooltip("At close range, clamp chest pitch aim to this many degrees (upper body only).")]
+        [Range(5f, 45f)] public float enemyAimCorrectionCloseMaxPitch = 28f;
+
+        [Tooltip("Fire via Invector weapon.Shoot without ShooterManager.ApplyRecoil (stops per-shot spine kick at close range).")]
+        public bool enemySkipInvectorShootRecoil = true;
+
 
         [Tooltip("Debug: once-per-second per-enemy log of the ranged fire gate that blocks a shot.")]
 
@@ -187,7 +199,83 @@ namespace Project.AI
         [Range(0f, 80f)] public float rifleEngageRangeBase = 25f;
         [Range(0f, 80f)] public float rifleVisionFloor = 25f;
 
+        [Header("Chase wall slide (no NavMesh)")]
+        [Tooltip("Capsule-cast chase steps against Default / Building / Climbable / Resource / PW blockers and slide along walls.")]
+        public bool enableChaseWallSlide = true;
+        [Tooltip("Fallback capsule radius when no CapsuleCollider is found on the enemy.")]
+        [Range(0.15f, 0.8f)] public float chaseWallSlideRadius = 0.35f;
+        [Tooltip("Fallback capsule height when no CapsuleCollider is found on the enemy.")]
+        [Range(0.8f, 2.5f)] public float chaseWallSlideHeight = 1.75f;
+        [Tooltip("Shrink allowed move distance before the hit normal (metres).")]
+        [Range(0.01f, 0.2f)] public float chaseWallSlideSkin = 0.05f;
+        [Tooltip("Standoff buffer from Default / Building / Climbable walls during chase / investigate / search (capsule cast skin).")]
+        [Range(0.15f, 1.2f)] public float chaseWallStandoffMeters = 0.5f;
+        [Tooltip("Seconds hugging the wall buffer or blocked before a brief retreat / sidestep nudge.")]
+        [Range(0.5f, 4f)] public float chaseWallBufferStuckSeconds = 1.5f;
+        [Tooltip("Metres to step along the wall outward normal when unsticking.")]
+        [Range(0.2f, 2f)] public float chaseWallRetreatStepMeters = 0.85f;
+        [Tooltip("Optional tangent sidestep mixed into the retreat nudge (metres).")]
+        [Range(0f, 1.5f)] public float chaseWallRetreatSidestepMeters = 0.55f;
+        [Tooltip("Seconds to steer toward the sidestep waypoint after a wall retreat nudge.")]
+        [Range(0.2f, 2.5f)] public float chaseWallRetreatSidestepSeconds = 0.65f;
+        [Tooltip("Slide-along-wall iterations per chase step.")]
+        [Range(1, 4)] public int chaseWallSlidePasses = 2;
+        [Tooltip("Chase steps smaller than this (metres) count as blocked for wall-follow.")]
+        [Range(0.0005f, 0.05f)] public float chaseWallMinProgress = 0.002f;
+        [Tooltip("Blocked frames before tangential wall-follow toward the chase target.")]
+        [Range(1, 12)] public int chaseWallBlockedFramesBeforeFollow = 2;
+        [Tooltip("Forward capsule probe distance used to read the wall normal when head-on.")]
+        [Range(0.2f, 1.5f)] public float chaseWallProbeDistance = 0.6f;
+        [Tooltip("Face the slide / wall-follow direction instead of staring into the wall.")]
+        public bool chaseWallFollowFaceSlide = true;
+        [Tooltip("Turn rate (deg/s) while blocked and steering along a wall.")]
+        [Range(120f, 720f)] public float chaseWallBlockedTurnRate = 480f;
+        [Tooltip("Min seconds to hold a wall-follow tangent side before picking the other (reduces left/right jitter).")]
+        [Range(0.1f, 2f)] public float chaseWallFollowMinSideSeconds = 0.55f;
+        [Tooltip("Dot-product gap required before swapping wall-follow side.")]
+        [Range(0.05f, 0.5f)] public float chaseWallFollowSideHysteresis = 0.18f;
+        [Tooltip("Blocked/stutter frames at a wall with no chase progress → start lost-sight investigate early.")]
+        [Range(4, 90)] public int chaseWallStuckFramesEarlyInvestigate = 24;
+        [Tooltip("Player this many metres above the enemy with no LOS → treat as unreachable direct chase (flatten / investigate).")]
+        [Range(1f, 8f)] public float chaseUnreachableMinVerticalDelta = 2.25f;
+        [Tooltip("Horizontal range for unreachable-roof rule (metres).")]
+        [Range(2f, 20f)] public float chaseUnreachableMaxHorizontal = 12f;
+        [Tooltip("Ranged attacks require EnemySenses line-of-sight (melee touch range still bypasses LOS).")]
+        public bool requireClearLosForRangedFire = true;
 
+        [Header("Lost sight — investigate")]
+        [Tooltip("When chase loses line-of-sight to the player, go to last known position then search instead of immediately giving up.")]
+        public bool enableInvestigateOnLostSight = true;
+        [Tooltip("Use the search duration / radius below instead of each enemy prefab's search fields.")]
+        public bool investigateUseProfileSearchTiming = true;
+        [Range(2f, 30f)] public float investigateSearchDurationSeconds = 8f;
+        [Range(1f, 12f)] public float investigateSearchRadiusMeters = 5f;
+        [Tooltip("Walk speed scale while searching the last-known area.")]
+        [Range(0.3f, 1f)] public float investigateSearchSpeedScale = 0.65f;
+        [Tooltip("Seconds to pause and sweep look direction at each search waypoint.")]
+        [Range(0f, 4f)] public float investigateLookSweepSeconds = 1.25f;
+        [Tooltip("Degrees per second while paused on a search look sweep.")]
+        [Range(30f, 360f)] public float investigateLookSweepTurnRate = 140f;
+        [Tooltip("When player was elevated / unreachable, ray toward last seen and anchor search at the wall impact (metres).")]
+        [Range(4f, 40f)] public float investigateWallBaseRayDistance = 22f;
+        [Tooltip("Stand-off from the wall plane at the investigate anchor.")]
+        [Range(0.1f, 1.2f)] public float investigateWallAnchorOffset = 0.45f;
+        [Tooltip("Search by walking along the wall tangent instead of orbiting last-known XZ.")]
+        public bool investigateSearchAlongWall = true;
+        [Tooltip("Max patrol distance each way from the wall-base anchor (metres).")]
+        [Range(2f, 16f)] public float investigateWallPatrolSpanMeters = 7f;
+        [Tooltip("Seconds blind + elevated threat at the wall foot before forcing Search (hide on roof).")]
+        [Range(0.5f, 8f)] public float investigateElevatedThreatSecondsToSearch = 1.35f;
+        [Tooltip("Seconds stuck within ~1m of investigate anchor before committing to Search.")]
+        [Range(0.5f, 6f)] public float investigateStuckCommitSeconds = 2f;
+        [Tooltip("When false, melee enemies do not swing at a climbing player (ranged is unaffected).")]
+        public bool allowMeleeVsClimbingPlayer = false;
+
+        [Header("Enemy ranged ammo pool")]
+        [Tooltip("Default shots each ranged enemy may fire before reload. EnemyDefinition.rangedAmmoPool > 0 overrides per type. 0 = unlimited (infinite mag).")]
+        [Range(0, 999)] public int enemyRangedAmmoPoolDefault = 1;
+        [Tooltip("Seconds after the last shot in a mag before the pool refills. 0 = no auto-reload (empty until respawn / Reapply).")]
+        [Range(0f, 30f)] public float enemyRangedAmmoReloadSeconds = 2.5f;
 
         [Header("Enemy guard stamina")]
         [Tooltip("Guard stamina pool per enemy (EnemyDefinition.guardStaminaMax overrides when > 0). Empty = guard breaks.")]

@@ -56,8 +56,10 @@ namespace Project.UI
         private Label keyBl;
         private Label clipLabel;
         private Label loadedAmmoLabel;
+        private Label scopeModeTag;
         private VisualElement loadedAmmoIcon;
         private VisualElement loadedAmmoRow;
+        private bool lastScopeTagVisible;
         private WeaponAmmoState ammoState;
         private int lastClipShown = int.MinValue;
         private string lastAmmoNameShown;
@@ -324,10 +326,23 @@ namespace Project.UI
                 visualsDirty = true;
             }
 
+            if (PollScopeTagChanged())
+                visualsDirty = true;
+
             if (visualsDirty)
                 Refresh();
 
             DMUiToolkitOverlayDocument.SetShown(ammoPopup, ammoPopupOpen);
+        }
+
+        /// <summary>Weapon modes Scope toggle has no inventory event — poll while HUD is up.</summary>
+        private bool PollScopeTagChanged()
+        {
+            bool visible = ComputeScopeTagVisible(out _);
+            if (visible == lastScopeTagVisible)
+                return false;
+            lastScopeTagVisible = visible;
+            return true;
         }
 
         private void MarkVisualsDirty()
@@ -384,8 +399,19 @@ namespace Project.UI
             keyBl = tree.Q<Label>("hot-cross-key-bl");
             clipLabel = tree.Q<Label>("hot-cross-clip");
             loadedAmmoLabel = tree.Q<Label>("hot-cross-loaded-ammo");
+            scopeModeTag = tree.Q<Label>("hot-cross-scope-tag");
             loadedAmmoIcon = tree.Q<VisualElement>("hot-cross-loaded-icon");
             loadedAmmoRow = tree.Q<VisualElement>("hot-cross-loaded");
+            if (scopeModeTag != null)
+            {
+                scopeModeTag.style.color = DarkMatterGenesisUiPalette.Gold;
+                scopeModeTag.style.borderTopColor = DarkMatterGenesisUiPalette.RichFuchsia;
+                scopeModeTag.style.borderBottomColor = DarkMatterGenesisUiPalette.RichFuchsia;
+                scopeModeTag.style.borderLeftColor = DarkMatterGenesisUiPalette.RichFuchsia;
+                scopeModeTag.style.borderRightColor = DarkMatterGenesisUiPalette.RichFuchsia;
+                scopeModeTag.style.backgroundColor = DarkMatterGenesisUiPalette.WithAlpha(DarkMatterGenesisUiPalette.DarkNavy, 0.72f);
+                DMUiToolkitOverlayDocument.SetShown(scopeModeTag, false);
+            }
             if (clipLabel != null)
                 clipLabel.text = string.Empty;
 
@@ -502,11 +528,54 @@ namespace Project.UI
             RefreshConsumableQuadrant();
             RefreshToolQuadrant();
             RefreshClipCount();
+            RefreshScopeModeTag();
+        }
+
+        private void RefreshScopeModeTag()
+        {
+            if (scopeModeTag == null)
+                return;
+
+            bool show = ComputeScopeTagVisible(out _);
+            lastScopeTagVisible = show;
+            if (!show)
+            {
+                DMUiToolkitOverlayDocument.SetShown(scopeModeTag, false);
+                return;
+            }
+
+            scopeModeTag.text = "SCOPE";
+            DMUiToolkitOverlayDocument.SetShown(scopeModeTag, true);
+        }
+
+        private bool ComputeScopeTagVisible(out ItemData drawnWeapon)
+        {
+            drawnWeapon = null;
+            if (!ShouldShow())
+                return false;
+
+            ResolveInventory();
+            if (equipment == null || !equipment.HasActiveRangedWeapon())
+                return false;
+
+            drawnWeapon = equipment.DrawnWeaponItem;
+            if (drawnWeapon == null || !drawnWeapon.IsRangedWeapon || drawnWeapon.isMiningTool)
+                return false;
+
+            if (!DMScopeMode.IsUnlocked)
+                return false;
+
+            DMScopeMode scope = DMScopeMode.Instance;
+            if (scope == null)
+                return false;
+
+            bool rifle = DMScopeMode.IsRifle(drawnWeapon);
+            return rifle ? scope.RifleScopeEnabled : scope.PistolScopeEnabled;
         }
 
         private void RefreshClipCount()
         {
-            if (clipLabel == null && loadedAmmoLabel == null && loadedAmmoIcon == null)
+            if (clipLabel == null && loadedAmmoLabel == null && loadedAmmoIcon == null && scopeModeTag == null)
                 return;
 
             ResolveAmmoState();
@@ -521,6 +590,7 @@ namespace Project.UI
                 lastClipShown = int.MinValue;
                 lastAmmoNameShown = null;
                 lastAmmoNameGlowValid = false;
+                lastScopeTagVisible = false;
                 if (clipLabel != null)
                 {
                     clipLabel.text = string.Empty;
@@ -528,6 +598,8 @@ namespace Project.UI
                 }
 
                 HideLoadedAmmoRow();
+                if (scopeModeTag != null)
+                    DMUiToolkitOverlayDocument.SetShown(scopeModeTag, false);
                 return;
             }
 

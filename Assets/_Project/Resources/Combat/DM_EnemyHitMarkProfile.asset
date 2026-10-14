@@ -79,6 +79,7 @@ MonoBehaviour:
   androidMarkTint: {r: 0.32, g: 0.34, b: 0.32, a: 1}
   robotMarkTint: {r: 0.34, g: 0.33, b: 0.3, a: 1}
   useVolumetricBlood: 1
+  prewarmVolumetricBlood: 1
   fleshVolumetric:
     any:
     - {fileID: 3151080748080959035, guid: 09ec677f2a2c350498005606f5b923fc, type: 3}
@@ -214,6 +215,12 @@ MonoBehaviour:
   volumetricSideThreshold: 0.2
   volumetricSwapSides: 0
   volumetricBudget: 6
+  volumetricAirborneScale: 0.7
+  lightHitBloodChance: 0.5
+  heavyHitBloodChance: 1
+  heavyHitBloodScale: 1.3
+  volumetricStraightUsesSideChance: 0.5
+  logVolumetricSide: 0
   volumetricMaxDistance: 20
   volumetricLifetime: 8
   volumetricLightIntensity: 1
@@ -228,6 +235,11 @@ MonoBehaviour:
   volumetricDecalRandomRotation: 1
   volumetricDecalScaleMin: 0.85
   volumetricDecalScaleMax: 1.15
+  volumetricDecalSizeMultiplier: 0.25
+  volumetricDecalDepth: 0.25
+  volumetricDecalGroundOffset: 0.08
+  volumetricGroundTowardTarget: 0.55
+  volumetricPlayerFluidGroundSnap: 0
   volumetricFluidExposureComp: 1
   volumetricFluidBrightness: 0.1
   fluidMaxChannel: 0.212

@@ -84,7 +84,9 @@ namespace Project.UI
             GameSettings.Load();
             // Late EnsureExists (e.g. while New Expedition already advanced the phase) must not
             // yank Phase back to MainMenu — that re-shows the menu and feels like a bounce.
-            if (GameSession.Phase != GamePhase.StartPopup
+            if (DMAuditBootSkip.Active)
+                GameSession.MarkStarted();
+            else if (GameSession.Phase != GamePhase.StartPopup
                 && GameSession.Phase != GamePhase.Playing
                 && GameSession.Phase != GamePhase.StarterPioneerSelect)
                 GameSession.ResetSession();
@@ -96,6 +98,8 @@ namespace Project.UI
 
             // Loading Genesis owns the screen on boot; keep freshly built chrome hidden until it hands off.
             if (LoadingOverlayController.IsBlockingMenu)
+                HideMenuChrome();
+            else if (DMAuditBootSkip.Active)
                 HideMenuChrome();
         }
 

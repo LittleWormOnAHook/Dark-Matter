@@ -1,8 +1,8 @@
 # Acts 0–3 — Expanded Plan (Current + Future Assets)
 
-**Status:** Design draft — August 2026  
-**Authority:** `Quests_And_Story_Plan.md` · `Prologue_Acts_Expanded.md` · `Prologue_Playthrough_Step_By_Step.md` · GDD 5.0  
-**Player:** Kade · 0 AC · level 1 · no inventory · 2 starting companions (Mars survivors) · Hard Mode optional · **10 Memory Cores**  
+**Status:** Design draft — August 2026 · **Links retargeted Oct 8, 2026** (ordinal playthrough → `Prologue_Playthrough_And_Camp_Bootstrap_Plan.md` §3; story spine restored as `Quests_And_Story_Plan.md`)  
+**Authority:** `Quests_And_Story_Plan.md` · `Prologue_Acts_Expanded.md` · `Prologue_Playthrough_And_Camp_Bootstrap_Plan.md` · GDD 5.0  
+**Player:** Kade · 0 UEA · level 1 · no inventory · 2 starting companions (Mars survivors) · Hard Mode optional · **10 Memory Cores**  
 **Legend**
 
 | Tag | Meaning |
@@ -19,7 +19,7 @@
 |-----|------|-----------|-----------|
 | **0** | Charter | 5–10 min | Background locked; 2 starting companions aboard; drop committed |
 | **1** | Landing & Camp | ~1.5–2.75 h | CC Seed + Shelter + Craft Station live |
-| **2** | Cert & Machine | ~1.0–2.25 h | Lv5 skills · Aether-9 awake · Echo #1 · 10-core hunt **accepted** |
+| **2** | Cert & Machine | ~1.0–2.25 h | Lv5 skills · The Overseer awake · Echo #1 · 10-core hunt **accepted** |
 | **3** | Ten Memories | Multi-session (post-prologue) | Cores **1–10** attached; Resonance cadence; trust climbing |
 
 Acts **0–2** = timed prologue (2–5 h mainline). Act **3** = campaign Memory Core hunt.
@@ -35,7 +35,7 @@ Acts **0–2** = timed prologue (2–5 h mainline). Act **3** = campaign Memory 
 
 | Step | Beat | Detail |
 |------|------|--------|
-| 0.1 | New Game | Create save; credits **0**; no cores; Aether-9 flag false |
+| 0.1 | New Game | Create save; credits **0**; no cores; The Overseer flag false |
 | 0.2 | Background select | Six Kade backgrounds + Hard Mode (−20% Kade damage) |
 | 0.3 | Starting companions | Kade's 2 Mars survivors are already in the crew (no pick); synergy preview if class matches |
 | 0.4 | Controls popup | KBM + gamepad sheet; GameSession gate |
@@ -267,7 +267,7 @@ CC Seed + Shelter + Station + companion assigned + gust survived → unlock Act 
 
 # ACT 2 — Cert & Machine
 
-**Fantasy:** Earn deep-gather rights → clear ridge → wake Aether-9 → first Echo → accept **10** cores.  
+**Fantasy:** Earn deep-gather rights → clear ridge → wake The Overseer → first Echo → accept **10** cores.  
 **Quests:** `prologue_05`–`prologue_08` + `prologue_end_ten_cores` (**FUTURE**).
 
 ## Scene E — Level 5 Field Certification
@@ -336,7 +336,7 @@ CC Seed + Shelter + Station + companion assigned + gust survived → unlock Act 
 
 ---
 
-## Scene G — Wake Aether-9
+## Scene G — Wake The Overseer
 
 ### CURRENT
 
@@ -352,17 +352,17 @@ CC Seed + Shelter + Station + companion assigned + gust survived → unlock Act 
 | Asset | Change |
 |-------|--------|
 | Custom objectives | Repair part slotting as Custom / Collect |
-| Save flags | `aether9Awakened`, trust tier |
+| Save flags | `The OverseerAwakened`, trust tier |
 
 ### FUTURE
 
 | Asset | Notes |
 |-------|--------|
-| `POI_Aether9_Shell` idle machine prefab | Centerpiece |
+| `POI_Overseer_Shell` idle machine prefab | Centerpiece |
 | Valve Vault puzzle prefab | Power Coupler |
 | Sparking Conduit extract volume | Memory Bus Ribbon |
 | `Item_PowerCoupler`, `Item_MemoryBusRibbon` | Parts 2–3 |
-| `Aether9Dialogue` / comms templates | Angry awaken |
+| `OverseerDialogue` / comms templates | Angry awaken |
 | Machine Caldera terrain bowl | ~60 m |
 | `prologue_07_aether_repair` quest | |
 
@@ -389,7 +389,7 @@ CC Seed + Shelter + Station + companion assigned + gust survived → unlock Act 
 |-------|--------|
 | Spawner | Fire on Aether awaken pulse (story hook) |
 | Journal | Show `Memory Cores 0/10` tracker after accept |
-| Distinguish | UI copy: surface Echo ≠ Aether-9 machine Echo |
+| Distinguish | UI copy: surface Echo ≠ The Overseer machine Echo |
 
 ### FUTURE
 
@@ -402,7 +402,7 @@ CC Seed + Shelter + Station + companion assigned + gust survived → unlock Act 
 
 ### Act 2 exit
 
-Lv5 + mining/harvest · Aether-9 Angry · Echo #1 rescued · **0/10** hunt accepted.
+Lv5 + mining/harvest · The Overseer Angry · Echo #1 rescued · **0/10** hunt accepted.
 
 ---
 
@@ -410,7 +410,7 @@ Lv5 + mining/harvest · Aether-9 Angry · Echo #1 rescued · **0/10** hunt accep
 
 **Fantasy:** Prove Io’s past with evidence — one core at a time.  
 **Starts when:** Act 2 ends. **Not** inside 2–5 h prologue clock.  
-**Loop per core:** Find → setpiece → attach to Aether-9 → Resonance Event (10–15 min) → fragment + unlock.
+**Loop per core:** Find → setpiece → attach to The Overseer → Resonance Event (10–15 min) → fragment + unlock.
 
 ## Act 3 structure
 
@@ -424,11 +424,11 @@ Lv5 + mining/harvest · Aether-9 Angry · Echo #1 rescued · **0/10** hunt accep
 
 ## Per-core template (every core)
 
-1. **Lead** — Aether-9 or Ops (early) marks sector; rumor, not truth.  
+1. **Lead** — The Overseer or Ops (early) marks sector; rumor, not truth.  
 2. **Travel** — Expedition with trio; exposure + enemies.  
 3. **Setpiece** — Puzzle and/or elite/boss; unique POI.  
 4. **Secure core** — Carry or sealed case (friction optional).  
-5. **Return / field attach** — Slot into Aether-9 (prefer return to shell for 1–3; later allow field uplink).  
+5. **Return / field attach** — Slot into The Overseer (prefer return to shell for 1–3; later allow field uplink).  
 6. **Resonance Event** — 10–15 min world change; may injure base-22, pause queues, spawn Echo chance.  
 7. **Aftermath** — Journal fragment; trust tick; next core unlock gate.
 
@@ -452,7 +452,7 @@ Lv5 + mining/harvest · Aether-9 Angry · Echo #1 rescued · **0/10** hunt accep
 | Asset | Change |
 |-------|--------|
 | `GameSaveData.memoryCoresAttached[]` | Length 10; ids + timestamps |
-| Aether-9 trust enum | Angry → Wary → Advisor → Friend |
+| The Overseer trust enum | Angry → Wary → Advisor → Friend |
 | Quest rewards | AC / XP / recipes per core |
 | Weather / Resonance | Hook Resonance Supercell weather id when directors land |
 | BCP pause | Full pause on Resonance Supercell / sulfur (GDD) |
@@ -465,7 +465,7 @@ Lv5 + mining/harvest · Aether-9 Angry · Echo #1 rescued · **0/10** hunt accep
 | `Item_MemoryCore_01`…`_10` | Or single item + instance id |
 | `POI_CoreSite_01`…`_10` | Unique layouts |
 | `ResonanceEventDirector` | 10–15 min modifiers |
-| Aether-9 attach VFX / UI | Slot cinematic |
+| The Overseer attach VFX / UI | Slot cinematic |
 | Comms: Aether advisory unlock | After trust gate (not day one) |
 | Biome art passes B1–B7 | Per Io phase map |
 
@@ -491,7 +491,7 @@ After Core 10 attach: Act IV trust/advisor handoff + path to campaign capstone (
 - [ ] All **10** cores attached  
 - [ ] At least one full Resonance Event experienced  
 - [ ] First Echo still in roster (or documented loss rules if any — default: keep)  
-- [ ] Aether-9 trust ≥ Wary (Advisor preferred)  
+- [ ] The Overseer trust ≥ Wary (Advisor preferred)  
 - [ ] Side content (Lost Survey, etc.) optionally available from Core 2+
 
 ---
@@ -500,7 +500,7 @@ After Core 10 attach: Act IV trust/advisor handoff + path to campaign capstone (
 
 ```
 Act0 FUTURE KadeBackgroundSelectUI
-  -> EXTEND PioneerRosterManager (2 starting companions; 0 AC)
+  -> EXTEND PioneerRosterManager (2 starting companions; 0 UEA)
   -> CURRENT MainMenu / GameSession
   -> FUTURE Shuttle Timeline
        ->
@@ -509,7 +509,7 @@ Act1 FUTURE prologue_01..04 + Landing/Ring/Plateau blockouts
   -> FUTURE CC Seed / Shelter / Station modules
        ->
 Act2 CURRENT skill_mining/harvesting Lv5 + TrainingDummy + EchoWorldEntity + Android prefabs
-  -> FUTURE Aether9 Shell + Boss Ash-Warden + prologue_05..08
+  -> FUTURE The Overseer Shell + Boss Ash-Warden + prologue_05..08
        ->
 Act3 FUTURE MemoryCoreDefinition x10 + ResonanceEventDirector
   -> CURRENT QuestManager, Echo, Map, Enemies, Exposure
@@ -530,7 +530,7 @@ Until FUTURE prefabs land, play Acts 0–2 on **Genesis v1.56 / v1.57** using:
 | CC Seed | Empty pad + `BuildingControlPanel` on prop |
 | Shelter | `Shelter_Safe_Zone` |
 | Craft station | Existing Workbench |
-| Aether-9 | Distinct prop + `QuestGiverNpc` dialog lines retargeted |
+| The Overseer | Distinct prop + `QuestGiverNpc` dialog lines retargeted |
 | First Echo | `EchoSignalSpawner.SpawnTestSignalNearPlayer` authored position |
 | Moths | Ember Skitter low damage |
 
@@ -542,11 +542,11 @@ Replace stand-ins without changing quest ids.
 
 | P | Work | Acts |
 |---|------|------|
-| P0 | 0 AC + free companion code | 0 |
+| P0 | 0 UEA + free companion code | 0 |
 | P1 | `prologue_01`–`04` quests + Landing/Ring/Plateau greybox | 1 |
 | P2 | CC Seed / Shelter / Station placeables + BCP assign | 1 |
 | P3 | Lv5 cert yard + mining/harvest proofs | 2 |
-| P4 | Ash-Warden + Aether-9 shell + repair quest | 2 |
+| P4 | Ash-Warden + The Overseer shell + repair quest | 2 |
 | P5 | First Echo cradle + 0/10 tracker | 2 |
 | P6 | `MemoryCoreDefinition` + Core 1–2 | 3 |
 | P7 | ResonanceEventDirector stub | 3 |
@@ -558,10 +558,10 @@ Replace stand-ins without changing quest ids.
 
 | Doc | Use |
 |-----|-----|
-| `Prologue_Playthrough_Step_By_Step.md` | Ordinal steps 0.1–8.7 |
+| `Prologue_Playthrough_And_Camp_Bootstrap_Plan.md` (§3) | Ordinal playthrough steps P0–P8 (replaces missing `Prologue_Playthrough_Step_By_Step.md`) |
 | `Prologue_Acts_Expanded.md` | Narrative/friction depth Acts 0–2 |
 | **This file** | Current vs future asset bible Acts **0–3** |
-| `Kade_Background_And_Universe_Backstory_Plan.md` | Background definitions |
+| `Player_Identity_Kade.md` | Kade identity / background locks |
 | `Io_World_Content_Phase_Map.md` | Biome order for Act 3 |
 
 ---

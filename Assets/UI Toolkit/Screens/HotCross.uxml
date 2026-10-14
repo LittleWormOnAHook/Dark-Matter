@@ -2,6 +2,7 @@
     <Style src="HotCross.uss"/>
     <ui:VisualElement name="hot-cross-root" picking-mode="Ignore" class="hot-cross-root">
         <ui:VisualElement name="hot-cross" picking-mode="Ignore" class="hot-cross">
+            <ui:Label name="hot-cross-scope-tag" text="SCOPE" picking-mode="Ignore" class="hot-cross-scope-tag"/>
             <!-- Loaded ammo row: ammo cutout + name (never the weapon icon). stamp: hotcross-loaded-icon 1006 -->
             <ui:VisualElement name="hot-cross-loaded" picking-mode="Ignore" class="hot-cross-loaded">
                 <ui:VisualElement name="hot-cross-loaded-icon" picking-mode="Ignore" class="hot-cross-loaded-icon"/>

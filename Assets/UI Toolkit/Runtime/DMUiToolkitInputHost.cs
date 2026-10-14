@@ -128,14 +128,6 @@ namespace Project.UI
                     return;
                 case KeyCode.J:
                 case KeyCode.I:
-                case KeyCode.M:
-                case KeyCode.K:
-                case KeyCode.P:
-                case KeyCode.C:
-                case KeyCode.U:
-                case KeyCode.T:
-                case KeyCode.L:
-                case KeyCode.G:
                     if (GameplayKeyboardShortcuts.TryHandleJournalKeyCode(evt.keyCode))
                         evt.StopImmediatePropagation();
                     return;

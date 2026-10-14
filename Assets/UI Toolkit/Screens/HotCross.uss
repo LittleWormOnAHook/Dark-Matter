@@ -22,6 +22,28 @@
     overflow: visible;
 }
 
+/* Scope mode tag (weapon modes Scope ON + drawn ranged weapon). */
+.hot-cross-scope-tag {
+    position: absolute;
+    left: 50%;
+    top: -56px;
+    width: 96px;
+    height: 18px;
+    margin-left: -48px;
+    font-size: 10px;
+    color: rgb(212, 160, 23);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+    -unity-text-outline-width: 1px;
+    -unity-text-outline-color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(28, 42, 56, 0.72);
+    border-width: 1px;
+    border-color: rgb(192, 46, 122);
+    padding-left: 6px;
+    padding-right: 6px;
+}
+
 /* Loaded ammo: cutout icon + name above the cross (ammo identity, not the weapon). */
 .hot-cross-loaded {
     position: absolute;

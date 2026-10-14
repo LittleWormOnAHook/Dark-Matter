@@ -113,6 +113,8 @@ namespace Project.AI.Invector
             }
 
             RestoreInvectorAliveState();
+            // 2026-10-14 (a): put the weapon dropped at death back on its holder before the loadout re-draws it.
+            GetComponent<EnemyInvectorLoadoutBridge>()?.RecoverDroppedWeaponForRespawn();
             RestoreCombatLoadout();
             GetComponent<EnemyInvectorLoadoutBridge>()?.ClearDroppedWeaponReference();
             EnemyInvectorRagdollSetup.EnsurePresent(gameObject);

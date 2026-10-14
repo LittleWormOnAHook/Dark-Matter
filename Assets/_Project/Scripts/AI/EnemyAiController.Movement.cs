@@ -275,6 +275,8 @@ namespace Project.AI
             if (IsStationary)
                 return;
 
+            TryApplyWallRetreatSidestepTarget(ref target);
+
             Vector3 flatTarget = target;
             if (TrySampleGround(flatTarget, out float groundY))
                 flatTarget.y = groundY;
@@ -295,12 +297,34 @@ namespace Project.AI
                     step = toTarget.normalized * maxStep;
 
                 step = ClampCombatStepTowardTarget(step);
+                DM_EnemyBrainProfile wallProfile = DM_EnemyBrainProfile.Live;
+                float minWallProgress = wallProfile != null
+                    ? Mathf.Max(0.0005f, wallProfile.chaseWallMinProgress)
+                    : 0.002f;
+                EnemyChaseWallSlide.AdjustResult wallMove = EnemyChaseWallSlide.AdjustStep(
+                    transform,
+                    step,
+                    flatTarget,
+                    wallProfile,
+                    this);
+                step = wallMove.Step;
+                TickWallBufferStuckRetreat(wallMove, step.sqrMagnitude, minWallProgress);
 
                 if (step.sqrMagnitude < 0.000001f)
                 {
-                    ClearLocomotion();
-                    if (toTarget.sqrMagnitude > 0.01f)
-                        FaceTowards(flatTarget);
+                    if (wallMove.PreferFaceSlideDirection && wallMove.FaceDirection.sqrMagnitude > 0.0001f)
+                    {
+                        ApplyWallFollowFacing(wallMove.FaceDirection);
+                        currentLocomotionSpeed = scaledSpeed * 0.45f;
+                        currentLocalMoveDirection = transform.InverseTransformDirection(wallMove.FaceDirection.normalized);
+                    }
+                    else
+                    {
+                        ClearLocomotion();
+                        if (toTarget.sqrMagnitude > 0.01f)
+                            FaceTowards(flatTarget);
+                    }
+
                     return;
                 }
 
@@ -308,14 +332,91 @@ namespace Project.AI
                 NoteMover("ChaseMove", step.magnitude);
                 currentLocomotionSpeed = scaledSpeed;
                 currentLocalMoveDirection = transform.InverseTransformDirection(step.normalized);
+
+                if (wallMove.PreferFaceSlideDirection && wallMove.FaceDirection.sqrMagnitude > 0.0001f)
+                    ApplyWallFollowFacing(wallMove.FaceDirection);
+                else if (toTarget.sqrMagnitude > 0.01f)
+                    FaceTowards(flatTarget);
+                return;
             }
             else
             {
+                chaseWallBlockedFrames = 0;
                 ClearLocomotion();
             }
 
             if (toTarget.sqrMagnitude > 0.01f)
                 FaceTowards(flatTarget);
+        }
+
+        private void ApplyWallFollowFacing(Vector3 worldDirection)
+        {
+            worldDirection.y = 0f;
+            if (worldDirection.sqrMagnitude < 0.0001f)
+                return;
+
+            DM_EnemyBrainProfile profile = DM_EnemyBrainProfile.Live;
+            float turnRate = profile != null ? profile.chaseWallBlockedTurnRate : 480f;
+            DMILocomotionFacing.FaceTowardDegrees(transform, transform.position + worldDirection.normalized, turnRate);
+        }
+
+        private bool UsesChaseWallSlideLocomotion()
+        {
+            return state == AiState.Chase || state == AiState.Investigate || state == AiState.Search;
+        }
+
+        private bool TryApplyWallRetreatSidestepTarget(ref Vector3 target)
+        {
+            if (Time.time > wallRetreatSidestepUntil)
+                return false;
+
+            target = wallRetreatSidestepTarget;
+            return true;
+        }
+
+        private void BeginWallRetreatSidestep(Vector3 nudge)
+        {
+            DM_EnemyBrainProfile profile = DM_EnemyBrainProfile.Live;
+            float seconds = profile != null ? profile.chaseWallRetreatSidestepSeconds : 0.65f;
+            nudge.y = 0f;
+            if (nudge.sqrMagnitude < 0.0001f || seconds <= 0.02f)
+                return;
+
+            wallRetreatSidestepTarget = transform.position + nudge.normalized * (nudge.magnitude + 0.35f);
+            if (TrySampleGround(wallRetreatSidestepTarget, out float groundY))
+                wallRetreatSidestepTarget.y = groundY;
+            wallRetreatSidestepUntil = Time.time + seconds;
+        }
+
+        private void TickWallBufferStuckRetreat(
+            EnemyChaseWallSlide.AdjustResult wallMove,
+            float stepSqrMag,
+            float minProgress)
+        {
+            DM_EnemyBrainProfile profile = DM_EnemyBrainProfile.Live;
+            if (profile == null || !profile.enableChaseWallSlide || !UsesChaseWallSlideLocomotion())
+                return;
+
+            bool blocked = stepSqrMag < minProgress * minProgress;
+            if (wallMove.InWallBufferContact || blocked || chaseWallBlockedFrames > 0 || ChaseWallStutterFrames > 0)
+                chaseWallBufferStuckTimer += Time.deltaTime;
+            else
+                chaseWallBufferStuckTimer = Mathf.Max(0f, chaseWallBufferStuckTimer - Time.deltaTime * 2f);
+
+            float limit = profile.chaseWallBufferStuckSeconds;
+            if (limit <= 0.05f || chaseWallBufferStuckTimer < limit)
+                return;
+
+            if (EnemyChaseWallSlide.TryBuildRetreatNudge(transform, profile, this, out Vector3 nudge))
+            {
+                transform.position += nudge;
+                NoteMover("WallRetreat", nudge.magnitude);
+                BeginWallRetreatSidestep(nudge);
+            }
+
+            chaseWallBufferStuckTimer = 0f;
+            chaseWallBlockedFrames = 0;
+            ChaseWallStutterFrames = 0;
         }
 
         /// <summary>

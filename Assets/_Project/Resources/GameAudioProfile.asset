@@ -270,6 +270,11 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 6ada37007453d944283930793beaa223, type: 3}
   levelUpClips:
   - {fileID: 8300000, guid: d173223db3d7b234fa4458f563b254b3, type: 3}
+  lootChestOpenClips: []
+  lootChestCloseClips:
+  - {fileID: 0}
+  lootChestDissolveClips: []
+  lootChestVolume: 0.8
   uiVolume: 0.85
   sfxSpatialBlend: 1
   sfxMinDistance: 1

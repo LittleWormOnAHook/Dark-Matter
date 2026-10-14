@@ -949,6 +949,6 @@ Status 2026-09-30: 6 `done` · 11 `in_progress` · 24 `backlog`.
 - Split **BUILD-012** if recipe drain and cancel/refund are too large for one PR.
 - **BUILD-070** can ship stub quests before full VO — use Custom objectives + debug complete.
 - Defer **BUILD-015** if single-def debug binding is enough for first playtest.
-- **Relay Pylon** and **Aether-9 shell** intentionally have **no tickets** — story POIs, not Lite Building v1.
+- **Relay Pylon** and **The Overseer shell** intentionally have **no tickets** — story POIs, not Lite Building v1.
 
 When you iterate, edit status/priority here or say which tickets to merge/split.

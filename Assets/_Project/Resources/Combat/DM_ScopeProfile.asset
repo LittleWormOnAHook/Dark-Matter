@@ -15,27 +15,35 @@ MonoBehaviour:
   scopeEnabled: 1
   scopeUnlockedByDefault: 1
   rifleScopedRange: 50
-  pistolScopedRange: 28
+  pistolScopedRange: 20
   rifleScopedFov: 14
   pistolScopedFov: 26
-  scopeInSeconds: 0.3
+  scopeInSeconds: 0.25
   scopeOutSeconds: 0.15
   rifleScopedFireInterval: 2.5
   pistolScopedFireInterval: 2
   minScopedFireInterval: 1
-  scopedHeadMultiplier: 2
+  scopedHeadMultiplier: 4
   scopedChestMultiplier: 1.25
   scopedAccuracyBonusPercent: 25
-  reticleSwayPixels: 6
+  reticleSwayPixels: 12
   reticleSwaySpeed: 0.6
   allowedAmmoKeywords:
   - Standard
   - Plasma
-  scopedShotVolume: 1.2
-  scopedShotPitch: 0.85
-  maxSwayReduction: 0.85
+  - Ion
+  scopedShotVolume: 2.53
+  scopedShotPitch: 0.621
+  maxSwayReduction: 0.8
   maxScopeInReduction: 0.7
   maxExtraZoom: 0.5
+  scopeCrosshairSprite: {fileID: 21300000, guid: a2adaa3af0ef3874cbb557c21520006f, type: 3}
+  scopeOverlayUseSpriteCrosshair: 1
+  rifleScopeMaskRadius: 0.34
+  rifleScopeMaskScale: 0.8
+  rifleScopeCrosshairScale: 0.8
+  pistolScopeMaskRadius: 0.4
+  pistolScopeReticleScale: 0.25
   useNewScopeArt: 1
   retireUguiOptics: 1
   reticleColor: {r: 0.05, g: 0.05, b: 0.05, a: 0.95}
@@ -43,6 +51,6 @@ MonoBehaviour:
   reticleLineWidth: 1.6
   reticleCenterGap: 10
   milDotsPerArm: 4
-  rifleScopeLabel: SCOPE
-  pistolScopeLabel: SCOPE
-  scopeHint: '[RMB] Release  |  Standard / Plasma ammo only'
+  rifleScopeLabel: SCOPED
+  pistolScopeLabel: SCOPED
+  scopeHint: '[RMB] Release  |  Standard / Plasma / Ion ammo only'

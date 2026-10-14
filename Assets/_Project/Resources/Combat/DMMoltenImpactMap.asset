@@ -16,7 +16,7 @@ MonoBehaviour:
   maxActive: 24
   dripCollisionMask:
     serializedVersion: 2
-    m_Bits: 4294967291
+    m_Bits: 2281701363
   glowShader: {fileID: 4800000, guid: 69444a857ad237f45a54a9cf50475e37, type: 3}
   rules:
   - label: Water

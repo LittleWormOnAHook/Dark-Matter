@@ -61,6 +61,7 @@ namespace Project.EditorTools.GenesisStudio
             GUILayout.Label("Personalities", GUILayout.Width(120f));
             GUILayout.Label("Body", GUILayout.Width(72f));
             GUILayout.Label("Ranged", GUILayout.Width(44f));
+            GUILayout.Label("Ammo", GUILayout.Width(72f));
             GUILayout.Label("Overrides", GUILayout.MinWidth(80f));
             GUILayout.Label("", GUILayout.Width(88f));
             EditorGUILayout.EndHorizontal();
@@ -85,6 +86,7 @@ namespace Project.EditorTools.GenesisStudio
             SerializedProperty secondary = row.Serialized.FindProperty("secondaryPersonality");
             SerializedProperty bodyType = row.Serialized.FindProperty("bodyType");
             SerializedProperty preferRanged = row.Serialized.FindProperty("preferRangedWeapon");
+            SerializedProperty rangedAmmoType = row.Serialized.FindProperty("rangedAmmoType");
 
             if (category != null)
                 EditorGUILayout.PropertyField(category, GUIContent.none, GUILayout.Width(72f));
@@ -107,6 +109,8 @@ namespace Project.EditorTools.GenesisStudio
                 EditorGUILayout.PropertyField(bodyType, GUIContent.none, GUILayout.Width(72f));
             if (preferRanged != null)
                 EditorGUILayout.PropertyField(preferRanged, GUIContent.none, GUILayout.Width(44f));
+            if (rangedAmmoType != null)
+                EditorGUILayout.PropertyField(rangedAmmoType, GUIContent.none, GUILayout.Width(72f));
 
             string overrideLabel = row.Definition.HasAnyProfileOverride ? "Profiles" : "—";
             EditorGUILayout.LabelField(overrideLabel, GUILayout.MinWidth(80f));

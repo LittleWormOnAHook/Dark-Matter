@@ -1,6 +1,7 @@
 using Invector.vCharacterController;
 using Invector.vMelee;
 using Invector.vShooter;
+using Project.AI;
 using Project.Combat;
 using Project.Data;
 using Project.Player.Invector;
@@ -51,6 +52,8 @@ namespace Project.AI.Invector
         [SerializeField] private DMEnemyArchetype brainArchetype = DMEnemyArchetype.Duelist;
         [SerializeField] private DMEnemyPersonality primaryPersonality = DMEnemyPersonality.None;
         [SerializeField] private DMEnemyPersonality secondaryPersonality = DMEnemyPersonality.None;
+        [Tooltip("Only when Override Brain is enabled. Use Grip Default = EnemyDefinition ranged ammo type.")]
+        [SerializeField] private DMEnemyRangedAmmoChoice overrideRangedAmmoType = DMEnemyRangedAmmoChoice.UseGripDefault;
         [Tooltip("Empty = definition's, then global.")] [SerializeField] private DM_EnemyBrainProfile brainProfileOverride;
         [Tooltip("Empty = definition's, then global.")] [SerializeField] private DM_EnemyEngagementProfile engagementProfileOverride;
         [Tooltip("Empty = definition's, then global.")] [SerializeField] private DM_EnemyHitMarkProfile hitMarkProfileOverride;
@@ -112,9 +115,29 @@ namespace Project.AI.Invector
                 o.overrideBrain = overrideBrain; o.brainArchetype = brainArchetype;
                 o.primaryPersonality = primaryPersonality; o.secondaryPersonality = secondaryPersonality;
                 o.brainProfileOverride = brainProfileOverride; o.engagementProfileOverride = engagementProfileOverride;
-                o.hitMarkProfileOverride = hitMarkProfileOverride; o.canThrowGrenades = canThrowGrenades;
+                o.hitMarkProfileOverride = hitMarkProfileOverride;                 o.canThrowGrenades = canThrowGrenades;
                 o.overrideWeaponDown = overrideWeaponDown; o.weaponDownAngle = weaponDownAngle; o.weaponDownVariation = weaponDownVariation;
+                o.overrideRangedAmmoType = overrideRangedAmmoType;
                 return o;
+            }
+        }
+
+        /// <summary>Effective ranged ammo choice: instance (when override brain) else definition.</summary>
+        public DMEnemyRangedAmmoChoice EffectiveRangedAmmoChoice
+        {
+            get
+            {
+                if (overrideBrain && overrideRangedAmmoType != DMEnemyRangedAmmoChoice.UseGripDefault)
+                    return overrideRangedAmmoType;
+
+                if (overrideBrain && overrideRangedAmmoType == DMEnemyRangedAmmoChoice.UseGripDefault)
+                {
+                    EnemyDefinition d = ResolveDefinition();
+                    return d != null ? d.rangedAmmoType : DMEnemyRangedAmmoChoice.UseGripDefault;
+                }
+
+                EnemyDefinition def = ResolveDefinition();
+                return def != null ? def.rangedAmmoType : DMEnemyRangedAmmoChoice.UseGripDefault;
             }
         }
 
@@ -343,6 +366,7 @@ namespace Project.AI.Invector
             _activeDrawnInstance = null;
             _activeItem = null;
 
+            CaptureDropSnapshot(weaponRoot); // 2026-10-14 (a): so respawn can put the same model back
             ClearInvectorWeapons();
             weaponRoot.SetActive(true);
             weaponRoot.transform.SetParent(null, true);
@@ -352,6 +376,135 @@ namespace Project.AI.Invector
             EnableWeaponPhysics(weaponRoot);
             DeactivateHolsteredWeaponVisuals();
             _lastDroppedWeapon = weaponRoot;
+            FinishDropSnapshot(weaponRoot);
+        }
+
+        // 2026-10-14 (a): GreySpire "fires a rifle but no rifle shows". On death the drawn weapon slot (the prefab's own
+        // Drawn_ child) is detached into the world as a physics prop and destroyed with the corpse dissolve. A respawn
+        // reuses the same enemy object, so the slot was gone for good: the loadout still fired the profiled rifle with no
+        // model. Now the dropped weapon is only hidden at dissolve, and on respawn it is put back on its original holder
+        // with its original local pose, layers, colliders and behaviours (no placement change, nothing saved to the prefab).
+        private sealed class DropSnapshot
+        {
+            public GameObject Root;
+            public Transform Parent;
+            public Vector3 LocalPosition;
+            public Quaternion LocalRotation;
+            public Vector3 LocalScale;
+            public bool WasActive;
+            public Transform[] Nodes;
+            public int[] Layers;
+            public Collider[] Colliders;
+            public bool[] ColliderEnabled;
+            public Behaviour[] Behaviours;
+            public bool[] BehaviourEnabled;
+            public bool HadRigidbody;
+            public bool RbKinematic;
+            public bool RbGravity;
+            public Component[] Added;
+        }
+
+        private DropSnapshot _dropSnapshot;
+
+        private void CaptureDropSnapshot(GameObject weaponRoot)
+        {
+            Transform t = weaponRoot.transform;
+            var s = new DropSnapshot
+            {
+                Root = weaponRoot,
+                Parent = t.parent,
+                LocalPosition = t.localPosition,
+                LocalRotation = t.localRotation,
+                LocalScale = t.localScale,
+                WasActive = weaponRoot.activeSelf,
+                Nodes = weaponRoot.GetComponentsInChildren<Transform>(true),
+                Colliders = weaponRoot.GetComponentsInChildren<Collider>(true),
+                Behaviours = weaponRoot.GetComponentsInChildren<Behaviour>(true)
+            };
+            s.Layers = new int[s.Nodes.Length];
+            for (int i = 0; i < s.Nodes.Length; i++) s.Layers[i] = s.Nodes[i].gameObject.layer;
+            s.ColliderEnabled = new bool[s.Colliders.Length];
+            for (int i = 0; i < s.Colliders.Length; i++) s.ColliderEnabled[i] = s.Colliders[i].enabled;
+            s.BehaviourEnabled = new bool[s.Behaviours.Length];
+            for (int i = 0; i < s.Behaviours.Length; i++) s.BehaviourEnabled[i] = s.Behaviours[i].enabled;
+            Rigidbody rb = weaponRoot.GetComponent<Rigidbody>();
+            s.HadRigidbody = rb != null;
+            if (rb != null) { s.RbKinematic = rb.isKinematic; s.RbGravity = rb.useGravity; }
+            _dropSnapshot = s;
+        }
+
+        private void FinishDropSnapshot(GameObject weaponRoot)
+        {
+            if (_dropSnapshot == null || _dropSnapshot.Root != weaponRoot)
+                return;
+
+            var added = new System.Collections.Generic.List<Component>();
+            if (!_dropSnapshot.HadRigidbody)
+            {
+                Rigidbody rb = weaponRoot.GetComponent<Rigidbody>();
+                if (rb != null) added.Add(rb);
+            }
+
+            var known = new System.Collections.Generic.HashSet<Collider>(_dropSnapshot.Colliders);
+            foreach (Collider c in weaponRoot.GetComponentsInChildren<Collider>(true))
+                if (c != null && !known.Contains(c)) added.Add(c);
+            _dropSnapshot.Added = added.ToArray();
+        }
+
+        /// <summary>Respawn: put the dropped drawn weapon back on its holder exactly as it was before death.</summary>
+        public bool RecoverDroppedWeaponForRespawn()
+        {
+            DropSnapshot s = _dropSnapshot;
+            _dropSnapshot = null;
+            GameObject root = s != null ? s.Root : null;
+            if (root == null || s.Parent == null)
+            {
+                _lastDroppedWeapon = null;
+                return false;
+            }
+
+            Rigidbody rb = root.GetComponent<Rigidbody>();
+            if (rb != null && !rb.isKinematic)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
+
+            if (s.Added != null)
+                for (int i = 0; i < s.Added.Length; i++)
+                    if (s.Added[i] != null) Destroy(s.Added[i]);
+
+            if (s.HadRigidbody && rb != null)
+            {
+                rb.isKinematic = s.RbKinematic;
+                rb.useGravity = s.RbGravity;
+            }
+
+            Transform t = root.transform;
+            t.SetParent(s.Parent, false);
+            t.localPosition = s.LocalPosition;
+            t.localRotation = s.LocalRotation;
+            t.localScale = s.LocalScale;
+
+            for (int i = 0; i < s.Nodes.Length; i++)
+                if (s.Nodes[i] != null) s.Nodes[i].gameObject.layer = s.Layers[i];
+            for (int i = 0; i < s.Colliders.Length; i++)
+                if (s.Colliders[i] != null) s.Colliders[i].enabled = s.ColliderEnabled[i];
+            for (int i = 0; i < s.Behaviours.Length; i++)
+                if (s.Behaviours[i] != null) s.Behaviours[i].enabled = s.BehaviourEnabled[i];
+
+            // Leave it inactive; the loadout restore below activates whichever slot it draws.
+            root.SetActive(false);
+            _lastDroppedWeapon = null;
+            Physics.SyncTransforms();
+            return true;
+        }
+
+        private void OnDestroy()
+        {
+            // The dropped weapon lives outside our hierarchy; don't leak it when the enemy itself goes away.
+            if (_dropSnapshot != null && _dropSnapshot.Root != null && _dropSnapshot.Root.transform.parent == null)
+                Destroy(_dropSnapshot.Root);
         }
 
         public void ClearDroppedWeaponReference()
@@ -391,6 +544,13 @@ namespace Project.AI.Invector
         {
             if (_lastDroppedWeapon == null)
                 return;
+
+            // 2026-10-14 (a): keep it (hidden) when it can go back on the holder at respawn.
+            if (_dropSnapshot != null && _dropSnapshot.Root == _lastDroppedWeapon && _dropSnapshot.Parent != null)
+            {
+                _lastDroppedWeapon.SetActive(false);
+                return;
+            }
 
             Destroy(_lastDroppedWeapon);
             _lastDroppedWeapon = null;

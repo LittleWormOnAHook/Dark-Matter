@@ -10,12 +10,12 @@ Revision: July 22, 2026 — disk-status correction: World Engine / Communication
 Status refresh: Sep 30, 2026 — Appendix B synced to the working project
           (build mode + snap building, Genesis Studio, save v23, streamed
           terrain tiles) and new B6 Implementation Status.
-          Same day, design answers applied to the locks: economy (0 AC, no
+          Same day, design answers applied to the locks: economy (0 UEA, no
           inventory), art (full-scale AAA, semi-high-definition), oxygen
           (needed in most areas; Rebreather auto-off), platforms (PC and Mac
           first; Xbox and PlayStation later), main scene v1.6.5, no NavMesh.
-          Later the same day: shipping start is 0 AC, level 1 and no inventory
-          (the code's 200 AC, level 5 and starting items are testing values,
+          Later the same day: shipping start is 0 UEA, level 1 and no inventory
+          (the code's 200 UEA, level 5 and starting items are testing values,
           to be reset before release); Kade lands with 2 companions (the Mars
           survivors) and the starter-companion pick is retired; the Rebreather
           is script and effects only for now.
@@ -51,10 +51,10 @@ Companion doc: GAME_SUMMARY.txt — quick one-page export of PRODUCT IDENTITY be
 
 LOCKED (do not contradict without an explicit design change)
   Platforms: PC and Mac first; Xbox and PlayStation later. No mobile ship target.
-  Economy: Aether Credits (AC) only. Player starts with 0 AC and no inventory.
-    Optional in-app purchases later would be AC only.
-  Start: level 1, 0 AC, no inventory. Testing values in code; to be reset
-    before release (the code currently starts at 200 AC, level 5, with items).
+  Economy: UEA Credits (UEA) only. Player starts with 0 UEA and no inventory.
+    Optional in-app purchases later would be UEA Credits only.
+  Start: level 1, 0 UEA, no inventory. Testing values in code; to be reset
+    before release (the code currently starts at 200 UEA, level 5, with items).
   Companions: Kade lands on Io with 2 companions (the 2 survivors from the Mars
     escape). No other companions until Echoes (Ethers) are found and reverted
     from ethereal back to corporeal form.
@@ -81,7 +81,7 @@ fight on the surface, and grow a base camp of up to twenty-two companions while 
 trio of three skilled companions can be switched and run expeditions with the player.
 Kade lands with two companions, the survivors of the Mars escape; every other
 companion is a Neural Echo found in ethereal form and restored to corporeal form.
-You rescue procedural Neural Echoes, spend Aether Credits at vendors, and operate
+You rescue procedural Neural Echoes, spend UEA Credits at vendors, and operate
 major structures through in-world Building Control Panels. A Lite Building system
 supports expanding your base camp.
 
@@ -108,7 +108,7 @@ expeditions; crews carry full exposure risk, and future Resonance Events will
 reshape Io while your base camp simulates injury, healing, and production at scale.
 
 Dark Matter (The World Engine) is the reusable framework. Dark Matter: Genesis is
-its first shipped game—the Io story, AC economy, Echo roster, Lite Building base
+its first shipped game—the Io story, UEA Credits economy, Echo roster, Lite Building base
 camp, and sulfur-storm companion fantasy layered on top.
 
 Framework detail: Appendix B5 · Documentation/Architecture/
@@ -596,12 +596,12 @@ stability (pooling, LODs, Addressables as needed).
 Economy (Current Lock)
 ================================================================================
 
-AETHER CREDITS ONLY
+UEA Credits ONLY
 -------------------
-  Aether Credits (AC) is the only player-facing currency.
-  Aether Credits (AC) only. Player starts with 0 AC and no inventory.
-  Optional in-app purchases later would be AC only.
-  Shipping start: 0 AC, level 1, no inventory. The code's 200 AC, level 5 and
+  UEA Credits (UEA) is the only player-facing currency.
+  UEA Credits (UEA) only. Player starts with 0 UEA and no inventory.
+  Optional in-app purchases later would be UEA Credits only.
+  Shipping start: 0 UEA, level 1, no inventory. The code's 200 UEA, level 5 and
   starting items are testing values in code; to be reset before release.
 
 
@@ -905,11 +905,13 @@ A5. Neural Echoes & procedural generation
   Progression is local roster / save only — no marketplace trading of Echoes.
 
 
-A6. Kairos, Memory Cores & Resonance Events
----------------------------------------------
-  Kairos is a SPECIAL prologue intelligence — not a generic mission-control bot and not
-  a human companion. He is an idle machine / probe shell containing an embedded
-  ancient alien Neural Echo who calls himself Kairos.
+A6. The Overseer (Kairos), Memory Cores & Resonance Events
+------------------------------------------------------------
+  **The Overseer** is the player-facing name for the prologue mystery hub (legacy
+  design label: Aether-9). **Kairos** is the in-fiction self-name the voice uses once
+  awakened. He is a SPECIAL prologue intelligence — not a generic mission-control bot
+  and not a human companion: an idle machine / probe shell containing an embedded
+  ancient alien Neural Echo.
 
   PROLOGUE DISCOVERY
     Kade finds the dormant machine early (prologue). Interacting loads a repair
@@ -947,7 +949,7 @@ A7. Buildings, Lite Building, craft & Building Control Panels
   LITE BUILDING (base camp — shipped direction):
     Lightweight placement and maintenance loop for base camp structures
     (shelters, utilities, camp modules) before full materialization pipeline.
-    Player spends gathered resources + AC at vendors where applicable; camp
+    Player spends gathered resources + UEA Credits at vendors where applicable; camp
     expands outward from the Command Center anchor.
 
   FULL MATERIALIZATION (planned):
@@ -974,19 +976,19 @@ A7. Buildings, Lite Building, craft & Building Control Panels
 
 A8. Economy (current lock)
 --------------------------
-  AC — sole gameplay currency.
-    Aether Credits (AC) only. Player starts with 0 AC and no inventory.
-    Shipping start: level 1, 0 AC, no inventory. The code's 200 AC, level 5
+  UEA Credits — sole gameplay currency.
+    UEA Credits (UEA) only. Player starts with 0 UEA and no inventory.
+    Shipping start: level 1, 0 UEA, no inventory. The code's 200 UEA, level 5
     and starting items are testing values in code; to be reset before release.
     Kade lands with 2 companions (the Mars survivors); the old starter-
     companion pick is retired.
-    Earn: XP, Credits, resources, quests, expeditions, Resonance bonuses, base output, loot.
+    Earn: XP, UEA Credits, resources, quests, expeditions, Resonance bonuses, base output, loot.
     Spend: vendors (supplies, gear), rush craft, upgrades,
     heals, inoculations, suits, Lite Building camp modules.
-    Optional in-app purchases later would be AC only.
+    Optional in-app purchases later would be UEA Credits only.
   Companions (workers and skilled): only Kade's starting two plus restored
   Echoes; progression is local roster / save only.
-  When touching economy code: prefer AC for all UI/save; remove leftover legacy
+  When touching economy code: prefer UEA Credits for all UI/save; remove leftover legacy
   currency naming from player-facing HUD.
 
 
@@ -997,16 +999,16 @@ A9. Controls & UI (target)
   Journal: Inventory, Map, Companions/Echoes (trios + roster), Skills, Craft,
   Recipes — pet UI folds into Companions/Echoes when migration completes.
   HUD: O2 + four exposure indicators + active weather alert + surface-threat
-  awareness; thermal = one cold/heat meter; AC balance; base status; hotbar +
+  awareness; thermal = one cold/heat meter; UEA balance; base status; hotbar +
   toolbar.
 
 
 A10. Locked decisions checklist
 -------------------------------
   [x] PC and Mac first; Xbox and PlayStation later; no mobile ship target
-  [x] Aether Credits (AC) only. Player starts with 0 AC and no inventory.
-      Optional in-app purchases later would be AC only.
-  [x] Shipping start: level 1, 0 AC, no inventory (code values are testing
+  [x] UEA Credits (UEA) only. Player starts with 0 UEA and no inventory.
+      Optional in-app purchases later would be UEA Credits only.
+  [x] Shipping start: level 1, 0 UEA, no inventory (code values are testing
       values; to be reset before release)
   [x] Kade lands with 2 companions (the Mars survivors); more only by
       restoring Echoes; starter-companion pick retired
@@ -1068,8 +1070,8 @@ B1. DONE — playable prototype core
   [x] Inventory 5x10 grid (bottom rows locked until unlocked) + hotbar +
       toolbar (scanner / binoculars); crafting + stations
   [x] Journal hub + map + quests (QuestManager); save/load
-  [x] Economy: Aether Credits on roster/UI/save. Shipping start is 0 AC,
-      level 1 and no inventory; the code's 200 AC, level 5 and starting items
+  [x] Economy: UEA Credits on roster/UI/save. Shipping start is 0 UEA,
+      level 1 and no inventory; the code's 200 UEA, level 5 and starting items
       are testing values in code, to be reset before release.
       StarterPioneerSelectUI (the old starter-companion pick screen and its
       credit label) is a retired leftover; the design start is Kade plus 2
@@ -1124,7 +1126,7 @@ B1. DONE — playable prototype core
       grenades; laser burn marks; pooled VFX
   [x] Progression: hex skill tree (5 ranks), level cap 200, XP from quests,
       crafting, combat, exploration, building, special items, achievements
-  [x] Vendors: AC vendors with buy log + camp crate; UI Toolkit shop
+  [x] Vendors: UEA vendors with buy log + camp crate; UI Toolkit shop
   [x] Map + fog of war + scanner discoveries; laser mining; achievements
   [x] Creatures + vehicles: DMI creature pipeline (Sulfur Hound sulfur spit,
       Ember Skitter); walker drill; deployable Quora shelter; Pet Manager
@@ -1134,7 +1136,7 @@ B1. DONE — playable prototype core
 B2. PARTIAL — present but incomplete vs lock
 --------------------------------------------
   [~] Legacy currency-swap UI leftovers (CharacterPanel, main menu) —
-      AC is gameplay truth; strip player-facing legacy currency when touching
+      UEA Credits are gameplay truth; strip player-facing legacy currency when touching
       economy UI
   [~] Building Control Craft/Changes tabs lighter than full GDD automation
   [~] Exposure zones + EnvironmentalCrisisHudMode exist; live WeatherDirector
@@ -1146,7 +1148,7 @@ B2. PARTIAL — present but incomplete vs lock
       Echo/trio not finished
   [~] Gamepad: Input System present on PC; Xbox / PlayStation are later
       targets (ship/cert not done)
-  [~] Quest/loot rewards display as AC; some legacy currency naming in
+  [~] Quest/loot rewards display as UEA; some legacy currency naming in
       enums/assets
   [~] Building tiers: Stone / Iron / Silicate live with no skill gates; Steel,
       Amalgam, skill gates, in-place tier upgrade, and blueprint unlocks (wreck
@@ -1201,7 +1203,7 @@ B4. Near-term roadmap priority (order of value)
   9. Io biome pass + console polish
 
   Legacy notes (partial, not World Engine):
-  [~] AC economy path largely clean; strip remaining legacy currency UI when touched
+  [~] UEA Credits economy path largely clean; strip remaining legacy currency UI when touched
   [x] Echo chronicle can record simulation incidents via PioneerRosterManager APIs
   [x] Exposure system + EnvironmentalCrisisHudMode (F11 WeatherCommand can drive crisis)
 
@@ -1234,7 +1236,7 @@ Run 1 (July 22, 2026) landed Features GameState / WorldState / Directors / Valid
   [x] Scripts/Pioneers/EchoGenerator + EchoChronicleEntry + save round-trip
   [x] BuildingOperationRegistry + FacilityTaskRunner (pauses when crisis HUD active)
   [x] CompanionSystemsBootstrap — Features spine + companions, pet, exposure, facilities
-  [x] GameSaveData v23 — roster, AC, chronicle, building ops, vehicles, power,
+  [x] GameSaveData v23 — roster, UEA Credits, chronicle, building ops, vehicles, power,
       pets, achievements, fog of war, scans, Io clock; placed pieces and crates
       via DMBuildingSaveRuntime / DMStorageCrateSave (no world seed yet)
 
@@ -1304,9 +1306,9 @@ Sep 28). The editor bridge was offline, so live editor state was not checked.
     - Xbox and PlayStation versions (after PC and Mac)
 
   TESTING VALUES IN CODE (to be reset before release)
-    - New game: 200 AC, level 5 and starting items (PlayerProgressionManager
+    - New game: 200 UEA, level 5 and starting items (PlayerProgressionManager
       NewGameStartLevel, StarterPioneerCatalog.StarterAcGrant, SimpleGameManager
-      startingItems). Shipping start: 0 AC, level 1, no inventory.
+      startingItems). Shipping start: 0 UEA, level 1, no inventory.
     - StarterPioneerSelectUI: retired leftover (old starter-companion pick)
 
   TBD / CONFLICTS (not resolved here)

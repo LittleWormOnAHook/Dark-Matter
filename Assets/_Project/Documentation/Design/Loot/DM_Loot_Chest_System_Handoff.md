@@ -22,9 +22,9 @@ HARD RULES
 - UI is UI Toolkit only (UXML/USS/DMUiToolkit*). No new uGUI. Palette from DarkMatterGenesisUiPalette.
 - DM / DMI names only. No new Invector-branded identifiers.
 - No NavMesh. Do NOT edit Invector-Chest.prefab. Remove NavMeshObstacle (fileID 20800156) and the Invector uGUI children in the new DM base prefab (DM_LootChest_Base) via m_RemovedComponents; derive IO_Ancient_Cache and the other chest types from it.
-- Do not retune Player_v7. Aether Credits only (QuestRewardType.Pi is legacy name for AC). Chests hold no AC.
+- Do not retune Player_v7. UEA Credits only (QuestRewardType.Pi is legacy name for AC). Chests hold no AC.
 - Ammo never auto-loads into weapons (Hot Cross only). Chest and world-pickup ammo goes to a matching Hot Cross stack, then inventory. Chest weapons and tools go to the main grid.
-- Shipping start is 0 AC, level 1, empty inventory (200 AC / level 5 / start items are test-only). PC and Mac first.
+- Shipping start is 0 UEA, level 1, empty inventory (200 UEA / level 5 / start items are test-only). PC and Mac first.
 - Do not git add -A. Do not commit unless the user asks. Never commit with console errors.
 - Auto Refresh OFF: after last write MCP refresh_unity (if_dirty, all, compile request, wait_for_ready true), wait for domain reload, read_console errors.
 - No per-frame Q() on UITK. Cache BindTree; create up to 25 rows once.

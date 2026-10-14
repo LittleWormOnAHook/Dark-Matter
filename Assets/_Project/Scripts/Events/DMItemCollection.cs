@@ -139,6 +139,7 @@ namespace Project.Events
             {
                 phase = DMLootChestPhase.Closed;
                 lid?.SnapClosed();
+                GameplayMenuTime.LeaveLootChestInteractUnlessLootWindowOpen();
             }
 
             // Timers keep running while a tile is disabled (9.5); only a destroyed chest leaves the runtime.
@@ -422,7 +423,8 @@ namespace Project.Events
             phase = DMLootChestPhase.Opening;
             WorldUseController.Unregister(this);
 
-            TryPlayPlayerLootAnimation(playerTransform);
+            // Full pause immediately (lid uses realtime); skip loot pose — it twisted under UI/camera lock.
+            GameplayMenuTime.EnterLootChestInteract();
             if (openParticle != null)
                 openParticle.SetActive(true);
             lid?.Open();
@@ -691,6 +693,8 @@ namespace Project.Events
                 return;
 
             phase = DMLootChestPhase.Closed;
+            if (!EnemyLootDialogUI.IsDialogOpen)
+                GameplayMenuTime.LeaveLootChestInteractUnlessLootWindowOpen();
             RefreshRegistration();
         }
 

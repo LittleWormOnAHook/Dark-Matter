@@ -196,6 +196,10 @@ namespace Project.AI
         public float unarmedDuration = 0.55f;
 
         [Header("Ranged Combat")]
+        [Tooltip("Ammo element for ranged shots. Use Grip Default = pistol Standard / rifle Plasma (legacy). Standard = Gunpowder ammo row.")]
+        public DMEnemyRangedAmmoChoice rangedAmmoType = DMEnemyRangedAmmoChoice.UseGripDefault;
+        [Tooltip("Shots this enemy type may fire before reload. 0 = use DM_EnemyBrainProfile enemyRangedAmmoPoolDefault.")]
+        [Min(0)] public int rangedAmmoPool;
         [Tooltip("Distance at which the enemy stops chasing and starts shooting.")]
         public float rangedEngageRange = 12f;
         [Tooltip("Ranged hold rule: distance a ranged-preferred enemy holds from the player (always beyond melee reach). 0 = auto: 80% of Ranged Engage Range.")]

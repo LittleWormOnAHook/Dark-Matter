@@ -277,6 +277,7 @@ namespace Project.UI
             PlayerController player = PlayerLocator.FindPlayerController();
             if (overlayOpen)
             {
+                GameplayMenuTime.SetPause(GameplayMenuTime.ReasonLootChestOpening, false);
                 player?.SetLootDialogOpen(true);
                 GameplayMenuTime.SetPause(GameplayMenuTime.ReasonLootDialog, true);
                 UnityEngine.Cursor.lockState = CursorLockMode.None;

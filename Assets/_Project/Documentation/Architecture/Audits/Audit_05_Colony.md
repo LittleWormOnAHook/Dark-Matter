@@ -24,7 +24,7 @@
 | `PioneerRosterManager` | `Features/Simulation/` service + adapter |
 | `BuildingOperationRegistry` static | scene-bound or service with events |
 | `PetManager` | fold into Echo/trio (`Features/Simulation/`) |
-| Legacy Pi wallet fields | strip on economy UI touch (GDD AC-only) |
+| Legacy Pi wallet fields | strip on economy UI touch (GDD UEA-only) |
 
 ---
 
@@ -59,6 +59,6 @@
 ## Dependencies
 
 **Inbound:** Quest rewards, echoes, building UI, companions, save system, GameState.  
-**Outbound:** `NamedPioneerCatalog`, companions, building registry, UI panels, AC grants.
+**Outbound:** `NamedPioneerCatalog`, companions, building registry, UI panels, UEA Credits grants.
 
 **SimulationDirector (planned):** off-screen colony tick, job assignment, incidents.

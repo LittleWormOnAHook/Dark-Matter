@@ -9,8 +9,7 @@ namespace Project.UI
 {
     /// <summary>
     /// Direct InputAction subscriptions for journal / pause while UITK has focus.
-    /// Per-tab hotkeys (Inventory/Map/Craft/...) toggle tabs on KBM only — gamepad ignores them
-    /// (pad uses Journal + DMUiJournalGamepadNav stick/D-Pad). stamp: journal-kbm-tabs 0920p
+    /// KBM direct hotkeys: Journal (J) and Inventory (I) only — other tabs via UI or gamepad nav.
     /// </summary>
     [DefaultExecutionOrder(-240)]
     [DisallowMultipleComponent]
@@ -65,82 +64,6 @@ namespace Project.UI
                 if (DMInputSchemeRouter.IsGamepadScheme)
                     return;
                 DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Inventory);
-            });
-            BindPlayer("Map", ctx =>
-            {
-                if (!ctx.performed)
-                    return;
-                if (DMInputSchemeRouter.IsGamepadScheme)
-                    return;
-                DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Map);
-            });
-            BindPlayer("Craft", ctx =>
-            {
-                if (!ctx.performed)
-                    return;
-                if (DMInputSchemeRouter.IsGamepadScheme)
-                    return;
-                DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Recipes);
-            });
-            BindPlayer("Blueprints", ctx =>
-            {
-                if (!ctx.performed)
-                    return;
-                if (DMInputSchemeRouter.IsGamepadScheme)
-                    return;
-                // Keyboard B is shared with binoculars hold — ToolBar/ToggleBlueprintsFromTap owns that.
-                // U (and other non-B keyboard binds) open Blueprints directly.
-                if (ctx.control != null && ctx.control.device is Keyboard kb && kb.bKey.isPressed)
-                    return;
-                DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Recipes);
-            });
-            BindPlayer("Pioneers", ctx =>
-            {
-                if (!ctx.performed)
-                    return;
-                if (DMInputSchemeRouter.IsGamepadScheme)
-                    return;
-                DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Pioneers);
-            });
-            BindPlayer("Skills", ctx =>
-            {
-                if (!ctx.performed)
-                    return;
-                if (DMInputSchemeRouter.IsGamepadScheme)
-                    return;
-                DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Skills);
-            });
-            BindPlayer("Echoes", ctx =>
-            {
-                if (!ctx.performed)
-                    return;
-                if (DMInputSchemeRouter.IsGamepadScheme)
-                    return;
-                DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Echoes);
-            });
-            BindPlayer("Achievements", ctx =>
-            {
-                if (!ctx.performed)
-                    return;
-                if (DMInputSchemeRouter.IsGamepadScheme)
-                    return;
-                DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Achievements);
-            });
-            BindPlayer("Character", ctx =>
-            {
-                if (!ctx.performed)
-                    return;
-                if (DMInputSchemeRouter.IsGamepadScheme)
-                    return;
-                DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Character);
-            });
-            BindPlayer("Pets", ctx =>
-            {
-                if (!ctx.performed)
-                    return;
-                if (DMInputSchemeRouter.IsGamepadScheme)
-                    return;
-                DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Pet);
             });
             BindUi("Cancel", ctx =>
             {

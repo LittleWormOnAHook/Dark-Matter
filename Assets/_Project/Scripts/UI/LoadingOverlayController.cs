@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using Project.Audio;
@@ -144,7 +144,7 @@ namespace Project.UI
             }
 
             // TEMP COMBAT FOCUS — Combat_Sandbox Play should not sit on the branded boot veil.
-            if (DmTempCombatFocus.SkipBootOverlay)
+            if (DmTempCombatFocus.SkipBootOverlay || DMAuditBootSkip.Active) // 2026-10-14 (b): audits/tests skip the boot veil
             {
                 bootPending = false;
                 return;
@@ -184,7 +184,7 @@ namespace Project.UI
             }
 
             // TEMP COMBAT FOCUS — skip boot overlay; leave cameras live.
-            if (DmTempCombatFocus.SkipBootOverlay)
+            if (DmTempCombatFocus.SkipBootOverlay || DMAuditBootSkip.Active) // 2026-10-14 (b): audits/tests skip the boot veil
             {
                 bootPending = false;
                 DestroyEarlyBlackout();

@@ -8,7 +8,9 @@ namespace Project.AI
         /// <summary>Generic noise (melee swings, ally alerts, footsteps-style cues).</summary>
         Generic = 0,
         /// <summary>Ranged projectile/hitscan impact — eligible for hearing aggro.</summary>
-        CombatImpact = 1
+        CombatImpact = 1,
+        /// <summary>2026-10-14 (a): player gunshot at the muzzle - exact radius (DM_CombatCoreProfile.gunshotHearingRadius), investigate only.</summary>
+        Gunshot = 2
     }
 
     public static class EnemyNoiseEvents

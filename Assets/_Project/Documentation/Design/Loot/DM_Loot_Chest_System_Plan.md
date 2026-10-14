@@ -21,7 +21,7 @@ Anthony's answers to the 16 questions from the Oct 6 design review (D1-D16) and 
 | D3 | Level-gated items | Lootable at any level. Shown as locked from use until the player reaches the required level. The look is set by D18; placement and selling by D21 and D22. |
 | D4 | Loot All with a full inventory | Take whatever fits, in list order, and leave the rest in the chest. The window stays open and usable; nothing is forfeited. If the chest is not fully looted, its dissolve/expiry pauses and the player gets a 30-minute hold to clear inventory and come back to reloot. Hold details are set by D19. |
 | D5 | World time while the loot window is open | Full pause, like the storage crate. Not the 0.2 slow motion used today. |
-| D6 | AC in chests | No. Chests never hold Aether Credits. |
+| D6 | AC in chests | No. Chests never hold UEA Credits. |
 | D7 | Ammo from chests and world pickups | Never auto-loads into weapons (ammo only loads from Hot Cross slots, an existing lock). It goes to a matching Hot Cross stack first, then the inventory. |
 | D8 | Weapons and tools from chests | Always land in the main inventory grid. No auto-slotting into weapon or tool slots. |
 | D9 | Telling chest types apart | A colour tint per type is enough for now. Anthony replaces the meshes later himself. |
@@ -79,8 +79,8 @@ Items 3, 6 and 7 are refined by the Oct 6 decisions: Loot All closes only once t
 
 - All new UI is **UI Toolkit only** (UXML/USS/`DMUiToolkit*` on an existing `UIDocument` host). No new uGUI. The uGUI loot fallback and the old WorldMenus loot panel are removed once the new window works (D11).
 - **DM / DMI naming.** No new Invector-branded identifiers in `_Project`. Legacy Invector package files stay untouched (D10).
-- **Aether Credits only** economy. Chests hold no AC (D6). No wallet or crypto wording in new code, save DTOs or UI text; do not copy or route through the legacy `piWalletBalance`, the "player wallet" tooltip on `ItemData.isAcInfused` or the legacy marketplace methods in `PioneerRosterManager`.
-- **Shipping start:** 0 AC, level 1, empty inventory. 200 AC, level 5 and the start items are test-only. Every chest rule is designed for the real start.
+- **UEA Credits only** economy. Chests hold no AC (D6). No wallet or crypto wording in new code, save DTOs or UI text; do not copy or route through the legacy `piWalletBalance`, the "player wallet" tooltip on `ItemData.isAcInfused` or the legacy marketplace methods in `PioneerRosterManager`.
+- **Shipping start:** 0 UEA, level 1, empty inventory. 200 UEA, level 5 and the start items are test-only. Every chest rule is designed for the real start.
 - **No NavMesh.** Do not retune `Player_v7`.
 - **Full AAA semi-HD art**, not low poly. Type tints are HDRP/Lit material variants, and the dissolve must not cause a visible lighting pop.
 - **Ammo only loads into weapons from Hot Cross slots** (D7).
@@ -152,7 +152,7 @@ The 15-item override on `IO_Ancient_Cache` (amounts 1 / 300 / 500) is test conte
 ### 4.8 Item model, inventory, economy
 
 - A loot entry is a `QuestRewardDefinition` (`type`, `item`, `amount`).
-- **`QuestRewardType.Pi` is the legacy enum name for Aether Credits.** `QuestRewardGranter.GrantReward` routes it to `GrantAetherCredits`. AC is the only currency.
+- **`QuestRewardType.Pi` is the legacy enum name for UEA Credits.** `QuestRewardGranter.GrantReward` routes it to `GrantAetherCredits`. AC is the only currency.
 - Grant path: gate `LevelUnlockUtility.PassesPickupGate`; grant `QuestRewardGranter.GrantReward` (returns items actually added); `TryGrantLootEntry` in `DmEvents` handles partial grants by reducing `entry.amount`; full-inventory feedback `PickupToastUI.ShowInventoryFull`.
 - Inventory API: `InventorySystem.AddItem` and `AddItemToMainInventory` (`Scripts/Inventory/InventorySystem.cs:207`, `:372`). `ItemData.maxStack` drives stacking.
 - **Nothing is saved for `DmEvents`.** `remainingLoot` rebuilds from `lootSlots` on every `Awake`, so chests refill on every load. `GameSaveData` has no loot field.
@@ -181,7 +181,7 @@ The 15-item override on `IO_Ancient_Cache` (amounts 1 / 300 / 500) is test conte
 - **Awake refill.** `DmEvents.Awake` rebuilds `remainingLoot` from `lootSlots` (`DmEvents.cs:58-63, 93-115`).
 - **Controller.** `DMUiJournalGamepadNav.ResolveNavigationRoot` (`:277-295`) has no branch for a loot host, so focus classes alone do nothing. The existing `dmg-list-row` class is already focusable (`:34`). The crate window is drag and right-click only.
 - **Prompt versus use priority.** Prompt resolution checks the storage crate before `DMItemCollection`, but use priority is collection 97 > bag 94 > crate 90 (aim-gated) (`WorldUseController.cs:1486-1514`). With both in range the prompt can name the wrong chest.
-- **`Shader.Find` in builds.** The dissolve pattern resolves `Project/EnemyDisintegrate` with `Shader.Find` (`EnemyLootBag.cs:389-421`), already flagged as failing or hitching in player builds (`REPAIR_LOG_2026-08-22.md`).
+- **`Shader.Find` in builds.** The dissolve pattern resolves `Project/EnemyDisintegrate` with `Shader.Find` (`EnemyLootBag.cs:389-421`); repair log #5 cached fallbacks — see `Archive/Historical_Engineering_Notes.md` §2.
 - **Map marker.** `DmEvents.RefreshEmptyState` hides the scanner target (`:221-234`) but the map marker added at `:138-141` stays.
 - **Pets.** Pets are designed to auto-pickup loot (`Io_Biome_Ecology_Roster.md:316`). D16 limits this.
 - **Vendor icons have no level-specific lock.** The vendor's only "can't do this" look is the blocked overlay, used when an item cannot be bought or sold (`DMUiToolkitVendor.cs:372, 448-450`). `DMVendorListing.requiredLevel` (`DMVendorListing.cs:16`) is declared but not read anywhere. Level gates only show as text in the item tooltip ("Equip Lv N+", "Use Lv N+", "Pickup Lv N+", `ItemTooltipFormatter.cs:304-331`). D18 reuses the blocked overlay as the level-lock look.
@@ -329,7 +329,7 @@ One `DMLootGrant.TryGrant(entry, source, out result)` replaces the two copies of
 - **Ammo never loads into magazines** (D7). Order: an existing matching stack in a Hot Cross slot, then a matching stack in the main grid, then a free unlocked main-grid slot. Model it on `WeaponAmmoState.ReturnRoundsToInventory` (`:534-560`) and always pass `autoCreditAmmoToWeapons: false`. World pickups (`ItemPickup.cs:396`, `ResourceGatherer.cs:54`) switch to the same rule.
 - **Level-gated items** (D3, D22) are granted at any level: no pickup-level check on chests, enemy drops or world pickups. Remove the pickup-gate refusal in `DmEvents.cs:243`, `EnemyLootBag.cs:612` and `ItemPickup.cs:277, 392`. Mining and harvesting keep their own check (`ResourceGatherer.cs:51`). Items show the level-lock look (section 8.8) while the player is below the item's equip or use gate (`LevelUnlockUtility.GetEffectiveEquipRequiredLevel` / `GetEffectiveUseRequiredLevel`). `requiredLevelToPickup` is not part of the lock, so an item with only a pickup gate shows no lock. Trying to equip or use a locked item shows the existing Require Level popup, once per action.
 - **Level-locked items stay in the main grid** (D21). They never go to hotbar, toolbar or Hot Cross slots until the level is reached, including through `AddItem` auto-slotting on world pickups and enemy drops. Level-locked ammo skips the Hot Cross step of the ammo order and goes straight to the main grid. They can still be sold (D22).
-- **No AC** (D6). The chest path is item-only. If an enemy bag carries AC, it keeps one feedback path (the roster's AC reward card, no extra "+N AC" toast).
+- **No AC** (D6). The chest path is item-only. If an enemy bag carries AC, it keeps one feedback path (the roster's UEA Credits reward card, no extra "+N AC" toast).
 - **Partial grants** reduce `entry.amount` in place; the toast reads "+X (Y left)". `PickupToastUI.ShowInventoryFull` fires once per action, not once per row.
 
 ### 7.8 Pets and companions (D16)

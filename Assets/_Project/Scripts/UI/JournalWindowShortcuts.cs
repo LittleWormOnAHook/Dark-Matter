@@ -1,7 +1,8 @@
 namespace Project.UI
 {
     /// <summary>
-    /// Default keyboard shortcuts for journal fullscreen tabs (Player input actions).
+    /// Journal keyboard shortcuts: only J (journal hub) and I (inventory) are direct hotkeys.
+    /// Other tabs are opened from the journal UI (or gamepad nav) — no letter hints on tab labels.
     /// </summary>
     public static class JournalWindowShortcuts
     {
@@ -11,24 +12,10 @@ namespace Project.UI
             {
                 case JournalWindowId.JournalQuest: return 'J';
                 case JournalWindowId.Inventory: return 'I';
-                case JournalWindowId.Map: return 'M';
-                case JournalWindowId.Pet: return 'K';
-                case JournalWindowId.Pioneers: return 'P';
-                case JournalWindowId.Character: return 'C'; // Player/Character = <Keyboard>/c
-                case JournalWindowId.Recipes: return 'U'; // Player/Blueprints = <Keyboard>/u
-                case JournalWindowId.Skills: return 'T';
-                // Craft tab removed from journal rail — C still opens Blueprints; tap B is primary.
-                case JournalWindowId.Craft: return null;
-                case JournalWindowId.Echoes: return 'L';
-                case JournalWindowId.Achievements: return 'G';
                 default: return null;
             }
         }
 
-        public static string FormatTabLabel(string label, JournalWindowId windowId)
-        {
-            char? key = GetShortcutKey(windowId);
-            return key.HasValue ? $"{label} ({key.Value})" : label;
-        }
+        public static string FormatTabLabel(string label, JournalWindowId windowId) => label;
     }
 }

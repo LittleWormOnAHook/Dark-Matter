@@ -36,7 +36,8 @@ namespace Project.UI
             "dmg-trio-slot",
             "dmg-subtab",
             "dmg-bp-learn",
-            "dmg-crate-slot"
+            "dmg-crate-slot",
+            "dmg-wm-list-row"
         };
 
         private static VisualElement lastFocused;
@@ -218,6 +219,34 @@ namespace Project.UI
                     return stick;
             }
 
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard != null)
+            {
+                if (keyboard.wKey.wasPressedThisFrame || keyboard.upArrowKey.wasPressedThisFrame)
+                {
+                    fromDigital = true;
+                    return new Vector2(0f, 1f);
+                }
+
+                if (keyboard.sKey.wasPressedThisFrame || keyboard.downArrowKey.wasPressedThisFrame)
+                {
+                    fromDigital = true;
+                    return new Vector2(0f, -1f);
+                }
+
+                if (keyboard.aKey.wasPressedThisFrame || keyboard.leftArrowKey.wasPressedThisFrame)
+                {
+                    fromDigital = true;
+                    return new Vector2(-1f, 0f);
+                }
+
+                if (keyboard.dKey.wasPressedThisFrame || keyboard.rightArrowKey.wasPressedThisFrame)
+                {
+                    fromDigital = true;
+                    return new Vector2(1f, 0f);
+                }
+            }
+
             return Vector2.zero;
         }
 
@@ -241,11 +270,21 @@ namespace Project.UI
             Keyboard keyboard = Keyboard.current;
             if (keyboard != null)
             {
-                if (keyboard.enterKey.wasPressedThisFrame)
+                if (keyboard.enterKey.wasPressedThisFrame || keyboard.eKey.wasPressedThisFrame)
                     southPressed = true;
-                if (keyboard.enterKey.isPressed)
+                if (keyboard.enterKey.isPressed || keyboard.eKey.isPressed)
                     southDown = true;
-                if (keyboard.enterKey.wasReleasedThisFrame)
+                if (keyboard.enterKey.wasReleasedThisFrame || keyboard.eKey.wasReleasedThisFrame)
+                    southReleased = true;
+            }
+
+            if (DMUiToolkitWorldMenus.IsWeaponOpen && pad != null)
+            {
+                if (pad.buttonWest.wasPressedThisFrame)
+                    southPressed = true;
+                if (pad.buttonWest.isPressed)
+                    southDown = true;
+                if (pad.buttonWest.wasReleasedThisFrame)
                     southReleased = true;
             }
 
@@ -296,6 +335,9 @@ namespace Project.UI
             // Storage crate (8.5, D15): player and crate grids are focusable (dmg-crate-slot).
             if (DMUiToolkitCrate.IsOpen)
                 return DMUiToolkitCrate.NavigationRoot;
+
+            if (DMUiToolkitWorldMenus.IsWeaponOpen)
+                return DMUiToolkitWorldMenus.WeaponNavigationRoot;
 
             if (DMUiToolkitMenus.IsOpen)
                 return DMUiToolkitMenus.NavigationRoot;

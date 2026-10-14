@@ -38,6 +38,8 @@ namespace Project.EditorTools.Audit
             {
                 var it = AssetDatabase.LoadAssetAtPath<ItemData>(AssetDatabase.GUIDToAssetPath(guid));
                 if (it == null) continue;
+                // Player-only mining tool — never an enemy weapon matrix case (2026-10-14 c).
+                if (it.isMiningTool) continue;
                 if (it.itemType == ItemType.MeleeWeapon) melee.Add(it);
                 else if (it.IsRangedWeapon) ranged.Add(it);
             }

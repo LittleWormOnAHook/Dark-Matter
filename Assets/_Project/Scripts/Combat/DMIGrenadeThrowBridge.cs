@@ -9,8 +9,8 @@ namespace Project.Combat
 {
     /// <summary>
     /// Syncs Dark Matter inventory grenade stacks with the existing Invector throw manager.
-    /// Inventory is the source of truth; G-throw gameplay stays on <see cref="vThrowManager"/>.
-    /// Cook / LT fuse is handled by <see cref="DMIGrenadeCookController"/>.
+    /// Inventory is the source of truth; throw animation/physics stay on <see cref="vThrowManager"/>.
+    /// Input: G/LB arm, hold LMB/LT cook, release LMB/LT throw — <see cref="DMIGrenadeCookController"/>.
     /// </summary>
     [DisallowMultipleComponent]
     public class DMIGrenadeThrowBridge : MonoBehaviour

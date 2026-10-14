@@ -21,5 +21,6 @@
         <ui:Label name="optics-hint" text="[RMB] Close  |  [Scroll] Zoom" picking-mode="Ignore" class="dmg-optics-hint"/>
         <ui:Label name="optics-range" text="" picking-mode="Ignore" class="dmg-optics-range"/>
         <ui:Label name="optics-scanning" text="SCANNING" picking-mode="Ignore" class="dmg-optics-scanning"/>
+        <ui:VisualElement name="optics-scope-crosshair" picking-mode="Ignore" class="dmg-optics-scope-crosshair"/>
     </ui:VisualElement>
 </ui:UXML>

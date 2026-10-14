@@ -1,3 +1,4 @@
+using Project.Combat;
 using Project.Core;
 using Project.Vehicles;
 using UnityEngine;
@@ -14,6 +15,10 @@ namespace Project.UI
         /// Tilde (~) hides only gameplay chrome. Journal, popups, input, and systems keep running.
         /// </summary>
         public static bool CinematicChromeHidden { get; private set; }
+
+        /// <summary>Rifle scope: hide duplicate center weapon reticle only (Hot Cross / compass stay up).</summary>
+        public static bool RifleScopeChromeSuppressed =>
+            DMScopeMode.IsScopedRifle && DMScopeMode.ZoomBlend > 0.05f;
 
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetCinematicStatic()

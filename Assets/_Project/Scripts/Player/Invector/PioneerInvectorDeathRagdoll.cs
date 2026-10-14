@@ -457,6 +457,71 @@ namespace Project.Player.Invector
 
             ResolveTpInput()?.EnableOnAnimatorMove();
             GetComponent<PioneerInvectorBootstrap>()?.EnsureInvectorPhysicsReady();
+            StartRespawnSettle(); // 2026-10-14 (a)
+        }
+
+        // 2026-10-14 (a): Retry slide fix. The corpse freeze released the ragdoll bones back to their death-time
+        // (non-kinematic) flags, so after Retry live physics bones stayed under the animated body, pushed the capsule
+        // and kept it off the ground (slippy friction) - the player skated. Now bones go back to Invector's alive
+        // state (kinematic) and the root's leftover velocity is zeroed for DM_CombatCoreProfile.playerRespawnSettleSeconds.
+        private Coroutine _respawnSettleRoutine;
+
+        private void StartRespawnSettle()
+        {
+            if (_respawnSettleRoutine != null)
+                StopCoroutine(_respawnSettleRoutine);
+            _respawnSettleRoutine = StartCoroutine(RespawnSettleRoutine());
+        }
+
+        private IEnumerator RespawnSettleRoutine()
+        {
+            Project.Combat.DM_CombatCoreProfile p = Project.Combat.DM_CombatCoreProfile.Live;
+            float settle = p != null ? p.playerRespawnSettleSeconds : 0.6f;
+            float until = Time.time + settle;
+            do
+            {
+                KillBodyMotion();
+                yield return new WaitForFixedUpdate();
+            }
+            while (Time.time < until);
+            KillBodyMotion();
+            _respawnSettleRoutine = null;
+        }
+
+        private void KillBodyMotion()
+        {
+            Rigidbody root = GetComponent<Rigidbody>();
+            Animator bodyAnimator = ResolveAnimator();
+            Transform hips = bodyAnimator != null && bodyAnimator.isHuman ? bodyAnimator.GetBoneTransform(HumanBodyBones.Hips) : null;
+            foreach (Rigidbody rb in GetComponentsInChildren<Rigidbody>())
+            {
+                if (rb == null)
+                    continue;
+                if (rb == root)
+                {
+                    if (!rb.isKinematic)
+                    {
+                        Vector3 v = rb.linearVelocity;
+                        rb.linearVelocity = new Vector3(0f, Mathf.Min(0f, v.y), 0f);
+                        rb.angularVelocity = Vector3.zero;
+                    }
+                    continue;
+                }
+
+                // Only ragdoll bones (under the hips); leave any other dynamic bodies alone.
+                if (hips == null || !(rb.transform == hips || rb.transform.IsChildOf(hips)))
+                    continue;
+
+                if (!rb.isKinematic)
+                {
+                    rb.linearVelocity = Vector3.zero;
+                    rb.angularVelocity = Vector3.zero;
+                    rb.isKinematic = true;
+                }
+            }
+
+            if (_controller != null && !_controller.ragdolled)
+                _controller.StopCharacter();
         }
 
 
@@ -553,6 +618,7 @@ namespace Project.Player.Invector
             }
 
             tpInput?.EnableOnAnimatorMove();
+            KillBodyMotion(); // 2026-10-14 (a)
 
             _lieCaptured = false;
             _deathPoseCaptured = false;
@@ -700,8 +766,17 @@ namespace Project.Player.Invector
                 StopCoroutine(_corpseFreezeRoutine);
                 _corpseFreezeRoutine = null;
             }
+            // 2026-10-14 (a): bones return to Invector's alive state (kinematic), not their death-time ragdoll flags.
+            // Non-bone bodies (if any were frozen) get their saved flag back.
+            Animator relAnim = ResolveAnimator();
+            Transform relHips = relAnim != null && relAnim.isHuman ? relAnim.GetBoneTransform(HumanBodyBones.Hips) : null;
             for (int i = 0; i < _frozenBodies.Count; i++)
-                if (_frozenBodies[i] != null) _frozenBodies[i].isKinematic = _frozenWasKinematic[i];
+            {
+                Rigidbody fb = _frozenBodies[i];
+                if (fb == null) continue;
+                bool bone = relHips != null && (fb.transform == relHips || fb.transform.IsChildOf(relHips));
+                fb.isKinematic = bone || _frozenWasKinematic[i];
+            }
             _frozenBodies.Clear();
             _frozenWasKinematic.Clear();
             if (_frozenRoot != null) _frozenRoot.isKinematic = _frozenRootWasKinematic;

@@ -172,14 +172,24 @@ namespace Project.Combat
 
         private static readonly Dictionary<Transform, float> LastByTarget = new Dictionary<Transform, float>();
 
-        public static bool TrySpawn(DM_EnemyHitMarkProfile p, DMEnemyBodyType body, Transform enemy, Vector3 point, Vector3 normal, Vector3 travel)
+        public static bool TrySpawn(DM_EnemyHitMarkProfile p, DMEnemyBodyType body, Transform enemy, Vector3 point, Vector3 normal, Vector3 travel, bool playerHit = false)
         {
             if (p == null || !p.useVolumetricBlood) return false;
+            Transform victimRoot = enemy;
+            if (playerHit && enemy != null)
+                victimRoot = enemy.root;
             DMVolumetricBloodSet set = SetFor(p, body, point);
             if (set == null || set.IsEmpty) return false;
             if (!DMEnemyHitFx.IsWithinFxDistance(point, p.volumetricMaxDistance)) return true; // 2026-10-12: out of range = handled (no legacy fallback while KriptoFX is on)
-            if (Time.time - _lastSpawnTime < 0.06f && (point - _lastSpawnPoint).sqrMagnitude < 0.25f) return true; // same hit reported by two paths: already handled
-            if (enemy != null) { Transform id = enemy; if (LastByTarget.TryGetValue(id, out float lt) && Time.time - lt < 0.05f) return true; LastByTarget[id] = Time.time; } // 2026-10-12: duplicate = handled, was false -> legacy splatter // one spray per hit (player hits can arrive twice)
+            if (Time.time - _lastSpawnTime < 0.06f && (point - _lastSpawnPoint).sqrMagnitude < 0.25f)
+                return !playerHit; // player: allow second path if first was a no-op duplicate guard
+            if (enemy != null)
+            {
+                Transform id = enemy;
+                if (LastByTarget.TryGetValue(id, out float lt) && Time.time - lt < 0.05f)
+                    return !playerHit;
+                LastByTarget[id] = Time.time;
+            }
             Sweep();
             if (Active.Count >= Mathf.Max(1, p.volumetricBudget)) RecycleOldest(); // 2026-10-12: was return false -> legacy splatter once 6 sprays were alive
             int side = ResolveSide(p, enemy, travel);
@@ -202,12 +212,13 @@ namespace Project.Combat
             {
                 settings.LightIntensityMultiplier = p.volumetricLightIntensity;
                 float gy = 0f;
-                bool grounded = p.volumetricGroundSnap && TryGround(p, point, enemy, out gy);
-                settings.AutomaticGroundHeightDetection = !grounded;
+                bool allowGroundSnap = p.volumetricGroundSnap && (!playerHit || p.volumetricPlayerFluidGroundSnap);
+                bool grounded = allowGroundSnap && TryGround(p, point, enemy, out gy);
+                settings.AutomaticGroundHeightDetection = playerHit ? !p.volumetricPlayerFluidGroundSnap : !grounded;
                 if (grounded) settings.GroundHeight = gy;
             }
             go.SetActive(true);
-            JitterDecals(p, go);
+            JitterDecals(p, go, victimRoot);
             ApplyFluidColor(p, go, body);
             _lastSpawnTime = Time.time; _lastSpawnPoint = point;
             Active.Add(new Live { go = go, prefab = prefab, until = Time.time + Mathf.Max(1f, p.volumetricLifetime) });
@@ -231,14 +242,17 @@ namespace Project.Combat
             st.Push(l.go);
         }
 
-        private static void JitterDecals(DM_EnemyHitMarkProfile p, GameObject go)
+        private static void JitterDecals(DM_EnemyHitMarkProfile p, GameObject go, Transform victimRoot)
         {
             float lo = Mathf.Min(p.volumetricDecalScaleMin, p.volumetricDecalScaleMax), hi = Mathf.Max(p.volumetricDecalScaleMin, p.volumetricDecalScaleMax);
+            float toward = Mathf.Clamp01(p.volumetricGroundTowardTarget);
             foreach (BFX.BFX_DecalSettings d in go.GetComponentsInChildren<BFX.BFX_DecalSettings>(true))
             {
                 DMDecalJitter j = d.GetComponent<DMDecalJitter>();
                 if (j == null) j = d.gameObject.AddComponent<DMDecalJitter>();
                 j.Apply(p.volumetricDecalRandomRotation, UnityEngine.Random.Range(lo, hi) * Mathf.Max(0.01f, p.volumetricDecalSizeMultiplier), p.volumetricDecalDepth, p.volumetricDecalGroundOffset);
+                if (toward > 0.001f && victimRoot != null)
+                    j.SetGroundToward(victimRoot, toward);
             }
         }
 

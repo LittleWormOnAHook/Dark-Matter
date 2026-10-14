@@ -1,8 +1,8 @@
 # Stages 0–1 — Playthrough Flow & Quest Task Stages
 
-**Status:** Design draft — August 2026  
+**Status:** Design draft — August 2026 · **Links retargeted Oct 8, 2026** (playthrough checklist → `Prologue_Playthrough_And_Camp_Bootstrap_Plan.md` §3)  
 **Covers:** **Stage 0 (Charter)** + **Stage 1 (Landing & Camp)** only  
-**Parents:** `Acts_0_to_3_Asset_Mapped_Plan.md` · `Prologue_Playthrough_Step_By_Step.md` · `Prologue_Acts_Expanded.md`  
+**Parents:** `Acts_0_to_3_Asset_Mapped_Plan.md` · `Prologue_Playthrough_And_Camp_Bootstrap_Plan.md` (§3) · `Prologue_Acts_Expanded.md`  
 **Scope:** Mainline only. Side quests off. Target contribution to the 2–5 h prologue: **~1.5–3.0 hours** for Stages 0–1 together.  
 **Legend:** **CURRENT** / **EXTEND** / **FUTURE** · Quest status flow: Locked → Available → Active → Completed → TurnedIn
 
@@ -51,7 +51,7 @@ Main Menu
 |-------|-------------|---------------|-------------|
 | S1 | Choose **New Game** / New Expedition | Enter charter pipeline | Return main menu |
 | S2 | Pick save slot (if multi-slot) | Slot reserved | Cancel → menu |
-| S3 | Init empty save | `aetherCredits=0`, no cores, `aether9Awakened=false`, level 1, no inventory | — |
+| S3 | Init empty save | `aetherCredits=0`, no cores, `The OverseerAwakened=false`, level 1, no inventory | — |
 
 ### UI / VO
 
@@ -63,7 +63,7 @@ Main Menu
 | Tag | Asset |
 |-----|--------|
 | CURRENT | `MainMenuController`, `GameSession`, `GameSaveSystem` |
-| EXTEND | New game ships at 0 AC, level 1, no inventory (the code's 200 AC, level 5 and starting items are testing values; reset before release) |
+| EXTEND | New game ships at 0 UEA, level 1, no inventory (the code's 200 UEA, level 5 and starting items are testing values; reset before release) |
 | FUTURE | Optional charter splash (“Basalt Highlands Charter”) |
 
 ### Exit
@@ -94,14 +94,14 @@ Show 6 background cards
 | S1 | Browse backgrounds | Hover/focus each card; read tagline | Gamepad: d-pad / stick |
 | S2 | (Optional) Open rumor panel | Expand body text | Rumor-safe Io lines only |
 | S3 | Review grants | Stats / skills summary visible (no starting kit) | Power band equal across BGs |
-| S4 | Set Hard Mode | Off default; On = −20% Kade damage | Same kit, same 0 AC |
+| S4 | Set Hard Mode | Off default; On = −20% Kade damage | Same kit, same 0 UEA |
 | S5 | Confirm background | Hold confirm or double-confirm if Hard Mode on | Writes `playerBackgroundId`, `hardModeEnabled` |
 
 ### UI / VO
 
 - Title: **“Who was Kade before Io?”**  
 - Hard Mode label: **“Hard Mode (−20% Kade damage)”**  
-- No Aether-9, no “ten cores,” no alien confirmation.
+- No The Overseer, no “ten cores,” no alien confirmation.
 
 ### Assets
 

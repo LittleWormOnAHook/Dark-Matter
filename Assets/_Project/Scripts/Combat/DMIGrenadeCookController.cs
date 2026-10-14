@@ -1,20 +1,24 @@
+using System;
 using System.Reflection;
 using Invector.Throw;
 using Invector.vCharacterController;
 using Project.Core;
 using Project.Data;
 using Project.Inventory;
+using Project.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace Project.Combat
 {
     /// <summary>
-    /// Grenade cook: hold LT (gamepad) / RMB or Left Ctrl (KBM) while G-aiming to start a 10s fuse.
-    /// Blocks weapon fire while holding/cooking a grenade. Keeps existing G / hold-G throw flow.
+    /// Dark Matter grenade controls (when <see cref="DM_CombatCoreProfile.enableGrenades"/> / bridge switch is on):
+    /// KBM — G tap arms (Invector throw-ready); hold LMB cooks; release LMB throws (cooked or not).
+    /// Gamepad — LB tap arms; hold LT cooks; release RB throws.
+    /// Replaces Invector hold-G aim and RMB/Ctrl cook by unsubscribing <see cref="vThrowManagerBase.UpdateThrowInput"/>.
     /// </summary>
     [DisallowMultipleComponent]
-    [DefaultExecutionOrder(-40)]
+    [DefaultExecutionOrder(500)]
     public class DMIGrenadeCookController : MonoBehaviour
     {
         private const float CookTriggerThreshold = 0.35f;
@@ -31,15 +35,36 @@ namespace Project.Combat
         private bool _holdingGrenade;
         private bool _throwCommitted;
         private bool _cookInputHeld;
+        private bool _throwInputHooked;
+        private bool _lastGrenadesEnabled;
         private DMIGrenadeExplosive _activeCookExplosive;
+
+        private vThirdPersonInput _tpInput;
+        private vThirdPersonInput.OnUpdateEvent _defaultThrowInputUpdate;
+
         private MethodInfo _disableAimMode;
         private MethodInfo _exitThrowMode;
+        private MethodInfo _enterThrowMode;
+        private MethodInfo _getThrowConditions;
+        private MethodInfo _pressThrowInputSetter;
+        private PropertyInfo _isAimingProp;
+        private PropertyInfo _inEnterThrowModeProp;
+        private PropertyInfo _isThrowingProp;
 
         /// <summary>True while a grenade is armed for throw and/or cooking — blocks weapon fire.</summary>
-        public bool BlocksWeaponFire => _holdingGrenade || IsCooking;
+        public bool BlocksWeaponFire => IsGrenadeInputBlocking;
+
+        public bool IsGrenadeInputBlocking => InThrowFlow || IsCooking;
 
         public bool IsHoldingGrenade => _holdingGrenade;
         public bool IsCooking => _activeCookExplosive != null && _activeCookExplosive.IsFuseRunning;
+
+        private bool InThrowFlow =>
+            IsAiming || InEnterThrowMode || IsThrowingAnim;
+
+        private bool IsAiming => ReadBoolProperty(_isAimingProp);
+        private bool InEnterThrowMode => ReadBoolProperty(_inEnterThrowModeProp);
+        private bool IsThrowingAnim => ReadBoolProperty(_isThrowingProp);
 
         private void Awake()
         {
@@ -51,11 +76,14 @@ namespace Project.Combat
         {
             ResolveRefs();
             BindThrowEvents(true);
+            _lastGrenadesEnabled = DMIGrenadeThrowBridge.GrenadesEnabled;
+            TryHookThrowInput();
         }
 
         private void OnDisable()
         {
             BindThrowEvents(false);
+            UnhookThrowInput(restoreDefault: true);
             ClearCookState(cancelExplosive: true);
             _holdingGrenade = false;
             _throwCommitted = false;
@@ -66,10 +94,35 @@ namespace Project.Combat
             if (!Application.isPlaying || !GameSession.HasStarted || Time.timeScale <= 0f)
                 return;
 
-            if (!DMIGrenadeThrowBridge.GrenadesEnabled)
-                return; // grenades off (DM_CombatCoreProfile.enableGrenades)
+            bool enabledNow = DMIGrenadeThrowBridge.GrenadesEnabled;
+            if (enabledNow != _lastGrenadesEnabled)
+            {
+                _lastGrenadesEnabled = enabledNow;
+                if (enabledNow)
+                    TryHookThrowInput();
+                else
+                {
+                    UnhookThrowInput(restoreDefault: true);
+                    ClearCookState(cancelExplosive: true);
+                    _holdingGrenade = false;
+                }
+            }
 
-            UpdateCookInput();
+            if (!enabledNow)
+                return;
+
+            TryHookThrowInput();
+            if (_throwInputHooked && _defaultThrowInputUpdate != null && _tpInput != null)
+                _tpInput.onUpdate -= _defaultThrowInputUpdate;
+
+            if (!_throwInputHooked)
+                return;
+
+            if (GameplayKeyboardShortcuts.IsGameplayInputLockedByUi())
+                return;
+
+            UpdateArmInput();
+            UpdateCookAndThrowInput();
         }
 
         private void ResolveRefs()
@@ -82,13 +135,69 @@ namespace Project.Combat
 
             if (inventory == null)
                 inventory = GetComponent<InventorySystem>() ?? GetComponentInParent<InventorySystem>();
+
+            if (throwManager != null && _tpInput == null)
+                _tpInput = throwManager.GetComponentInParent<vThirdPersonInput>();
         }
 
         private void CacheThrowManagerMethods()
         {
             const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
-            _disableAimMode = typeof(vThrowManagerBase).GetMethod("DisableAimMode", flags);
-            _exitThrowMode = typeof(vThrowManagerBase).GetMethod("ExitThrowMode", flags);
+            Type baseType = typeof(vThrowManagerBase);
+            _disableAimMode = baseType.GetMethod("DisableAimMode", flags);
+            _exitThrowMode = baseType.GetMethod("ExitThrowMode", flags);
+            _enterThrowMode = baseType.GetMethod("EnterThrowMode", flags);
+            _getThrowConditions = baseType.GetMethod("get_ThrowConditions", flags);
+            PropertyInfo pressProp = baseType.GetProperty("pressThrowInput", flags);
+            if (pressProp != null)
+                _pressThrowInputSetter = pressProp.GetSetMethod(true);
+
+            _isAimingProp = baseType.GetProperty("isAiming", flags);
+            _inEnterThrowModeProp = baseType.GetProperty("inEnterThrowMode", flags);
+            _isThrowingProp = baseType.GetProperty("isThrowing", flags);
+        }
+
+        private void TryHookThrowInput()
+        {
+            if (_throwInputHooked || throwManager == null || !DMIGrenadeThrowBridge.GrenadesEnabled)
+                return;
+
+            ResolveRefs();
+            if (_tpInput == null)
+                return;
+
+            MethodInfo updateMi = typeof(vThrowManagerBase).GetMethod("UpdateThrowInput",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            if (updateMi == null)
+                return;
+
+            try
+            {
+                _defaultThrowInputUpdate = (vThirdPersonInput.OnUpdateEvent)Delegate.CreateDelegate(
+                    typeof(vThirdPersonInput.OnUpdateEvent), throwManager, updateMi);
+            }
+            catch (Exception)
+            {
+                return;
+            }
+
+            _tpInput.onUpdate -= _defaultThrowInputUpdate;
+            throwManager.aimHoldingButton = false;
+            _throwInputHooked = true;
+        }
+
+        private void UnhookThrowInput(bool restoreDefault)
+        {
+            if (!_throwInputHooked || _tpInput == null || _defaultThrowInputUpdate == null)
+            {
+                _throwInputHooked = false;
+                return;
+            }
+
+            if (restoreDefault)
+                _tpInput.onUpdate += _defaultThrowInputUpdate;
+
+            _throwInputHooked = false;
         }
 
         private void BindThrowEvents(bool bind)
@@ -130,7 +239,6 @@ namespace Project.Combat
 
         private void HandleGrenadeAimCancelled()
         {
-            // Release-G cancel: abort cook fuse if the pin was pulled but not thrown.
             if (!_throwCommitted)
                 ClearCookState(cancelExplosive: true);
 
@@ -146,7 +254,6 @@ namespace Project.Combat
 
         private void HandleThrown()
         {
-            // Thrown instance keeps its own fuse/beep; clear player-side cook tracking.
             if (_activeCookExplosive != null)
             {
                 _activeCookExplosive.CookFuseExpired -= HandleCookFuseExpired;
@@ -167,37 +274,116 @@ namespace Project.Combat
             _throwCommitted = false;
         }
 
-        private void UpdateCookInput()
+        private void UpdateArmInput()
         {
-            bool held = ReadCookInputHeld();
-            bool pressedThisFrame = held && !_cookInputHeld;
-            _cookInputHeld = held;
-
-            if (!pressedThisFrame)
+            if (!ReadArmPressedThisFrame())
                 return;
 
-            if (!_holdingGrenade || _throwCommitted)
+            if (IsThrowingAnim)
                 return;
 
-            TryStartCook();
+            if (InThrowFlow)
+            {
+                if (!_cookInputHeld)
+                    ForceExitThrowMode();
+                return;
+            }
+
+            if (!CanEnterThrow())
+                return;
+
+            try
+            {
+                _enterThrowMode?.Invoke(throwManager, null);
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
         }
 
-        private bool ReadCookInputHeld()
+        private void UpdateCookAndThrowInput()
+        {
+            if (!InThrowFlow && !_holdingGrenade)
+                return;
+
+            bool cookHeld = ReadCookHeld();
+            bool cookPressed = cookHeld && !_cookInputHeld;
+            bool cookReleased = !cookHeld && _cookInputHeld;
+            _cookInputHeld = cookHeld;
+
+            if (cookPressed && !_throwCommitted && !IsThrowingAnim)
+                TryStartCook();
+
+            if (cookReleased && !_throwCommitted && !IsThrowingAnim)
+                TryTriggerThrow();
+        }
+
+        private bool ReadArmPressedThisFrame()
+        {
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.gKey.wasPressedThisFrame)
+                return true;
+
+            Gamepad pad = Gamepad.current;
+            if (pad != null && pad.leftShoulder.wasPressedThisFrame)
+                return true;
+
+            return false;
+        }
+
+        private bool ReadCookHeld()
         {
             Gamepad pad = Gamepad.current;
             if (pad != null && pad.leftTrigger.ReadValue() >= cookTriggerThreshold)
                 return true;
 
-            // KBM cook while grenade is ready: RMB (Block/Aim parallel to LT) or Left Ctrl.
             Mouse mouse = Mouse.current;
-            if (mouse != null && mouse.rightButton.isPressed)
-                return true;
-
-            Keyboard keyboard = Keyboard.current;
-            if (keyboard != null && keyboard.leftCtrlKey.isPressed)
+            if (mouse != null && mouse.leftButton.isPressed)
                 return true;
 
             return false;
+        }
+
+        private bool CanEnterThrow()
+        {
+            if (throwManager == null)
+                return false;
+
+            try
+            {
+                if (_getThrowConditions != null && _getThrowConditions.Invoke(throwManager, null) is bool ok)
+                    return ok;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+
+            return throwManager.CurrentThrowAmount > 0;
+        }
+
+        private void TryTriggerThrow()
+        {
+            if (!IsAiming && !InEnterThrowMode && !_holdingGrenade)
+                return;
+
+            SetPressThrowInput(true);
+        }
+
+        private void SetPressThrowInput(bool value)
+        {
+            if (throwManager == null)
+                return;
+
+            try
+            {
+                _pressThrowInputSetter?.Invoke(throwManager, new object[] { value });
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
         }
 
         private void TryStartCook()
@@ -255,7 +441,6 @@ namespace Project.Combat
 
         private void ConsumeGrenadeForInHandDetonation()
         {
-            // Normal throws consume on onStartThrowObject; in-hand cook detonation never reaches that.
             ItemData item = throwBridge != null ? throwBridge.GrenadeItem : null;
             if (item == null)
                 item = ItemRegistry.Resolve("Frag Grenade") ?? ItemRegistry.Resolve("DM_Frag_Grenade");
@@ -278,21 +463,21 @@ namespace Project.Combat
             if (throwManager == null)
                 return;
 
+            ClearCookState(cancelExplosive: true);
+
             try
             {
                 _disableAimMode?.Invoke(throwManager, null);
                 _exitThrowMode?.Invoke(throwManager, null);
             }
-            catch (System.Exception)
+            catch (Exception)
             {
-                // Fallback: unlock locomotion if reflection fails mid-domain-reload.
-                vThirdPersonInput tpInput = GetComponentInParent<vThirdPersonInput>() ?? GetComponent<vThirdPersonInput>();
-                if (tpInput != null)
+                if (_tpInput != null)
                 {
-                    tpInput.SetLockAllInput(false);
-                    tpInput.SetStrafeLocomotion(false);
-                    if (tpInput.animator != null)
-                        tpInput.animator.SetInteger("ActionState", 0);
+                    _tpInput.SetLockAllInput(false);
+                    _tpInput.SetStrafeLocomotion(false);
+                    if (_tpInput.animator != null)
+                        _tpInput.animator.SetInteger("ActionState", 0);
                 }
             }
         }
@@ -305,6 +490,21 @@ namespace Project.Combat
                 if (cancelExplosive)
                     _activeCookExplosive.CancelCook();
                 _activeCookExplosive = null;
+            }
+        }
+
+        private bool ReadBoolProperty(PropertyInfo prop)
+        {
+            if (prop == null || throwManager == null)
+                return false;
+
+            try
+            {
+                return prop.GetValue(throwManager) is bool b && b;
+            }
+            catch (Exception)
+            {
+                return false;
             }
         }
     }

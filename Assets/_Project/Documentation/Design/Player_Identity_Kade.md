@@ -18,15 +18,17 @@ Do not revert to generic placeholders (**Commander**, **Pioneer**, unnamed playe
 
 ---
 
-## AI Spine Rename — Kairos
+## Mystery hub — The Overseer (Kairos)
 
-| Legacy | Canon |
-|--------|-------|
-| Aether-9 / Aether9 / `aether9` domain | **Kairos** / `kairos` |
+| Layer | Canon |
+|-------|-------|
+| **Player-facing name** | **The Overseer** (product rename from legacy **Aether-9** in docs and UI) |
+| **In-fiction self-name** | **Kairos** / `kairos` (Kade learns this at prologue end) |
+| **Legacy ids** | `aether9`, `Aether9*`, `POI_Aether9_Shell` — keep in serialized assets until a deliberate code pass; update display copy only |
 
-**Naming beat (all packages):** Pre-prologue UI and radio use liaison shell, probe, ledger machine, or unknown contact labels — **not** Kairos. **Kade learns the name Kairos at prologue end.**
+**Naming beat (all packages):** Pre-prologue UI and radio use liaison shell, probe, ledger machine, or unknown contact labels — **not** Kairos or The Overseer. **Prologue end:** machine online; player-facing **The Overseer**; Kade learns the voice calls itself **Kairos**.
 
-**Code mapping:**
+**Code mapping (unchanged on disk — Kairos types in runtime):**
 
 | Legacy type | Canon type |
 |-------------|------------|
@@ -47,7 +49,7 @@ These traits define **Kade** in the locked freelancer spine (V4). Other narrativ
 | Combat | Weapons-first mind; high field IQ; reads encounters like survey maps |
 | Drive | Discovery — new terrain, dead signals, organisms that shouldn't exist, machines still running after crews vanish |
 | Mars backstory | Last employer **abandoned Kade on Mars** after a budget cut disguised as "phase completion". Kade **escaped with 2 survivors**, was **picked up by a freighter**, and **took a new job on Io** |
-| Starting state | **0 AC, level 1, no inventory** (locked 2026-09-30). Aether Credits (AC) only; optional in-app purchases later would be AC only. The code's 200 AC, level 5 and starting items are testing values in code; to be reset before release |
+| Starting state | **0 UEA, level 1, no inventory** (locked 2026-09-30). UEA Credits (UEA) only; Optional in-app purchases later would be UEA Credits only. The code's 200 UEA, level 5 and starting items are testing values in code; to be reset before release |
 | Starting companions | Kade lands on Io with **2 companions**: the **2 survivors** of the Mars escape. No other companions until Echoes (Ethers) are found and reverted from ethereal back to corporeal form |
 | Io mission | Discover **what happened to the other expeditions**, **survey Io for human survival and terraforming**, and **mine** |
 
@@ -90,4 +92,4 @@ Ship **one** truth per build. Do not mix all four AI truths in one release.
 
 ---
 
-*Last updated: Sep 30, 2026 — premise, background, mission, starting state (0 AC, level 1, no inventory) and 2 starting companions (Aug 2026 — global Kade + Kairos canon lock).*
+*Last updated: Sep 30, 2026 — premise, background, mission, starting state (0 UEA, level 1, no inventory) and 2 starting companions (Aug 2026 — global Kade + Kairos canon lock).*

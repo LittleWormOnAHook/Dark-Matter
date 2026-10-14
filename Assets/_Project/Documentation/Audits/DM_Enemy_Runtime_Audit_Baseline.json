@@ -1,0 +1,1965 @@
+{
+    "created": "2026-10-10 20:06",
+    "entries": [
+        {
+            "key": "enemy|Axe_Droid|cfg",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Axe_Droid|silent.missingscripts",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Axe_Droid|silent.materials",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Axe_Droid|silent.animator",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Axe_Droid|silent.hitboxes",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Axe_Droid|unaware",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Axe_Droid|notice",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Axe_Droid|natural.damage",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|Axe_Droid|melee.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Axe_Droid|melee.vis",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|Axe_Droid|ranged.damage",
+            "status": "SKIP"
+        },
+        {
+            "key": "enemy|Axe_Droid|vis",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Axe_Droid|player.dmg",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Axe_Droid|player.swing",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Axe_Droid|hitmarks",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Axe_Droid|death",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Axe_Droid|anim",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|Axe_Droid|console",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|corrupt_patrol_android|cfg",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|corrupt_patrol_android|silent.missingscripts",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|corrupt_patrol_android|silent.materials",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|corrupt_patrol_android|silent.animator",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|corrupt_patrol_android|silent.hitboxes",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|corrupt_patrol_android|unaware",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|corrupt_patrol_android|notice",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|corrupt_patrol_android|natural.damage",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|corrupt_patrol_android|melee.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|corrupt_patrol_android|melee.vis",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|corrupt_patrol_android|ranged.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|corrupt_patrol_android|ranged.vis",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|corrupt_patrol_android|vis",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|corrupt_patrol_android|player.dmg",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|corrupt_patrol_android|player.swing",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|corrupt_patrol_android|hitmarks",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|corrupt_patrol_android|death",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|corrupt_patrol_android|anim",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|corrupt_patrol_android|console",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|GreySpire Soldier|cfg",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|GreySpire Soldier|silent.missingscripts",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|GreySpire Soldier|silent.materials",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|GreySpire Soldier|silent.animator",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|GreySpire Soldier|silent.hitboxes",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|GreySpire Soldier|unaware",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|GreySpire Soldier|notice",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|GreySpire Soldier|natural.damage",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|GreySpire Soldier|melee.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|GreySpire Soldier|melee.vis",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|GreySpire Soldier|ranged.damage",
+            "status": "SKIP"
+        },
+        {
+            "key": "enemy|GreySpire Soldier|vis",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|GreySpire Soldier|player.dmg",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|GreySpire Soldier|player.swing",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|GreySpire Soldier|hitmarks",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|GreySpire Soldier|death",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|GreySpire Soldier|anim",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|GreySpire Soldier|console",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Humadroid|cfg",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Humadroid|silent.missingscripts",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Humadroid|silent.materials",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Humadroid|silent.animator",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Humadroid|silent.hitboxes",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Humadroid|unaware",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Humadroid|notice",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Humadroid|natural.damage",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|Humadroid|melee.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Humadroid|melee.vis",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|Humadroid|ranged.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Humadroid|ranged.vis",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|Humadroid|vis",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Humadroid|player.dmg",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Humadroid|player.swing",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Humadroid|hitmarks",
+            "status": "WARN"
+        },
+        {
+            "key": "enemy|Humadroid|death",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Humadroid|anim",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|Humadroid|console",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Humanoid|cfg",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Humanoid|silent.missingscripts",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Humanoid|silent.materials",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Humanoid|silent.animator",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Humanoid|silent.hitboxes",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Humanoid|unaware",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Humanoid|notice",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Humanoid|natural.damage",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|Humanoid|melee.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Humanoid|melee.vis",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|Humanoid|ranged.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Humanoid|ranged.vis",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|Humanoid|vis",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Humanoid|player.dmg",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Humanoid|player.swing",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Humanoid|hitmarks",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Humanoid|death",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Humanoid|anim",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|Humanoid|console",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|HumanoidEnemy_Invector|cfg",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|HumanoidEnemy_Invector|silent.missingscripts",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|HumanoidEnemy_Invector|silent.materials",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|HumanoidEnemy_Invector|silent.animator",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|HumanoidEnemy_Invector|silent.hitboxes",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|HumanoidEnemy_Invector|unaware",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|HumanoidEnemy_Invector|notice",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|HumanoidEnemy_Invector|natural.damage",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|HumanoidEnemy_Invector|melee.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|HumanoidEnemy_Invector|melee.vis",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|HumanoidEnemy_Invector|ranged.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|HumanoidEnemy_Invector|ranged.vis",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|HumanoidEnemy_Invector|vis",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|HumanoidEnemy_Invector|player.dmg",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|HumanoidEnemy_Invector|player.swing",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|HumanoidEnemy_Invector|hitmarks",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|HumanoidEnemy_Invector|death",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|HumanoidEnemy_Invector|anim",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|HumanoidEnemy_Invector|console",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Hybrid Droid|cfg",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Hybrid Droid|silent.missingscripts",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Hybrid Droid|silent.materials",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Hybrid Droid|silent.animator",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Hybrid Droid|silent.hitboxes",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Hybrid Droid|unaware",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Hybrid Droid|notice",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Hybrid Droid|natural.damage",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|Hybrid Droid|melee.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Hybrid Droid|melee.vis",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|Hybrid Droid|ranged.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Hybrid Droid|ranged.vis",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|Hybrid Droid|vis",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Hybrid Droid|player.dmg",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Hybrid Droid|player.swing",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Hybrid Droid|hitmarks",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Hybrid Droid|death",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Hybrid Droid|anim",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|Hybrid Droid|console",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Lisa_Hybrid|cfg",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Lisa_Hybrid|silent.missingscripts",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Lisa_Hybrid|silent.materials",
+            "status": "FAIL"
+        },
+        {
+            "key": "enemy|Lisa_Hybrid|silent.animator",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Lisa_Hybrid|silent.hitboxes",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Lisa_Hybrid|unaware",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Lisa_Hybrid|notice",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Lisa_Hybrid|natural.damage",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|Lisa_Hybrid|melee.damage",
+            "status": "SKIP"
+        },
+        {
+            "key": "enemy|Lisa_Hybrid|ranged.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Lisa_Hybrid|ranged.vis",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|Lisa_Hybrid|vis",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Lisa_Hybrid|player.dmg",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Lisa_Hybrid|player.swing",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Lisa_Hybrid|hitmarks",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Lisa_Hybrid|death",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Lisa_Hybrid|anim",
+            "status": "WARN"
+        },
+        {
+            "key": "enemy|Lisa_Hybrid|console",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Robot|cfg",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Robot|silent.missingscripts",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Robot|silent.materials",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Robot|silent.animator",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Robot|silent.hitboxes",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Robot|unaware",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Robot|notice",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Robot|natural.damage",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|Robot|melee.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Robot|melee.vis",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|Robot|ranged.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Robot|ranged.vis",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|Robot|vis",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Robot|player.dmg",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Robot|player.swing",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Robot|hitmarks",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Robot|death",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|Robot|anim",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|Robot|console",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|The_Evil_One|cfg",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|The_Evil_One|silent.missingscripts",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|The_Evil_One|silent.materials",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|The_Evil_One|silent.animator",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|The_Evil_One|silent.hitboxes",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|The_Evil_One|unaware",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|The_Evil_One|notice",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|The_Evil_One|natural.damage",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|The_Evil_One|melee.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|The_Evil_One|melee.vis",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|The_Evil_One|ranged.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|The_Evil_One|ranged.vis",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|The_Evil_One|vis",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|The_Evil_One|player.dmg",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|The_Evil_One|player.swing",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|The_Evil_One|hitmarks",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|The_Evil_One|death",
+            "status": "PASS"
+        },
+        {
+            "key": "enemy|The_Evil_One|anim",
+            "status": "INFO"
+        },
+        {
+            "key": "enemy|The_Evil_One|console",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|2 Hander|w.equip",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|2 Hander|audio.swing.2 Hander",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|2 Hander|audio.hitplayer.2 Hander",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|2 Hander|w.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|2 Hander|w.timing",
+            "status": "INFO"
+        },
+        {
+            "key": "weapon|2 Hander|vis",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|2 Hander|console",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|Blade Of Chaos|w.equip",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|Blade Of Chaos|audio.swing.Blade Of Chaos",
+            "status": "FAIL"
+        },
+        {
+            "key": "weapon|Blade Of Chaos|audio.hitplayer.Blade Of Chaos",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|Blade Of Chaos|w.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|Blade Of Chaos|w.timing",
+            "status": "INFO"
+        },
+        {
+            "key": "weapon|Blade Of Chaos|vis",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|Blade Of Chaos|console",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|Death Axe|w.equip",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|Death Axe|audio.swing.Death Axe",
+            "status": "FAIL"
+        },
+        {
+            "key": "weapon|Death Axe|audio.hitplayer.Death Axe",
+            "status": "FAIL"
+        },
+        {
+            "key": "weapon|Death Axe|w.damage",
+            "status": "FAIL"
+        },
+        {
+            "key": "weapon|Death Axe|w.timing",
+            "status": "INFO"
+        },
+        {
+            "key": "weapon|Death Axe|vis",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|Death Axe|console",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|Spear of Fate|w.equip",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|Spear of Fate|audio.swing.Spear of Fate",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|Spear of Fate|audio.hitplayer.Spear of Fate",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|Spear of Fate|w.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|Spear of Fate|w.timing",
+            "status": "INFO"
+        },
+        {
+            "key": "weapon|Spear of Fate|vis",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|Spear of Fate|console",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|Sword of Fear|w.equip",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|Sword of Fear|audio.swing.Sword of Fear",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|Sword of Fear|audio.hitplayer.Sword of Fear",
+            "status": "FAIL"
+        },
+        {
+            "key": "weapon|Sword of Fear|w.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|Sword of Fear|w.timing",
+            "status": "INFO"
+        },
+        {
+            "key": "weapon|Sword of Fear|vis",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|Sword of Fear|console",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|weap2_sword|w.equip",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|weap2_sword|audio.swing.weap2_sword",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|weap2_sword|audio.hitplayer.weap2_sword",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|weap2_sword|w.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|weap2_sword|w.timing",
+            "status": "INFO"
+        },
+        {
+            "key": "weapon|weap2_sword|vis",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|weap2_sword|console",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|weap_two_handed|w.equip",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|weap_two_handed|audio.swing.weap_two_handed",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|weap_two_handed|audio.hitplayer.weap_two_handed",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|weap_two_handed|w.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|weap_two_handed|w.timing",
+            "status": "INFO"
+        },
+        {
+            "key": "weapon|weap_two_handed|vis",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|weap_two_handed|console",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|Wood Axe|w.equip",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|Wood Axe|audio.swing.Wood Axe",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|Wood Axe|audio.hitplayer.Wood Axe",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|Wood Axe|w.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|Wood Axe|w.timing",
+            "status": "INFO"
+        },
+        {
+            "key": "weapon|Wood Axe|vis",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|Wood Axe|console",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|DM_Mining_Tool|w.equip",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|DM_Mining_Tool|w.damage",
+            "status": "WARN"
+        },
+        {
+            "key": "weapon|DM_Mining_Tool|w.timing",
+            "status": "INFO"
+        },
+        {
+            "key": "weapon|DM_Mining_Tool|vis",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|DM_Mining_Tool|console",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|sci_fi_pistol|w.equip",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|sci_fi_pistol|w.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|sci_fi_pistol|w.timing",
+            "status": "INFO"
+        },
+        {
+            "key": "weapon|sci_fi_pistol|vis",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|sci_fi_pistol|console",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|survival_rifle|w.equip",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|survival_rifle|w.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|survival_rifle|w.timing",
+            "status": "INFO"
+        },
+        {
+            "key": "weapon|survival_rifle|vis",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|survival_rifle|console",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|OVERRIDE both slots|ovr.resolve",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|OVERRIDE both slots|ovr.start",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|OVERRIDE both slots|ovr.switch",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|OVERRIDE both slots|ovr.default",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|OVERRIDE both slots|vis",
+            "status": "PASS"
+        },
+        {
+            "key": "weapon|OVERRIDE both slots|console",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Camera: faces forward after teleports, zoom in/out|cam.forward",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Camera: faces forward after teleports, zoom in/out|cam.zoom",
+            "status": "WARN"
+        },
+        {
+            "key": "scenario|Camera: faces forward after teleports, zoom in/out|console",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Equip: weapon survives a teleport|equip.teleport",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Equip: weapon survives a teleport|console",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Audio: swing / hit sound wiring (static)|audio.profile",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Audio: swing / hit sound wiring (static)|audio.swing.callers",
+            "status": "FAIL"
+        },
+        {
+            "key": "scenario|Audio: swing / hit sound wiring (static)|audio.hit.callers",
+            "status": "WARN"
+        },
+        {
+            "key": "scenario|Audio: swing / hit sound wiring (static)|console",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player controls: WASD, look, mouse buttons, jump, jetpack, sprint, crouch, dodge, dash, switch|ctl.W",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player controls: WASD, look, mouse buttons, jump, jetpack, sprint, crouch, dodge, dash, switch|ctl.S",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player controls: WASD, look, mouse buttons, jump, jetpack, sprint, crouch, dodge, dash, switch|ctl.A",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player controls: WASD, look, mouse buttons, jump, jetpack, sprint, crouch, dodge, dash, switch|ctl.D",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player controls: WASD, look, mouse buttons, jump, jetpack, sprint, crouch, dodge, dash, switch|ctl.run",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player controls: WASD, look, mouse buttons, jump, jetpack, sprint, crouch, dodge, dash, switch|ctl.sprint",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player controls: WASD, look, mouse buttons, jump, jetpack, sprint, crouch, dodge, dash, switch|ctl.jump",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player controls: WASD, look, mouse buttons, jump, jetpack, sprint, crouch, dodge, dash, switch|ctl.crouch",
+            "status": "WARN"
+        },
+        {
+            "key": "scenario|Player controls: WASD, look, mouse buttons, jump, jetpack, sprint, crouch, dodge, dash, switch|ctl.crouch.code",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player controls: WASD, look, mouse buttons, jump, jetpack, sprint, crouch, dodge, dash, switch|ctl.dodge",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player controls: WASD, look, mouse buttons, jump, jetpack, sprint, crouch, dodge, dash, switch|ctl.dash",
+            "status": "WARN"
+        },
+        {
+            "key": "scenario|Player controls: WASD, look, mouse buttons, jump, jetpack, sprint, crouch, dodge, dash, switch|ctl.jetpack",
+            "status": "WARN"
+        },
+        {
+            "key": "scenario|Player controls: WASD, look, mouse buttons, jump, jetpack, sprint, crouch, dodge, dash, switch|ctl.look.x",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player controls: WASD, look, mouse buttons, jump, jetpack, sprint, crouch, dodge, dash, switch|ctl.look.y",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player controls: WASD, look, mouse buttons, jump, jetpack, sprint, crouch, dodge, dash, switch|ctl.lmb",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player controls: WASD, look, mouse buttons, jump, jetpack, sprint, crouch, dodge, dash, switch|ctl.rmb",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player controls: WASD, look, mouse buttons, jump, jetpack, sprint, crouch, dodge, dash, switch|ctl.mmb",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player controls: WASD, look, mouse buttons, jump, jetpack, sprint, crouch, dodge, dash, switch|ctl.mmb.note",
+            "status": "INFO"
+        },
+        {
+            "key": "scenario|Player controls: WASD, look, mouse buttons, jump, jetpack, sprint, crouch, dodge, dash, switch|ctl.switch",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player controls: WASD, look, mouse buttons, jump, jetpack, sprint, crouch, dodge, dash, switch|ctl.walk",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player controls: WASD, look, mouse buttons, jump, jetpack, sprint, crouch, dodge, dash, switch|console",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Block + parry: player defends against enemy melee|blk.base",
+            "status": "INFO"
+        },
+        {
+            "key": "scenario|Block + parry: player defends against enemy melee|blk.hold",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Block + parry: player defends against enemy melee|blk.stagger",
+            "status": "INFO"
+        },
+        {
+            "key": "scenario|Block + parry: player defends against enemy melee|parry.sweep",
+            "status": "INFO"
+        },
+        {
+            "key": "scenario|Block + parry: player defends against enemy melee|parry.window",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Block + parry: player defends against enemy melee|console",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Block: enemy defends against player swings|eblk",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Block: enemy defends against player swings|eparry",
+            "status": "INFO"
+        },
+        {
+            "key": "scenario|Block: enemy defends against player swings|console",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Movement: retreat, push, flank, backstab, lose target|mv.retreat",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Movement: retreat, push, flank, backstab, lose target|mv.push",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Movement: retreat, push, flank, backstab, lose target|mv.flank",
+            "status": "WARN"
+        },
+        {
+            "key": "scenario|Movement: retreat, push, flank, backstab, lose target|mv.backstab",
+            "status": "INFO"
+        },
+        {
+            "key": "scenario|Movement: retreat, push, flank, backstab, lose target|mv.lose",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Movement: retreat, push, flank, backstab, lose target|console",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Play: approach, kite, strafe, re-engage, jump, jetpack escape, lose target, return|play.approach",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Play: approach, kite, strafe, re-engage, jump, jetpack escape, lose target, return|play.kite",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Play: approach, kite, strafe, re-engage, jump, jetpack escape, lose target, return|play.strafe",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Play: approach, kite, strafe, re-engage, jump, jetpack escape, lose target, return|play.reengage",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Play: approach, kite, strafe, re-engage, jump, jetpack escape, lose target, return|play.jump",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Play: approach, kite, strafe, re-engage, jump, jetpack escape, lose target, return|play.jetpack",
+            "status": "WARN"
+        },
+        {
+            "key": "scenario|Play: approach, kite, strafe, re-engage, jump, jetpack escape, lose target, return|play.lose",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Play: approach, kite, strafe, re-engage, jump, jetpack escape, lose target, return|play.return",
+            "status": "WARN"
+        },
+        {
+            "key": "scenario|Play: approach, kite, strafe, re-engage, jump, jetpack escape, lose target, return|console",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Multi-enemy: 3 at once|multi",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Multi-enemy: 3 at once|console",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player weapons: each melee/ranged item vs enemy|audio.pswing.2 Hander",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player weapons: each melee/ranged item vs enemy|audio.phit.2 Hander",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player weapons: each melee/ranged item vs enemy|pw.2 Hander",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player weapons: each melee/ranged item vs enemy|audio.pswing.Blade Of Chaos",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player weapons: each melee/ranged item vs enemy|audio.phit.Blade Of Chaos",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player weapons: each melee/ranged item vs enemy|pw.Blade Of Chaos",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player weapons: each melee/ranged item vs enemy|audio.pswing.Death Axe",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player weapons: each melee/ranged item vs enemy|audio.phit.Death Axe",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player weapons: each melee/ranged item vs enemy|pw.Death Axe",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player weapons: each melee/ranged item vs enemy|audio.pswing.Spear of Fate",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player weapons: each melee/ranged item vs enemy|audio.phit.Spear of Fate",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player weapons: each melee/ranged item vs enemy|pw.Spear of Fate",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player weapons: each melee/ranged item vs enemy|audio.pswing.Sword of Fear",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player weapons: each melee/ranged item vs enemy|audio.phit.Sword of Fear",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player weapons: each melee/ranged item vs enemy|pw.Sword of Fear",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player weapons: each melee/ranged item vs enemy|audio.pswing.weap2_sword",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player weapons: each melee/ranged item vs enemy|audio.phit.weap2_sword",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player weapons: each melee/ranged item vs enemy|pw.weap2_sword",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player weapons: each melee/ranged item vs enemy|audio.pswing.weap_two_handed",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player weapons: each melee/ranged item vs enemy|audio.phit.weap_two_handed",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player weapons: each melee/ranged item vs enemy|pw.weap_two_handed",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player weapons: each melee/ranged item vs enemy|audio.pswing.Wood Axe",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player weapons: each melee/ranged item vs enemy|audio.phit.Wood Axe",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player weapons: each melee/ranged item vs enemy|pw.Wood Axe",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player weapons: each melee/ranged item vs enemy|pw.DM_Mining_Tool",
+            "status": "INFO"
+        },
+        {
+            "key": "scenario|Player weapons: each melee/ranged item vs enemy|pw.sci_fi_pistol",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player weapons: each melee/ranged item vs enemy|pw.survival_rifle",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Player weapons: each melee/ranged item vs enemy|console",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.inventory",
+            "status": "INFO"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_CarveExperiment.load",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_CarveExperiment.fill",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_CarveExperiment.fire",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_CarveExperiment.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_CarveExperiment.marks",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_CarveExperiment.empty",
+            "status": "INFO"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Electricity.load",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Electricity.fill",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Electricity.fire",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Electricity.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Electricity.marks",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Electricity.empty",
+            "status": "INFO"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Explosive.load",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Explosive.fill",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Explosive.fire",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Explosive.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Explosive.marks",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Explosive.empty",
+            "status": "INFO"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Fire.load",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Fire.fill",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Fire.fire",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Fire.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Fire.marks",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Fire.empty",
+            "status": "INFO"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Ice.load",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Ice.fill",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Ice.fire",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Ice.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Ice.marks",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Ice.empty",
+            "status": "INFO"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Ion.load",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Ion.fill",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Ion.fire",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Ion.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Ion.marks",
+            "status": "WARN"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Ion.empty",
+            "status": "INFO"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Laser.load",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Laser.fill",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Laser.fire",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Laser.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Laser.marks",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Laser.empty",
+            "status": "INFO"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Plasma.load",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Plasma.fill",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Plasma.fire",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Plasma.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Plasma.marks",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Plasma.empty",
+            "status": "INFO"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Resonance Stabilizer.load",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Resonance Stabilizer.fill",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Resonance Stabilizer.fire",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Resonance Stabilizer.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Resonance Stabilizer.marks",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Resonance Stabilizer.empty",
+            "status": "INFO"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Standard.load",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Standard.fill",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Standard.fire",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Standard.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Standard.marks",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.sci_fi_pistol.DMAmmoFxProfile_Standard.empty",
+            "status": "INFO"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.cycle",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_CarveExperiment.load",
+            "status": "FAIL"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_CarveExperiment.fill",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_CarveExperiment.fire",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_CarveExperiment.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_CarveExperiment.marks",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_CarveExperiment.empty",
+            "status": "INFO"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Electricity.load",
+            "status": "FAIL"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Electricity.fill",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Electricity.fire",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Electricity.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Electricity.marks",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Electricity.empty",
+            "status": "INFO"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Explosive.load",
+            "status": "FAIL"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Explosive.fill",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Explosive.fire",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Explosive.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Explosive.marks",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Explosive.empty",
+            "status": "INFO"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Fire.load",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Fire.fill",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Fire.fire",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Fire.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Fire.marks",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Fire.empty",
+            "status": "INFO"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Ice.load",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Ice.fill",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Ice.fire",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Ice.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Ice.marks",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Ice.empty",
+            "status": "INFO"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Ion.load",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Ion.fill",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Ion.fire",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Ion.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Ion.marks",
+            "status": "WARN"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Ion.empty",
+            "status": "INFO"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Laser.load",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Laser.fill",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Laser.fire",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Laser.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Laser.marks",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Laser.empty",
+            "status": "INFO"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Plasma.load",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Plasma.fill",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Plasma.fire",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Plasma.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Plasma.marks",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Plasma.empty",
+            "status": "INFO"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Resonance Stabilizer.load",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Resonance Stabilizer.fill",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Resonance Stabilizer.fire",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Resonance Stabilizer.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Resonance Stabilizer.marks",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Resonance Stabilizer.empty",
+            "status": "INFO"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Standard.load",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Standard.fill",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Standard.fire",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Standard.damage",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Standard.marks",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.survival_rifle.DMAmmoFxProfile_Standard.empty",
+            "status": "INFO"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|ammo.combos",
+            "status": "INFO"
+        },
+        {
+            "key": "scenario|Ammo: fill clips, change ammo types, fire / damage / marks / empty / reload|console",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Aim: tracks a moving enemy, chest / head / arm / leg / foot, body-part hits|aim.chest",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Aim: tracks a moving enemy, chest / head / arm / leg / foot, body-part hits|aim.head",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Aim: tracks a moving enemy, chest / head / arm / leg / foot, body-part hits|aim.arm",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Aim: tracks a moving enemy, chest / head / arm / leg / foot, body-part hits|aim.leg",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Aim: tracks a moving enemy, chest / head / arm / leg / foot, body-part hits|aim.foot",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Aim: tracks a moving enemy, chest / head / arm / leg / foot, body-part hits|aim.table",
+            "status": "INFO"
+        },
+        {
+            "key": "scenario|Aim: tracks a moving enemy, chest / head / arm / leg / foot, body-part hits|console",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Performance per enemy (spawn cost, frame time, GC)|perf.Axe_Droid",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Performance per enemy (spawn cost, frame time, GC)|perf.corrupt_patrol_android",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Performance per enemy (spawn cost, frame time, GC)|perf.GreySpire Soldier",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Performance per enemy (spawn cost, frame time, GC)|perf.Humadroid",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Performance per enemy (spawn cost, frame time, GC)|perf.Humanoid",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Performance per enemy (spawn cost, frame time, GC)|perf.HumanoidEnemy_Invector",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Performance per enemy (spawn cost, frame time, GC)|perf.Hybrid Droid",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Performance per enemy (spawn cost, frame time, GC)|perf.Lisa_Hybrid",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Performance per enemy (spawn cost, frame time, GC)|perf.Robot",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Performance per enemy (spawn cost, frame time, GC)|perf.The_Evil_One",
+            "status": "PASS"
+        },
+        {
+            "key": "scenario|Performance per enemy (spawn cost, frame time, GC)|console",
+            "status": "PASS"
+        }
+    ]
+}

@@ -3904,7 +3904,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 8128668236925612103, guid: 0a484d18b49777f47ac335b6d643c81a, type: 3}
       propertyPath: m_Name
-      value: 'Aether 9 '
+      value: 'The Overseer '
       objectReference: {fileID: 0}
     - target: {fileID: 8128668236925612103, guid: 0a484d18b49777f47ac335b6d643c81a, type: 3}
       propertyPath: m_IsActive

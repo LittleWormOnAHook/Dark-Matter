@@ -35,9 +35,9 @@ namespace Project.UI
             if (!CombatPlayerSourceUtility.IsPlayerOrPioneerSource(info.Source))
                 return;
 
-            EnemyHealth health = target.GetComponent<EnemyHealth>();
-            if (health == null)
-                health = target.GetComponentInChildren<EnemyHealth>();
+            EnemyHealth health = target.GetComponent<EnemyHealth>()
+                ?? target.GetComponentInParent<EnemyHealth>()
+                ?? target.GetComponentInChildren<EnemyHealth>();
             if (health == null)
                 return;
 

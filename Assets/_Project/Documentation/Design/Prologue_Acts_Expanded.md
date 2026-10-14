@@ -1,9 +1,9 @@
 # Prologue Acts — Expanded Detail
 
-**Status:** Design draft — August 2026  
-**Parents:** `Prologue_Playthrough_Step_By_Step.md` (checklist) · `Prologue_Playthrough_And_Camp_Bootstrap_Plan.md` (systems/POIs) · `Quests_And_Story_Plan.md` (spine)  
+**Status:** Design draft — August 2026 · **Links retargeted Oct 8, 2026** (checklist → `Prologue_Playthrough_And_Camp_Bootstrap_Plan.md` §3)  
+**Parents:** `Prologue_Playthrough_And_Camp_Bootstrap_Plan.md` (§3 checklist + systems/POIs) · `Quests_And_Story_Plan.md` (spine)  
 **Scope:** Mainline Acts **0 → I → II** only (2–5 hours). Act **III+** summarized as handoff.  
-**Locks:** Kade fixed name · 0 AC · level 1 · no inventory · 2 starting companions (Mars survivors) · Level 5 mining/harvest gate · **10 Memory Cores** post-prologue · rumors until cores prove truth.
+**Locks:** Kade fixed name · 0 UEA · level 1 · no inventory · 2 starting companions (Mars survivors) · Level 5 mining/harvest gate · **10 Memory Cores** post-prologue · rumors until cores prove truth.
 
 ---
 
@@ -13,7 +13,7 @@
 |-----|------|----------------|-----------|
 | **0** | Charter | Who is Kade before Io? | Dropship committed; 2 starting companions aboard |
 | **I** | Landing & Camp | We survived the crash. We have a foothold. | CC Seed + Shelter + Crafting Station live |
-| **II** | Cert & Machine | We earned the right to dig — and woke something. | Lv5 skills · Aether-9 awake · Echo #1 · 10-core hunt accepted |
+| **II** | Cert & Machine | We earned the right to dig — and woke something. | Lv5 skills · The Overseer awake · Echo #1 · 10-core hunt accepted |
 | **III+** | (Post-prologue) | Hunt the ten memories. | Outside 2–5 h budget |
 
 ---
@@ -35,14 +35,14 @@
 
 **0.1 New Game**  
 - Main Menu → New Expedition / New Game.  
-- Save slot created empty: `aetherCredits = 0`, no cores, Aether-9 not awakened.
+- Save slot created empty: `aetherCredits = 0`, no cores, The Overseer not awakened.
 
 **0.2 Kade Background Select**  
 - Full-screen cards (Shift / Dark Matter palette).  
 - Each card: tagline, 3-line hook, expandable “Rumors you have heard,” stat/perk summary, companion synergy highlights (≥2 classes).  
-- Hard Mode toggle visible: **−20% Kade damage**, same kit, same 0 AC.  
+- Hard Mode toggle visible: **−20% Kade damage**, same kit, same 0 UEA.  
 - Confirm writes `playerBackgroundId` + `hardModeEnabled`.  
-- Do **not** reveal Memory Core count or Aether-9 existence here.
+- Do **not** reveal Memory Core count or The Overseer existence here.
 
 **0.3 Starting Companions**  
 - Kade's 2 Mars survivors are already in the crew. No pick screen (the old starter pick is a retired leftover).  
@@ -68,7 +68,7 @@
 
 - [ ] Background + Hard Mode saved  
 - [ ] 2 starting companions saved  
-- [ ] Player spawned at Landing Scar with 0 AC, level 1 and no inventory  
+- [ ] Player spawned at Landing Scar with 0 UEA, level 1 and no inventory  
 
 ---
 
@@ -97,7 +97,7 @@ Act I is four scenes. Each scene expands **space, story, systems, combat, fricti
 ### Player start state
 
 - Kade at shuttle nose/side (not inside cockpit).  
-- Hotbar and inventory empty (no starting inventory). **0 AC.**  
+- Hotbar and inventory empty (no starting inventory). **0 UEA.**  
 - Survival meters visible; O₂ and thermal may already tick if standing in heat.
 
 ### Step detail
@@ -123,7 +123,7 @@ Movement, camera, hotbar, thermal/O₂ HUD, loot, ping navigation, light scan.
 
 ### Story / VO (rumor-safe)
 
-- Ops never names Aether-9.  
+- Ops never names The Overseer.  
 - Background-specific rumor line optional (one sentence max) on stake scan.
 
 ### Exit
@@ -285,11 +285,11 @@ Deep mine/harvest still locked.
 
 ---
 
-# ACT II — Certification, Ridge & Aether-9
+# ACT II — Certification, Ridge & The Overseer
 
 **Duration:** ~1.0–2.25 hours  
 **Tone:** Competence test → buried machine → hostile awakening → curiosity hook (Echo + ten cores).  
-**Geography spine:** Gather/Dummy Yards → Ridge Gauntlet → Machine Caldera → Echo Cradle → Aether-9.
+**Geography spine:** Gather/Dummy Yards → Ridge Gauntlet → Machine Caldera → Echo Cradle → The Overseer.
 
 ---
 
@@ -359,7 +359,7 @@ Ops marks Ridge Gauntlet. Settlement advanced recipes unlock.
 | **6.2 Relay Pylon** | Insert cell; rotate dish through 4 stops until Ops ping locks. Teaches device interact under light pressure (1 skitter enemy optional). |
 | **6.3 Glass Hive skirmish** | Mid trash — ranged spitters. Teach cover on ridge spine. |
 | **6.4–6.5 Ash-Warden Drone boss** | Damaged survey android (rumor: prior expedition leftover). Length ~3–6 min. |
-| **6.6 Loot Interface Key Fragment** | Repair part **1/3** for Aether-9. Distinct icon/quest flag. |
+| **6.6 Loot Interface Key Fragment** | Repair part **1/3** for The Overseer. Distinct icon/quest flag. |
 | **6.7 Overlook** | Scripted look-at to caldera glow. Ops uneasy: *“That signature is not on the charter map.”* |
 
 ### Boss phases (expanded)
@@ -382,7 +382,7 @@ Path into Machine Caldera unlocked; Key Fragment held.
 
 ---
 
-## Act II · Scene G — Wake Aether-9 (Steps 7.1–7.9)
+## Act II · Scene G — Wake The Overseer (Steps 7.1–7.9)
 
 **Quest:** `prologue_07_aether_repair`  
 **Target time:** 30–50 min  
@@ -391,7 +391,7 @@ Path into Machine Caldera unlocked; Key Fragment held.
 ### Space and terrain
 
 - **Machine Caldera:** sunken bowl ~60 m, rubble rings, cool blue idle lights (contrast camp magenta UI).  
-- Center: dormant **Aether-9** probe shell (interactable).  
+- Center: dormant **The Overseer** probe shell (interactable).  
 - Lip: **Valve Vault** entrance.  
 - Trench: **Sparking Conduit** for ribbon escort.  
 - Tube mouth beyond — sealed for post-prologue.
@@ -406,7 +406,7 @@ Path into Machine Caldera unlocked; Key Fragment held.
 | **7.4–7.5 Valve Vault** | Pipe pressure valves; order = worn Helix marks around room. Wrong order → gas damage + reset. Loot **Power Coupler** (2/3). |
 | **7.6–7.7 Bus Ribbon escort** | Companion channels extract; player defends vs Tube Jackals + 1 Brood Mouth. Fail → restart wave; after first serious attempt keep 50% progress. Gain **Memory Bus Ribbon** (3/3). |
 | **7.8 Slot all** | Insert three parts; short boot cinematic. |
-| **7.9 Awaken** | Aether-9 online: hostile / angry. Speaks of murdered group and missing memories. Keep exact **“ten”** for Scene H; here say “many” / “the cores that lived in this shell.” |
+| **7.9 Awaken** | The Overseer online: hostile / angry. Speaks of murdered group and missing memories. Keep exact **“ten”** for Scene H; here say “many” / “the cores that lived in this shell.” |
 
 ### Systems taught
 
@@ -424,7 +424,7 @@ Multi-objective story quest, vault puzzle, escort defense, mystery hub introduct
 
 ### Exit
 
-Aether-9 awakened; trust tier = **Angry**; Colony Ops steps back for story focus (still available for logistics).
+The Overseer awakened; trust tier = **Angry**; Colony Ops steps back for story focus (still available for logistics).
 
 ---
 
@@ -432,7 +432,7 @@ Aether-9 awakened; trust tier = **Angry**; Colony Ops steps back for story focus
 
 **Quest:** `prologue_08_first_echo` + `prologue_end_ten_cores`  
 **Target time:** 15–25 min  
-**Story beat:** A surface Echo answers the pulse. Aether-9 names the price of memory: ten cores.
+**Story beat:** A surface Echo answers the pulse. The Overseer names the price of memory: ten cores.
 
 ### Space and terrain
 
@@ -443,12 +443,12 @@ Aether-9 awakened; trust tier = **Angry**; Colony Ops steps back for story focus
 
 | Step | Expanded detail |
 |------|-----------------|
-| **8.1 Hostility beat** | Dialogue pressure; optional camera shake / stumble. **No** HP boss bar on Aether-9. |
+| **8.1 Hostility beat** | Dialogue pressure; optional camera shake / stumble. **No** HP boss bar on The Overseer. |
 | **8.2 Echo Signal** | Awaken pulse spawns first **Echo Signal** ping (sense/map). Distinct from Ops pings. |
 | **8.3 Frequency Align** | Three tone nodes; match pitch/color order from cradle plaque. Gate opens. |
-| **8.4 Rescue first Echo** | Reclaim into roster or holding bay. Teach Echo ≠ Aether-9 (Aether is sealed machine Echo; this is surface rescue). |
+| **8.4 Rescue first Echo** | Reclaim into roster or holding bay. Teach Echo ≠ The Overseer (Aether is sealed machine Echo; this is surface rescue). |
 | **8.5 Return** | Mandatory return talk. |
-| **8.6 Ten-core mandate** | Aether-9: machine once held **ten** Memory Cores; without them he cannot remember / function. Hunt accepted. |
+| **8.6 Ten-core mandate** | The Overseer: machine once held **ten** Memory Cores; without them he cannot remember / function. Hunt accepted. |
 | **8.7 Prologue end turn-in** | `prologue_end_ten_cores` → 0/10 tracker in Journal; optional Core Site 01 map teaser outside timed prologue. |
 
 ### Systems taught
@@ -460,7 +460,7 @@ Echo rescue, mystery mandate, journal campaign tracker.
 - [ ] Level ≥ 5  
 - [ ] Mining or harvesting ranked (+ cert proofs)  
 - [ ] Ash-Warden defeated; Key Fragment used  
-- [ ] Aether-9 awakened (Angry)  
+- [ ] The Overseer awakened (Angry)  
 - [ ] First Echo rescued  
 - [ ] 10-core hunt accepted (0/10)  
 - [ ] Camp still standing (Seed + Shelter + Station)
@@ -512,4 +512,4 @@ Ranges flex with skill; soft XP loops keep slower players inside 5 h without sid
 
 ---
 
-*Expanded act bible for narrative, level design, and QA. Use `Prologue_Playthrough_Step_By_Step.md` for ordinal steps; this file for depth.*
+*Expanded act bible for narrative, level design, and QA. Use `Prologue_Playthrough_And_Camp_Bootstrap_Plan.md` (§3) for ordinal steps; this file for depth.*

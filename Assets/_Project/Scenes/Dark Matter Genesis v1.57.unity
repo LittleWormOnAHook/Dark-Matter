@@ -2419,7 +2419,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 8128668236925612103, guid: 0a484d18b49777f47ac335b6d643c81a, type: 3}
       propertyPath: m_Name
-      value: 'Aether 9 '
+      value: 'The Overseer '
       objectReference: {fileID: 0}
     - target: {fileID: 8128668236925612103, guid: 0a484d18b49777f47ac335b6d643c81a, type: 3}
       propertyPath: m_IsActive
@@ -18574,7 +18574,7 @@ MonoBehaviour:
 
 
     Survival is key. Gather vital resources, monitor
-    your health, energy, stamina, and oxygen stats, and earn Aether Credits along
+    your health, energy, stamina, and oxygen stats, and earn UEA Credits along
     your journey.
 
 
@@ -26542,7 +26542,7 @@ MonoBehaviour:
 
 
     Survival is key. Gather vital resources,
-    monitor your health, energy, stamina, and oxygen stats, and earn Aether Credits
+    monitor your health, energy, stamina, and oxygen stats, and earn UEA Credits
     along your journey.
 
 

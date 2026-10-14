@@ -1,12 +1,12 @@
 # Narrative Package V1: Ash & Signal
 
-> **Global locks (Sep 30, 2026) override this package:** the player starts with **0 AC, level 1 and no inventory** (Aether Credits only). Kade lands on Io with **2 companions**, the survivors of the Mars escape; no other companions until Echoes are found and restored from ethereal to corporeal form. The starter-companion pick is retired.
+> **Global locks (Sep 30, 2026) override this package:** the player starts with **0 UEA, level 1 and no inventory** (UEA Credits only). Kade lands on Io with **2 companions**, the survivors of the Mars escape; no other companions until Echoes are found and restored from ethereal to corporeal form. The starter-companion pick is retired.
 
 **Project:** Dark Matter: Genesis  
 **Package identity:** **V1 Ash & Signal**  
 **Player:** **Kade**  
 **Genre tone:** Mystery / horror survival on Io  
-**Canon spine:** Io 2160, AC-only economy, 22 base companions plus a switchable trio of 3, Kairos repair to 6 Memory Cores to trust, ending triad **Seal / Awaken / Symbiosis**  
+**Canon spine:** Io 2160, UEA-only economy, 22 base companions plus a switchable trio of 3, Kairos repair to 6 Memory Cores to trust, ending triad **Seal / Awaken / Symbiosis**  
 **Designed hour target:** **165h** excluding open exploration; exploration adds ~25-40h bonus ambience, free roam, hunting, gathering, and vista discovery  
 **Biome order lock:** **B6 -> B1 -> B2 -> B3 -> B5 -> B4 -> B7**  
 **Permanent stakes lock:** Failed hostile Echo sync means permanent Echo loss; building/base damage injures companions but never kills them.
@@ -19,7 +19,7 @@
 
 Io does not behave like a moon. It behaves like a crime scene that keeps hiding the body.
 
-**Kade** lands in 2160 on a basalt highland hub after colony systems detect impossible rescue pings from erased crews. Kade starts with **0 Aether Credits (AC)** and no inventory, with the **2 companions** who escaped Mars with him and a fragile foothold. A dormant machine intelligence, later identified as **Kairos**, lies broken under ash-glass stone. Kade repairs it through salvaged precursor components, but the awakened voice is not grateful. It recognizes human signatures, remembers betrayal, and treats the new colony as another infection.
+**Kade** lands in 2160 on a basalt highland hub after colony systems detect impossible rescue pings from erased crews. Kade starts with **0 UEA Credits (UEA)** and no inventory, with the **2 companions** who escaped Mars with him and a fragile foothold. A dormant machine intelligence, later identified as **Kairos**, lies broken under ash-glass stone. Kade repairs it through salvaged precursor components, but the awakened voice is not grateful. It recognizes human signatures, remembers betrayal, and treats the new colony as another infection.
 
 The truth unfolds through Memory Cores, Echo chronicles, Resonance Events, faction disputes, and hostile ecology. **Kairos is not a god, not a vendor, and not a quest giver. Kairos is a precursor defense AI built to preserve Io from extraction, settlement, and contamination.** Its previous crew tried to repurpose the lattice. Io erased them. Whether Io acted through the defense system, through something below it, or through a deeper symbiosis remains the central horror.
 
@@ -46,7 +46,7 @@ The truth unfolds through Memory Cores, Echo chronicles, Resonance Events, facti
 
 | Lock | Package Use |
 |---|---|
-| AC-only economy, 0 AC start | Every reward and vendor hook uses AC. |
+| UEA-only economy, 0 UEA start | Every reward and vendor hook uses AC. |
 | 22 base + trio of 3 | Mainline and side content assume 22 protected base roles plus field trio risk. |
 | Kairos repair -> 6 Memory Cores -> trust | Mainline progress is trigger-driven, not quest-giver-driven. |
 | Biome order B6 -> B1 -> B2 -> B3 -> B5 -> B4 -> B7 | Quest, puzzle, AC, and gear tiers follow this order. |
@@ -91,7 +91,7 @@ Life sheet refs match `Io_Biome_Life_Sheet_Manifest.md` (Set B under `ArtReferen
 
 | System | Status | Current Package Hook | Content Dependency / Notes |
 |---|---:|---|---|
-| AC economy | [SHIPPED] | All quest, puzzle, faction, and mainline rewards pay AC only. Starting balance is 0 AC. | Reward curve below avoids alternate currencies. |
+| UEA Credits economy | [SHIPPED] | All quest, puzzle, faction, and mainline rewards pay AC only. Starting balance is 0 UEA. | Reward curve below avoids alternate currencies. |
 | Building Control Panels 5-tab shell | [SHIPPED/PARTIAL Craft] | Base buildings use tabs **Overview \| Companions \| Production \| Craft \| Changes** for storm pause, sheltering, assignment, and module previews. | Craft tab is partial; Journal Craft remains recipe library / scroll learning, not primary production. |
 | EchoGenerator + chronicle | [SHIPPED] | Echo chronicle milestones trigger mainline trust beats and optional side rescue arcs. | Failed hostile Echo sync is permanent loss. |
 | Exposure / survival | [SHIPPED] | O2, radiation, and thermal pressure appear in B1 storm runs, B5 lens fields, B4 heat locks, and underground gas domes. | Thermal is one cold/heat bar with two poles. |
@@ -118,14 +118,14 @@ Life sheet refs match `Io_Biome_Life_Sheet_Manifest.md` (Set B under `ArtReferen
 
 The mainline is **not quest-giver-driven**. No NPC hands the player the critical path. Progress advances through **WorldState and GameState triggers**: locations reached, repair objects installed, Memory Cores attached, biomes entered in locked order, Echo chronicle milestones, Building Control structures online, Ash Barrier Field patterns solved, and Resonance Events completed. Kairos reacts to progress; it does not behave like a normal quest board.
 
-### AC Reward Tier Curve
+### UEA Credits reward Tier Curve
 
 | Tier | Campaign Range | Mainline Beat AC | Side Quest AC | Mastery Puzzle AC | Reward Intent |
 |---|---|---:|---:|---:|---|
-| **T1 Early** | Act I / B6-B1 | 200-450 AC | 250-500 AC | 600-900 AC | Build the early economy up from the 0 AC start. |
-| **T2 Mid** | Act II / B2-B3 | 450-900 AC | 500-950 AC | 900-1500 AC | Support gear breadth, ranged/hotbar upgrades, and faction spend. |
-| **T3 Late Mid** | Act III / B5-B4 | 900-1800 AC | 1000-2000 AC | 1500-2200 AC | Fund environmental kit, base modules, and higher-risk expedition loadouts. |
-| **T4 Endgame** | Act IV / B7 / faction finales | 1800-3500 AC | 2000-4500 AC | 2200-3000 AC | Let players finish builds, buy late gear, and resolve faction consequences. |
+| **T1 Early** | Act I / B6-B1 | 200-450 UEA | 250-500 UEA | 600-900 UEA | Build the early economy up from the 0 UEA start. |
+| **T2 Mid** | Act II / B2-B3 | 450-900 UEA | 500-950 UEA | 900-1500 UEA | Support gear breadth, ranged/hotbar upgrades, and faction spend. |
+| **T3 Late Mid** | Act III / B5-B4 | 900-1800 UEA | 1000-2000 UEA | 1500-2200 UEA | Fund environmental kit, base modules, and higher-risk expedition loadouts. |
+| **T4 Endgame** | Act IV / B7 / faction finales | 1800-3500 UEA | 2000-4500 UEA | 2200-3000 UEA | Let players finish builds, buy late gear, and resolve faction consequences. |
 
 Mastery puzzles provide prestige AC and gear/lore bonuses only. They do **not** block the story.
 
@@ -256,46 +256,46 @@ Purpose distribution is intentionally mixed. Only a minority are hard access gat
 
 | ID | Title | Purpose Type | Solve | Payoff (AC / Weapon / Lore / Unlock) | Links | Est.h | Tags |
 |---|---|---|---|---|---|---:|---|
-| PQ-V1-01 | Bowl Field Tuning | Access Gate / Area Unlock | Align three ash tones around the dormant Kairos shell using the Resonator Coil. | Unlocks shell chamber; 250 AC; lore ping. | ML-V1-03 | 0.8 | B6, Ash Barrier Field, Kairos [PLANNED] |
+| PQ-V1-01 | Bowl Field Tuning | Access Gate / Area Unlock | Align three ash tones around the dormant Kairos shell using the Resonator Coil. | Unlocks shell chamber; 250 UEA; lore ping. | ML-V1-03 | 0.8 | B6, Ash Barrier Field, Kairos [PLANNED] |
 | PQ-V1-02 | Ridge Resonator Gate | Access Gate / Area Unlock | Match ridge frequency pulses while avoiding Glass Hive Swarmer agitation. | Unlocks repair object 1; **Ash-Tuned Baton**. | ML-V1-04 | 1.0 | B6, Glass Hive Swarmer, repair |
-| PQ-V1-03 | Sulfur Lock Petals | Access Gate / Area Unlock | Rotate sulfur-stained Vault Glass Petal fragments only during low plume pressure. | Unlocks repair object 2; 350 AC. | ML-V1-06 | 1.1 | B1, Brimstone Fan, exposure [SHIPPED] |
+| PQ-V1-03 | Sulfur Lock Petals | Access Gate / Area Unlock | Rotate sulfur-stained Vault Glass Petal fragments only during low plume pressure. | Unlocks repair object 2; 350 UEA. | ML-V1-06 | 1.1 | B1, Brimstone Fan, exposure [SHIPPED] |
 | PQ-V1-04 | Vent Cap Cipher | Access Gate / Area Unlock | Use vent cadence, Science scan, and a rig-side breaker to open corporate inner door. | Unlocks repair object 3; **Geyser Pulse Carbine**. | ML-V1-10 | 1.2 | B2, Vent Capper Bot, Rusted Survey Drone |
-| PQ-V1-05 | Lens Gate | Access Gate / Area Unlock | Cross polar lens nodes when cold/heat meter passes through neutral. | Unlocks Core C4 route; 900 AC. | ML-V1-C4 | 1.1 | B5, Void Kelp, exposure [SHIPPED] |
+| PQ-V1-05 | Lens Gate | Access Gate / Area Unlock | Cross polar lens nodes when cold/heat meter passes through neutral. | Unlocks Core C4 route; 900 UEA. | ML-V1-C4 | 1.1 | B5, Void Kelp, exposure [SHIPPED] |
 | PQ-V1-06 | Heat Lock Secundus | Access Gate / Area Unlock | Route heat into two sacrificial vents, then trigger a Stability Bubble. | Unlocks C5 death-site; **Heat Lock Override**. | ML-V1-C5 | 1.3 | B4, Heat Eel, Eruption Sentry Bot |
-| PQ-V1-07 | Three Surface Locks | Access Gate / Area Unlock | Bring B3, B5, and B4 signal proofs to B7 surface lock obelisks. | Unlocks B7 vault approach; 2200 AC. | ML-V1-14 | 1.5 | B7, Ash Barrier Field, WorldState [SHIPPED] |
-| PQ-V1-08 | Lattice Cage Final | Access Gate / Area Unlock | Seal path only: close lattice nodes without waking all defense subroutines. | Enables Seal ending; 3000 AC. | ML-V1-15 | 1.5 | B7, ending, Kairos [PLANNED] |
-| PQ-V1-09 | Graveyard Scrapper Vault | Loot / Cache / Weapon Unlock | Reorder dead drone commands so Graveyard Scrapper Drones open their own cache. | 500 AC; **Graveyard Scrapper Pistol**. | SQ-V1-05 | 1.0 | B1, Graveyard Scrapper Drone, AC [SHIPPED] |
-| PQ-V1-10 | Brimstone Leech Still | Loot / Cache / Weapon Unlock | Use bait heat and O2 timing to pull Brimstone Leeches off a sealed med crate. | 500 AC; Whisper med cache. | SQ-V1-09 | 1.0 | B1, Brimstone Leech, Whisper Clinic |
-| PQ-V1-11 | Vent Crab Queen Cache | Loot / Cache / Weapon Unlock | Feed vent pressure to Worker tunnels without enraging the Queen. | 850 AC; **Vent-Knuckle Gauntlet**. | SQ-V1-11 | 1.1 | B2, Vent Crab Worker/Queen |
-| PQ-V1-12 | Ashglass Nest Cut | Loot / Cache / Weapon Unlock | Harvest glass in silence using timed smoke cover. | 900 AC; **Ashglass Wasp Needler**. | SQ-V1-18 | 1.1 | B3, Ash Glass Wasp, Silence Mandate |
-| PQ-V1-13 | Magnet Wyrm Coil | Loot / Cache / Weapon Unlock | Follow magnetic pull pulses to find a buried coil before drones reclaim it. | 1400 AC; **Mag-Clamp Sidearm Rail**. | SQ-V1-22 | 1.1 | B5, Magnet Wyrm, Mag-Clamp Drone |
-| PQ-V1-14 | Caldera Armory Vent | Loot / Cache / Weapon Unlock | Deflect Heat Eel vent bursts into an old armory seal. | 1800 AC; **Caldera Cleaver**. | SQ-V1-30 | 1.2 | B4, Heat Eel, base modules [PLANNED] |
-| PQ-V1-15 | Vault Petal Cut | Loot / Cache / Weapon Unlock | Cut a Vault Glass Petal along resonance veins without breaking the imprint. | 2600 AC; **Vault Petal Blade**. | SQ-V1-34 | 1.3 | B7, Vault Glass Petal |
-| PQ-V1-16 | Rust Garden Frame | Loot / Cache / Weapon Unlock | Wake one Rust Garden android frame long enough to copy its actuator map. | 2800 AC; **Rust-Garden Nanoforge Seed**. | SQ-V1-39 | 1.4 | B7, Rust Garden, android |
-| PQ-V1-17 | Storm Hatch Window | Environmental Survival (no gate) | Open a hatch only during sulfur storm peak, then reach shelter before exposure spikes. | 450 AC; survival mastery note. | ML-V1-C1 | 1.0 | B1, weather stubs [PARTIAL], exposure [SHIPPED] |
-| PQ-V1-18 | Spout Alley Timing | Environmental Survival (no gate) | Cross Dust Spout Cluster lanes with no sprinting and no companion injury. | 800 AC; **Spout-Timer Hotbar Chip**. | SQ-V1-17 | 1.0 | B3, Dust Spout Cluster |
-| PQ-V1-19 | Void Kelp Shadow Scan | Environmental Survival (no gate) | Move through radiation shadows cast by Void Kelp while scans charge. | 1100 AC; rad data. | SQ-V1-21 | 1.1 | B5, Void Kelp, exposure [SHIPPED] |
-| PQ-V1-20 | Brine Fall Bridge | Environmental Survival (no gate) | Time brine fall intervals and thermal swings to cross without a hard gate. | 1300 AC; Seam route clue. | SQ-V1-23 | 1.0 | B5, Seam Runners, Rift Stalker rumor |
-| PQ-V1-21 | Rim Glass Quiet Walk | Environmental Survival (no gate) | Cross Rim Glass Needle Mat below a noise threshold. | 1600 AC; **Rim-Glass Buckler**. | SQ-V1-27 | 1.2 | B4, Rim Glass Needle Mat, Silence Mandate |
-| PQ-V1-22 | Gas Dome Alpha | Environmental Survival (no gate) | Vent underground gas dome using Science timing; optional if bypass found. | 1200 AC; Underground map node. | UG Stratum 2 | 1.2 | Underground, Tube Lace, Echo Lichen |
-| PQ-V1-23 | Crust Lattice | Environmental Survival (no gate) | Read floor crust patterns over brine, choosing lighter trio formation. | 1500 AC; rare salvage. | UG Stratum 3 | 1.2 | Underground, Brine Hound, Floor Crust |
-| PQ-V1-24 | Clone Cage | Combat / Encounter Puzzle | Identify real Echo clone by behavior and sync or defeat only the false copies. | 450 AC; trust bump if no permanent loss. | ML-V1-C1 | 1.0 | EchoGenerator [SHIPPED], Echo sync permanent loss |
-| PQ-V1-25 | Sulfur Hound Windline | Combat / Encounter Puzzle | Use wind, Brimstone Fan cover, and scent breaks to split a Sulfur Hound pack. | 500 AC; **Sulfur-Bite Machete**. | SQ-V1-07 | 1.1 | Sulfur Hound [SHIPPED], B1 encounter table [SHIPPED] |
-| PQ-V1-26 | Geyser Strider Wake | Combat / Encounter Puzzle | Fight only during safe vent gaps; careless shots wake Geyser Strider charge lanes. | 900 AC; **Vent-Step Boots**. | SQ-V1-14 | 1.2 | B2, Geyser Strider, combat [SHIPPED] |
-| PQ-V1-27 | Moth Silence Hall | Combat / Encounter Puzzle | Cross a hall where killing Silence Moths calls android reinforcements. | 950 AC; stealth loot. | SQ-V1-13 | 1.2 | B3/B7, Silence Moth, Salvage Excavator Android |
-| PQ-V1-28 | Caldera Mantis Heat Read | Combat / Encounter Puzzle | Redirect heat vents to stun, not burn, Caldera Mantis. | 1800 AC; **Mantis Heat Talon**. | SQ-V1-28 | 1.3 | B4, Caldera Mantis |
-| PQ-V1-29 | Patrol Corruption Loop | Combat / Encounter Puzzle | Rewire Corrupted Patrol Android priorities while fighting spawned decoys. | 2600 AC; **Compliance Arc Rifle**. | SQ-V1-38 | 1.3 | B7, Corrupted Patrol Android, Helix |
-| PQ-V1-30 | Shelf Wrong Song | Story / Reveal | Tune Resonance Echo Shelf to match Kairos's old crew call without causing Saturation drift. | Lore: crew did not all agree; 850 AC. | ML-V1-C3 | 1.1 | B3, Resonance Echo Shelf, Kairos [PLANNED] |
-| PQ-V1-31 | Frequency Mirror | Story / Reveal | Mirror Kairos tone through Echo Lichen and compare the returned voice. | Lore: Io may be answering through biology; 1200 AC. | UG / Symbiosis | 1.2 | Underground, Echo Lichen, Echo Symbiont Swarm |
-| PQ-V1-32 | Smuggler Remnant Cipher | Story / Reveal | Decode Smuggler Remnant Android memory without letting Helix auto-redact it. | Lore: cores were moved through B5; 1600 AC. | SQ-V1-25 | 1.2 | B5, Smuggler Remnant Android, Helix / Seam |
-| PQ-V1-33 | Rim Watcher Reflection | Story / Reveal | Angle caldera glass to reveal what the crew saw before the death-site event. | Lore: Kairos contained but did not initiate everything; 1800 AC. | ML-V1-C5 | 1.3 | B4, Rim Glass Needle Mat |
+| PQ-V1-07 | Three Surface Locks | Access Gate / Area Unlock | Bring B3, B5, and B4 signal proofs to B7 surface lock obelisks. | Unlocks B7 vault approach; 2200 UEA. | ML-V1-14 | 1.5 | B7, Ash Barrier Field, WorldState [SHIPPED] |
+| PQ-V1-08 | Lattice Cage Final | Access Gate / Area Unlock | Seal path only: close lattice nodes without waking all defense subroutines. | Enables Seal ending; 3000 UEA. | ML-V1-15 | 1.5 | B7, ending, Kairos [PLANNED] |
+| PQ-V1-09 | Graveyard Scrapper Vault | Loot / Cache / Weapon Unlock | Reorder dead drone commands so Graveyard Scrapper Drones open their own cache. | 500 UEA; **Graveyard Scrapper Pistol**. | SQ-V1-05 | 1.0 | B1, Graveyard Scrapper Drone, AC [SHIPPED] |
+| PQ-V1-10 | Brimstone Leech Still | Loot / Cache / Weapon Unlock | Use bait heat and O2 timing to pull Brimstone Leeches off a sealed med crate. | 500 UEA; Whisper med cache. | SQ-V1-09 | 1.0 | B1, Brimstone Leech, Whisper Clinic |
+| PQ-V1-11 | Vent Crab Queen Cache | Loot / Cache / Weapon Unlock | Feed vent pressure to Worker tunnels without enraging the Queen. | 850 UEA; **Vent-Knuckle Gauntlet**. | SQ-V1-11 | 1.1 | B2, Vent Crab Worker/Queen |
+| PQ-V1-12 | Ashglass Nest Cut | Loot / Cache / Weapon Unlock | Harvest glass in silence using timed smoke cover. | 900 UEA; **Ashglass Wasp Needler**. | SQ-V1-18 | 1.1 | B3, Ash Glass Wasp, Silence Mandate |
+| PQ-V1-13 | Magnet Wyrm Coil | Loot / Cache / Weapon Unlock | Follow magnetic pull pulses to find a buried coil before drones reclaim it. | 1400 UEA; **Mag-Clamp Sidearm Rail**. | SQ-V1-22 | 1.1 | B5, Magnet Wyrm, Mag-Clamp Drone |
+| PQ-V1-14 | Caldera Armory Vent | Loot / Cache / Weapon Unlock | Deflect Heat Eel vent bursts into an old armory seal. | 1800 UEA; **Caldera Cleaver**. | SQ-V1-30 | 1.2 | B4, Heat Eel, base modules [PLANNED] |
+| PQ-V1-15 | Vault Petal Cut | Loot / Cache / Weapon Unlock | Cut a Vault Glass Petal along resonance veins without breaking the imprint. | 2600 UEA; **Vault Petal Blade**. | SQ-V1-34 | 1.3 | B7, Vault Glass Petal |
+| PQ-V1-16 | Rust Garden Frame | Loot / Cache / Weapon Unlock | Wake one Rust Garden android frame long enough to copy its actuator map. | 2800 UEA; **Rust-Garden Nanoforge Seed**. | SQ-V1-39 | 1.4 | B7, Rust Garden, android |
+| PQ-V1-17 | Storm Hatch Window | Environmental Survival (no gate) | Open a hatch only during sulfur storm peak, then reach shelter before exposure spikes. | 450 UEA; survival mastery note. | ML-V1-C1 | 1.0 | B1, weather stubs [PARTIAL], exposure [SHIPPED] |
+| PQ-V1-18 | Spout Alley Timing | Environmental Survival (no gate) | Cross Dust Spout Cluster lanes with no sprinting and no companion injury. | 800 UEA; **Spout-Timer Hotbar Chip**. | SQ-V1-17 | 1.0 | B3, Dust Spout Cluster |
+| PQ-V1-19 | Void Kelp Shadow Scan | Environmental Survival (no gate) | Move through radiation shadows cast by Void Kelp while scans charge. | 1100 UEA; rad data. | SQ-V1-21 | 1.1 | B5, Void Kelp, exposure [SHIPPED] |
+| PQ-V1-20 | Brine Fall Bridge | Environmental Survival (no gate) | Time brine fall intervals and thermal swings to cross without a hard gate. | 1300 UEA; Seam route clue. | SQ-V1-23 | 1.0 | B5, Seam Runners, Rift Stalker rumor |
+| PQ-V1-21 | Rim Glass Quiet Walk | Environmental Survival (no gate) | Cross Rim Glass Needle Mat below a noise threshold. | 1600 UEA; **Rim-Glass Buckler**. | SQ-V1-27 | 1.2 | B4, Rim Glass Needle Mat, Silence Mandate |
+| PQ-V1-22 | Gas Dome Alpha | Environmental Survival (no gate) | Vent underground gas dome using Science timing; optional if bypass found. | 1200 UEA; Underground map node. | UG Stratum 2 | 1.2 | Underground, Tube Lace, Echo Lichen |
+| PQ-V1-23 | Crust Lattice | Environmental Survival (no gate) | Read floor crust patterns over brine, choosing lighter trio formation. | 1500 UEA; rare salvage. | UG Stratum 3 | 1.2 | Underground, Brine Hound, Floor Crust |
+| PQ-V1-24 | Clone Cage | Combat / Encounter Puzzle | Identify real Echo clone by behavior and sync or defeat only the false copies. | 450 UEA; trust bump if no permanent loss. | ML-V1-C1 | 1.0 | EchoGenerator [SHIPPED], Echo sync permanent loss |
+| PQ-V1-25 | Sulfur Hound Windline | Combat / Encounter Puzzle | Use wind, Brimstone Fan cover, and scent breaks to split a Sulfur Hound pack. | 500 UEA; **Sulfur-Bite Machete**. | SQ-V1-07 | 1.1 | Sulfur Hound [SHIPPED], B1 encounter table [SHIPPED] |
+| PQ-V1-26 | Geyser Strider Wake | Combat / Encounter Puzzle | Fight only during safe vent gaps; careless shots wake Geyser Strider charge lanes. | 900 UEA; **Vent-Step Boots**. | SQ-V1-14 | 1.2 | B2, Geyser Strider, combat [SHIPPED] |
+| PQ-V1-27 | Moth Silence Hall | Combat / Encounter Puzzle | Cross a hall where killing Silence Moths calls android reinforcements. | 950 UEA; stealth loot. | SQ-V1-13 | 1.2 | B3/B7, Silence Moth, Salvage Excavator Android |
+| PQ-V1-28 | Caldera Mantis Heat Read | Combat / Encounter Puzzle | Redirect heat vents to stun, not burn, Caldera Mantis. | 1800 UEA; **Mantis Heat Talon**. | SQ-V1-28 | 1.3 | B4, Caldera Mantis |
+| PQ-V1-29 | Patrol Corruption Loop | Combat / Encounter Puzzle | Rewire Corrupted Patrol Android priorities while fighting spawned decoys. | 2600 UEA; **Compliance Arc Rifle**. | SQ-V1-38 | 1.3 | B7, Corrupted Patrol Android, Helix |
+| PQ-V1-30 | Shelf Wrong Song | Story / Reveal | Tune Resonance Echo Shelf to match Kairos's old crew call without causing Saturation drift. | Lore: crew did not all agree; 850 UEA. | ML-V1-C3 | 1.1 | B3, Resonance Echo Shelf, Kairos [PLANNED] |
+| PQ-V1-31 | Frequency Mirror | Story / Reveal | Mirror Kairos tone through Echo Lichen and compare the returned voice. | Lore: Io may be answering through biology; 1200 UEA. | UG / Symbiosis | 1.2 | Underground, Echo Lichen, Echo Symbiont Swarm |
+| PQ-V1-32 | Smuggler Remnant Cipher | Story / Reveal | Decode Smuggler Remnant Android memory without letting Helix auto-redact it. | Lore: cores were moved through B5; 1600 UEA. | SQ-V1-25 | 1.2 | B5, Smuggler Remnant Android, Helix / Seam |
+| PQ-V1-33 | Rim Watcher Reflection | Story / Reveal | Angle caldera glass to reveal what the crew saw before the death-site event. | Lore: Kairos contained but did not initiate everything; 1800 UEA. | ML-V1-C5 | 1.3 | B4, Rim Glass Needle Mat |
 | PQ-V1-34 | Names In The Shelf | Story / Reveal | Play Echo chronicle fragments in erased-crew order. | Lore: crew manifest names; trust dialogue. | SQ-V1-33 | 1.3 | B7, Echo chronicle [SHIPPED] |
-| PQ-V1-35 | Still Mark Counting | Story / Reveal | Track three Still Hunter signs without looking directly at the final mark. | Lore: Still Hunter is a defense myth made flesh; 2200 AC. | SQ-V1-37 | 1.4 | B7, Still Hunter myth |
-| PQ-V1-36 | Barrier Cascade Mastery | Optional Mastery / Challenge | Disable 3 linked Ash Barrier Fields under time pressure after story route is already open. | Prestige 1500 AC; **Barrier Harmonic Charm**. | B3 optional POIs | 1.4 | Ash Barrier Field, no story gate |
-| PQ-V1-37 | Gas Dome Beta Mastery | Optional Mastery / Challenge | Dual vent an underground gas dome while protecting an Echo trio from Saturation spikes. | Prestige 1800 AC; cleanse discount. | UG Stratum 4 | 1.3 | Underground, Echo Symbiont Swarm, no story gate |
-| PQ-V1-38 | Plume Moth Constellation | Optional Mastery / Challenge | Follow Plume Moth light paths across B2 and B7 variants without map markers. | Prestige 1200 AC; cosmetic signal trail. | Global Plume Moth | 1.2 | Plume Moth, no story gate |
-| PQ-V1-39 | Void Stitcher Trace | Optional Mastery / Challenge | Solve cross-biome trace clues without fighting; resets if player overuses radio pings. | Prestige 3000 AC; Void Stitcher codex. | Global rumor | 1.5 | Void Stitcher, Communications [PLANNED], no story gate |
-| PQ-V1-40 | Lattice Clean Run | Optional Mastery / Challenge | Complete final vault puzzle sequence with no companion injury, no Echo loss, and no forced awaken flags. | Prestige 3000 AC; title flag. | Ending triad | 1.6 | B7, mastery, no story gate |
+| PQ-V1-35 | Still Mark Counting | Story / Reveal | Track three Still Hunter signs without looking directly at the final mark. | Lore: Still Hunter is a defense myth made flesh; 2200 UEA. | SQ-V1-37 | 1.4 | B7, Still Hunter myth |
+| PQ-V1-36 | Barrier Cascade Mastery | Optional Mastery / Challenge | Disable 3 linked Ash Barrier Fields under time pressure after story route is already open. | Prestige 1500 UEA; **Barrier Harmonic Charm**. | B3 optional POIs | 1.4 | Ash Barrier Field, no story gate |
+| PQ-V1-37 | Gas Dome Beta Mastery | Optional Mastery / Challenge | Dual vent an underground gas dome while protecting an Echo trio from Saturation spikes. | Prestige 1800 UEA; cleanse discount. | UG Stratum 4 | 1.3 | Underground, Echo Symbiont Swarm, no story gate |
+| PQ-V1-38 | Plume Moth Constellation | Optional Mastery / Challenge | Follow Plume Moth light paths across B2 and B7 variants without map markers. | Prestige 1200 UEA; cosmetic signal trail. | Global Plume Moth | 1.2 | Plume Moth, no story gate |
+| PQ-V1-39 | Void Stitcher Trace | Optional Mastery / Challenge | Solve cross-biome trace clues without fighting; resets if player overuses radio pings. | Prestige 3000 UEA; Void Stitcher codex. | Global rumor | 1.5 | Void Stitcher, Communications [PLANNED], no story gate |
+| PQ-V1-40 | Lattice Clean Run | Optional Mastery / Challenge | Complete final vault puzzle sequence with no companion injury, no Echo loss, and no forced awaken flags. | Prestige 3000 UEA; title flag. | Ending triad | 1.6 | B7, mastery, no story gate |
 
 **Puzzle quest subtotal:** ~43h.
 
@@ -357,7 +357,7 @@ Reputation ladder for all factions: **Unknown -> Noticed -> Trusted -> Inner Cir
 | Underground Gas / Crust | Optional depth route | SQ-V1-04 | PQ-V1-22, 23, 37 | Choir, Scrim, Clinic | F7, F8, Underground [PLANNED] |
 | Base Injury-Not-Death | ML-V1-02, C5 | SQ-V1-03, 09, 24, 32 | PQ-V1-17, 40 | Ashwatch, Clinic, Exchange | Building Control [SHIPPED/PARTIAL Craft], base modules [PLANNED] |
 | Still Hunter Trace | ML-V1-14, C6, 15 | SQ-V1-37, 40 | PQ-V1-35, 39, 40 | Seam Runners, Clinic | F10, Still Hunter myth, B7 [PLANNED] |
-| AC Economy Pressure | All acts | All SQ rows | All PQ payoff rows | Basalt Exchange | AC economy [SHIPPED] |
+| UEA Credits economy Pressure | All acts | All SQ rows | All PQ payoff rows | Basalt Exchange | UEA Credits economy [SHIPPED] |
 
 ---
 
@@ -451,6 +451,6 @@ Designed hours exclude pure exploration, free-form harvesting, collectible wande
 
 ## Production Summary
 
-**V1 Ash & Signal** is a 165-hour designed narrative package built around progress-triggered mainline advancement, mixed-purpose puzzle content, AC-only reward scaling, ecology-forward horror, and a trust arc with Kairos as a precursor defense AI. The player moves through **B6 -> B1 -> B2 -> B3 -> B5 -> B4 -> B7**, repairs Kairos, recovers 6 Memory Cores, survives Resonance Events, and chooses **Seal**, **Awaken**, or **Symbiosis**.
+**V1 Ash & Signal** is a 165-hour designed narrative package built around progress-triggered mainline advancement, mixed-purpose puzzle content, UEA-only reward scaling, ecology-forward horror, and a trust arc with Kairos as a precursor defense AI. The player moves through **B6 -> B1 -> B2 -> B3 -> B5 -> B4 -> B7**, repairs Kairos, recovers 6 Memory Cores, survives Resonance Events, and chooses **Seal**, **Awaken**, or **Symbiosis**.
 
 The package assumes shipped systems where they exist, marks partial/planned dependencies clearly, and keeps all future hooks compatible with the locked canon: no Echo marketplace, no base companion death from building damage, 22 base companions plus trio expeditions, and AC as the sole economy.

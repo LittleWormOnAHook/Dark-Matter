@@ -39,6 +39,27 @@ namespace Project.AI.Invector
                 ApplyDefinition(health, senses, combat, ai, root, definition);
             else
                 ApplyRuntimeDefaults(health, senses, combat, ai, root);
+
+            EnsureRangedAmmoPool(root, definition);
+        }
+
+        private static void EnsureRangedAmmoPool(GameObject root, EnemyDefinition definition)
+        {
+            DMEnemyRangedAmmoPool ammoPool = GetOrAdd<DMEnemyRangedAmmoPool>(root);
+            EnemyDefinition def = definition;
+            if (def == null)
+            {
+                EnemyInvectorBootstrap bootstrap = root.GetComponent<EnemyInvectorBootstrap>();
+                def = bootstrap != null ? bootstrap.Definition : null;
+            }
+
+            if (def == null)
+            {
+                EnemyInvectorLoadoutBridge loadout = root.GetComponent<EnemyInvectorLoadoutBridge>();
+                def = loadout != null ? loadout.ResolveDefinition() : null;
+            }
+
+            ammoPool.ApplyFromSources(def, null);
         }
 
         private static void ApplyRuntimeDefaults(

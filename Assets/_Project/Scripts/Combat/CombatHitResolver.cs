@@ -71,7 +71,14 @@ namespace Project.Combat
             if (playHitAudio)
                 PlayImpactHitAudio(hitPoint);
 
-            EnemyNoiseEvents.RaiseCombatImpactNoise(hitPoint, DefaultImpactNoiseRadius, owner);
+            // 2026-10-14 (a): player misses alert enemies near the impact (DM_CombatCoreProfile.rangedImpactAlertRadius).
+            float noiseRadius = DefaultImpactNoiseRadius;
+            if (CombatPlayerSourceUtility.IsPlayerOrPioneerSource(owner))
+            {
+                DM_CombatCoreProfile cp = DM_CombatCoreProfile.Live;
+                noiseRadius = cp != null ? cp.rangedImpactAlertRadius : 8f;
+            }
+            EnemyNoiseEvents.RaiseCombatImpactNoise(hitPoint, noiseRadius, owner);
         }
 
         public static void PlayImpactHitAudio(Vector3 hitPoint)

@@ -18,6 +18,14 @@ namespace Project.Combat
         private float _groundOffset = 0.08f;
         private bool _pending;
         private DecalProjector _decal;
+        private Transform _towardTarget;
+        private float _towardWeight;
+
+        public void SetGroundToward(Transform victimRoot, float weight01)
+        {
+            _towardTarget = victimRoot;
+            _towardWeight = Mathf.Clamp01(weight01);
+        }
 
         public void Apply(bool randomYaw, float scale, float depth = -1f, float groundOffset = 0.08f)
         {
@@ -44,8 +52,22 @@ namespace Project.Combat
                 Vector3 center = new Vector3(transform.position.x, groundY + _groundOffset - depth * 0.5f, transform.position.z);
                 _decal.pivot = Quaternion.Inverse(transform.rotation) * (center - transform.position);
             }
+
+            if (_towardTarget != null && _towardWeight > 0.001f)
+            {
+                Vector3 pos = transform.position;
+                Vector3 foot = _towardTarget.position;
+                foot.y = pos.y;
+                Vector3 nudged = Vector3.Lerp(pos, foot, _towardWeight);
+                transform.position = nudged;
+            }
         }
 
-        private void OnDisable() { _pending = false; }
+        private void OnDisable()
+        {
+            _pending = false;
+            _towardTarget = null;
+            _towardWeight = 0f;
+        }
     }
 }

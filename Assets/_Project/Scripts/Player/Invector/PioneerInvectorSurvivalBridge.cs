@@ -198,6 +198,9 @@ namespace Project.Player.Invector
             if (_survivalStats.IsDead || damage.damageValue <= 0f)
                 return;
 
+            // Hit VFX before damage apply so audit / god-mode blocks still show blood.
+            CombatHitVfx.SpawnIncomingEnemyHit(damage, transform);
+
             _forwardingInvectorDamage = true;
             try
             {
@@ -205,7 +208,6 @@ namespace Project.Player.Invector
                     _survivalStats.ApplyDamageFromSource(damage.damageValue, damage.sender.gameObject);
                 else
                     _survivalStats.ApplyDamage(damage.damageValue, "unknown");
-                CombatHitVfx.SpawnIncomingEnemyHit(damage, transform);
                 PlayerCombatEvents.RaisePlayerAttackedBySender(damage.sender);
                 PushHealthToInvector();
             }

@@ -49,7 +49,7 @@ This document is **frozen** after ratification. No casual edits.
 
 Dark Matter is **not a game**. It is a **Living World Architecture** — a reusable Unity framework for building story-driven, simulation-driven exploration RPGs where authored narrative and emergent world life coexist.
 
-**Dark Matter: Genesis** is the first product built on Dark Matter. Game-specific content (Io, Aether Credits, Neural Echoes, sulfur storms) lives in the **Game layer**. Dark Matter owns patterns, services, intelligence, experience, and presentation that could support future titles.
+**Dark Matter: Genesis** is the first product built on Dark Matter. Game-specific content (Io, UEA Credits, Neural Echoes, sulfur storms) lives in the **Game layer**. Dark Matter owns patterns, services, intelligence, experience, and presentation that could support future titles.
 
 Dark Matter is also **The World Engine** — a **World Operating System (WoOS)**.
 It is not "here is my game." It is "here is the operating system that runs my world."
@@ -689,7 +689,7 @@ WorldStateSnapshot
 | **SimulationDirector** | Off-screen colony tick, needs, relationships |
 | **MissionDirector** | Expedition objectives, trio constraints |
 | **WeatherDirector** | Hazard scheduling, storm phases |
-| **EconomyDirector** | AC milestones, trade gates |
+| **EconomyDirector** | UEA Credits milestones, trade gates |
 | **ExperienceDirector** | Pacing, silence, densities, player emotional estimation |
 | **EventDirector** | Dynamic incidents between beats |
 | **AIDirector** (future) | Tactical suggestions — optional, last |

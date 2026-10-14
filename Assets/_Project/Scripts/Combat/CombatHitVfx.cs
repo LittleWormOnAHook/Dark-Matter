@@ -58,7 +58,8 @@ namespace Project.Combat
         private static bool TryPlayerVolumetric(Transform receiver, Vector3 point, Vector3 direction)
         {
             DM_EnemyHitMarkProfile p = DM_EnemyHitMarkProfile.Live;
-            return p != null && p.volumetricOnPlayer && DMVolumetricBlood.TrySpawn(p, DMEnemyBodyType.Humanoid, receiver, point, -direction, direction);
+            return p != null && p.volumetricOnPlayer
+                && DMVolumetricBlood.TrySpawn(p, DMEnemyBodyType.Humanoid, receiver, point, -direction, direction, playerHit: true);
         }
 
 

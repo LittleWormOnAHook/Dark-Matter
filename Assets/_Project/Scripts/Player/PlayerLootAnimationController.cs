@@ -1,6 +1,9 @@
 using Invector.vCharacterController;
+using Project.Core;
 using Project.Interaction;
+using Project.Player;
 using Project.Survival;
+using Project.UI;
 using UnityEngine;
 
 namespace Project.Player
@@ -79,6 +82,22 @@ namespace Project.Player
             FinishLoot();
         }
 
+        public void CancelForModal()
+        {
+            CancelForCombat();
+        }
+
+        public static void CancelOnLivePlayer()
+        {
+            PlayerController player = PlayerLocator.FindPlayerController();
+            if (player == null)
+                return;
+
+            PlayerLootAnimationController loot =
+                player.GetComponentInChildren<PlayerLootAnimationController>(true);
+            loot?.CancelForModal();
+        }
+
         private void OnDisable()
         {
             if (_animator != null)
@@ -87,6 +106,13 @@ namespace Project.Player
 
         private void Update()
         {
+            if (GameplayWorldSimulation.IsFrozen || GameplayMenuTime.IsInventoryPaused)
+            {
+                if (_phase != LootPhase.None || IsInLootStateOnBaseLayer())
+                    CancelForModal();
+                return;
+            }
+
             if (_phase == LootPhase.None || _animator == null)
                 return;
 

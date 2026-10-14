@@ -1,29 +1,44 @@
-﻿#if UNITY_EDITOR
+#if UNITY_EDITOR
 using Project.Combat;
 using Project.Core;
+using UnityEditor;
 
 namespace Project.EditorTools.Audit
 {
     /// <summary>
-    /// 2026-10-13 (i): audits run with god mode ON when DM_CombatCoreProfile.auditGodMode (player + enemies unkillable, infinite ammo);
-    /// the previous god-mode state is restored in Finish. With auditGodMode off, the respawn fallback (DMGodModeCheat) applies.
+    /// 2026-10-14 (b): audits/tests run an audit SESSION (DMDevCommandState.AuditSessionActive) when
+    /// DM_CombatCoreProfile.auditGodMode: player-only protection + infinite ammo + respawn fallback. Enemies take
+    /// real damage. The typed godmode cheat is never touched. The session ends in Finish, on play-mode exit and on
+    /// domain reload, so nothing persists into normal play.
     /// </summary>
     public static partial class DMEnemyRuntimeAudit
     {
-        private static bool _guardGodSet, _guardGodWas;
+        [InitializeOnLoad]
+        private static class AuditSessionPlayModeHook
+        {
+            static AuditSessionPlayModeHook()
+            {
+                EditorApplication.playModeStateChanged -= EndAuditSessionOnPlayModeChange;
+                EditorApplication.playModeStateChanged += EndAuditSessionOnPlayModeChange;
+            }
+        }
+
+        private static void EndAuditSessionOnPlayModeChange(PlayModeStateChange change)
+        {
+            if (change == PlayModeStateChange.ExitingPlayMode || change == PlayModeStateChange.EnteredEditMode)
+                DMDevCommandState.EndAuditSession();
+        }
 
         internal static void AuditPlayerGuard()
         {
             DM_CombatCoreProfile p = DM_CombatCoreProfile.Live;
             if (p != null && !p.auditGodMode) return;
-            if (!_guardGodSet) { _guardGodWas = DMDevCommandState.GodMode; _guardGodSet = true; }
-            if (!DMDevCommandState.GodMode) DMGodModeCheat.SetGodMode(true);
+            if (!DMDevCommandState.AuditSessionActive) DMDevCommandState.BeginAuditSession();
         }
 
         internal static void ReleaseAuditPlayerGuard()
         {
-            if (_guardGodSet) DMGodModeCheat.SetGodMode(_guardGodWas);
-            _guardGodSet = false;
+            DMDevCommandState.EndAuditSession();
         }
     }
 }

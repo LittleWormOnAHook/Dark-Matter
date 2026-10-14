@@ -226,6 +226,7 @@ namespace Project.Inventory
         {
             get
             {
+                if (Project.Core.DMDevCommandState.AuditSessionActive) return true; // 2026-10-14 (b): audit/test only
                 if (!Project.Core.DMDevCommandState.GodMode) return false;
                 Project.Combat.DM_CombatCoreProfile p = Project.Combat.DM_CombatCoreProfile.Live;
                 return p == null || p.godModeInfiniteAmmo;

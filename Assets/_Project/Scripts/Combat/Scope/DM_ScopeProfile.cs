@@ -57,6 +57,31 @@ namespace Project.Combat
         [Range(0f, 1f)] public float maxExtraZoom = 0.5f;
 
         [Header("Overlay")]
+        [Tooltip("Rifle scope only: center crosshair sprite (Invector sniperCrossHair). Pistol scope keeps procedural/legacy art.")]
+        public Sprite scopeCrosshairSprite;
+        [Tooltip("When true, rifle scope uses scopeCrosshairSprite + binocular-style mask. Pistol scope is unchanged.")]
+        public bool scopeOverlayUseSpriteCrosshair = true;
+
+        public const string RifleCrosshairResourcesPath = "UI/Combat/sniperCrossHair";
+        private static Sprite s_resolvedRifleCrosshair;
+
+        /// <summary>Rifle sniper overlay sprite; asset reference, then Resources fallback.</summary>
+        public Sprite ResolveRifleScopeCrosshairSprite()
+        {
+            if (scopeCrosshairSprite != null)
+                return scopeCrosshairSprite;
+            if (s_resolvedRifleCrosshair == null)
+                s_resolvedRifleCrosshair = Resources.Load<Sprite>(RifleCrosshairResourcesPath);
+            return s_resolvedRifleCrosshair;
+        }
+        [Range(0.15f, 0.55f)] public float rifleScopeMaskRadius = 0.34f;
+        [Tooltip("Multiplies rifle circular mask radius (0.8 ≈ 20% smaller hole).")]
+        [Range(0.5f, 1f)] public float rifleScopeMaskScale = 0.8f;
+        [Tooltip("Rifle sniperCrossHair UITK sprite size multiplier (0.8 = 20% smaller than base 196px).")]
+        [Range(0.35f, 1.5f)] public float rifleScopeCrosshairScale = 0.8f;
+        [Range(0.15f, 0.55f)] public float pistolScopeMaskRadius = 0.4f;
+        [Tooltip("Pistol scope procedural reticle size (0.25 = quarter size).")]
+        [Range(0.1f, 1f)] public float pistolScopeReticleScale = 0.25f;
         [Tooltip("New UITK reticle art for the scope AND the binoculars (replaces the old sprite frame).")]
         public bool useNewScopeArt = true;
         [Tooltip("Retire the old uGUI optics canvas: the UITK overlay always drives optics.")]

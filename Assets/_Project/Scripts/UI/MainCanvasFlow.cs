@@ -26,6 +26,15 @@ namespace Project.UI
 
             SanitizeCanvasHost(MainMenuController.ResolveMainCanvas());
 
+            // 2026-10-14 (b/c): Enemy Runtime Audit skips boot/menu — land in gameplay phase immediately.
+            if (DMAuditBootSkip.Active)
+            {
+                if (!GameSession.HasStarted)
+                    GameSession.MarkStarted();
+                ApplyGameplayPhase();
+                return;
+            }
+
             if (GameSession.HasStarted)
             {
                 ApplyGameplayPhase();

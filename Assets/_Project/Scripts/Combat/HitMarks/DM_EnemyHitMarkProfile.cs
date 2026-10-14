@@ -284,7 +284,12 @@ namespace Project.Combat
         [Tooltip("Ground decal projection box depth (m). Thin = no blood on legs / boots; too thin can miss sloped terrain. 0 = vendor depth.")]
         [Range(0f, 2f)] public float volumetricDecalDepth = 0.25f;
         [Tooltip("How far the decal box reaches above the ground snap point (m). The box spans [ground + offset - depth, ground + offset].")]
-        [Range(0f, 0.5f)] public float volumetricDecalGroundOffset = 0.08f;        [Tooltip("BFX_Blood is unlit: under HDRP physical exposure it renders black. On = its color is scaled by the sun intensity (lux / pi) at spawn.")]
+        [Range(0f, 0.5f)] public float volumetricDecalGroundOffset = 0.08f;
+        [Tooltip("Nudge ground decals toward the victim root on XZ (0 = impact point only, 1 = at victim feet).")]
+        [Range(0f, 1f)] public float volumetricGroundTowardTarget = 0.55f;
+        [Tooltip("When on, player-hit fluids snap BFX ground height (often hides airborne spray). Off = keep vendor airborne arc on the player.")]
+        public bool volumetricPlayerFluidGroundSnap = false;
+        [Tooltip("BFX_Blood is unlit: under HDRP physical exposure it renders black. On = its color is scaled by the sun intensity (lux / pi) at spawn.")]
         public bool volumetricFluidExposureComp = true;
         [Tooltip("Fluid brightness multiplier on top of the exposure compensation (1 = lit like a 100% albedo surface).")]
         [Range(0f, 4f)] public float volumetricFluidBrightness = 0.07f;

@@ -1,8 +1,8 @@
-# Prologue Playthrough — Shuttle Landing to Aether-9
+# Prologue Playthrough — Shuttle Landing to The Overseer
 
 **Status:** Design draft — August 2026  
 **Authority:** Extends `Quests_And_Story_Plan.md` + GDD 5.0 Appendix A6/A7; B6 Basalt Highlands hub.  
-**Player:** **Kade** (fixed name) + 2 starting companions (the Mars survivors); 0 AC, level 1, no inventory.  
+**Player:** **Kade** (fixed name) + 2 starting companions (the Mars survivors); 0 UEA, level 1, no inventory.  
 **Scope:** **Main quest line only** — target **2–5 hours**. Side quests, open exploration, and pet hunts are **out of band** (optional after prologue).
 
 ### Locked for this plan
@@ -10,10 +10,10 @@
 | Lock | Value |
 |------|--------|
 | Memory Cores (campaign) | **10** primary cores (supersedes older “≥3” design target until GDD A6 is updated) |
-| Prologue end condition | Kade meets / awakens **Aether-9**, slots **0** cores yet, accepts the **10-core hunt**, rescues **first Echo** |
+| Prologue end condition | Kade meets / awakens **The Overseer**, slots **0** cores yet, accepts the **10-core hunt**, rescues **first Echo** |
 | Level gate | Must reach **Player Level 5** before advanced mining / harvesting / settlement craft skills unlock (matches live `skill_mining`, `skill_harvesting` at `requiredPlayerLevel: 5`) |
 | Biome | Entire prologue stays in **B6 Basalt Highlands** + shallow Stratum-1 tube mouth |
-| Radio | **Colony Ops** only until Aether-9 awakens |
+| Radio | **Colony Ops** only until The Overseer awakens |
 
 ---
 
@@ -26,7 +26,7 @@ The prologue teaches the **full survival-lite loop** without leaving the hub val
 3. Fight / puzzle through friction zones  
 4. Level to **5** → unlock settlement skills  
 5. Rebuild a working camp  
-6. Find the dormant machine → repair → meet Aether-9  
+6. Find the dormant machine → repair → meet The Overseer  
 7. First Echo rescue → receive the **10 Memory Core** mandate  
 
 Everything after that is Act III+ (core hunt across biomes) — not timed into the 2–5h prologue budget.
@@ -44,7 +44,7 @@ Everything after that is Act III+ (core hunt across biomes) — not timed into t
 | **P4** | Settlement bootstrap (shelter, station, BCP) | 30–50 min |
 | **P5** | Level-5 skill gate + deeper gather / mine | 25–45 min |
 | **P6** | Ridge gauntlet + first boss | 20–35 min |
-| **P7** | Aether-9 discovery + 3-part repair | 30–50 min |
+| **P7** | The Overseer discovery + 3-part repair | 30–50 min |
 | **P8** | Awaken → first Echo → 10-core charge | 15–25 min |
 | | **Total mainline** | **~2.0–5.0 h** |
 
@@ -68,7 +68,7 @@ Soft fail: if a player is under Level 5 at P5, quest holds on a **training loop*
 
 ### P1 — Landing scar (Story Scene A)
 
-**Where Kade starts:** beside the **downed charter shuttle** on a basalt shelf (**Landing Scar**), south of the future camp plateau. Both starting companions stand near the cargo hatch. Hotbar and inventory empty. **0 AC**.
+**Where Kade starts:** beside the **downed charter shuttle** on a basalt shelf (**Landing Scar**), south of the future camp plateau. Both starting companions stand near the cargo hatch. Hotbar and inventory empty. **0 UEA**.
 
 **Objectives (quest `prologue_01_touchdown`):**
 
@@ -120,7 +120,7 @@ Soft fail: if a player is under Level 5 at P5, quest holds on a **training loop*
 **Terrain:** mesa top ~60–80 m across; ravine west; tube mouth northeast (blocked until P7).  
 **Puzzle:** **Collapsed Bridge Bypass** — stack / deploy 2 salvage plates (crafted in P2) or companion “boost” interact to cross.  
 **Friction:** carrying Emergency Cell slows sprint; drop if hit — jackal remount.  
-**POIs:** Survey paint glyphs, broken antenna, sealed tube grate (Aether-9 path tease).
+**POIs:** Survey paint glyphs, broken antenna, sealed tube grate (The Overseer path tease).
 
 **Exit:** Command Center Seed online → Building Control Panel (Overview only) opens. Ops: *“Shelter. Craft. Survive the night window.”*
 
@@ -181,7 +181,7 @@ Soft fail: if a player is under Level 5 at P5, quest holds on a **training loop*
 1. Repair **Relay Pylon** (crafted part from P5).  
 2. Clear **Glass Hive Skirmish** (mid trash).  
 3. Defeat boss **Ash-Warden Drone** (damaged survey android — rumor: “prior expedition leftover”).  
-4. Loot **Interface Key Fragment** (repair part 1 of 3 for Aether-9).  
+4. Loot **Interface Key Fragment** (repair part 1 of 3 for The Overseer).  
 
 **Boss kit:** telegraphed beam, weakpoint after overheat, companion interrupt window. Arena = circular basalt bowl with 2 pillars (cover).  
 **Puzzle:** **Relay Pylon** — insert power cell + align dish toward Ops (minigame or 4-position rotate).  
@@ -193,9 +193,9 @@ Soft fail: if a player is under Level 5 at P5, quest holds on a **training loop*
 
 ---
 
-### P7 — Aether-9 discovery & repair (Story Scene G)
+### P7 — The Overseer discovery & repair (Story Scene G)
 
-**Layout:** sunken caldera / crater with **dormant Aether-9 machine** (probe shell) center-stage. Rubble rings. Tube mouth connects later expeditions. Cool blue idle lights (vs camp magenta UI).
+**Layout:** sunken caldera / crater with **dormant The Overseer machine** (probe shell) center-stage. Rubble rings. Tube mouth connects later expeditions. Cool blue idle lights (vs camp magenta UI).
 
 **Objectives (`prologue_07_aether_repair`):**
 
@@ -208,9 +208,9 @@ Soft fail: if a player is under Level 5 at P5, quest holds on a **training loop*
 
 **Puzzle vault:** valve order painted as worn Helix marks; wrong order vents gas (damage + reset).  
 **Friction:** conduit defense wave (Tube Jackals + 1 Brood Mouth).  
-**POIs:** Aether-9 shell, valve vault, conduit trench, rumor plaques (illegible).
+**POIs:** The Overseer shell, valve vault, conduit trench, rumor plaques (illegible).
 
-**Exit:** Cutscene / dialogue — Aether-9 awakens **angry / hostile**. Colony Ops steps back; Aether-9 becomes story focus (not yet advisory radio).
+**Exit:** Cutscene / dialogue — The Overseer awakens **angry / hostile**. Colony Ops steps back; The Overseer becomes story focus (not yet advisory radio).
 
 ---
 
@@ -218,11 +218,11 @@ Soft fail: if a player is under Level 5 at P5, quest holds on a **training loop*
 
 **Objectives (`prologue_08_first_echo`):**
 
-1. Survive Aether-9’s first hostility beat (dialogue + optional small shockwave stumble — no full combat vs Aether).  
+1. Survive The Overseer’s first hostility beat (dialogue + optional small shockwave stumble — no full combat vs Aether).  
 2. Follow **Echo Signal** ping spawned by awaken pulse (**first Echo** — surface Neural Echo, rescueable).  
 3. Reach Echo cradle POI (short path, 1 puzzle gate: **Frequency Align** — match 3 tone nodes).  
 4. Rescue / reclaim **first Echo** into roster (or holding bay → Reclamation later).  
-5. Return to Aether-9 → he demands **Memory Cores**: *his machine once held **ten**. Without them he cannot remember / function.*  
+5. Return to The Overseer → he demands **Memory Cores**: *his machine once held **ten**. Without them he cannot remember / function.*  
 
 **Quest turn-in:** `prologue_end_ten_cores` — accepts hunt; maps **Core Site 01** as post-prologue teaser (can be outside B6 — player may stop here).  
 
@@ -230,11 +230,11 @@ Soft fail: if a player is under Level 5 at P5, quest holds on a **training loop*
 
 - [x] Command Center Seed + Shelter + Crafting Station live  
 - [x] Level ≥ 5 + mining or harvesting unlocked  
-- [x] Aether-9 awakened  
+- [x] The Overseer awakened  
 - [x] First Echo rescued  
 - [x] 10-core hunt accepted (0/10 attached)
 
-**Reward:** small AC payout, XP, recipe unlocks, Aether-9 trust tier = **Angry**.
+**Reward:** small UEA Credits payout, XP, recipe unlocks, The Overseer trust tier = **Angry**.
 
 ---
 
@@ -243,7 +243,7 @@ Soft fail: if a player is under Level 5 at P5, quest holds on a **training loop*
 ```
                     [Tube Mouth — sealed]
                            ↑
-              [Machine Caldera / Aether-9]
+              [Machine Caldera / The Overseer]
                            ↑
                    [Ridge Gauntlet]
                            ↑
@@ -262,7 +262,7 @@ Soft fail: if a player is under Level 5 at P5, quest holds on a **training loop*
 | Gather Yard | ~50 m terraces | Lv5 skill proof |
 | Dummy Yard | ~30 m | XP filler |
 | Ridge Gauntlet | ~120 m linear | Combat + boss |
-| Machine Caldera | ~60 m bowl | Aether-9 + repair |
+| Machine Caldera | ~60 m bowl | The Overseer + repair |
 | Echo Cradle | ~40 m spur | First Echo |
 
 Keep **total authored walkable prologue footprint** compact enough that backtracking is ≤3–4 minutes between hubs.
@@ -286,7 +286,7 @@ Keep **total authored walkable prologue footprint** compact enough that backtrac
 | POI-11 | Tube Lace Shelf | Gather Yard | Needs `skill_harvesting` |
 | POI-12 | Relay Pylon | Ridge | Dish align puzzle |
 | POI-13 | Ash-Warden Arena | Ridge | Boss |
-| POI-14 | Aether-9 Shell | Caldera | Repair / awaken |
+| POI-14 | The Overseer Shell | Caldera | Repair / awaken |
 | POI-15 | Valve Vault | Caldera | Power Coupler |
 | POI-16 | Sparking Conduit | Caldera | Bus Ribbon escort |
 | POI-17 | Echo Cradle | Echo spur | First Echo rescue |
@@ -304,7 +304,7 @@ Keep **total authored walkable prologue footprint** compact enough that backtrac
 | Glass Hive skirmish | P6 | Mid trash |
 | **Ash-Warden Drone** (boss) | P6 | Interface Key Fragment |
 | Conduit defense wave | P7 | Escort friction |
-| *(No Aether-9 fight)* | P8 | Dialogue threat only |
+| *(No The Overseer fight)* | P8 | Dialogue threat only |
 
 **Boss design notes (Ash-Warden):** 1 armor break phase, 1 companion opportunity on stagger, loot = repair part. Soft DPS check for ~3–6 minutes.
 
@@ -347,7 +347,7 @@ Avoid hard adventure-game softlocks: every puzzle piece is craftable or lying �
 | Elite / boss combat | P6 | Ash-Warden |
 | Multi-part story quest | P7 | 3 repair objects |
 | Echo rescue | P8 | First Echo |
-| Mystery hub (Aether-9) | P8 | 10-core hunt accepted |
+| Mystery hub (The Overseer) | P8 | 10-core hunt accepted |
 
 ---
 
@@ -389,7 +389,7 @@ Replace `QuestGiver_PioneerGuide` board as primary driver once these ship; Guide
 
 - **Act III:** Hunt **Memory Cores 1–10** across campaign biomes (B6→B1→…→B7 per phase map).  
 - Each core: find → setpiece → attach → Resonance Event.  
-- Aether-9 trust ladder progresses with cores returned.  
+- The Overseer trust ladder progresses with cores returned.  
 - Side content (Lost Survey / Beacon Hopper, etc.) unlocks **after** `prologue_end_ten_cores`.
 
 **Core 1 teaser:** marker can appear at prologue end, but the recovery setpiece is the first Act III mission (may leave B6).
@@ -401,7 +401,7 @@ Replace `QuestGiver_PioneerGuide` board as primary driver once these ship; Guide
 1. Mainline completable in **2–5 hours** without side quests.  
 2. Player ends at **Level ≥ 5** with mining or harvesting unlocked.  
 3. Camp has CC Seed + Shelter + Crafting Station.  
-4. Aether-9 awakened; **10-core** hunt accepted; **first Echo** rescued.  
+4. The Overseer awakened; **10-core** hunt accepted; **first Echo** rescued.  
 5. All systems in §8 exercised once.  
 6. Player-facing lore stays rumor-grade until cores prove truth.
 

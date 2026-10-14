@@ -107,7 +107,7 @@ namespace Project.EditorTools
                 new DMToolsEntry(DarkMatterGenesisEditorMenus.Scene + "Map System", "Wire map UI and providers"),
                 new DMToolsEntry(DarkMatterGenesisEditorMenus.Scene + "Sync Map To Terrain", "Sync map bounds, texture bake, and minimap span to terrain"),
                 new DMToolsEntry(DarkMatterGenesisEditorMenus.RefreshAllMapMarkers, "Fog reveal + live position on every MapMarker"),
-                new DMToolsEntry(DarkMatterGenesisEditorMenus.Scene + "Journal Input Shortcuts", "Wire J/I/M/K journal tab hotkeys"),
+                new DMToolsEntry(DarkMatterGenesisEditorMenus.Scene + "Journal Input Shortcuts", "Wire J journal and I inventory hotkeys (legacy uGUI PlayerInput events)"),
                 new DMToolsEntry(DarkMatterGenesisEditorMenus.Scene + "Reflection Probe", "Add an active realtime reflection probe"),
                 new DMToolsEntry(DarkMatterGenesisEditorMenus.BindGaiaTerrainScenes, "Bind DM Genesis Gaia terrain scenes to build settings"),
                 new DMToolsEntry(DarkMatterGenesisEditorMenus.BindPlayerTerrainLoader, "Wire Player_v7 to Gaia Terrain Loader Manager"),

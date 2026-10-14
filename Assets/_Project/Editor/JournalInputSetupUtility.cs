@@ -89,7 +89,7 @@ public static class JournalInputSetupUtility
 
         EditorSceneManager.MarkSceneDirty(scene);
         Debug.Log(changes > 0
-            ? $"Journal input wired ({changes} change(s)). Keys: J Journal, I Inventory, M Map, U Character, P Pioneers, C Craft, R Blueprints, T Skills, L Echoes."
+            ? $"Journal input wired ({changes} change(s)). Direct keys: J Journal, I Inventory. Other tabs: open Journal and pick tabs in UI."
             : "Journal input already wired.");
     }
 

@@ -35,7 +35,7 @@ public static class MapSystemSetupUtility
 
         EditorSceneManager.MarkSceneDirty(scene);
         Debug.Log(changes > 0
-            ? $"Map system setup complete ({changes} change(s)). Minimap: top-right. Full map: M. Journal tabs: Dark Matter Genesis > Scene > Journal Input Shortcuts."
+            ? $"Map system setup complete ({changes} change(s)). Minimap: top-right. Full map: Journal (J) then Map tab. Journal hotkeys: J / I only."
             : "Map system already set up.");
     }
 

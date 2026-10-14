@@ -68,6 +68,17 @@
     -unity-background-scale-mode: scale-to-fit;
 }
 
+.dmg-optics-scope-crosshair {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 196px;
+    height: 196px;
+    margin-left: -98px;
+    margin-top: -98px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
 .dmg-optics-crosshair-h {
     position: absolute;
     left: 50%;

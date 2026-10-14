@@ -9,7 +9,7 @@ namespace Project.UI
     /// Fullscreen ADS / scanner chrome as a sibling UIDocument above HUD.
     /// Optics camera / RT stay on OpticsCameraRig; this is the Toolkit overlay.
     /// </summary>
-    [DefaultExecutionOrder(-380)]
+    [DefaultExecutionOrder(32500)]
     [DisallowMultipleComponent]
     public sealed class DMUiToolkitOpticsOverlay : MonoBehaviour
     {
@@ -51,7 +51,14 @@ namespace Project.UI
         private DMScopeReticleElement reticle;      // 2026-10-13 (h) new scope art
         private VisualElement crosshairH;
         private VisualElement crosshairV;
+        private VisualElement scopeCrosshairSprite;
         private bool scopeShowing;
+        private float weaponScopeMaskRadius = 0.38f;
+        private float maskBuiltRadius = -1f;
+        private const float RifleCrosshairBasePixels = 196f;
+
+        private static bool WeaponScopeActive =>
+            Project.Combat.DMScopeMode.IsScoped || Project.Combat.DMScopeMode.ZoomBlend > 0.001f;
 
         public static bool IsShowing => instance != null && instance.visible;
 
@@ -82,6 +89,9 @@ namespace Project.UI
         {
             EnsureAttached();
             if (instance == null || ugui == null)
+                return;
+
+            if (WeaponScopeActive)
                 return;
 
             instance.ApplyState(
@@ -150,14 +160,18 @@ namespace Project.UI
             if (document == null)
                 return;
 
-            // 2026-10-13 (h): retireUguiOptics = the UITK overlay always drives (old uGUI canvas stays off).
             Project.Combat.DM_ScopeProfile scopeProfile = Project.Combat.DM_ScopeProfile.Live;
-            bool driving = DMUiToolkitConfig.IsEnabled && (DMUiToolkitHud.IsDriving || scopeProfile.retireUguiOptics);
+            bool scopeActive = WeaponScopeActive;
+            if (scopeActive && DMUiToolkitConfig.IsEnabled)
+                EnsureAttached();
+
+            // Weapon scope + binoculars/scanner: UITK drives; retire uGUI optics canvas (no MainCanvas duplicate).
+            bool driving = DMUiToolkitConfig.IsEnabled && (scopeActive || DMUiToolkitHud.IsDriving || scopeProfile.retireUguiOptics);
             SetOpticsCanvasEnabled(!driving);
             if (!driving)
                 return;
 
-            if (Project.Combat.DMScopeMode.IsScoped || Project.Combat.DMScopeMode.ZoomBlend > 0.001f)
+            if (scopeActive)
             {
                 ApplyScopeState(scopeProfile);
                 return;
@@ -165,7 +179,9 @@ namespace Project.UI
             if (scopeShowing)
             {
                 scopeShowing = false;
+                weaponScopeMaskRadius = 0.38f;
                 if (opticsRoot != null) opticsRoot.style.opacity = 1f;
+                SetDisplay(scopeCrosshairSprite, false);
                 ApplyState(false, ToolType.None, true, null);
             }
 
@@ -178,30 +194,103 @@ namespace Project.UI
         private void ApplyScopeState(Project.Combat.DM_ScopeProfile p)
         {
             scopeShowing = true;
-            ApplyState(true, ToolType.Binoculars, true, null);
-            if (opticsRoot != null)
-                opticsRoot.style.opacity = Mathf.Clamp01(Project.Combat.DMScopeMode.ZoomBlend);
+            visible = true;
+            toolType = ToolType.Binoculars;
+            passthrough = true;
+            boundTexture = null;
+
+            bool rifle = Project.Combat.DMScopeMode.IsScopedRifle;
+
+            SetHostVisible(true);
+            SetDisplay(binocularRoot, true);
+            SetDisplay(scannerRoot, false);
+            SetScannerBorderVisible(false);
+            SetDisplay(scanningLabel, false);
+            SetDisplay(modeLabel, false);
+            SetDisplay(hintLabel, rifle);
+            SetDisplay(viewport, false);
+            float maskRadius = Mathf.Clamp(rifle ? p.rifleScopeMaskRadius : p.pistolScopeMaskRadius, 0.15f, 0.55f);
+            if (rifle)
+                maskRadius = Mathf.Clamp(maskRadius * Mathf.Clamp(p.rifleScopeMaskScale, 0.5f, 1f), 0.15f, 0.55f);
+            weaponScopeMaskRadius = rifle ? maskRadius : 0f;
+
+            bool rifleSniperSprite = rifle && p.scopeOverlayUseSpriteCrosshair && p.useNewScopeArt;
+            Sprite crossSprite = rifleSniperSprite ? p.ResolveRifleScopeCrosshairSprite() : null;
+            rifleSniperSprite = crossSprite != null && rifleSniperSprite;
+
+            SetDisplay(scopeOuter, false);
+            SetDisplay(scopeInner, false);
+            SetDisplay(crosshairH, false);
+            SetDisplay(crosshairV, false);
+
             if (reticle != null)
             {
                 reticle.Offset = Project.Combat.DMScopeMode.ReticleSway;
-                reticle.Refresh();
+                if (!rifle && p.useNewScopeArt)
+                {
+                    float pistolScale = Mathf.Clamp(p.pistolScopeReticleScale, 0.1f, 1f);
+                    reticle.RadiusFraction = maskRadius * pistolScale;
+                    reticle.PresentationScale = pistolScale;
+                    reticle.DrawCrosshair = true;
+                    SetDisplay(reticle, true);
+                    reticle.Refresh();
+                }
+                else
+                {
+                    reticle.PresentationScale = 1f;
+                    SetDisplay(reticle, false);
+                }
             }
-            bool rifle = Project.Combat.DMScopeMode.IsScopedRifle;
-            if (modeLabel != null)
-                modeLabel.text = rifle ? p.rifleScopeLabel : p.pistolScopeLabel;
-            if (hintLabel != null)
+
+            SetDisplay(scopeCrosshairSprite, false);
+            if (rifleSniperSprite && scopeCrosshairSprite != null)
+            {
+                SetDisplay(scopeCrosshairSprite, true);
+                Vector2 sway = Project.Combat.DMScopeMode.ReticleSway;
+                float crossPx = RifleCrosshairBasePixels * Mathf.Clamp(p.rifleScopeCrosshairScale, 0.35f, 1.5f);
+                scopeCrosshairSprite.style.width = crossPx;
+                scopeCrosshairSprite.style.height = crossPx;
+                scopeCrosshairSprite.style.left = Length.Percent(50f);
+                scopeCrosshairSprite.style.top = Length.Percent(50f);
+                scopeCrosshairSprite.style.right = StyleKeyword.Auto;
+                scopeCrosshairSprite.style.bottom = StyleKeyword.Auto;
+                scopeCrosshairSprite.style.marginLeft = -crossPx * 0.5f + sway.x;
+                scopeCrosshairSprite.style.marginTop = -crossPx * 0.5f + sway.y;
+                scopeCrosshairSprite.style.unityBackgroundImageTintColor = Color.white;
+                if (!DMUiToolkitStyle.TrySetSpriteBackground(scopeCrosshairSprite, crossSprite, ScaleMode.ScaleToFit)
+                    && crossSprite.texture != null)
+                    DMUiToolkitStyle.TrySetTextureBackground(scopeCrosshairSprite, crossSprite.texture, ScaleMode.ScaleToFit);
+                scopeCrosshairSprite.BringToFront();
+            }
+
+            maskBuiltForScanner = false;
+            if (rifle)
+                ApplyPassthroughDim(scanner: false);
+            else if (dim != null)
+                SetDisplay(dim, false);
+
+            if (opticsRoot != null)
+                opticsRoot.style.opacity = rifle
+                    ? Mathf.Clamp01(Project.Combat.DMScopeMode.ZoomBlend)
+                    : 1f;
+
+            if (rifle && hintLabel != null)
                 hintLabel.text = Time.unscaledTime < Project.Combat.DMScopeMode.BlockedAmmoUntil
                     ? Project.Combat.DMScopeMode.BlockedAmmoMessage
                     : p.scopeHint;
             if (rangeLabel != null)
             {
-                string rangeText = Mathf.RoundToInt(Project.Combat.DMScopeMode.ResolvePlayerRange(0f)) + " m";
-                // 2026-10-13 (i): the scope mask darkens the top-screen enemy bar, so mirror the engaged target here.
-                EngagedEnemyHealthHud enemyHud = EngagedEnemyHealthHud.Instance;
-                if (enemyHud != null && enemyHud.TryGetFocus(out string enemyName, out float enemyFill))
-                    rangeText += "   |   " + enemyName + "  " + Mathf.RoundToInt(enemyFill * 100f) + "%";
-                rangeLabel.text = rangeText;
-                SetDisplay(rangeLabel, true);
+                if (rifle)
+                {
+                    string rangeText = Mathf.RoundToInt(Project.Combat.DMScopeMode.ResolvePlayerRange(0f)) + " m";
+                    EngagedEnemyHealthHud enemyHud = EngagedEnemyHealthHud.Instance;
+                    if (enemyHud != null && enemyHud.TryGetFocus(out string enemyName, out float enemyFill))
+                        rangeText += "   |   " + enemyName + "  " + Mathf.RoundToInt(enemyFill * 100f) + "%";
+                    rangeLabel.text = rangeText;
+                    SetDisplay(rangeLabel, true);
+                }
+                else
+                    SetDisplay(rangeLabel, false);
             }
         }
 
@@ -223,6 +312,9 @@ namespace Project.UI
 
             if (boundOpticsCanvas != null && boundOpticsCanvas.enabled != enabled)
                 boundOpticsCanvas.enabled = enabled;
+
+            if (!enabled)
+                OpticsOverlayUI.EnsureRetiredWhenUitkOwns();
         }
 
         private void OnDestroy()
@@ -273,6 +365,15 @@ namespace Project.UI
                 host.Insert(idx, reticle);
             }
 
+            scopeCrosshairSprite = root.Q<VisualElement>("optics-scope-crosshair");
+            if (scopeCrosshairSprite == null || scopeCrosshairSprite.parent == null)
+            {
+                scopeCrosshairSprite = new VisualElement { name = "optics-scope-crosshair" };
+                scopeCrosshairSprite.AddToClassList("dmg-optics-scope-crosshair");
+                scopeCrosshairSprite.pickingMode = PickingMode.Ignore;
+                (opticsRoot ?? root).Add(scopeCrosshairSprite);
+            }
+
             ApplySprites();
             SetHostVisible(false);
         }
@@ -295,6 +396,9 @@ namespace Project.UI
 
         private void ApplyState(bool show, ToolType type, bool passthroughMode, RenderTexture texture)
         {
+            if (WeaponScopeActive)
+                return;
+
             visible = show;
             toolType = type;
             passthrough = passthroughMode;
@@ -440,9 +544,16 @@ namespace Project.UI
             if (Screen.height > 0)
                 aspect = Screen.width / (float)Mathf.Max(1, Screen.height);
 
+            OpticsCrosshairLibrary library = OpticsUiSprites.Current;
+            OpticsViewportPresentation settings = library != null ? library.viewport : null;
+            float radius = scopeShowing
+                ? weaponScopeMaskRadius
+                : settings != null ? Mathf.Max(0.2f, settings.binocularRadius) : 0.38f;
+
             bool needsRebuild = passthroughMask == null
                 || maskBuiltForScanner != scanner
-                || Mathf.Abs(maskBuiltAspect - aspect) > 0.01f;
+                || Mathf.Abs(maskBuiltAspect - aspect) > 0.01f
+                || Mathf.Abs(maskBuiltRadius - radius) > 0.005f;
             if (!needsRebuild)
                 return;
 
@@ -456,9 +567,6 @@ namespace Project.UI
                 };
             }
 
-            OpticsCrosshairLibrary library = OpticsUiSprites.Current;
-            OpticsViewportPresentation settings = library != null ? library.viewport : null;
-            float radius = settings != null ? Mathf.Max(0.2f, settings.binocularRadius) : 0.38f;
             float halfW = settings != null ? settings.scannerRectHalfWidth : 0.4f;
             float halfH = settings != null ? settings.scannerRectHalfHeight : 0.24f;
             float softness = scanner
@@ -488,6 +596,7 @@ namespace Project.UI
             passthroughMask.Apply(false, false);
             maskBuiltForScanner = scanner;
             maskBuiltAspect = aspect;
+            maskBuiltRadius = radius;
         }
 
         private void PullScannerMarkers(

@@ -17,13 +17,24 @@ namespace Project.Core
         public static bool GamePaused { get; set; }
         public static bool UnlockCursor { get; set; }
 
-        public static bool BlocksDamage => GodMode;
+        /// <summary>
+        /// 2026-10-14 (b): true only while an Enemy Runtime Audit / scripted test runs. Player-only protection
+        /// (no damage, health refilled, infinite ammo) plus the respawn fallback; enemies take real damage.
+        /// Cleared at audit end, play-mode exit and domain reload, so nothing leaks into normal play.
+        /// </summary>
+        public static bool AuditSessionActive { get; private set; }
+
+        public static void BeginAuditSession() { AuditSessionActive = true; }
+        public static void EndAuditSession() { AuditSessionActive = false; }
+
+        public static bool BlocksDamage => GodMode || AuditSessionActive;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticsOnDomainReload()
         {
             ClearTransient();
             GodMode = false;
+            AuditSessionActive = false;
             InfiniteStamina = false;
             InfiniteEnergy = false;
             InfiniteOxygen = false;
@@ -50,7 +61,7 @@ namespace Project.Core
                 stats.DevSetStamina(stats.maxStamina);
             if ((GodMode || InfiniteOxygen) && stats.CurrentOxygen < stats.maxOxygen - 0.05f)
                 stats.DevSetOxygen(stats.maxOxygen);
-            if (GodMode && stats.CurrentHealth < stats.maxHealth - 0.05f)
+            if ((GodMode || AuditSessionActive) && stats.CurrentHealth < stats.maxHealth - 0.05f)
                 stats.DevSetHealth(stats.maxHealth);
             if (GodMode && (Mathf.Abs(stats.CurrentThermalStress) > 0.05f
                 || stats.CurrentRadiation > 0.05f

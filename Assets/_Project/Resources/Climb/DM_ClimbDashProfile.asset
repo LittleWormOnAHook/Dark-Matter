@@ -95,7 +95,7 @@ MonoBehaviour:
   stepIgnoreSlopeBlock: 1
   maxHealth: 1000
   maxEnergy: 100
-  maxStamina: 100
+  maxStamina: 1000
   maxOxygen: 2400
   energyDrainPerSecond: 0
   toolEnergyDrainPerSecond: 0.5
@@ -117,7 +117,7 @@ MonoBehaviour:
   maxVolcano: 100
   exposureRecoveryPerSecond: 8
   thermalRecoveryPerSecond: 12
-  idleStaminaRegenPerSecond: 5
+  idleStaminaRegenPerSecond: 25
   sprintStaminaDrainPerSecond: 12
   sprintStaminaRegenPerSecond: 0
   climbStartStaminaCost: 1

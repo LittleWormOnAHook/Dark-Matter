@@ -332,7 +332,8 @@ namespace Project.EditorTools.GenesisStudio
             "interruptRecoverySeconds",
             "interruptReactionSeconds",
             "logInterruptsInPlay",
-            "logCombatEventsInPlay"
+            "logCombatEventsInPlay",
+            "logEngagedHudFill"
         };
 
         private static readonly string[] CombatAmmoFields =

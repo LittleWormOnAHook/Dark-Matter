@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Project.Combat;
 using Project.Data;
 using TMPro;
 using UnityEngine;
@@ -68,7 +69,46 @@ namespace Project.UI
         private float markerPostScanPulseBase = 0.55f;
 
         public bool IsBuilt => uiBuilt;
-        public bool IsVisible => isVisible && overlayRoot != null && overlayRoot.activeSelf;
+        /// <summary>Logical visibility (UITK mirrors this even when uGUI roots stay inactive).</summary>
+        public bool IsVisible => isVisible;
+
+        /// <summary>When true, DMUiToolkitOpticsOverlay drives binoculars/scanner/weapon scope; uGUI canvas stays off.</summary>
+        internal static bool UitkOwnsOpticsSurface()
+        {
+            if (!DMUiToolkitConfig.IsEnabled)
+                return false;
+            DM_ScopeProfile profile = DM_ScopeProfile.Live;
+            if (profile.retireUguiOptics)
+                return true;
+            if (DMScopeMode.IsScoped || DMScopeMode.ZoomBlend > 0.001f)
+                return true;
+            return DMUiToolkitHud.IsDriving;
+        }
+
+        internal static void EnsureRetiredWhenUitkOwns()
+        {
+            if (!UitkOwnsOpticsSurface())
+                return;
+
+            if (instance != null)
+                instance.SuppressUguiOverlayRoot();
+
+            Canvas[] canvases = Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include);
+            for (int i = 0; i < canvases.Length; i++)
+            {
+                Canvas canvas = canvases[i];
+                if (canvas != null && canvas.gameObject.name == OverlayCanvasName && canvas.enabled)
+                    canvas.enabled = false;
+            }
+        }
+
+        private void SuppressUguiOverlayRoot()
+        {
+            if (overlayRoot != null && overlayRoot.activeSelf)
+                overlayRoot.SetActive(false);
+            if (passthroughVignetteImage != null)
+                passthroughVignetteImage.enabled = false;
+        }
 
         public static OpticsOverlayUI EnsureExists()
         {
@@ -617,6 +657,14 @@ namespace Project.UI
 
             isVisible = visible;
             ActiveToolType = visible ? toolType : ToolType.None;
+
+            if (UitkOwnsOpticsSurface())
+            {
+                SuppressUguiOverlayRoot();
+                DMUiToolkitOpticsOverlay.SyncFromUgui(this);
+                return;
+            }
+
             overlayRoot.SetActive(visible);
             if (!visible)
             {
@@ -765,10 +813,12 @@ namespace Project.UI
 
         private void LateUpdate()
         {
-            // UITK owns optics: DMUiToolkitOpticsOverlay disables OpticsOverlayCanvas and mirrors
-            // this component's state, so skip the layout fit without touching visibility state.
-            if (DMUiToolkitHud.IsDriving)
+            // UITK owns optics: canvas off + no uGUI layout (weapon scope, binoculars, scanner).
+            if (UitkOwnsOpticsSurface())
+            {
+                SuppressUguiOverlayRoot();
                 return;
+            }
 
             if (sceneAuthoredOverlay || !isVisible || binocularRoot == null || !binocularRoot.activeSelf)
                 return;

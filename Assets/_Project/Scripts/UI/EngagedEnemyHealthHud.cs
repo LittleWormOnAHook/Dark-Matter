@@ -1,4 +1,5 @@
 using System;
+using Project.Combat;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -23,6 +24,9 @@ namespace Project.UI
         private const float FocusCheckInterval = 0.25f;
 
         private static EngagedEnemyHealthHud instance;
+
+        /// <summary>Increments whenever fill/name presentation changes (UITK cache invalidation).</summary>
+        public static int PresentationStamp { get; private set; }
 
         private RectTransform root;
         private CanvasGroup canvasGroup;
@@ -213,7 +217,7 @@ namespace Project.UI
                 return;
             }
 
-            if (Time.time - lastFocusEventTime <= AttackLingerSeconds)
+            if (Time.time - lastFocusEventTime <= LingerSeconds)
                 return;
 
             bool engaged = false;
@@ -298,6 +302,20 @@ namespace Project.UI
             float normalized = max > 0f ? Mathf.Clamp01(current / max) : 0f;
             if (fillImage != null)
                 fillImage.fillAmount = normalized;
+            PresentationStamp++;
+            LogFillIfEnabled(current, max, normalized);
+        }
+
+        private static void LogFillIfEnabled(float current, float max, float normalized)
+        {
+            DM_CombatCoreProfile cp = DM_CombatCoreProfile.Live;
+            if (cp == null || !cp.logEngagedHudFill)
+                return;
+
+            string label = instance != null && instance.nameLabel != null && !string.IsNullOrWhiteSpace(instance.nameLabel.text)
+                ? instance.nameLabel.text.Trim()
+                : "Enemy";
+            Debug.Log($"[DMEngagedHud] {label} hp {current:0.##}/{max:0.##} fill {normalized:0.000}");
         }
 
         private void UnbindHealth()
@@ -399,6 +417,16 @@ namespace Project.UI
         }
 
         /// <summary>How long the HUD may linger after the player last damaged an enemy.</summary>
-        public static float AttackLinger => AttackLingerSeconds;
+        public static float AttackLinger => LingerSeconds;
+
+        /// <summary>2026-10-14 (a): Studio-editable linger (DM_CombatCoreProfile.engagedHudLingerSeconds).</summary>
+        private static float LingerSeconds
+        {
+            get
+            {
+                DM_CombatCoreProfile cp = DM_CombatCoreProfile.Live;
+                return cp != null ? Mathf.Max(1f, cp.engagedHudLingerSeconds) : AttackLingerSeconds;
+            }
+        }
     }
 }

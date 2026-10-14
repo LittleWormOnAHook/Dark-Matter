@@ -33,10 +33,10 @@ This document explains **HOW** systems work. The HLA explains **WHY**.
 
 | Layer | Owns | Does not own |
 |-------|------|--------------|
-| **Dark Matter** | Framework pillars, services, directors, snapshots, editor patterns | Io lore, AC economy rules, GDD canon |
+| **Dark Matter** | Framework pillars, services, directors, snapshots, editor patterns | Io lore, UEA Credits economy rules, GDD canon |
 | **Dark Matter: Genesis** | ScriptableObject content, game adapters, Shift UI theme assets | Framework interface shapes |
 
-Game-specific strings (`Kairos`, `Aether Credits`, `Neural Echo`) appear in **Data** and **Adapters**, not in framework Runtime interface names where avoidable.
+Game-specific strings (`Kairos`, `UEA Credits`, `Neural Echo`) appear in **Data** and **Adapters**, not in framework Runtime interface names where avoidable.
 
 ---
 

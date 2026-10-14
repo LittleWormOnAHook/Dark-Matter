@@ -2,6 +2,8 @@ using Invector.vShooter;
 using Project.Data;
 using Project.Inventory;
 using Project.Progression;
+using Project.Player;
+using Project.UI;
 using UnityEngine;
 
 namespace Project.Combat
@@ -44,6 +46,7 @@ namespace Project.Combat
         private vShooterWeapon _patchedWeapon;
         private float _patchedOriginalFreq;
         private Vector2 _sway;
+        private DMCameraCollisionOverlay _cameraOverlay;
 
         public bool RifleScopeEnabled => _rifleOn;
         public bool PistolScopeEnabled => _pistolOn;
@@ -93,7 +96,7 @@ namespace Project.Combat
         private ItemData ActiveWeapon()
         {
             if (_equipment == null)
-                _equipment = GetComponentInParent<EquipmentController>() ?? FindFirstObjectByType<EquipmentController>();
+                _equipment = GetComponentInParent<EquipmentController>() ?? FindAnyObjectByType<EquipmentController>();
             return _equipment != null ? _equipment.DrawnWeaponItem : null;
         }
 
@@ -131,12 +134,23 @@ namespace Project.Combat
             ApplyFov(p);
             ApplyFireInterval(p);
             UpdateSway(p);
+            ApplyRifleScopePresentation(_scoped && _scopedRifle && _blend > 0.05f);
+        }
+
+        private void ApplyRifleScopePresentation(bool hideBody)
+        {
+            if (_cameraOverlay == null)
+                _cameraOverlay = FindAnyObjectByType<DMCameraCollisionOverlay>(FindObjectsInactive.Include);
+            _cameraOverlay?.SetRifleScopePresentationHideBody(hideBody);
+            if (hideBody)
+                DMUiToolkitHud.RefreshMenuChrome();
         }
 
         private void EnterScope(bool rifle)
         {
             _scoped = true;
             _scopedRifle = rifle;
+            DMUiToolkitOpticsOverlay.EnsureAttached();
             _cam = Camera.main;
             if (_cam != null && _blend <= 0.001f)
                 _baseFov = _cam.fieldOfView;
@@ -145,6 +159,7 @@ namespace Project.Combat
         private void ExitScope(bool instant)
         {
             _scoped = false;
+            ApplyRifleScopePresentation(false);
             RestoreFireInterval();
             if (instant)
             {
@@ -185,7 +200,7 @@ namespace Project.Combat
         private void DriveInvectorStateFov(float fov)
         {
             if (_tp == null)
-                _tp = FindFirstObjectByType<Invector.vCamera.vThirdPersonCamera>();
+                _tp = FindAnyObjectByType<Invector.vCamera.vThirdPersonCamera>();
             if (_tp == null)
                 return;
             if (_tp.currentState != _drivenState || _tp.lerpState != _drivenLerp)

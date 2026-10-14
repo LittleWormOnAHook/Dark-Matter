@@ -1,0 +1,154 @@
+{
+    "mode": "full",
+    "wallSeconds": 101.91963958740235,
+    "timingNote": "frame split from ProfilerRecorder markers (approximate, editor): FixedUpdate.PhysicsFixedUpdate, Camera.Render, Update.ScriptRunBehaviourUpdate, PreLateUpdate.ScriptRunBehaviourLateUpdate",
+    "timings": [],
+    "findingsFixes": [],
+    "tool": "enemy-runtime",
+    "startedLocal": "2026-10-11 16:12:43",
+    "finishedLocal": "2026-10-11 16:14:25",
+    "scene": "Assets/_Project/Scenes/Dark Matter Genesis v1.6.6.unity",
+    "unityVersion": "6000.4.11f1",
+    "state": "aborted",
+    "abortReason": "left play mode",
+    "environment": [
+        "Menu/loading bypass: boot loader finished; state before bypass: GameSession not started, world frozen, timeScale 0, main menu visible, UITK_MainMenu/mainmenu-root still displayed, PlayerInput disabled (player not controllable); attempt 1: verified clean (phase=Playing, frozen=False, timeScale=1, loader=hidden, main menu=hidden, pause overlay=off, PlayerInput=enabled, cursor=Locked); Game view screenshot at first test step: A:\\Dark Matter Genesis\\Temp\\DMAudit_first_step.png",
+        "Player: Player_v7 Combat Variant at (-777.4, 21.2, -117.8), hp 1000.0/1200.0",
+        "Player armed for the audit: weap2_sword drawn (vMeleeManager.rightWeapon = Drawn_weap2_sword); in-memory only, nothing saved",
+        "Camera: set behind the player at spawn and re-seated after every teleport/movement step (vThirdPersonCamera); scroll-wheel zoom available",
+        "Scene enemies deactivated for the run (runtime only): 3; spawner components disabled: 0",
+        "Time.timeScale=1, runInBackground=True",
+        "Enemy prefabs found: 1",
+        "Unit store: 37 stored unit(s); stamps audit 0E4E49 game 147489 gear FB6DFE; skip-unchanged is OFF (Full mode)",
+        "Mode full: 0 unit(s) ran, 0 reused from the unit store (unchanged and previously passing)",
+        "Excluded characters (broken, not used): Lisa_Hybrid",
+        "Settings the audit changed (all restored at exit): Application.runInBackground False -> true -> False; stack traces for Log and Warning set to None during the run (were ScriptOnly/ScriptOnly, restored). Also (restored): InputSystem backgroundBehavior ResetAndDisableNonBackgroundDevices -> IgnoreFocus, editorInputBehaviorInPlayMode PointersAndKeyboardsRespectGameViewFocus -> AllDeviceInputAlwaysGoesToGameView (so injected keys/mouse work even when the editor is not the foreground window; Application.isFocused was True). Jetpack/dash/climb unlocked for the run by writing rank 1 into the in-memory skill ranks (skill_system_jetpack absent->1; skill_system_dash absent->1; skill_system_climb absent->1; restored at exit; no skill points spent, no save, no asset written). Nothing else is touched: no scene save, no ProjectSettings/QualitySettings/GraphicsSettings write, no timeScale change.",
+        "Settings at start: runInBackground=False; vSyncCount=1; lodBias=2; targetFrameRate=-1; qualityLevel=3 (High); qualityRenderPipeline=Genesis_HDRP_High; graphicsDefaultRenderPipeline=Genesis_HDRP_Performance; fixedDeltaTime=0.0167; maximumDeltaTime=0.1",
+        "SETTINGS DRIFT during the run (changed by something other than the audit, e.g. game code or another tool): start [runInBackground=False; vSyncCount=1; lodBias=2; targetFrameRate=-1; qualityLevel=3 (High); qualityRenderPipeline=Genesis_HDRP_High; graphicsDefaultRenderPipeline=Genesis_HDRP_Performance; fixedDeltaTime=0.0167; maximumDeltaTime=0.1] -> end [runInBackground=False; vSyncCount=1; lodBias=1; targetFrameRate=-1; qualityLevel=3 (High); qualityRenderPipeline=Genesis_HDRP_High; graphicsDefaultRenderPipeline=Genesis_HDRP_Performance; fixedDeltaTime=0.0167; maximumDeltaTime=0.1]",
+        "Main scene file Assets/_Project/Scenes/Dark Matter Genesis v1.6.6.unity: not written during the run (the audit has no SaveScene/SaveOpenScenes call)"
+    ],
+    "enemies": [
+        {
+            "name": "SwordMaster",
+            "prefabPath": "Assets/_Project/Prefabs/Combat/Enemies/SwordMaster.prefab",
+            "definition": "",
+            "melee": "",
+            "ranged": "",
+            "note": "",
+            "seconds": 0.0,
+            "checks": [],
+            "clips": [],
+            "consoleLines": [
+                "[Warning] Assets/_Project/Editor/World/BindDmGenesisGaiaTerrainScenes.cs(78): PlayableGraph was not destroyed."
+            ],
+            "consoleErrors": 0,
+            "consoleWarnings": 1,
+            "cached": false,
+            "cachedFrom": ""
+        }
+    ],
+    "weapons": [],
+    "scenarios": [
+        {
+            "name": "Regression of earlier fixes and tweaks",
+            "prefabPath": "",
+            "definition": "",
+            "melee": "",
+            "ranged": "",
+            "note": "scenario",
+            "seconds": 0.0,
+            "checks": [
+                {
+                    "id": "fix.swish",
+                    "group": "Fix check",
+                    "label": "vMeleeManager swing swish (PlayWeaponSwing on attack-window open)",
+                    "status": "WARN",
+                    "value": "code present: True; 0 PASS / 0 FAIL / 0 warn of 0 runtime row(s)",
+                    "cause": ""
+                },
+                {
+                    "id": "fix.hitsound",
+                    "group": "Fix check",
+                    "label": "Enemy melee hit on the player plays a hit sound (vMeleeManager.OnDamageHit -> CombatHitAudio)",
+                    "status": "WARN",
+                    "value": "code present: True; 0 PASS / 0 FAIL / 0 warn of 0 runtime row(s)",
+                    "cause": ""
+                },
+                {
+                    "id": "fix.hotcross",
+                    "group": "Fix check",
+                    "label": "Hot Cross weapon focus stays in sync with the equipped weapon (no revert to the first weapon)",
+                    "status": "WARN",
+                    "value": "0 PASS / 0 FAIL / 0 warn of 0 runtime row(s); weapon reverts recorded this run: 0",
+                    "cause": "no Hot Cross row ran (cached or scenario skipped)"
+                },
+                {
+                    "id": "fix.hiteffects",
+                    "group": "Fix check",
+                    "label": "vHitEffects null-safe AddListener (no NullReferenceException on runtime weapons)",
+                    "status": "PASS",
+                    "value": "code present: True; console errors across 0 weapon-matrix case(s): 0",
+                    "cause": ""
+                },
+                {
+                    "id": "fix.loadout",
+                    "group": "Fix check",
+                    "label": "EnemyInvectorLoadoutBridge: an override equal to the definition's item does not stick",
+                    "status": "WARN",
+                    "value": "code present: True; dual-slot override case: not run",
+                    "cause": ""
+                },
+                {
+                    "id": "fix.tuning",
+                    "group": "Fix check",
+                    "label": "Template tuning values (AI standoff/stamina, ragdoll stagger/reaction, CombatPoise) still match on the enemies",
+                    "status": "PASS",
+                    "value": "6 value(s) compared on 0 enemies",
+                    "cause": ""
+                },
+                {
+                    "id": "fix.patrol",
+                    "group": "Fix check",
+                    "label": "No circling while unaware (patrol-anchor fix) on every enemy",
+                    "status": "WARN",
+                    "value": "0 PASS / 0 FAIL of 0 enemies",
+                    "cause": ""
+                },
+                {
+                    "id": "fix.onedrawn",
+                    "group": "Fix check",
+                    "label": "Exactly one weapon drawn on every enemy (loadout bridge melee rebind / hide-unresolved)",
+                    "status": "WARN",
+                    "value": "0 PASS / 0 FAIL of 0 enemies",
+                    "cause": ""
+                },
+                {
+                    "id": "fix.profiles",
+                    "group": "Fix check",
+                    "label": "Profile adjustments made by earlier audit passes",
+                    "status": "INFO",
+                    "value": "none: no brain / engagement / hit-mark / ammo profile or definition value was changed by the audit passes",
+                    "cause": ""
+                }
+            ],
+            "clips": [],
+            "consoleLines": [],
+            "consoleErrors": 0,
+            "consoleWarnings": 0,
+            "cached": false,
+            "cachedFrom": ""
+        }
+    ],
+    "baselineChanges": [
+        "NEW scenario|Regression of earlier fixes and tweaks|fix.swish = WARN",
+        "NEW scenario|Regression of earlier fixes and tweaks|fix.hitsound = WARN",
+        "NEW scenario|Regression of earlier fixes and tweaks|fix.hotcross = WARN",
+        "NEW scenario|Regression of earlier fixes and tweaks|fix.hiteffects = PASS",
+        "NEW scenario|Regression of earlier fixes and tweaks|fix.loadout = WARN",
+        "NEW scenario|Regression of earlier fixes and tweaks|fix.tuning = PASS",
+        "NEW scenario|Regression of earlier fixes and tweaks|fix.patrol = WARN",
+        "NEW scenario|Regression of earlier fixes and tweaks|fix.onedrawn = WARN",
+        "NEW scenario|Regression of earlier fixes and tweaks|fix.profiles = INFO"
+    ],
+    "baselineNote": "compared with baseline from 2026-10-10 20:06: 9 change(s)"
+}

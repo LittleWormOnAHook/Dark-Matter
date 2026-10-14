@@ -25,6 +25,7 @@ namespace Project.AI
         private CompanionHealth targetCompanionHealth;
         private EnemyAiController aiController;
         private EnemyInvectorCombatBridge invectorCombat;
+        private EnemySenses senses;
         private DMEnemyMeleeComboDriver comboDriver;
         private float attackStartTime;
         private float nextAttackTime;
@@ -78,6 +79,7 @@ namespace Project.AI
         {
             aiController = GetComponent<EnemyAiController>();
             invectorCombat = GetComponent<EnemyInvectorCombatBridge>();
+            senses = GetComponent<EnemySenses>();
             comboDriver = GetComponent<DMEnemyMeleeComboDriver>();
             if (comboDriver == null && invectorCombat != null)
                 comboDriver = gameObject.AddComponent<DMEnemyMeleeComboDriver>();
@@ -155,6 +157,21 @@ namespace Project.AI
             return HorizontalDistance(transform.position, target.position) <= range;
         }
 
+        private bool HasClearLosForRangedFire(Transform threat)
+        {
+            DM_EnemyBrainProfile profile = DM_EnemyBrainProfile.Live;
+            if (profile == null || !profile.requireClearLosForRangedFire)
+                return true;
+
+            if (threat == null)
+                return false;
+
+            if (senses == null)
+                senses = GetComponent<EnemySenses>();
+
+            return senses != null && senses.CanSeeThreat(threat);
+        }
+
         private float _gateLogNext;
         /// <summary>2026-10-13 (e2): debug, DM_EnemyBrainProfile.logRangedFireGates. Once per second per enemy, logs which TryAttack gate stopped a ranged enemy.</summary>
         private void RangedGateLog(string gate)
@@ -206,6 +223,21 @@ namespace Project.AI
             // One attacker at a time across every enemy type (ranged / android / robot included), also while another swing is still finishing.
             if (aiController != null && !aiController.CanStartAttackGlobal(target))
             { RangedGateLog("aiController != null && !aiController.CanStartAttackGlobal(target)"); return; }
+
+            if (invectorCombat != null &&
+                invectorCombat.IsArmedRangedPreferred() &&
+                invectorCombat.HasRangedWeaponEquipped() &&
+                !HasClearLosForRangedFire(target))
+            { RangedGateLog("!HasClearLosForRangedFire"); return; }
+
+            if (invectorCombat != null &&
+                invectorCombat.IsArmedRangedPreferred() &&
+                invectorCombat.HasRangedWeaponEquipped() &&
+                !invectorCombat.HasRangedAmmoToFire())
+            { RangedGateLog("!HasRangedAmmoToFire"); return; }
+
+            if (IsMeleeAttackPath() && BlocksMeleeVsClimbingPlayer(target))
+            { RangedGateLog("BlocksMeleeVsClimbingPlayer"); return; }
 
             // Ranged aim gate: draw the gun / hold the aim pose first. Never consumes the cooldown and
             // never falls through to the scripted melee fallback below.
@@ -288,6 +320,12 @@ namespace Project.AI
 
         private void Update()
         {
+            if (attackPending && IsMeleeAttackPath() && BlocksMeleeVsClimbingPlayer(target))
+            {
+                comboDriver?.CancelSequence();
+                InterruptAttackForStagger(0.12f);
+            }
+
             if (_wasAttackPending && !attackPending)
             {
                 if (_intentionalMissActive)
@@ -344,7 +382,26 @@ namespace Project.AI
                 return;
             }
 
+            if (IsMeleeAttackPath() && BlocksMeleeVsClimbingPlayer(target))
+                return;
+
             ApplyDamageToTarget(attackDamage);
+        }
+
+        private bool IsMeleeAttackPath()
+        {
+            if (invectorCombat == null)
+                return true;
+
+            if (invectorCombat.IsArmedRangedPreferred() && invectorCombat.HasRangedWeaponEquipped())
+                return false;
+
+            return true;
+        }
+
+        private bool BlocksMeleeVsClimbingPlayer(Transform threat)
+        {
+            return DMPlayerClimbCombatGate.BlocksMeleeAgainstTarget(threat, DM_EnemyBrainProfile.Live);
         }
 
         private bool ShouldRollIntentionalMeleeMiss()

@@ -27,18 +27,22 @@
         </ui:VisualElement>
         <ui:VisualElement name="weapon-host" picking-mode="Position" class="dmg-wm-modal">
             <ui:VisualElement name="weapon-veil" picking-mode="Position" class="dmg-hi-veil"/>
-            <ui:VisualElement name="weapon-panel" picking-mode="Position" class="dmg-fmenu-panel dmg-wm-weapon-panel">
-                <ui:Label name="weapon-title" text="Weapon Modes" picking-mode="Ignore" class="dmg-hi-title"/>
-                <ui:Button name="weapon-pistols" text="Pistols >" picking-mode="Position" class="dmg-fmenu-btn"/>
-                <ui:Button name="weapon-rifles" text="Rifles >" picking-mode="Position" class="dmg-fmenu-btn"/>
-            </ui:VisualElement>
-            <ui:VisualElement name="weapon-pistols-sub" picking-mode="Position" class="dmg-fmenu-panel dmg-fmenu-flyout">
-                <ui:Button name="weapon-pistol-sight" text="LaserSight  OFF" picking-mode="Position" class="dmg-fmenu-btn"/>
-                <ui:Button name="weapon-pistol-beam" text="Laser  OFF" picking-mode="Position" class="dmg-fmenu-btn"/>
-            </ui:VisualElement>
-            <ui:VisualElement name="weapon-rifles-sub" picking-mode="Position" class="dmg-fmenu-panel dmg-fmenu-flyout">
-                <ui:Button name="weapon-rifle-sight" text="LaserSight  OFF" picking-mode="Position" class="dmg-fmenu-btn"/>
-                <ui:Button name="weapon-rifle-beam" text="Laser  OFF" picking-mode="Position" class="dmg-fmenu-btn"/>
+            <ui:VisualElement name="weapon-panel" picking-mode="Position" class="dmg-wm-weapon-panel">
+                <ui:Label name="weapon-title" text="Weapon Modes" picking-mode="Ignore" class="dmg-wm-weapon-title"/>
+                <ui:Label text="Modes" picking-mode="Ignore" class="dmg-wm-list-header"/>
+                <ui:Button name="weapon-pistols" text="Pistols" picking-mode="Position" class="dmg-wm-list-row dmg-wm-category"/>
+                <ui:VisualElement name="weapon-pistols-body" picking-mode="Position" class="dmg-wm-foldout">
+                    <ui:Button name="weapon-pistol-sight" text="LaserSight  OFF" picking-mode="Position" class="dmg-wm-list-row dmg-wm-toggle"/>
+                    <ui:Button name="weapon-pistol-beam" text="Laser  OFF" picking-mode="Position" class="dmg-wm-list-row dmg-wm-toggle"/>
+                    <ui:Button name="weapon-pistol-scope" text="Scope  OFF" picking-mode="Position" class="dmg-wm-list-row dmg-wm-toggle"/>
+                </ui:VisualElement>
+                <ui:Button name="weapon-rifles" text="Rifles" picking-mode="Position" class="dmg-wm-list-row dmg-wm-category"/>
+                <ui:VisualElement name="weapon-rifles-body" picking-mode="Position" class="dmg-wm-foldout">
+                    <ui:Button name="weapon-rifle-sight" text="LaserSight  OFF" picking-mode="Position" class="dmg-wm-list-row dmg-wm-toggle"/>
+                    <ui:Button name="weapon-rifle-beam" text="Laser  OFF" picking-mode="Position" class="dmg-wm-list-row dmg-wm-toggle"/>
+                    <ui:Button name="weapon-rifle-scope" text="Scope  OFF" picking-mode="Position" class="dmg-wm-list-row dmg-wm-toggle"/>
+                </ui:VisualElement>
+                <ui:Label name="weapon-nav-hint" text="WASD  E  |  Mouse  |  D-Pad  X" picking-mode="Ignore" class="dmg-wm-nav-hint"/>
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="echo-host" picking-mode="Position" class="dmg-wm-modal">

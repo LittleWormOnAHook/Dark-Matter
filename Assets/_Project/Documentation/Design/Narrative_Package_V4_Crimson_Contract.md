@@ -1,6 +1,6 @@
 # Narrative Package V4 — Crimson Contract
 
-> **Global locks (Sep 30, 2026) override this package:** the player starts with **0 AC, level 1 and no inventory** (Aether Credits only). Kade lands on Io with **2 companions**, the survivors of the Mars escape; no other companions until Echoes are found and restored from ethereal to corporeal form. The starter-companion pick is retired.
+> **Global locks (Sep 30, 2026) override this package:** the player starts with **0 UEA, level 1 and no inventory** (UEA Credits only). Kade lands on Io with **2 companions**, the survivors of the Mars escape; no other companions until Echoes are found and restored from ethereal to corporeal form. The starter-companion pick is retired.
 
 **Package identity:** V4 Crimson Contract  
 **Game:** Dark Matter: Genesis  
@@ -12,7 +12,7 @@
 **Ending triad:** Walk Away / Crown the Company / Burn the Ledger  
 **Designed hour target:** 172 hours, exploration excluded
 
-> **V4 narrative note:** The global lock is that Kade lands with **2 companions**, the survivors of the Mars escape. V4 frames them as **2 old-friend specialists** (Combat + Science) who **trust the player completely from day one**, with no wary starter loyalty arc for Reid or Suri. Kade starts with **0 AC** and no inventory; the older Mars-pay AC framing is retired. Names lock globally only if V4 becomes canon spine.
+> **V4 narrative note:** The global lock is that Kade lands with **2 companions**, the survivors of the Mars escape. V4 frames them as **2 old-friend specialists** (Combat + Science) who **trust the player completely from day one**, with no wary starter loyalty arc for Reid or Suri. Kade starts with **0 UEA** and no inventory; the older Mars-pay AC framing is retired. Names lock globally only if V4 becomes canon spine.
 
 ---
 
@@ -25,7 +25,7 @@ You are **Kade**, a **freelance space explorer**, not a mercenary commander inhe
 - **Weapons-first mind:** Decades of field work made you fluent in ballistics, pressure seals, and when *not* to shoot. High combat IQ; you read encounters like survey maps.
 - **Discovery drive:** You take contracts that let you **find things** — new terrain, dead signals, organisms that shouldn't exist, machines still running after crews vanish.
 - **Terraform pedigree:** You started at the **bottom** of a Mars terraforming directorate — soil tech, vent routing, labor disputes — and **earned the director chair**. You know what "viable" looks like when the math lies.
-- **Mars stranding:** Your last employer **left you stranded on Mars** after a budget cut masquerading as "phase completion." You walked out with reputation, grudges and **0 AC**, escaped with two survivors, and caught a freighter out.
+- **Mars stranding:** Your last employer **left you stranded on Mars** after a budget cut masquerading as "phase completion." You walked out with reputation, grudges and **0 UEA**, escaped with two survivors, and caught a freighter out.
 - **Why Io:** Freelance work pointed here. A charter buyer wants a **viability assessment** — can Io be terraformed, and **why did prior expeditions disappear** without conventional closure? You did not come to get rich. You came to **learn the truth** and get paid enough to never be stranded again.
 
 You arrive with **two old friends**, the two survivors of the Mars escape:
@@ -75,9 +75,9 @@ Prologue is **progress-triggered**, not quest-giver driven. No NPC assigns the c
 
 | Beat | Trigger | Content | Mystery / Survey Hook |
 |------|---------|---------|------------------------|
-| P-01 | Player completes B6 landing sequence | Brief **Mars stranding** log or playable flashback sting: employer evac without crew; director chair revoked mid-shift | Establishes why Kade arrives with **0 AC** and only two friends |
+| P-01 | Player completes B6 landing sequence | Brief **Mars stranding** log or playable flashback sting: employer evac without crew; director chair revoked mid-shift | Establishes why Kade arrives with **0 UEA** and only two friends |
 | P-02 | Charter terminal boot | Freelancer contract loads: **assess Io terraform viability**; bonus clause for **documenting expedition disappearance patterns** | Reid and Suri banter like old crew — no introduction handshake; they already know your calls |
-| P-03 | First B6 camp footprint | **0 AC** start; **Reid Kael** + **Dr. Suri Vale** active in trio — **old friends, full trust** | BCP shell online; 22 bunk assignments empty; Reid jokes about Mars; Suri opens survey slate |
+| P-03 | First B6 camp footprint | **0 UEA** start; **Reid Kael** + **Dr. Suri Vale** active in trio — **old friends, full trust** | BCP shell online; 22 bunk assignments empty; Reid jokes about Mars; Suri opens survey slate |
 | P-04 | Survey probe uplink | First viability scan returns **impossible rescue pings** from erased crews; Beacon Hopper mimic behavior [ecology] | Suri flags "missing expedition" anomaly cluster |
 | P-05 | Annex approach | Expedition camp without bodies — equipment arranged like aborted terraform grid | Missing-expedition mystery visible before combat spike |
 | P-06 | **Prologue end** — dormant shell contact | Player restores minimal probe power to buried **liaison shell**; machine speaks auth fragment; UI decodes true name | **Player learns the name Kairos** — first time name appears in package |
@@ -91,7 +91,7 @@ Prologue is **progress-triggered**, not quest-giver driven. No NPC assigns the c
 | Lock | V4 Crimson Contract Rule |
 |------|--------------------------|
 | Setting | Io, 2160 |
-| Economy | AC-only. Player starts with **0 AC** and no inventory (global lock) |
+| Economy | UEA-only. Player starts with **0 UEA** and no inventory (global lock) |
 | Roster | 25 companions max: 22 base camp + 3 expedition trio; **V4 starts with old friends Reid Kael + Dr. Suri Vale (baseline max loyalty, no starter trust arc)** |
 | Kairos spine | Repair Kairos (pre-prologue: liaison shell), recover 6 Memory Cores, earn trust, trigger Resonance Events |
 | Biome order | B6 -> B1 -> B2 -> B3 -> B5 -> B4 -> B7 |
@@ -157,7 +157,7 @@ Ecology visual source: Life Sheet set under `ArtReference/LifeSheets_RayTraced/`
 
 | System | Status | V4 Crimson Contract Use |
 |--------|--------|-------------------------|
-| Aether Credits economy | [SHIPPED] | Contract payouts, bid wars, escrow penalties, gear purchases; **0 AC start** |
+| UEA Credits economy | [SHIPPED] | Contract payouts, bid wars, escrow penalties, gear purchases; **0 UEA start** |
 | Building Control Panels | [SHIPPED] | Freelancer HQ terminal: **Overview \| Companions \| Production \| Craft \| Changes** + contract board tab hooks |
 | Echo chronicle / EchoGenerator | [SHIPPED] | Crew drama, missing-expedition Echo rescue, permanent fail consequence; Reid/Suri starter loyalty exempt from wary arc |
 | Exposure / oxygen / pressure | [SHIPPED] | B5 cold-chain jobs, B4 heat sieges, B1 storm convoys, terraform viability stress tests |
@@ -188,14 +188,14 @@ Ecology visual source: Life Sheet set under `ArtReference/LifeSheets_RayTraced/`
 
 | Tier | Campaign Range | Typical Reward | Use Cases |
 |------|----------------|----------------|-----------|
-| **T1** | Early B6/B1 | 150-450 AC | Starter board jobs, minor puzzles, first escorts |
-| **T2** | B2/B3 | 500-950 AC | Mid contracts, ridge holds, weapon module rewards |
-| **T3** | B5/B4 | 1100-2200 AC | Dangerous escorts, elite ecology hunts, ledger evidence |
-| **T4** | B7 / endgame | 2500-5200 AC | Vault jobs, client capstones, ending payouts, mastery prestige |
+| **T1** | Early B6/B1 | 150-450 UEA | Starter board jobs, minor puzzles, first escorts |
+| **T2** | B2/B3 | 500-950 UEA | Mid contracts, ridge holds, weapon module rewards |
+| **T3** | B5/B4 | 1100-2200 UEA | Dangerous escorts, elite ecology hunts, ledger evidence |
+| **T4** | B7 / endgame | 2500-5200 UEA | Vault jobs, client capstones, ending payouts, mastery prestige |
 
 ### Application Rules
 
-- **Prologue / ML-01:** Kade starts at **0 AC**; early contract payouts fund the survey.
+- **Prologue / ML-01:** Kade starts at **0 UEA**; early contract payouts fund the survey.
 - **Mainline:** Milestone payouts unlock cores, modules, and survey auth — not quest-giver dialogue trees.
 - **Side quests:** Contract-board and crew-drama jobs scale T1-T4; often pay AC plus named gear or rep.
 - **Puzzles:** Access Gate minority (~8). Loot/Cache/Weapon and Optional Mastery carry higher AC and kit.
@@ -224,24 +224,24 @@ Mainline uses **progress triggers, not quest givers**. Contract NPCs and rival c
 
 | ID | Mainline Beat | Trigger | Biome / Site | Core / Repair | AC / Gear Reward | Est. | Status |
 |----|---------------|---------|--------------|---------------|------------------|------|--------|
-| ML-01 | **Prologue: Freelancer Arrival** | B6 landing + charter boot + `KairosNamed` flag | B6 Survey HQ | Liaison shell ping | 0 AC start; **Survey Sidearm**; Reid + Suri active | 2.0h | [PLANNED] narrative |
-| ML-02 | Ledger Shell | Scan buried liaison casing under basalt ash (post-name) | B6 annex | Kairos shell found | 300 AC; **Ledger Lens Mk I** | 2.0h | [PLANNED] |
+| ML-01 | **Prologue: Freelancer Arrival** | B6 landing + charter boot + `KairosNamed` flag | B6 Survey HQ | Liaison shell ping | 0 UEA start; **Survey Sidearm**; Reid + Suri active | 2.0h | [PLANNED] narrative |
+| ML-02 | Ledger Shell | Scan buried liaison casing under basalt ash (post-name) | B6 annex | Kairos shell found | 300 UEA; **Ledger Lens Mk I** | 2.0h | [PLANNED] |
 | ML-03 | Escrow Auth Spindle | Enter first Contract Lock annex | B6 Lock Annex | Repair part 1 | **Escrow Spike Module** | 2.0h | [PLANNED] |
-| ML-04 | Convoy Capacitor Bank | Complete first B1 sulfur storm escort window | B1 Sulfur Plains | Repair part 2 | 450 AC; **Storm Filter Module** | 2.5h | [PARTIAL] ecology via Sulfur Hound |
+| ML-04 | Convoy Capacitor Bank | Complete first B1 sulfur storm escort window | B1 Sulfur Plains | Repair part 2 | 450 UEA; **Storm Filter Module** | 2.5h | [PARTIAL] ecology via Sulfur Hound |
 | ML-05 | Client Coupler | Breach B2 seized rig inner lock after vent survey flag | B2 Geyser Fields | Repair part 3 | **Client Coil**, unlock Kairos wake | 2.5h | [PLANNED] |
 | ML-06 | Kairos Wake | Install all 3 repair parts in BCP-linked ledger cradle | Base Camp | Trust Angry | **Escrow Capacitor Mk I** | 1.5h | [PLANNED] |
-| ML-07 | Core 1: Kill Receipt | Recover storm-buried escrow record; **first missing-expedition name** | B1 | Memory Core 1 | 650 AC; **Crimson Pike** | 3.0h | [PLANNED] |
+| ML-07 | Core 1: Kill Receipt | Recover storm-buried escrow record; **first missing-expedition name** | B1 | Memory Core 1 | 650 UEA; **Crimson Pike** | 3.0h | [PLANNED] |
 | ML-08 | Resonance 1: Overbid Hangover | Attach Core 1; Synergy Overcharge hits trio after bad bid | Base / B1 | Trust Wary | **Field Stabilizer Module** | 1.5h | [PLANNED] |
-| ML-09 | Core 2: Vent Escrow | Decode falsified vent lease after timed geyser vault | B2 | Memory Core 2 | 900 AC; **Geothermal Stabilizer** | 3.0h | [PLANNED] |
+| ML-09 | Core 2: Vent Escrow | Decode falsified vent lease after timed geyser vault | B2 | Memory Core 2 | 900 UEA; **Geothermal Stabilizer** | 3.0h | [PLANNED] |
 | ML-10 | Resonance 2: Caravan Ledger | Install Geothermal Stabilizer through BCP | Base building | Building module unlock | **Vent Seal Kit** | 1.5h | [PLANNED] |
-| ML-11 | Core 3: Jam Receipt | Break B3 signal jam contract sequence | B3 Ash Flats & Ridges | Memory Core 3 | 1200 AC; **Relay Breaker SMG** | 3.0h | [PLANNED] |
+| ML-11 | Core 3: Jam Receipt | Break B3 signal jam contract sequence | B3 Ash Flats & Ridges | Memory Core 3 | 1200 UEA; **Relay Breaker SMG** | 3.0h | [PLANNED] |
 | ML-12 | Resonance 3: Private Client | Signal blackout opens private Kairos trust scene | Base / B3 relay | Trust Advisor | **Scout Relay Mesh** | 1.5h | [PLANNED] |
-| ML-13 | Core 4: Cold Courier Mirror | Recover illegal core from B5 polar cache job | B5 Polar Radiation Flats | Memory Core 4 | 1700 AC; **Veil Cloak Module** | 3.0h | [PLANNED] |
+| ML-13 | Core 4: Cold Courier Mirror | Recover illegal core from B5 polar cache job | B5 Polar Radiation Flats | Memory Core 4 | 1700 UEA; **Veil Cloak Module** | 3.0h | [PLANNED] |
 | ML-14 | Resonance 4: Double Escrow | Attach Core 4; rad inversion reveals rival ambush route | B5 / Base | Rad Suit Mk II | **Core-Sniffer Array** | 1.5h | [PLANNED] |
-| ML-15 | Core 5: Caldera Hold Receipt | Find failed expedition death site under heat lock siege | B4 Lava Calderas | Memory Core 5 | 2100 AC; **Procurement Carbine** or **Redact Torch Mk II** | 3.5h | [PLANNED] |
+| ML-15 | Core 5: Caldera Hold Receipt | Find failed expedition death site under heat lock siege | B4 Lava Calderas | Memory Core 5 | 2100 UEA; **Procurement Carbine** or **Redact Torch Mk II** | 3.5h | [PLANNED] |
 | ML-16 | Resonance 5: The Job Killed Them | Building injury spike; BCP emergency crew triage | Base / B4 | Trust Friend | **Resonance Baffle** | 1.5h | [PLANNED] |
-| ML-17 | Core 6: Ledger Vault | Open B7 lock triad with repaired Kairos | B7 Precursor Ruin Belt | Memory Core 6 | 3000 AC; **Kairos Ledger Key** | 4.0h | [PLANNED] |
-| ML-18 | Final Choice: Walk Away / Crown / Burn | Install Core 6; terraform viability report + doctrine terminal | B7 / Base | Ending triad | Ending-specific weapon/module; 5200 AC reserve grant | 3.0h | [PLANNED] |
+| ML-17 | Core 6: Ledger Vault | Open B7 lock triad with repaired Kairos | B7 Precursor Ruin Belt | Memory Core 6 | 3000 UEA; **Kairos Ledger Key** | 4.0h | [PLANNED] |
+| ML-18 | Final Choice: Walk Away / Crown / Burn | Install Core 6; terraform viability report + doctrine terminal | B7 / Base | Ending triad | Ending-specific weapon/module; 5200 UEA reserve grant | 3.0h | [PLANNED] |
 
 **Mainline subtotal:** 41 hours.
 
@@ -284,46 +284,46 @@ Side quests blend contract-board work, survey discovery, rival crews, and specia
 
 | ID | Title | Faction / Source | Biome | Type | Objective | AC Tier / Reward | Gear / Module | Est. |
 |----|-------|------------------|-------|------|-----------|------------------|---------------|------|
-| SQ-01 | First Blood Bid | Iron Lark board | B6 | Contract | Break up rival salvage fight; collect fee | T1 250 AC | **Crimson Plate Liner** | 1.2h |
-| SQ-02 | Spike The Job Zone | Iron Lark marshal | B3 | Territory | Hold Contract Lock on contested ash route | T1 350 AC | **Escrow Spike** | 1.3h |
-| SQ-03 | Storm Convoy | Iron Lark board | B1 | Escort | Move survey cargo through sulfur storm window | T2 600 AC | **Survey Carbine** | 1.4h |
-| SQ-04 | Silent Wire | Iron Lark scout | B3 | Stealth / Combat | Clear android relay without losing bonus pay | T2 700 AC | **Mute Sling Module** | 1.3h |
-| SQ-05 | Lock Brief | Iron Lark analyst | B3 | Recon | Map 3 Contract Locks and identify client keys | T2 650 AC | Lock matrix update | 1.1h |
-| SQ-06 | Lark Legend | Iron Lark captain | B4 | Escort / Siege | Protect summit courier through Caldera Mantis hold | T3 1700 AC | **Crimson Pike Mk II** | 1.8h |
-| SQ-07 | Receipt Primer | Signal Cartographers board | B1 | Evidence | Collect ledger scraps from failed isotope camp | T1 300 AC | **Ledger Lens** | 1.1h |
-| SQ-08 | Fake Lease | Cartographer whistleblower | B2 | Investigation | Prove Helix vent lease contradicts Suri's survey data | T2 750 AC | **Redact Torch** | 1.3h |
-| SQ-09 | Polar Whistle | Cartographers board | B5 | Evidence | Choose smuggler records or Helix logs first | T3 1400 AC | **Sample Case Mk II** | 1.5h |
-| SQ-10 | Publish Fork | Cartographer council | B6 | Choice | Leak early for chaos or hold for vault leverage | T2 900 AC | Cartographer rep fork | 1.0h |
-| SQ-11 | Shelf Frequency | Cartographer specialist | B7 | Puzzle / Lore | Tune Echo Shelves to decode client backups | T4 2600 AC | **Client Coil** | 1.4h |
-| SQ-12 | Ledger Finale | Cartographers board | B7 | Evidence Capstone | Recover secondary black-box shard | T4 3200 AC | **Redact Torch Prime** | 1.5h |
-| SQ-13 | Contested Haul | Red Shipment board | B1 | Salvage | Beat rivals to storm-exposed wreck | T1 400 AC | **Red Cutters** | 1.2h |
-| SQ-14 | Mag Debt | Shipment foreman | B2 | Salvage | Retrieve Mag-Claw from Helix-sealed vent pit | T2 700 AC | **Mag-Claw** | 1.2h |
-| SQ-15 | Fence Night | Shipment broker | B3 | Stealth / Trade | Move fence stamp through Contract Lock checkpoint | T2 850 AC | **Fence Stamp** | 1.1h |
-| SQ-16 | Crust Drop | Shipment board | S1-S3 | Depth Push | Recover dead drop under unsafe crust | T3 1500 AC | **Crust Anchor Module** | 1.5h |
-| SQ-17 | Price War | Shipment / Registry dispute | B6 | Debate | Break or endorse Registry tariffs | T2 800 AC | Vendor fee modifier | 0.9h |
-| SQ-18 | Shipment Legend | Shipment syndics | B4 | Salvage Capstone | Loot contract wreck during heat lull | T3 1900 AC | **Red Cutter Mk II** | 1.7h |
-| SQ-19 | After Overbid | Field Stitchers board | B6 | Medical / Echo | Treat Rebooted trio member after bad bid job | T1 450 AC | **Field Collar** | 1.2h |
-| SQ-20 | Reid's Line | Field Stitchers / Reid Kael | B3 | Companion | Hold ridge under Helix audit pressure — **Reid already trusts you**; beat is tactical cost, not loyalty test | T2 850 AC | Reid bond perk | 1.3h |
-| SQ-21 | Draven Stabilized | Field Stitchers / Draven-4 | B1 | Companion | Stabilize hostile imprint after weaponized Echo scare | T2 900 AC | **Trauma Injector** | 1.4h |
-| SQ-22 | Solara Heat | Field Stitchers / Solara | B4 | Companion | Keep thermal lab survivor off Helix custody lists | T3 1650 AC | Solara bond perk | 1.3h |
-| SQ-23 | Suri's Draft | Field Stitchers / Dr. Suri Vale | B2 | Companion / Evidence | Use seismic receipt to fix Suri's viability draft — **she trusts your field data**; beat is scientific integrity vs client pressure | T2 950 AC | **Crew Band** | 1.3h |
-| SQ-24 | Stitcher Soften | Field Stitchers board | B6 | Stabilization | Cleanse weaponize Saturation from one building loop | T3 1300 AC | **Stitcher Soften Module** | 1.2h |
-| SQ-25 | Registry Open | Convoy Registry board | B6 | Founding | Stand up neutral contract desk | T1 200 AC | **Registry Pack** | 0.8h |
-| SQ-26 | Tariff Storm | Registry dispatcher | B1 | Escort | Deliver contracts through shifting storm claims | T2 650 AC | **Convoy Slate** | 1.3h |
-| SQ-27 | Vent Broker | Registry board | B2 | Escort / Trade | Run neutral convoy past vent lease checkpoints | T2 750 AC | **Tariff Tag** | 1.2h |
-| SQ-28 | Signal Fee | Registry adjudicator | B3 | Choice | Pay, break, or redirect jam monopoly | T2 950 AC | **Tariff Cut Module** | 1.3h |
-| SQ-29 | Polar Broker | Registry board | B5 | Delivery | Maintain cold-chain custody of evidence | T3 1550 AC | Registry vendor discount | 1.2h |
-| SQ-30 | Registry Legend | Registry summit clerk | B7 | Escort Capstone | Carry final ledger logistics through silent corridors | T4 2800 AC | **Convoy Slate Prime** | 1.6h |
-| SQ-31 | Lease Drop | Helix Procurement Office | B2 | Client Entry | Accept visitor status without ceding freelancer sovereignty | T1 350 AC | **Client Override Chip** | 0.8h |
-| SQ-32 | Seizure | Helix contract board | B1 | Combat / Seizure | Seize Shipment crate under corporate paperwork | T2 800 AC | **Audit Drone** | 1.2h |
-| SQ-33 | Compliance | Helix auditor | B5 | Recon | Audit Veil routes without tipping Iron Lark | T3 1600 AC | **Procurement Armor** | 1.4h |
-| SQ-34 | Override Trial | Helix client rep | B7 | Puzzle / Access | Open corporate vault seal with client override | T4 3000 AC | **Override Module** | 1.5h |
-| SQ-35 | Helix Ultimatum | Helix Procurement Office | B6 | Choice Capstone | Ally, burn, or crown with Helix at the table | T4 4200 AC | **Procurement Carbine** | 1.1h |
-| SQ-36 | Veil Meet | Veil Route Brokers | B5 | Client Entry | Buy first Route Pick and learn smuggler map | T1 300 AC | **Mute Boots** | 0.8h |
-| SQ-37 | Sleeve Run | Veil board | B5 | Stealth | Move false core past Iron Lark scanners | T3 1450 AC | **Veil Cloak** | 1.4h |
-| SQ-38 | Stitcher Tip | Veil survivor | B3 | Encounter / Lore | Verify: "Do not trust the seams." | T3 1300 AC | **Veil Needle Armor Mod** | 1.3h |
-| SQ-39 | Lock Market | Veil board | B3 | Puzzle / Trade | Buy, sell, or burn Contract Lock bypass market | T3 1750 AC | **Route Pick Skill** | 1.5h |
-| SQ-40 | Veil Legend | Veil Route Brokers | B7 | Silent Escort | Move protected asset past Still Hunter pressure | T4 3500 AC | **Route Picks Prime** | 1.8h |
+| SQ-01 | First Blood Bid | Iron Lark board | B6 | Contract | Break up rival salvage fight; collect fee | T1 250 UEA | **Crimson Plate Liner** | 1.2h |
+| SQ-02 | Spike The Job Zone | Iron Lark marshal | B3 | Territory | Hold Contract Lock on contested ash route | T1 350 UEA | **Escrow Spike** | 1.3h |
+| SQ-03 | Storm Convoy | Iron Lark board | B1 | Escort | Move survey cargo through sulfur storm window | T2 600 UEA | **Survey Carbine** | 1.4h |
+| SQ-04 | Silent Wire | Iron Lark scout | B3 | Stealth / Combat | Clear android relay without losing bonus pay | T2 700 UEA | **Mute Sling Module** | 1.3h |
+| SQ-05 | Lock Brief | Iron Lark analyst | B3 | Recon | Map 3 Contract Locks and identify client keys | T2 650 UEA | Lock matrix update | 1.1h |
+| SQ-06 | Lark Legend | Iron Lark captain | B4 | Escort / Siege | Protect summit courier through Caldera Mantis hold | T3 1700 UEA | **Crimson Pike Mk II** | 1.8h |
+| SQ-07 | Receipt Primer | Signal Cartographers board | B1 | Evidence | Collect ledger scraps from failed isotope camp | T1 300 UEA | **Ledger Lens** | 1.1h |
+| SQ-08 | Fake Lease | Cartographer whistleblower | B2 | Investigation | Prove Helix vent lease contradicts Suri's survey data | T2 750 UEA | **Redact Torch** | 1.3h |
+| SQ-09 | Polar Whistle | Cartographers board | B5 | Evidence | Choose smuggler records or Helix logs first | T3 1400 UEA | **Sample Case Mk II** | 1.5h |
+| SQ-10 | Publish Fork | Cartographer council | B6 | Choice | Leak early for chaos or hold for vault leverage | T2 900 UEA | Cartographer rep fork | 1.0h |
+| SQ-11 | Shelf Frequency | Cartographer specialist | B7 | Puzzle / Lore | Tune Echo Shelves to decode client backups | T4 2600 UEA | **Client Coil** | 1.4h |
+| SQ-12 | Ledger Finale | Cartographers board | B7 | Evidence Capstone | Recover secondary black-box shard | T4 3200 UEA | **Redact Torch Prime** | 1.5h |
+| SQ-13 | Contested Haul | Red Shipment board | B1 | Salvage | Beat rivals to storm-exposed wreck | T1 400 UEA | **Red Cutters** | 1.2h |
+| SQ-14 | Mag Debt | Shipment foreman | B2 | Salvage | Retrieve Mag-Claw from Helix-sealed vent pit | T2 700 UEA | **Mag-Claw** | 1.2h |
+| SQ-15 | Fence Night | Shipment broker | B3 | Stealth / Trade | Move fence stamp through Contract Lock checkpoint | T2 850 UEA | **Fence Stamp** | 1.1h |
+| SQ-16 | Crust Drop | Shipment board | S1-S3 | Depth Push | Recover dead drop under unsafe crust | T3 1500 UEA | **Crust Anchor Module** | 1.5h |
+| SQ-17 | Price War | Shipment / Registry dispute | B6 | Debate | Break or endorse Registry tariffs | T2 800 UEA | Vendor fee modifier | 0.9h |
+| SQ-18 | Shipment Legend | Shipment syndics | B4 | Salvage Capstone | Loot contract wreck during heat lull | T3 1900 UEA | **Red Cutter Mk II** | 1.7h |
+| SQ-19 | After Overbid | Field Stitchers board | B6 | Medical / Echo | Treat Rebooted trio member after bad bid job | T1 450 UEA | **Field Collar** | 1.2h |
+| SQ-20 | Reid's Line | Field Stitchers / Reid Kael | B3 | Companion | Hold ridge under Helix audit pressure — **Reid already trusts you**; beat is tactical cost, not loyalty test | T2 850 UEA | Reid bond perk | 1.3h |
+| SQ-21 | Draven Stabilized | Field Stitchers / Draven-4 | B1 | Companion | Stabilize hostile imprint after weaponized Echo scare | T2 900 UEA | **Trauma Injector** | 1.4h |
+| SQ-22 | Solara Heat | Field Stitchers / Solara | B4 | Companion | Keep thermal lab survivor off Helix custody lists | T3 1650 UEA | Solara bond perk | 1.3h |
+| SQ-23 | Suri's Draft | Field Stitchers / Dr. Suri Vale | B2 | Companion / Evidence | Use seismic receipt to fix Suri's viability draft — **she trusts your field data**; beat is scientific integrity vs client pressure | T2 950 UEA | **Crew Band** | 1.3h |
+| SQ-24 | Stitcher Soften | Field Stitchers board | B6 | Stabilization | Cleanse weaponize Saturation from one building loop | T3 1300 UEA | **Stitcher Soften Module** | 1.2h |
+| SQ-25 | Registry Open | Convoy Registry board | B6 | Founding | Stand up neutral contract desk | T1 200 UEA | **Registry Pack** | 0.8h |
+| SQ-26 | Tariff Storm | Registry dispatcher | B1 | Escort | Deliver contracts through shifting storm claims | T2 650 UEA | **Convoy Slate** | 1.3h |
+| SQ-27 | Vent Broker | Registry board | B2 | Escort / Trade | Run neutral convoy past vent lease checkpoints | T2 750 UEA | **Tariff Tag** | 1.2h |
+| SQ-28 | Signal Fee | Registry adjudicator | B3 | Choice | Pay, break, or redirect jam monopoly | T2 950 UEA | **Tariff Cut Module** | 1.3h |
+| SQ-29 | Polar Broker | Registry board | B5 | Delivery | Maintain cold-chain custody of evidence | T3 1550 UEA | Registry vendor discount | 1.2h |
+| SQ-30 | Registry Legend | Registry summit clerk | B7 | Escort Capstone | Carry final ledger logistics through silent corridors | T4 2800 UEA | **Convoy Slate Prime** | 1.6h |
+| SQ-31 | Lease Drop | Helix Procurement Office | B2 | Client Entry | Accept visitor status without ceding freelancer sovereignty | T1 350 UEA | **Client Override Chip** | 0.8h |
+| SQ-32 | Seizure | Helix contract board | B1 | Combat / Seizure | Seize Shipment crate under corporate paperwork | T2 800 UEA | **Audit Drone** | 1.2h |
+| SQ-33 | Compliance | Helix auditor | B5 | Recon | Audit Veil routes without tipping Iron Lark | T3 1600 UEA | **Procurement Armor** | 1.4h |
+| SQ-34 | Override Trial | Helix client rep | B7 | Puzzle / Access | Open corporate vault seal with client override | T4 3000 UEA | **Override Module** | 1.5h |
+| SQ-35 | Helix Ultimatum | Helix Procurement Office | B6 | Choice Capstone | Ally, burn, or crown with Helix at the table | T4 4200 UEA | **Procurement Carbine** | 1.1h |
+| SQ-36 | Veil Meet | Veil Route Brokers | B5 | Client Entry | Buy first Route Pick and learn smuggler map | T1 300 UEA | **Mute Boots** | 0.8h |
+| SQ-37 | Sleeve Run | Veil board | B5 | Stealth | Move false core past Iron Lark scanners | T3 1450 UEA | **Veil Cloak** | 1.4h |
+| SQ-38 | Stitcher Tip | Veil survivor | B3 | Encounter / Lore | Verify: "Do not trust the seams." | T3 1300 UEA | **Veil Needle Armor Mod** | 1.3h |
+| SQ-39 | Lock Market | Veil board | B3 | Puzzle / Trade | Buy, sell, or burn Contract Lock bypass market | T3 1750 UEA | **Route Pick Skill** | 1.5h |
+| SQ-40 | Veil Legend | Veil Route Brokers | B7 | Silent Escort | Move protected asset past Still Hunter pressure | T4 3500 UEA | **Route Picks Prime** | 1.8h |
 
 **Side quest subtotal:** 51 hours.
 
@@ -342,46 +342,46 @@ Purpose distribution:
 
 | ID | Title | Purpose | Biome / Site | Solve Grammar | AC Tier / Reward | Gear / Module | Est. |
 |----|-------|---------|--------------|---------------|------------------|---------------|------|
-| PQ-01 | Annex Contract Lock | Access Gate | B6 annex | Hack, Lark key, or Veil pick | T1 150 AC | Opens Escrow Auth Spindle route | 1.0h |
-| PQ-02 | Capacitor Storm Lock | Access Gate | B1 isotope camp | Open during sulfur storm lull | T1 250 AC | **Storm Filter Module** | 1.1h |
-| PQ-03 | Coupler Choice Gate | Access Gate | B2 seized rig | Helix chip or Veil pick | T2 500 AC | **Client Coupler** | 1.2h |
-| PQ-04 | Veil Seal A | Access Gate | B5 polar route | Route Pick timing | T2 650 AC | Opens Veil route | 1.0h |
-| PQ-05 | Contract Heat Lock | Access Gate | B4 death site | Heat Override and cooled crust path | T3 1200 AC | **Heat Lock Override** | 1.3h |
-| PQ-06 | Ledger Locks A | Access Gate | B7 outer vault | Three surface locks | T4 2500 AC | Vault access flag | 1.5h |
-| PQ-07 | Triple Key Lock | Access Gate | Act III shared route | Lark + Cartographer + Veil tools | T3 1800 AC | **Ledger Key Fragment** | 1.5h |
-| PQ-08 | Burn Seal | Access Gate | Final terminal | Seven-faction seal alignment | T4 3200 AC | Burn ending route | 1.5h |
-| PQ-09 | Lark Armory | Loot/Cache/Weapon | B6 HQ | Trusted board rank + safe combination | T1 300 AC | **Survey Carbine** | 0.8h |
-| PQ-10 | Shipment Mag-Lock | Loot/Cache/Weapon | B1 yard | Mag-Claw lift and fence code | T1 350 AC | **Red Cutters** | 0.9h |
-| PQ-11 | Cartographer Cleanroom | Loot/Cache/Weapon | B5 lab | Contamination route puzzle | T2 800 AC | **Redact Torch Mk II** | 1.0h |
-| PQ-12 | Helix Black Seal | Loot/Cache/Weapon | B2 lander | Client chip sequence | T2 950 AC | **Procurement Carbine Mod** | 1.1h |
-| PQ-13 | Veil False Wall | Loot/Cache/Weapon | B5 smuggler cut | Mute Boots + Route Pick | T2 900 AC | **Veil Cloak Liner** | 1.0h |
-| PQ-14 | Crust Lottery Drop | Loot/Cache/Weapon | S3 volatile basin | Lattice path memorization | T3 1500 AC | **Crust Anchor Module** | 1.2h |
-| PQ-15 | Android Dig Lease | Loot/Cache/Weapon | B7 dig | Cipher proves lease fraud, then unlocks frame | T4 2800 AC | **Audit Drone Upgrade** | 1.3h |
-| PQ-16 | Crown Cage | Loot/Cache/Weapon | Final weapon vault | Arm or disarm ledger safely | T4 3600 AC | **Crimson Crown Rifle** | 1.4h |
-| PQ-17 | Void Kelp Wire | Environmental Survival | B5 kelp grove | Scan quietly through rad pulse | T2 750 AC | Rad-shield gel recipe | 1.1h |
-| PQ-18 | Flooded Tube Brief | Environmental Survival | S2 flooded junction | Wade route and O2 timing | T2 600 AC | **O2 Valve Module** | 1.0h |
-| PQ-19 | Cover Relay Bribe | Environmental Survival | B5/B4 relay | Cross pulse/heat cover lanes; bribe optional | T3 1400 AC | **Relay Baffle** | 1.2h |
-| PQ-20 | Spout Checkpoint | Environmental Survival | B3 ash route | Predict Dust Spout paths | T2 700 AC | Ash ceramic cache | 1.0h |
-| PQ-21 | Pulse Toll | Environmental Survival | B2 geyser bridge | Pay tariff or master vent timing | T2 650 AC | Vent shortcut unlock | 1.0h |
-| PQ-22 | Gas Dome Blacksite | Environmental Survival | S4/S5 blacksite | Vent pressure and Redact Read | T3 1700 AC | **Gas Dome Filter** | 1.3h |
-| PQ-23 | Silent Summit Path | Environmental Survival | B7 silent zone | Avoid Silence Moths and Still Hunter trace | T4 2600 AC | Summit escort shortcut | 1.1h |
-| PQ-24 | Receipt Cage | Combat/Encounter | B1 Core 1 vault | Pattern solve while drones fire | T2 800 AC | **Crimson Pike** | 1.2h |
-| PQ-25 | Reboot Chamber | Combat/Encounter | Base emergency room | Stabilize lace puzzle under sync aftershock | T2 700 AC | **Trauma Injector Module** | 1.1h |
-| PQ-26 | Rockfall Ambush | Combat/Encounter | S1/S2 tunnel | Drop rocks on rival pursuers or block escape | T2 850 AC | Tunnel route unlock | 1.1h |
-| PQ-27 | Multi-Breach Lock | Combat/Encounter | B3 ridge maze | Blast, quiet route, or bribe under ambush | T3 1300 AC | **Escrow Spike Mk II** | 1.2h |
-| PQ-28 | Petal Blackmail | Combat/Encounter | B7 vault | Align petal under Hunter pressure | T4 3000 AC | **Vault Glass Mod** | 1.5h |
-| PQ-29 | Void Stitcher Proof | Combat/Encounter | Global seam POI | Survive reveal, force retreat, collect seam needle | T3 1800 AC | **Veil Needle Armor Mod** | 1.3h |
-| PQ-30 | Vent Escrow Vault | Story/Reveal | B2 vent vault | Compare Suri's scanner truth to false papers | T2 900 AC | Core 2 evidence | 1.2h |
-| PQ-31 | Jam Receipt Gate | Story/Reveal | B3 beacons | Break jam monopoly sequence | T2 950 AC | Core 3 evidence | 1.2h |
-| PQ-32 | Frequency Blackmail | Story/Reveal | B7 Echo Shelf | Wrong pitch raises Saturation threat | T3 1500 AC | Helix blackmail file | 1.2h |
-| PQ-33 | Dual Blacksite | Story/Reveal | S5 vault approach | Two-dome synchronization | T3 1700 AC | Rare proof cache | 1.2h |
-| PQ-34 | Ledger Locks B | Story/Reveal | B7 inner vault | Petals + faction keys reveal Kairos truth | T4 3000 AC | Core 6 route | 1.5h |
-| PQ-35 | Doctrine Seal | Story/Reveal | Final chamber | Walk Away, Crown, or Burn doctrine lock | T4 4200 AC | Ending doctrine | 1.6h |
-| PQ-36 | Lock Cascade | Optional Mastery | B3 contested field | Link 3 Contract Locks to reroute job ownership | T3 1900 AC | Contract map overlay | 1.4h |
-| PQ-37 | Bid Auction | Optional Mastery | B6 generator | Bid AC, siphon Strain, or steal rival key | T3 2200 AC | **Master Lock Key** | 1.4h |
-| PQ-38 | Registry Vault | Optional Mastery | B6 market | Convoy Slate timing across factions | T2 1000 AC | Registry vendor upgrade | 1.0h |
-| PQ-39 | Veil Seal B | Optional Mastery | B5 Core 4 vault | Dual Seal + Ledger Lens | T3 2100 AC | **Route Picks Prime Part** | 1.3h |
-| PQ-40 | Caldera Mantis Trophy Lock | Optional Mastery | B4 rim cache | Lure mantis into heat shadow pressure trap | T4 3100 AC | **Mantis Shell Armor Module** | 1.5h |
+| PQ-01 | Annex Contract Lock | Access Gate | B6 annex | Hack, Lark key, or Veil pick | T1 150 UEA | Opens Escrow Auth Spindle route | 1.0h |
+| PQ-02 | Capacitor Storm Lock | Access Gate | B1 isotope camp | Open during sulfur storm lull | T1 250 UEA | **Storm Filter Module** | 1.1h |
+| PQ-03 | Coupler Choice Gate | Access Gate | B2 seized rig | Helix chip or Veil pick | T2 500 UEA | **Client Coupler** | 1.2h |
+| PQ-04 | Veil Seal A | Access Gate | B5 polar route | Route Pick timing | T2 650 UEA | Opens Veil route | 1.0h |
+| PQ-05 | Contract Heat Lock | Access Gate | B4 death site | Heat Override and cooled crust path | T3 1200 UEA | **Heat Lock Override** | 1.3h |
+| PQ-06 | Ledger Locks A | Access Gate | B7 outer vault | Three surface locks | T4 2500 UEA | Vault access flag | 1.5h |
+| PQ-07 | Triple Key Lock | Access Gate | Act III shared route | Lark + Cartographer + Veil tools | T3 1800 UEA | **Ledger Key Fragment** | 1.5h |
+| PQ-08 | Burn Seal | Access Gate | Final terminal | Seven-faction seal alignment | T4 3200 UEA | Burn ending route | 1.5h |
+| PQ-09 | Lark Armory | Loot/Cache/Weapon | B6 HQ | Trusted board rank + safe combination | T1 300 UEA | **Survey Carbine** | 0.8h |
+| PQ-10 | Shipment Mag-Lock | Loot/Cache/Weapon | B1 yard | Mag-Claw lift and fence code | T1 350 UEA | **Red Cutters** | 0.9h |
+| PQ-11 | Cartographer Cleanroom | Loot/Cache/Weapon | B5 lab | Contamination route puzzle | T2 800 UEA | **Redact Torch Mk II** | 1.0h |
+| PQ-12 | Helix Black Seal | Loot/Cache/Weapon | B2 lander | Client chip sequence | T2 950 UEA | **Procurement Carbine Mod** | 1.1h |
+| PQ-13 | Veil False Wall | Loot/Cache/Weapon | B5 smuggler cut | Mute Boots + Route Pick | T2 900 UEA | **Veil Cloak Liner** | 1.0h |
+| PQ-14 | Crust Lottery Drop | Loot/Cache/Weapon | S3 volatile basin | Lattice path memorization | T3 1500 UEA | **Crust Anchor Module** | 1.2h |
+| PQ-15 | Android Dig Lease | Loot/Cache/Weapon | B7 dig | Cipher proves lease fraud, then unlocks frame | T4 2800 UEA | **Audit Drone Upgrade** | 1.3h |
+| PQ-16 | Crown Cage | Loot/Cache/Weapon | Final weapon vault | Arm or disarm ledger safely | T4 3600 UEA | **Crimson Crown Rifle** | 1.4h |
+| PQ-17 | Void Kelp Wire | Environmental Survival | B5 kelp grove | Scan quietly through rad pulse | T2 750 UEA | Rad-shield gel recipe | 1.1h |
+| PQ-18 | Flooded Tube Brief | Environmental Survival | S2 flooded junction | Wade route and O2 timing | T2 600 UEA | **O2 Valve Module** | 1.0h |
+| PQ-19 | Cover Relay Bribe | Environmental Survival | B5/B4 relay | Cross pulse/heat cover lanes; bribe optional | T3 1400 UEA | **Relay Baffle** | 1.2h |
+| PQ-20 | Spout Checkpoint | Environmental Survival | B3 ash route | Predict Dust Spout paths | T2 700 UEA | Ash ceramic cache | 1.0h |
+| PQ-21 | Pulse Toll | Environmental Survival | B2 geyser bridge | Pay tariff or master vent timing | T2 650 UEA | Vent shortcut unlock | 1.0h |
+| PQ-22 | Gas Dome Blacksite | Environmental Survival | S4/S5 blacksite | Vent pressure and Redact Read | T3 1700 UEA | **Gas Dome Filter** | 1.3h |
+| PQ-23 | Silent Summit Path | Environmental Survival | B7 silent zone | Avoid Silence Moths and Still Hunter trace | T4 2600 UEA | Summit escort shortcut | 1.1h |
+| PQ-24 | Receipt Cage | Combat/Encounter | B1 Core 1 vault | Pattern solve while drones fire | T2 800 UEA | **Crimson Pike** | 1.2h |
+| PQ-25 | Reboot Chamber | Combat/Encounter | Base emergency room | Stabilize lace puzzle under sync aftershock | T2 700 UEA | **Trauma Injector Module** | 1.1h |
+| PQ-26 | Rockfall Ambush | Combat/Encounter | S1/S2 tunnel | Drop rocks on rival pursuers or block escape | T2 850 UEA | Tunnel route unlock | 1.1h |
+| PQ-27 | Multi-Breach Lock | Combat/Encounter | B3 ridge maze | Blast, quiet route, or bribe under ambush | T3 1300 UEA | **Escrow Spike Mk II** | 1.2h |
+| PQ-28 | Petal Blackmail | Combat/Encounter | B7 vault | Align petal under Hunter pressure | T4 3000 UEA | **Vault Glass Mod** | 1.5h |
+| PQ-29 | Void Stitcher Proof | Combat/Encounter | Global seam POI | Survive reveal, force retreat, collect seam needle | T3 1800 UEA | **Veil Needle Armor Mod** | 1.3h |
+| PQ-30 | Vent Escrow Vault | Story/Reveal | B2 vent vault | Compare Suri's scanner truth to false papers | T2 900 UEA | Core 2 evidence | 1.2h |
+| PQ-31 | Jam Receipt Gate | Story/Reveal | B3 beacons | Break jam monopoly sequence | T2 950 UEA | Core 3 evidence | 1.2h |
+| PQ-32 | Frequency Blackmail | Story/Reveal | B7 Echo Shelf | Wrong pitch raises Saturation threat | T3 1500 UEA | Helix blackmail file | 1.2h |
+| PQ-33 | Dual Blacksite | Story/Reveal | S5 vault approach | Two-dome synchronization | T3 1700 UEA | Rare proof cache | 1.2h |
+| PQ-34 | Ledger Locks B | Story/Reveal | B7 inner vault | Petals + faction keys reveal Kairos truth | T4 3000 UEA | Core 6 route | 1.5h |
+| PQ-35 | Doctrine Seal | Story/Reveal | Final chamber | Walk Away, Crown, or Burn doctrine lock | T4 4200 UEA | Ending doctrine | 1.6h |
+| PQ-36 | Lock Cascade | Optional Mastery | B3 contested field | Link 3 Contract Locks to reroute job ownership | T3 1900 UEA | Contract map overlay | 1.4h |
+| PQ-37 | Bid Auction | Optional Mastery | B6 generator | Bid AC, siphon Strain, or steal rival key | T3 2200 UEA | **Master Lock Key** | 1.4h |
+| PQ-38 | Registry Vault | Optional Mastery | B6 market | Convoy Slate timing across factions | T2 1000 UEA | Registry vendor upgrade | 1.0h |
+| PQ-39 | Veil Seal B | Optional Mastery | B5 Core 4 vault | Dual Seal + Ledger Lens | T3 2100 UEA | **Route Picks Prime Part** | 1.3h |
+| PQ-40 | Caldera Mantis Trophy Lock | Optional Mastery | B4 rim cache | Lure mantis into heat shadow pressure trap | T4 3100 UEA | **Mantis Shell Armor Module** | 1.5h |
 
 **Puzzle subtotal:** 48 hours.
 
@@ -556,7 +556,7 @@ Exploration/free roam is excluded from the designed total.
 | **Survey: Baseline Grid** | "Freelancer charter clause 7: map B6 thermal variance. Pay on upload." | Terraform viability flag |
 | **Hold: Ridge Seven** | "Hold until timer. Pay triple if Caldera Mantis breaches early." | Siege timer + ecology setpiece |
 | **Missing: Expedition 14** | "Recover survey slate from sulfur graveyard. No bodies expected." | Disappearance mystery |
-| **Bid War: Vent Rig** | "Helix lowballed. Beat by 200 AC or lose rep." | AC margin vs reputation fork |
+| **Bid War: Vent Rig** | "Helix lowballed. Beat by 200 UEA or lose rep." | AC margin vs reputation fork |
 | **Override: Client Seizure** | "Helix asserts escrow seizure. Contest or comply." | Client Override friction |
 
 ### Ending Closing Lines
@@ -574,7 +574,7 @@ Exploration/free roam is excluded from the designed total.
 
 ## 13. Package Summary
 
-V4 Crimson Contract centers a **freelance terraform surveyor** stranded by Mars corporate betrayal, arriving on Io with **0 AC**, **old friends Reid Kael and Dr. Suri Vale** (complete trust from day one — no starter loyalty arc), and a charter to assess **terraform viability** and **missing expeditions**. Off-beat contract-board spectacle funds the survey while **Kairos** — named only at **prologue end** — reveals a black-box mercenary ledger tying clients to disappeared crews. Mainline progression remains trigger-driven through repair parts, Memory Cores, building unlocks, Resonance Events, and final doctrine choice.
+V4 Crimson Contract centers a **freelance terraform surveyor** stranded by Mars corporate betrayal, arriving on Io with **0 UEA**, **old friends Reid Kael and Dr. Suri Vale** (complete trust from day one — no starter loyalty arc), and a charter to assess **terraform viability** and **missing expeditions**. Off-beat contract-board spectacle funds the survey while **Kairos** — named only at **prologue end** — reveals a black-box mercenary ledger tying clients to disappeared crews. Mainline progression remains trigger-driven through repair parts, Memory Cores, building unlocks, Resonance Events, and final doctrine choice.
 
 **Designed total:** 172 hours, exploration excluded.  
 **Core fantasy:** Discover why Io eats expeditions. Survive the contracts that pay for the truth. Choose what your report — and your company — become when Kairos opens the vault.

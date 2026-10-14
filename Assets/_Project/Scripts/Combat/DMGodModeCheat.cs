@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Project.AI;
 using Project.Core;
 using Project.Survival;
@@ -86,7 +86,8 @@ namespace Project.Combat
             Hook();
             if (Time.unscaledTime < _nextScan) return;
             _nextScan = Time.unscaledTime + 0.5f;
-            if (DMDevCommandState.GodMode) { _deadSince.Clear(); _playerDeadSince = -1f; return; }
+            // 2026-10-14 (b): the respawn fallback runs only during an audit/test session, never in normal play.
+            if (!DMDevCommandState.AuditSessionActive || DMDevCommandState.GodMode) { _deadSince.Clear(); _playerDeadSince = -1f; return; }
             DM_CombatCoreProfile p = DM_CombatCoreProfile.Live;
             if (p == null) return;
 

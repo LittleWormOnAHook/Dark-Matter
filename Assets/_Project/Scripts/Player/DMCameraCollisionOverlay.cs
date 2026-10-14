@@ -116,6 +116,7 @@ namespace Project.Player
         private bool _inTightSpace;
         private bool _pivotEnclosed;
         private bool _playerMeshHidden;
+        private bool _rifleScopePresentationHide;
         private Renderer[] _playerRenderers;
         private float _lastComfortDist = -1f;
         private float _restoreComfortDist = -1f;
@@ -442,10 +443,24 @@ namespace Project.Player
             return MinFollow;
         }
 
+        /// <summary>Rifle scope presentation: hide 3rd-person body so it does not fill the lens.</summary>
+        public void SetRifleScopePresentationHideBody(bool hide)
+        {
+            _rifleScopePresentationHide = hide;
+            if (hide)
+                SetPlayerMeshVisible(false);
+        }
+
         private void UpdatePlayerMeshVisibility(float activeMinFollow, bool pivotEnclosed)
         {
             if (_playerRenderers == null || _playerRenderers.Length == 0)
                 return;
+
+            if (_rifleScopePresentationHide)
+            {
+                SetPlayerMeshVisible(false);
+                return;
+            }
 
             float hideDist = pivotEnclosed
                 ? Mathf.Max(PlayerMeshHideDistance, InteriorFirstPersonDistance + 0.05f)

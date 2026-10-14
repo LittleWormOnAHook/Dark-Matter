@@ -3,7 +3,7 @@
   Project: Dark Matter: Genesis
   Document generated from codebase and scene assets (Assets/_Project/)
   Note: Prefer GAME_DESIGN_DOCUMENT_5.0.txt Appendix B for current locks.
-  Economy lock: Aether Credits (AC) only. Player starts with 0 AC, level 1 and
+  Economy lock: UEA Credits (UEA) only. Player starts with 0 UEA, level 1 and
   no inventory (code start values are testing values). Kade lands with 2
   companions (the Mars survivors). Platforms: PC and Mac first; Xbox and PlayStation later.
   Status refresh: Sep 30, 2026 — facts marked [Sep 30] were re-checked against
@@ -24,7 +24,7 @@ TABLE OF CONTENTS
   9.  Resource Gathering
   10. Crafting & Recipes
   11. Quest System
-  12. Aether Credits (AC)
+  12. UEA Credits (UEA)
   13. UI & Menus
   14. Map
   15. Pet Companion
@@ -56,7 +56,7 @@ scene art as forest / Earth wilderness camp fiction.
 Core gameplay loops (vision + prototype):
 
   - Manage survival vitals (health, energy, stamina, oxygen) and exposure
-  - Gather resources; craft at stations; spend Aether Credits (AC) at vendors
+  - Gather resources; craft at stations; spend UEA Credits (UEA) at vendors
   - Lite Building + Building Control Panels — expand base camp and modules
   - Fight enemies (including alien life + android threats); complete quests
   - Switch expedition trio companions; run roster / Echo rescue systems
@@ -340,7 +340,7 @@ WORLD ITEM PICKUPS (ItemPickup.cs)
   - Physical items on ground (rocks, mushrooms, weapons, etc.)
   - Press E to collect into inventory
   - Optional respawn timer (20–90 seconds)
-  - AC-infused items grant Aether Credits on pickup (legacy ItemData.isPiInfused)
+  - UEA-infused items grant UEA Credits on pickup (legacy ItemData.isPiInfused)
 
 
 ================================================================================
@@ -448,9 +448,9 @@ OBJECTIVE TYPES
   - Custom         Manual/scripted hooks
 
 CURRENT QUESTS (Resources/Quests/)
-  gather_rocks       — Collect 3 Rocks → AC reward
+  gather_rocks       — Collect 3 Rocks → UEA Credits reward
   guide_supply_run   — Talk to Companion Guide, gather mushrooms for stew recipe
-  Get more Rocks     — Collect 10 Rocks → item + AC reward
+  Get more Rocks     — Collect 10 Rocks → item + UEA Credits reward
   One_More           — [Sep 30] also on disk (details not re-listed)
 
 QUEST GIVER
@@ -466,13 +466,13 @@ QUEST HUD
 
 
 ================================================================================
-12. AETHER CREDITS (AC)
+12. UEA Credits (UEA)
 ================================================================================
 
-Aether Credits (AC) is the only in-game currency (GDD 5.0 lock).
-[Sep 30] Aether Credits (AC) only. Player starts with 0 AC and no inventory.
-Optional in-app purchases later would be AC only.
-Shipping start: 0 AC, level 1, no inventory. Testing values in code; to be
+UEA Credits (UEA) is the only in-game currency (GDD 5.0 lock).
+[Sep 30] UEA Credits (UEA) only. Player starts with 0 UEA and no inventory.
+Optional in-app purchases later would be UEA Credits only.
+Shipping start: 0 UEA, level 1, no inventory. Testing values in code; to be
 reset before release: StarterPioneerCatalog.StarterAcGrant = 200,
 PlayerProgressionManager.NewGameStartLevel = 5, and SimpleGameManager
 starting items. The old starter-pick screen and its credit label are a
@@ -485,7 +485,7 @@ DISPLAY
 SOURCES
   - Quest completion rewards
   - Enemy loot rolls (AC drop range on corpses)
-  - AC-infused item pickups in the world (`ItemData.isAcInfused` / `acValue`)
+  - UEA-infused item pickups in the world (`ItemData.isAcInfused` / `acValue`)
 
 FEEDBACK
   - Animated reward popup on gain (`AcRewardPopup` prefab)
@@ -537,14 +537,14 @@ PEAK SCREENS (GDD Phase E — prototype shells)
   EchoRescueRevealUI.cs — fullscreen Neural Echo rescue reveal
     Debug: Tools → Dark Matter: Genesis → Debug → Show Echo Rescue Reveal (Test)
   Legacy main-menu balances overlay — retired from boot surfaces; remove on
-    AC cleanup (see DMG_LoadingScreen_Plan.md)
+    UEA Credits cleanup (see DMG_LoadingScreen_Plan.md)
 
 HUD ELEMENTS
   - [Sep 30] UI Toolkit HUD; Hot Cross HUD with loaded-ammo readout; build
     hotbar in build mode
   - Survival stat bars (health, energy, stamina, oxygen)
   - Condensed stats layout option (CondensedSurvivalStatsHud.cs)
-  - AC balance text
+  - UEA balance text
   - Hotbar (10 slots)
   - Toolbar (scanner / binoculars)
   - Interaction prompt (center/bottom)
@@ -646,7 +646,7 @@ SYSTEM (GameSaveSystem.cs)
 PERSISTED DATA
   - Survival stats (health, energy, stamina, oxygen)
   - Player position and rotation
-  - AC balance
+  - UEA balance
   - Full inventory (main, hotbar, toolbar slots)
   - Equipment state (drawn weapon, selected slots)
   - Quest progress per quest ID
@@ -789,7 +789,7 @@ MAINTENANCE
   - Trust-gated Kairos advisory radio (Colony Ops handles queries until awake)
   - Xbox / PlayStation versions come later (Input System present; cert not
     done); Mac build checks TBD
-  - Some legacy currency field names remain in code — AC is gameplay truth
+  - Some legacy currency field names remain in code — UEA Credits are gameplay truth
   - StatUpgrade quest reward type (logged as placeholder only)
   - No dedicated in-project README (this document + GDD 5.0 serve that role)
   - Some third-party asset packs provide art/animation only; custom logic lives
@@ -914,7 +914,7 @@ PLANNED
     work yet); Xbox and PlayStation versions
 
 TESTING VALUES IN CODE (to be reset before release)
-  - New game: 200 AC, level 5, starting items (shipping: 0 AC, level 1, no
+  - New game: 200 UEA, level 5, starting items (shipping: 0 UEA, level 1, no
     inventory)
 
 TBD

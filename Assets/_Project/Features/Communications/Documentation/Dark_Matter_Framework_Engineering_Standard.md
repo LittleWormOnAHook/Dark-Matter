@@ -16,7 +16,7 @@ GDD authority: `Assets/_Project/GAME_DESIGN_DOCUMENT_5.0.txt`
 ## 1. Product constraints
 
 - Ship targets: **PC first**, then consoles (PS5 / Xbox). No mobile-as-target. No WebGL.
-- Economy: **Aether Credits (AC) only**. Do not reintroduce Pi marketplace loops.
+- Economy: **UEA Credits (UEA) only**. Do not reintroduce Pi marketplace loops.
 - Prefer existing systems under `Assets/_Project/Scripts/` when extending shipped gameplay; new cross-cutting features use the Features layout below.
 
 ## 2. Folder structure

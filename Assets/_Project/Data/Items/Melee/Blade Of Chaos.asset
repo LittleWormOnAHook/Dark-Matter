@@ -28,7 +28,7 @@ MonoBehaviour:
   heldLocalRotation: {x: 0, y: 0, z: 0, w: 1}
   heldLocalScale: {x: 1, y: 1, z: 1}
   swingEulerAngles: {x: -120, y: 0, z: 0}
-  sheatheSocketName: Spine
+  sheatheSocketName: RightUpLeg
   sheathedLocalPosition: {x: 0.02, y: 0.18, z: -0.22}
   sheathedLocalEuler: {x: 75, y: 90, z: 90}
   useSheathedLocalRotation: 0
@@ -41,6 +41,7 @@ MonoBehaviour:
   criticalChance: 0.168
   criticalDamageMultiplier: 3.5
   meleeRange: 3
+  meleeBladeLength: 0.75
   meleeCooldown: 0.2
   attackAnimationSpeed: 0
   meleeStaminaCost: 8

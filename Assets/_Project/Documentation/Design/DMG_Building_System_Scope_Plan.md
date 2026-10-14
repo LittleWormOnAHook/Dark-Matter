@@ -12,7 +12,7 @@ This document is the **single implementation scope** for building. Where the des
 
 **Player fantasy:** Death Stranding construction + NMS/Subnautica hologram validity + Dune Awakening modular sets — learn blueprints by scanning wrecks and vital machines **or** by finding them on the map, spend gathered resources (stone first) to materialize snapped components and complete-structure kits, operate major structures through Building Control Panels while Colony Ops (then Kairos) drives the Memory Core hunt.
 
-**Story spine:** Kade crashes on Io (Act 0) → claims Camp Plateau and bootstraps a real colony (Act I) → earns field certification and wakes **Aether-9 / Kairos** (Act II) → accepts the **10 Memory Core** mandate (Act II end) → each core triggers **Resonance Events** that stress and grow the base (Act III+).
+**Story spine:** Kade crashes on Io (Act 0) → claims Camp Plateau and bootstraps a real colony (Act I) → earns field certification and wakes **The Overseer / Kairos** (Act II) → accepts the **10 Memory Core** mandate (Act II end) → each core triggers **Resonance Events** that stress and grow the base (Act III+).
 
 **Engineering spine:** Structure slices 1–7 (definition → hold-construct → wrecks → authoring → save → BCP depth → campaign facilities), then the component track (Stone library → snap grid → build hotbar → Building Studio → map blueprints → tier upgrades). Reuse multitool, BCP, scanner, reverse dissolve, inventory resources, and World Engine `BuildingSnapshot`.
 
@@ -51,14 +51,14 @@ This document is the **single implementation scope** for building. Where the des
 | **III+** | Ten Memories | Hunt cores; Io pushes back | Resonance Events **injure base-22, pause queues, unlock new facilities** |
 
 **Locked lore rules (building-adjacent):**
-- Pre-prologue: no Aether-9 name; dormant shell = liaison/probe/ledger contact only.
+- Pre-prologue: no The Overseer name; dormant shell = liaison/probe/ledger contact only.
 - Act I: Helix Meridian survey paint = **rumor**, not exposition.
 - Act II end: Kairos names **ten** Memory Cores; trust = **Angry**.
 - Act III: each core attach → 10–15 min Resonance Event (storms, base injury, Echo spawns).
 
 ### Act 0 — Charter (no building)
 
-- Kade background, Kade's 2 starting companions (the Mars survivors), 0 AC, level 1, no inventory, shuttle cinematic → Landing Scar.
+- Kade background, Kade's 2 starting companions (the Mars survivors), 0 UEA, level 1, no inventory, shuttle cinematic → Landing Scar.
 - **Building scope:** none. Establishes the companions who later appear on BCP Companions tab.
 
 ### Act I — Landing & Camp (building is the act climax)
@@ -78,19 +78,19 @@ This document is the **single implementation scope** for building. Where the des
 
 **Player line at exit:** *“We have a real foothold on Io.”*
 
-### Act II — Certification, Ridge & Aether-9 (camp must persist)
+### Act II — Certification, Ridge & The Overseer (camp must persist)
 
 | Scene | Quest (FUTURE) | Building beat |
 |-------|----------------|---------------|
 | **E — Lv5 cert** | `prologue_05_field_cert` | Settlement recipes (framing, scrubber) gated behind cert — crafted at **existing station** |
 | **F — Ridge** | `prologue_06_ridge` | Relay Pylon = **story device interact**, not Lite Building place (reuse puzzle grammar) |
-| **G — Wake Aether-9** | `prologue_07_aether_repair` | **Aether-9 shell** = authored caldera POI; repair = quest slots, not multitool pipeline (v1) |
+| **G — Wake The Overseer** | `prologue_07_aether_repair` | **The Overseer shell** = authored caldera POI; repair = quest slots, not multitool pipeline (v1) |
 | **H — Echo + mandate** | `prologue_08` + `prologue_end_ten_cores` | Camp standing check; Journal **0/10 cores** tracker |
 
 **Act II exit criteria (story + building):**
 - [ ] Camp still standing (Seed + Shelter + Station from Act I)
 - [ ] Lv5 + mining or harvesting cert
-- [ ] Aether-9 awakened (Angry)
+- [ ] The Overseer awakened (Angry)
 - [ ] First Echo rescued
 - [ ] 10-core hunt accepted
 
@@ -134,7 +134,7 @@ Each becomes a `BuildingDefinition` + optional **world wreck** in the target bio
 | Inventory + hotbar + craft | 5×10 inventory grid (was 24 slots), `CraftingUI`, stations | Recipe language for `BuildingDefinition.recipe` |
 | Journal hub | Quest, Map, Craft library, Companions, Skills | **Not** primary production UI (GDD lock) |
 | Quests | `QuestManager` + 4 live quests (`GatherRocks`, etc.) | Prologue quests **not authored yet** |
-| Economy | AC on save/HUD; the old starter-companion pick screen is a retired leftover | Lite Building costs resources + AC at vendors |
+| Economy | AC on save/HUD; the old starter-companion pick screen is a retired leftover | Lite Building costs resources + UEA Credits at vendors |
 | Roster / trio | `PioneerRosterManager`, expedition UI | BCP Companions tab assigns base-22 |
 | Echoes | `EchoGenerator`, world entities, rescue path | Parallel to building; chronicle hooks |
 | Scanner / optics | `ScannableTarget`, `OpticsController`, scanner sweep | **Wreck → blueprint unlock** |
@@ -364,7 +364,7 @@ Per player-placed instance: `definitionId`, world pose, ghost vs complete, const
 | `craft_station_settlement` | Crafting Station | Act I-D | Quest step / schematic | 2 | Camp plateau |
 | `module_o2_scrubber` | O₂ Scrubber mount | Act I-D | Craft + place (small footprint) | 4 | Camp rim |
 | `relay_pylon_story` | Relay Pylon | Act II-F | **Story interact only** — not Lite Building v1 | — | Ridge content |
-| `aether9_shell` | Aether-9 Machine | Act II-G | **Quest repair slots** — not multitool v1 | — | Caldera POI |
+| `Overseer_Shell` | The Overseer Machine | Act II-G | **Quest repair slots** — not multitool v1 | — | Caldera POI |
 | `echo_reclamation` | Echo Reclamation Chamber | Act III Core 2–3 | Resonance unlock + wreck scan | 5–6 | B1 content |
 | `purification_hub` | Purification Hub | Act III Core 3–4 | Resonance + B1 wreck | 6 | B1 content |
 | `medical_facility` | Medical Facility | Act III Core 4+ | Quest + wreck | 6 | B2+ content |
@@ -384,7 +384,7 @@ Per player-placed instance: `definitionId`, world pose, ghost vs complete, const
 | Construction fences | **Dark Matter Genesis v1.6.x** main scene |
 | Player-placed ghosts + buildings | Save → `BuildingSnapshot` |
 | Camp Plateau snap pad / survey paint | Content scene or v1.6 authored blockout |
-| Aether-9 caldera shell | Authored POI — Act II-G |
+| The Overseer caldera shell | Authored POI — Act II-G |
 
 ---
 
@@ -543,7 +543,7 @@ Cross-ref `Prologue_Acts_Expanded.md` QA section:
 - Iron / Steel / Silicate / Amalgam art beyond empty tier slots and the upgrade hook
 - Multi-tile mega structures beyond the 8×8 piece
 - Gaia User Data as base truth
-- Aether-9 shell as multitool build (quest POI only)
+- The Overseer shell as multitool build (quest POI only)
 - Relay Pylon as player-placed building (story interact)
 - Full attachment module graph (Slice 7)
 - Maintenance decay loop (design after Slice 5)
@@ -577,7 +577,7 @@ Cross-ref `Prologue_Acts_Expanded.md` QA section:
 | BCP tab gating | Overview-only until Act I-D step 4.3 |
 | First author mesh | Scene workbench or `PowerGenerator` |
 | Fabricator ruin | Teaches `craft_station_settlement` or `cc_seed`? → **station** (Scene B craft teach) |
-| Starter AC | **Resolved 2026-09-30:** player starts with 0 AC, level 1 and no inventory (GDD and story agree). The code's 200 AC, level 5 and starting items are testing values in code; to be reset before release |
+| Starter AC | **Resolved 2026-09-30:** player starts with 0 UEA, level 1 and no inventory (GDD and story agree). The code's 200 UEA, level 5 and starting items are testing values in code; to be reset before release |
 | Starting companions | **Resolved 2026-09-30:** Kade lands on Io with 2 companions (the 2 Mars survivors); no other companions until Echoes are found and restored from ethereal to corporeal form. The starter-companion pick is retired |
 | Kairos comms | Ops only until trust gate; building UI unchanged |
 | Build hotbar vs inventory hotbar | Build bar shows **only in build mode**. Inventory hotbar stays the gameplay bar |
@@ -643,7 +643,7 @@ Gathering resources does **not** unlock a blueprint. Stone, iron, and the later 
 | **Kit** | Command Center Seed, Survival Shelter, Crafting Station | Complete structure. BCP on the prefab |
 | **Vital machine** | Power cell socket, O₂ scrubber, fabricator | Machine prefab. BCP when the design says the machine is operated |
 
-Story POIs stay out of this list: Relay Pylon and the Aether-9 shell are quest interacts.
+Story POIs stay out of this list: Relay Pylon and the The Overseer shell are quest interacts.
 
 ### 18.3 Snap style (Dune Awakening)
 
@@ -817,7 +817,7 @@ Source: code, Genesis Studio profiles, and prefab folders on branch `cursor/wip-
 - Steel and Amalgam tiers, skill gates, in-place tier upgrade (C6).
 - BCP depth (Slice 6) and campaign facilities (Slice 7), attachment module graph.
 - Force-field "Pentashield" upgrade: requested; no design or code yet (TBD).
-- Combat & AI overhaul (Combat Plan v2, Sep 29, 2026, 16 phases) is a separate plan that uses these bases in fights (force fields, power). Pointer: GDD 5.0 Appendix B6 and the wiki page "Combat-Plan". The plan file `DMG_Combat_Plan_v2.md` is not in this repo yet (location TBD).
+- Combat & AI overhaul (**Master Plan v2.4**, Sep 29 design; Oct 8, 2026 status — Phase 4 Combat Director next) is a separate plan that uses these bases in fights (force fields, power). Pointer: GDD 5.0 Appendix B6, wiki **Combat-Plan** / `Documentation/Design/Combat/DMG_Combat_Plan_v2.md`, INDEX §1b.
 
 ### As-built deviations from this plan (review)
 
@@ -832,4 +832,4 @@ Source: code, Genesis Studio profiles, and prefab folders on branch `cursor/wip-
 
 ---
 
-*Constraints:* No NavMesh · Palette hologram not gold · Fences in v1.6 · Wrecks in content scenes · Reuse multitool/BCP/scanner/dissolve · Drain on hold · Instant Slice 1 before hold Slice 2 · Component track starts after Slice 1 · Stone before other tiers · **Hold B** enters build mode, tap B stays binoculars · Build hotbar is UITK, ten slots, arrow scroll, no scrollbar · Story POIs (Aether-9, Relay) stay quest-driven until explicitly promoted to `BuildingDefinition`.
+*Constraints:* No NavMesh · Palette hologram not gold · Fences in v1.6 · Wrecks in content scenes · Reuse multitool/BCP/scanner/dissolve · Drain on hold · Instant Slice 1 before hold Slice 2 · Component track starts after Slice 1 · Stone before other tiers · **Hold B** enters build mode, tap B stays binoculars · Build hotbar is UITK, ten slots, arrow scroll, no scrollbar · Story POIs (The Overseer, Relay) stay quest-driven until explicitly promoted to `BuildingDefinition`.

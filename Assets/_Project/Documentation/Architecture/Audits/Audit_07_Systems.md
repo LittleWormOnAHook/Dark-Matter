@@ -23,7 +23,7 @@
 | Current | Target |
 |---------|--------|
 | Manager bootstrapping in `UIManager` | Core bootstrap registry |
-| Legacy Pi wallet UI | remove on AC cleanup pass |
+| Legacy Pi wallet UI | remove on UEA Credits cleanup pass |
 | 134 UI scripts | document modules; migrate presenters per feature |
 | `RadioHudUI` in Assembly-CSharp | optional `Project.Features.Communications.UI` asmdef |
 

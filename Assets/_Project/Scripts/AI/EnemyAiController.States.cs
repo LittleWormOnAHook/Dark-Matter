@@ -126,13 +126,24 @@ namespace Project.AI
 
         private void UpdateInvestigate()
         {
-            if (senses.TryGetHeardNoise(out Vector3 noisePosition))
+            if (TryReacquireFromInvestigate())
+                return;
+
+            if (investigateFromCombatLoss)
+                moveTarget = investigateAnchor.sqrMagnitude > 0.01f ? investigateAnchor : lastKnownPlayerPosition;
+            else if (senses.TryGetHeardNoise(out Vector3 noisePosition))
                 moveTarget = noisePosition;
 
             MoveTowards(moveTarget, walkSpeed);
+            TickInvestigateStuckCommit();
 
             if (HorizontalDistance(transform.position, moveTarget) <= investigateArriveDistance)
-                EnterState(AiState.Search);
+            {
+                if (investigateFromCombatLoss)
+                    EnterSearchFromCombatLoss();
+                else
+                    EnterState(AiState.Search);
+            }
         }
 
         private void UpdateReturnHome()
@@ -149,8 +160,18 @@ namespace Project.AI
             Transform chaseTarget = combat.CurrentTarget;
             Vector3 chasePosition = ResolveChasePosition(chaseTarget);
             float chaseSpeedResolved = ResolveChaseSpeed();
+            // 2026-10-14 (a): provoked by a player hit -> the enemy knows where the shooter is and ignores
+            // leash / chase-time / lost-sight give-ups until the provoke window ends.
+            bool provoked = IsProvokedBy(chaseTarget);
+            if (provoked)
+            {
+                lastKnownPlayerPosition = chaseTarget.position;
+                chasePosition = chaseTarget.position;
+                chaseStartedTime = Time.time;
+                lostTargetTimer = 0f;
+            }
 
-            if (!CanContinueChase(chasePosition))
+            if (!provoked && !CanContinueChase(chasePosition))
             {
                 GiveUpChaseAndReturnHome();
                 return;
@@ -175,9 +196,27 @@ namespace Project.AI
             if (Time.time >= nextChaseStaminaRollTime)
                 TryStartChaseStaminaPause();
 
+            bool blindUnreachable = !provoked && chaseTarget != null && ShouldTreatAsUnreachableVerticalChase(chaseTarget);
+            if (blindUnreachable)
+            {
+                chasePosition = ResolveElevatedChaseFootprint(chaseTarget);
+                elevatedBlindNoLosTimer += Time.deltaTime;
+                DM_EnemyBrainProfile profile = DM_EnemyBrainProfile.Live;
+                float forceSearchAfter = profile != null ? profile.investigateElevatedThreatSecondsToSearch : 1.35f;
+                if (ShouldEarlyInvestigateAtWall() || elevatedBlindNoLosTimer >= forceSearchAfter)
+                {
+                    TryBeginInvestigateLostSight(chaseTarget);
+                    return;
+                }
+            }
+            else
+            {
+                elevatedBlindNoLosTimer = 0f;
+            }
+
             float giveUpDistance = stopDistance + 0.75f;
             bool atLastKnown = HasArrived(chasePosition, giveUpDistance, navMeshReady);
-            if ((chaseTarget == null || !IsPioneer(chaseTarget)) && !senses.CanSeePlayer() && atLastKnown)
+            if (!provoked && (chaseTarget == null || !IsPioneer(chaseTarget)) && !senses.CanSeePlayer() && atLastKnown)
             {
                 lostTargetTimer += Time.deltaTime;
                 if (lostTargetTimer >= loseTargetDelay)
@@ -188,7 +227,7 @@ namespace Project.AI
                         aggroUntil = 0f;
                     }
 
-                    GiveUpChaseAndReturnHome();
+                    TryBeginInvestigateLostSight();
                     return;
                 }
             }
@@ -206,6 +245,13 @@ namespace Project.AI
                     EnterState(ResolveAttackEntryState(chaseTarget, distance));
                     return;
                 }
+            }
+
+            if (blindUnreachable)
+            {
+                moveTarget = chasePosition;
+                MoveTowards(moveTarget, chaseSpeedResolved, stopDistance + 0.35f);
+                return;
             }
 
             moveTarget = combat.HasLivingTarget() && chaseTarget != null
@@ -346,7 +392,76 @@ namespace Project.AI
                 return chaseTarget.position;
             }
 
+            if (ShouldTreatAsUnreachableVerticalChase(chaseTarget))
+                return ResolveElevatedChaseFootprint(chaseTarget);
+
             return lastKnownPlayerPosition;
+        }
+
+        private Vector3 ResolveElevatedChaseFootprint(Transform chaseTarget)
+        {
+            DM_EnemyBrainProfile profile = DM_EnemyBrainProfile.Live;
+            EnemyInvestigateWallBase.Context ctx = EnemyInvestigateWallBase.Resolve(
+                transform,
+                lastKnownPlayerPosition,
+                transform.position,
+                profile,
+                preferWallBase: true);
+            return ctx.Anchor;
+        }
+
+        private void ConfigureCombatInvestigateAnchor(Transform chaseTarget)
+        {
+            DM_EnemyBrainProfile profile = DM_EnemyBrainProfile.Live;
+            bool preferWall = chaseTarget != null && ShouldTreatAsUnreachableVerticalChase(chaseTarget);
+            EnemyInvestigateWallBase.Context ctx = EnemyInvestigateWallBase.Resolve(
+                transform,
+                lastKnownPlayerPosition,
+                transform.position,
+                profile,
+                preferWall);
+
+            investigateAnchor = ctx.Anchor;
+            investigateWallNormal = ctx.WallNormal;
+            investigateWallTangent = ctx.WallTangent;
+            investigateUseWallPatrol = preferWall && profile != null && profile.investigateSearchAlongWall && ctx.HasWall;
+            searchWallPatrolOffset = 0f;
+            investigateStuckSamplePosition = transform.position;
+            investigateStuckTimer = 0f;
+        }
+
+        private bool ShouldTreatAsUnreachableVerticalChase(Transform chaseTarget)
+        {
+            if (chaseTarget == null || IsPioneer(chaseTarget) || senses.CanSeePlayer())
+                return false;
+
+            DM_EnemyBrainProfile profile = DM_EnemyBrainProfile.Live;
+            if (profile == null)
+                return false;
+
+            Vector3 delta = chaseTarget.position - transform.position;
+            float horizontal = new Vector2(delta.x, delta.z).magnitude;
+            return delta.y >= profile.chaseUnreachableMinVerticalDelta &&
+                   horizontal <= profile.chaseUnreachableMaxHorizontal;
+        }
+
+        private Vector3 FlattenBlindChaseHorizontal(Vector3 worldPoint)
+        {
+            Vector3 flat = worldPoint;
+            flat.y = transform.position.y;
+            if (TrySampleGround(flat, out float groundY))
+                flat.y = groundY;
+            return flat;
+        }
+
+        private bool ShouldEarlyInvestigateAtWall()
+        {
+            DM_EnemyBrainProfile profile = DM_EnemyBrainProfile.Live;
+            if (profile == null || !profile.enableInvestigateOnLostSight)
+                return false;
+
+            int limit = Mathf.Max(4, profile.chaseWallStuckFramesEarlyInvestigate);
+            return chaseWallBlockedFrames >= limit || ChaseWallStutterFrames >= limit;
         }
 
         private void TryStartChaseStaminaPause()
@@ -561,7 +676,7 @@ namespace Project.AI
                 }
             }
 
-            if (state != AiState.Chase && CanChaseTarget(aggroTarget.position))
+            if (state != AiState.Chase && (IsProvokedBy(aggroTarget) || CanChaseTarget(aggroTarget.position)))
                 EnterState(AiState.Chase);
         }
 
@@ -572,6 +687,8 @@ namespace Project.AI
             chaseStartedTime = 0f;
             defensiveActionPending = false;
             defensiveActionUntil = 0f;
+            investigateFromCombatLoss = false;
+            investigateLookUntil = 0f;
             combat.SetTarget(null);
 
             if (IsStationary || !returnToHomeAfterSearch)
@@ -602,19 +719,225 @@ namespace Project.AI
 
         private void UpdateSearch()
         {
-            stateTimer -= Time.deltaTime;
-            MoveTowards(moveTarget, walkSpeed * 0.85f);
+            if (TryReacquireFromInvestigate())
+                return;
 
-            if (HorizontalDistance(transform.position, moveTarget) <= stopDistance + 0.4f)
-                moveTarget = lastKnownPlayerPosition + Random.insideUnitSphere * searchRadius;
+            DM_EnemyBrainProfile profile = DM_EnemyBrainProfile.Live;
+            float speedScale = profile != null && investigateFromCombatLoss
+                ? profile.investigateSearchSpeedScale
+                : 0.85f;
+
+            if (investigateLookUntil > 0f && Time.time < investigateLookUntil)
+            {
+                ClearLocomotion();
+                float turnRate = profile != null ? profile.investigateLookSweepTurnRate : 140f;
+                transform.Rotate(0f, searchPingDirection * turnRate * Time.deltaTime, 0f, Space.World);
+                return;
+            }
+
+            stateTimer -= Time.deltaTime;
+
+            if (investigateFromCombatLoss && investigateUseWallPatrol)
+            {
+                float span = profile != null ? profile.investigateWallPatrolSpanMeters : 7f;
+                float step = walkSpeed * speedScale * Time.deltaTime;
+                searchWallPatrolOffset += searchPingDirection * step;
+                if (Mathf.Abs(searchWallPatrolOffset) >= span)
+                {
+                    searchWallPatrolOffset = Mathf.Sign(searchWallPatrolOffset) * span;
+                    searchPingDirection = -searchPingDirection;
+                    if (profile != null && profile.investigateLookSweepSeconds > 0.05f)
+                        investigateLookUntil = Time.time + profile.investigateLookSweepSeconds;
+                }
+
+                EnemyInvestigateWallBase.Context ctx = new EnemyInvestigateWallBase.Context
+                {
+                    Anchor = investigateAnchor,
+                    WallNormal = investigateWallNormal,
+                    WallTangent = investigateWallTangent,
+                    HasWall = true
+                };
+                moveTarget = EnemyInvestigateWallBase.PatrolPointAlongWall(in ctx, searchWallPatrolOffset);
+            }
+            else if (investigateFromCombatLoss)
+            {
+                searchOrbitAngle += 22f * Time.deltaTime * searchPingDirection;
+                float radius = ResolveInvestigateSearchRadius();
+                moveTarget = investigateAnchor.sqrMagnitude > 0.01f ? investigateAnchor : lastKnownPlayerPosition;
+                moveTarget += Quaternion.Euler(0f, searchOrbitAngle, 0f) * Vector3.forward * (radius * 0.75f);
+                if (TrySampleGround(moveTarget, out float orbitGroundY))
+                    moveTarget.y = orbitGroundY;
+            }
+
+            MoveTowards(moveTarget, walkSpeed * speedScale);
+            TickInvestigateStuckCommit();
+
+            if (!investigateUseWallPatrol &&
+                HorizontalDistance(transform.position, moveTarget) <= stopDistance + 0.4f)
+            {
+                if (investigateFromCombatLoss && profile != null && profile.investigateLookSweepSeconds > 0.05f)
+                {
+                    investigateLookUntil = Time.time + profile.investigateLookSweepSeconds;
+                    searchPingDirection = Random.value < 0.5f ? -1 : 1;
+                }
+                else
+                    PickSearchMoveTarget(ResolveInvestigateSearchRadius());
+            }
 
             if (stateTimer <= 0f)
             {
+                investigateFromCombatLoss = false;
                 if (returnToHomeAfterSearch)
                     EnterState(AiState.ReturnHome);
                 else
                     EnterCalmState();
             }
+        }
+
+        private void TryBeginInvestigateLostSight(Transform chaseTarget)
+        {
+            if (chaseTarget != null)
+                lastKnownPlayerPosition = chaseTarget.position;
+
+            ConfigureCombatInvestigateAnchor(chaseTarget);
+            TryBeginInvestigateLostSight();
+        }
+
+        private void TryBeginInvestigateLostSight()
+        {
+            DM_EnemyBrainProfile profile = DM_EnemyBrainProfile.Live;
+            if (profile == null || !profile.enableInvestigateOnLostSight)
+            {
+                GiveUpChaseAndReturnHome();
+                return;
+            }
+
+            investigateFromCombatLoss = true;
+            lostTargetTimer = 0f;
+            chaseStartedTime = 0f;
+            elevatedBlindNoLosTimer = 0f;
+            moveTarget = investigateAnchor.sqrMagnitude > 0.01f ? investigateAnchor : lastKnownPlayerPosition;
+
+            if (lastKnownPlayerPosition.sqrMagnitude < 0.01f)
+                lastKnownPlayerPosition = transform.position;
+
+            float arrive = investigateArriveDistance + 0.15f;
+            Vector3 arrivePoint = investigateUseWallPatrol && investigateAnchor.sqrMagnitude > 0.01f
+                ? investigateAnchor
+                : lastKnownPlayerPosition;
+            if (HorizontalDistance(transform.position, arrivePoint) <= arrive)
+                EnterSearchFromCombatLoss();
+            else
+                EnterState(AiState.Investigate);
+        }
+
+        /// <summary>
+        /// If the enemy barely moves near the investigate anchor, commit to Search (wall patrol or orbit).
+        /// </summary>
+        private void TickInvestigateStuckCommit()
+        {
+            if (state != AiState.Investigate && state != AiState.Search)
+                return;
+
+            if (!investigateFromCombatLoss)
+                return;
+
+            DM_EnemyBrainProfile profile = DM_EnemyBrainProfile.Live;
+            float commitSeconds = profile != null ? profile.investigateStuckCommitSeconds : 2f;
+            if (commitSeconds <= 0.05f)
+                return;
+
+            const float stuckRadius = 1f;
+            if (HorizontalDistance(transform.position, investigateStuckSamplePosition) >= stuckRadius)
+            {
+                investigateStuckSamplePosition = transform.position;
+                investigateStuckTimer = 0f;
+                return;
+            }
+
+            investigateStuckTimer += Time.deltaTime;
+            if (investigateStuckTimer < commitSeconds)
+                return;
+
+            investigateStuckTimer = 0f;
+            investigateStuckSamplePosition = transform.position;
+
+            if (state == AiState.Investigate)
+            {
+                EnterSearchFromCombatLoss();
+                return;
+            }
+
+            if (investigateUseWallPatrol)
+            {
+                searchPingDirection = -searchPingDirection;
+                searchWallPatrolOffset = Mathf.Sign(searchWallPatrolOffset) * (profile != null ? profile.investigateWallPatrolSpanMeters : 7f) * 0.35f;
+            }
+            else
+            {
+                PickSearchMoveTarget(ResolveInvestigateSearchRadius());
+            }
+        }
+
+        private void EnterSearchFromCombatLoss()
+        {
+            investigateFromCombatLoss = true;
+            ConfigureSearchFromProfile();
+            EnterState(AiState.Search);
+        }
+
+        private void ConfigureSearchFromProfile()
+        {
+            DM_EnemyBrainProfile profile = DM_EnemyBrainProfile.Live;
+            float radius = ResolveInvestigateSearchRadius();
+            stateTimer = profile != null && profile.investigateUseProfileSearchTiming
+                ? profile.investigateSearchDurationSeconds
+                : searchDuration;
+            searchOrbitAngle = Random.Range(0f, 360f);
+            searchPingDirection = Random.value < 0.5f ? -1 : 1;
+            PickSearchMoveTarget(radius);
+        }
+
+        private float ResolveInvestigateSearchRadius()
+        {
+            DM_EnemyBrainProfile profile = DM_EnemyBrainProfile.Live;
+            if (profile != null && profile.investigateUseProfileSearchTiming)
+                return profile.investigateSearchRadiusMeters;
+            return searchRadius;
+        }
+
+        private void PickSearchMoveTarget(float radius)
+        {
+            moveTarget = lastKnownPlayerPosition + Random.insideUnitSphere * radius;
+            moveTarget.y = lastKnownPlayerPosition.y;
+            if (TrySampleGround(moveTarget, out float searchGroundY))
+                moveTarget.y = searchGroundY;
+        }
+
+        private bool TryReacquireFromInvestigate()
+        {
+            Transform visiblePlayer = senses.GetVisiblePlayerTarget();
+            if (!TryPickVisibleThreat(visiblePlayer, out Transform visible))
+                return false;
+
+            investigateFromCombatLoss = false;
+            investigateLookUntil = 0f;
+            lostTargetTimer = 0f;
+
+            bool threatIsPlayer = IsCombatTargetPlayer(visible);
+            playerTarget = threatIsPlayer ? visible : null;
+            if (!threatIsPlayer || !IsTargetingLivingPioneer())
+                combat.SetTarget(visible);
+
+            float dist = HorizontalDistance(transform.position, visible.position);
+            if (combat.IsTargetInEffectiveRange())
+                EnterState(ResolveAttackEntryState(visible, dist));
+            else if (chasePlayer && CanChaseTarget(visible.position))
+                EnterState(AiState.Chase);
+            else
+                EnterState(AiState.Chase);
+
+            return true;
         }
 
         private bool ShouldInvestigateNoise()

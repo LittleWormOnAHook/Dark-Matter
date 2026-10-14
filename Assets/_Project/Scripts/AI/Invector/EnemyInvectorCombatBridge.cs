@@ -50,6 +50,7 @@ namespace Project.AI.Invector
         private EnemyInvectorBootstrap _bootstrap;
         private EnemyCombat _enemyCombat;
         private EnemyAiController _aiController;
+        private DMEnemyRangedAmmoPool _rangedAmmoPool;
         private Animator _animator;
         private bool _isAimStanceActive;
         private float _aimHoldTimer;
@@ -79,6 +80,7 @@ namespace Project.AI.Invector
             _loadoutBridge = GetComponent<EnemyInvectorLoadoutBridge>();
             _enemyCombat = GetComponent<EnemyCombat>();
             _aiController = GetComponent<EnemyAiController>();
+            _rangedAmmoPool = GetComponent<DMEnemyRangedAmmoPool>();
             _animator = _controller != null ? _controller.animator : GetComponentInChildren<Animator>(true);
 
 
@@ -235,12 +237,19 @@ namespace Project.AI.Invector
                 if (target != null)
                 {
                     Vector3 aimOrigin = _chestBone.position;
-                    Vector3 toTarget  = ResolveAimPoint(target) - aimOrigin;
+                    Vector3 aimPt = ResolveAimPoint(target);
+                    Vector3 toTarget  = aimPt - aimOrigin;
                     if (toTarget.sqrMagnitude > 0.01f)
                     {
                         float vertical   = toTarget.y;
                         float horizontal = new Vector2(toTarget.x, toTarget.z).magnitude;
                         float angle      = Mathf.Atan2(vertical, horizontal) * Mathf.Rad2Deg;
+                        DM_EnemyBrainProfile acpPitch = GuardProfile;
+                        if (acpPitch != null && horizontal < acpPitch.enemyAimCorrectionFullDistance)
+                        {
+                            float closePitch = acpPitch.enemyAimCorrectionCloseMaxPitch;
+                            angle = Mathf.Clamp(angle, -closePitch, closePitch);
+                        }
                         targetPitch      = Mathf.Clamp(angle, -aimChestPitchLimit, aimChestPitchLimit);
                     }
                 }
@@ -263,6 +272,19 @@ namespace Project.AI.Invector
                     Vector3 pivot = _chestBone.position;
                     Vector3 tgt = ResolveAimPoint(aimTarget);
                     Vector3 to = tgt - barrel.position;
+                    float horiz = new Vector2(to.x, to.z).magnitude;
+                    float closeOff = Mathf.Max(0.5f, acp.enemyAimCorrectionCloseDisableDistance);
+                    float fullAt = Mathf.Max(closeOff + 0.01f, acp.enemyAimCorrectionFullDistance);
+                    float rangeFalloff = Mathf.Clamp01(Mathf.InverseLerp(closeOff, fullAt, horiz));
+                    if (rangeFalloff < 0.001f)
+                    {
+                        _aimCorrection = Quaternion.RotateTowards(_aimCorrection, Quaternion.identity, Mathf.Max(1f, acp.enemyAimCorrectionSpeed) * Time.deltaTime);
+                        _aimCorrectionPrevFull = _aimCorrection;
+                        if (Mathf.Abs(_chestPitchCurrent) > 0.1f)
+                            _chestBone.rotation = Quaternion.AngleAxis(-_chestPitchCurrent, transform.right) * _chestBone.rotation;
+                        return;
+                    }
+
                     float dist = Mathf.Max(0.5f, to.magnitude);
                     Vector3 pivotToAim = barrel.position + barrel.forward * dist - pivot;
                     Vector3 pivotToTgt = tgt - pivot;
@@ -271,7 +293,8 @@ namespace Project.AI.Invector
                         Quaternion full = Quaternion.FromToRotation(pivotToAim, pivotToTgt);
                         full.ToAngleAxis(out float ang, out Vector3 axis);
                         if (ang > 180f) ang -= 360f;
-                        ang = Mathf.Clamp(ang * Mathf.Clamp01(acp.enemyAimCorrectionStrength), -acp.enemyAimCorrectionMaxAngle, acp.enemyAimCorrectionMaxAngle);
+                        float strength = acp.enemyAimCorrectionStrength * rangeFalloff;
+                        ang = Mathf.Clamp(ang * Mathf.Clamp01(strength), -acp.enemyAimCorrectionMaxAngle, acp.enemyAimCorrectionMaxAngle);
                         if (axis.sqrMagnitude > 0.0001f) want = Quaternion.AngleAxis(ang, axis);
                     }
                 }
@@ -827,6 +850,10 @@ namespace Project.AI.Invector
             if (_animator == null || _meleeManager == null)
                 return false;
 
+            if (_enemyCombat != null && _enemyCombat.CurrentTarget != null &&
+                DMPlayerClimbCombatGate.BlocksMeleeAgainstTarget(_enemyCombat.CurrentTarget, GuardProfile))
+                return false;
+
             LastAttackWasRanged = false;
             if (_loadoutBridge != null &&
                 (_loadoutBridge.ActiveItem != weapon || _loadoutBridge.ActiveDrawnInstance == null))
@@ -854,6 +881,20 @@ namespace Project.AI.Invector
             if (_shooterManager == null || target == null)
                 return false;
 
+            DM_EnemyBrainProfile losProfile = GuardProfile;
+            if (losProfile != null && losProfile.requireClearLosForRangedFire)
+            {
+                if (_senses == null)
+                    _senses = GetComponent<EnemySenses>();
+                if (_senses == null || !_senses.CanSeeThreat(target))
+                    return false;
+            }
+
+            if (_rangedAmmoPool == null)
+                _rangedAmmoPool = GetComponent<DMEnemyRangedAmmoPool>();
+            if (_rangedAmmoPool != null && !_rangedAmmoPool.CanFire)
+                return false;
+
             LastAttackWasRanged = true;
 
             _loadoutBridge?.EquipSpecificWeapon(weapon);
@@ -872,11 +913,28 @@ namespace Project.AI.Invector
             Vector3 originPoint = shotOrigin != null ? shotOrigin.position : transform.position + Vector3.up * 1.35f;
             { DM_EnemyBrainProfile hp = GuardProfile; _aimHeadThisShot = hp != null && Random.value < hp.enemyHeadshotChance; } // 2026-10-13 (d2)
             Vector3 aimPoint = ApplyMissOffset(ResolveAimPoint(target), target, originPoint);
-            _shooterManager.Shoot(aimPoint, applyHipfirePrecision: false);
+            bool skipRecoil = trp == null || trp.enemySkipInvectorShootRecoil;
+            vShooterWeapon ivWeapon = _shooterManager.rWeapon != null ? _shooterManager.rWeapon : _shooterManager.lWeapon;
+            if (skipRecoil && ivWeapon != null && ivWeapon.gameObject.activeInHierarchy)
+            {
+                ivWeapon.Shoot(ivWeapon.muzzle.position, aimPoint, transform, _ => { });
+            }
+            else
+            {
+                _shooterManager.Shoot(aimPoint, applyHipfirePrecision: false);
+            }
             SpawnRangedProjectile(weapon, aimPoint);
+            _rangedAmmoPool?.ConsumeShot();
             EnemyNoiseEvents.RaiseNoise(transform.position, 12f, gameObject);
 
             return true;
+        }
+
+        public bool HasRangedAmmoToFire()
+        {
+            if (_rangedAmmoPool == null)
+                _rangedAmmoPool = GetComponent<DMEnemyRangedAmmoPool>();
+            return _rangedAmmoPool == null || _rangedAmmoPool.CanFire;
         }
 
         private void PrepareShooterWeaponForFire()
@@ -893,6 +951,10 @@ namespace Project.AI.Invector
             weapon.dontUseReload = true;
 
             int clip = weapon.clipSize > 0 ? weapon.clipSize : 999;
+            if (_rangedAmmoPool == null)
+                _rangedAmmoPool = GetComponent<DMEnemyRangedAmmoPool>();
+            if (_rangedAmmoPool != null && !_rangedAmmoPool.IsUnlimited)
+                clip = Mathf.Min(clip, Mathf.Max(1, _rangedAmmoPool.Remaining));
             if (weapon.ammo <= 0)
                 weapon.AddAmmo(clip);
         }
@@ -940,7 +1002,17 @@ namespace Project.AI.Invector
             if (weapon == null)
                 return null;
 
-            // Enemies use Standard for pistols and Plasma for rifles.
+            DMEnemyRangedAmmoChoice choice = _loadoutBridge != null
+                ? _loadoutBridge.EffectiveRangedAmmoChoice
+                : (_bootstrap?.Definition != null
+                    ? _bootstrap.Definition.rangedAmmoType
+                    : DMEnemyRangedAmmoChoice.UseGripDefault);
+
+            ItemData fromChoice = DMEnemyRangedAmmoCatalog.ResolveItem(choice);
+            if (fromChoice != null)
+                return fromChoice;
+
+            // Legacy: Standard pistols, Plasma rifles.
             if (weapon.weaponGrip == WeaponGrip.TwoHanded)
                 return enemyRifleAmmo != null ? enemyRifleAmmo : weapon.defaultAmmoItem;
 

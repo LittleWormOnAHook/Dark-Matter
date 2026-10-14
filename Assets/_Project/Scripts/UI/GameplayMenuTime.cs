@@ -21,6 +21,8 @@ namespace Project.UI
         public const string ReasonPptDirections = "PptDirections";
         /// <summary>UITK loot window: use with <see cref="SetPause"/> (full pause, D5), not slow motion.</summary>
         public const string ReasonLootDialog = "LootDialog";
+        /// <summary>From chest/bag interact until the UITK loot window takes over (full pause, unscaled lid delay).</summary>
+        public const string ReasonLootChestOpening = "LootChestOpening";
         public const string ReasonCraftingStation = "CraftingStation";
         public const string ReasonHovercraftMenu = "HovercraftMenu";
         public const string ReasonWeaponModeSwitch = "WeaponModeSwitch";
@@ -95,6 +97,23 @@ namespace Project.UI
             pauseReasons.Add(ReasonJournalInventory);
             slowReasons.Remove(ReasonJournal);
             Apply();
+        }
+
+        /// <summary>Freeze player/camera during chest open delay before the UITK loot panel appears.</summary>
+        public static void EnterLootChestInteract()
+        {
+            SetPause(ReasonLootChestOpening, true);
+            PlayerController player = PlayerLocator.FindPlayerController();
+            player?.SetLootDialogOpen(true);
+            PlayerLootAnimationController.CancelOnLivePlayer();
+        }
+
+        /// <summary>End chest-opening pause when the window never opened or after handoff to <see cref="ReasonLootDialog"/>.</summary>
+        public static void LeaveLootChestInteractUnlessLootWindowOpen()
+        {
+            SetPause(ReasonLootChestOpening, false);
+            if (!HasPauseReason(ReasonLootDialog))
+                PlayerLocator.FindPlayerController()?.SetLootDialogOpen(false);
         }
 
         public static void ClearAll()

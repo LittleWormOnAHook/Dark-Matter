@@ -129,12 +129,74 @@
     -unity-text-align: middle-center;
 }
 
-.dmg-fmenu-panel.dmg-wm-weapon-panel {
+.dmg-wm-weapon-panel {
+    position: absolute;
     left: 50%;
     top: 50%;
+    width: 240px;
     translate: -50% -50%;
-    margin-left: 0;
-    margin-top: 0;
+    padding: 8px;
+    background-color: rgb(28, 42, 56);
+    border-width: 1px;
+    border-color: rgb(74, 74, 90);
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.dmg-wm-weapon-title {
+    height: 28px;
+    margin-bottom: 4px;
+    font-size: 18px;
+    color: rgb(212, 160, 23);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.dmg-wm-list-header {
+    margin-top: 2px;
+    margin-bottom: 2px;
+    padding-left: 4px;
+    font-size: 11px;
+    color: rgb(140, 127, 117);
+    -unity-font-style: bold;
+}
+
+.dmg-wm-list-row {
+    height: 30px;
+    margin-bottom: 4px;
+    padding-left: 8px;
+    padding-right: 8px;
+    color: rgb(237, 233, 228);
+    background-color: rgb(47, 47, 47);
+    border-width: 0;
+    -unity-text-align: middle-left;
+    font-size: 14px;
+}
+
+.dmg-wm-list-row-selected {
+    background-color: rgb(192, 46, 122);
+    color: rgb(237, 233, 228);
+}
+
+.dmg-wm-foldout {
+    flex-direction: column;
+    align-items: stretch;
+    padding-left: 8px;
+    margin-bottom: 4px;
+}
+
+.dmg-wm-toggle {
+    height: 28px;
+    font-size: 13px;
+    background-color: rgba(28, 42, 56, 0.85);
+}
+
+.dmg-wm-nav-hint {
+    margin-top: 6px;
+    font-size: 10px;
+    color: rgb(140, 127, 117);
+    -unity-text-align: middle-center;
+    white-space: normal;
 }
 
 .dmg-wm-scan {

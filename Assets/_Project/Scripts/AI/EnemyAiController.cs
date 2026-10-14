@@ -185,6 +185,26 @@ namespace Project.AI
         private static readonly Collider[] AvoidanceHits = new Collider[12];
         private const float AggroDuration = 8f;
         private bool locomotionPaused;
+        internal int chaseWallBlockedFrames;
+        internal int ChaseWallStutterFrames;
+        internal int ChaseWallFollowSideSign = 1;
+        internal float ChaseWallFollowSideLockUntil;
+        internal float chaseWallBufferStuckTimer;
+        internal Vector3 chaseWallLastContactNormal;
+        private Vector3 wallRetreatSidestepTarget;
+        private float wallRetreatSidestepUntil;
+        private bool investigateFromCombatLoss;
+        private float investigateLookUntil;
+        private float searchOrbitAngle;
+        private int searchPingDirection = 1;
+        private bool investigateUseWallPatrol;
+        private Vector3 investigateAnchor;
+        private Vector3 investigateWallNormal;
+        private Vector3 investigateWallTangent;
+        private float searchWallPatrolOffset;
+        private float elevatedBlindNoLosTimer;
+        private float investigateStuckTimer;
+        private Vector3 investigateStuckSamplePosition;
 
         public float CurrentLocomotionSpeed => currentLocomotionSpeed;
         public Vector3 CurrentLocalMoveDirection => currentLocalMoveDirection;
@@ -573,7 +593,7 @@ namespace Project.AI
                 {
                     lostTargetTimer += Time.deltaTime;
                     if (lostTargetTimer >= loseTargetDelay)
-                        GiveUpChaseAndReturnHome();
+                        TryBeginInvestigateLostSight();
                 }
             }
 
@@ -658,6 +678,16 @@ namespace Project.AI
             }
 
             state = newState;
+            chaseWallBlockedFrames = 0;
+            ChaseWallStutterFrames = 0;
+            ChaseWallFollowSideSign = 1;
+            ChaseWallFollowSideLockUntil = 0f;
+            chaseWallBufferStuckTimer = 0f;
+            chaseWallLastContactNormal = Vector3.zero;
+            wallRetreatSidestepUntil = 0f;
+            investigateUseWallPatrol = false;
+            elevatedBlindNoLosTimer = 0f;
+            investigateStuckTimer = 0f;
 
             switch (newState)
             {
@@ -675,9 +705,12 @@ namespace Project.AI
                         moveTarget = patrolPoint;
                     break;
                 case AiState.Investigate:
-                    moveTarget = senses.TryGetHeardNoise(out Vector3 noisePosition)
-                        ? noisePosition
-                        : transform.position;
+                    if (investigateFromCombatLoss)
+                        moveTarget = lastKnownPlayerPosition;
+                    else
+                        moveTarget = senses.TryGetHeardNoise(out Vector3 noisePosition)
+                            ? noisePosition
+                            : transform.position;
                     break;
                 case AiState.ReturnHome:
                     moveTarget = homePosition;
@@ -706,11 +739,7 @@ namespace Project.AI
                     OnEnterHold();
                     break;
                 case AiState.Search:
-                    stateTimer = searchDuration;
-                    moveTarget = lastKnownPlayerPosition + Random.insideUnitSphere * searchRadius;
-                    moveTarget.y = lastKnownPlayerPosition.y;
-                    if (TrySampleGround(moveTarget, out float searchGroundY))
-                        moveTarget.y = searchGroundY;
+                    ConfigureSearchFromProfile();
                     break;
             }
         }

@@ -2150,6 +2150,7 @@ MonoBehaviour:
     lastTimeTheButtonWasPressed: 0
     inButtomTimer: 0
   shooterManager: {fileID: 0}
+  cameraProfile: {fileID: 0}
   runtimeMinCameraDistance: 1.6
   runtimeMaxCameraDistance: 12
   runtimeDefaultCameraDistance: 1.6
@@ -2175,8 +2176,11 @@ MonoBehaviour:
   maxStamina: 100
   maxOxygen: 4000
   energyDrain: 0.2
+  toolEnergyDrainPerSecond: 0.5
+  handCraftEnergyPerItem: 0.5
   oxygenDrainPerSecond: 1
   staminaRegenPerSecond: 12
+  sprintStaminaDrainPerSecond: 12
   healthDrain: 0
   oxygenDepletedHealthDrainMultiplier: 5
   lowStatThreshold: 99
@@ -2755,12 +2759,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8f822430a4b36bb4b9518caed9413304, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.UI.RangedCombatHud
-  showCrosshair: 1
   showAmmoCounter: 1
-  crosshairColor: {r: 1, g: 1, b: 1, a: 0.82}
-  crosshairSize: 14
-  crosshairGap: 5
-  crosshairThickness: 2
 --- !u!114 &3392848996132198380
 MonoBehaviour:
   m_ObjectHideFlags: 0

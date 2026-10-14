@@ -1,6 +1,6 @@
 # Narrative Packages — Compare & Pick
 
-> **Global locks (Sep 30, 2026) override this package:** the player starts with **0 AC, level 1 and no inventory** (Aether Credits only). Kade lands on Io with **2 companions**, the survivors of the Mars escape; no other companions until Echoes are found and restored from ethereal to corporeal form. The starter-companion pick is retired.
+> **Global locks (Sep 30, 2026) override this package:** the player starts with **0 UEA, level 1 and no inventory** (UEA Credits only). Kade lands on Io with **2 companions**, the survivors of the Mars escape; no other companions until Echoes are found and restored from ethereal to corporeal form. The starter-companion pick is retired.
 
 **Dark Matter: Genesis** | Choose one package (or cherry-pick systems)  
 **Designed content target:** ≥150 hours each (**exploration excluded**)  
@@ -20,13 +20,13 @@
 | Mainline delivery | **Progress triggers** — not quest givers | Same; BCP / storm / colony flags | Same; Claim Barriers + Compact votes on **sides** | Same; **Contract Locks + board jobs** on **sides** |
 | Friction emphasis | Silence, Resonance Shelves, Still Hunter, Ash Barrier | Weather windows, Building gates, Colony Barrier | Claim Barriers, Smuggler Seals, Compact Summit | **Contract Locks, Escrow Seals, Siege Timers, Rival Crew ambushes, Client Override** |
 | Player fantasy | Survive a hostile moon that might be alive | Prove a colony deserves a future | Own the table; write the Compact | **Freelance terraform surveyor** — assess Io viability, find missing expeditions, survive contract-board spectacle |
-| Starter setup | 0 AC · 2 starting companions (Mars survivors) | 0 AC · 2 starting companions (Mars survivors) | 0 AC · 2 starting companions (Mars survivors) | 0 AC · **2 old-friend specialists** (Reid Kael + Dr. Suri Vale, **max trust day one**) |
+| Starter setup | 0 UEA · 2 starting companions (Mars survivors) | 0 UEA · 2 starting companions (Mars survivors) | 0 UEA · 2 starting companions (Mars survivors) | 0 UEA · **2 old-friend specialists** (Reid Kael + Dr. Suri Vale, **max trust day one**) |
 | Designed hours | **165h** | **170h** | **174h** | **172h** |
 | Exploration | ~25–40h bonus (untracked) | Same | Same | Same |
 
 ### Shared locks (all four)
 
-Io 2160 · **Player Kade** · AC-only · 22+trio · repair **Kairos** → 6 Memory Cores → trust · biome order **B6→B1→B2→B3→B5→B4→B7** · ~40 sides · ~40 puzzles · 5 base + 2 external factions · Barrier Field pattern · Echo fail = permanent · base injury-not-death
+Io 2160 · **Player Kade** · UEA-only · 22+trio · repair **Kairos** → 6 Memory Cores → trust · biome order **B6→B1→B2→B3→B5→B4→B7** · ~40 sides · ~40 puzzles · 5 base + 2 external factions · Barrier Field pattern · Echo fail = permanent · base injury-not-death
 
 **Kairos naming:** Pre-prologue UI uses liaison shell / probe / ledger machine labels. Player learns the name **Kairos** at **prologue end** in every package.
 
@@ -36,7 +36,7 @@ Io 2160 · **Player Kade** · AC-only · 22+trio · repair **Kairos** → 6 Memo
 |---------|---------|
 | Player | **Kade** — freelance space explorer; ex-**terraform director** who started from the bottom; weapons-fluent, high IQ, discovery-driven |
 | Mars backstory | Former employer **stranded player on Mars** → chose freelance → Io charter |
-| Starting AC | **0 AC** and no inventory (global lock, Sep 30, 2026) |
+| Starting AC | **0 UEA** and no inventory (global lock, Sep 30, 2026) |
 | Mission | Assess **Io terraform viability** + discover **why past expeditions disappeared** |
 | Starter crew | **Reid "Iron" Kael** (Combat Tactician) + **Dr. Suri Vale** (Science Specialist) — **old friends, complete trust from day one**; no wary starter loyalty arc |
 | Drama source | Io, Kairos, clients, Echo stakes, mission ethics — **not distrust of the player** by Reid/Suri |
@@ -57,10 +57,10 @@ Io 2160 · **Player Kade** · AC-only · 22+trio · repair **Kairos** → 6 Memo
 
 | Tier | Acts / biomes | Mainline beats | Side quests | Mastery puzzles |
 |------|---------------|----------------|-------------|-----------------|
-| **T1** | Act I · B6–B1 | 200–450 AC | 250–500 AC | 600–900 AC |
-| **T2** | Act II · B2–B3 | 450–900 AC | 500–950 AC | 900–1500 AC |
-| **T3** | Act III · B5–B4 | 900–1800 AC | 1000–2000 AC | 1500–2200 AC |
-| **T4** | Act IV · B7 / finales | 1800–3500 AC | 2000–4500 AC | 2200–3000 AC |
+| **T1** | Act I · B6–B1 | 200–450 UEA | 250–500 UEA | 600–900 UEA |
+| **T2** | Act II · B2–B3 | 450–900 UEA | 500–950 UEA | 900–1500 UEA |
+| **T3** | Act III · B5–B4 | 900–1800 UEA | 1000–2000 UEA | 1500–2200 UEA |
+| **T4** | Act IV · B7 / finales | 1800–3500 UEA | 2000–4500 UEA | 2200–3000 UEA |
 
 Access-gate puzzles may pay low AC but unlock routes; loot/mastery puzzles carry the higher AC / weapon payoffs.
 

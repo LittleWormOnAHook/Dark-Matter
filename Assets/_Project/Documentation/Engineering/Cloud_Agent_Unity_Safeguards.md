@@ -9,7 +9,7 @@ Cloud Agents and branch switches can change **files on disk** while Unity still 
 | When | Do |
 |------|-----|
 | Before Cloud Agent asks to switch branch | Run `.\Tools\DmUnityGitSafeguard.ps1` |
-| After any git pull/checkout/merge on this PC | Unity **Ctrl+R**; reopen **Dark Matter Genesis v1.6.4** (or current Genesis scene) |
+| After any git pull/checkout/merge on this PC | Unity **Ctrl+R**; reopen the current Genesis scene (`Dark Matter Genesis v1.6.5.unity` on disk; see `Assets/_Project/Scenes/`) |
 | Before commit/push | Console **0 errors**; safeguard script clean |
 | After big Unity day | `git branch backup/wip-pre-restore-YYYYMMDD` on current HEAD |
 

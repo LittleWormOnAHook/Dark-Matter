@@ -65,7 +65,7 @@ namespace Project.UI
             if (!CanProcess())
                 return;
 
-            // KBM tab letters (match Journal.uxml). Gamepad uses Journal + D-Pad/stick only.
+            // Direct KBM journal hotkeys: J = journal hub, I = inventory only. Other tabs: UI / gamepad nav.
             // KeyCode poll is required while journal is open: DMUiModalInputGate disables the Player map.
             Keyboard keyboard = Keyboard.current;
             if (keyboard == null)
@@ -75,22 +75,6 @@ namespace Project.UI
                 TryHandleJournalKeyCode(KeyCode.J);
             if (keyboard.iKey.wasPressedThisFrame)
                 TryHandleJournalKeyCode(KeyCode.I);
-            if (keyboard.mKey.wasPressedThisFrame && !Project.Building.DMBuildingMode.IsActive)
-                TryHandleJournalKeyCode(KeyCode.M);
-            if (keyboard.kKey.wasPressedThisFrame)
-                TryHandleJournalKeyCode(KeyCode.K);
-            if (keyboard.pKey.wasPressedThisFrame)
-                TryHandleJournalKeyCode(KeyCode.P);
-            if (keyboard.cKey.wasPressedThisFrame)
-                TryHandleJournalKeyCode(KeyCode.C);
-            if (keyboard.uKey.wasPressedThisFrame)
-                TryHandleJournalKeyCode(KeyCode.U);
-            if (keyboard.tKey.wasPressedThisFrame)
-                TryHandleJournalKeyCode(KeyCode.T);
-            if (keyboard.lKey.wasPressedThisFrame)
-                TryHandleJournalKeyCode(KeyCode.L);
-            if (keyboard.gKey.wasPressedThisFrame)
-                TryHandleJournalKeyCode(KeyCode.G);
         }
 
         public static void TryHandleHotbarHotkeys()
@@ -692,9 +676,7 @@ namespace Project.UI
             if (!CanProcess())
                 return false;
 
-            // KBM tab letters open only while that physical key is really down (the same keys the
-            // Input System bindings use). Rejects stray UITK KeyDown codes / layout mismatches and
-            // never lets X (Hot Cross AmmoCycle) open a journal tab. stamp: x-never-journal 1006
+            // Direct journal hotkeys: J and I only. Rejects stray UITK KeyDown codes / layout mismatches.
             if (!IsJournalLetterKeyDown(keyCode))
                 return false;
 
@@ -708,36 +690,6 @@ namespace Project.UI
                         return true;
                     EnsureJournalPanel()?.OpenToInventoryTab();
                     return true;
-                case KeyCode.M:
-                    if (Project.Building.DMBuildingMode.IsActive)
-                        return false;
-                    return DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Map)
-                        || EnsureJournalPanel()?.TryToggleMapTab() == true;
-                case KeyCode.K:
-                    return DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Pet)
-                        || EnsureJournalPanel()?.TryToggleTab(JournalWindowId.Pet) == true;
-                case KeyCode.P:
-                    return DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Pioneers)
-                        || EnsureJournalPanel()?.TryToggleTab(JournalWindowId.Pioneers) == true;
-                case KeyCode.C:
-                    if (DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Character))
-                        return true;
-                    EnsureJournalPanel()?.OpenToCharacterTab();
-                    return true;
-                case KeyCode.U:
-                    if (DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Recipes))
-                        return true;
-                    EnsureJournalPanel()?.OpenToBlueprintsTab();
-                    return true;
-                case KeyCode.T:
-                    return DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Skills)
-                        || EnsureJournalPanel()?.TryToggleTab(JournalWindowId.Skills) == true;
-                case KeyCode.L:
-                    return DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Echoes)
-                        || EnsureJournalPanel()?.TryToggleTab(JournalWindowId.Echoes) == true;
-                case KeyCode.G:
-                    return DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Achievements)
-                        || EnsureJournalPanel()?.TryToggleTab(JournalWindowId.Achievements) == true;
                 default:
                     return false;
             }
@@ -753,14 +705,6 @@ namespace Project.UI
             {
                 KeyCode.J => Key.J,
                 KeyCode.I => Key.I,
-                KeyCode.M => Key.M,
-                KeyCode.K => Key.K,
-                KeyCode.P => Key.P,
-                KeyCode.C => Key.C,
-                KeyCode.U => Key.U,
-                KeyCode.T => Key.T,
-                KeyCode.L => Key.L,
-                KeyCode.G => Key.G,
                 _ => Key.None
             };
             if (key == Key.None)

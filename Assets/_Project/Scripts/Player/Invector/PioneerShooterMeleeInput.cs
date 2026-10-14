@@ -600,6 +600,9 @@ namespace Project.Player.Invector
 
         protected override void FixedUpdate()
         {
+            if (GameplayWorldSimulation.IsFrozen)
+                return;
+
             bool attackMoveFrame = BeginLightComboAttackMoveForFixedUpdate(out DM_CombatCoreProfile attackProfile);
             base.FixedUpdate();
             EndLightComboAttackMoveForFixedUpdate(attackMoveFrame);
@@ -2481,6 +2484,9 @@ namespace Project.Player.Invector
 
         private void ApplyMeleeThreatFacing()
         {
+            if (IsGameplayInputDeferred())
+                return;
+
             if (cc == null || cc.isDead || cc.customAction || cc.ragdolled)
                 return;
 

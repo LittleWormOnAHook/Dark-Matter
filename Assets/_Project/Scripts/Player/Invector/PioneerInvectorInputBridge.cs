@@ -85,6 +85,9 @@ namespace Project.Player.Invector
 
             RefreshCombatUiPointerBlock();
             ApplyInputLocks(_shooterInput);
+
+            if (GameplayMenuTime.IsInventoryPaused)
+                ClearMovement();
         }
 
         private void LateUpdate()

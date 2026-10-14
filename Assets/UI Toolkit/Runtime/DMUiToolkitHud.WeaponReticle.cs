@@ -133,7 +133,9 @@ namespace Project.UI
         {
             if (!gameplayVisible || GameplayHudVisibility.CinematicChromeHidden)
                 return false;
-            if (DMUiToolkitMenus.IsOpen || DMUiToolkitOpticsOverlay.IsShowing)
+            if (DMUiToolkitMenus.IsOpen)
+                return false;
+            if (Project.Combat.DMScopeMode.IsScoped && Project.Combat.DMScopeMode.ZoomBlend > 0.05f)
                 return false;
 
             if (equipmentController == null)

@@ -57,6 +57,8 @@ namespace Project.AI
         /// </summary>
         private void ClearPlayerThreat()
         {
+            provokedBy = null;
+            provokedUntil = 0f;
             if (IsCombatTargetPlayer(combat.CurrentTarget))
                 combat.SetTarget(null);
 
@@ -158,7 +160,35 @@ namespace Project.AI
                 return;
             }
 
+            // 2026-10-14 (a): a player hit (ranged from any distance, or melee) provokes the enemy so it keeps
+            // hunting the shooter past vision / leash / chase-time limits (DM_CombatCoreProfile.rangedHitProvokeSeconds).
+            if (IsCombatTargetPlayer(attacker))
+            {
+                Project.Combat.DM_CombatCoreProfile cp = Project.Combat.DM_CombatCoreProfile.Live;
+                float provoke = cp != null ? cp.rangedHitProvokeSeconds : 15f;
+                if (provoke > 0f)
+                {
+                    provokedBy = attacker;
+                    provokedUntil = Time.time + provoke;
+                }
+            }
+
             NotifyAggroFromDamage(attacker, damage);
+            if (IsProvokedBy(attacker))
+            {
+                aggroUntil = Mathf.Max(aggroUntil, provokedUntil);
+                lastKnownPlayerPosition = attacker.position;
+            }
+        }
+
+        private Transform provokedBy;
+        private float provokedUntil;
+
+        /// <summary>True while a recent player hit keeps this enemy hunting <paramref name="target"/>.</summary>
+        private bool IsProvokedBy(Transform target)
+        {
+            return target != null && provokedBy != null && Time.time < provokedUntil
+                && (target == provokedBy || target.IsChildOf(provokedBy) || provokedBy.IsChildOf(target));
         }
 
         private void ApplyAggroTarget(Transform attacker)

@@ -11,6 +11,7 @@ namespace Project.UI
     public sealed class DMScopeReticleElement : VisualElement
     {
         public float RadiusFraction = 0.38f;
+        public float PresentationScale = 1f;
         public bool DrawCrosshair = true;
         public Vector2 Offset;
 
@@ -33,7 +34,8 @@ namespace Project.UI
             DM_ScopeProfile p = DM_ScopeProfile.Live;
             Painter2D g = ctx.painter2D;
             Vector2 c = r.center + Offset;
-            float radius = Mathf.Max(8f, RadiusFraction * r.height);
+            float scale = Mathf.Clamp(PresentationScale, 0.1f, 1.5f);
+            float radius = Mathf.Max(8f, RadiusFraction * r.height * scale);
 
             // Lens ring (dark bezel just inside the mask edge) + thin inner rim.
             g.strokeColor = p.ringColor;
@@ -50,8 +52,8 @@ namespace Project.UI
             if (!DrawCrosshair)
                 return;
 
-            float lw = p.reticleLineWidth;
-            float gap = p.reticleCenterGap;
+            float lw = p.reticleLineWidth * scale;
+            float gap = p.reticleCenterGap * scale;
             float arm = radius * 0.93f;
             g.strokeColor = p.reticleColor;
             // Thick outer posts + fine inner wires.

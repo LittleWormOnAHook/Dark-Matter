@@ -38,7 +38,7 @@ Assets/_Project/Features/Communications/
 ## Locked product rules
 
 - Platforms: **PC first + consoles** (no mobile-as-target, no WebGL).
-- Economy: **Aether Credits (AC) only**.
+- Economy: **UEA Credits (UEA) only**.
 - GDD: communications attachment module / Probe Uplink; **Kairos** is a future callsign / hub identity, not an LLM dependency.
 - AI / LLM never reads Unity managers directly — only **Game State snapshots** / WorldState (planned) / context packs.
 - **Silence is Experience design** (HLA §2.7) — ExperienceDirector may schedule radio silence; Communications obeys density intents.

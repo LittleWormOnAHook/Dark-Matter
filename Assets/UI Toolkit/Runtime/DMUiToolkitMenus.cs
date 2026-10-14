@@ -707,6 +707,9 @@ namespace Project.UI
             if (root != null)
                 root.pickingMode = PickingMode.Ignore;
 
+            if (boundJournal == null || !boundJournal.IsOpen)
+                GameplayMenuTime.SyncJournal(false, null);
+
             DMUiToolkitHud.RefreshMenuChrome();
         }
 

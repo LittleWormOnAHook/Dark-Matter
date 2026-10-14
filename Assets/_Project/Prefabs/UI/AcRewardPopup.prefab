@@ -172,7 +172,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '+10 AC Credits
+  m_text: '+10 UEA Credits
 
     Gathering'
   m_isRightToLeft: 0

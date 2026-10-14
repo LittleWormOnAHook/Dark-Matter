@@ -41,6 +41,7 @@ MonoBehaviour:
   criticalChance: 0.12
   criticalDamageMultiplier: 2
   meleeRange: 2.4
+  meleeBladeLength: 1
   meleeCooldown: 0.6
   attackAnimationSpeed: 0
   meleeStaminaCost: 7

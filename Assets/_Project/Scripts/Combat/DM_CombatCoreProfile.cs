@@ -411,7 +411,7 @@ namespace Project.Combat
         [Range(0f, 0.4f)] public float blockShakeDurationSeconds = 0.08f;
 
         [Header("Grenades")]
-        [Tooltip("Master switch for throwable grenades (G throw, cook, throw manager). Off = grenade items stay in inventory but cannot be thrown. Default off.")]
+        [Tooltip("Master switch for throwable grenades. On: G (LB) arms; hold LMB (LT) to cook; release LMB (LT) to throw. Off = stacks stay in inventory but cannot be thrown. Default off.")]
         public bool enableGrenades = false;
 
         [Header("Attack interrupts (player hit interrupts an enemy attack)")]
@@ -469,13 +469,13 @@ namespace Project.Combat
         public bool godModeEnemiesUnkillable = true;
         [Tooltip("God mode: shots consume no rounds.")]
         public bool godModeInfiniteAmmo = true;
-        [Tooltip("God mode OFF: dead enemies without their own respawn timer respawn after enemyRespawnDelay.")]
+        [Tooltip("Audit/test sessions only: dead enemies without their own respawn timer respawn after enemyRespawnDelay.")]
         public bool respawnEnemiesAfterDeath = true;
         [Range(0.5f, 120f)] public float enemyRespawnDelay = 6f;
-        [Tooltip("God mode OFF: the player respawns automatically after playerRespawnDelay (skips the death popup).")]
+        [Tooltip("Audit/test sessions only: the player respawns automatically after playerRespawnDelay (skips the death popup).")]
         public bool respawnPlayerAfterDeath = true;
         [Range(0.5f, 60f)] public float playerRespawnDelay = 3f;
-        [Tooltip("Enemy Runtime Audit: god mode is forced ON for the whole run (restored afterwards).")]
+        [Tooltip("Enemy Runtime Audit / tests: player-only protection (no damage, health refill, infinite ammo) for the run; enemies take real damage. Cleared when the run ends or play stops. Does not touch the typed godmode cheat.")]
         public bool auditGodMode = true;
         [Range(0.5f, 10f)] public float godModeToastSeconds = 2f;
 
@@ -485,7 +485,22 @@ namespace Project.Combat
         [Range(0.2f, 5f)] public float playerCorpseSettleSeconds = 1.5f;
         [Tooltip("Max horizontal bone speed (m/s) while the corpse settles.")]
         [Range(0f, 10f)] public float playerCorpseMaxSlideSpeed = 1.5f;
+        [Tooltip("After Retry/respawn: seconds the player's body is held still (velocity zeroed, ragdoll bones kept kinematic) before control resumes.")]
+        [Range(0f, 3f)] public float playerRespawnSettleSeconds = 0.6f;
+
+        [Header("Ranged aggro + alerts (2026-10-14 a)")]
+        [Tooltip("A player ranged hit provokes the enemy: it targets the shooter and chases past its vision, leash and chase-time limits for this many seconds (refreshed by each hit).")]
+        [Range(0f, 60f)] public float rangedHitProvokeSeconds = 15f;
+        [Tooltip("Player shots that miss alert enemies within this radius of the impact (they turn, investigate, search).")]
+        [Range(0f, 30f)] public float rangedImpactAlertRadius = 8f;
+        [Tooltip("Enemies within this radius of the shooter hear the gunshot and investigate toward it. 0 = off.")]
+        [Range(0f, 80f)] public float gunshotHearingRadius = 25f;
+        [Tooltip("Engaged enemy health bar stays up this long after the last hit even if the enemy isn't targeting the player.")]
+        [Range(1f, 30f)] public float engagedHudLingerSeconds = 6f;
 
         [Header("Debug")]
-        public bool logCombatEventsInPlay;    }
+        public bool logCombatEventsInPlay;
+        [Tooltip("Logs engaged enemy HUD fill (0-1) on each health change when that enemy is focused.")]
+        public bool logEngagedHudFill;
+    }
 }

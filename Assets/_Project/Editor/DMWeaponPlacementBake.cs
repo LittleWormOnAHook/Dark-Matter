@@ -10,80 +10,34 @@ using UnityEngine;
 
 namespace Project.EditorTools
 {
-    /// <summary>
-    /// Weapon placement data (Bake to template). One entry per weapon item id + kind (Drawn / Holstered) + holder bone, optionally for one body type only.
-    /// Rebuild From Template / Fix (restore holders) / Sync to Template read this asset FIRST, so hand-tweaked placements survive.
-    /// </summary>
-    public sealed class DMWeaponPlacementProfile : ScriptableObject
-    {
-        public const string AssetPath = "Assets/_Project/Data/Combat/DM_WeaponPlacementProfile.asset";
-
-        [Serializable]
-        public sealed class Entry
-        {
-            [Tooltip("Weapon item id: the slot name without its Drawn_ / Holstered_ prefix (for example Blade_Of_Chaos).")] public string itemId;
-            [Tooltip("True = Drawn_<item> (in hand), false = Holstered_<item> (on the body).")] public bool drawn;
-            [Tooltip("Name of the holder bone / holder object the slot sits under (for example R_Hand, Spine2, RifleHolder). Empty = any holder.")] public string holderBone;
-            [Tooltip("Any = every body type. Otherwise this entry only applies to that body type and wins over the Any entry.")] public bool anyBodyType = true;
-            public DMEnemyBodyType bodyType = DMEnemyBodyType.Humanoid;
-            public Vector3 localPosition;
-            public Vector3 localEulerAngles;
-            public Vector3 localScale = Vector3.one;
-
-            public string Label => (drawn ? "Drawn_" : "Holstered_") + itemId + " @ " + (string.IsNullOrEmpty(holderBone) ? "*" : holderBone) + (anyBodyType ? " [any body]" : " [" + bodyType + "]");
-        }
-
-        public List<Entry> entries = new List<Entry>();
-
-        public static DMWeaponPlacementProfile LoadOrCreate(bool create)
-        {
-            DMWeaponPlacementProfile p = AssetDatabase.LoadAssetAtPath<DMWeaponPlacementProfile>(AssetPath);
-            if (p != null || !create)
-                return p;
-
-            Directory.CreateDirectory(Path.GetDirectoryName(AssetPath));
-            p = CreateInstance<DMWeaponPlacementProfile>();
-            AssetDatabase.CreateAsset(p, AssetPath);
-            AssetDatabase.SaveAssets();
-            return p;
-        }
-
-        /// <summary>Best entry: exact holder + body type > exact holder, any body > any holder + body type > any holder, any body.</summary>
-        public Entry Find(string itemId, bool drawn, string holderBone, DMEnemyBodyType body)
-        {
-            Entry best = null;
-            int bestScore = -1;
-            for (int i = 0; i < entries.Count; i++)
-            {
-                Entry e = entries[i];
-                if (e == null || e.drawn != drawn || !string.Equals(e.itemId, itemId, StringComparison.Ordinal))
-                    continue;
-                if (!string.IsNullOrEmpty(e.holderBone) && !string.Equals(e.holderBone, holderBone, StringComparison.Ordinal))
-                    continue;
-                if (!e.anyBodyType && e.bodyType != body)
-                    continue;
-
-                int score = (string.IsNullOrEmpty(e.holderBone) ? 0 : 2) + (e.anyBodyType ? 0 : 1);
-                if (score > bestScore)
-                {
-                    bestScore = score;
-                    best = e;
-                }
-            }
-
-            return best;
-        }
-    }
-
     /// <summary>Capture / diff / apply of weapon slot placements, plus the hook that makes every rebuild path read the profile first.</summary>
     [InitializeOnLoad]
     public static class DMWeaponPlacementBake
     {
         const float Eps = 0.0005f;
 
+        public static DMWeaponPlacementProfile LoadOrCreateProfile(bool create)
+        {
+            DMWeaponPlacementProfile p = AssetDatabase.LoadAssetAtPath<DMWeaponPlacementProfile>(DMWeaponPlacementProfile.AssetPath);
+            if (p != null || !create)
+                return p;
+
+            Directory.CreateDirectory(Path.GetDirectoryName(DMWeaponPlacementProfile.AssetPath));
+            p = ScriptableObject.CreateInstance<DMWeaponPlacementProfile>();
+            AssetDatabase.CreateAsset(p, DMWeaponPlacementProfile.AssetPath);
+            AssetDatabase.SaveAssets();
+            return p;
+        }
+
         static DMWeaponPlacementBake()
         {
-            EnemyInvectorWeaponHolderRebind.AfterRebind = root => ApplyFromProfile(root, null);
+            EnemyInvectorWeaponHolderRebind.AfterRebind = root =>
+            {
+                // Baked placements are an editor/prefab workflow — never mutate holders during Play.
+                if (Application.isPlaying)
+                    return;
+                ApplyFromProfile(root, null);
+            };
         }
 
         // Existing placements captured right before a Studio rebuild / fix / sync (see DMHumanoidVisualRebuildUtility.BackupExistingOutput).
@@ -254,7 +208,10 @@ namespace Project.EditorTools
         /// <summary>Apply the profile to the slots of a root (prefab contents or instance). Returns the number of slots moved. Log lists old -> new.</summary>
         public static int ApplyFromProfile(GameObject root, StringBuilder log)
         {
-            DMWeaponPlacementProfile profile = DMWeaponPlacementProfile.LoadOrCreate(false);
+            if (Application.isPlaying)
+                return 0;
+
+            DMWeaponPlacementProfile profile = LoadOrCreateProfile(false);
             if (root == null)
                 return 0;
 
@@ -322,7 +279,7 @@ namespace Project.EditorTools
         public static string DiffText(IEnumerable<string> paths, out List<(DMWeaponPlacementProfile, List<Change>)> work)
         {
             work = new List<(DMWeaponPlacementProfile, List<Change>)>();
-            DMWeaponPlacementProfile profile = DMWeaponPlacementProfile.LoadOrCreate(true);
+            DMWeaponPlacementProfile profile = LoadOrCreateProfile(true);
             var sb = new StringBuilder();
             var all = new List<Change>();
             // Work on a copy so each prefab is compared with what the earlier prefabs of this pass already wrote (a differing rig becomes a body-type override, never silently dropped).
@@ -394,7 +351,7 @@ namespace Project.EditorTools
         }
 
         [MenuItem("Tools/Dark Matter Genesis/Combat/Weapon Placement/Select placement profile")]
-        static void MenuSelectProfile() => Selection.activeObject = DMWeaponPlacementProfile.LoadOrCreate(true);
+        static void MenuSelectProfile() => Selection.activeObject = LoadOrCreateProfile(true);
 
         [MenuItem("Tools/Dark Matter Genesis/Combat/Weapon Placement/Bake window")]
         static void MenuWindow() => EditorWindow.GetWindow<DMWeaponPlacementBakeWindow>("Weapon Placement");
@@ -411,7 +368,7 @@ namespace Project.EditorTools
             if (GUILayout.Button("Bake all enemy prefabs", GUILayout.Height(26f)))
                 last = DMWeaponPlacementBake.BakeInteractive(DMWeaponPlacementBake.EnemyPrefabPaths());
             if (GUILayout.Button("Select placement profile"))
-                Selection.activeObject = DMWeaponPlacementProfile.LoadOrCreate(true);
+                Selection.activeObject = DMWeaponPlacementBake.LoadOrCreateProfile(true);
             EditorGUILayout.Space();
             scroll = EditorGUILayout.BeginScrollView(scroll);
             foreach (string path in DMWeaponPlacementBake.EnemyPrefabPaths())

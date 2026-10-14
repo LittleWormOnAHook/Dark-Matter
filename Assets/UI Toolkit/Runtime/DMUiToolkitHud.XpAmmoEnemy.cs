@@ -29,6 +29,7 @@ namespace Project.UI
         private EngagedEnemyHealthHud cachedEnemyHud;
         private string lastEnemyName;
         private float lastEnemyFill = -1f;
+        private int lastEnemyPresentationStamp = -1;
         private bool lastEnemyShown;
 
         private void Update()
@@ -167,9 +168,10 @@ namespace Project.UI
             if (enemyFocusRoot == null)
                 return;
 
-            if (cachedEnemyHud == null && (Time.frameCount & 31) == 0)
-                cachedEnemyHud = EngagedEnemyHealthHud.Instance
-                    ?? FindAnyObjectByType<EngagedEnemyHealthHud>(FindObjectsInactive.Include);
+            EngagedEnemyHealthHud liveHud = EngagedEnemyHealthHud.Instance
+                ?? FindAnyObjectByType<EngagedEnemyHealthHud>(FindObjectsInactive.Include);
+            if (liveHud != cachedEnemyHud)
+                cachedEnemyHud = liveHud;
 
             EngagedEnemyHealthHud enemyHud = cachedEnemyHud;
             string displayName = null;
@@ -177,6 +179,12 @@ namespace Project.UI
             bool show = enemyHud != null
                 && !DMUiToolkitMenus.IsOpen
                 && enemyHud.TryGetFocus(out displayName, out normalized);
+
+            if (show && EngagedEnemyHealthHud.PresentationStamp != lastEnemyPresentationStamp)
+            {
+                lastEnemyPresentationStamp = EngagedEnemyHealthHud.PresentationStamp;
+                lastEnemyFill = -1f;
+            }
 
             if (show)
             {

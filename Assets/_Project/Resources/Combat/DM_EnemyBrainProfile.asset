@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.AI.DM_EnemyBrainProfile
   enableUtilityBrain: 1
   autoAttachBrain: 1
-  defaultArchetype: 0
-  defaultPersonality: 0
+  defaultArchetype: 10
+  defaultPersonality: 1
   debugLogDecisions: 0
   decisionInterval: 0.4
   scoreRandomness: 0.25
@@ -24,6 +24,7 @@ MonoBehaviour:
   defendCooldown: 3
   defendBlockShare: 0.6
   enableEnemyBlock: 1
+  reactiveBlockChance: 0.25
   blockCooldown: 4
   blockDurationSeconds: 1
   blockDamageFraction: 0.1
@@ -38,6 +39,73 @@ MonoBehaviour:
   blockSparkPrefab: {fileID: 0}
   blockedHitShakeAmplitude: 0.3
   blockedHitShakeDurationSeconds: 0.1
+  blockedHitSfx: {fileID: 0}
+  blockedHitSfxVolume: 0.8
+  meleeAttackerCapEnabled: 1
+  maxMeleeAttackers: 2
+  meleeSwingStaggerMin: 0.4
+  meleeSwingStaggerMax: 0.8
+  enemyAimTargetBone: 8
+  enemyHeadshotChance: 0.15
+  enemyAimCorrectionEnabled: 1
+  enemyAimCorrectionStrength: 1
+  enemyAimCorrectionMaxAngle: 60
+  enemyAimCorrectionSpeed: 360
+  enemyAimCorrectionFullDistance: 8
+  enemyAimCorrectionCloseDisableDistance: 2.5
+  enemyAimCorrectionCloseMaxPitch: 28
+  enemySkipInvectorShootRecoil: 1
+  logRangedFireGates: 0
+  rangedFireWhileRetreating: 1
+  reconcileRangedEngageToVision: 1
+  rifleEngageRangeBase: 25
+  rifleVisionFloor: 25
+  enableChaseWallSlide: 1
+  chaseWallSlideRadius: 0.35
+  chaseWallSlideHeight: 1.75
+  chaseWallSlideSkin: 0.05
+  chaseWallStandoffMeters: 0.5
+  chaseWallBufferStuckSeconds: 1.5
+  chaseWallRetreatStepMeters: 0.85
+  chaseWallRetreatSidestepMeters: 0.55
+  chaseWallRetreatSidestepSeconds: 0.65
+  chaseWallSlidePasses: 2
+  chaseWallMinProgress: 0.002
+  chaseWallBlockedFramesBeforeFollow: 2
+  chaseWallProbeDistance: 0.6
+  chaseWallFollowFaceSlide: 1
+  chaseWallBlockedTurnRate: 480
+  chaseWallFollowMinSideSeconds: 0.55
+  chaseWallFollowSideHysteresis: 0.18
+  chaseWallStuckFramesEarlyInvestigate: 24
+  chaseUnreachableMinVerticalDelta: 2.25
+  chaseUnreachableMaxHorizontal: 12
+  requireClearLosForRangedFire: 1
+  enableInvestigateOnLostSight: 1
+  investigateUseProfileSearchTiming: 1
+  investigateSearchDurationSeconds: 8
+  investigateSearchRadiusMeters: 5
+  investigateSearchSpeedScale: 0.65
+  investigateLookSweepSeconds: 1.25
+  investigateLookSweepTurnRate: 140
+  investigateWallBaseRayDistance: 22
+  investigateWallAnchorOffset: 0.45
+  investigateSearchAlongWall: 1
+  investigateWallPatrolSpanMeters: 7
+  investigateElevatedThreatSecondsToSearch: 1.35
+  investigateStuckCommitSeconds: 2
+  allowMeleeVsClimbingPlayer: 0
+  enemyRangedAmmoPoolDefault: 1
+  enemyRangedAmmoReloadSeconds: 2.5
+  enemyGuardStaminaMax: 60
+  enemyGuardRegenPerSec: 12
+  enemyGuardRegenDelay: 1
+  enemyBlockHoldCostBase: 3
+  enemyBlockHoldCostGrowth: 1.6
+  enemyBlockHoldCostCap: 25
+  enemyBlockedHitStaminaCost: 12
+  enemyStaggerStaminaCost: 20
+  enemyMinGuardStaminaToBlock: 15
   dodgeRollChance: 1
   dodgeRollCooldown: 2
   dodgeRollSideWeight: 1

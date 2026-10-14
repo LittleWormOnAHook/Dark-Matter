@@ -35,7 +35,7 @@ namespace Project.Player
         public bool requireSkillTreeUnlocks = true;
 
         [Header("World")]
-        [Tooltip("Final authority for Gaia terrain streaming, content scenes, expedition tile wait, and related world loaders. Off keeps Terrain Loader Manager disabled in Play and after returning to Edit.")]
+        [Tooltip("Final authority for Gaia terrain streaming, content scenes, expedition tile wait, and related world loaders. Off keeps Terrain Loader Manager disabled in Play and after returning to Edit. Editor bind: BindDmGenesisGaiaTerrainScenes reads this via IsWorldTerrainLoadingEnabled (Player_v7 prefab / scene instance, not TerrainScenes.asset).")]
         public bool terrainLoading = true;
 
         private bool _appliedClimb = true;
@@ -50,7 +50,13 @@ namespace Project.Player
         public bool HeroLandEnabled => isActiveAndEnabled && heroLand;
         public bool TerrainLoadingEnabled => isActiveAndEnabled && terrainLoading;
 
-        /// <summary>Authority for world terrain streaming (live player profile, else any active profile).</summary>
+        /// <summary>
+        /// Authority for world terrain streaming and editor Gaia bind.
+        /// Resolves <see cref="terrainLoading"/> on live <c>Player_v7</c> (see <see cref="PlayerLocator.FindOnLivePlayer{T}"/>),
+        /// else any active <see cref="DMPlayerSystemsProfile"/> in the open scene.
+        /// Serialized on <c>Assets/_Project/Prefabs/Players/Player_v7.prefab</c> (field name: terrainLoading).
+        /// When no profile exists, returns true (legacy default).
+        /// </summary>
         public static bool IsWorldTerrainLoadingEnabled()
         {
             DMPlayerSystemsProfile profile = PlayerLocator.FindOnLivePlayer<DMPlayerSystemsProfile>();

@@ -284,6 +284,12 @@ namespace Project.Player.Invector
                 direction,
                 spread,
                 lockedSpawnPosition: lockedSpawn);
+
+            // 2026-10-14 (a): enemies within the gunshot radius hear the shot and investigate toward the shooter.
+            DM_CombatCoreProfile cp = DM_CombatCoreProfile.Live;
+            float gunshot = cp != null ? cp.gunshotHearingRadius : 25f;
+            if (gunshot > 0f)
+                Project.AI.EnemyNoiseEvents.RaiseNoise(muzzle.position, gunshot, gameObject, Project.AI.EnemyNoiseKind.Gunshot);
         }
 
         private Camera ResolveGameplayCamera()

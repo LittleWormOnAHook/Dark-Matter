@@ -9,9 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: e81fb4f5eee59564186389e1346c3860, type: 3}
   m_Name: DM_WeaponPlacementProfile
-  m_EditorClassIdentifier: Assembly-CSharp-Editor:Project.EditorTools:DMWeaponPlacementProfile
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Combat:DMWeaponPlacementProfile
   entries:
   - itemId: Sci_Fi_Pistol
     drawn: 0

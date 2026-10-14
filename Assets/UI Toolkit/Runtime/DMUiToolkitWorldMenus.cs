@@ -24,7 +24,7 @@ namespace Project.UI
     /// </summary>
     [DefaultExecutionOrder(-365)]
     [DisallowMultipleComponent]
-    public class DMUiToolkitWorldMenus : MonoBehaviour
+    public partial class DMUiToolkitWorldMenus : MonoBehaviour
     {
         private static DMUiToolkitWorldMenus instance;
 
@@ -44,8 +44,10 @@ namespace Project.UI
         private Button drillCancel;
         private VisualElement weaponHost;
         private VisualElement weaponPanel;
-        private VisualElement pistolsSub;
-        private VisualElement riflesSub;
+        private VisualElement pistolsBody;
+        private VisualElement riflesBody;
+        private bool pistolsExpanded = true;
+        private bool riflesExpanded;
         private Button weaponPistols;
         private Button weaponRifles;
         private Button pistolSight;
@@ -122,6 +124,10 @@ namespace Project.UI
         public static bool IsShelterOpen => instance != null && instance.shelterOpen;
         public static bool IsDrillOpen => instance != null && instance.drillOpen;
         public static bool IsWeaponOpen => instance != null && instance.weaponOpen;
+
+        /// <summary>UITK focus root for weapon modes (fold-out panel).</summary>
+        public static VisualElement WeaponNavigationRoot =>
+            instance != null && instance.weaponOpen ? instance.weaponPanel : null;
 
         /// <summary>World modals plus the UITK loot window (<see cref="DMUiToolkitLoot"/>); blocks autosave.</summary>
         public static bool IsAnyModalOpen => DMUiToolkitLoot.IsOpen || (instance != null && (
@@ -494,14 +500,16 @@ namespace Project.UI
             drillCancel = tree.Q<Button>("drill-cancel");
             weaponHost = tree.Q<VisualElement>("weapon-host");
             weaponPanel = tree.Q<VisualElement>("weapon-panel");
-            pistolsSub = tree.Q<VisualElement>("weapon-pistols-sub");
-            riflesSub = tree.Q<VisualElement>("weapon-rifles-sub");
+            pistolsBody = tree.Q<VisualElement>("weapon-pistols-body");
+            riflesBody = tree.Q<VisualElement>("weapon-rifles-body");
             weaponPistols = tree.Q<Button>("weapon-pistols");
             weaponRifles = tree.Q<Button>("weapon-rifles");
             pistolSight = tree.Q<Button>("weapon-pistol-sight");
             pistolBeam = tree.Q<Button>("weapon-pistol-beam");
             rifleSight = tree.Q<Button>("weapon-rifle-sight");
             rifleBeam = tree.Q<Button>("weapon-rifle-beam");
+            pistolScope = tree.Q<Button>("weapon-pistol-scope");
+            rifleScope = tree.Q<Button>("weapon-rifle-scope");
             echoHost = tree.Q<VisualElement>("echo-host");
             echoName = tree.Q<Label>("echo-name");
             echoBody = tree.Q<Label>("echo-body");
@@ -551,23 +559,12 @@ namespace Project.UI
             if (drillCollect != null) drillCollect.clicked += OnDrillCollect;
             if (drillStore != null) drillStore.clicked += OnDrillStore;
             if (drillCancel != null) drillCancel.clicked += HideDrillInternal;
-            if (weaponPistols != null)
-            {
-                weaponPistols.clicked += ShowPistolsSub;
-                weaponPistols.RegisterCallback<PointerEnterEvent>(_ => ShowPistolsSub());
-            }
-            if (weaponRifles != null)
-            {
-                weaponRifles.clicked += ShowRiflesSub;
-                weaponRifles.RegisterCallback<PointerEnterEvent>(_ => ShowRiflesSub());
-            }
+            if (weaponPistols != null) weaponPistols.clicked += TogglePistolsFoldout;
+            if (weaponRifles != null) weaponRifles.clicked += ToggleRiflesFoldout;
             if (pistolSight != null) pistolSight.clicked += TogglePistolSight;
             if (pistolBeam != null) pistolBeam.clicked += TogglePistolBeam;
             if (rifleSight != null) rifleSight.clicked += ToggleRifleSight;
             if (rifleBeam != null) rifleBeam.clicked += ToggleRifleBeam;
-            // 2026-10-13 (h): "Scope" toggles, built in code next to the laser buttons.
-            pistolScope = CreateScopeButton(pistolBeam, "weapon-pistol-scope");
-            rifleScope = CreateScopeButton(rifleBeam, "weapon-rifle-scope");
             if (pistolScope != null) pistolScope.clicked += TogglePistolScope;
             if (rifleScope != null) rifleScope.clicked += ToggleRifleScope;
             if (echoClose != null) echoClose.clicked += HideEchoInternal;
@@ -593,8 +590,7 @@ namespace Project.UI
             DMUiToolkitOverlayDocument.SetShown(shelterHost, shelterOpen);
             DMUiToolkitOverlayDocument.SetShown(drillHost, drillOpen);
             DMUiToolkitOverlayDocument.SetShown(weaponHost, weaponOpen);
-            DMUiToolkitOverlayDocument.SetShown(pistolsSub, false);
-            DMUiToolkitOverlayDocument.SetShown(riflesSub, false);
+            ApplyWeaponFoldouts();
             DMUiToolkitOverlayDocument.SetShown(echoHost, echoOpen);
             DMUiToolkitOverlayDocument.SetShown(scanHost, scanOpen);
             DMUiToolkitOverlayDocument.SetShown(tamingHost, tamingOpen);
@@ -772,9 +768,10 @@ namespace Project.UI
             boundWeaponPlayer = controller.GetComponent<PlayerController>() ?? PlayerLocator.FindPlayerController();
             weaponOpenedFrame = Time.frameCount;
             weaponOpen = true;
+            pistolsExpanded = true;
+            riflesExpanded = false;
             DMUiToolkitOverlayDocument.SetShown(weaponHost, true);
-            DMUiToolkitOverlayDocument.SetShown(pistolsSub, false);
-            DMUiToolkitOverlayDocument.SetShown(riflesSub, false);
+            ApplyWeaponFoldouts();
             if (weaponPanel != null)
                 DMUiToolkitOverlayDocument.PositionCenterOnScreen(weaponPanel);
             boundWeaponPlayer?.SetBuildingControlOpen(true);
@@ -783,6 +780,8 @@ namespace Project.UI
             UnityEngine.Cursor.lockState = CursorLockMode.None;
             UnityEngine.Cursor.visible = true;
             RefreshWeapon();
+            if (weaponPanel != null)
+                DMUiJournalGamepadNav.NotifyMenuOpened(weaponPanel);
         }
 
         private void HideWeaponInternal()
@@ -790,8 +789,6 @@ namespace Project.UI
             weaponOpen = false;
             weaponController = null;
             DMUiToolkitOverlayDocument.SetShown(weaponHost, false);
-            DMUiToolkitOverlayDocument.SetShown(pistolsSub, false);
-            DMUiToolkitOverlayDocument.SetShown(riflesSub, false);
             if (boundWeaponPlayer != null)
             {
                 boundWeaponPlayer.SetBuildingControlOpen(false);
@@ -804,38 +801,6 @@ namespace Project.UI
 
             GameplayMenuTime.SetPause(GameplayMenuTime.ReasonWeaponModeSwitch, false);
             GameplayMenuTime.SetSlowMotion(GameplayMenuTime.ReasonWeaponModeSwitch, false);
-        }
-
-        private void ShowPistolsSub()
-        {
-            DMUiToolkitOverlayDocument.SetShown(riflesSub, false);
-            DMUiToolkitOverlayDocument.SetShown(pistolsSub, true);
-            PositionWeaponFlyout(weaponPanel, pistolsSub);
-            RefreshWeapon();
-        }
-
-        private void ShowRiflesSub()
-        {
-            DMUiToolkitOverlayDocument.SetShown(pistolsSub, false);
-            DMUiToolkitOverlayDocument.SetShown(riflesSub, true);
-            PositionWeaponFlyout(weaponPanel, riflesSub);
-            RefreshWeapon();
-        }
-
-        private static void PositionWeaponFlyout(VisualElement anchor, VisualElement flyout)
-        {
-            if (anchor == null || flyout == null)
-                return;
-
-            anchor.schedule.Execute(() =>
-            {
-                if (anchor == null || flyout == null)
-                    return;
-
-                flyout.style.position = Position.Absolute;
-                flyout.style.top = anchor.resolvedStyle.top;
-                flyout.style.left = anchor.resolvedStyle.left + anchor.resolvedStyle.width + 8f;
-            }).ExecuteLater(0);
         }
 
         private void TogglePistolSight()
@@ -866,49 +831,47 @@ namespace Project.UI
             RefreshWeapon();
         }
 
-        private static Button CreateScopeButton(Button sibling, string name)
+        private static Project.Combat.DMScopeMode ResolveScopeMode()
         {
-            if (sibling == null || sibling.parent == null)
-                return null;
-            Button existing = sibling.parent.Q<Button>(name);
-            if (existing != null)
-                return existing;
-            var b = new Button { name = name, text = "Scope  OFF" };
-            foreach (string c in sibling.GetClasses())
-                b.AddToClassList(c);
-            VisualElement parent = sibling.parent;
-            parent.Insert(parent.IndexOf(sibling) + 1, b);
-            return b;
+            return Project.Combat.DMScopeMode.Instance
+                ?? UnityEngine.Object.FindAnyObjectByType<Project.Combat.DMScopeMode>(FindObjectsInactive.Include);
         }
-
-        private static Project.Combat.DMScopeMode ScopeMode => Project.Combat.DMScopeMode.Instance;
 
         private void TogglePistolScope()
         {
-            if (ScopeMode == null) return;
-            ScopeMode.SetPistolScopeEnabled(!ScopeMode.PistolScopeEnabled);
+            Project.Combat.DMScopeMode mode = ResolveScopeMode();
+            if (mode == null) return;
+            mode.SetPistolScopeEnabled(!mode.PistolScopeEnabled);
             RefreshWeapon();
         }
 
         private void ToggleRifleScope()
         {
-            if (ScopeMode == null) return;
-            ScopeMode.SetRifleScopeEnabled(!ScopeMode.RifleScopeEnabled);
+            Project.Combat.DMScopeMode mode = ResolveScopeMode();
+            if (mode == null) return;
+            mode.SetRifleScopeEnabled(!mode.RifleScopeEnabled);
             RefreshWeapon();
         }
 
         private void RefreshWeapon()
         {
-            bool scopeAvail = Project.Combat.DMScopeMode.IsUnlocked && ScopeMode != null;
+            bool scopeAvail = Project.Combat.DMScopeMode.IsUnlocked;
+            Project.Combat.DMScopeMode mode = ResolveScopeMode();
             if (pistolScope != null)
             {
-                pistolScope.style.display = scopeAvail ? DisplayStyle.Flex : DisplayStyle.None;
-                if (scopeAvail) pistolScope.text = FormatToggle("Scope", ScopeMode.PistolScopeEnabled);
+                DMUiToolkitOverlayDocument.SetShown(pistolScope, scopeAvail);
+                if (scopeAvail && mode != null)
+                    pistolScope.text = FormatToggle("Scope", mode.PistolScopeEnabled);
+                else if (scopeAvail)
+                    pistolScope.text = FormatToggle("Scope", false);
             }
             if (rifleScope != null)
             {
-                rifleScope.style.display = scopeAvail ? DisplayStyle.Flex : DisplayStyle.None;
-                if (scopeAvail) rifleScope.text = FormatToggle("Scope", ScopeMode.RifleScopeEnabled);
+                DMUiToolkitOverlayDocument.SetShown(rifleScope, scopeAvail);
+                if (scopeAvail && mode != null)
+                    rifleScope.text = FormatToggle("Scope", mode.RifleScopeEnabled);
+                else if (scopeAvail)
+                    rifleScope.text = FormatToggle("Scope", false);
             }
 
             if (weaponController == null)

@@ -346,6 +346,9 @@ namespace Project.EditorTools
 
             EditorGUILayout.Space(4f);
             EditorGUILayout.LabelField("Ranged Combat", EditorStyles.boldLabel);
+            def.rangedAmmoType = (DMEnemyRangedAmmoChoice)EditorGUILayout.EnumPopup(
+                "Ranged Ammo Type",
+                def.rangedAmmoType);
             def.rangedEngageRange = EditorGUILayout.FloatField("Engage Range", def.rangedEngageRange);
             def.rangedAttackCooldown = EditorGUILayout.FloatField("Shot Cooldown", def.rangedAttackCooldown);
             def.rangedDuration = EditorGUILayout.FloatField("Shot Duration", def.rangedDuration);

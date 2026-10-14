@@ -2,7 +2,7 @@
 
 Implementation plan only. Do not treat this as shipped behavior until the phases below land.
 
-**Authority:** Align with `HDRP_Migration_Plan.md`, `System_Requirements.md`, GDD platforms (PC + consoles; WebGL retired), and Phase 6 default **`Genesis_HDRP_High`** (Quality index 3 / `PlatformGraphicsProfile.HighTierIndex`).
+**Authority:** Align with `System_Requirements.md`, GDD platforms (PC + Mac first, consoles later; WebGL retired), Phase 6 default **`Genesis_HDRP_High`** (Quality index 3 / `PlatformGraphicsProfile.HighTierIndex`), and HDRP history in `Archive/Historical_Engineering_Notes.md` §3.
 
 **Related code today:**
 
@@ -296,7 +296,7 @@ Do **not** change compass HUD FOV constant unless product asks.
 
 ### Phase G — Docs + polish
 
-- Update `HDRP_Migration_Plan.md` “Settings integration” from planned → implemented checklist.
+- Update `Archive/Historical_Engineering_Notes.md` §3 settings checklist when integration ships.
 - Cross-link `System_Requirements.md`.
 - Console default pass notes (60 FPS, no RT).
 
@@ -363,7 +363,7 @@ Do **not** change compass HUD FOV constant unless product asks.
 
 ## References
 
-- `Documentation/Architecture/HDRP_Migration_Plan.md`
+- `Documentation/Archive/Historical_Engineering_Notes.md` §3
 - `Documentation/System_Requirements.md`
 - `ProjectSettings/QualitySettings.asset` (5 tiers → `Genesis_HDRP_*`)
 - Phase 6 commit context: project default **HDRP High**

@@ -410,7 +410,7 @@ new DMStudioSubtab(
                         new DMStudioSubtab(
                             "combat-ai-awareness",
                             "AI & awareness",
-                            "§31 #3 utility brain — DM_EnemyBrainProfile (Resources/Combat): archetype rows, personality multipliers, condition thresholds, defend / retreat scoring. Live in Play.",
+                            "§31 #3 utility brain — DM_EnemyBrainProfile (Resources/Combat): archetype rows, personality multipliers, condition thresholds, defend / retreat scoring, chase wall standoff (~0.5 m) / stuck retreat. Live in Play.",
                             DMStudioPanelMode.SingletonAsset,
                             "Assets/_Project/Resources/Combat/DM_EnemyBrainProfile.asset",
                             playModeSave: true),

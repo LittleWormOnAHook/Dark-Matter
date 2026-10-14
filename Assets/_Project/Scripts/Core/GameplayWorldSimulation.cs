@@ -40,6 +40,9 @@ namespace Project.Core
             if (Time.timeScale <= 0.01f)
                 return true;
 
+            if (GameplayMenuTime.IsInventoryPaused)
+                return true;
+
             if (MainMenuController.BlocksGameplayHud)
                 return true;
 
