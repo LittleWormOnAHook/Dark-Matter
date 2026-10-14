@@ -211,7 +211,7 @@ namespace Project.UI
             loadoutLabel.text = BuildLoadoutText(equipment, ammoState);
 
             float ac = roster != null ? roster.AetherCredits : 0f;
-            creditsLabel.text = $"Aether Credits: {Mathf.RoundToInt(ac)}";
+            creditsLabel.text = $"UEA Credits: {Mathf.RoundToInt(ac)}";
 
             unlocksLabel.text = LevelUnlockRegistry.BuildUnlockSummary(level);
         }

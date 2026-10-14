@@ -142,6 +142,10 @@ namespace Project.Combat
                     info.Amount,
                     info.BodyPart,
                     DM_EnemyHitMarkProfile.LiveOrDefault);
+
+                // 2026-10-13 (h): scoped player head/chest multipliers (DM_ScopeProfile + Scope skills).
+                if (DMScopeMode.IsScoped && owner != null && owner.transform.root == DMScopeMode.Instance.transform.root)
+                    info.Amount *= DMScopeMode.DamageMultiplier(info.BodyPart);
             }
 
             bool applied = CombatDamageApplicator.ApplyToDamageable(
@@ -688,6 +692,13 @@ namespace Project.Combat
 
             if (clip == null || muzzle == null)
                 return;
+
+            // 2026-10-13 (h): scoped player shots are louder / lower (DM_ScopeProfile).
+            if (DMScopeMode.IsScoped && muzzle.root == DMScopeMode.Instance.transform.root)
+            {
+                GameAudioManager.PlayWorldSfxPitched(clip, muzzle.position, DMScopeMode.ShotVolume, DMScopeMode.ShotPitch);
+                return;
+            }
 
             GameAudioManager.PlayWorldSfx(clip, muzzle.position, 1f);
         }

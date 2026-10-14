@@ -893,7 +893,7 @@ namespace Project.UI
             if (characterIoClock != null)
                 characterIoClock.text = DMIoClock.DisplayText;
             if (characterCredits != null)
-                characterCredits.text = "Aether Credits: " + Mathf.RoundToInt(ac);
+                characterCredits.text = "UEA Credits: " + Mathf.RoundToInt(ac);
             if (characterUnlocks != null)
                 characterUnlocks.text = LevelUnlockRegistry.BuildUnlockSummary(level);
         }

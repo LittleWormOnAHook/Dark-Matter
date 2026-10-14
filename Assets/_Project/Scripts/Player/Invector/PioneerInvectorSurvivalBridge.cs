@@ -245,6 +245,8 @@ namespace Project.Player.Invector
                 {
                     if (core != null)
                         _staggerImmuneUntil = Time.time + core.playerStaggerImmunitySeconds;
+                    if (core != null && core.playerStaggerStaminaCost > 0f && _survivalStats != null)
+                        _survivalStats.SpendStamina(core.playerStaggerStaminaCost); // 2026-10-13: stagger costs more than a block
                     TryShakeOnReaction(reactionId);
                     return;
                 }

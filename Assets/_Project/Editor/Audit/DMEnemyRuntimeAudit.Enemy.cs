@@ -198,6 +198,21 @@ namespace Project.EditorTools.Audit
                     $"player hp lost {L.PhaseDamage:0.0} (item dmg {ranged.rangedDamage:0.#}), shots/projectiles {L.projectileSpawns}, attack-state frames {L.attackStateFrames}, attacks {L.attackStarts}, first hit {FmtT(L.firstDamageT)}, range {rd:0}m (engage {engage:0}), target '{L.targetName}', states {string.Join("/", L.phaseStates)}; {rstat}",
                     cause);
                 AddMissRow(R, "ranged.miss", L, false, $"Ranged '{ranged.name}'", def);
+                // 2026-10-13 (f): range sweep 7/12/18/25 m + near the configured engage range.
+                var sweep = new List<float> { 7f, 12f, 18f, 25f, Mathf.Max(5f, engage * 0.95f) };
+                foreach (float sd in sweep)
+                {
+                    TopUpPlayer();
+                    PlacePlayer(Ground(go.transform.position + ef * sd), go.transform.position);
+                    yield return Settle(L);
+                    L.BeginPhase();
+                    yield return WaitSwingsOrDamage(L, false, 8f, 6f);
+                    bool hitSd = L.PhaseDamage > 0f;
+                    string st = hitSd ? "PASS" : (sd <= engage + 0.01f ? "FAIL" : "INFO");
+                    R.Add("Weapons", $"ranged.range.{sd:0}", $"Ranged '{ranged.name}' at {sd:0.0} m", st,
+                        $"player hp lost {L.PhaseDamage:0.0}, shots/projectiles {L.projectileSpawns}, attacks {L.attackStarts}, attack-state frames {L.attackStateFrames}, states {string.Join("/", L.phaseStates)}, engage {engage:0.0}",
+                        hitSd ? "" : (sd <= engage + 0.01f ? "inside engage range but no damage (see [DMRangedShot] log)" : "beyond engage range (by settings)"));
+                }
                 R.Add("Weapons", "ranged.vis", "Ranged drawn state", "INFO", visRanged, "");
             }
             else R.Add("Weapons", "ranged.damage", "Ranged weapon damages the player", "SKIP", "no resolved ranged weapon", "");
@@ -341,9 +356,9 @@ namespace Project.EditorTools.Audit
                     var invBefore = InvCounts();
                     string lootRes = lootBag.TryLootAll().ToString();
                     int lootRemoved = InvRemoveGranted(invBefore); // in-memory only: keep the audit inventory from filling up with loot
-                    bool lootOk = lootN > 0 && (lootRes == "Granted" || lootRes == "Partial");
+                    bool lootOk = (lootN > 0 && (lootRes == "Granted" || lootRes == "Partial")) || (lootN == 0 && bagHasLoot); // 2026-10-13 (d7): an AC-only bag (0 item rolls, AC granted on loot) is valid loot, not an empty bag
                     bool minZero = def != null && def.randomLootCountMin <= 0;
-                    lootNote = $"loot bag held {lootN} entr{(lootN == 1 ? "y" : "ies")}, TryLootAll -> {lootRes}, left {lootBag.Entries.Count}" + (lootRemoved > 0 ? $", {lootRemoved} granted item(s) removed again from the audit inventory" : "") + (def != null ? $"; definition random loot count {def.randomLootCountMin}-{def.randomLootCountMax}" : "");
+                    lootNote = $"loot bag held {lootN} item entr{(lootN == 1 ? "y" : "ies")}{(lootN == 0 && bagHasLoot ? " + AC only" : "")}, TryLootAll -> {lootRes}, left {lootBag.Entries.Count}" + (lootRemoved > 0 ? $", {lootRemoved} granted item(s) removed again from the audit inventory" : "") + (def != null ? $"; definition random loot count {def.randomLootCountMin}-{def.randomLootCountMax}" : "");
                     R.Add("Death", "loot", "Loot dropped and can be looted (real loot path), then cleaned up at once",
                         lootOk ? "PASS" : (lootN == 0 && minZero && !bagHasLoot ? "INFO" : (lootN > 0 && bagHasLoot && lootRes == "InventoryFull" ? "WARN" : "FAIL")), lootNote + (bagHasLoot ? "" : ", HasRemainingLoot was false"),
                         lootOk ? "" : (lootN == 0 && minZero && !bagHasLoot ? "the random loot roll gave 0 entries and the definition allows 0 (randomLootCountMin 0): an empty bag is a valid drop chance, not a failure" : lootRes == "InventoryFull" ? "the audit player's inventory was full: loot path reached, cannot confirm the grant" : "bag spawned but nothing could be looted (empty entries / TryLootAll refused)"));

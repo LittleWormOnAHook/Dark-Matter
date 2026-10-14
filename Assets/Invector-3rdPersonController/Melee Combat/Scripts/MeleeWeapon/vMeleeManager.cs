@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -114,6 +114,18 @@ namespace Invector.vMelee
         /// <param name="type"></param>
         /// <param name="active"></param>
         /// <param name="damageMultiplier"></param>
+        float _dmLastSwingSfx = -1f;
+
+        /// <summary>DM: GameAudioManager.PlayWeaponSwing/PlayPunchSwing had no callers, so no melee swing (player or enemy) ever made a swish. The attack window opening is the swing.</summary>
+        void DMPlaySwingSound(vAttackType type)
+        {
+            if (Time.time - _dmLastSwingSfx < 0.2f) return;
+            var audio = global::Project.Audio.GameAudioManager.Instance;
+            if (audio == null) return;
+            _dmLastSwingSfx = Time.time;
+            if (type == vAttackType.Unarmed) audio.PlayPunchSwing(transform.position + Vector3.up);
+            else audio.PlayWeaponSwing(transform.position + Vector3.up);
+        }
         public virtual void SetActiveAttack(List<string> bodyParts, vAttackType type, bool active = true, int damageMultiplier = 0, int recoilID = 0, int reactionID = 0, bool ignoreDefense = false, bool activeRagdoll = false, float senselessTime = 0, string attackName = "")
         {
             for (int i = 0; i < bodyParts.Count; i++)
@@ -139,6 +151,7 @@ namespace Invector.vMelee
             this.activeRagdoll = activeRagdoll;
             this.attackName = attackName;
             this.senselessTime = senselessTime;
+            if (active) DMPlaySwingSound(type);
             if (type == vAttackType.Unarmed)
             {
                 /// find attackObject by bodyPart
@@ -183,6 +196,8 @@ namespace Invector.vMelee
 
             damage.damageValue *= damageMultiplier > 1 ? damageMultiplier : 1;
             hitInfo.targetIsBlocking = !hitInfo.attackObject.ApplyDamage(hitInfo.hitBox, hitInfo.targetCollider, damage);
+            // DM: melee hits on a target without a PioneerInvectorDamageReceiver (the player) played no impact sound; CombatHitAudio debounces per collider so receivers that already play it do not double up.
+            if (!hitInfo.targetIsBlocking) global::Project.Combat.CombatHitAudio.PlayWeaponHit(hitInfo.hitPoint, false, hitInfo.targetCollider);
 
             onDamageHit.Invoke(hitInfo);
         }

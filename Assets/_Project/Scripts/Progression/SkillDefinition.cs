@@ -37,7 +37,14 @@ namespace Project.Progression
         /// <summary>Tier-0 journal anchor — unlocks climb when rank is above zero.</summary>
         ClimbSystemUnlock,
         JetpackSystemUnlock,
-        DashSystemUnlock
+        DashSystemUnlock,
+        // 2026-10-13 (h): scope / sniper skills (append-only).
+        ScopeSteadyAimPercent,
+        ScopeInSpeedPercent,
+        ScopeZoomPercent,
+        ScopeHeadshotDamagePercent,
+        ScopeRangePercent,
+        ScopeFireIntervalPercent
     }
 
     /// <summary>Journal hex skill-tree branches.</summary>

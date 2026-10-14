@@ -1,4 +1,5 @@
 using Project.Building;
+using Project.EditorTools;
 using Project.EditorTools.GenesisStudio;
 using UnityEditor;
 using UnityEngine;
@@ -302,26 +303,42 @@ namespace Project.EditorTools.Building
             EditorGUILayout.LabelField("Build Hub test (play mode)", EditorStyles.boldLabel);
             int hubs = Application.isPlaying ? DMBuildHub.Active.Count : 0;
             EditorGUILayout.LabelField("Hubs in world", Application.isPlaying ? hubs.ToString() : "- (enter play mode)");
-            using (new EditorGUI.DisabledScope(hubs == 0))
+            var hubBlockers = DMStudioActionValidation.CollectBuildingHubUpgradeBlockers();
+            DMStudioActionValidation.DrawBlockersHelpBox(hubBlockers, "Build Hub test upgrades");
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Upgrade all hubs (+1)"))
             {
-                EditorGUILayout.BeginHorizontal();
-                if (GUILayout.Button("Upgrade all hubs (+1)"))
-                {
-                    for (int i = 0; i < DMBuildHub.Active.Count; i++)
+                DMStudioActionValidation.TryRunPrimaryAction(
+                    DMStudioActionValidation.BuildingStudioDialogTitle,
+                    hubBlockers,
+                    () =>
                     {
-                        if (DMBuildHub.Active[i] != null)
-                            DMBuildHub.Active[i].Upgrade();
-                    }
-                }
-                if (GUILayout.Button("Reset hubs to level 0"))
-                {
-                    for (int i = 0; i < DMBuildHub.Active.Count; i++)
+                        for (int i = 0; i < DMBuildHub.Active.Count; i++)
+                        {
+                            if (DMBuildHub.Active[i] != null)
+                                DMBuildHub.Active[i].Upgrade();
+                        }
+                    });
+            }
+
+            if (GUILayout.Button("Reset hubs to level 0"))
+            {
+                DMStudioActionValidation.TryRunPrimaryAction(
+                    DMStudioActionValidation.BuildingStudioDialogTitle,
+                    hubBlockers,
+                    () =>
                     {
-                        if (DMBuildHub.Active[i] != null)
-                            DMBuildHub.Active[i].SetLevel(0);
-                    }
-                }
-                EditorGUILayout.EndHorizontal();
+                        for (int i = 0; i < DMBuildHub.Active.Count; i++)
+                        {
+                            if (DMBuildHub.Active[i] != null)
+                                DMBuildHub.Active[i].SetLevel(0);
+                        }
+                    });
+            }
+
+            EditorGUILayout.EndHorizontal();
+            if (Application.isPlaying)
+            {
                 for (int i = 0; i < DMBuildHub.Active.Count && Application.isPlaying; i++)
                 {
                     DMBuildHub hub = DMBuildHub.Active[i];
@@ -471,12 +488,20 @@ namespace Project.EditorTools.Building
                     MessageType.None);
                 Prop("forceFieldCorners", "Show corner blocks");
                 Prop("forceFieldCornerMaterial", "Block material (empty = DM_ForceFieldCorner)");
+                var cornerMatBlockers = DMStudioActionValidation.CollectBuildingCreationFxMaterialBlockers(fxProfile);
+                DMStudioActionValidation.DrawBlockersHelpBox(cornerMatBlockers, "Create editable block material");
                 if (fxProfile.forceFieldCornerMaterial == null && GUILayout.Button("Create editable block material"))
                 {
-                    Material made = DMBuildingForceFields.EnsureCornerMaterial();
-                    SerializedProperty slot = fxSerialized.FindProperty("forceFieldCornerMaterial");
-                    if (made != null && slot != null)
-                        slot.objectReferenceValue = made;
+                    DMStudioActionValidation.TryRunPrimaryAction(
+                        DMStudioActionValidation.BuildingStudioDialogTitle,
+                        cornerMatBlockers,
+                        () =>
+                        {
+                            Material made = DMBuildingForceFields.EnsureCornerMaterial();
+                            SerializedProperty slot = fxSerialized.FindProperty("forceFieldCornerMaterial");
+                            if (made != null && slot != null)
+                                slot.objectReferenceValue = made;
+                        });
                 }
                 Prop("forceFieldCornerSize", "Block size (m)");
                 Prop("forceFieldCornerDepth", "Block depth (m)");

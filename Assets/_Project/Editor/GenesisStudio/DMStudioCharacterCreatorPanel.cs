@@ -25,6 +25,13 @@ namespace Project.EditorTools.GenesisStudio
         readonly DMStudioCharacterCreatorPrefabList playerPrefabList = new DMStudioCharacterCreatorPrefabList(DMStudioCharacterCreatorPrefabList.ListKind.Player);
         readonly DMStudioCharacterCreatorPrefabList enemyPrefabList = new DMStudioCharacterCreatorPrefabList(DMStudioCharacterCreatorPrefabList.ListKind.Enemy);
 
+        public DMStudioCharacterCreatorPanel()
+        {
+            // Clicking a prefab row loads that prefab's definition into the editing panel below.
+            enemyPrefabList.OnLoadEnemyDefinition = SelectEnemyDefinitionByAsset;
+            playerPrefabList.OnLoadPlayerDefinition = SelectPlayerDefinitionByAsset;
+        }
+
         int selectedPlayerDef = -1;
         int selectedEnemyDef = -1;
         PlayerVisualDefinition[] playerDefs = System.Array.Empty<PlayerVisualDefinition>();

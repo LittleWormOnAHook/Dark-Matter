@@ -314,7 +314,7 @@ namespace Project.UI
             if (playerAcLabel != null && playerAc != lastHeaderPlayerAc)
             {
                 lastHeaderPlayerAc = playerAc;
-                playerAcLabel.text = "Your AC " + playerAc;
+                playerAcLabel.text = "Your UEA " + playerAc;
             }
 
             DMVendorRuntimeState state = DMVendorRuntime.GetOrCreate(npc.Profile);
@@ -322,7 +322,7 @@ namespace Project.UI
             if (vendorAcLabel != null && purse != lastHeaderVendorAc)
             {
                 lastHeaderVendorAc = purse;
-                vendorAcLabel.text = "Vendor AC " + purse;
+                vendorAcLabel.text = "Vendor UEA " + purse;
                 vendorAcLabel.style.color = purse <= 0
                     ? DarkMatterGenesisUiPalette.DeepMagenta
                     : DarkMatterGenesisUiPalette.Gold;
@@ -677,8 +677,8 @@ namespace Project.UI
                 qtyValue.text = qty.ToString();
             if (qtyPrice != null)
                 qtyPrice.text = focusSide == FocusSide.Vendor
-                    ? "Buy " + ResolveFocusedBuy(qty) + " AC"
-                    : "Sell " + ResolveFocusedSell(qty) + " AC";
+                    ? "Buy " + ResolveFocusedBuy(qty) + " UEA"
+                    : "Sell " + ResolveFocusedSell(qty) + " UEA";
         }
 
         private int ResolveFocusedMaxQty()
@@ -779,8 +779,8 @@ namespace Project.UI
                     MaxQty = max,
                     DefaultQty = startQty,
                     FormatPrice = qty => focusSide == FocusSide.Vendor
-                        ? "Buy " + ResolveFocusedBuy(qty) + " AC"
-                        : "Sell " + ResolveFocusedSell(qty) + " AC",
+                        ? "Buy " + ResolveFocusedBuy(qty) + " UEA"
+                        : "Sell " + ResolveFocusedSell(qty) + " UEA",
                     Confirm = ConfirmFocused
                 });
         }

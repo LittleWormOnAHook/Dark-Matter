@@ -221,6 +221,17 @@ namespace Project.Inventory
         /// not silently top itself up mid-shot. Actual reserve refilling happens once, at reload
         /// completion, via EnsureWeaponInitialized.
         /// </summary>
+        /// <summary>2026-10-13 (i): god mode (typed cheat / audit) = shots consume nothing (DM_CombatCoreProfile.godModeInfiniteAmmo).</summary>
+        private static bool GodInfiniteAmmo
+        {
+            get
+            {
+                if (!Project.Core.DMDevCommandState.GodMode) return false;
+                Project.Combat.DM_CombatCoreProfile p = Project.Combat.DM_CombatCoreProfile.Live;
+                return p == null || p.godModeInfiniteAmmo;
+            }
+        }
+
         public bool TryConsumeActiveRound()
         {
             if (equipment == null)
@@ -232,6 +243,11 @@ namespace Project.Inventory
                 return false;
 
             SlotAmmo entry = GetOrCreateSlot(slot, weapon);
+            if (GodInfiniteAmmo)
+            {
+                if (entry.loaded <= 0) { entry.loaded = 1; NotifyChanged(); }
+                return true;
+            }
             if (entry.loaded <= 0)
                 return false;
 

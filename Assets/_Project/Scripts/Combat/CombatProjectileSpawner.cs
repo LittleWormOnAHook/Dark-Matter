@@ -14,6 +14,9 @@ namespace Project.Combat
     /// </summary>
     public static class CombatProjectileSpawner
     {
+        /// <summary>2026-10-13 (f): debug trace of enemy shots, set from DM_EnemyBrainProfile.logRangedFireGates by the enemy combat bridge.</summary>
+        public static bool DebugTrace;
+        private static void Trace(GameObject owner, string msg) { if (DebugTrace && owner != null && !owner.CompareTag("Player")) Debug.Log("[DMRangedShot] " + owner.name + " " + msg); }
         // Single copy (Resources) shared by the editor and builds.
         private const string DefaultProjectilePath = "Assets/_Project/Resources/Combat/DefaultBullet.prefab";
 
@@ -43,6 +46,7 @@ namespace Project.Combat
             float damage = ResolveShotDamage(weapon, ammoItem, damageOverride);
 
             DMAmmoDeliveryMode delivery = DMCombatRangedResolver.ResolveDelivery(ammoItem, weapon);
+            Trace(owner, $"spawn: weapon {weapon.name} ammo {(ammoItem != null ? ammoItem.name : "none")} delivery {delivery} dmg {damage:0.0} spread {spreadDegrees:0.0}");
             if (delivery == DMAmmoDeliveryMode.Hitscan || delivery == DMAmmoDeliveryMode.Beam
                 || (ammoItem != null && ammoItem.isHitscanBeam))
             {
@@ -52,7 +56,11 @@ namespace Project.Combat
 
             GameObject prefab = ResolveProjectilePrefab(weapon, ammoItem);
             if (prefab == null)
+            {
+                Trace(owner, "projectile prefab NULL -> no shot");
                 return null;
+            }
+            Trace(owner, "projectile prefab " + prefab.name);
 
             Vector3 spawnPosition;
             if (lockedSpawnPosition.HasValue)
@@ -119,6 +127,7 @@ namespace Project.Combat
                     ammoItem: ammoItem))
             {
                 endPoint = hit.point;
+                Trace(owner, $"hitscan hit {hit.collider.name} layer {LayerMask.LayerToName(hit.collider.gameObject.layer)} at {hit.distance:0.0}m (range {range:0.0})");
                 DMCombatRangedResolver.ApplyHitOutcome(
                     hit,
                     direction,
@@ -129,6 +138,7 @@ namespace Project.Combat
                     weapon);
             }
 
+            else Trace(owner, $"hitscan MISS (range {range:0.0})");
             // Pulse/continuous laser ammo: tracers + beam line, never a traveling projectile.
             CombatHitResolver.SpawnHitscanBeamVisual(ammoItem, weapon, muzzle, origin, endPoint, direction, range);
         }

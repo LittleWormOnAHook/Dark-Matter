@@ -1,4 +1,4 @@
-﻿using Invector;
+using Invector;
 using Invector.vCamera;
 using Invector.vShooter;
 using Project.Combat;
@@ -298,7 +298,7 @@ namespace Project.Player.Invector
             weapon.reloadTime = DMRangedAmmoStats.ResolveReloadSeconds(weaponItem, ammoItem);
             weapon.clipSize = DMRangedAmmoStats.ResolveMagazineSize(weaponItem, ammoItem);
             weapon.velocity = DMRangedAmmoStats.ResolveProjectileSpeed(weaponItem, ammoItem);
-            weapon.maxDamageDistance = DMRangedAmmoStats.ResolveRange(weaponItem, ammoItem);
+            weapon.maxDamageDistance = DMScopeMode.ResolvePlayerRange(DMRangedAmmoStats.ResolveRange(weaponItem, ammoItem)); // (h) scoped range
             weapon.minDamage = Mathf.RoundToInt(DMRangedAmmoStats.ResolveMinDamage(weaponItem, ammoItem));
             weapon.maxDamage = Mathf.RoundToInt(Mathf.Max(1f, DMRangedAmmoStats.ResolveAverageDamage(weaponItem, ammoItem)));
         }

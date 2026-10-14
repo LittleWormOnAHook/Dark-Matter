@@ -16,9 +16,11 @@ namespace Invector.vMelee
             var weaponObject = GetComponent<vMeleeWeapon>();
             if (weaponObject)
             {
-                weaponObject.onDamageHit.AddListener(PlayHitEffects);
-                weaponObject.onRecoilHit.AddListener(PlayRecoilEffects);
-                weaponObject.onDefense.AddListener(PlayDefenseEffects);
+                // DM: weapon prefabs authored before these events existed (or built at runtime) can have a null UnityEvent;
+                // an unguarded AddListener threw a NullReferenceException on every spawn of such a weapon.
+                weaponObject.onDamageHit?.AddListener(PlayHitEffects);
+                weaponObject.onRecoilHit?.AddListener(PlayRecoilEffects);
+                weaponObject.onDefense?.AddListener(PlayDefenseEffects);
             }
         }
 

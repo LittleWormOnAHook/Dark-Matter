@@ -100,7 +100,7 @@ namespace Project.Core
                 return "No roster.";
 
             roster.AddAetherCredits(amount, "DevPanel");
-            return $"AC now {Mathf.RoundToInt(roster.AetherCredits)}.";
+            return $"UEA now {Mathf.RoundToInt(roster.AetherCredits)}.";
         }
 
         public static string AddItem(string itemId, int amount)

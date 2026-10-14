@@ -136,7 +136,7 @@ MonoBehaviour:
   snapLegsToMovement: 1
   unarmedTipReach: 1.1
   swingStartInnerMargin: 0.25
-  swingCutDepthFraction: 0.2
+  swingCutDepthFraction: 0.35
   swingGateAllAttackers: 1
   swingStartLeadSeconds: 0.2
   swingCloseInReadySeconds: 0.5

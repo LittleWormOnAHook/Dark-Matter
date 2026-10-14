@@ -920,7 +920,7 @@ namespace Project.Combat
             GrantPendingAetherCredits();
             if (lootEntries.IsEmpty)
             {
-                // AC-only bag: the AC card is the whole reward; dissolve on the normal looted delay.
+                // UEA-only bag: the AC card is the whole reward; dissolve on the normal looted delay.
                 RefreshLootState();
                 return;
             }

@@ -99,7 +99,71 @@ namespace Project.AI.Invector
         private void Update()
         {
             UpdateRangedAimStance();
+            TickGuardStamina();
         }
+
+        // ---- 2026-10-13 guard stamina (DM_EnemyBrainProfile "Enemy guard stamina") ----
+        private float _guardStamina = -1f;
+        private float _guardLastSpend = -999f;
+        private float _guardHoldStart = -1f;
+
+        private Project.AI.DM_EnemyBrainProfile GuardProfile
+        {
+            get
+            {
+                var b = GetComponent<Project.AI.DMEnemyBrain>();
+                return b != null && b.Profile != null ? b.Profile : Project.AI.DM_EnemyBrainProfile.Live;
+            }
+        }
+
+        public float GuardStaminaMax
+        {
+            get
+            {
+                var ai = GetComponent<EnemyAiController>();
+                var def = ai != null ? ai.AppliedDefinition : null;
+                if (def != null && def.guardStaminaMax > 0f) return def.guardStaminaMax;
+                var p = GuardProfile;
+                return p != null ? p.enemyGuardStaminaMax : 60f;
+            }
+        }
+
+        public float GuardStamina { get { if (_guardStamina < 0f) _guardStamina = GuardStaminaMax; return _guardStamina; } }
+
+        /// <summary>Spends guard stamina; empty = the guard breaks (and stays down until it refills past the block minimum).</summary>
+        public void SpendGuardStamina(float amount)
+        {
+            if (amount <= 0f) return;
+            _guardStamina = Mathf.Max(0f, GuardStamina - amount);
+            _guardLastSpend = Time.time;
+            if (_guardStamina <= 0.01f && _blockActive)
+            {
+                var ai = GetComponent<EnemyAiController>();
+                if (ai != null) ai.BreakGuard(); else EndBlock();
+            }
+        }
+
+        private void TickGuardStamina()
+        {
+            var p = GuardProfile;
+            if (p == null) return;
+            float max = GuardStaminaMax;
+            if (_guardStamina < 0f) _guardStamina = max;
+            if (_blockActive)
+            {
+                if (_guardHoldStart < 0f) _guardHoldStart = Time.time;
+                float held = Time.time - _guardHoldStart;
+                float rate = Mathf.Min(p.enemyBlockHoldCostBase * Mathf.Pow(Mathf.Max(1f, p.enemyBlockHoldCostGrowth), held), p.enemyBlockHoldCostCap);
+                SpendGuardStamina(rate * Time.deltaTime);
+            }
+            else
+            {
+                _guardHoldStart = -1f;
+                if (Time.time - _guardLastSpend >= p.enemyGuardRegenDelay)
+                    _guardStamina = Mathf.Min(max, _guardStamina + p.enemyGuardRegenPerSec * Time.deltaTime);
+            }
+        }
+
 
         // Runs after the Animator so we can post-process the chest bone pitch without
         // fighting the animator each frame. Only active while the aim stance is held.
@@ -185,11 +249,78 @@ namespace Project.AI.Invector
             _chestPitchCurrent = Mathf.MoveTowards(
                 _chestPitchCurrent, targetPitch, aimChestPitchSpeed * Time.deltaTime);
 
+            // 2026-10-13 (e1): barrel-to-target correction (yaw + pitch) replaces the pitch-only tilt when enabled.
+            DM_EnemyBrainProfile acp = GuardProfile;
+            if (acp != null && acp.enemyAimCorrectionEnabled)
+            {
+                Quaternion want = Quaternion.identity;
+                Transform aimTarget = _isAimStanceActive ? _enemyCombat?.CurrentTarget : null;
+                Transform barrel = aimTarget != null && HasRangedWeaponEquipped() ? ResolveProjectileMuzzle() : null;
+                if (barrel != null && barrel != fallbackMuzzle)
+                {
+                    // 2026-10-13 (i): solve about the chest pivot, not the barrel. The correction rotates the chest, which also
+                    // moves the barrel; up close the barrel-only FromTo over-rotated (pistols pointed at the feet).
+                    Vector3 pivot = _chestBone.position;
+                    Vector3 tgt = ResolveAimPoint(aimTarget);
+                    Vector3 to = tgt - barrel.position;
+                    float dist = Mathf.Max(0.5f, to.magnitude);
+                    Vector3 pivotToAim = barrel.position + barrel.forward * dist - pivot;
+                    Vector3 pivotToTgt = tgt - pivot;
+                    if (to.sqrMagnitude > 0.04f && pivotToTgt.sqrMagnitude > 0.04f && pivotToAim.sqrMagnitude > 0.04f)
+                    {
+                        Quaternion full = Quaternion.FromToRotation(pivotToAim, pivotToTgt);
+                        full.ToAngleAxis(out float ang, out Vector3 axis);
+                        if (ang > 180f) ang -= 360f;
+                        ang = Mathf.Clamp(ang * Mathf.Clamp01(acp.enemyAimCorrectionStrength), -acp.enemyAimCorrectionMaxAngle, acp.enemyAimCorrectionMaxAngle);
+                        if (axis.sqrMagnitude > 0.0001f) want = Quaternion.AngleAxis(ang, axis);
+                    }
+                }
+                // Smoothed in world space; re-solved every frame against the fresh animator pose, so it converges instead of accumulating.
+                _aimCorrection = Quaternion.RotateTowards(_aimCorrection, want, Mathf.Max(1f, acp.enemyAimCorrectionSpeed) * Time.deltaTime);
+                Quaternion applied = Quaternion.Slerp(_aimCorrectionPrevFull, _aimCorrection, 1f);
+                _aimCorrectionPrevFull = applied;
+                if (Quaternion.Angle(applied, Quaternion.identity) > 0.1f)
+                    _chestBone.rotation = applied * _chestBone.rotation;
+                return;
+            }
+
             if (Mathf.Abs(_chestPitchCurrent) > 0.1f)
                 _chestBone.rotation = Quaternion.AngleAxis(-_chestPitchCurrent, transform.right) * _chestBone.rotation;
         }
 
-        public float RangedEngageRange => rangedEngageRange;
+        /// <summary>2026-10-13 (f): when DM_EnemyBrainProfile.reconcileRangedEngageToVision is on, a ranged enemy may fire out to
+        /// min(weapon rangedRange, vision range) if that is beyond its configured engage range (it can see and hit you, so it shoots).</summary>
+        public float RangedEngageRange
+        {
+            get
+            {
+                DM_EnemyBrainProfile p = GuardProfile;
+                if (p == null || !p.reconcileRangedEngageToVision)
+                    return rangedEngageRange;
+                ItemData w = _loadoutBridge != null ? _loadoutBridge.ResolvedRanged : null;
+                if (_senses == null) _senses = GetComponent<EnemySenses>();
+                if (w == null || w.rangedRange <= 0f || _senses == null)
+                    return rangedEngageRange;
+                float engage = Mathf.Max(rangedEngageRange, Mathf.Min(w.rangedRange, _senses.VisionRange));
+                if (IsRifle(w)) // 2026-10-13 (g): rifle base engage (25 m) + upgrade hook, capped by the weapon range
+                    engage = Mathf.Max(engage, Mathf.Min(w.rangedRange, p.rifleEngageRangeBase + RifleRangeBonus));
+                return engage;
+            }
+        }
+        private EnemySenses _senses;
+        /// <summary>2026-10-13 (g): hook for skill/upgrade systems to extend enemy rifle range (metres added to rifleEngageRangeBase / rifleVisionFloor).</summary>
+        public static float RifleRangeBonus;
+        public static bool IsRifle(ItemData w) => w != null && w.IsRangedWeapon && w.weaponGrip == WeaponGrip.TwoHanded && !w.isMiningTool;
+        /// <summary>Vision floor for rifle users (EnemySenses reads it).</summary>
+        public float RifleVisionFloor
+        {
+            get
+            {
+                DM_EnemyBrainProfile p = GuardProfile;
+                ItemData w = _loadoutBridge != null ? _loadoutBridge.ResolvedRanged : null;
+                return p != null && IsRifle(w) ? p.rifleVisionFloor + RifleRangeBonus : 0f;
+            }
+        }
 
         /// <summary>Ranged hold distance (definition field when set, else this bridge's field, else 80% of the engage range), kept beyond melee reach.</summary>
         public float RangedHoldDistance
@@ -228,6 +359,15 @@ namespace Project.AI.Invector
         {
             ItemData weapon = _loadoutBridge != null ? _loadoutBridge.ActiveItem : null;
             return weapon != null && weapon.IsRangedWeapon;
+        }
+
+        /// <summary>2026-10-13 (g): true when this enemy would pick its gun for the target at the current distance (even before the gun is drawn).</summary>
+        public bool WouldUseRangedFor(Transform target)
+        {
+            if (target == null || _loadoutBridge == null || !_loadoutBridge.PrefersRangedAtRange || _loadoutBridge.ResolvedRanged == null)
+                return false;
+            ItemData w = ResolveWeaponForTarget(target);
+            return w != null && w.IsRangedWeapon;
         }
 
         public bool IsArmedRangedPreferred()
@@ -271,8 +411,17 @@ namespace Project.AI.Invector
             duration = blockDuration > 0f ? blockDuration : defensiveBlockDurationFallback;
             if (_controller == null || _animator == null)
                 return false;
+            var gp = GuardProfile;
+            if (gp != null && GuardStamina < gp.enemyMinGuardStaminaToBlock)
+                return false; // 2026-10-13: too tired to guard
 
             _controller.isStrafing = true;
+            // 2026-10-13 (d5): melee weapon drawn -> weapon block (DefenseID >= 1, same as the player), never Defense_Unarmed (0).
+            if (!HasRangedWeaponEquipped() && _loadoutBridge != null && _loadoutBridge.ActiveItem != null)
+            {
+                int defId = _meleeManager != null ? _meleeManager.GetDefenseID() : 1;
+                _animator.SetInteger(vAnimatorParameters.DefenseID, Mathf.Max(1, defId));
+            }
             _animator.SetBool(vAnimatorParameters.IsBlocking, true);
             _blockActive = true;
             return true;
@@ -698,6 +847,10 @@ namespace Project.AI.Invector
         private bool TryBeginRangedAttack(Transform target, ItemData weapon, out float duration)
         {
             duration = defaultRangedDuration;
+            DM_EnemyBrainProfile trp = GuardProfile;
+            Project.Combat.CombatProjectileSpawner.DebugTrace = trp != null && trp.logRangedFireGates;
+            if (Project.Combat.CombatProjectileSpawner.DebugTrace)
+                Debug.Log($"[DMRangedShot] {name} TryBeginRangedAttack weapon {(weapon != null ? weapon.name : "null")} shooterMgr {(_shooterManager != null)} dist {(target != null ? HorizontalDistance(transform.position, target.position) : -1f):0.0}");
             if (_shooterManager == null || target == null)
                 return false;
 
@@ -717,6 +870,7 @@ namespace Project.AI.Invector
             PrepareShooterWeaponForFire();
             Transform shotOrigin = ResolveProjectileMuzzle();
             Vector3 originPoint = shotOrigin != null ? shotOrigin.position : transform.position + Vector3.up * 1.35f;
+            { DM_EnemyBrainProfile hp = GuardProfile; _aimHeadThisShot = hp != null && Random.value < hp.enemyHeadshotChance; } // 2026-10-13 (d2)
             Vector3 aimPoint = ApplyMissOffset(ResolveAimPoint(target), target, originPoint);
             _shooterManager.Shoot(aimPoint, applyHipfirePrecision: false);
             SpawnRangedProjectile(weapon, aimPoint);
@@ -748,7 +902,10 @@ namespace Project.AI.Invector
         private void SpawnRangedProjectile(ItemData weapon, Vector3 aimPoint)
         {
             if (weapon == null || !weapon.IsRangedWeapon)
+            {
+                if (Project.Combat.CombatProjectileSpawner.DebugTrace) Debug.Log($"[DMRangedShot] {name} SpawnRangedProjectile skipped: weapon not ranged");
                 return;
+            }
 
             Transform muzzle = ResolveProjectileMuzzle();
             if (muzzle == null)
@@ -883,7 +1040,30 @@ namespace Project.AI.Invector
             transform.rotation = Quaternion.LookRotation(toTarget.normalized, Vector3.up);
         }
 
-        private static Vector3 ResolveAimPoint(Transform target)
+        private bool _aimHeadThisShot;
+        private Quaternion _aimCorrection = Quaternion.identity, _aimCorrectionPrevFull = Quaternion.identity;
+
+        /// <summary>2026-10-13 (d2): aim at the target's humanoid bone (DM_EnemyBrainProfile.enemyAimTargetBone, default Chest;
+        /// head on an enemyHeadshotChance roll per shot). Falls back to the old capsule centre when the target has no humanoid rig.</summary>
+        private Vector3 ResolveAimPoint(Transform target)
+        {
+            if (target != null)
+            {
+                Animator ta = target.GetComponentInChildren<Animator>();
+                if (ta != null && ta.isHuman)
+                {
+                    DM_EnemyBrainProfile bp = GuardProfile;
+                    HumanBodyBones bone = _aimHeadThisShot ? HumanBodyBones.Head
+                        : (bp != null ? bp.enemyAimTargetBone : HumanBodyBones.Chest);
+                    Transform bt = bone != HumanBodyBones.LastBone ? ta.GetBoneTransform(bone) : null;
+                    if (bt == null && bone == HumanBodyBones.Chest) bt = ta.GetBoneTransform(HumanBodyBones.Spine);
+                    if (bt != null) return bt.position;
+                }
+            }
+            return ResolveCapsuleAimPoint(target);
+        }
+
+        private static Vector3 ResolveCapsuleAimPoint(Transform target)
         {
             // Prefer the root CapsuleCollider (character controller body) — its bounds.center
             // sits at mid-torso. Avoid trigger colliders and child hitboxes.

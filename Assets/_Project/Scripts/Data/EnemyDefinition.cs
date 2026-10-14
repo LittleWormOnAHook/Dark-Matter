@@ -128,6 +128,13 @@ namespace Project.AI
         [Header("Block (brain Defend)")]
         [Tooltip("Scales the chance this enemy type actually blocks when its brain decides to block (0 = never blocks, 1 = as the brain rolled with defendBlockShare). The block rules themselves live in DM_EnemyBrainProfile 'Enemy block'.")]
         [Range(0f, 1f)] public float blockChanceMultiplier = 1f;
+        [Tooltip("Guard stamina pool for this type. 0 = DM_EnemyBrainProfile 'Enemy guard stamina'.")]
+        [Min(0f)] public float guardStaminaMax = 0f;
+
+        [Header("Weapon held down (overrides Combat Core 'Enemy weapon held down')")]
+        public bool overrideWeaponDown = false;
+        [Range(0f, 90f)] public float weaponDownAngle = 60f;
+        [Range(0f, 30f)] public float weaponDownVariation = 5f;
 
         [Header("Dodge strike (brain)")]
         [Tooltip("Multiplies the chance this enemy type opens a swing with a dodge strike (0 = never, 1 = DM_EnemyBrainProfile dodgeStrikeChance). The rules live in DM_EnemyBrainProfile 'Dodge strike'.")]

@@ -183,6 +183,8 @@ namespace Project.Combat
             Sweep();
             if (Active.Count >= Mathf.Max(1, p.volumetricBudget)) RecycleOldest(); // 2026-10-12: was return false -> legacy splatter once 6 sprays were alive
             int side = ResolveSide(p, enemy, travel);
+            bool forcedSide = false;
+            if (side == 0 && UnityEngine.Random.value < p.volumetricStraightUsesSideChance) { side = UnityEngine.Random.value < 0.5f ? -1 : 1; forcedSide = true; } // 2026-10-13: side variants never played
             GameObject prefab = set.Pick(side);
             if (prefab == null) return false;
 
@@ -193,6 +195,7 @@ namespace Project.Combat
             float angle = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
             GameObject go = Get(prefab);
             go.transform.SetPositionAndRotation(point, Quaternion.Euler(0f, angle + p.volumetricYawOffset, 0f));
+            go.transform.localScale = Vector3.one * (Mathf.Clamp(p.volumetricAirborneScale, 0.2f, 1.5f) * NextScaleMul); NextScaleMul = 1f; // 2026-10-13 (f): smaller airborne splatter (HDRP decal size is scale-invariant)
 
             var settings = go.GetComponent<BFX_BloodSettings>();
             if (settings != null)
@@ -208,6 +211,8 @@ namespace Project.Combat
             ApplyFluidColor(p, go, body);
             _lastSpawnTime = Time.time; _lastSpawnPoint = point;
             Active.Add(new Live { go = go, prefab = prefab, until = Time.time + Mathf.Max(1f, p.volumetricLifetime) });
+            if (p.logVolumetricSide)
+                Debug.Log("[BloodSide] target=" + (enemy != null ? enemy.name : "?") + " side=" + (side < 0 ? "Left" : side > 0 ? "Right" : "Straight") + (forcedSide ? " (random)" : "") + " prefab=" + prefab.name);
             if (DM_CombatCoreProfile.Live != null && DM_CombatCoreProfile.Live.logInterruptsInPlay)
                 Debug.Log("[HitMarkMat] vol target=" + (enemy != null ? enemy.name : "?") + " body=" + body + " prefab=" + prefab.name + " side=" + side);
             return true;
@@ -233,9 +238,12 @@ namespace Project.Combat
             {
                 DMDecalJitter j = d.GetComponent<DMDecalJitter>();
                 if (j == null) j = d.gameObject.AddComponent<DMDecalJitter>();
-                j.Apply(p.volumetricDecalRandomRotation, UnityEngine.Random.Range(lo, hi), p.volumetricDecalDepth, p.volumetricDecalGroundOffset);
+                j.Apply(p.volumetricDecalRandomRotation, UnityEngine.Random.Range(lo, hi) * Mathf.Max(0.01f, p.volumetricDecalSizeMultiplier), p.volumetricDecalDepth, p.volumetricDecalGroundOffset);
             }
         }
+
+        /// <summary>One-shot size multiplier for the next spray (heavy hits); reset after use.</summary>
+        public static float NextScaleMul = 1f;
 
         private static float _nextSunSearch; // 2026-10-13: no-sun scenes ran FindObjectsByType<Light> on every hit
 

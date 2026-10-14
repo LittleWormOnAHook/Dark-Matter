@@ -14,7 +14,7 @@ namespace Project.EditorTools.Loot
     /// Loot chest ids and validators (loot plan 6.3 / 13.1 #9).
     /// - Menu: assigns a GUID-style chestId to every DMItemCollection in open scenes that has none or a duplicate
     ///   (Ctrl+D copies). Marks the scene dirty; saving stays the designer's call.
-    /// - On scene save: warns about empty / duplicate chestIds and non-item (Aether Credit) loot slots (D6). Never edits.
+    /// - On scene save: warns about empty / duplicate chestIds and non-item (UEA Credit) loot slots (D6). Never edits.
     /// </summary>
     [InitializeOnLoad]
     public static class DMLootChestIdTool
@@ -111,7 +111,7 @@ namespace Project.EditorTools.Loot
                     if (data == null || !data.isAcInfused)
                         continue;
                     issues++;
-                    report.AppendLine($"- '{PathOf(events.transform)}' loot slot {i} ({data.itemName}) carries Aether Credits; chests hold items only (D6).");
+                    report.AppendLine($"- '{PathOf(events.transform)}' loot slot {i} ({data.itemName}) carries UEA Credits; chests hold items only (D6).");
                 }
             }
 

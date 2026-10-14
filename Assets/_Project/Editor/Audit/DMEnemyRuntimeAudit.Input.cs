@@ -114,8 +114,26 @@ namespace Project.EditorTools.Audit
         private static void Inject<T>(UnityEngine.InputSystem.InputDevice d, T state) where T : struct, UnityEngine.InputSystem.LowLevel.IInputStateTypeInfo
         {
             if (d == null) return;
-            if (!Application.isFocused) InputState.Change(d, state);
+            // 2026-10-13 (d9): re-focus the Game view if another editor window took focus, and write state directly when the
+            // app OR the Game view is unfocused, so injected input is never dropped mid-scenario.
+            bool gvFocused = EnsureGameViewFocus();
+            if (!Application.isFocused || !gvFocused) InputState.Change(d, state);
             InputSystem.QueueStateEvent(d, state);
+        }
+        private static Type _gameViewType;
+        /// <summary>2026-10-13 (d9): focus the Game view when it is not the focused editor window. Returns whether it was already focused.</summary>
+        private static bool EnsureGameViewFocus()
+        {
+            try
+            {
+                if (_gameViewType == null) _gameViewType = typeof(Editor).Assembly.GetType("UnityEditor.GameView");
+                if (_gameViewType == null) return true;
+                EditorWindow f = EditorWindow.focusedWindow;
+                if (f != null && f.GetType() == _gameViewType) return true;
+                EditorWindow.FocusWindowIfItsOpen(_gameViewType);
+                return false;
+            }
+            catch { return false; }
         }
         private static void PushKeys()
         {
@@ -282,6 +300,7 @@ namespace Project.EditorTools.Audit
             Func<float> sample, Func<float, float, float, float, bool> ok, string unit, string cause, string failStatus = "FAIL")
         {
             DMAuditHud.Step(label);
+            EnsureGameViewFocus();
             yield return ResetControlSpot(0f);
             float v0 = sample(), vmin = v0, vmax = v0;
             press?.Invoke();

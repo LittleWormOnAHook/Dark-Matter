@@ -167,7 +167,7 @@ namespace Project.Player.Invector
             float reload = DMRangedAmmoStats.ResolveReloadSeconds(item, ammo);
             int clip = DMRangedAmmoStats.ResolveMagazineSize(item, ammo);
             float speed = DMRangedAmmoStats.ResolveProjectileSpeed(item, ammo);
-            float range = DMRangedAmmoStats.ResolveRange(item, ammo);
+            float range = DMScopeMode.ResolvePlayerRange(DMRangedAmmoStats.ResolveRange(item, ammo)); // (h) scoped range
 
             if (!force
                 && Mathf.Approximately(interval, _appliedShootInterval)
@@ -209,6 +209,13 @@ namespace Project.Player.Invector
 
             if (_shooterManager.isReloadingWeapon)
                 return false;
+
+            // 2026-10-13 (h): scoped fire allows only the profile ammo (Standard / Plasma).
+            if (DMScopeMode.IsScoped && !DMScopeMode.AllowsAmmo(_ammoState.GetLoadedAmmoItem(_equipment.ActiveWeaponHotbarSlot)))
+            {
+                PlayEmptyFireClick();
+                return false;
+            }
 
             bool consumed = _ammoState.TryConsumeActiveRound();
             SyncMagazineFromPioneer();

@@ -231,7 +231,7 @@ namespace Project.Player
             if (eye != null)
                 skin += eye.nearClipPlane;
 
-            float minFollow = mantling ? MantleMinFollow : (nearClimb ? ClimbMinFollow : MinFollow);
+            float minFollow = AimCapMinFollow(mantling ? MantleMinFollow : (nearClimb ? ClimbMinFollow : MinFollow));
 
             float wantDist;
             if (_pivotEnclosed)
@@ -284,7 +284,7 @@ namespace Project.Player
                 }
             }
 
-            float activeMinFollow = ResolveActiveMinFollow(mantling, nearClimb, _inTightSpace, _pivotEnclosed);
+            float activeMinFollow = AimCapMinFollow(ResolveActiveMinFollow(mantling, nearClimb, _inTightSpace, _pivotEnclosed));
 
             if (_smoothDist < 0f)
             {
@@ -415,6 +415,18 @@ namespace Project.Player
             tpCamera.distance = _smoothDist;
             if (pulledBelowZoom || invectorSnappedIn)
                 SetCullingDistance(_smoothDist);
+        }
+
+        /// <summary>2026-10-13 (i): while an Aim camera state is active the min follow never exceeds the aim zoom target. Before, the
+        /// min follow (2.5 m) sat above the ADS zoom (~2.05 m): Invector lerped the lens in each FixedUpdate and this overlay pushed it
+        /// back out each frame, a 4-5 cm back-and-forth every 2-3 frames (player + camera shake while aiming, scope or not).</summary>
+        private float AimCapMinFollow(float minFollow)
+        {
+            if (tpCamera == null || string.IsNullOrEmpty(tpCamera.currentStateName)
+                || tpCamera.currentStateName.IndexOf("Aim", System.StringComparison.OrdinalIgnoreCase) < 0)
+                return minFollow;
+            float zoom = tpCamera.CurrentZoom;
+            return zoom > 0.3f ? Mathf.Min(minFollow, zoom) : minFollow;
         }
 
         private float ResolveActiveMinFollow(bool mantling, bool nearClimb, bool tightSpace, bool pivotEnclosed)

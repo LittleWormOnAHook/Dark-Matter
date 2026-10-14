@@ -35,9 +35,53 @@ MonoBehaviour:
   trainingDummyMaxRotationOffset: 52.6
   trainingDummyPoiseStaggerImpulseScale: 3.019
   dodgeIFrameSeconds: 0.25
+  chargedMaxHoldSeconds: 1
+  meleeLightStaminaCost: 8
+  meleeHeavyStaminaCost: 14
+  meleeChargedStaminaCost: 22
+  meleeStaminaAlsoOnHit: 0
+  playerBlockHoldCostBase: 2
+  playerBlockHoldCostGrowth: 1.6
+  playerBlockHoldCostCap: 25
+  playerBlockedHitStaminaCost: 10
+  playerStaggerStaminaCost: 18
+  playerGuardBreakLockSeconds: 1.2
   playerRollGuard: 1
   playerRollMinNormalized: 0.7
   dashIFrameSeconds: 0.25
+  holsterAllHotbarWeapons: 1
+  holsterOneMeleePerLocation: 1
+  holsterMaxMeleeVisible: 4
+  holsterOneRangedPerLocation: 0
+  playerStaggerUseProfile: 1
+  playerStaggerChanceMin: 0.2
+  playerStaggerChanceMax: 0.4
+  playerStaggerImmunitySeconds: 1.5
+  playerStaggerInterruptsCharge: 1
+  guardImpactMinIntervalSeconds: 0.45
+  blockShakeMinIntervalSeconds: 0.35
+  chargeHoldPinTolerance: 0.05
+  meleeFacingTargetLockSeconds: 1.5
+  meleeFacingSwitchCloserFraction: 0.7
+  logHitchesInPlay: 0
+  hitchThresholdMs: 120
+  quickStepEnabled: 1
+  quickStepTapWindowSeconds: 0.5
+  sidestepDistance: 1.8
+  backstepDistance: 1.5
+  quickStepDurationSeconds: 0.2
+  quickStepCooldownSeconds: 0.4
+  quickStepStickFlick: 0.8
+  quickStepStickRelease: 0.3
+  quickStepStaminaCost: 0
+  holsterSwayAmount: 1
+  holsterSwayPivot: 0.66
+  holsterSwayAdvanced:
+    stiffness: 60
+    damping: 6
+    inertia: 4
+    gravity: 6
+    maxAngle: 14
   statusMaxStacks: 3
   statusImmunityWindowSeconds: 2
   statusBossMultiplier: 0.5
@@ -86,16 +130,16 @@ MonoBehaviour:
   hitstopHoldSpeed: 0.3
   playerRigidbodyInterpolation: 2
   hitstopFreezesAttacker: 1
-  lightHitShakeAmplitude: 0.05
-  lightHitShakeDurationSeconds: 0.04
+  lightHitShakeAmplitude: 0.102
+  lightHitShakeDurationSeconds: 0.065
   heavyHitShakeAmplitude: 0.2
   heavyHitShakeDurationSeconds: 0.08
   useDamageNumberTiers: 1
   damageNumberNormalColor: {r: 1, g: 0.96, b: 0.78, a: 1}
-  damageNumberCritColor: {r: 1, g: 0.55, b: 0.1, a: 1}
-  damageNumberHeavyColor: {r: 1, g: 0.4, b: 0.05, a: 1}
-  damageNumberCritScale: 1.25
-  damageNumberHeavyScale: 1.4
+  damageNumberCritColor: {r: 1, g: 0, b: 0.06236458, a: 1}
+  damageNumberHeavyColor: {r: 1, g: 0.37210044, b: 0.05098039, a: 1}
+  damageNumberCritScale: 1.495
+  damageNumberHeavyScale: 1.281
   enableHitReactions: 1
   hitRecoverySeconds: 1.6
   hitRecoveryOnPoiseBreak: 1

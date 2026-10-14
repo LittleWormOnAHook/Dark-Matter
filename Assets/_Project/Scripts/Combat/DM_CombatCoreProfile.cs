@@ -78,6 +78,28 @@ namespace Project.Combat
         [Range(0.05f, 1f)] public float dodgeIFrameSeconds = 0.25f;
         [Tooltip("Max charged-attack hold (s), player and enemies, counted from the press / charged start. When reached the attack auto-releases and follows through. 0 = no cap.")]
         [Range(0f, 5f)] public float chargedMaxHoldSeconds = 1f;
+
+        [Header("Player melee stamina (spent when the swing starts, hit or miss)")]
+        [Tooltip("Stamina per light swing.")]
+        [Range(0f, 100f)] public float meleeLightStaminaCost = 8f;
+        [Tooltip("Stamina per heavy swing (interact-hold combo attack).")]
+        [Range(0f, 100f)] public float meleeHeavyStaminaCost = 14f;
+        [Tooltip("Stamina per charged (hold) attack release.")]
+        [Range(0f, 100f)] public float meleeChargedStaminaCost = 22f;
+        [Tooltip("Also spend the weapon's own ItemData meleeStaminaCost on every landed hit (old behaviour; double-charges with the costs above).")]
+        public bool meleeStaminaAlsoOnHit = false;
+
+        [Header("Player block stamina")]
+        [Tooltip("Holding block drains stamina per second = base x growth ^ seconds held (capped). Runs out = guard breaks.")]
+        [Range(0f, 30f)] public float playerBlockHoldCostBase = 2f;
+        [Range(1f, 4f)] public float playerBlockHoldCostGrowth = 1.6f;
+        [Range(0f, 100f)] public float playerBlockHoldCostCap = 25f;
+        [Tooltip("Flat stamina per blocked hit.")]
+        [Range(0f, 100f)] public float playerBlockedHitStaminaCost = 10f;
+        [Tooltip("Stamina lost when the player is staggered (more than a simple block).")]
+        [Range(0f, 100f)] public float playerStaggerStaminaCost = 18f;
+        [Tooltip("Seconds block is locked after the guard breaks from empty stamina.")]
+        [Range(0f, 5f)] public float playerGuardBreakLockSeconds = 1.2f;
         [Tooltip("Player roll guard: the Roll clip cannot be cut (snap back to standing) or re-triggered before playerRollMinNormalized.")]
         public bool playerRollGuard = true;
         [Range(0f, 1f)] public float playerRollMinNormalized = 0.7f;
@@ -139,6 +161,26 @@ namespace Project.Combat
         [Range(0f, 0.6f)] public float quickStepStickRelease = 0.3f;
         [Tooltip("Stamina cost per step (0 = free).")]
         [Range(0f, 100f)] public float quickStepStaminaCost = 0f;
+
+        [Header("Holstered weapon sway (player + enemies, runtime only)")]
+        [Tooltip("Holstered_ weapons swing on a spring when walking / running / fighting. Rest pose = the hand-set placement; nothing is saved. 0 = off.")]
+        [Range(0f, 3f)] public float holsterSwayAmount = 1f;
+        [Tooltip("Pivot position along the weapon, measured from its lower end (0.66 = two thirds up).")]
+        [Range(0.3f, 1f)] public float holsterSwayPivot = 0.66f;
+        [Tooltip("Advanced spring settings (collapsed).")]
+        public HolsterSwayAdvanced holsterSwayAdvanced = new HolsterSwayAdvanced();
+
+        [System.Serializable]
+        public class HolsterSwayAdvanced
+        {
+            [Range(5f, 400f)] public float stiffness = 60f;
+            [Range(0f, 40f)] public float damping = 6f;
+            [Tooltip("How strongly body acceleration swings the weapon.")]
+            [Range(0f, 20f)] public float inertia = 4f;
+            [Tooltip("Pull toward hanging straight down (0 = rest pose only).")]
+            [Range(0f, 50f)] public float gravity = 6f;
+            [Range(1f, 45f)] public float maxAngle = 14f;
+        }
 
         [Header("Status (global rules)")]
         [Range(1, 10)] public int statusMaxStacks = 3;
@@ -418,6 +460,31 @@ namespace Project.Combat
         [Range(0.2f, 1.5f)] public float interruptReactionSeconds = 0.45f;
         [Tooltip("Logs every interrupt decision (enemy, class, swing progress, chance, roll) to the console in Play.")]
         public bool logInterruptsInPlay;
+
+        [Header("God mode cheat + respawn fallback (2026-10-13 i)")]
+        [Tooltip("Typing the cheat code during play toggles god mode (DMDevCommandState.GodMode): player AND enemies unkillable, infinite ammo.")]
+        public bool godModeCheatEnabled = true;
+        public string godModeCheatCode = "godmode";
+        [Tooltip("God mode keeps enemies at 1 HP minimum (hits, hit marks and the health bar still work).")]
+        public bool godModeEnemiesUnkillable = true;
+        [Tooltip("God mode: shots consume no rounds.")]
+        public bool godModeInfiniteAmmo = true;
+        [Tooltip("God mode OFF: dead enemies without their own respawn timer respawn after enemyRespawnDelay.")]
+        public bool respawnEnemiesAfterDeath = true;
+        [Range(0.5f, 120f)] public float enemyRespawnDelay = 6f;
+        [Tooltip("God mode OFF: the player respawns automatically after playerRespawnDelay (skips the death popup).")]
+        public bool respawnPlayerAfterDeath = true;
+        [Range(0.5f, 60f)] public float playerRespawnDelay = 3f;
+        [Tooltip("Enemy Runtime Audit: god mode is forced ON for the whole run (restored afterwards).")]
+        public bool auditGodMode = true;
+        [Range(0.5f, 10f)] public float godModeToastSeconds = 2f;
+
+        [Header("Player corpse (2026-10-13 i)")]
+        [Tooltip("Dead player stays where it fell until respawn (root stopped, slide capped, ragdoll frozen after settle).")]
+        public bool playerCorpseStayInPlace = true;
+        [Range(0.2f, 5f)] public float playerCorpseSettleSeconds = 1.5f;
+        [Tooltip("Max horizontal bone speed (m/s) while the corpse settles.")]
+        [Range(0f, 10f)] public float playerCorpseMaxSlideSpeed = 1.5f;
 
         [Header("Debug")]
         public bool logCombatEventsInPlay;    }

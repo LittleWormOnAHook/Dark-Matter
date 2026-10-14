@@ -474,6 +474,9 @@ namespace Project.AI
                     away.y = 0f;
                     StepFlat(away, walkSpeed * combatBridge.RangedRetreatSpeedMultiplier, retreatBelow - distanceToTarget);
                     FaceTowards(target.position);
+                    // 2026-10-13 (f): keep shooting while backing off (was: no TryAttack inside the hold distance, so close targets were never shot).
+                    if (inRangedEngagement && DM_EnemyBrainProfile.Live != null && DM_EnemyBrainProfile.Live.rangedFireWhileRetreating)
+                        combat.TryAttack();
                     return;
                 }
             }
@@ -483,6 +486,8 @@ namespace Project.AI
             {
                 MoveTowardsCombatRing(target, walkSpeed * 0.75f, standoff);
                 FaceTowards(target.position);
+                if (inRangedEngagement && DM_EnemyBrainProfile.Live != null && DM_EnemyBrainProfile.Live.rangedFireWhileRetreating)
+                    combat.TryAttack(); // 2026-10-13 (f)
                 return;
             }
 

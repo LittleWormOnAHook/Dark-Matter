@@ -244,6 +244,18 @@ namespace Project.Combat
         public bool volumetricSwapSides = false;
         [Tooltip("Max volumetric fluids alive at once (pooled).")]
         [Range(1, 24)] public int volumetricBudget = 6;
+        [Tooltip("Size of the airborne blood / coolant splatter (the flying fluid only; ground decals keep their own scale). 1 = vendor size. Colour and glow are untouched.")]
+        [Range(0.2f, 1.5f)] public float volumetricAirborneScale = 0.7f;
+        [Tooltip("Chance that a normal / light enemy hit shows the blood / coolant spray (less blood overall).")]
+        [Range(0f, 1f)] public float lightHitBloodChance = 0.5f;
+        [Tooltip("Chance that a heavy / charged hit shows the blood / coolant spray.")]
+        [Range(0f, 1f)] public float heavyHitBloodChance = 1f;
+        [Tooltip("Heavy / charged hits: extra size on top of the airborne scale (heavier spray).")]
+        [Range(1f, 2f)] public float heavyHitBloodScale = 1.3f;
+        [Tooltip("Hits whose swing reads straight (no clear left / right) still use the Left / Right variants this often (random side). The swing direction is usually straight-on, so without this the side variants almost never played.")]
+        [Range(0f, 1f)] public float volumetricStraightUsesSideChance = 0.5f;
+        [Tooltip("Debug: log the chosen side + prefab of every volumetric spray (off by default).")]
+        public bool logVolumetricSide = false;
         [Tooltip("No volumetric fluid beyond this camera distance (falls back to the small particle).")]
         public float volumetricMaxDistance = 20f;
         [Tooltip("Seconds before a pooled fluid is recycled.")]
@@ -267,6 +279,8 @@ namespace Project.Combat
         [Range(0.3f, 2f)] public float volumetricDecalScaleMin = 0.85f;
         [Tooltip("Random landed-decal scale range per spawn (max).")]
         [Range(0.3f, 2f)] public float volumetricDecalScaleMax = 1.15f;
+        [Tooltip("2026-10-13: overall landed-decal size multiplier on top of the random range (0.25 = 75% smaller). Rotation / random range / projection unchanged.")]
+        [Range(0.05f, 2f)] public float volumetricDecalSizeMultiplier = 0.25f;
         [Tooltip("Ground decal projection box depth (m). Thin = no blood on legs / boots; too thin can miss sloped terrain. 0 = vendor depth.")]
         [Range(0f, 2f)] public float volumetricDecalDepth = 0.25f;
         [Tooltip("How far the decal box reaches above the ground snap point (m). The box spans [ground + offset - depth, ground + offset].")]

@@ -3,7 +3,7 @@
 **Project:** Dark Matter: Genesis (Unity 6 HDRP 6000.4.11f1)  
 **Status:** Design canon — Phase 2 melee (Jetpack controller)  
 **Audience:** Combat animation, Combat Studio / Build And Apply, agent studio edits  
-**Last updated:** Oct 6, 2026  
+**Last updated:** Oct 10, 2026  
 
 **Related:** `DM_Melee_Animation_Library_Plan.md` **§10**; `DMG_Combat_Plan_v2.md` §0 / §15; controller `Assets/_Project/Animations/Player/Invector@ShooterMelee_Jetpack.controller`.
 
@@ -90,6 +90,10 @@ Weak chain, random pool, and charge hold remain as wired in `DM_MeleeAnimationSe
   - **B**: later active window (matches longer wind-up on **Axe Standing Melee Combo Ver. 1**)
 
 Tune weights and windows in Combat Core + event copy from reference states after **Build And Apply**.
+
+### 3.2 Humanoid enemy armed idle
+
+Shared `Invector@ShooterMelee.controller` (and `The_Evil_OneController` copy) **MoveSet_ID 2** idle plus **Holding Melee Idle** standing clip use **Basic_FreeMovement `Idle`** (arms down), matching Player_v7 combat `movesetID = 1` locomotion idle. Do not assign Melee_StrafeMoveset `standing_idle` (crossed arms) as the armed stand. Walk/strafe clips from that FBX stay on MoveSet 2.
 
 ---
 

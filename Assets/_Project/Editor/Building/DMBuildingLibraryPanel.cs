@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Project.Building;
 using Project.Data;
+using Project.EditorTools;
 using Project.EditorTools.GenesisStudio;
 using Project.UI;
 using UnityEditor;
@@ -313,11 +314,19 @@ namespace Project.EditorTools.Building
             kit.gateCrossbars = EditorGUILayout.IntSlider("Gate crossbars", kit.gateCrossbars, 0, 8);
 
             EditorGUILayout.Space(4f);
+            var rebuildBlockers = DMStudioActionValidation.CollectBuildingStyleRebuildBlockers(style);
+            DMStudioActionValidation.DrawBlockersHelpBox(rebuildBlockers, "Rebuild Kit (ProBuilder)");
             if (GUILayout.Button("Rebuild " + style.displayName + " Kit (ProBuilder)", GUILayout.Height(26f)))
             {
                 DMBuildingStyleLibrary target = style;
-                AssetDatabase.SaveAssets();
-                EditorApplication.delayCall += () => DMBuildingKitBuilder.RebuildStyle(target);
+                DMStudioActionValidation.TryRunPrimaryAction(
+                    DMStudioActionValidation.BuildingStudioDialogTitle,
+                    rebuildBlockers,
+                    () =>
+                    {
+                        AssetDatabase.SaveAssets();
+                        EditorApplication.delayCall += () => DMBuildingKitBuilder.RebuildStyle(target);
+                    });
             }
         }
 
@@ -358,13 +367,21 @@ namespace Project.EditorTools.Building
                 AddPart(style, DMBuildingShape.Custom, null);
             if (GUILayout.Button(new GUIContent("+ Surface Item", "Lights and decorations that stick to walls, floors and ceilings of built pieces.")))
                 AddPart(style, DMBuildingShape.SurfaceItem, null);
+            var fromSelectionBlockers = DMStudioActionValidation.CollectBuildingFromSelectionBlockers();
+            DMStudioActionValidation.DrawBlockersHelpBox(fromSelectionBlockers, "+ From Selected Prefabs");
             if (GUILayout.Button(new GUIContent("+ From Selected Prefabs", "Adds a part for every prefab selected in the Project window.")))
             {
-                foreach (GameObject go in Selection.GetFiltered<GameObject>(SelectionMode.Assets))
-                {
-                    if (PrefabUtility.IsPartOfPrefabAsset(go))
-                        AddPart(style, DMBuildingShape.Custom, go);
-                }
+                DMStudioActionValidation.TryRunPrimaryAction(
+                    DMStudioActionValidation.BuildingStudioDialogTitle,
+                    fromSelectionBlockers,
+                    () =>
+                    {
+                        foreach (GameObject go in Selection.GetFiltered<GameObject>(SelectionMode.Assets))
+                        {
+                            if (PrefabUtility.IsPartOfPrefabAsset(go))
+                                AddPart(style, DMBuildingShape.Custom, go);
+                        }
+                    });
             }
 
             if (GUILayout.Button(new GUIContent("Add Missing Kit Shapes", "Adds a row for every standard kit shape this style is missing.")))

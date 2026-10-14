@@ -1,4 +1,4 @@
-﻿using Project.AI;
+using Project.AI;
 using Project.AI.Invector;
 using Project.Player.Invector;
 using UnityEngine;
@@ -102,6 +102,8 @@ namespace Project.Combat
         public static void BreakGuard(EnemyHealth enemy, string reason)
         {
             EnemyAiController ai = enemy != null ? enemy.GetComponent<EnemyAiController>() : null;
+            EnemyInvectorCombatBridge gb = enemy != null ? enemy.GetComponent<EnemyInvectorCombatBridge>() : null;
+            if (gb != null) gb.SpendGuardStamina(DM_EnemyBrainProfile.Live.enemyStaggerStaminaCost); // broken guard costs more
             if (ai != null)
                 ai.BreakGuard();
 
@@ -112,11 +114,15 @@ namespace Project.Combat
         public static void OnBlocked(EnemyHealth enemy, GameObject source, Invector.vDamage snapshot)
         {
             DM_EnemyBrainProfile bp = DM_EnemyBrainProfile.Live;
+            EnemyInvectorCombatBridge gb = enemy.GetComponent<EnemyInvectorCombatBridge>();
+            if (gb != null) gb.SpendGuardStamina(bp.enemyBlockedHitStaminaCost); // 2026-10-13 flat per blocked hit
             DMParryClashVfx.TryPlay(snapshot, enemy.transform, source != null ? source.transform : null, bp.blockSparkScale, bp.blockSparkPrefab);
             DMCombatCameraShake.Play(bp.blockedHitShakeAmplitude, bp.blockedHitShakeDurationSeconds);
 
             bool recoiled = false;
             PioneerShooterMeleeInput melee = source != null ? source.GetComponentInParent<PioneerShooterMeleeInput>() : null;
+            if (bp.blockedHitSfx != null)
+                AudioSource.PlayClipAtPoint(bp.blockedHitSfx, enemy.transform.position + Vector3.up * 1.3f, bp.blockedHitSfxVolume);
             if (melee != null
                 && bp.playerBlockedRecoilChance > 0f
                 && Time.time - lastPlayerRecoilTime >= bp.playerBlockedRecoilImmunitySeconds

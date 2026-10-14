@@ -472,6 +472,8 @@ namespace Project.Combat
             float accuracy = weapon.ResolveBaseAccuracy(ammo);
             if (applyPlayerSkillBonus)
                 accuracy += PlayerSkillAllocator.GetWeaponAccuracyBonusPercent();
+            if (applyPlayerSkillBonus)
+                accuracy += DMScopeMode.ScopedAccuracyBonusPercent; // 2026-10-13 (h) scope accuracy hook
 
             accuracy = Mathf.Clamp(accuracy, 0f, 100f);
             float accuracy01 = accuracy * 0.01f;

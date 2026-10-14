@@ -69,6 +69,9 @@ namespace Project.Player.Invector
         {
             if (item == null || item.meleeStaminaCost <= 0f)
                 return;
+            DM_CombatCoreProfile sp = DM_CombatCoreProfile.Live;
+            if (sp != null && !sp.meleeStaminaAlsoOnHit)
+                return; // 2026-10-13: stamina is spent at swing start (PioneerShooterMeleeInput)
 
             if (_survival == null)
                 _survival = GetComponent<SurvivalStats>();

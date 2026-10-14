@@ -6,6 +6,8 @@ using Invector;
 using Invector.vCharacterController.vActions;
 using Invector.vMelee;
 using Invector.vShooter;
+using Project.AI.Invector;
+using Project.EditorTools.Invector;
 using Project.Player.Invector;
 using UnityEditor;
 using UnityEngine;
@@ -61,6 +63,43 @@ namespace Project.EditorTools
             return true;
         }
 
+        public static bool RepairVisualAfterDedup(string prefabPath)
+        {
+            if (string.IsNullOrEmpty(prefabPath))
+                return false;
+
+            GameObject prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            if (prefabAsset != null && prefabAsset.GetComponent<EnemyInvectorBootstrap>() != null)
+            {
+                return EnemyPrefabVisualSetupUtility.RepairVisualAtPath(
+                    prefabPath,
+                    EnemyInvectorSetupUtility.ResolveDefinitionForPrefab(prefabPath));
+            }
+
+            return PlayerPrefabVisualSetupUtility.RepairVisualAtPath(prefabPath);
+        }
+
+        public static bool TryResolveHumanoidPrefabPathFromSelection(out string prefabPath)
+        {
+            prefabPath = null;
+            GameObject selected = Selection.activeGameObject;
+            if (selected == null)
+                return false;
+
+            if (PrefabUtility.IsPartOfPrefabAsset(selected))
+            {
+                prefabPath = AssetDatabase.GetAssetPath(selected);
+                return !string.IsNullOrEmpty(prefabPath) && prefabPath.EndsWith(".prefab");
+            }
+
+            GameObject root = PrefabUtility.GetOutermostPrefabInstanceRoot(selected);
+            if (root == null)
+                return false;
+
+            prefabPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(root);
+            return !string.IsNullOrEmpty(prefabPath);
+        }
+
         public static bool DedupAndRepair(string prefabPath, out DedupReport report, bool createFileBackup = true)
         {
             report = default;
@@ -92,7 +131,7 @@ namespace Project.EditorTools
                 PrefabUtility.UnloadPrefabContents(root);
             }
 
-            if (!PlayerPrefabVisualSetupUtility.RepairVisualAtPath(prefabPath))
+            if (!RepairVisualAfterDedup(prefabPath))
             {
                 Debug.LogError($"[PlayerV7Dedup] RepairVisualAtPath failed for {prefabPath}.");
                 return false;

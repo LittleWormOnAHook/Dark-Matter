@@ -5,7 +5,7 @@ using UnityEngine.UIElements;
 namespace Project.UI
 {
     /// <summary>
-    /// UITK Aether Credits reward toast. Forwards from UIManager.ShowCurrencyPopup / AcRewardPopup.
+    /// UITK UEA Credits reward toast. Forwards from UIManager.ShowCurrencyPopup / AcRewardPopup.
     /// </summary>
     [DefaultExecutionOrder(-374)]
     [DisallowMultipleComponent]

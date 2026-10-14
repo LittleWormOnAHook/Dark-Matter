@@ -18,7 +18,7 @@ namespace Project.AI
         [SerializeField] private bool enableLoot = true;
         [SerializeField] private string lootDisplayName = "Enemy";
         [Header("Loot AC")]
-        [Tooltip("Aether Credits (AC) dropped by this enemy.")]
+        [Tooltip("UEA Credits (UEA) dropped by this enemy.")]
         [UnityEngine.Serialization.FormerlySerializedAs("piCoinsMin")]
         [SerializeField] private int acDropMin = 1;
         [UnityEngine.Serialization.FormerlySerializedAs("piCoinsMax")]

@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR
+#if UNITY_EDITOR
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -193,6 +193,7 @@ namespace Project.EditorTools.Audit
                 return;
             _running = false;
             Application.logMessageReceived -= OnLog;
+            try { ReleaseAuditPlayerGuard(); } catch { /* best effort */ }
             try { Cleanup(); } catch { /* best effort */ }
             try { RestoreAuditState(); } catch { /* best effort */ }
             try { AuditTiming.End(); BuildFixRegression(); } catch (Exception ex) { Debug.LogWarning("DMAudit: regression summary failed: " + ex.Message); }
@@ -266,7 +267,7 @@ namespace Project.EditorTools.Audit
                 return;
             }
 
-            if (_bypassDone && _player != null) GuardFloor();
+            if (_bypassDone && _player != null) { GuardFloor(); AuditPlayerGuard(); }
             double now = EditorApplication.timeSinceStartup;
             if (!_bypassDone) _lastProgressReal = now; // watchdog only after the menu bypass succeeded
             if (Time.time > _lastGameTime + 0.001f) { _lastGameTime = Time.time; _lastProgressReal = now; }

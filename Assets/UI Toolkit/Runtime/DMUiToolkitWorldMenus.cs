@@ -52,6 +52,8 @@ namespace Project.UI
         private Button pistolBeam;
         private Button rifleSight;
         private Button rifleBeam;
+        private Button pistolScope; // 2026-10-13 (h)
+        private Button rifleScope;  // 2026-10-13 (h)
         private VisualElement echoHost;
         private Label echoName;
         private Label echoBody;
@@ -563,6 +565,11 @@ namespace Project.UI
             if (pistolBeam != null) pistolBeam.clicked += TogglePistolBeam;
             if (rifleSight != null) rifleSight.clicked += ToggleRifleSight;
             if (rifleBeam != null) rifleBeam.clicked += ToggleRifleBeam;
+            // 2026-10-13 (h): "Scope" toggles, built in code next to the laser buttons.
+            pistolScope = CreateScopeButton(pistolBeam, "weapon-pistol-scope");
+            rifleScope = CreateScopeButton(rifleBeam, "weapon-rifle-scope");
+            if (pistolScope != null) pistolScope.clicked += TogglePistolScope;
+            if (rifleScope != null) rifleScope.clicked += ToggleRifleScope;
             if (echoClose != null) echoClose.clicked += HideEchoInternal;
             if (itemTipQty != null)
                 itemTipQty.RegisterValueChangedCallback(OnVendorTradeQtyChanged);
@@ -859,8 +866,51 @@ namespace Project.UI
             RefreshWeapon();
         }
 
+        private static Button CreateScopeButton(Button sibling, string name)
+        {
+            if (sibling == null || sibling.parent == null)
+                return null;
+            Button existing = sibling.parent.Q<Button>(name);
+            if (existing != null)
+                return existing;
+            var b = new Button { name = name, text = "Scope  OFF" };
+            foreach (string c in sibling.GetClasses())
+                b.AddToClassList(c);
+            VisualElement parent = sibling.parent;
+            parent.Insert(parent.IndexOf(sibling) + 1, b);
+            return b;
+        }
+
+        private static Project.Combat.DMScopeMode ScopeMode => Project.Combat.DMScopeMode.Instance;
+
+        private void TogglePistolScope()
+        {
+            if (ScopeMode == null) return;
+            ScopeMode.SetPistolScopeEnabled(!ScopeMode.PistolScopeEnabled);
+            RefreshWeapon();
+        }
+
+        private void ToggleRifleScope()
+        {
+            if (ScopeMode == null) return;
+            ScopeMode.SetRifleScopeEnabled(!ScopeMode.RifleScopeEnabled);
+            RefreshWeapon();
+        }
+
         private void RefreshWeapon()
         {
+            bool scopeAvail = Project.Combat.DMScopeMode.IsUnlocked && ScopeMode != null;
+            if (pistolScope != null)
+            {
+                pistolScope.style.display = scopeAvail ? DisplayStyle.Flex : DisplayStyle.None;
+                if (scopeAvail) pistolScope.text = FormatToggle("Scope", ScopeMode.PistolScopeEnabled);
+            }
+            if (rifleScope != null)
+            {
+                rifleScope.style.display = scopeAvail ? DisplayStyle.Flex : DisplayStyle.None;
+                if (scopeAvail) rifleScope.text = FormatToggle("Scope", ScopeMode.RifleScopeEnabled);
+            }
+
             if (weaponController == null)
                 return;
 

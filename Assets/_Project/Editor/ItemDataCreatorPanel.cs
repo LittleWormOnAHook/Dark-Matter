@@ -61,7 +61,7 @@ namespace Project.EditorTools
                 oxygenRestore = EditorGUILayout.FloatField("Oxygen Restore (display sec)", oxygenRestore);
 
                 EditorGUILayout.Space(10f);
-                EditorGUILayout.LabelField("Aether Credits", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField("UEA Credits", EditorStyles.boldLabel);
                 isAcInfused = EditorGUILayout.Toggle("Grants AC On Pickup", isAcInfused);
                 if (isAcInfused)
                     acValue = EditorGUILayout.IntField("AC Value", acValue);
@@ -94,20 +94,21 @@ namespace Project.EditorTools
             }
 
             EditorGUILayout.Space(20f);
+            var createBlockers = DMStudioActionValidation.CollectItemDataCreateBlockers(itemName);
+            DMStudioActionValidation.DrawBlockersHelpBox(createBlockers, "Create ItemData + Prefab");
             if (GUILayout.Button("Create ItemData + Prefab", GUILayout.Height(50f)))
-                CreateFullItem();
+            {
+                DMStudioActionValidation.TryRunPrimaryAction(
+                    DMStudioActionValidation.GenesisStudioDialogTitle,
+                    createBlockers,
+                    CreateFullItem);
+            }
 
             EditorGUILayout.EndScrollView();
         }
 
         private void CreateFullItem()
         {
-            if (string.IsNullOrEmpty(itemName))
-            {
-                EditorUtility.DisplayDialog("Item Data Creator", "Item Name is required!", "OK");
-                return;
-            }
-
             string safeName = CraftingEditorUtility.SanitizeAssetName(itemName);
             ItemData newItem = ScriptableObject.CreateInstance<ItemData>();
             newItem.itemName = itemName.Trim();

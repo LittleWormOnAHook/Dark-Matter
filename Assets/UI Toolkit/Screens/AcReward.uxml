@@ -3,7 +3,7 @@
     <Style src="AcReward.uss"/>
     <ui:VisualElement name="acreward-root" picking-mode="Ignore" class="dmg-ac-reward-root">
         <ui:VisualElement name="acreward-card" picking-mode="Ignore" class="dmg-ac-reward-card">
-            <ui:Label name="acreward-amount" text="+10 AC" picking-mode="Ignore" class="dmg-ac-reward-amount"/>
+            <ui:Label name="acreward-amount" text="+10 UEA" picking-mode="Ignore" class="dmg-ac-reward-amount"/>
             <ui:Label name="acreward-source" text="Gathering" picking-mode="Ignore" class="dmg-ac-reward-source"/>
         </ui:VisualElement>
     </ui:VisualElement>

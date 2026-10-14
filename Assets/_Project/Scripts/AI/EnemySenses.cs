@@ -42,9 +42,10 @@ namespace Project.AI
         private Transform cachedVisiblePioneer;
         private Transform cachedVisibleThreat;
 
-        public float VisionRange => visionRange;
+        public float VisionRange { get { if (_rangeBridge == null) _rangeBridge = GetComponent<Project.AI.Invector.EnemyInvectorCombatBridge>(); return _rangeBridge != null ? Mathf.Max(visionRange, _rangeBridge.RifleVisionFloor) : visionRange; } } // 2026-10-13 (g): rifle vision floor
+        private Project.AI.Invector.EnemyInvectorCombatBridge _rangeBridge;
         public float HearingRange => hearingRange;
-        public float OuterSenseRange => Mathf.Max(visionRange, hearingRange);
+        public float OuterSenseRange => Mathf.Max(VisionRange, hearingRange);
 
         public Vector3 LastNoisePosition => lastNoisePosition;
         public bool HasRecentNoise => hasRecentNoise && Time.time - lastNoiseTime <= noiseMemoryDuration;
@@ -87,7 +88,7 @@ namespace Project.AI
             if (distance <= proximityRange)
                 return player;
 
-            if (distance <= visionRange && IsWithinFov(playerPos) && HasLineOfSight(playerPos))
+            if (distance <= VisionRange && IsWithinFov(playerPos) && HasLineOfSight(playerPos))
                 return player;
 
             return null;
@@ -158,7 +159,7 @@ namespace Project.AI
             if (distance <= meleeTouchRange)
                 return player;
 
-            if (distance <= visionRange && IsWithinFov(playerPos) && HasLineOfSight(playerPos))
+            if (distance <= VisionRange && IsWithinFov(playerPos) && HasLineOfSight(playerPos))
                 return player;
 
             return null;
@@ -217,7 +218,7 @@ namespace Project.AI
             if (distance <= meleeTouchRange)
                 return true;
 
-            return distance <= visionRange &&
+            return distance <= VisionRange &&
                    IsWithinFov(candidate.position) &&
                    HasLineOfSightTo(candidate);
         }

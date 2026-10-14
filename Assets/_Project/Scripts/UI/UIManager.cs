@@ -48,7 +48,7 @@ namespace Project.UI
         public Transform combatPopupParent;
 
         [Header("Layout")]
-        [Tooltip("When disabled, AC balance and interaction prompt rects are not repositioned at Start.")]
+        [Tooltip("When disabled, UEA balance and interaction prompt rects are not repositioned at Start.")]
         [SerializeField] private bool applyRuntimeHudLayout = true;
 
         private SurvivalStats survivalStats;

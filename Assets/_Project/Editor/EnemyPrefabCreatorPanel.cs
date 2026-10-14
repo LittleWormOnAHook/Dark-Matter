@@ -74,17 +74,23 @@ namespace Project.EditorTools
                 return;
 
             using var _ = DMCharacterCreatorSharedUi.ScopedCreatorLabelWidth();
-            def.meleeWeaponItem = (ItemData)EditorGUILayout.ObjectField(
+            ItemData pickMelee = (ItemData)EditorGUILayout.ObjectField(
                 "Melee Weapon Item",
                 def.meleeWeaponItem,
                 typeof(ItemData),
                 false);
-            def.rangedWeaponItem = (ItemData)EditorGUILayout.ObjectField(
+            ItemData pickRanged = (ItemData)EditorGUILayout.ObjectField(
                 "Ranged Weapon Item",
                 def.rangedWeaponItem,
                 typeof(ItemData),
                 false);
+            // Mining tools are player utility items, not enemy weapons: the picker rejects them.
+            if (pickMelee != null && pickMelee.isMiningTool) { Debug.LogWarning("Mining tools cannot be enemy weapons (no drawn enemy visual). Pick a melee weapon item."); pickMelee = def.meleeWeaponItem; }
+            if (pickRanged != null && pickRanged.isMiningTool) { Debug.LogWarning("Mining tools cannot be enemy weapons (no drawn enemy visual). Pick a ranged weapon item."); pickRanged = def.rangedWeaponItem; }
+            def.meleeWeaponItem = pickMelee;
+            def.rangedWeaponItem = pickRanged;
             def.preferRangedWeapon = DMCharacterCreatorSharedUi.DrawPropertyToggle("Prefer Ranged", def.preferRangedWeapon);
+            def.canThrowGrenades = DMCharacterCreatorSharedUi.DrawPropertyToggle("Can Throw Grenades (adds grenade components on Sync; no AI use yet)", def.canThrowGrenades);
         }
 
         /// <summary>Applies an Enemy Kind: body type (hit FX), threat kind and category defaults.</summary>

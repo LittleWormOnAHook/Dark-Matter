@@ -435,6 +435,14 @@ namespace Project.Combat
 
             // KriptoFX volumetric fluid replaces the blood / coolant particle (flesh needs blood allowed; mechs always); sparks stay.
             bool fleshBlocked = bodyType == DMEnemyBodyType.Humanoid && !allowsBlood;
+            // 2026-10-13: not every stroke bleeds. Light hits roll lightHitBloodChance, heavy / charged roll heavyHitBloodChance and spray bigger.
+            bool fluidKind = response.splatter == DMEnemyHitFxKind.Blood || response.splatter == DMEnemyHitFxKind.Coolant;
+            if (fluidKind && Random.value >= (MeleeHeavyContext ? profile.heavyHitBloodChance : profile.lightHitBloodChance))
+            {
+                fleshBlocked = true;
+                splatter = null;
+            }
+            DMVolumetricBlood.NextScaleMul = MeleeHeavyContext ? Mathf.Max(1f, profile.heavyHitBloodScale) : 1f;
             if (!fleshBlocked && DMVolumetricBlood.TrySpawn(profile, bodyType, transform, point, normal, travel)
                 && (response.splatter == DMEnemyHitFxKind.Blood || response.splatter == DMEnemyHitFxKind.Coolant))
                 splatter = null;

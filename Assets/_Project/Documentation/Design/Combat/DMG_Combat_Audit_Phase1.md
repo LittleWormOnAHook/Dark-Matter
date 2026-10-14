@@ -1,7 +1,7 @@
 # Dark Matter: Genesis: Combat Audit, Phase 1
 ## Read-only audit of the Unity project against Master Plan v2 (September 30, 2026)
 
-Scope: `A:\Dark Matter Genesis`, branch `cursor/wip-clean-20260919`, read only. No project, repo or wiki file was changed. All evidence paths are relative to `Assets/_Project/` unless they start with `Assets/`. Known testing values (200 AC, start level 5, 25 skill points, starting items) and the no-NavMesh rule are intentional and are not gaps.
+Scope: `A:\Dark Matter Genesis`, branch `cursor/wip-clean-20260919`, read only. No project, repo or wiki file was changed. All evidence paths are relative to `Assets/_Project/` unless they start with `Assets/`. Known testing values (200 UEA, start level 5, 25 skill points, starting items) and the no-NavMesh rule are intentional and are not gaps.
 
 Status key: **Built** = works as the plan intends (or better). **Partial** = some of it exists, gap stated. **Missing** = nothing usable yet. **Conflicts** = the code does it differently from the plan; a decision is needed before building.
 

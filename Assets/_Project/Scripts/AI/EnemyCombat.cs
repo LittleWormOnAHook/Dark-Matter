@@ -155,17 +155,30 @@ namespace Project.AI
             return HorizontalDistance(transform.position, target.position) <= range;
         }
 
+        private float _gateLogNext;
+        /// <summary>2026-10-13 (e2): debug, DM_EnemyBrainProfile.logRangedFireGates. Once per second per enemy, logs which TryAttack gate stopped a ranged enemy.</summary>
+        private void RangedGateLog(string gate)
+        {
+            DM_EnemyBrainProfile p = DM_EnemyBrainProfile.Live;
+            if (p == null || !p.logRangedFireGates || invectorCombat == null || !invectorCombat.HasRangedWeaponEquipped() || Time.time < _gateLogNext)
+                return;
+            _gateLogNext = Time.time + 1f;
+            float d = target != null ? HorizontalDistance(transform.position, target.position) : -1f;
+            Debug.Log($"[DMRangedGate] {name} blocked by '{gate}' | state {(aiController != null ? aiController.CurrentStateName : "?")} | dist {d:0.0} | engage {invectorCombat.RangedEngageRange:0.0} | rangedPref {invectorCombat.IsArmedRangedPreferred()} | aimReady {invectorCombat.IsAimReady} | cooldown {Mathf.Max(0f, nextAttackTime - Time.time):0.00}");
+        }
+
         public void TryAttack()
         {
             if (!HasLivingTarget())
-                return;
+            { RangedGateLog("!HasLivingTarget()"); return; }
 
             EnemyInvectorRagdollBridge ragdollBridge = GetComponent<EnemyInvectorRagdollBridge>();
             if (ragdollBridge != null && ragdollBridge.IsHitStaggerActive)
-                return;
+            { RangedGateLog("ragdollBridge != null && ragdollBridge.IsHitStaggerActive"); return; }
 
             if (!IsTargetInEffectiveRange())
-                return;
+
+            { RangedGateLog("!IsTargetInEffectiveRange()"); return; }
 
             if (aiController != null && !aiController.AllowsCombatTarget(target))
             {
@@ -175,27 +188,29 @@ namespace Project.AI
             }
 
             if (Time.time < nextAttackTime)
-                return;
+
+            { RangedGateLog("Time.time < nextAttackTime"); return; }
 
             // Swing start distance: melee swings start only inside the weapon's real reach (the engager closes in first).
             if (aiController != null && (invectorCombat == null || !invectorCombat.HasRangedWeaponEquipped()) && !aiController.IsInSwingStartReach(target))
-                return;
+            { RangedGateLog("aiController != null && (invectorCombat == null || !invectorCombat.Has"); return; }
 
             if (comboDriver != null && comboDriver.IsSequenceActive)
-                return;
+
+            { RangedGateLog("comboDriver != null && comboDriver.IsSequenceActive"); return; }
 
             // Phase 3 spacing: only the melee token holder swings, after its hand-off grace, inside the facing cone.
             if (aiController != null && !aiController.CanEngagementAttack(target))
-                return;
+            { RangedGateLog("aiController != null && !aiController.CanEngagementAttack(target)"); return; }
 
             // One attacker at a time across every enemy type (ranged / android / robot included), also while another swing is still finishing.
             if (aiController != null && !aiController.CanStartAttackGlobal(target))
-                return;
+            { RangedGateLog("aiController != null && !aiController.CanStartAttackGlobal(target)"); return; }
 
             // Ranged aim gate: draw the gun / hold the aim pose first. Never consumes the cooldown and
             // never falls through to the scripted melee fallback below.
             if (invectorCombat != null && invectorCombat.TryDeferRangedAttack(target))
-                return;
+            { RangedGateLog("invectorCombat != null && invectorCombat.TryDeferRangedAttack(target)"); return; }
 
             bool rollIntentionalMiss = ShouldRollIntentionalMeleeMiss();
 

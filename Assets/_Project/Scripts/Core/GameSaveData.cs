@@ -150,7 +150,7 @@ namespace Project.Core
 
             DateTime savedAt = new DateTime(SavedAtUtcTicks, DateTimeKind.Utc).ToLocalTime();
             int level = PlayerLevel > 0 ? PlayerLevel : 1;
-            return $"Lv {level} | AC: {Mathf.RoundToInt(AetherCredits)} | HP: {Mathf.RoundToInt(Health)} | {savedAt:g}";
+            return $"Lv {level} | UEA: {Mathf.RoundToInt(AetherCredits)} | HP: {Mathf.RoundToInt(Health)} | {savedAt:g}";
         }
     }
 }

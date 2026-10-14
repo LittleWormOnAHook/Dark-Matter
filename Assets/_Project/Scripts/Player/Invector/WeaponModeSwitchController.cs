@@ -67,6 +67,9 @@ namespace Project.Player.Invector
             playerController = GetComponent<PlayerController>();
             shooterInput = GetComponent<PioneerShooterMeleeInput>();
             weaponBridge = GetComponent<PioneerInvectorWeaponBridge>();
+            // 2026-10-13 (h): scope / sniper mode runtime lives on the player next to the mode switch.
+            if (GetComponent<DMScopeMode>() == null)
+                gameObject.AddComponent<DMScopeMode>();
             // Default OFF — lasers start deactivated until the player enables them.
             rifleLaserSightEnabled = PlayerPrefs.GetInt(PrefRifleLaserSight, 0) != 0;
             rifleLaserBeamEnabled = PlayerPrefs.GetInt(PrefRifleLaserBeam, 0) != 0;

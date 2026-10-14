@@ -497,6 +497,19 @@ namespace Project.Audio
         }
 
         /// <summary>Pooled 3D one-shot for weapon fire / world SFX (avoids PlayClipAtPoint allocs).</summary>
+        /// <summary>2026-10-13 (h): world SFX with an explicit pitch multiplier (scoped shots).</summary>
+        public static void PlayWorldSfxPitched(AudioClip clip, Vector3 position, float volumeScale, float pitchScale)
+        {
+            if (clip == null)
+                return;
+            if (Instance != null)
+            {
+                Instance.PlayClip3D(clip, position, volumeScale, pitchScale * Random.Range(0.97f, 1.03f));
+                return;
+            }
+            AudioSource.PlayClipAtPoint(clip, position, Mathf.Clamp01(volumeScale));
+        }
+
         public static void PlayWorldSfx(AudioClip clip, Vector3 position, float volumeScale = 1f)
         {
             if (clip == null)

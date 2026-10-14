@@ -71,6 +71,13 @@ namespace Project.AI
                 return;
 
             currentHealth = Mathf.Max(0f, currentHealth - damage);
+            // 2026-10-13 (i): god mode keeps enemies alive at 1 HP (DM_CombatCoreProfile.godModeEnemiesUnkillable).
+            if (Project.Core.DMDevCommandState.GodMode && currentHealth < 1f)
+            {
+                DM_CombatCoreProfile gp = DM_CombatCoreProfile.Live;
+                if (gp == null || gp.godModeEnemiesUnkillable)
+                    currentHealth = Mathf.Min(1f, maxHealth);
+            }
             NotifyHealthChanged();
             Damaged?.Invoke(damage, isCritical);
 

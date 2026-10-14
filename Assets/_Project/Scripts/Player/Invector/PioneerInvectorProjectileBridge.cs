@@ -230,7 +230,7 @@ namespace Project.Player.Invector
             else
             {
                 bool isAiming = _inputBridge != null && _inputBridge.IsAiming;
-                float maxRange = DMRangedAmmoStats.ResolveRange(weaponItem, ammoItem);
+                float maxRange = DMScopeMode.ResolvePlayerRange(DMRangedAmmoStats.ResolveRange(weaponItem, ammoItem)); // (h) scoped range
 
                 Camera cam = ResolveGameplayCamera();
                 float aimDistance = maxRange;

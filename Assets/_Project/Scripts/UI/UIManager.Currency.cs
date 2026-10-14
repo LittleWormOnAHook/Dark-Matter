@@ -77,7 +77,7 @@ namespace Project.UI
             if (amount <= 0)
                 return;
 
-            ShowCurrencyPopup($"+{amount} AC Credits", source);
+            ShowCurrencyPopup($"+{amount} UEA Credits", source);
         }
 
         public void ShowLevelUpPopup(int newLevel, int levelsGained = 1)
@@ -96,7 +96,7 @@ namespace Project.UI
             if (acBalanceText == null || !acBalanceText.gameObject.activeSelf)
                 return;
 
-            acBalanceText.text = $"AC Credits: {Mathf.RoundToInt(aetherCredits)}";
+            acBalanceText.text = $"UEA Credits: {Mathf.RoundToInt(aetherCredits)}";
         }
 
         private void ShowCurrencyPopup(string amountLine, string source)

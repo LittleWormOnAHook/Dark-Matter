@@ -690,7 +690,7 @@ namespace Project.Pioneers
 
             if (aetherCredits + 0.01f < offer.acCost)
             {
-                message = "Not enough Aether Credits.";
+                message = "Not enough UEA Credits.";
                 return false;
             }
 
@@ -747,7 +747,7 @@ namespace Project.Pioneers
 
             if (aetherCredits + 0.01f < offer.acListPrice)
             {
-                message = $"Need {offer.acListPrice} AC (balance: {Mathf.FloorToInt(aetherCredits)}).";
+                message = $"Need {offer.acListPrice} UEA (balance: {Mathf.FloorToInt(aetherCredits)}).";
                 return false;
             }
 
@@ -763,7 +763,7 @@ namespace Project.Pioneers
 
             if (!TryAddSkilledPioneer(record, out string rosterMessage))
             {
-                message = $"Purchased {offer.displayName} for {offer.acListPrice} AC (wallet only: {rosterMessage}).";
+                message = $"Purchased {offer.displayName} for {offer.acListPrice} UEA (wallet only: {rosterMessage}).";
                 PushCurrencyToUi();
                 NotifyRosterChanged();
                 return true;
@@ -771,7 +771,7 @@ namespace Project.Pioneers
 
             PushCurrencyToUi();
             NotifyRosterChanged();
-            message = $"Purchased {offer.displayName} for {offer.acListPrice} AC. Added to base roster.";
+            message = $"Purchased {offer.displayName} for {offer.acListPrice} UEA. Added to base roster.";
             return true;
         }
 

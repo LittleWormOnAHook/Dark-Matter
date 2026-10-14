@@ -164,6 +164,11 @@ namespace Project.Combat
                                 isCritical,
                                 wantsHitStagger,
                                 staggerSeconds);
+                            if (ragdollBridge.IsHitStaggerActive)
+                            {
+                                EnemyInvectorCombatBridge staggerGuard = enemyHealth.GetComponent<EnemyInvectorCombatBridge>();
+                                if (staggerGuard != null) staggerGuard.SpendGuardStamina(DM_EnemyBrainProfile.Live.enemyStaggerStaminaCost); // 2026-10-13
+                            }
                             NotifyAttackInterrupt(enemyHealth, damage, source, isCritical, hitPoint, staggerSnapshot);
                             bool poiseBreak = hitPoise != null && hitPoise.LastBreakFrame == Time.frameCount;
                             DMEnemyHitReaction.OnPlayerMeleeHit(enemyHealth, ragdollBridge, staggerSnapshot, damage, source, isCritical, poiseBreak);

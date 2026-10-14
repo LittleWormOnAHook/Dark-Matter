@@ -8,8 +8,8 @@
                 <ui:Label name="vendor-title" text="COMMISSARY" picking-mode="Ignore" class="dmg-section-title dmg-gold"/>
                 <ui:Label name="vendor-clock" text="Io Day 1 · 06:00:00 AM" picking-mode="Ignore" class="dmg-vendor-clock"/>
                 <ui:VisualElement name="vendor-ac-row" picking-mode="Ignore" class="dmg-vendor-ac-row">
-                    <ui:Label name="vendor-player-ac" text="Your AC 0" picking-mode="Ignore" class="dmg-gold-heading"/>
-                    <ui:Label name="vendor-npc-ac" text="Vendor AC 0" picking-mode="Ignore" class="dmg-gold-heading"/>
+                    <ui:Label name="vendor-player-ac" text="Your UEA 0" picking-mode="Ignore" class="dmg-gold-heading"/>
+                    <ui:Label name="vendor-npc-ac" text="Vendor UEA 0" picking-mode="Ignore" class="dmg-gold-heading"/>
                 </ui:VisualElement>
                 <ui:Button name="vendor-close" text="Close" picking-mode="Position" class="dmg-tab"/>
             </ui:VisualElement>

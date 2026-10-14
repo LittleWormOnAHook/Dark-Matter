@@ -164,9 +164,8 @@ namespace Project.AI
             spawnStabilizer = GetComponent<DMSpawnPhysicsStabilizer>();
             brain = GetComponent<DMEnemyBrain>();
             EnemyDefinition definition = ResolveAppliedDefinition();
-            DM_EnemyBrainProfile brainProfile = definition != null && definition.brainProfileOverride != null
-                ? definition.brainProfileOverride
-                : DM_EnemyBrainProfile.Live;
+            DM_EnemyBrainProfile brainProfile = EnemyDefinitionOverrides.EffectiveBrainProfile(this, definition);
+            if (brainProfile == null) brainProfile = DM_EnemyBrainProfile.Live;
             if (brain == null && brainProfile != null && brainProfile.autoAttachBrain)
             {
                 brain = gameObject.AddComponent<DMEnemyBrain>();
@@ -189,6 +188,14 @@ namespace Project.AI
         {
             appliedDefinition = definition;
             engagementProfileOverride = definition != null ? definition.engagementProfileOverride : null;
+            var lb = GetComponent<Project.AI.Invector.EnemyInvectorLoadoutBridge>();
+            if (lb != null && lb.ProfileOverrides != null && lb.ProfileOverrides.engagementProfileOverride != null)
+                engagementProfileOverride = lb.ProfileOverrides.engagementProfileOverride; // instance first
+        }
+
+        public void SetEngagementProfileOverride(DM_EnemyEngagementProfile profile)
+        {
+            if (profile != null) engagementProfileOverride = profile;
         }
 
         private EnemyDefinition ResolveAppliedDefinition()
@@ -221,7 +228,7 @@ namespace Project.AI
             if (!DMEnemyEngagementDirector.IsEnabled)
                 return false;
 
-            if (combatBridge != null && combatBridge.IsArmedRangedPreferred())
+            if (combatBridge != null && (combatBridge.IsArmedRangedPreferred() || combatBridge.WouldUseRangedFor(target))) // 2026-10-13 (g): a gun-at-range enemy never holds the melee ring token
                 return false;
 
             return combat.CurrentTarget == target && combat.HasLivingTarget();
@@ -329,7 +336,7 @@ namespace Project.AI
             if (combat == null || combat.CurrentTarget != target)
                 return false;
 
-            if (combatBridge != null && combatBridge.IsArmedRangedPreferred())
+            if (combatBridge != null && (combatBridge.IsArmedRangedPreferred() || combatBridge.WouldUseRangedFor(target))) // 2026-10-13 (g): a gun-at-range enemy never holds the melee ring token
                 return false;
 
             if (ragdollBridge != null && ragdollBridge.IsCorpseRagdolled)

@@ -124,6 +124,87 @@ namespace Project.AI
         [Tooltip("Camera shake on a blocked hit (player block uses 0.18 / 0.08).")]
         [Range(0f, 2f)] public float blockedHitShakeAmplitude = 0.3f;
         [Range(0f, 0.4f)] public float blockedHitShakeDurationSeconds = 0.1f;
+        [Tooltip("Sound played when an enemy blocks a player hit (empty = none).")]
+        public AudioClip blockedHitSfx;
+        [Range(0f, 1f)] public float blockedHitSfxVolume = 0.8f;
+
+        [Header("Melee attacker cap (2026-10-13)")]
+
+        [Tooltip("Limit simultaneous melee swings on one target; ranged enemies are not counted.")]
+
+        public bool meleeAttackerCapEnabled = true;
+
+        [Range(1, 6)] public int maxMeleeAttackers = 2;
+
+        [Tooltip("Random delay between melee swing starts (seconds).")]
+
+        [Range(0f, 2f)] public float meleeSwingStaggerMin = 0.4f;
+
+        [Range(0f, 2f)] public float meleeSwingStaggerMax = 0.8f;
+
+
+        [Header("Enemy ranged aim (2026-10-13)")]
+
+        [Tooltip("Player bone enemy guns aim at by default (pistol + rifle).")]
+
+        public HumanBodyBones enemyAimTargetBone = HumanBodyBones.Chest;
+
+        [Tooltip("Chance per shot to aim at the head instead.")]
+
+        [Range(0f, 1f)] public float enemyHeadshotChance = 0.15f;
+
+
+        [Header("Enemy visual aim correction (2026-10-13e)")]
+
+
+        [Tooltip("While aiming, rotate the chest so the gun barrel points at the aim point (yaw + pitch). Projectiles unchanged.")]
+
+
+        public bool enemyAimCorrectionEnabled = true;
+
+
+        [Range(0f, 1f)] public float enemyAimCorrectionStrength = 1f;
+
+
+        [Range(0f, 90f)] public float enemyAimCorrectionMaxAngle = 60f;
+
+
+        [Tooltip("Smoothing speed, degrees per second.")]
+
+
+        public float enemyAimCorrectionSpeed = 360f;
+
+
+        [Tooltip("Debug: once-per-second per-enemy log of the ranged fire gate that blocks a shot.")]
+
+
+        public bool logRangedFireGates = false;
+        [Tooltip("Ranged enemies keep firing while they back off to their hold distance (else a close player is never shot).")]
+        public bool rangedFireWhileRetreating = true;
+        [Tooltip("Ranged engage range = max(definition engage, min(weapon range, vision range)): enemies shoot as far as they can see and hit.")]
+        public bool reconcileRangedEngageToVision = true;
+        [Tooltip("Rifle (two-handed ranged) users: base engage range and vision floor, metres. Pistol unchanged. Extra range from upgrades is added via EnemyInvectorCombatBridge.RifleRangeBonus.")]
+        [Range(0f, 80f)] public float rifleEngageRangeBase = 25f;
+        [Range(0f, 80f)] public float rifleVisionFloor = 25f;
+
+
+
+        [Header("Enemy guard stamina")]
+        [Tooltip("Guard stamina pool per enemy (EnemyDefinition.guardStaminaMax overrides when > 0). Empty = guard breaks.")]
+        [Range(1f, 300f)] public float enemyGuardStaminaMax = 60f;
+        [Range(0f, 100f)] public float enemyGuardRegenPerSec = 12f;
+        [Tooltip("Seconds after the last spend before regen starts.")]
+        [Range(0f, 5f)] public float enemyGuardRegenDelay = 1f;
+        [Tooltip("Holding the guard drains per second = base x growth ^ seconds held (capped).")]
+        [Range(0f, 30f)] public float enemyBlockHoldCostBase = 3f;
+        [Range(1f, 4f)] public float enemyBlockHoldCostGrowth = 1.6f;
+        [Range(0f, 100f)] public float enemyBlockHoldCostCap = 25f;
+        [Tooltip("Flat cost per blocked hit.")]
+        [Range(0f, 100f)] public float enemyBlockedHitStaminaCost = 12f;
+        [Tooltip("Cost when staggered or the guard is broken (more than a simple block).")]
+        [Range(0f, 100f)] public float enemyStaggerStaminaCost = 20f;
+        [Tooltip("An enemy will not raise its guard below this stamina.")]
+        [Range(0f, 100f)] public float enemyMinGuardStaminaToBlock = 15f;
 
         [Header("Dodge roll (single owner: brain Defend -> EnemyAiController.BeginBrainDefend -> EnemyInvectorCombatBridge.TryBeginDodgeRoll)")]
         [Tooltip("When a Defend decision does not block, chance the enemy actually rolls (otherwise it falls back to a block, then to attacking). 1 = old behaviour.")]

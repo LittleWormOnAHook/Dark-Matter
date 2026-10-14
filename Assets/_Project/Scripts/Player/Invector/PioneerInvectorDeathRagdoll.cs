@@ -142,6 +142,7 @@ namespace Project.Player.Invector
 
 
             EnsureReferences();
+            StartCorpseFreeze(); // 2026-10-13 (i)
 
 
 
@@ -407,6 +408,7 @@ namespace Project.Player.Invector
 
         public void ResetForRespawn()
         {
+            ReleaseCorpseFreeze(); // 2026-10-13 (i)
             if (_ensureDeathRoutine != null)
             {
                 StopCoroutine(_ensureDeathRoutine);
@@ -625,6 +627,86 @@ namespace Project.Player.Invector
         }
 
 
+
+        // 2026-10-13 (i): the dead player slid away / off the terrain. Nothing removed the momentum the body had at death, and the
+        // ragdoll bones kept taking pushes (enemy contacts, late hits) on a low-friction capsule/terrain, so it skated. Now the root
+        // body is stopped and made kinematic at death, bone speeds are capped while it falls, and after settle time the whole
+        // ragdoll is frozen in place until respawn (DM_CombatCoreProfile "Player corpse").
+        private Coroutine _corpseFreezeRoutine;
+        private readonly System.Collections.Generic.List<Rigidbody> _frozenBodies = new System.Collections.Generic.List<Rigidbody>();
+        private readonly System.Collections.Generic.List<bool> _frozenWasKinematic = new System.Collections.Generic.List<bool>();
+        private Rigidbody _frozenRoot;
+        private bool _frozenRootWasKinematic;
+
+        private void StartCorpseFreeze()
+        {
+            Project.Combat.DM_CombatCoreProfile p = Project.Combat.DM_CombatCoreProfile.Live;
+            if (p != null && !p.playerCorpseStayInPlace)
+                return;
+            if (_corpseFreezeRoutine != null)
+                StopCoroutine(_corpseFreezeRoutine);
+            _corpseFreezeRoutine = StartCoroutine(CorpseFreezeRoutine());
+        }
+
+        private IEnumerator CorpseFreezeRoutine()
+        {
+            Project.Combat.DM_CombatCoreProfile p = Project.Combat.DM_CombatCoreProfile.Live;
+            float settle = p != null ? p.playerCorpseSettleSeconds : 1.5f;
+            float maxSlide = p != null ? p.playerCorpseMaxSlideSpeed : 1.5f;
+
+            Rigidbody root = GetComponent<Rigidbody>();
+            if (root != null && _frozenRoot == null)
+            {
+                _frozenRoot = root;
+                _frozenRootWasKinematic = root.isKinematic;
+                if (!root.isKinematic) { root.linearVelocity = Vector3.zero; root.angularVelocity = Vector3.zero; }
+                root.isKinematic = true;
+            }
+
+            float until = Time.time + settle;
+            while (Time.time < until)
+            {
+                foreach (Rigidbody rb in GetComponentsInChildren<Rigidbody>())
+                {
+                    if (rb == null || rb == root || rb.isKinematic) continue;
+                    Vector3 v = rb.linearVelocity;
+                    Vector3 flat = new Vector3(v.x, 0f, v.z);
+                    if (flat.magnitude > maxSlide)
+                    {
+                        flat = flat.normalized * maxSlide;
+                        rb.linearVelocity = new Vector3(flat.x, v.y, flat.z);
+                    }
+                }
+                yield return new WaitForFixedUpdate();
+            }
+
+            _frozenBodies.Clear();
+            _frozenWasKinematic.Clear();
+            foreach (Rigidbody rb in GetComponentsInChildren<Rigidbody>())
+            {
+                if (rb == null || rb == root) continue;
+                _frozenBodies.Add(rb);
+                _frozenWasKinematic.Add(rb.isKinematic);
+                if (!rb.isKinematic) { rb.linearVelocity = Vector3.zero; rb.angularVelocity = Vector3.zero; }
+                rb.isKinematic = true;
+            }
+            _corpseFreezeRoutine = null;
+        }
+
+        private void ReleaseCorpseFreeze()
+        {
+            if (_corpseFreezeRoutine != null)
+            {
+                StopCoroutine(_corpseFreezeRoutine);
+                _corpseFreezeRoutine = null;
+            }
+            for (int i = 0; i < _frozenBodies.Count; i++)
+                if (_frozenBodies[i] != null) _frozenBodies[i].isKinematic = _frozenWasKinematic[i];
+            _frozenBodies.Clear();
+            _frozenWasKinematic.Clear();
+            if (_frozenRoot != null) _frozenRoot.isKinematic = _frozenRootWasKinematic;
+            _frozenRoot = null;
+        }
 
         private void EnsureReferences()
 

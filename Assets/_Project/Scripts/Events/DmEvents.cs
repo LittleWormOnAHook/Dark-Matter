@@ -199,7 +199,7 @@ namespace Project.Events
         }
 
         /// <summary>
-        /// Item-only validator (D6): chests never hold Aether Credits. AC-infused items are flagged so
+        /// Item-only validator (D6): chests never hold UEA Credits. UEA-infused items are flagged so
         /// the designer swaps them for plain items. Full id/slot validation is the phase 5 editor tool.
         /// </summary>
         private void WarnOnNonItemLoot()
@@ -214,7 +214,7 @@ namespace Project.Events
                     continue;
 
                 Debug.LogWarning(
-                    $"[DmEvents] '{name}' loot slot {i} ({slot.item.itemName}) carries Aether Credits. " +
+                    $"[DmEvents] '{name}' loot slot {i} ({slot.item.itemName}) carries UEA Credits. " +
                     "Chests hold items only (loot plan D6).",
                     this);
             }

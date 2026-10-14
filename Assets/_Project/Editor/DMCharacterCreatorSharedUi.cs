@@ -316,10 +316,55 @@ namespace Project.EditorTools
             if (string.IsNullOrEmpty(message))
                 return;
 
-            GUIStyle style = WrappedHelpBoxStyle;
-            float height = style.CalcHeight(new GUIContent(message), EffectiveContentWidth());
-            Rect rect = EditorGUILayout.GetControlRect(false, height, GUILayout.ExpandWidth(true));
+            // Height comes from the REAL layout width (GetRect with a word-wrapped style), not an estimated panel
+            // width, so long messages are never clipped. The icon column is reserved via extra left padding.
+            GUIStyle style = type == MessageType.None ? WrappedHelpBoxStyle : WrappedHelpBoxIconStyle;
+            var content = new GUIContent(message);
+
+            // Very long results (backup paths, before/after dumps) get a bounded, scrollable box.
+            if (message.Length > LongHelpBoxChars)
+            {
+                float estimate = style.CalcHeight(content, EffectiveContentWidth());
+                float boxHeight = Mathf.Clamp(estimate, 90f, 220f);
+                int key = message.GetHashCode();
+                s_HelpBoxScroll.TryGetValue(key, out Vector2 scroll);
+                using (var sv = new EditorGUILayout.ScrollViewScope(scroll, GUILayout.Height(boxHeight)))
+                {
+                    s_HelpBoxScroll[key] = sv.scrollPosition;
+                    float innerHeight = Mathf.Max(boxHeight - 4f, estimate);
+                    Rect inner = GUILayoutUtility.GetRect(0f, innerHeight, GUILayout.ExpandWidth(true));
+                    EditorGUI.HelpBox(inner, message, type);
+                }
+
+                return;
+            }
+
+            float minHeight = message.Length > 90 ? 54f : (message.Length > 45 ? 38f : 22f);
+            Rect rect = GUILayoutUtility.GetRect(content, style, GUILayout.ExpandWidth(true), GUILayout.MinHeight(minHeight));
             EditorGUI.HelpBox(rect, message, type);
+        }
+
+        const int LongHelpBoxChars = 420;
+        static readonly System.Collections.Generic.Dictionary<int, Vector2> s_HelpBoxScroll =
+            new System.Collections.Generic.Dictionary<int, Vector2>();
+        static GUIStyle s_WrappedHelpBoxIcon;
+
+        static GUIStyle WrappedHelpBoxIconStyle
+        {
+            get
+            {
+                if (s_WrappedHelpBoxIcon == null)
+                {
+                    s_WrappedHelpBoxIcon = new GUIStyle(EditorStyles.helpBox) { wordWrap = true };
+                    s_WrappedHelpBoxIcon.padding = new RectOffset(
+                        s_WrappedHelpBoxIcon.padding.left + 34,
+                        s_WrappedHelpBoxIcon.padding.right,
+                        s_WrappedHelpBoxIcon.padding.top + 2,
+                        s_WrappedHelpBoxIcon.padding.bottom + 2);
+                }
+
+                return s_WrappedHelpBoxIcon;
+            }
         }
 
         public static void DrawWrappedLabel(string text, GUIStyle style = null)

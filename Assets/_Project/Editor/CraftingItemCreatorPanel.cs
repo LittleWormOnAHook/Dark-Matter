@@ -78,10 +78,14 @@ namespace Project.EditorTools
             addToItemRegistry = EditorGUILayout.Toggle("Add To Item Registry", addToItemRegistry);
 
             EditorGUILayout.Space(16f);
-            using (new EditorGUI.DisabledScope(string.IsNullOrWhiteSpace(itemName)))
+            var createBlockers = DMStudioActionValidation.CollectCraftingItemCreateBlockers(itemName, assetFileName);
+            DMStudioActionValidation.DrawBlockersHelpBox(createBlockers, "Create Crafting Item");
+            if (GUILayout.Button("Create Crafting Item", GUILayout.Height(42f)))
             {
-                if (GUILayout.Button("Create Crafting Item", GUILayout.Height(42f)))
-                    CreateItem();
+                DMStudioActionValidation.TryRunPrimaryAction(
+                    DMStudioActionValidation.GenesisStudioDialogTitle,
+                    createBlockers,
+                    CreateItem);
             }
 
             EditorGUILayout.EndScrollView();
@@ -91,11 +95,6 @@ namespace Project.EditorTools
         {
             string safeName = CraftingEditorUtility.SanitizeAssetName(
                 string.IsNullOrWhiteSpace(assetFileName) ? itemName : assetFileName);
-            if (string.IsNullOrEmpty(safeName))
-            {
-                EditorUtility.DisplayDialog("Crafting Item Creator", "Enter a valid item or file name.", "OK");
-                return;
-            }
 
             string folder = CraftingEditorUtility.GetItemCategoryFolder(itemType);
             CraftingEditorUtility.EnsureFolder(folder);

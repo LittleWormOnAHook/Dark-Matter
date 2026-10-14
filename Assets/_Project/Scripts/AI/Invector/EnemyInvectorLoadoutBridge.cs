@@ -37,6 +37,30 @@ namespace Project.AI.Invector
         [Tooltip("UseDefinition = follow EnemyDefinition.preferRangedWeapon.")]
         [SerializeField] private EnemyPreferRangedOverride preferRangedOverride = EnemyPreferRangedOverride.UseDefinition;
 
+        [Header("Profile OVERRIDES (empty = use EnemyDefinition)")]
+        // 2026-10-13: flat fields (the nested foldout rendered collapsed with its arrow clipped). Toggle off / empty = definition.
+        [SerializeField] private bool overrideSurfaceThreatKind;
+        [SerializeField] private SurfaceThreatKind surfaceThreatKind = SurfaceThreatKind.Lifeform;
+        [SerializeField] private bool overrideEnemyCategory;
+        [SerializeField] private EnemyCategory enemyCategory = EnemyCategory.Grunt;
+        [Tooltip("e.g. Humanoid -> Robot: drives blood pool, sparks vs blood and reach.")]
+        [SerializeField] private bool overrideBodyType;
+        [SerializeField] private DMEnemyBodyType bodyType = DMEnemyBodyType.Humanoid;
+        [Tooltip("On = this instance uses the archetype / personalities below.")]
+        [SerializeField] private bool overrideBrain;
+        [SerializeField] private DMEnemyArchetype brainArchetype = DMEnemyArchetype.Duelist;
+        [SerializeField] private DMEnemyPersonality primaryPersonality = DMEnemyPersonality.None;
+        [SerializeField] private DMEnemyPersonality secondaryPersonality = DMEnemyPersonality.None;
+        [Tooltip("Empty = definition's, then global.")] [SerializeField] private DM_EnemyBrainProfile brainProfileOverride;
+        [Tooltip("Empty = definition's, then global.")] [SerializeField] private DM_EnemyEngagementProfile engagementProfileOverride;
+        [Tooltip("Empty = definition's, then global.")] [SerializeField] private DM_EnemyHitMarkProfile hitMarkProfileOverride;
+        [SerializeField] private DMOverrideBool canThrowGrenades = DMOverrideBool.UseDefinition;
+        [SerializeField] private bool overrideWeaponDown;
+        [SerializeField] [Range(0f, 90f)] private float weaponDownAngle = 60f;
+        [SerializeField] [Range(0f, 30f)] private float weaponDownVariation = 5f;
+
+        [System.NonSerialized] private DMEnemyInstanceOverrides profileOverrides;
+
         [Header("Fallbacks (only used when NO EnemyDefinition is linked)")]
         [SerializeField] private bool preferRangedAtRange = true;
         [SerializeField] private bool startWithMeleeWeapon = true;
@@ -76,6 +100,39 @@ namespace Project.AI.Invector
 
         // ---- Resolved weapons (override, else definition) -------------------------------------------------
         /// <summary>The linked EnemyDefinition (runtime-configured, else the Bootstrap's serialized link).</summary>
+        public DMEnemyInstanceOverrides ProfileOverrides
+        {
+            get
+            {
+                if (profileOverrides == null) profileOverrides = new DMEnemyInstanceOverrides();
+                var o = profileOverrides;
+                o.overrideSurfaceThreatKind = overrideSurfaceThreatKind; o.surfaceThreatKind = surfaceThreatKind;
+                o.overrideEnemyCategory = overrideEnemyCategory; o.enemyCategory = enemyCategory;
+                o.overrideBodyType = overrideBodyType; o.bodyType = bodyType;
+                o.overrideBrain = overrideBrain; o.brainArchetype = brainArchetype;
+                o.primaryPersonality = primaryPersonality; o.secondaryPersonality = secondaryPersonality;
+                o.brainProfileOverride = brainProfileOverride; o.engagementProfileOverride = engagementProfileOverride;
+                o.hitMarkProfileOverride = hitMarkProfileOverride; o.canThrowGrenades = canThrowGrenades;
+                o.overrideWeaponDown = overrideWeaponDown; o.weaponDownAngle = weaponDownAngle; o.weaponDownVariation = weaponDownVariation;
+                return o;
+            }
+        }
+
+        // ---- Effective values: instance override -> EnemyDefinition -> global ----
+        public SurfaceThreatKind EffectiveSurfaceThreatKind =>
+            overrideSurfaceThreatKind ? surfaceThreatKind
+            : (ResolveDefinition() != null ? ResolveDefinition().surfaceThreatKind : SurfaceThreatKind.Lifeform);
+        public EnemyCategory EffectiveEnemyCategory =>
+            overrideEnemyCategory ? enemyCategory
+            : (ResolveDefinition() != null ? ResolveDefinition().enemyCategory : EnemyCategory.Grunt);
+        public DMEnemyBodyType EffectiveBodyType =>
+            overrideBodyType ? bodyType
+            : (ResolveDefinition() != null ? ResolveDefinition().bodyType : DMEnemyBodyType.Humanoid);
+        public bool EffectiveCanThrowGrenades =>
+            canThrowGrenades != DMOverrideBool.UseDefinition
+                ? canThrowGrenades == DMOverrideBool.ForceOn
+                : (ResolveDefinition() != null && ResolveDefinition().canThrowGrenades);
+
         public EnemyDefinition ResolveDefinition()
         {
             if (_definition != null)
@@ -152,6 +209,13 @@ namespace Project.AI.Invector
             _meleeManager = GetComponent<vMeleeManager>();
             _controller = GetComponent<vThirdPersonController>();
             _health = GetComponent<EnemyHealth>();
+        }
+
+        private void Start()
+        {
+            // Instance overrides also apply when no definition pass ran (idempotent).
+            if (ProfileOverrides.Any)
+                EnemyDefinitionOverrides.ApplyInstance(gameObject, ResolveDefinition());
         }
 
         /// <summary>

@@ -48,6 +48,10 @@ namespace Project.UI
         private readonly List<VisualElement> markerPool = new List<VisualElement>();
         private OpticsOverlayUI boundUgui;
         private Canvas boundOpticsCanvas;
+        private DMScopeReticleElement reticle;      // 2026-10-13 (h) new scope art
+        private VisualElement crosshairH;
+        private VisualElement crosshairV;
+        private bool scopeShowing;
 
         public static bool IsShowing => instance != null && instance.visible;
 
@@ -146,15 +150,59 @@ namespace Project.UI
             if (document == null)
                 return;
 
-            bool driving = DMUiToolkitConfig.IsEnabled && DMUiToolkitHud.IsDriving;
+            // 2026-10-13 (h): retireUguiOptics = the UITK overlay always drives (old uGUI canvas stays off).
+            Project.Combat.DM_ScopeProfile scopeProfile = Project.Combat.DM_ScopeProfile.Live;
+            bool driving = DMUiToolkitConfig.IsEnabled && (DMUiToolkitHud.IsDriving || scopeProfile.retireUguiOptics);
             SetOpticsCanvasEnabled(!driving);
             if (!driving)
                 return;
+
+            if (Project.Combat.DMScopeMode.IsScoped || Project.Combat.DMScopeMode.ZoomBlend > 0.001f)
+            {
+                ApplyScopeState(scopeProfile);
+                return;
+            }
+            if (scopeShowing)
+            {
+                scopeShowing = false;
+                if (opticsRoot != null) opticsRoot.style.opacity = 1f;
+                ApplyState(false, ToolType.None, true, null);
+            }
 
             if (boundUgui == null)
                 boundUgui = FindAnyObjectByType<OpticsOverlayUI>(FindObjectsInactive.Include);
             if (boundUgui != null)
                 ApplyState(boundUgui.IsVisible, boundUgui.ActiveToolType, boundUgui.IsPassthroughMode, boundUgui.BoundRenderTexture);
+        }
+
+        private void ApplyScopeState(Project.Combat.DM_ScopeProfile p)
+        {
+            scopeShowing = true;
+            ApplyState(true, ToolType.Binoculars, true, null);
+            if (opticsRoot != null)
+                opticsRoot.style.opacity = Mathf.Clamp01(Project.Combat.DMScopeMode.ZoomBlend);
+            if (reticle != null)
+            {
+                reticle.Offset = Project.Combat.DMScopeMode.ReticleSway;
+                reticle.Refresh();
+            }
+            bool rifle = Project.Combat.DMScopeMode.IsScopedRifle;
+            if (modeLabel != null)
+                modeLabel.text = rifle ? p.rifleScopeLabel : p.pistolScopeLabel;
+            if (hintLabel != null)
+                hintLabel.text = Time.unscaledTime < Project.Combat.DMScopeMode.BlockedAmmoUntil
+                    ? Project.Combat.DMScopeMode.BlockedAmmoMessage
+                    : p.scopeHint;
+            if (rangeLabel != null)
+            {
+                string rangeText = Mathf.RoundToInt(Project.Combat.DMScopeMode.ResolvePlayerRange(0f)) + " m";
+                // 2026-10-13 (i): the scope mask darkens the top-screen enemy bar, so mirror the engaged target here.
+                EngagedEnemyHealthHud enemyHud = EngagedEnemyHealthHud.Instance;
+                if (enemyHud != null && enemyHud.TryGetFocus(out string enemyName, out float enemyFill))
+                    rangeText += "   |   " + enemyName + "  " + Mathf.RoundToInt(enemyFill * 100f) + "%";
+                rangeLabel.text = rangeText;
+                SetDisplay(rangeLabel, true);
+            }
         }
 
         private void SetOpticsCanvasEnabled(bool enabled)
@@ -215,6 +263,15 @@ namespace Project.UI
             hintLabel = root.Q<Label>("optics-hint");
             rangeLabel = root.Q<Label>("optics-range");
             scanningLabel = root.Q<Label>("optics-scanning");
+            crosshairH = root.Q<VisualElement>("optics-crosshair-h");
+            crosshairV = root.Q<VisualElement>("optics-crosshair-v");
+            if (reticle == null || reticle.parent == null)
+            {
+                reticle = new DMScopeReticleElement();
+                VisualElement host = opticsRoot ?? root;
+                int idx = binocularRoot != null && binocularRoot.parent == host ? host.IndexOf(binocularRoot) + 1 : host.childCount;
+                host.Insert(idx, reticle);
+            }
 
             ApplySprites();
             SetHostVisible(false);
@@ -279,6 +336,24 @@ namespace Project.UI
             }
 
             ApplyViewport(scanner);
+
+            // 2026-10-13 (h): new procedural scope art for binoculars + scope (old sprite frame hidden).
+            bool newArt = !scanner && Project.Combat.DM_ScopeProfile.Live.useNewScopeArt;
+            SetDisplay(scopeOuter, !newArt);
+            SetDisplay(scopeInner, !newArt);
+            SetDisplay(crosshairH, !newArt);
+            SetDisplay(crosshairV, !newArt);
+            if (reticle != null)
+            {
+                SetDisplay(reticle, newArt);
+                if (newArt)
+                {
+                    OpticsCrosshairLibrary lib = OpticsUiSprites.Current;
+                    reticle.RadiusFraction = lib != null && lib.viewport != null ? Mathf.Max(0.2f, lib.viewport.binocularRadius) : 0.38f;
+                    reticle.Offset = Vector2.zero;
+                    reticle.Refresh();
+                }
+            }
         }
 
         private void SetScannerBorderVisible(bool show)

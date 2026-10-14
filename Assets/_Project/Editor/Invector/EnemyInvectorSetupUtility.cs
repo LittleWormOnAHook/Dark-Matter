@@ -659,20 +659,48 @@ namespace Project.EditorTools.Invector
             if (loadout == null || definition == null)
                 return;
 
+            // WEAPON FLOW: the EnemyDefinition is the DEFAULT, the LoadoutBridge fields are per-instance OVERRIDES.
+            // The creator never bakes the definition's weapons into the bridge (that would turn the default into an
+            // override). It only clears values that are NOT an intentional override: a copy of the definition's own
+            // weapon, or a weapon inherited from the template prefab. Anything else is treated as the user's override.
             SerializedObject serialized = new SerializedObject(loadout);
             SerializedProperty melee = serialized.FindProperty("meleeWeaponItem");
             SerializedProperty ranged = serialized.FindProperty("rangedWeaponItem");
             SerializedProperty prefer = serialized.FindProperty("preferRangedAtRange");
             SerializedProperty startMelee = serialized.FindProperty("startWithMeleeWeapon");
 
+            ItemData templateMelee = null;
+            ItemData templateRanged = null;
+            GameObject templateAsset = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/_Project/Prefabs/Combat/Enemies/HumanoidEnemy_Invector.prefab");
+            EnemyInvectorLoadoutBridge templateLoadout = templateAsset != null
+                ? templateAsset.GetComponent<EnemyInvectorLoadoutBridge>()
+                : null;
+            if (templateLoadout != null)
+            {
+                templateMelee = templateLoadout.MeleeOverride;
+                templateRanged = templateLoadout.RangedOverride;
+            }
+
             if (melee != null)
-                melee.objectReferenceValue = definition.meleeWeaponItem;
+            {
+                ItemData current = melee.objectReferenceValue as ItemData;
+                if (current != null && (current == definition.meleeWeaponItem || current == templateMelee))
+                    melee.objectReferenceValue = null;
+            }
+
             if (ranged != null)
-                ranged.objectReferenceValue = definition.rangedWeaponItem;
+            {
+                ItemData current = ranged.objectReferenceValue as ItemData;
+                if (current != null && (current == definition.rangedWeaponItem || current == templateRanged))
+                    ranged.objectReferenceValue = null;
+            }
+
+            // Fallbacks only (used when no definition is linked); keep them consistent with the definition.
             if (prefer != null)
                 prefer.boolValue = definition.preferRangedWeapon;
             if (startMelee != null)
-                startMelee.boolValue = !definition.preferRangedWeapon;
+                startMelee.boolValue = !(definition.preferRangedWeapon && definition.rangedWeaponItem != null);
 
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
@@ -739,9 +767,12 @@ namespace Project.EditorTools.Invector
             ItemData preferredRanged = null;
             if (loadout != null)
             {
-                SerializedObject so = new SerializedObject(loadout);
-                preferredMelee = so.FindProperty("meleeWeaponItem")?.objectReferenceValue as ItemData;
-                preferredRanged = so.FindProperty("rangedWeaponItem")?.objectReferenceValue as ItemData;
+                // Resolved weapons (override, else definition); arm the one the bridge will start with.
+                ItemData start = loadout.ResolveStartingWeapon();
+                if (start != null && start.itemType == ItemType.MeleeWeapon)
+                    preferredMelee = start;
+                else if (start != null)
+                    preferredRanged = start;
             }
 
             RepairWeaponSlotVisuals(root, preferredMelee, preferredRanged);

@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d48551ecd8464b24f84603260c4656cb, type: 3}
+  m_Name: DM_ScopeProfile
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.DM_ScopeProfile
+  scopeEnabled: 1
+  scopeUnlockedByDefault: 1
+  rifleScopedRange: 50
+  pistolScopedRange: 28
+  rifleScopedFov: 14
+  pistolScopedFov: 26
+  scopeInSeconds: 0.3
+  scopeOutSeconds: 0.15
+  rifleScopedFireInterval: 2.5
+  pistolScopedFireInterval: 2
+  minScopedFireInterval: 1
+  scopedHeadMultiplier: 2
+  scopedChestMultiplier: 1.25
+  scopedAccuracyBonusPercent: 25
+  reticleSwayPixels: 6
+  reticleSwaySpeed: 0.6
+  allowedAmmoKeywords:
+  - Standard
+  - Plasma
+  scopedShotVolume: 1.2
+  scopedShotPitch: 0.85
+  maxSwayReduction: 0.85
+  maxScopeInReduction: 0.7
+  maxExtraZoom: 0.5
+  useNewScopeArt: 1
+  retireUguiOptics: 1
+  reticleColor: {r: 0.05, g: 0.05, b: 0.05, a: 0.95}
+  ringColor: {r: 0, g: 0, b: 0, a: 1}
+  reticleLineWidth: 1.6
+  reticleCenterGap: 10
+  milDotsPerArm: 4
+  rifleScopeLabel: SCOPE
+  pistolScopeLabel: SCOPE
+  scopeHint: '[RMB] Release  |  Standard / Plasma ammo only'

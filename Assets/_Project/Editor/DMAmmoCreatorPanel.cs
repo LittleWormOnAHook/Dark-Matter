@@ -109,12 +109,26 @@ namespace Project.EditorTools
             createFxProfile = EditorGUILayout.Toggle("Create DMAmmoFxProfile", createFxProfile);
 
             EditorGUILayout.Space(8f);
+            var createBlockers = DMStudioActionValidation.CollectAmmoCreateBlockers(
+                createFxProfile,
+                registerNewType,
+                newTypeName,
+                ammoName,
+                working != null && working.isHitscanBeam,
+                createProjectilePrefab,
+                existingProjectilePrefab);
+            DMStudioActionValidation.DrawBlockersHelpBox(createBlockers, "Create Ammo + Profile + Prefabs");
             if (GUILayout.Button(
                     registerNewType
                         ? "Create New AmmoType + Profile + Prefabs"
                         : "Create Ammo + Profile + Prefabs",
                     GUILayout.Height(42f)))
-                Create();
+            {
+                DMStudioActionValidation.TryRunPrimaryAction(
+                    DMStudioActionValidation.GenesisStudioDialogTitle,
+                    createBlockers,
+                    Create);
+            }
 
             EditorGUILayout.Space(6f);
             if (GUILayout.Button("Create Missing Ammo Types (Ice, Fire, Electric, …)", GUILayout.Height(28f)))
@@ -367,12 +381,6 @@ namespace Project.EditorTools
 
         private void Create()
         {
-            if (!createFxProfile)
-            {
-                EditorUtility.DisplayDialog("Ammo Creator", "Enable DMAmmoFxProfile.", "OK");
-                return;
-            }
-
             AmmoType typeToCreate = ammoType;
             string typeNote = string.Empty;
             if (registerNewType)

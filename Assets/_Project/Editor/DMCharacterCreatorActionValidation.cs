@@ -149,6 +149,11 @@ namespace Project.EditorTools
                     blockers.Add($"Melee Weapon '{d.meleeWeaponItem.name}' has no Invector weapon prefab (it would spawn unarmed).");
             }
 
+            if (d.meleeWeaponItem != null && d.meleeWeaponItem.isMiningTool)
+                blockers.Add($"Melee Weapon '{d.meleeWeaponItem.name}' is a mining tool; mining tools are not enemy weapons.");
+            if (d.rangedWeaponItem != null && d.rangedWeaponItem.isMiningTool)
+                blockers.Add($"Ranged Weapon '{d.rangedWeaponItem.name}' is a mining tool; mining tools are not enemy weapons.");
+
             if (d.rangedWeaponItem != null)
             {
                 if (!d.rangedWeaponItem.IsRangedWeapon)

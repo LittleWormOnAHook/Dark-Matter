@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Invector.vMelee;
 using Project.Combat;
+using Project.EditorTools;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
@@ -64,6 +65,15 @@ namespace Project.EditorTools.Combat
         [MenuItem("Tools/Dark Matter Genesis/Combat/Build And Apply Melee Animation Set", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Build_And_Apply_Melee_Animation_Set)]
         public static void BuildAndApply()
         {
+            var blockers = DMStudioActionValidation.CollectMeleeBuildAndApplyBlockers();
+            if (blockers.Count > 0)
+            {
+                DMStudioActionValidation.ShowValidationDialog(
+                    DMStudioActionValidation.CombatStudioDialogTitle,
+                    blockers);
+                return;
+            }
+
             DM_MeleeAnimationSet set = LoadOrCreateSet();
             EnsureHumanoidImport(InteractHoldComboPath);
             PopulateDefaultClips(set);

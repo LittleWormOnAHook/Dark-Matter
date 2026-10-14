@@ -1007,6 +1007,31 @@ namespace Project.Player.Invector
             }
 
             isBlocking = ReadBlockHeld() && cc.currentStamina > 0 && !cc.customAction && !isAttacking;
+            TickBlockStamina();
+        }
+
+        private float _blockHoldStart = -1f;
+
+        /// <summary>2026-10-13: holding block drains stamina (base x growth^held, capped); empty = guard breaks.</summary>
+        private void TickBlockStamina()
+        {
+            DM_CombatCoreProfile p = DM_CombatCoreProfile.Live;
+            if (!isBlocking || p == null) { _blockHoldStart = -1f; return; }
+            if (_blockHoldStart < 0f) _blockHoldStart = Time.time;
+            float held = Time.time - _blockHoldStart;
+            float rate = Mathf.Min(p.playerBlockHoldCostBase * Mathf.Pow(Mathf.Max(1f, p.playerBlockHoldCostGrowth), held), p.playerBlockHoldCostCap);
+            SpendSwingStamina(rate * Time.deltaTime);
+            var stats = GetComponent<Project.Survival.SurvivalStats>();
+            float left = stats != null ? stats.CurrentStamina : cc.currentStamina;
+            if (left <= 0.01f) BreakPlayerGuard(p);
+        }
+
+        private void BreakPlayerGuard(DM_CombatCoreProfile p)
+        {
+            isBlocking = false;
+            if (animator != null) animator.SetBool(vAnimatorParameters.IsBlocking, false);
+            _suppressBlockUntil = Time.time + (p != null ? p.playerGuardBreakLockSeconds : 1f);
+            _blockHoldStart = -1f;
         }
 
         public override void OnDisableAttack()
@@ -1117,10 +1142,29 @@ namespace Project.Player.Invector
             if (!_strongDamageSawSwing)
                 _strongDamageArmed = false;
 
+            DM_CombatCoreProfile staminaP = DM_CombatCoreProfile.Live;
             if (ReadInteractHoldActive())
+            {
                 PlayInteractHoldComboAttack();
+                SpendSwingStamina(staminaP != null ? staminaP.meleeHeavyStaminaCost : 14f);
+            }
             else
+            {
                 PlayLightSwordSwing();
+                SpendSwingStamina(staminaP != null ? staminaP.meleeLightStaminaCost : 8f);
+            }
+        }
+
+        /// <summary>2026-10-13: melee stamina is spent at swing start on SurvivalStats (the HUD source). The drawn-melee path
+        /// bypasses Invector's attack cost, and Invector's cc.currentStamina is overwritten from SurvivalStats every frame,
+        /// so the only cost left was the ItemData cost on a landed hit (misses and charged attacks were free).</summary>
+        private void SpendSwingStamina(float cost)
+        {
+            if (cost <= 0f) return;
+            var stats = GetComponent<Project.Survival.SurvivalStats>();
+            if (stats == null) stats = GetComponentInParent<Project.Survival.SurvivalStats>();
+            if (stats != null) stats.SpendStamina(cost);
+            else if (cc != null) cc.currentStamina = Mathf.Max(0f, cc.currentStamina - cost);
         }
 
         private void TryReleaseStrongMelee()
@@ -1134,6 +1178,8 @@ namespace Project.Player.Invector
             _suppressBlockUntil = Time.time + StrongAttackBlockSuppressSeconds;
             _strongChargePoseActive = false;
             PlayStrongSwordSwing();
+            DM_CombatCoreProfile chargeStaminaP = DM_CombatCoreProfile.Live;
+            SpendSwingStamina(chargeStaminaP != null ? chargeStaminaP.meleeChargedStaminaCost : 22f);
             _strongDamageArmed = true;
             _strongDamageSawSwing = false;
             _strongDamageUntil = Time.time + StrongDamageWindowSeconds;
@@ -2280,6 +2326,14 @@ namespace Project.Player.Invector
                 meleeManager.OnDefense();
                 cc.currentStaminaRecoveryDelay = damage.staminaRecoveryDelay;
                 cc.currentStamina -= damage.staminaBlockCost;
+                // 2026-10-13: cc stamina is overwritten from SurvivalStats every frame; spend the Studio flat cost there.
+                DM_CombatCoreProfile bp = DM_CombatCoreProfile.Live;
+                if (bp != null)
+                {
+                    SpendSwingStamina(bp.playerBlockedHitStaminaCost);
+                    var st = GetComponent<Project.Survival.SurvivalStats>();
+                    if (st != null && st.CurrentStamina <= 0.01f) BreakPlayerGuard(bp);
+                }
             }
 
             if (damage != null)

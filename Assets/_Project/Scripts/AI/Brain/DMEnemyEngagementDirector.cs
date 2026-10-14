@@ -505,6 +505,12 @@ namespace Project.AI
             if (agent == null || !IsEnabled)
                 return true;
 
+            // 2026-10-13 (d6): simple melee attacker cap (DM_EnemyBrainProfile "Melee attacker cap"): up to maxMeleeAttackers melee
+            // swings at once, starts staggered by a random 0.4-0.8 s; others wait/circle. Ranged enemies are not counted and keep the old rule.
+            DM_EnemyBrainProfile capP = DM_EnemyBrainProfile.Live;
+            if (capP != null && capP.meleeAttackerCapEnabled && !IsRangedAgent(agent))
+                return CanStartMeleeCapped(agent, target, capP);
+
             Ring ring = agent.EngagementState.Ring;
             int budget = ring != null ? Mathf.Max(1, ring.TotalSlots) : 1;
             int attacking = 0;
@@ -522,6 +528,46 @@ namespace Project.AI
             }
 
             return attacking < budget;
+        }
+
+        private static float s_nextMeleeStart;
+        private static EnemyAiController s_meleeStartOwner;
+
+        private static bool IsRangedAgent(EnemyAiController a)
+        {
+            var b = a != null ? a.GetComponent<Project.AI.Invector.EnemyInvectorCombatBridge>() : null;
+            return b != null && b.IsArmedRangedPreferred();
+        }
+
+        private static bool CanStartMeleeCapped(EnemyAiController agent, Transform target, DM_EnemyBrainProfile p)
+        {
+            int melee = 0;
+            var all = EnemyAiController.ActiveEnemies;
+            for (int i = 0; i < all.Count; i++)
+            {
+                EnemyAiController m = all[i];
+                if (m == null || m == agent || !m.isActiveAndEnabled || !m.IsInAttackSequence || IsRangedAgent(m))
+                    continue;
+                if (target != null && m.CurrentCombatTarget != null && m.CurrentCombatTarget != target)
+                    continue;
+                if (Vector3.SqrMagnitude(m.transform.position - agent.transform.position) > 30f * 30f)
+                    continue;
+                melee++;
+            }
+            if (melee >= Mathf.Max(1, p.maxMeleeAttackers))
+                return false;
+
+            float now = Time.time;
+            if (now < s_nextMeleeStart && s_meleeStartOwner != agent)
+                return false; // stagger window held by the enemy that just started
+
+            if (now >= s_nextMeleeStart)
+            {
+                float lo = Mathf.Min(p.meleeSwingStaggerMin, p.meleeSwingStaggerMax), hi = Mathf.Max(p.meleeSwingStaggerMin, p.meleeSwingStaggerMax);
+                s_nextMeleeStart = now + UnityEngine.Random.Range(lo, hi);
+                s_meleeStartOwner = agent;
+            }
+            return true;
         }
 
         public static bool CanStartSwing(EnemyAiController agent)

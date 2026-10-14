@@ -156,7 +156,7 @@ namespace Project.Loot
         }
 
         /// <summary>
-        /// Enemy bag AC only (chests never hold AC, D6). One feedback path: the roster's AC reward card,
+        /// Enemy bag AC only (chests never hold AC, D6). One feedback path: the roster's UEA Credits reward card,
         /// no extra "+N AC" toast.
         /// </summary>
         public static int GrantAetherCredits(int amount, string source)
