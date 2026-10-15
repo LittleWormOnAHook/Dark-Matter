@@ -70,6 +70,8 @@ namespace Project.AI
         [SerializeField] private float wanderRadius = 8f;
         [SerializeField] private float wanderPauseMin = 2f;
         [SerializeField] private float wanderPauseMax = 5f;
+        private float wanderCommittedAt;
+        private const float WanderRetargetTimeoutSeconds = 5.5f;
 
         [Header("Patrol")]
         [SerializeField] private Transform[] patrolPoints;
@@ -186,13 +188,28 @@ namespace Project.AI
         private const float AggroDuration = 8f;
         private bool locomotionPaused;
         internal int chaseWallBlockedFrames;
+        internal bool RecentWallBufferContact;
         internal int ChaseWallStutterFrames;
-        internal int ChaseWallFollowSideSign = 1;
+        internal int ChaseWallFollowSideSign;
         internal float ChaseWallFollowSideLockUntil;
+        internal int ChaseWallFollowFailStreak;
+        internal Vector3 ChaseFanLatchedDirection;
+        internal float ChaseFanLatchUntil;
+        internal float ChaseFanLastRetargetTime;
+        private Vector3 cachedCombatRingPoint;
+        private float combatRingPointLockUntil;
         internal float chaseWallBufferStuckTimer;
         internal Vector3 chaseWallLastContactNormal;
+        internal Vector3 VirtualSteerHint;
+        internal Vector3 VirtualSteerMoveTarget;
+        internal bool VirtualSteerActive;
         private Vector3 wallRetreatSidestepTarget;
         private float wallRetreatSidestepUntil;
+        private float wallRetreatCooldownUntil;
+        private Vector3 cachedCombatRingDir;
+        private float combatRingDirLockUntil;
+        private Vector3 hardSeparationPushDir;
+        private float hardSeparationDirLockUntil;
         private bool investigateFromCombatLoss;
         private float investigateLookUntil;
         private float searchOrbitAngle;
@@ -298,6 +315,59 @@ namespace Project.AI
             patrolIndex = 0;
             patrolDirection = 1;
         }
+
+        /// <summary>Configure a world patrol loop and enter calm Patrol state (validation / encounter tooling).</summary>
+        public void BeginPatrolRouteNow(Vector3[] worldPoints, EnemyPatrolMode mode = EnemyPatrolMode.Loop)
+        {
+            ConfigurePatrolRoute(worldPoints, mode);
+            if (hasPatrolRoute)
+                EnterCalmState();
+        }
+
+        private Transform[] _validationSavedPatrolTransforms;
+        private Vector3[] _validationSavedPatrolWorld;
+        private EnemyMovementMode _validationSavedMovementMode;
+        private EnemyPatrolMode _validationSavedPatrolMode;
+        private bool _validationPatrolActive;
+
+        /// <summary>Play-mode collision walk validation only — saves patrol/wander, then loops world waypoints.</summary>
+        public void BeginValidationPatrolRoute(Vector3[] worldPoints, EnemyPatrolMode mode = EnemyPatrolMode.Loop)
+        {
+            if (!_validationPatrolActive)
+            {
+                _validationSavedMovementMode = movementMode;
+                _validationSavedPatrolMode = patrolMode;
+                _validationSavedPatrolTransforms = patrolPoints;
+                _validationSavedPatrolWorld = patrolWorldPoints != null
+                    ? (Vector3[])patrolWorldPoints.Clone()
+                    : null;
+            }
+
+            _validationPatrolActive = true;
+            ConfigurePatrolRoute(worldPoints, mode);
+            if (hasPatrolRoute)
+                EnterCalmState();
+        }
+
+        /// <summary>Restores movement mode and patrol anchors after validation tooling.</summary>
+        public void EndValidationPatrolRoute()
+        {
+            if (!_validationPatrolActive)
+                return;
+
+            _validationPatrolActive = false;
+            movementMode = _validationSavedMovementMode;
+            patrolMode = _validationSavedPatrolMode;
+            patrolPoints = _validationSavedPatrolTransforms;
+            patrolWorldPoints = _validationSavedPatrolWorld;
+            RefreshPatrolRouteFlag();
+            patrolIndex = 0;
+            patrolDirection = 1;
+            StopNavMeshMovement();
+            EnterCalmState();
+        }
+
+        public bool IsValidationPatrolActive => _validationPatrolActive;
 
         /// <summary>Assign Path Creator for Patrol and register with bezier anchors.</summary>
         public void SetPatrolPath(PathCreator path, DMIPathFollowProvider provider = null)
@@ -516,6 +586,9 @@ namespace Project.AI
             if (((Time.frameCount + perfPhase) & 1) != 0)
                 return;
 
+            if (!ShouldApplyGroundSnap())
+                return;
+
             SnapToGround();
         }
 
@@ -680,11 +753,22 @@ namespace Project.AI
             state = newState;
             chaseWallBlockedFrames = 0;
             ChaseWallStutterFrames = 0;
-            ChaseWallFollowSideSign = 1;
+            ChaseWallFollowSideSign = 0;
             ChaseWallFollowSideLockUntil = 0f;
+            ChaseWallFollowFailStreak = 0;
+            ChaseFanLatchedDirection = Vector3.zero;
+            ChaseFanLatchUntil = 0f;
+            ChaseFanLastRetargetTime = 0f;
             chaseWallBufferStuckTimer = 0f;
             chaseWallLastContactNormal = Vector3.zero;
             wallRetreatSidestepUntil = 0f;
+            wallRetreatCooldownUntil = 0f;
+            cachedCombatRingDir = Vector3.zero;
+            combatRingDirLockUntil = 0f;
+            cachedCombatRingPoint = Vector3.zero;
+            combatRingPointLockUntil = 0f;
+            hardSeparationPushDir = Vector3.zero;
+            hardSeparationDirLockUntil = 0f;
             investigateUseWallPatrol = false;
             elevatedBlindNoLosTimer = 0f;
             investigateStuckTimer = 0f;
@@ -695,8 +779,9 @@ namespace Project.AI
                     stateTimer = idleDuration;
                     break;
                 case AiState.Wander:
-                    moveTarget = PickRandomGroundPoint(homePosition, wanderRadius);
+                    moveTarget = ClampPointToWanderRadius(PickRandomGroundPoint(homePosition, wanderRadius));
                     stateTimer = Random.Range(wanderPauseMin, wanderPauseMax);
+                    wanderCommittedAt = Time.time;
                     lastNavDestination = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
                     break;
                 case AiState.Patrol:

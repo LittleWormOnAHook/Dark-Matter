@@ -79,6 +79,10 @@ namespace Project.AI
         public DMEnemyArchetype defaultArchetype = DMEnemyArchetype.Duelist;
         public DMEnemyPersonality defaultPersonality = DMEnemyPersonality.None;
         public bool debugLogDecisions = false;
+        [Tooltip("Play mode: gold movement history on enemies with DMEnemyMovementPathDebug. Buffer reserved for future path analysis.")]
+        public bool enableMovementPathDebug = false;
+        [Tooltip("When path debug is visible: dashed yellow virtual steer polyline (root → fan hint → move target). Memory only — no path objects.")]
+        public bool drawVirtualSteerPath = false;
 
         [Header("Decisions")]
         [Tooltip("The brain re-scores this often and holds its pick until the next decision.")]
@@ -234,6 +238,31 @@ namespace Project.AI
         [Range(0.1f, 2f)] public float chaseWallFollowMinSideSeconds = 0.55f;
         [Tooltip("Dot-product gap required before swapping wall-follow side.")]
         [Range(0.05f, 0.5f)] public float chaseWallFollowSideHysteresis = 0.18f;
+        [Tooltip("Consecutive failed wall-follow steps before flipping tangential side (reduces left-right hunting).")]
+        [Range(2, 8)] public int chaseWallFollowFlipAfterFails = 3;
+        [Tooltip("Capsule fan ahead of the chase target to pick a clearer direction before slide / wall-follow.")]
+        public bool enableChaseWallPredictiveFan = false;
+        [Range(3, 11)] public int chaseWallFanRayCount = 7;
+        [Range(10f, 75f)] public float chaseWallFanHalfAngleDegrees = 42f;
+        [Tooltip("Multiplies chaseWallProbeDistance for fan clearance samples.")]
+        [Range(0.8f, 2.5f)] public float chaseWallFanLookAheadScale = 1.35f;
+        [Range(0.15f, 1.2f)] public float chaseWallFanLatchSeconds = 0.4f;
+        [Tooltip("Score margin required before replacing a latched fan direction (reduces L/R hunting).")]
+        [Range(0.02f, 0.25f)] public float chaseWallFanDirectionHysteresis = 0.08f;
+        [Tooltip("Min seconds between full fan re-scans when the latched direction still clears ahead.")]
+        [Range(0.1f, 1.2f)] public float chaseWallFanMinRetargetSeconds = 0.32f;
+        [Tooltip("Seconds to hold combat ring bearing / chase point while in wall standoff buffer.")]
+        [Range(0.4f, 2.5f)] public float chaseWallRingLockSeconds = 1.05f;
+        [Tooltip("Sparse long-range fan toward chase target for macro bearing only (local slide unchanged).")]
+        public bool enableChaseWallLongRangeFan = false;
+        [Range(8f, 24f)] public float chaseWallLongRangeFanDistance = 20f;
+        [Range(3, 5)] public int chaseWallLongRangeFanRayCount = 3;
+        [Tooltip("Blend weight from long-range macro bearing into short fan wish direction.")]
+        [Range(0.1f, 0.55f)] public float chaseWallLongRangeFanBlend = 0.35f;
+        [Tooltip("Ignore tiny standoff buffer pushes below this clearance deficit (metres).")]
+        [Range(0.02f, 0.15f)] public float chaseWallStandoffPushMinDeficit = 0.07f;
+        [Tooltip("Only enter tangential wall-follow when a forward probe hits geometry (not buffer-only stalls).")]
+        public bool chaseWallFollowRequiresHeadOnBlock = true;
         [Tooltip("Blocked/stutter frames at a wall with no chase progress → start lost-sight investigate early.")]
         [Range(4, 90)] public int chaseWallStuckFramesEarlyInvestigate = 24;
         [Tooltip("Player this many metres above the enemy with no LOS → treat as unreachable direct chase (flatten / investigate).")]

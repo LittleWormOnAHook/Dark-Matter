@@ -21,7 +21,8 @@ namespace Project.EditorTools.GenesisStudio
         BuildingBuiltTintsOnly = 12,
         CombatCoreOnly = 13,
         LootChestTimersOnly = 14,
-        LootChestPresentationOnly = 15
+        LootChestPresentationOnly = 15,
+        EnemyBrainChaseWallOnly = 16
     }
 
     internal static class DMStudioProfileSections
@@ -394,6 +395,45 @@ namespace Project.EditorTools.GenesisStudio
             "impactTraumaMinDistance"
         };
 
+        private static readonly string[] EnemyBrainChaseWallFields =
+        {
+            "enableChaseWallSlide",
+            "chaseWallSlideRadius",
+            "chaseWallSlideHeight",
+            "chaseWallSlideSkin",
+            "chaseWallStandoffMeters",
+            "chaseWallBufferStuckSeconds",
+            "chaseWallRetreatStepMeters",
+            "chaseWallRetreatSidestepMeters",
+            "chaseWallRetreatSidestepSeconds",
+            "chaseWallSlidePasses",
+            "chaseWallMinProgress",
+            "chaseWallBlockedFramesBeforeFollow",
+            "chaseWallProbeDistance",
+            "chaseWallFollowFaceSlide",
+            "chaseWallBlockedTurnRate",
+            "chaseWallFollowMinSideSeconds",
+            "chaseWallFollowSideHysteresis",
+            "chaseWallFollowFlipAfterFails",
+            "enableChaseWallPredictiveFan",
+            "chaseWallFanRayCount",
+            "chaseWallFanHalfAngleDegrees",
+            "chaseWallFanLookAheadScale",
+            "chaseWallFanLatchSeconds",
+            "chaseWallFanDirectionHysteresis",
+            "chaseWallFanMinRetargetSeconds",
+            "chaseWallRingLockSeconds",
+            "enableChaseWallLongRangeFan",
+            "chaseWallLongRangeFanDistance",
+            "chaseWallLongRangeFanRayCount",
+            "chaseWallLongRangeFanBlend",
+            "chaseWallStandoffPushMinDeficit",
+            "chaseWallFollowRequiresHeadOnBlock",
+            "chaseWallStuckFramesEarlyInvestigate",
+            "chaseUnreachableMinVerticalDelta",
+            "chaseUnreachableMaxHorizontal"
+        };
+
         private static readonly string[] DashFields =
         {
             "dashStaminaCost",
@@ -459,6 +499,7 @@ namespace Project.EditorTools.GenesisStudio
                 DMStudioProfileSectionFilter.BuildingDoorOnly => IsBuildingDoorField(propertyPath),
                 DMStudioProfileSectionFilter.LootChestTimersOnly => IsLootChestTimerField(propertyPath),
                 DMStudioProfileSectionFilter.LootChestPresentationOnly => !IsLootChestTimerField(propertyPath),
+                DMStudioProfileSectionFilter.EnemyBrainChaseWallOnly => IsEnemyBrainChaseWallField(propertyPath),
                 _ => true
             };
         }
@@ -497,8 +538,21 @@ namespace Project.EditorTools.GenesisStudio
                     "World Reloot window, emptied dissolve delay, Single Loot removal, and the 30-minute full-inventory hold on DM_LootChestProfile (Resources/Loot). Play-mode edits persist via Profile Save.",
                 DMStudioProfileSectionFilter.LootChestPresentationOnly =>
                     "Lid timing, loot window delay, interact and auto-close range, storage defaults, dissolve look, and the enemy drop box prefab on DM_LootChestProfile. Timers have their own tab.",
+                DMStudioProfileSectionFilter.EnemyBrainChaseWallOnly =>
+                    "NavMesh-free chase wall slide: standoff buffer, retreat, predictive fan, hysteresis, and stuck → investigate on DM_EnemyBrainProfile. Full brain tuning lives under AI & awareness.",
                 _ => string.Empty
             };
+        }
+
+        private static bool IsEnemyBrainChaseWallField(string propertyPath)
+        {
+            for (int i = 0; i < EnemyBrainChaseWallFields.Length; i++)
+            {
+                if (propertyPath == EnemyBrainChaseWallFields[i])
+                    return true;
+            }
+
+            return false;
         }
 
         private static bool IsFootstepsAudioField(string propertyPath)

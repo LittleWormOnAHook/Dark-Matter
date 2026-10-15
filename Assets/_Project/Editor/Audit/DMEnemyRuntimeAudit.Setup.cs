@@ -27,6 +27,7 @@ namespace Project.EditorTools.Audit
         // =============================================================== setup / cleanup
         private static void Cleanup()
         {
+            CleanupObstacleAudit();
             if (_live != null && _live.go != null)
                 Object.Destroy(_live.go);
             _live = null;
@@ -238,6 +239,12 @@ namespace Project.EditorTools.Audit
             ComputeStamps();
             _run.environment.Add($"Unit store: {_store.entries.Count} stored unit(s); stamps audit {_auditStamp.Substring(0, 6)} game {_gameStamp.Substring(0, 6)} gear {_gearStamp.Substring(0, 6)}; skip-unchanged is {(FullMode ? "OFF (Full mode)" : "ON (Quick mode)")}");
             int i = 0;
+            if (_opts.obstaclesOnly)
+            {
+                if (prefabs.Count == 0) { Finish("aborted", "No enemy prefab matched obstacle audit filter"); yield break; }
+                yield return Scn("Obstacle movement: corners, wander, ping-pong, combat", prefabs[0], ScnObstacles);
+                yield break;
+            }
             foreach (GameObject prefab in prefabs)
             {
                 i++;

@@ -546,6 +546,13 @@ namespace Project.AI
                 return;
             }
 
+            step = EnemyChaseWallSlide.ClampStepToGeometry(transform, step);
+            if (step.sqrMagnitude < 0.000001f)
+            {
+                ClearLocomotion();
+                return;
+            }
+
             transform.position += step;
             NoteMover("StepFlat", step.magnitude);
             currentLocomotionSpeed = speed;

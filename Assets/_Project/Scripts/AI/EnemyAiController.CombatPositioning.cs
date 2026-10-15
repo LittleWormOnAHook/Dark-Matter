@@ -118,6 +118,18 @@ namespace Project.AI
             if (target == null)
                 return -transform.forward;
 
+            DM_EnemyBrainProfile brain = DM_EnemyBrainProfile.Live;
+            float ringLockSeconds = brain != null ? brain.chaseWallRingLockSeconds : 1.05f;
+            if (RecentWallBufferContact)
+                ringLockSeconds = Mathf.Max(ringLockSeconds, 0.95f);
+
+            if (RecentWallBufferContact &&
+                Time.time < combatRingDirLockUntil &&
+                cachedCombatRingDir.sqrMagnitude > 0.01f)
+            {
+                return cachedCombatRingDir;
+            }
+
             Vector3 toSelf = transform.position - target.position;
             toSelf.y = 0f;
             if (toSelf.sqrMagnitude < 0.01f)
@@ -131,15 +143,28 @@ namespace Project.AI
             if (engagementProfile != null && engagementProfile.legacyRingSlotRotation)
                 toSelf = Quaternion.AngleAxis(combatRingSlotAngle, Vector3.up) * toSelf;
 
-            Vector3 separation = ComputeEnemySeparationOffset();
-            if (separation.sqrMagnitude > 0.0001f)
+            if (!RecentWallBufferContact)
             {
-                toSelf += separation;
-                toSelf.y = 0f;
-                if (toSelf.sqrMagnitude > 0.01f)
-                    toSelf.Normalize();
+                Vector3 separation = ComputeEnemySeparationOffset();
+                if (separation.sqrMagnitude > 0.0001f && cachedSeparationDepth >= 0.22f)
+                {
+                    toSelf += separation * 0.65f;
+                    toSelf.y = 0f;
+                    if (toSelf.sqrMagnitude > 0.01f)
+                        toSelf.Normalize();
+                }
             }
 
+            if (!RecentWallBufferContact &&
+                Time.time < combatRingDirLockUntil &&
+                cachedCombatRingDir.sqrMagnitude > 0.01f)
+            {
+                float blend = Mathf.Clamp01((Time.time - (combatRingDirLockUntil - ringLockSeconds)) / ringLockSeconds);
+                toSelf = Vector3.Slerp(cachedCombatRingDir, toSelf, blend).normalized;
+            }
+
+            cachedCombatRingDir = toSelf;
+            combatRingDirLockUntil = Time.time + ringLockSeconds;
             return toSelf;
         }
 
@@ -162,6 +187,8 @@ namespace Project.AI
             DM_EnemyEngagementProfile p = EngagementProfile;
             if (p == null || p.hardEnemySeparation <= 0.01f || IsStationary || dodgeRollUntil > 0f || dodgeStrikeUntil > 0f)
                 return;
+            if (!IsEngagedWithTarget)
+                return;
             if (ragdollBridge != null && (ragdollBridge.IsHitStaggerActive || ragdollBridge.IsCorpseRagdolled))
                 return;
             bool swinging = IsInAttackSequence;
@@ -183,8 +210,15 @@ namespace Project.AI
                 if (dist >= p.hardEnemySeparation)
                     continue;
 
-                d = dist < 0.01f ? transform.right * ((GetHashCode() & 1) == 0 ? 1f : -1f) : d / dist;
                 float overlap = p.hardEnemySeparation - dist;
+                if (overlap < 0.055f)
+                    continue;
+
+                d = dist < 0.01f
+                    ? (hardSeparationPushDir.sqrMagnitude > 0.01f
+                        ? hardSeparationPushDir
+                        : transform.right * ((GetHashCode() & 1) == 0 ? 1f : -1f))
+                    : d / dist;
                 push += d * overlap;
                 deepest = Mathf.Max(deepest, overlap);
             }
@@ -194,9 +228,19 @@ namespace Project.AI
             if (swinging && deepest < p.hardEnemySeparation * 0.5f)
                 return; // a swinging enemy only gives way when the overlap is deep
 
+            Vector3 pushDir = push.normalized;
+            if (Time.time < hardSeparationDirLockUntil && hardSeparationPushDir.sqrMagnitude > 0.01f)
+                pushDir = Vector3.Slerp(hardSeparationPushDir, pushDir, 0.25f).normalized;
+            hardSeparationPushDir = pushDir;
+            hardSeparationDirLockUntil = Time.time + 0.28f;
+
             float speed = Mathf.Clamp(deepest * 6f, 0.9f, p.hardSeparationMaxSpeed);
-            Vector3 step = push.normalized * Mathf.Min(speed * Time.deltaTime, deepest);
+            Vector3 step = pushDir * Mathf.Min(speed * Time.deltaTime, deepest);
             step = ClampStepAwayFromNonTargetPlayer(step);
+            step = EnemyChaseWallSlide.ClampStepToGeometry(transform, step);
+            if (step.sqrMagnitude < 0.000001f)
+                return;
+
             transform.position += step;
             LastPushDirection = step;
             NoteMover("HardSeparation", step.magnitude);
@@ -223,6 +267,10 @@ namespace Project.AI
 
             Vector3 step = cachedSeparationDir * (p.waitingCrowdingStrength * CrowdingDepthScale(cachedSeparationDepth) * Time.deltaTime);
             step.y = 0f;
+            step = EnemyChaseWallSlide.ClampStepToGeometry(transform, step);
+            if (step.sqrMagnitude < 0.000001f)
+                return;
+
             transform.position += step;
             LastPushDirection = step;
             NoteMover("CrowdPush", step.magnitude);
@@ -302,8 +350,20 @@ namespace Project.AI
                 return;
             }
 
-            Vector3 ringDirection = ResolveCombatRingDirection(target);
-            Vector3 ringPoint = targetPos + ringDirection * ringDistance;
+            Vector3 ringPoint;
+            if (Time.time < combatRingPointLockUntil && cachedCombatRingPoint.sqrMagnitude > 0.01f)
+            {
+                ringPoint = cachedCombatRingPoint;
+            }
+            else
+            {
+                Vector3 ringDirection = ResolveCombatRingDirection(target);
+                ringPoint = targetPos + ringDirection * ringDistance;
+                if (TrySampleGround(ringPoint, out float groundY))
+                    ringPoint.y = groundY;
+                cachedCombatRingPoint = ringPoint;
+            }
+
             MoveTowards(ringPoint, speed, 0.18f);
         }
 

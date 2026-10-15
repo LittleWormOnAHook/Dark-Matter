@@ -72,6 +72,25 @@ namespace Project.AI
                 return;
             }
 
+            if (_validationPatrolActive)
+            {
+                EndValidationPatrolRoute();
+                return;
+            }
+
+            float radius = Mathf.Max(0.5f, wanderRadius);
+            moveTarget = ClampPointToWanderRadius(moveTarget);
+
+            if (HorizontalDistance(homePosition, transform.position) > radius)
+            {
+                moveTarget = ClampPointToWanderRadius(homePosition);
+                wanderCommittedAt = Time.time;
+            }
+            else if (wanderCommittedAt > 0f && Time.time - wanderCommittedAt >= WanderRetargetTimeoutSeconds)
+            {
+                CommitNewWanderDestination();
+            }
+
             float arriveDistance = stopDistance + 0.5f;
             bool usingNav = TryMoveWithNavMesh(moveTarget, walkSpeed, arriveDistance);
             if (!usingNav)
@@ -86,8 +105,29 @@ namespace Project.AI
             if (stateTimer > 0f)
                 return;
 
-            moveTarget = PickRandomGroundPoint(homePosition, wanderRadius);
+            CommitNewWanderDestination();
+        }
+
+        private void CommitNewWanderDestination()
+        {
+            moveTarget = ClampPointToWanderRadius(PickRandomGroundPoint(homePosition, Mathf.Max(0.5f, wanderRadius)));
             stateTimer = Random.Range(wanderPauseMin, wanderPauseMax);
+            wanderCommittedAt = Time.time;
+        }
+
+        private Vector3 ClampPointToWanderRadius(Vector3 point)
+        {
+            float radius = Mathf.Max(0.5f, wanderRadius);
+            Vector3 flat = point - homePosition;
+            flat.y = 0f;
+            if (flat.sqrMagnitude > radius * radius)
+            {
+                point = homePosition + flat.normalized * (radius * 0.92f);
+                if (TrySampleGround(point, out float groundY))
+                    point.y = groundY;
+            }
+
+            return point;
         }
 
         private void UpdatePatrol()
@@ -383,12 +423,16 @@ namespace Project.AI
             if (chaseTarget == null)
                 return lastKnownPlayerPosition;
 
-            if (IsPioneer(chaseTarget))
-                return chaseTarget.position;
-
-            if (senses.CanSeePlayer())
+            if (senses.CanSeePlayer() || IsProvokedBy(chaseTarget))
             {
                 lastKnownPlayerPosition = chaseTarget.position;
+                return chaseTarget.position;
+            }
+
+            if (IsPioneer(chaseTarget))
+            {
+                if (lastKnownPlayerPosition.sqrMagnitude > 0.01f)
+                    return lastKnownPlayerPosition;
                 return chaseTarget.position;
             }
 
@@ -458,6 +502,9 @@ namespace Project.AI
         {
             DM_EnemyBrainProfile profile = DM_EnemyBrainProfile.Live;
             if (profile == null || !profile.enableInvestigateOnLostSight)
+                return false;
+
+            if (combatBridge != null && combatBridge.IsArmedRangedPreferred())
                 return false;
 
             int limit = Mathf.Max(4, profile.chaseWallStuckFramesEarlyInvestigate);

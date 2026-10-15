@@ -415,6 +415,14 @@ new DMStudioSubtab(
                             "Assets/_Project/Resources/Combat/DM_EnemyBrainProfile.asset",
                             playModeSave: true),
                         new DMStudioSubtab(
+                            "combat-enemy-chase-wall",
+                            "Chase wall & fan",
+                            "Filtered slice of DM_EnemyBrainProfile: wall slide, standoff buffer, predictive fan rays, hysteresis, and stuck retreat — NavMesh-free chase geometry.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Combat/DM_EnemyBrainProfile.asset",
+                            playModeSave: true,
+                            sectionFilter: DMStudioProfileSectionFilter.EnemyBrainChaseWallOnly),
+                        new DMStudioSubtab(
                             "combat-enemy-types",
                             "Enemy Types",
                             "Every EnemyDefinition plus prefabs that use it: category, archetype, personalities, body type, prefer-ranged, and profile overrides. Global brain / engagement profiles remain the defaults.",

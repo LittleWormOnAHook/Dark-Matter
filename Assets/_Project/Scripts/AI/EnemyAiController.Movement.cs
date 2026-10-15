@@ -261,6 +261,11 @@ namespace Project.AI
             MoveTowards(target, speed, stopDistance);
         }
 
+        // Editor audit observations; no steering authority or per-frame allocation.
+#if UNITY_EDITOR
+        private Vector3 auditDesiredStep, auditResolvedStep, auditRootAfterStep;
+        private int auditStepFrame = -1;
+#endif
         private void MoveTowards(Vector3 target, float speed, float arriveDistance)
         {
             if (!AllowsTranslation &&
@@ -289,7 +294,9 @@ namespace Project.AI
             float distance = toTarget.magnitude;
             if (distance > arriveDistance)
             {
-                float moveScale = DMILocomotionFacing.FacingMoveScale(transform, toTarget, ResolveFacingMoveScaleFloor());
+                float moveScale = RecentWallBufferContact
+                    ? 1f
+                    : DMILocomotionFacing.FacingMoveScale(transform, toTarget, ResolveFacingMoveScaleFloor());
                 float scaledSpeed = speed * moveScale;
                 Vector3 step = toTarget.normalized * (scaledSpeed * Time.deltaTime);
                 float maxStep = distance - arriveDistance;
@@ -297,6 +304,10 @@ namespace Project.AI
                     step = toTarget.normalized * maxStep;
 
                 step = ClampCombatStepTowardTarget(step);
+#if UNITY_EDITOR
+                auditDesiredStep = step;
+                auditStepFrame = Time.frameCount;
+#endif
                 DM_EnemyBrainProfile wallProfile = DM_EnemyBrainProfile.Live;
                 float minWallProgress = wallProfile != null
                     ? Mathf.Max(0.0005f, wallProfile.chaseWallMinProgress)
@@ -308,48 +319,65 @@ namespace Project.AI
                     wallProfile,
                     this);
                 step = wallMove.Step;
+#if UNITY_EDITOR
+                auditResolvedStep = step;
+                auditRootAfterStep = transform.position + step;
+#endif
+                RecentWallBufferContact = wallMove.InWallBufferContact;
+                if (wallMove.InWallBufferContact && UsesChaseWallSlideLocomotion())
+                {
+                    float ringLock = wallProfile != null ? wallProfile.chaseWallRingLockSeconds : 1.05f;
+                    combatRingPointLockUntil = Time.time + ringLock;
+                    cachedCombatRingPoint = flatTarget;
+                    combatRingDirLockUntil = Time.time + ringLock;
+                }
+
+                UpdateVirtualSteerSnapshot(flatTarget, toTarget);
+                float minProgressSq = minWallProgress * minWallProgress;
                 TickWallBufferStuckRetreat(wallMove, step.sqrMagnitude, minWallProgress);
 
-                if (step.sqrMagnitude < 0.000001f)
+                if (step.sqrMagnitude < minProgressSq)
                 {
-                    if (wallMove.PreferFaceSlideDirection && wallMove.FaceDirection.sqrMagnitude > 0.0001f)
-                    {
-                        ApplyWallFollowFacing(wallMove.FaceDirection);
-                        currentLocomotionSpeed = scaledSpeed * 0.45f;
-                        currentLocalMoveDirection = transform.InverseTransformDirection(wallMove.FaceDirection.normalized);
-                    }
-                    else
-                    {
-                        ClearLocomotion();
-                        if (toTarget.sqrMagnitude > 0.01f)
-                            FaceTowards(flatTarget);
-                    }
-
+                    ClearLocomotion();
+                    bool faceSlide = wallProfile != null && wallProfile.chaseWallFollowFaceSlide;
+                    if (faceSlide && wallMove.PreferFaceSlideDirection && wallMove.FaceDirection.sqrMagnitude > 0.0001f)
+                        ApplyWallFollowFacing(wallMove.FaceDirection, fastTurn: false);
+                    else if (toTarget.sqrMagnitude > 0.01f && !wallMove.InWallBufferContact)
+                        FaceTowards(flatTarget);
                     return;
                 }
 
                 transform.position += step;
                 NoteMover("ChaseMove", step.magnitude);
-                currentLocomotionSpeed = scaledSpeed;
+                currentLocomotionSpeed = step.magnitude / Mathf.Max(Time.deltaTime, 0.0001f);
                 currentLocalMoveDirection = transform.InverseTransformDirection(step.normalized);
+                if (wallMove.InWallBufferContact && Mathf.Abs(currentLocalMoveDirection.z) < 0.2f)
+                    currentLocalMoveDirection.x = 0f;
 
                 if (wallMove.PreferFaceSlideDirection && wallMove.FaceDirection.sqrMagnitude > 0.0001f)
-                    ApplyWallFollowFacing(wallMove.FaceDirection);
-                else if (toTarget.sqrMagnitude > 0.01f)
+                    ApplyWallFollowFacing(wallMove.FaceDirection, fastTurn: true);
+                else if (toTarget.sqrMagnitude > 0.01f && !wallMove.InWallBufferContact)
                     FaceTowards(flatTarget);
                 return;
             }
             else
             {
                 chaseWallBlockedFrames = 0;
+                RecentWallBufferContact = false;
                 ClearLocomotion();
+                if (EnemyChaseWallSlide.TryExtractFromOverlap(transform, DM_EnemyBrainProfile.Live, out Vector3 unstick, out Vector3 unstickNormal))
+                {
+                    transform.position += unstick;
+                    RecentWallBufferContact = true;
+                    chaseWallLastContactNormal = unstickNormal;
+                }
             }
 
             if (toTarget.sqrMagnitude > 0.01f)
                 FaceTowards(flatTarget);
         }
 
-        private void ApplyWallFollowFacing(Vector3 worldDirection)
+        private void ApplyWallFollowFacing(Vector3 worldDirection, bool fastTurn)
         {
             worldDirection.y = 0f;
             if (worldDirection.sqrMagnitude < 0.0001f)
@@ -357,7 +385,16 @@ namespace Project.AI
 
             DM_EnemyBrainProfile profile = DM_EnemyBrainProfile.Live;
             float turnRate = profile != null ? profile.chaseWallBlockedTurnRate : 480f;
-            DMILocomotionFacing.FaceTowardDegrees(transform, transform.position + worldDirection.normalized, turnRate);
+            if (!fastTurn)
+                turnRate = Mathf.Min(turnRate, 200f);
+
+            Vector3 wishForward = worldDirection.normalized;
+            Vector3 flatForward = transform.forward;
+            flatForward.y = 0f;
+            if (flatForward.sqrMagnitude > 0.0001f && Vector3.Dot(flatForward.normalized, wishForward) > 0.992f)
+                return;
+
+            DMILocomotionFacing.FaceTowardDegrees(transform, transform.position + wishForward, turnRate);
         }
 
         private bool UsesChaseWallSlideLocomotion()
@@ -394,11 +431,13 @@ namespace Project.AI
             float minProgress)
         {
             DM_EnemyBrainProfile profile = DM_EnemyBrainProfile.Live;
-            if (profile == null || !profile.enableChaseWallSlide || !UsesChaseWallSlideLocomotion())
+            if (profile == null || !profile.enableChaseWallSlide ||
+                (!UsesChaseWallSlideLocomotion() && state != AiState.Wander && state != AiState.Patrol && state != AiState.ReturnHome))
                 return;
 
             bool blocked = stepSqrMag < minProgress * minProgress;
-            if (wallMove.InWallBufferContact || blocked || chaseWallBlockedFrames > 0 || ChaseWallStutterFrames > 0)
+            // Touching a wall while making progress is normal wall-follow, not a stall.
+            if (blocked)
                 chaseWallBufferStuckTimer += Time.deltaTime;
             else
                 chaseWallBufferStuckTimer = Mathf.Max(0f, chaseWallBufferStuckTimer - Time.deltaTime * 2f);
@@ -407,11 +446,13 @@ namespace Project.AI
             if (limit <= 0.05f || chaseWallBufferStuckTimer < limit)
                 return;
 
+            if (Time.time < wallRetreatSidestepUntil || Time.time < wallRetreatCooldownUntil)
+                return;
+
             if (EnemyChaseWallSlide.TryBuildRetreatNudge(transform, profile, this, out Vector3 nudge))
             {
-                transform.position += nudge;
-                NoteMover("WallRetreat", nudge.magnitude);
                 BeginWallRetreatSidestep(nudge);
+                wallRetreatCooldownUntil = Time.time + Mathf.Max(limit * 1.5f, 0.85f);
             }
 
             chaseWallBufferStuckTimer = 0f;
@@ -461,14 +502,40 @@ namespace Project.AI
             return p != null ? Mathf.Clamp(p.facingMoveScaleFloor, 0.1f, 1f) : 0.18f;
         }
 
+        /// <summary>
+        /// Standing calm/combat states skip ground snap so terrain ray noise and foot-offset
+        /// fighting do not bob the root every other LateUpdate frame (idle jitter).
+        /// </summary>
+        private bool ShouldApplyGroundSnap()
+        {
+            if (currentLocomotionSpeed > 0.05f)
+                return true;
+
+            switch (state)
+            {
+                case AiState.Wander:
+                case AiState.Patrol:
+                case AiState.Chase:
+                case AiState.Investigate:
+                case AiState.Search:
+                case AiState.ReturnHome:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
         private void SnapToGround()
         {
-            if (TrySampleGround(transform.position, out float groundY))
-            {
-                Vector3 pos = transform.position;
-                pos.y = groundY;
-                transform.position = pos;
-            }
+            if (!TrySampleGround(transform.position, out float groundY))
+                return;
+
+            Vector3 pos = transform.position;
+            if (Mathf.Abs(pos.y - groundY) < 0.045f)
+                return;
+
+            pos.y = groundY;
+            transform.position = pos;
         }
 
         private bool TrySampleGround(Vector3 worldPosition, out float groundY)
@@ -481,6 +548,62 @@ namespace Project.AI
             a.y = 0f;
             b.y = 0f;
             return Vector3.Distance(a, b);
+        }
+
+        /// <summary>
+        /// Virtual intent polyline (memory only): root → fan / wish hint → move target. Caller supplies list.
+        /// </summary>
+        public int FillVirtualSteerPolyline(List<Vector3> buffer)
+        {
+            if (buffer == null)
+                return 0;
+
+            buffer.Clear();
+            Vector3 root = transform.position;
+            buffer.Add(root);
+
+            if (!VirtualSteerActive)
+                return 1;
+
+            if ((VirtualSteerHint - root).sqrMagnitude > 0.01f)
+                buffer.Add(VirtualSteerHint);
+
+            if ((VirtualSteerMoveTarget - root).sqrMagnitude > 0.01f &&
+                (VirtualSteerMoveTarget - VirtualSteerHint).sqrMagnitude > 0.01f)
+                buffer.Add(VirtualSteerMoveTarget);
+
+            return buffer.Count;
+        }
+
+        private void UpdateVirtualSteerSnapshot(Vector3 flatTarget, Vector3 toTarget)
+        {
+            VirtualSteerMoveTarget = flatTarget;
+            VirtualSteerActive = UsesChaseWallSlideLocomotion() ||
+                                 state == AiState.Patrol ||
+                                 state == AiState.Wander;
+
+            Vector3 root = transform.position;
+            DM_EnemyBrainProfile profile = DM_EnemyBrainProfile.Live;
+            float lookAhead = 0.6f;
+            if (profile != null)
+                lookAhead = Mathf.Max(0.25f, profile.chaseWallProbeDistance * profile.chaseWallFanLookAheadScale);
+
+            if (profile != null &&
+                profile.enableChaseWallPredictiveFan &&
+                ChaseFanLatchedDirection.sqrMagnitude > 0.0001f)
+            {
+                VirtualSteerHint = root + ChaseFanLatchedDirection.normalized * lookAhead;
+                return;
+            }
+
+            toTarget.y = 0f;
+            if (toTarget.sqrMagnitude > 0.01f)
+            {
+                float dist = Mathf.Min(toTarget.magnitude, lookAhead);
+                VirtualSteerHint = root + toTarget.normalized * dist;
+            }
+            else
+                VirtualSteerHint = root;
         }
     }
 }

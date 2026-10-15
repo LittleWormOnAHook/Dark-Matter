@@ -17,6 +17,8 @@ MonoBehaviour:
   defaultArchetype: 10
   defaultPersonality: 1
   debugLogDecisions: 0
+  enableMovementPathDebug: 0
+  drawVirtualSteerPath: 0
   decisionInterval: 0.4
   scoreRandomness: 0.25
   defendThreatMemory: 1.2
@@ -77,6 +79,21 @@ MonoBehaviour:
   chaseWallBlockedTurnRate: 480
   chaseWallFollowMinSideSeconds: 0.55
   chaseWallFollowSideHysteresis: 0.18
+  chaseWallFollowFlipAfterFails: 3
+  enableChaseWallPredictiveFan: 0
+  chaseWallFanRayCount: 7
+  chaseWallFanHalfAngleDegrees: 42
+  chaseWallFanLookAheadScale: 1.35
+  chaseWallFanLatchSeconds: 0.4
+  chaseWallFanDirectionHysteresis: 0.08
+  chaseWallFanMinRetargetSeconds: 0.32
+  chaseWallRingLockSeconds: 1.05
+  enableChaseWallLongRangeFan: 0
+  chaseWallLongRangeFanDistance: 20
+  chaseWallLongRangeFanRayCount: 3
+  chaseWallLongRangeFanBlend: 0.35
+  chaseWallStandoffPushMinDeficit: 0.07
+  chaseWallFollowRequiresHeadOnBlock: 1
   chaseWallStuckFramesEarlyInvestigate: 24
   chaseUnreachableMinVerticalDelta: 2.25
   chaseUnreachableMaxHorizontal: 12
