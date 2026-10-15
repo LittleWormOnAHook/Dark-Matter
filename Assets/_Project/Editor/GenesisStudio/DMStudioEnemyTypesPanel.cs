@@ -61,7 +61,7 @@ namespace Project.EditorTools.GenesisStudio
             GUILayout.Label("Personalities", GUILayout.Width(120f));
             GUILayout.Label("Body", GUILayout.Width(72f));
             GUILayout.Label("Ranged", GUILayout.Width(44f));
-            GUILayout.Label("Ammo", GUILayout.Width(72f));
+            GUILayout.Label("Ammo", GUILayout.Width(96f));
             GUILayout.Label("Overrides", GUILayout.MinWidth(80f));
             GUILayout.Label("", GUILayout.Width(88f));
             EditorGUILayout.EndHorizontal();
@@ -110,7 +110,7 @@ namespace Project.EditorTools.GenesisStudio
             if (preferRanged != null)
                 EditorGUILayout.PropertyField(preferRanged, GUIContent.none, GUILayout.Width(44f));
             if (rangedAmmoType != null)
-                EditorGUILayout.PropertyField(rangedAmmoType, GUIContent.none, GUILayout.Width(72f));
+                EditorGUILayout.PropertyField(rangedAmmoType, GUIContent.none, GUILayout.Width(96f));
 
             string overrideLabel = row.Definition.HasAnyProfileOverride ? "Profiles" : "—";
             EditorGUILayout.LabelField(overrideLabel, GUILayout.MinWidth(80f));

@@ -1006,7 +1006,7 @@ namespace Project.AI.Invector
                 ? _loadoutBridge.EffectiveRangedAmmoChoice
                 : (_bootstrap?.Definition != null
                     ? _bootstrap.Definition.rangedAmmoType
-                    : DMEnemyRangedAmmoChoice.UseGripDefault);
+                    : DMEnemyRangedAmmoChoice.Standard);
 
             ItemData fromChoice = DMEnemyRangedAmmoCatalog.ResolveItem(choice);
             if (fromChoice != null)

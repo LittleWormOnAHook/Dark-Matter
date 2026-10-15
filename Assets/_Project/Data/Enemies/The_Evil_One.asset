@@ -25,13 +25,25 @@ MonoBehaviour:
   canThrowGrenades: 1
   enemyCategory: 1
   bodyType: 0
-  overrideBrain: 0
+  overrideBrain: 1
   brainArchetype: 0
-  primaryPersonality: 0
-  secondaryPersonality: 0
+  primaryPersonality: 10
+  secondaryPersonality: 6
   brainProfileOverride: {fileID: 0}
   engagementProfileOverride: {fileID: 0}
   hitMarkProfileOverride: {fileID: 0}
+  backoffDistanceMultiplier: 1
+  blockChanceMultiplier: 1
+  guardStaminaMax: 0
+  overrideWeaponDown: 0
+  weaponDownAngle: 60
+  weaponDownVariation: 5
+  dodgeStrikeChanceMultiplier: 1
+  attackPaceMultiplier: 1
+  tokenPriorityBonus: 0
+  interruptResistance: 0
+  attackArmor: 0
+  poiseMultiplier: 1
   maxHealth: 500
   destroyOnDeath: 1
   destroyDelay: 1
@@ -56,6 +68,8 @@ MonoBehaviour:
   attackWindup: 0.35
   meleeDuration: 0.85
   unarmedDuration: 0.55
+  rangedAmmoType: 1
+  rangedAmmoPool: 6
   rangedEngageRange: 12
   rangedHoldDistance: 0
   rangedRetreatFraction: 0.6

@@ -52,7 +52,7 @@ namespace Project.AI.Invector
         [SerializeField] private DMEnemyArchetype brainArchetype = DMEnemyArchetype.Duelist;
         [SerializeField] private DMEnemyPersonality primaryPersonality = DMEnemyPersonality.None;
         [SerializeField] private DMEnemyPersonality secondaryPersonality = DMEnemyPersonality.None;
-        [Tooltip("Only when Override Brain is enabled. Use Grip Default = EnemyDefinition ranged ammo type.")]
+        [Tooltip("Only when Override Brain is enabled. Use Grip Default = follow EnemyDefinition (not the legacy grip split).")]
         [SerializeField] private DMEnemyRangedAmmoChoice overrideRangedAmmoType = DMEnemyRangedAmmoChoice.UseGripDefault;
         [Tooltip("Empty = definition's, then global.")] [SerializeField] private DM_EnemyBrainProfile brainProfileOverride;
         [Tooltip("Empty = definition's, then global.")] [SerializeField] private DM_EnemyEngagementProfile engagementProfileOverride;
@@ -133,11 +133,11 @@ namespace Project.AI.Invector
                 if (overrideBrain && overrideRangedAmmoType == DMEnemyRangedAmmoChoice.UseGripDefault)
                 {
                     EnemyDefinition d = ResolveDefinition();
-                    return d != null ? d.rangedAmmoType : DMEnemyRangedAmmoChoice.UseGripDefault;
+                    return d != null ? d.rangedAmmoType : DMEnemyRangedAmmoChoice.Standard;
                 }
 
                 EnemyDefinition def = ResolveDefinition();
-                return def != null ? def.rangedAmmoType : DMEnemyRangedAmmoChoice.UseGripDefault;
+                return def != null ? def.rangedAmmoType : DMEnemyRangedAmmoChoice.Standard;
             }
         }
 

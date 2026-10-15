@@ -39,7 +39,7 @@ namespace Project.AI.Invector
         [Range(0f, 90f)] public float weaponDownAngle = 60f;
         [Range(0f, 30f)] public float weaponDownVariation = 5f;
 
-        [Tooltip("Only when Override Brain is on (prefab). Use Grip Default = follow EnemyDefinition.rangedAmmoType.")]
+        [Tooltip("Only when Override Brain is on. Use Grip Default = follow EnemyDefinition (runtime unset → Standard Gunpowder).")]
         public DMEnemyRangedAmmoChoice overrideRangedAmmoType = DMEnemyRangedAmmoChoice.UseGripDefault;
 
         public bool Any =>

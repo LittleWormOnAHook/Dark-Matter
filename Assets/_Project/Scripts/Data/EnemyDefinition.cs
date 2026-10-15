@@ -196,8 +196,8 @@ namespace Project.AI
         public float unarmedDuration = 0.55f;
 
         [Header("Ranged Combat")]
-        [Tooltip("Ammo element for ranged shots. Use Grip Default = pistol Standard / rifle Plasma (legacy). Standard = Gunpowder ammo row.")]
-        public DMEnemyRangedAmmoChoice rangedAmmoType = DMEnemyRangedAmmoChoice.UseGripDefault;
+        [Tooltip("Ammo for ranged shots. Standard = Gunpowder (default when unset). Use Grip Default = same as Standard at runtime; kept for older serialized values.")]
+        public DMEnemyRangedAmmoChoice rangedAmmoType = DMEnemyRangedAmmoChoice.Standard;
         [Tooltip("Shots this enemy type may fire before reload. 0 = use DM_EnemyBrainProfile enemyRangedAmmoPoolDefault.")]
         [Min(0)] public int rangedAmmoPool;
         [Tooltip("Distance at which the enemy stops chasing and starts shooting.")]

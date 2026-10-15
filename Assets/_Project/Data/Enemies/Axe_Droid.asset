@@ -20,18 +20,30 @@ MonoBehaviour:
   templatePrefab: {fileID: 6565715488936467165, guid: 89ca87f611b180d4791a7ff5f0d9ac66, type: 3}
   lastModelSource: {fileID: 919132149155446097, guid: 7923f7b6e8e3b6c42b5bdb2aa3e4a2f6, type: 3}
   meleeWeaponItem: {fileID: 11400000, guid: 2e8f991038197ef498a21d87d427a3b7, type: 2}
-  rangedWeaponItem: {fileID: 0}
+  rangedWeaponItem: {fileID: 11400000, guid: 051378d9c28e82544a585c86b3dbbfc3, type: 2}
   preferRangedWeapon: 0
-  canThrowGrenades: 0
+  canThrowGrenades: 1
   enemyCategory: 0
   bodyType: 1
-  overrideBrain: 0
+  overrideBrain: 1
   brainArchetype: 0
-  primaryPersonality: 0
-  secondaryPersonality: 0
+  primaryPersonality: 2
+  secondaryPersonality: 8
   brainProfileOverride: {fileID: 0}
   engagementProfileOverride: {fileID: 0}
   hitMarkProfileOverride: {fileID: 0}
+  backoffDistanceMultiplier: 1
+  blockChanceMultiplier: 1
+  guardStaminaMax: 0
+  overrideWeaponDown: 0
+  weaponDownAngle: 60
+  weaponDownVariation: 5
+  dodgeStrikeChanceMultiplier: 1
+  attackPaceMultiplier: 1
+  tokenPriorityBonus: 0
+  interruptResistance: 0
+  attackArmor: 0
+  poiseMultiplier: 1
   maxHealth: 250
   destroyOnDeath: 1
   destroyDelay: 3
@@ -56,6 +68,8 @@ MonoBehaviour:
   attackWindup: 0.35
   meleeDuration: 0.85
   unarmedDuration: 0.55
+  rangedAmmoType: 0
+  rangedAmmoPool: 30
   rangedEngageRange: 12
   rangedHoldDistance: 0
   rangedRetreatFraction: 0.6
