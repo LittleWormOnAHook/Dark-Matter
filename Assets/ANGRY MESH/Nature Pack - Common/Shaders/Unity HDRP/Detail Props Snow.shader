@@ -81,7 +81,7 @@ Shader "ANGRYMESH/Nature Pack/HDRP/Detail Props Snow"
 
 		
 
-		Tags { "RenderPipeline"="HDRenderPipeline" "RenderType"="Opaque" "Queue"="Geometry" }
+		Tags { "RenderPipeline"="HDRenderPipeline" "RenderType"="HDLitShader" "Queue"="Geometry" }
 
 		HLSLINCLUDE
 		#pragma target 4.5
@@ -863,7 +863,7 @@ Shader "ANGRYMESH/Nature Pack/HDRP/Detail Props Snow"
 				float3 tanNormal93 = NormalMap166;
 				float3 worldNormal93 = float3(dot(tanToWorld0,tanNormal93), dot(tanToWorld1,tanNormal93), dot(tanToWorld2,tanNormal93));
 				float3 ase_worldPos = GetAbsolutePositionWS( positionRWS );
-				half Top_Mask168 = ( saturate( ( pow( abs( ( saturate( worldNormal93.y ) + ( _TopOffset * AGP_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGP_SnowContrast ) ) * ( _TopIntensity * AGP_SnowIntensity ) ) ) * saturate( (0.0 + (ase_worldPos.y - AGH_SnowMinimumHeight) * (1.0 - 0.0) / (( AGH_SnowMinimumHeight + AGH_SnowFadeHeight ) - AGH_SnowMinimumHeight)) ) );
+				half Top_Mask168 = ( saturate( ( pow( abs( ( saturate( worldNormal93.y ) + ( _TopOffset * AGP_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGP_SnowContrast ) ) * ( _TopIntensity * AGP_SnowIntensity ) ) ) * AGSafeSnowHeightMask(ase_worldPos.y, AGH_SnowMinimumHeight, AGH_SnowFadeHeight) );
 				float2 texCoord279 = packedInput.ase_texcoord5.xy * float2( 1,1 ) + float2( 0,0 );
 				float4 temp_cast_0 = (( 1.0 - tex2D( _BaseAOANoiseMask, ( texCoord279 * _TopNoiseUVScale ) ).a )).xxxx;
 				#ifdef _TOPENABLENOISE_ON
@@ -1543,7 +1543,7 @@ Shader "ANGRYMESH/Nature Pack/HDRP/Detail Props Snow"
 				float3 tanNormal93 = NormalMap166;
 				float3 worldNormal93 = float3(dot(tanToWorld0,tanNormal93), dot(tanToWorld1,tanNormal93), dot(tanToWorld2,tanNormal93));
 				float3 ase_worldPos = packedInput.ase_texcoord4.xyz;
-				half Top_Mask168 = ( saturate( ( pow( abs( ( saturate( worldNormal93.y ) + ( _TopOffset * AGP_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGP_SnowContrast ) ) * ( _TopIntensity * AGP_SnowIntensity ) ) ) * saturate( (0.0 + (ase_worldPos.y - AGH_SnowMinimumHeight) * (1.0 - 0.0) / (( AGH_SnowMinimumHeight + AGH_SnowFadeHeight ) - AGH_SnowMinimumHeight)) ) );
+				half Top_Mask168 = ( saturate( ( pow( abs( ( saturate( worldNormal93.y ) + ( _TopOffset * AGP_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGP_SnowContrast ) ) * ( _TopIntensity * AGP_SnowIntensity ) ) ) * AGSafeSnowHeightMask(ase_worldPos.y, AGH_SnowMinimumHeight, AGH_SnowFadeHeight) );
 				float2 texCoord279 = packedInput.ase_texcoord.xy * float2( 1,1 ) + float2( 0,0 );
 				float4 temp_cast_0 = (( 1.0 - tex2D( _BaseAOANoiseMask, ( texCoord279 * _TopNoiseUVScale ) ).a )).xxxx;
 				#ifdef _TOPENABLENOISE_ON
@@ -3127,7 +3127,7 @@ Shader "ANGRYMESH/Nature Pack/HDRP/Detail Props Snow"
 				float3 tanNormal93 = NormalMap166;
 				float3 worldNormal93 = float3(dot(tanToWorld0,tanNormal93), dot(tanToWorld1,tanNormal93), dot(tanToWorld2,tanNormal93));
 				float3 ase_worldPos = GetAbsolutePositionWS( positionRWS );
-				half Top_Mask168 = ( saturate( ( pow( abs( ( saturate( worldNormal93.y ) + ( _TopOffset * AGP_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGP_SnowContrast ) ) * ( _TopIntensity * AGP_SnowIntensity ) ) ) * saturate( (0.0 + (ase_worldPos.y - AGH_SnowMinimumHeight) * (1.0 - 0.0) / (( AGH_SnowMinimumHeight + AGH_SnowFadeHeight ) - AGH_SnowMinimumHeight)) ) );
+				half Top_Mask168 = ( saturate( ( pow( abs( ( saturate( worldNormal93.y ) + ( _TopOffset * AGP_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGP_SnowContrast ) ) * ( _TopIntensity * AGP_SnowIntensity ) ) ) * AGSafeSnowHeightMask(ase_worldPos.y, AGH_SnowMinimumHeight, AGH_SnowFadeHeight) );
 				float2 texCoord279 = packedInput.ase_texcoord3.xy * float2( 1,1 ) + float2( 0,0 );
 				float4 temp_cast_0 = (( 1.0 - tex2D( _BaseAOANoiseMask, ( texCoord279 * _TopNoiseUVScale ) ).a )).xxxx;
 				#ifdef _TOPENABLENOISE_ON
@@ -3762,7 +3762,7 @@ Shader "ANGRYMESH/Nature Pack/HDRP/Detail Props Snow"
 				float3 tanNormal93 = NormalMap166;
 				float3 worldNormal93 = float3(dot(tanToWorld0,tanNormal93), dot(tanToWorld1,tanNormal93), dot(tanToWorld2,tanNormal93));
 				float3 ase_worldPos = packedInput.ase_texcoord7.xyz;
-				half Top_Mask168 = ( saturate( ( pow( abs( ( saturate( worldNormal93.y ) + ( _TopOffset * AGP_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGP_SnowContrast ) ) * ( _TopIntensity * AGP_SnowIntensity ) ) ) * saturate( (0.0 + (ase_worldPos.y - AGH_SnowMinimumHeight) * (1.0 - 0.0) / (( AGH_SnowMinimumHeight + AGH_SnowFadeHeight ) - AGH_SnowMinimumHeight)) ) );
+				half Top_Mask168 = ( saturate( ( pow( abs( ( saturate( worldNormal93.y ) + ( _TopOffset * AGP_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGP_SnowContrast ) ) * ( _TopIntensity * AGP_SnowIntensity ) ) ) * AGSafeSnowHeightMask(ase_worldPos.y, AGH_SnowMinimumHeight, AGH_SnowFadeHeight) );
 				float2 texCoord279 = packedInput.ase_texcoord3.xy * float2( 1,1 ) + float2( 0,0 );
 				float4 temp_cast_0 = (( 1.0 - tex2D( _BaseAOANoiseMask, ( texCoord279 * _TopNoiseUVScale ) ).a )).xxxx;
 				#ifdef _TOPENABLENOISE_ON
@@ -4522,7 +4522,7 @@ Shader "ANGRYMESH/Nature Pack/HDRP/Detail Props Snow"
 				float3 tanNormal93 = NormalMap166;
 				float3 worldNormal93 = float3(dot(tanToWorld0,tanNormal93), dot(tanToWorld1,tanNormal93), dot(tanToWorld2,tanNormal93));
 				float3 ase_worldPos = GetAbsolutePositionWS( positionRWS );
-				half Top_Mask168 = ( saturate( ( pow( abs( ( saturate( worldNormal93.y ) + ( _TopOffset * AGP_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGP_SnowContrast ) ) * ( _TopIntensity * AGP_SnowIntensity ) ) ) * saturate( (0.0 + (ase_worldPos.y - AGH_SnowMinimumHeight) * (1.0 - 0.0) / (( AGH_SnowMinimumHeight + AGH_SnowFadeHeight ) - AGH_SnowMinimumHeight)) ) );
+				half Top_Mask168 = ( saturate( ( pow( abs( ( saturate( worldNormal93.y ) + ( _TopOffset * AGP_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGP_SnowContrast ) ) * ( _TopIntensity * AGP_SnowIntensity ) ) ) * AGSafeSnowHeightMask(ase_worldPos.y, AGH_SnowMinimumHeight, AGH_SnowFadeHeight) );
 				float2 texCoord279 = packedInput.ase_texcoord7.xy * float2( 1,1 ) + float2( 0,0 );
 				float4 temp_cast_0 = (( 1.0 - tex2D( _BaseAOANoiseMask, ( texCoord279 * _TopNoiseUVScale ) ).a )).xxxx;
 				#ifdef _TOPENABLENOISE_ON

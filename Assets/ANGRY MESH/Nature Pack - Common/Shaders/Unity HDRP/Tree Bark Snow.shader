@@ -900,7 +900,7 @@ Shader "ANGRYMESH/Nature Pack/HDRP/Tree Bark Snow"
 				float lerpResult553 = lerp( tex2DNode443.a , tex2DNode200.a , Blend_Mask319);
 				half Blend_Height554 = lerpResult553;
 				float3 ase_worldPos = GetAbsolutePositionWS( positionRWS );
-				half Top_Mask168 = ( saturate( ( saturate( ( pow( abs( ( saturate( worldNormal93.y ) + ( _TopOffset * AGT_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGT_SnowContrast ) ) * ( _TopIntensity * AGT_SnowIntensity ) ) ) + ( _TopIntensity * pow( abs( ( ( 1.0 - dotResult631 ) * ( _TopArrowDirection * AGT_SnowArrow * GlobalSnowIntensity818 ) * Blend_Height554 ) ) , 30.0 ) ) ) ) * saturate( (0.0 + (ase_worldPos.y - AGH_SnowMinimumHeight) * (1.0 - 0.0) / (( AGH_SnowMinimumHeight + AGH_SnowFadeHeight ) - AGH_SnowMinimumHeight)) ) );
+				half Top_Mask168 = ( saturate( ( saturate( ( pow( abs( ( saturate( worldNormal93.y ) + ( _TopOffset * AGT_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGT_SnowContrast ) ) * ( _TopIntensity * AGT_SnowIntensity ) ) ) + ( _TopIntensity * pow( abs( ( ( 1.0 - dotResult631 ) * ( _TopArrowDirection * AGT_SnowArrow * GlobalSnowIntensity818 ) * Blend_Height554 ) ) , 30.0 ) ) ) ) * AGSafeSnowHeightMask(ase_worldPos.y, AGH_SnowMinimumHeight, AGH_SnowFadeHeight) );
 				float4 lerpResult157 = lerp( lerpResult187 , ( tex2DNode172 * _TopColor ) , Top_Mask168);
 				half4 Output_Albedo596 = lerpResult157;
 				
@@ -1606,7 +1606,7 @@ Shader "ANGRYMESH/Nature Pack/HDRP/Tree Bark Snow"
 				float lerpResult553 = lerp( tex2DNode443.a , tex2DNode200.a , Blend_Mask319);
 				half Blend_Height554 = lerpResult553;
 				float3 ase_worldPos = packedInput.ase_texcoord4.xyz;
-				half Top_Mask168 = ( saturate( ( saturate( ( pow( abs( ( saturate( worldNormal93.y ) + ( _TopOffset * AGT_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGT_SnowContrast ) ) * ( _TopIntensity * AGT_SnowIntensity ) ) ) + ( _TopIntensity * pow( abs( ( ( 1.0 - dotResult631 ) * ( _TopArrowDirection * AGT_SnowArrow * GlobalSnowIntensity818 ) * Blend_Height554 ) ) , 30.0 ) ) ) ) * saturate( (0.0 + (ase_worldPos.y - AGH_SnowMinimumHeight) * (1.0 - 0.0) / (( AGH_SnowMinimumHeight + AGH_SnowFadeHeight ) - AGH_SnowMinimumHeight)) ) );
+				half Top_Mask168 = ( saturate( ( saturate( ( pow( abs( ( saturate( worldNormal93.y ) + ( _TopOffset * AGT_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGT_SnowContrast ) ) * ( _TopIntensity * AGT_SnowIntensity ) ) ) + ( _TopIntensity * pow( abs( ( ( 1.0 - dotResult631 ) * ( _TopArrowDirection * AGT_SnowArrow * GlobalSnowIntensity818 ) * Blend_Height554 ) ) , 30.0 ) ) ) ) * AGSafeSnowHeightMask(ase_worldPos.y, AGH_SnowMinimumHeight, AGH_SnowFadeHeight) );
 				float4 lerpResult157 = lerp( lerpResult187 , ( tex2DNode172 * _TopColor ) , Top_Mask168);
 				half4 Output_Albedo596 = lerpResult157;
 				
@@ -3256,7 +3256,7 @@ Shader "ANGRYMESH/Nature Pack/HDRP/Tree Bark Snow"
 				float lerpResult553 = lerp( tex2DNode443.a , tex2DNode200.a , Blend_Mask319);
 				half Blend_Height554 = lerpResult553;
 				float3 ase_worldPos = GetAbsolutePositionWS( positionRWS );
-				half Top_Mask168 = ( saturate( ( saturate( ( pow( abs( ( saturate( worldNormal93.y ) + ( _TopOffset * AGT_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGT_SnowContrast ) ) * ( _TopIntensity * AGT_SnowIntensity ) ) ) + ( _TopIntensity * pow( abs( ( ( 1.0 - dotResult631 ) * ( _TopArrowDirection * AGT_SnowArrow * GlobalSnowIntensity818 ) * Blend_Height554 ) ) , 30.0 ) ) ) ) * saturate( (0.0 + (ase_worldPos.y - AGH_SnowMinimumHeight) * (1.0 - 0.0) / (( AGH_SnowMinimumHeight + AGH_SnowFadeHeight ) - AGH_SnowMinimumHeight)) ) );
+				half Top_Mask168 = ( saturate( ( saturate( ( pow( abs( ( saturate( worldNormal93.y ) + ( _TopOffset * AGT_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGT_SnowContrast ) ) * ( _TopIntensity * AGT_SnowIntensity ) ) ) + ( _TopIntensity * pow( abs( ( ( 1.0 - dotResult631 ) * ( _TopArrowDirection * AGT_SnowArrow * GlobalSnowIntensity818 ) * Blend_Height554 ) ) , 30.0 ) ) ) ) * AGSafeSnowHeightMask(ase_worldPos.y, AGH_SnowMinimumHeight, AGH_SnowFadeHeight) );
 				float3 lerpResult158 = lerp( lerpResult321 , BlendNormal( lerpResult321 , UnpackNormalmapRGorAG( tex2D( _TopNormalMap, Top_UVScale197 ), _DetailNormalMapScale ) ) , Top_Mask168);
 				float3 normalizeResult136 = normalize( lerpResult158 );
 				half3 Output_Normal598 = normalizeResult136;
@@ -3923,7 +3923,7 @@ Shader "ANGRYMESH/Nature Pack/HDRP/Tree Bark Snow"
 				float lerpResult553 = lerp( tex2DNode443.a , tex2DNode200.a , Blend_Mask319);
 				half Blend_Height554 = lerpResult553;
 				float3 ase_worldPos = packedInput.ase_texcoord7.xyz;
-				half Top_Mask168 = ( saturate( ( saturate( ( pow( abs( ( saturate( worldNormal93.y ) + ( _TopOffset * AGT_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGT_SnowContrast ) ) * ( _TopIntensity * AGT_SnowIntensity ) ) ) + ( _TopIntensity * pow( abs( ( ( 1.0 - dotResult631 ) * ( _TopArrowDirection * AGT_SnowArrow * GlobalSnowIntensity818 ) * Blend_Height554 ) ) , 30.0 ) ) ) ) * saturate( (0.0 + (ase_worldPos.y - AGH_SnowMinimumHeight) * (1.0 - 0.0) / (( AGH_SnowMinimumHeight + AGH_SnowFadeHeight ) - AGH_SnowMinimumHeight)) ) );
+				half Top_Mask168 = ( saturate( ( saturate( ( pow( abs( ( saturate( worldNormal93.y ) + ( _TopOffset * AGT_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGT_SnowContrast ) ) * ( _TopIntensity * AGT_SnowIntensity ) ) ) + ( _TopIntensity * pow( abs( ( ( 1.0 - dotResult631 ) * ( _TopArrowDirection * AGT_SnowArrow * GlobalSnowIntensity818 ) * Blend_Height554 ) ) , 30.0 ) ) ) ) * AGSafeSnowHeightMask(ase_worldPos.y, AGH_SnowMinimumHeight, AGH_SnowFadeHeight) );
 				float3 lerpResult158 = lerp( lerpResult321 , BlendNormal( lerpResult321 , UnpackNormalmapRGorAG( tex2D( _TopNormalMap, Top_UVScale197 ), _DetailNormalMapScale ) ) , Top_Mask168);
 				float3 normalizeResult136 = normalize( lerpResult158 );
 				half3 Output_Normal598 = normalizeResult136;
@@ -4718,7 +4718,7 @@ Shader "ANGRYMESH/Nature Pack/HDRP/Tree Bark Snow"
 				float lerpResult553 = lerp( tex2DNode443.a , tex2DNode200.a , Blend_Mask319);
 				half Blend_Height554 = lerpResult553;
 				float3 ase_worldPos = GetAbsolutePositionWS( positionRWS );
-				half Top_Mask168 = ( saturate( ( saturate( ( pow( abs( ( saturate( worldNormal93.y ) + ( _TopOffset * AGT_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGT_SnowContrast ) ) * ( _TopIntensity * AGT_SnowIntensity ) ) ) + ( _TopIntensity * pow( abs( ( ( 1.0 - dotResult631 ) * ( _TopArrowDirection * AGT_SnowArrow * GlobalSnowIntensity818 ) * Blend_Height554 ) ) , 30.0 ) ) ) ) * saturate( (0.0 + (ase_worldPos.y - AGH_SnowMinimumHeight) * (1.0 - 0.0) / (( AGH_SnowMinimumHeight + AGH_SnowFadeHeight ) - AGH_SnowMinimumHeight)) ) );
+				half Top_Mask168 = ( saturate( ( saturate( ( pow( abs( ( saturate( worldNormal93.y ) + ( _TopOffset * AGT_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGT_SnowContrast ) ) * ( _TopIntensity * AGT_SnowIntensity ) ) ) + ( _TopIntensity * pow( abs( ( ( 1.0 - dotResult631 ) * ( _TopArrowDirection * AGT_SnowArrow * GlobalSnowIntensity818 ) * Blend_Height554 ) ) , 30.0 ) ) ) ) * AGSafeSnowHeightMask(ase_worldPos.y, AGH_SnowMinimumHeight, AGH_SnowFadeHeight) );
 				float4 lerpResult157 = lerp( lerpResult187 , ( tex2DNode172 * _TopColor ) , Top_Mask168);
 				half4 Output_Albedo596 = lerpResult157;
 				

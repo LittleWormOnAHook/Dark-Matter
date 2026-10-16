@@ -940,7 +940,7 @@ Shader "ANGRYMESH/Nature Pack/HDRP/Tree Leaf Snow"
 				#endif
 				float3 temp_cast_1 = (( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGT_SnowContrast )).xxx;
 				float3 ase_worldPos = GetAbsolutePositionWS( positionRWS );
-				half3 Top_Mask168 = ( saturate( ( pow( abs( ( saturate( staticSwitch364 ) + ( _TopOffset * AGT_SnowOffset ) ) ) , temp_cast_1 ) * ( _TopIntensity * AGT_SnowIntensity ) ) ) * saturate( (0.0 + (ase_worldPos.y - AGH_SnowMinimumHeight) * (1.0 - 0.0) / (( AGH_SnowMinimumHeight + AGH_SnowFadeHeight ) - AGH_SnowMinimumHeight)) ) );
+				half3 Top_Mask168 = ( saturate( ( pow( abs( ( saturate( staticSwitch364 ) + ( _TopOffset * AGT_SnowOffset ) ) ) , temp_cast_1 ) * ( _TopIntensity * AGT_SnowIntensity ) ) ) * AGSafeSnowHeightMask(ase_worldPos.y, AGH_SnowMinimumHeight, AGH_SnowFadeHeight) );
 				float4 lerpResult157 = lerp( temp_output_163_0 , temp_output_173_0 , float4( Top_Mask168 , 0.0 ));
 				float4 lerpResult322 = lerp( temp_output_163_0 , temp_output_173_0 , float4( ( Top_Mask168 * _BackFaceSnow ) , 0.0 ));
 				float4 switchResult320 = (((isFrontFace>0)?(lerpResult157):(( lerpResult322 * _BackFaceColor ))));
@@ -1676,7 +1676,7 @@ Shader "ANGRYMESH/Nature Pack/HDRP/Tree Leaf Snow"
 				#endif
 				float3 temp_cast_1 = (( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGT_SnowContrast )).xxx;
 				float3 ase_worldPos = packedInput.ase_texcoord5.xyz;
-				half3 Top_Mask168 = ( saturate( ( pow( abs( ( saturate( staticSwitch364 ) + ( _TopOffset * AGT_SnowOffset ) ) ) , temp_cast_1 ) * ( _TopIntensity * AGT_SnowIntensity ) ) ) * saturate( (0.0 + (ase_worldPos.y - AGH_SnowMinimumHeight) * (1.0 - 0.0) / (( AGH_SnowMinimumHeight + AGH_SnowFadeHeight ) - AGH_SnowMinimumHeight)) ) );
+				half3 Top_Mask168 = ( saturate( ( pow( abs( ( saturate( staticSwitch364 ) + ( _TopOffset * AGT_SnowOffset ) ) ) , temp_cast_1 ) * ( _TopIntensity * AGT_SnowIntensity ) ) ) * AGSafeSnowHeightMask(ase_worldPos.y, AGH_SnowMinimumHeight, AGH_SnowFadeHeight) );
 				float4 lerpResult157 = lerp( temp_output_163_0 , temp_output_173_0 , float4( Top_Mask168 , 0.0 ));
 				float4 lerpResult322 = lerp( temp_output_163_0 , temp_output_173_0 , float4( ( Top_Mask168 * _BackFaceSnow ) , 0.0 ));
 				float4 switchResult320 = (((isFrontFace>0)?(lerpResult157):(( lerpResult322 * _BackFaceColor ))));
@@ -3415,7 +3415,7 @@ Shader "ANGRYMESH/Nature Pack/HDRP/Tree Leaf Snow"
 				#endif
 				float3 temp_cast_1 = (( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGT_SnowContrast )).xxx;
 				float3 ase_worldPos = GetAbsolutePositionWS( positionRWS );
-				half3 Top_Mask168 = ( saturate( ( pow( abs( ( saturate( staticSwitch364 ) + ( _TopOffset * AGT_SnowOffset ) ) ) , temp_cast_1 ) * ( _TopIntensity * AGT_SnowIntensity ) ) ) * saturate( (0.0 + (ase_worldPos.y - AGH_SnowMinimumHeight) * (1.0 - 0.0) / (( AGH_SnowMinimumHeight + AGH_SnowFadeHeight ) - AGH_SnowMinimumHeight)) ) );
+				half3 Top_Mask168 = ( saturate( ( pow( abs( ( saturate( staticSwitch364 ) + ( _TopOffset * AGT_SnowOffset ) ) ) , temp_cast_1 ) * ( _TopIntensity * AGT_SnowIntensity ) ) ) * AGSafeSnowHeightMask(ase_worldPos.y, AGH_SnowMinimumHeight, AGH_SnowFadeHeight) );
 				float3 lerpResult158 = lerp( NormalMap166 , BlendNormal( tex2DNode1127 , UnpackNormalmapRGorAG( tex2D( _TopNormalMap, Top_UVScale197 ), _DetailNormalMapScale ) ) , Top_Mask168);
 				float3 normalizeResult136 = normalize( lerpResult158 );
 				half3 Output_Normal1110 = normalizeResult136;
@@ -4094,7 +4094,7 @@ Shader "ANGRYMESH/Nature Pack/HDRP/Tree Leaf Snow"
 				#endif
 				float3 temp_cast_1 = (( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGT_SnowContrast )).xxx;
 				float3 ase_worldPos = packedInput.ase_texcoord7.xyz;
-				half3 Top_Mask168 = ( saturate( ( pow( abs( ( saturate( staticSwitch364 ) + ( _TopOffset * AGT_SnowOffset ) ) ) , temp_cast_1 ) * ( _TopIntensity * AGT_SnowIntensity ) ) ) * saturate( (0.0 + (ase_worldPos.y - AGH_SnowMinimumHeight) * (1.0 - 0.0) / (( AGH_SnowMinimumHeight + AGH_SnowFadeHeight ) - AGH_SnowMinimumHeight)) ) );
+				half3 Top_Mask168 = ( saturate( ( pow( abs( ( saturate( staticSwitch364 ) + ( _TopOffset * AGT_SnowOffset ) ) ) , temp_cast_1 ) * ( _TopIntensity * AGT_SnowIntensity ) ) ) * AGSafeSnowHeightMask(ase_worldPos.y, AGH_SnowMinimumHeight, AGH_SnowFadeHeight) );
 				float3 lerpResult158 = lerp( NormalMap166 , BlendNormal( tex2DNode1127 , UnpackNormalmapRGorAG( tex2D( _TopNormalMap, Top_UVScale197 ), _DetailNormalMapScale ) ) , Top_Mask168);
 				float3 normalizeResult136 = normalize( lerpResult158 );
 				half3 Output_Normal1110 = normalizeResult136;
@@ -4920,7 +4920,7 @@ Shader "ANGRYMESH/Nature Pack/HDRP/Tree Leaf Snow"
 				#endif
 				float3 temp_cast_1 = (( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGT_SnowContrast )).xxx;
 				float3 ase_worldPos = GetAbsolutePositionWS( positionRWS );
-				half3 Top_Mask168 = ( saturate( ( pow( abs( ( saturate( staticSwitch364 ) + ( _TopOffset * AGT_SnowOffset ) ) ) , temp_cast_1 ) * ( _TopIntensity * AGT_SnowIntensity ) ) ) * saturate( (0.0 + (ase_worldPos.y - AGH_SnowMinimumHeight) * (1.0 - 0.0) / (( AGH_SnowMinimumHeight + AGH_SnowFadeHeight ) - AGH_SnowMinimumHeight)) ) );
+				half3 Top_Mask168 = ( saturate( ( pow( abs( ( saturate( staticSwitch364 ) + ( _TopOffset * AGT_SnowOffset ) ) ) , temp_cast_1 ) * ( _TopIntensity * AGT_SnowIntensity ) ) ) * AGSafeSnowHeightMask(ase_worldPos.y, AGH_SnowMinimumHeight, AGH_SnowFadeHeight) );
 				float4 lerpResult157 = lerp( temp_output_163_0 , temp_output_173_0 , float4( Top_Mask168 , 0.0 ));
 				float4 lerpResult322 = lerp( temp_output_163_0 , temp_output_173_0 , float4( ( Top_Mask168 * _BackFaceSnow ) , 0.0 ));
 				float4 switchResult320 = (((isFrontFace>0)?(lerpResult157):(( lerpResult322 * _BackFaceColor ))));

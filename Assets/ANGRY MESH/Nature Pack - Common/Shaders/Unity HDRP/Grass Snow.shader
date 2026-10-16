@@ -883,7 +883,7 @@ Shader "ANGRYMESH/Nature Pack/HDRP/Grass Snow"
 				float3 tanNormal218 = desaturateVar301;
 				float3 worldNormal218 = float3(dot(tanToWorld0,tanNormal218), dot(tanToWorld1,tanNormal218), dot(tanToWorld2,tanNormal218));
 				float3 ase_worldPos = GetAbsolutePositionWS( positionRWS );
-				half TopMask211 = ( saturate( ( pow( abs( ( saturate( worldNormal218.y ) + ( _TopOffset * AGG_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (200.0 - 1.0) / (1.0 - 0.0)) * AGG_SnowContrast ) ) * ( _TopIntensity * AGG_SnowIntensity ) ) ) * saturate( (0.0 + (ase_worldPos.y - AGH_SnowMinimumHeight) * (1.0 - 0.0) / (( AGH_SnowMinimumHeight + AGH_SnowFadeHeight ) - AGH_SnowMinimumHeight)) ) );
+				half TopMask211 = ( saturate( ( pow( abs( ( saturate( worldNormal218.y ) + ( _TopOffset * AGG_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (200.0 - 1.0) / (1.0 - 0.0)) * AGG_SnowContrast ) ) * ( _TopIntensity * AGG_SnowIntensity ) ) ) * AGSafeSnowHeightMask(ase_worldPos.y, AGH_SnowMinimumHeight, AGH_SnowFadeHeight) );
 				float4 lerpResult215 = lerp( ( _Color * tex2DNode1 * TintColor229 ) , _TopColor , TopMask211);
 				float4 lerpResult8 = lerp( ( _BaseBottomColor * lerpResult215 ) , lerpResult215 , saturate( pow( abs( ( packedInput.ase_color.r * 2.0 ) ) , _BaseBottomOffset ) ));
 				half4 Output_Albedo97 = lerpResult8;
@@ -1557,7 +1557,7 @@ Shader "ANGRYMESH/Nature Pack/HDRP/Grass Snow"
 				float3 tanNormal218 = desaturateVar301;
 				float3 worldNormal218 = float3(dot(tanToWorld0,tanNormal218), dot(tanToWorld1,tanNormal218), dot(tanToWorld2,tanNormal218));
 				float3 ase_worldPos = packedInput.ase_texcoord5.xyz;
-				half TopMask211 = ( saturate( ( pow( abs( ( saturate( worldNormal218.y ) + ( _TopOffset * AGG_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (200.0 - 1.0) / (1.0 - 0.0)) * AGG_SnowContrast ) ) * ( _TopIntensity * AGG_SnowIntensity ) ) ) * saturate( (0.0 + (ase_worldPos.y - AGH_SnowMinimumHeight) * (1.0 - 0.0) / (( AGH_SnowMinimumHeight + AGH_SnowFadeHeight ) - AGH_SnowMinimumHeight)) ) );
+				half TopMask211 = ( saturate( ( pow( abs( ( saturate( worldNormal218.y ) + ( _TopOffset * AGG_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (200.0 - 1.0) / (1.0 - 0.0)) * AGG_SnowContrast ) ) * ( _TopIntensity * AGG_SnowIntensity ) ) ) * AGSafeSnowHeightMask(ase_worldPos.y, AGH_SnowMinimumHeight, AGH_SnowFadeHeight) );
 				float4 lerpResult215 = lerp( ( _Color * tex2DNode1 * TintColor229 ) , _TopColor , TopMask211);
 				float4 lerpResult8 = lerp( ( _BaseBottomColor * lerpResult215 ) , lerpResult215 , saturate( pow( abs( ( packedInput.ase_color.r * 2.0 ) ) , _BaseBottomOffset ) ));
 				half4 Output_Albedo97 = lerpResult8;
@@ -4518,7 +4518,7 @@ Shader "ANGRYMESH/Nature Pack/HDRP/Grass Snow"
 				float3 tanNormal218 = desaturateVar301;
 				float3 worldNormal218 = float3(dot(tanToWorld0,tanNormal218), dot(tanToWorld1,tanNormal218), dot(tanToWorld2,tanNormal218));
 				float3 ase_worldPos = GetAbsolutePositionWS( positionRWS );
-				half TopMask211 = ( saturate( ( pow( abs( ( saturate( worldNormal218.y ) + ( _TopOffset * AGG_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (200.0 - 1.0) / (1.0 - 0.0)) * AGG_SnowContrast ) ) * ( _TopIntensity * AGG_SnowIntensity ) ) ) * saturate( (0.0 + (ase_worldPos.y - AGH_SnowMinimumHeight) * (1.0 - 0.0) / (( AGH_SnowMinimumHeight + AGH_SnowFadeHeight ) - AGH_SnowMinimumHeight)) ) );
+				half TopMask211 = ( saturate( ( pow( abs( ( saturate( worldNormal218.y ) + ( _TopOffset * AGG_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (200.0 - 1.0) / (1.0 - 0.0)) * AGG_SnowContrast ) ) * ( _TopIntensity * AGG_SnowIntensity ) ) ) * AGSafeSnowHeightMask(ase_worldPos.y, AGH_SnowMinimumHeight, AGH_SnowFadeHeight) );
 				float4 lerpResult215 = lerp( ( _Color * tex2DNode1 * TintColor229 ) , _TopColor , TopMask211);
 				float4 lerpResult8 = lerp( ( _BaseBottomColor * lerpResult215 ) , lerpResult215 , saturate( pow( abs( ( packedInput.ase_color.r * 2.0 ) ) , _BaseBottomOffset ) ));
 				half4 Output_Albedo97 = lerpResult8;

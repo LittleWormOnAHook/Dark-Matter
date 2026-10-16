@@ -845,7 +845,7 @@ Shader "ANGRYMESH/Nature Pack/HDRP/Tree Cross Snow"
 				float2 uv_BaseSnowMask1130 = packedInput.ase_texcoord5.xy;
 				half SnowMask1131 = tex2D( _BaseSnowMask, uv_BaseSnowMask1130 ).r;
 				float3 ase_worldPos = GetAbsolutePositionWS( positionRWS );
-				half Top_Mask168 = ( saturate( ( pow( abs( ( saturate( SnowMask1131 ) + ( _TopOffset * AGT_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGT_SnowContrast ) ) * ( _TopIntensity * AGT_SnowIntensity ) ) ) * saturate( (0.0 + (ase_worldPos.y - AGH_SnowMinimumHeight) * (1.0 - 0.0) / (( AGH_SnowMinimumHeight + AGH_SnowFadeHeight ) - AGH_SnowMinimumHeight)) ) );
+				half Top_Mask168 = ( saturate( ( pow( abs( ( saturate( SnowMask1131 ) + ( _TopOffset * AGT_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGT_SnowContrast ) ) * ( _TopIntensity * AGT_SnowIntensity ) ) ) * AGSafeSnowHeightMask(ase_worldPos.y, AGH_SnowMinimumHeight, AGH_SnowFadeHeight) );
 				float4 lerpResult157 = lerp( ( _Color * tex2DNode162 * TintColor1115 ) , _TopColor , Top_Mask168);
 				half4 Output_Albedo1074 = lerpResult157;
 				
@@ -1480,7 +1480,7 @@ Shader "ANGRYMESH/Nature Pack/HDRP/Tree Cross Snow"
 				float2 uv_BaseSnowMask1130 = packedInput.ase_texcoord.xy;
 				half SnowMask1131 = tex2D( _BaseSnowMask, uv_BaseSnowMask1130 ).r;
 				float3 ase_worldPos = packedInput.ase_texcoord2.xyz;
-				half Top_Mask168 = ( saturate( ( pow( abs( ( saturate( SnowMask1131 ) + ( _TopOffset * AGT_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGT_SnowContrast ) ) * ( _TopIntensity * AGT_SnowIntensity ) ) ) * saturate( (0.0 + (ase_worldPos.y - AGH_SnowMinimumHeight) * (1.0 - 0.0) / (( AGH_SnowMinimumHeight + AGH_SnowFadeHeight ) - AGH_SnowMinimumHeight)) ) );
+				half Top_Mask168 = ( saturate( ( pow( abs( ( saturate( SnowMask1131 ) + ( _TopOffset * AGT_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGT_SnowContrast ) ) * ( _TopIntensity * AGT_SnowIntensity ) ) ) * AGSafeSnowHeightMask(ase_worldPos.y, AGH_SnowMinimumHeight, AGH_SnowFadeHeight) );
 				float4 lerpResult157 = lerp( ( _Color * tex2DNode162 * TintColor1115 ) , _TopColor , Top_Mask168);
 				half4 Output_Albedo1074 = lerpResult157;
 				
@@ -4356,7 +4356,7 @@ Shader "ANGRYMESH/Nature Pack/HDRP/Tree Cross Snow"
 				float2 uv_BaseSnowMask1130 = packedInput.ase_texcoord7.xy;
 				half SnowMask1131 = tex2D( _BaseSnowMask, uv_BaseSnowMask1130 ).r;
 				float3 ase_worldPos = GetAbsolutePositionWS( positionRWS );
-				half Top_Mask168 = ( saturate( ( pow( abs( ( saturate( SnowMask1131 ) + ( _TopOffset * AGT_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGT_SnowContrast ) ) * ( _TopIntensity * AGT_SnowIntensity ) ) ) * saturate( (0.0 + (ase_worldPos.y - AGH_SnowMinimumHeight) * (1.0 - 0.0) / (( AGH_SnowMinimumHeight + AGH_SnowFadeHeight ) - AGH_SnowMinimumHeight)) ) );
+				half Top_Mask168 = ( saturate( ( pow( abs( ( saturate( SnowMask1131 ) + ( _TopOffset * AGT_SnowOffset ) ) ) , ( (1.0 + (_TopContrast - 0.0) * (20.0 - 1.0) / (1.0 - 0.0)) * AGT_SnowContrast ) ) * ( _TopIntensity * AGT_SnowIntensity ) ) ) * AGSafeSnowHeightMask(ase_worldPos.y, AGH_SnowMinimumHeight, AGH_SnowFadeHeight) );
 				float4 lerpResult157 = lerp( ( _Color * tex2DNode162 * TintColor1115 ) , _TopColor , Top_Mask168);
 				half4 Output_Albedo1074 = lerpResult157;
 				
