@@ -1,0 +1,13 @@
+fileFormatVersion: 2
+guid: ce569f12a84263940a3f81b18667144d
+TextScriptImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 15667
+  packageName: Taichi Character Pack
+  packageVersion: 1.16
+  assetPath: Assets/TaichiCharacterPack/Viewer/Resources/Taichi/Viewer Settings/title_text.txt
+  uploadId: 746711

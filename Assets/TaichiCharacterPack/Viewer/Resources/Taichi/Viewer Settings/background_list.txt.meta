@@ -1,0 +1,13 @@
+fileFormatVersion: 2
+guid: b32cb2655e063f946abade985a3faf81
+TextScriptImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 15667
+  packageName: Taichi Character Pack
+  packageVersion: 1.16
+  assetPath: Assets/TaichiCharacterPack/Viewer/Resources/Taichi/Viewer Settings/background_list.txt
+  uploadId: 746711

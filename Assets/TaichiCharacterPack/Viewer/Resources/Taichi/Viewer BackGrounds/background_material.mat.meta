@@ -1,0 +1,13 @@
+fileFormatVersion: 2
+guid: 41f8afe6f397cd44cace049b0a5ec261
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 15667
+  packageName: Taichi Character Pack
+  packageVersion: 1.16
+  assetPath: Assets/TaichiCharacterPack/Viewer/Resources/Taichi/Viewer BackGrounds/background_material.mat
+  uploadId: 746711

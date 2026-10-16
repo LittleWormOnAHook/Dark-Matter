@@ -1,0 +1,13 @@
+fileFormatVersion: 2
+guid: b89d7ae7c00596042923e5a32db0dd91
+TextScriptImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 15667
+  packageName: Taichi Character Pack
+  packageVersion: 1.16
+  assetPath: Assets/TaichiCharacterPack/Viewer/Resources/Taichi/Viewer Settings/animation_list.txt
+  uploadId: 746711

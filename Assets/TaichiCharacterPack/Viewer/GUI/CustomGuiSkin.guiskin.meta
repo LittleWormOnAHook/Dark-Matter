@@ -1,0 +1,13 @@
+fileFormatVersion: 2
+guid: 4e358f4e18f1ae64cb6eeb6627dbb7cb
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 15667
+  packageName: Taichi Character Pack
+  packageVersion: 1.16
+  assetPath: Assets/TaichiCharacterPack/Viewer/GUI/CustomGuiSkin.guiskin
+  uploadId: 746711

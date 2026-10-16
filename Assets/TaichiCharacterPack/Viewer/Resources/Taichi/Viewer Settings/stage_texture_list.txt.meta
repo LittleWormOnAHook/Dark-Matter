@@ -1,0 +1,13 @@
+fileFormatVersion: 2
+guid: 5d69eb788c015da41a4e85aa754b390f
+TextScriptImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 15667
+  packageName: Taichi Character Pack
+  packageVersion: 1.16
+  assetPath: Assets/TaichiCharacterPack/Viewer/Resources/Taichi/Viewer Settings/stage_texture_list.txt
+  uploadId: 746711
