@@ -96,7 +96,7 @@ namespace Project.Combat
 
         /// <summary>
         /// World aim point for HUD crosshair and muzzle→reticle shots.
-        /// Uses the gameplay camera viewport center (0.5, 0.5) so impacts match a fixed center reticle.
+        /// Uses gameplay camera viewport center; scoped mode adds profile sway (skill-reduced via DMScopeMode).
         /// </summary>
         public static Vector3 ResolveReticleAimPoint(
             Camera cam,
@@ -112,7 +112,8 @@ namespace Project.Combat
             mask &= ~(1 << PlayerLayer);
             GameObject owner = PlayerLocator.FindPlayerObject();
 
-            Ray centerRay = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+            Vector2 viewport = ResolveReticleViewportCenter();
+            Ray centerRay = cam.ViewportPointToRay(new Vector3(viewport.x, viewport.y, 0f));
             Vector3 dir = centerRay.direction;
             if (dir.sqrMagnitude < 0.0001f)
                 dir = Vector3.forward;
@@ -134,6 +135,14 @@ namespace Project.Combat
                 return hit.point;
 
             return centerRay.origin + dir * (CameraAimRayStartSkin + range);
+        }
+
+        /// <summary>Fixed center reticle, or scoped center + sway (does not alter spread/skills).</summary>
+        public static Vector2 ResolveReticleViewportCenter()
+        {
+            if (DMScopeMode.IsScoped && DMScopeMode.ZoomBlend > 0.01f)
+                return DMScopeMode.GetScopedAimViewport();
+            return new Vector2(0.5f, 0.5f);
         }
 
         /// <summary>Raycast from the live muzzle along its forward axis.</summary>

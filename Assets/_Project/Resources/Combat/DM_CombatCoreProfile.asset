@@ -220,3 +220,9 @@ MonoBehaviour:
   interruptReactionSeconds: 0.45
   logInterruptsInPlay: 0
   logCombatEventsInPlay: 0
+  playerCorpseStayInPlace: 1
+  playerCorpseSettleSeconds: 1.5
+  playerCorpseMaxSlideSpeed: 1.5
+  playerRespawnSettleSeconds: 0.85
+  playerRespawnPostStandUpLockSeconds: 0.35
+  playerRespawnPostStandUpSettleSeconds: 0.75

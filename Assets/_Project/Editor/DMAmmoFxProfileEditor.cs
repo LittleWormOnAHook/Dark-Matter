@@ -23,6 +23,8 @@ namespace Project.EditorTools
                 "Rifle Camera fields on Ammo Recoil Profile still override two-hand weapons. " +
                 "Invector weapon recoilUp / recoilLeft / recoilRight do nothing. " +
                 "Fire Rate is shots or burst groups per second and overrides the weapon when > 0. " +
+                "Rifle/Pistol Scoped Fire Interval is optional per-ammo fallback when DM_ScopeProfile scoped interval is unset; global scope profile wins when set. " +
+                "Rifle/Pistol Scoped Fire Interval Percent Modifier tweaks that base by ±10% (+10 = faster), then scope skills apply. " +
                 "Shots Per Burst 1 = single; 2-5 fires that many rounds at Burst Fire Rate.",
                 MessageType.Info);
 

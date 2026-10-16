@@ -193,6 +193,8 @@ namespace Project.AI
         internal int ChaseWallFollowSideSign;
         internal float ChaseWallFollowSideLockUntil;
         internal int ChaseWallFollowFailStreak;
+        internal Collider ChaseWallSurface;
+        internal Vector3 ChaseWallSurfaceNormal;
         internal Vector3 ChaseFanLatchedDirection;
         internal float ChaseFanLatchUntil;
         internal float ChaseFanLastRetargetTime;
@@ -756,6 +758,9 @@ namespace Project.AI
             ChaseWallFollowSideSign = 0;
             ChaseWallFollowSideLockUntil = 0f;
             ChaseWallFollowFailStreak = 0;
+            ChaseWallSurface = null;
+            ChaseWallSurfaceNormal = Vector3.zero;
+            ResetWallRouteProgress();
             ChaseFanLatchedDirection = Vector3.zero;
             ChaseFanLatchUntil = 0f;
             ChaseFanLastRetargetTime = 0f;

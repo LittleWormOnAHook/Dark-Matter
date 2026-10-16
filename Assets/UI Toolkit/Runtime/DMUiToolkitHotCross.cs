@@ -358,7 +358,7 @@ namespace Project.UI
                 return false;
             return DMUiToolkitOverlayDocument.GameplayHudWanted()
                 && !DMUiToolkitMainMenu.IsVisible
-                && !GameplayHudVisibility.CinematicChromeHidden;
+                && !GameplayHudVisibility.SuppressesGameplayChrome;
         }
 
         private bool IsTreeStale()
@@ -569,7 +569,13 @@ namespace Project.UI
             if (scope == null)
                 return false;
 
+            if (GameplayHudVisibility.RifleScopeChromeSuppressed)
+                return false;
+
             bool rifle = DMScopeMode.IsRifle(drawnWeapon);
+            if (rifle && DMScopeMode.IsScopedRifle && DMScopeMode.ZoomBlend > 0.001f)
+                return false;
+
             return rifle ? scope.RifleScopeEnabled : scope.PistolScopeEnabled;
         }
 

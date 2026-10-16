@@ -104,6 +104,7 @@ namespace Project.AI
                 return;
 
             isDead = true;
+            EngagedEnemyHealthHud.Instance?.ClearIf(this);
             Died?.Invoke();
             EnemyInvectorCombatShutdown.Apply(gameObject);
 

@@ -59,6 +59,8 @@ MonoBehaviour:
   recoilHorizontal: 0.75
   recoilFireRateScale: 5
   fireRate: 6.5
+  rifleScopedFireIntervalPercentModifier: 0
+  pistolScopedFireIntervalPercentModifier: 0
   shotsPerBurst: 1
   burstFireRate: 10
   magazineSize: 30

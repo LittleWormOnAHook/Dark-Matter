@@ -116,20 +116,21 @@ namespace Project.EditorTools.Audit
         private static void AudioStaticFacts(DMAuditEnemyResult R)
         {
             object prof = AudioProfileObj();
-            int sw = ClipCount(prof, "weaponSwingClips"), hit = ClipCount(prof, "weaponHitClips"), crit = ClipCount(prof, "weaponCriticalHitClips");
+            int sw = ClipCount(prof, "meleeSwingClips"), hit = ClipCount(prof, "meleeHitClips"), crit = ClipCount(prof, "meleeCriticalHitClips");
+            int rHit = ClipCount(prof, "rangedHitClips"), rCrit = ClipCount(prof, "rangedCriticalHitClips");
             R.Add("Audio", "audio.profile", "GameAudioProfile combat clips assigned", prof == null ? "WARN" : (sw > 0 && hit > 0 ? "PASS" : "FAIL"),
-                prof == null ? "GameAudioManager.Instance / profile not found at runtime" : $"weaponSwingClips {sw}, weaponHitClips {hit}, weaponCriticalHitClips {crit}",
+                prof == null ? "GameAudioManager.Instance / profile not found at runtime" : $"meleeSwing {sw}, meleeHit {hit}, meleeCrit {crit}, rangedHit {rHit}, rangedCrit {rCrit}",
                 prof == null ? "audio manager not in the scene or created lazily" : (sw > 0 && hit > 0 ? "" : "GameAudioProfile asset has empty clip arrays: assign swish/hit clips (swing: " + sw + ", hit: " + hit + ")"));
 
-            List<string> swingCallers = CodeCallers("PlayWeaponSwing(", "GameAudioManager.cs");
-            R.Add("Audio", "audio.swing.callers", "Swing swish (GameAudioManager.PlayWeaponSwing) is called by gameplay code", swingCallers.Count > 0 ? "PASS" : "FAIL",
+            List<string> swingCallers = CodeCallers("PlayMeleeSwing(", "GameAudioManager.cs");
+            R.Add("Audio", "audio.swing.callers", "Swing swish (GameAudioManager.PlayMeleeSwing) is called by gameplay code", swingCallers.Count > 0 ? "PASS" : "FAIL",
                 $"callers outside GameAudioManager: {(swingCallers.Count == 0 ? "NONE" : string.Join(", ", swingCallers))}",
-                swingCallers.Count > 0 ? "" : "PlayWeaponSwing / PlayPunchSwing are never called, so NO weapon (player or enemy) ever plays a swish: add a call where a melee attack window opens (vMeleeManager.SetActiveAttack active=true or the animation event OnEnableAttack)");
+                swingCallers.Count > 0 ? "" : "PlayMeleeSwing / PlayPunchSwing are never called, so NO weapon (player or enemy) ever plays a swish: add a call where a melee attack window opens (vMeleeManager.SetActiveAttack active=true or the animation event OnEnableAttack)");
 
-            List<string> hitCallers = CodeCallers("CombatHitAudio.PlayWeaponHit", "CombatHitAudio.cs");
+            List<string> hitCallers = CodeCallers("MeleeHitAudio.PlayMeleeHit", "MeleeHitAudio.cs");
             bool playerPath = hitCallers.Any(f => f.IndexOf("Player", StringComparison.OrdinalIgnoreCase) >= 0 || f.IndexOf("DamageBridge", StringComparison.OrdinalIgnoreCase) >= 0 || f.IndexOf("Survival", StringComparison.OrdinalIgnoreCase) >= 0 || f.IndexOf("vMeleeManager", StringComparison.OrdinalIgnoreCase) >= 0); // vMeleeManager.OnDamageHit is the enemy-weapon -> player hit path (confirmed at runtime by the Regression scenario row)
             R.Add("Audio", "audio.hit.callers", "Melee hit sound has a caller on the damage path", hitCallers.Count > 0 ? (playerPath ? "PASS" : "WARN") : "FAIL",
-                $"CombatHitAudio.PlayWeaponHit callers: {(hitCallers.Count == 0 ? "NONE" : string.Join(", ", hitCallers))}",
+                $"MeleeHitAudio.PlayMeleeHit callers: {(hitCallers.Count == 0 ? "NONE" : string.Join(", ", hitCallers))}",
                 hitCallers.Count == 0 ? "no code plays a melee hit sound" : (playerPath ? "" : "the only callers are the enemy-body receiver (PioneerInvectorDamageReceiver), MeleeCombatController and CombatHitResolver: damage TO THE PLAYER (PioneerInvectorDamageBridge / the player's vDamageReceiver) has no hit-sound call, so enemy weapons hitting the player are silent"));
         }
 

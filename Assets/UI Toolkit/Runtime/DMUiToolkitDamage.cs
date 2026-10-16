@@ -1,4 +1,7 @@
 using System.Collections.Generic;
+using Project.Audio;
+using Project.Combat;
+using Project.Core;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -25,6 +28,28 @@ namespace Project.UI
         private VisualElement layer;
         private bool bound;
         private readonly List<Popup> popups = new List<Popup>();
+        private VisualElement hitDirectionHost;
+        private HitDirectionRing hitDirectionRing;
+        private GameAudioProfile feedbackProfile;
+        private readonly HitDirection[] hitDirections = new HitDirection[8];
+        private bool hitDirectionsVisible;
+
+        private struct HitDirection
+        {
+            public Vector3 Direction;
+            public float Until;
+        }
+
+        private sealed class HitDirectionRing : VisualElement
+        {
+            public HitDirectionRing(DMUiToolkitDamage owner)
+            {
+                pickingMode = PickingMode.Ignore;
+                style.position = Position.Absolute;
+                style.left = style.top = style.right = style.bottom = 0f;
+                generateVisualContent += owner.PaintHitDirections;
+            }
+        }
 
         private class Popup
         {
@@ -94,6 +119,15 @@ namespace Project.UI
         {
             instance = this;
             BindTree();
+            CombatEvents.PlayerDamaged -= HandlePlayerDamaged;
+            CombatEvents.PlayerDamaged += HandlePlayerDamaged;
+        }
+
+        private void OnDisable()
+        {
+            CombatEvents.PlayerDamaged -= HandlePlayerDamaged;
+            System.Array.Clear(hitDirections, 0, hitDirections.Length);
+            hitDirectionHost?.SetEnabled(false);
         }
 
         private void OnDestroy()
@@ -108,6 +142,7 @@ namespace Project.UI
                 BindTree();
 
             TickPopups();
+            TickHitDirections();
             HideUgui();
         }
 
@@ -125,7 +160,88 @@ namespace Project.UI
             root = tree.Q<VisualElement>("damage-root") ?? tree;
             DMUiToolkitOverlayDocument.ApplyIgnorePicking(root);
             layer = tree.Q<VisualElement>("damage-layer") ?? root;
+            VisualElement directionHost = tree.Q<VisualElement>("hit-direction-host");
+            if (directionHost != null && hitDirectionHost != directionHost)
+            {
+                hitDirectionHost = directionHost;
+                hitDirectionRing = new HitDirectionRing(this);
+                hitDirectionHost.Add(hitDirectionRing);
+                hitDirectionHost.style.display = DisplayStyle.None;
+            }
             bound = root != null;
+        }
+
+        private GameAudioProfile FeedbackProfile()
+        {
+            if (GameAudioManager.Instance != null) return GameAudioManager.Instance.Profile;
+            if (feedbackProfile == null) feedbackProfile = Resources.Load<GameAudioProfile>("GameAudioProfile");
+            return feedbackProfile;
+        }
+
+        private void HandlePlayerDamaged(GameObject player, GameObject source, float amount)
+        {
+            GameAudioProfile profile = FeedbackProfile();
+            if (profile == null || !profile.playerHitIndicatorEnabled || player == null || source == null || amount <= 0f) return;
+            Vector3 direction = source.transform.position - player.transform.position;
+            direction.y = 0f;
+            if (direction.sqrMagnitude < 0.0001f) return; // Unknown bearing: do not invent a direction.
+            direction.Normalize();
+            int slot = 0;
+            float oldest = float.MaxValue;
+            for (int i = 0; i < hitDirections.Length; i++)
+            {
+                if (hitDirections[i].Until > Time.unscaledTime && Vector3.Dot(direction, hitDirections[i].Direction) > 0.92f)
+                { slot = i; break; }
+                if (hitDirections[i].Until < oldest) { oldest = hitDirections[i].Until; slot = i; }
+            }
+            hitDirections[slot] = new HitDirection { Direction = direction, Until = Time.unscaledTime + profile.playerHitIndicatorSeconds };
+        }
+
+        private void TickHitDirections()
+        {
+            if (hitDirectionHost == null) return;
+            GameAudioProfile profile = FeedbackProfile();
+            bool visible = false;
+            if (profile != null && profile.playerHitIndicatorEnabled && GameSession.HasStarted &&
+                !MainMenuController.BlocksGameplayHud && !GameplayWorldSimulation.IsFrozen)
+                for (int i = 0; i < hitDirections.Length; i++) visible |= hitDirections[i].Until > Time.unscaledTime;
+            if (visible != hitDirectionsVisible)
+            {
+                hitDirectionsVisible = visible;
+                hitDirectionHost.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
+                hitDirectionHost.SetEnabled(true);
+            }
+            if (visible) hitDirectionRing.MarkDirtyRepaint();
+        }
+
+        private void PaintHitDirections(MeshGenerationContext context)
+        {
+            GameAudioProfile profile = FeedbackProfile();
+            Camera camera = Camera.main;
+            if (profile == null || camera == null || !hitDirectionsVisible) return;
+            Vector3 forward = camera.transform.forward; forward.y = 0f;
+            if (forward.sqrMagnitude < 0.001f) { forward = camera.transform.up; forward.y = 0f; }
+            forward.Normalize();
+            Vector3 right = Vector3.Cross(Vector3.up, forward);
+            Rect rect = hitDirectionRing.contentRect;
+            Vector2 center = rect.center;
+            float radius = Mathf.Clamp(profile.playerHitIndicatorRadius, 25f, 750f);
+            float width = Mathf.Clamp(profile.playerHitIndicatorThickness, 1f, 16f);
+            var painter = context.painter2D;
+            for (int i = 0; i < hitDirections.Length; i++)
+            {
+                float remaining = hitDirections[i].Until - Time.unscaledTime;
+                if (remaining <= 0f) continue;
+                float angle = Mathf.Atan2(Vector3.Dot(hitDirections[i].Direction, right), Vector3.Dot(hitDirections[i].Direction, forward)) * Mathf.Rad2Deg - 90f;
+                float half = Mathf.Clamp(profile.playerHitIndicatorArc, 15f, 100f) * 0.5f;
+                float alpha = Mathf.Clamp01(remaining / Mathf.Max(0.01f, profile.playerHitIndicatorSeconds) * 2f);
+                painter.lineWidth = width + 3f;
+                painter.strokeColor = new Color(0f, 0f, 0f, alpha * 0.75f);
+                painter.BeginPath(); painter.Arc(center, radius, Angle.Degrees(angle - half), Angle.Degrees(angle + half)); painter.Stroke();
+                Color color = profile.playerHitIndicatorColor; color.a *= alpha;
+                painter.lineWidth = width; painter.strokeColor = color;
+                painter.BeginPath(); painter.Arc(center, radius, Angle.Degrees(angle - half), Angle.Degrees(angle + half)); painter.Stroke();
+            }
         }
 
         private void SpawnInternal(float damage, Vector3 worldPosition, Color? color, float sizeScale = 1f, bool? critOverride = null)

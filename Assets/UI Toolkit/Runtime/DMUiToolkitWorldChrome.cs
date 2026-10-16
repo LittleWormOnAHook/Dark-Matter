@@ -157,7 +157,7 @@ namespace Project.UI
                 BindTree();
 
             bool want = DMUiToolkitOverlayDocument.GameplayHudWanted();
-            bool show = want && !GameplayHudVisibility.CinematicChromeHidden;
+            bool show = want && !GameplayHudVisibility.SuppressesGameplayChrome;
             if (show != lastGameplayWant)
             {
                 lastGameplayWant = show;

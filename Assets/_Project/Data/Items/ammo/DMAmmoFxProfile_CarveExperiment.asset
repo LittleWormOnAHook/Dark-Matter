@@ -41,6 +41,7 @@ MonoBehaviour:
   criticalChance: 0.1
   criticalDamageMultiplier: 2
   meleeRange: 2.2
+  meleeBladeLength: -1
   meleeCooldown: 0.65
   attackAnimationSpeed: 0
   meleeStaminaCost: 0
@@ -50,8 +51,8 @@ MonoBehaviour:
   rangedDamage: 8
   rangedDamageRandomRange: 4
   rangedRange: 120
-  projectileSpeed: 200
-  projectileSpreadDegrees: 0.8
+  projectileSpeed: 350
+  projectileSpreadDegrees: 0.1
   weaponAccuracy: 92
   closeRangeFullAccuracyDistance: 12
   closeRangeSpreadScale: 0.2
@@ -59,6 +60,8 @@ MonoBehaviour:
   recoilHorizontal: 0.5
   recoilFireRateScale: 4.5
   fireRate: 6
+  rifleScopedFireIntervalPercentModifier: 0
+  pistolScopedFireIntervalPercentModifier: 0
   shotsPerBurst: 1
   burstFireRate: 10
   magazineSize: 30
@@ -84,8 +87,8 @@ MonoBehaviour:
   ammoPerPickup: 200
   ammoPickupGrant: 100
   ammoRecoilProfile:
-    pistolCameraVertical: 0
-    pistolCameraHorizontal: 0
+    pistolCameraVertical: 0.5
+    pistolCameraHorizontal: 0.5
     pistolAnimationWeight: 0
     rifleCameraVertical: 0
     rifleCameraHorizontal: 0
@@ -97,7 +100,7 @@ MonoBehaviour:
   fxProfile: {fileID: 11400000}
   muzzleFlashPrefab: {fileID: 1250043994138880037, guid: 66dd72922f471824ab8c130fe448726b, type: 3}
   tracerPrefab: {fileID: 3975566894687731992, guid: 16b91d7a47f914f45a59f733295e2b23, type: 3}
-  impactVfxPrefab: {fileID: 0}
+  impactVfxPrefab: {fileID: 464135841913011520, guid: 33c9200703088c944b9dde7429bf826c, type: 3}
   beamVfxPrefab: {fileID: 0}
   isMiningTool: 0
   miningPassesRequired: 2
@@ -108,8 +111,8 @@ MonoBehaviour:
   miningChunkVfxPrefab: {fileID: 0}
   miningChargeDrainPerSecond: 4
   miningChargePerPlasmaFuel: 50
-  fireSound: {fileID: 8300000, guid: 588355d79c1e05645bd2a3c671f004e4, type: 3}
-  projectileTravelSound: {fileID: 0}
+  fireSound: {fileID: 8300000, guid: fe90135ad668a394287ca68605d4763b, type: 3}
+  projectileTravelSound: {fileID: 8300000, guid: 083a11b6fd995714a99ab776145116b2, type: 3}
   isContinuousLaser: 0
   continuousLoopSound: {fileID: 0}
   continuousStartSound: {fileID: 0}

@@ -35,6 +35,9 @@ namespace Project.Combat
 
         public static int ResolveBurstCount(ItemData weapon, ItemData ammo)
         {
+            if (DMScopeMode.IsScoped)
+                return 1;
+
             int count = 1;
             if (ammo != null && ammo.shotsPerBurst > 1)
                 count = ammo.shotsPerBurst;
@@ -47,6 +50,12 @@ namespace Project.Combat
         /// <summary>Seconds between Invector trigger cycles (one shot or one full burst).</summary>
         public static float ResolveShootInterval(ItemData weapon, ItemData ammo)
         {
+            if (DMScopeMode.IsScoped)
+            {
+                bool rifle = weapon != null && DMScopeMode.IsRifle(weapon);
+                return DMScopeMode.ScopedFireInterval(rifle, ammo);
+            }
+
             float fireRate = ResolveFireRate(weapon, ammo);
             float cycle = fireRate > 0.01f ? 1f / fireRate : 1f / DefaultFireRate;
             int burst = ResolveBurstCount(weapon, ammo);
@@ -56,6 +65,56 @@ namespace Project.Combat
             float intra = 1f / ResolveBurstFireRate(weapon, ammo);
             float burstDuration = (burst - 1) * intra;
             return Mathf.Max(cycle, burstDuration + 0.01f);
+        }
+
+        /// <summary>
+        /// Base seconds per scoped shot before per-ammo percent tweak, scope skills, and min interval clamp
+        /// (see <see cref="ResolveScopedFireIntervalBeforeSkills"/> and <see cref="DMScopeMode.ScopedFireInterval"/>).
+        /// DM_ScopeProfile rifle/pistol interval wins when &gt; 0; loaded ammo interval is fallback only (does not replace profile).
+        /// </summary>
+        public static float ResolveScopedFireIntervalBase(ItemData ammo, bool rifle)
+        {
+            DM_ScopeProfile p = DM_ScopeProfile.Live;
+            float fromProfile = rifle ? p.rifleScopedFireInterval : p.pistolScopedFireInterval;
+            if (fromProfile > 0.01f)
+                return fromProfile;
+
+            if (ammo != null)
+            {
+                float authored = rifle ? ammo.rifleScopedFireInterval : ammo.pistolScopedFireInterval;
+                if (authored > 0.01f)
+                    return authored;
+            }
+
+            return fromProfile;
+        }
+
+        /// <summary>
+        /// ±% scoped cadence from loaded ammo. Positive = faster (shorter interval). Clamped to ±10.
+        /// </summary>
+        public static float ResolveScopedFireIntervalPercentModifier(ItemData ammo, bool rifle)
+        {
+            if (ammo == null)
+                return 0f;
+
+            float mod = rifle
+                ? ammo.rifleScopedFireIntervalPercentModifier
+                : ammo.pistolScopedFireIntervalPercentModifier;
+            return Mathf.Clamp(mod, -10f, 10f);
+        }
+
+        /// <summary>
+        /// Seconds per scoped shot after profile/ammo base and per-ammo ±% modifier, before Rifles scope skills and min interval.
+        /// Order: <see cref="ResolveScopedFireIntervalBase"/> → ammo percent (<c>interval × (1 − modifier/100)</c>) → skills in <see cref="DMScopeMode.ScopedFireInterval"/>.
+        /// </summary>
+        public static float ResolveScopedFireIntervalBeforeSkills(ItemData ammo, bool rifle)
+        {
+            float baseI = ResolveScopedFireIntervalBase(ammo, rifle);
+            if (baseI <= 0.01f)
+                return baseI;
+
+            float pct = ResolveScopedFireIntervalPercentModifier(ammo, rifle);
+            return baseI * (1f - pct * 0.01f);
         }
 
         public static int ResolveMagazineSize(ItemData weapon, ItemData ammo)

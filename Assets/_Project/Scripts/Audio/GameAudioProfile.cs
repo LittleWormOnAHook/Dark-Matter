@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Project.Audio
 {
@@ -32,10 +33,41 @@ namespace Project.Audio
         [Min(0.5f)] public float hardLandingSpeed = 9f;
         [Range(0f, 1f)] public float landingVolume = 0.9f;
 
-        [Header("Combat")]
-        public AudioClip[] weaponSwingClips;
-        public AudioClip[] weaponHitClips;
-        public AudioClip[] weaponCriticalHitClips;
+        [Header("Combat — Melee")]
+        [FormerlySerializedAs("weaponSwingClips")]
+        public AudioClip[] meleeSwingClips;
+        [FormerlySerializedAs("weaponHitClips")]
+        [InspectorName("Weapon / guard clash clips")]
+        public AudioClip[] meleeHitClips;
+        [FormerlySerializedAs("weaponCriticalHitClips")]
+        [InspectorName("Critical / parry clash clips")]
+        public AudioClip[] meleeCriticalHitClips;
+
+        [Header("Combat — Body impacts (not weapon clashes)")]
+        [Tooltip("Confirmed melee damage to a body. Empty means silent, never falls back to metallic clash clips.")]
+        public AudioClip[] meleeBodyHitClips;
+        public AudioClip[] meleeBodyCriticalHitClips;
+        [Range(0f, 1f)] public float meleeBodyHitVolume = 0.95f;
+        [Tooltip("Existing Melee Hit / Critical Hit libraries above are now weapon/guard clashes only.")]
+        [Range(0f, 1f)] public float meleeClashVolume = 0.9f;
+        [Header("Combat — Player receives damage")]
+        public AudioClip[] playerBodyHitClips;
+        public AudioClip[] playerPainClips;
+        [Range(0f, 1f)] public float playerBodyHitVolume = 1f;
+        [Range(0f, 1f)] public float playerPainVolume = 0.65f;
+        [Min(0f)] public float playerPainMinInterval = 0.8f;
+
+        [Header("Combat — Center circular hit direction")]
+        public bool playerHitIndicatorEnabled = true;
+        [Range(25f, 750f)] public float playerHitIndicatorRadius = 500f;
+        [Range(1f, 16f)] public float playerHitIndicatorThickness = 5f;
+        [Range(15f, 100f)] public float playerHitIndicatorArc = 55f;
+        [Range(0.15f, 2f)] public float playerHitIndicatorSeconds = 0.65f;
+        public Color playerHitIndicatorColor = Project.UI.DarkMatterGenesisUiPalette.RichFuchsia;
+
+        [Header("Combat — Ranged")]
+        public AudioClip[] rangedHitClips;
+        public AudioClip[] rangedCriticalHitClips;
         public AudioClip[] punchSwingClips;
         public AudioClip[] punchHitClips;
         public AudioClip[] punchCriticalHitClips;
@@ -75,6 +107,18 @@ namespace Project.Audio
         public float sfxMaxDistance = 22f;
 
         [NonSerialized] private FootstepSurfaceSet overlayScratch;
+
+        [HideInInspector] public CombatAudioFolderPool[] combatFolderPools;
+
+        public AudioClip[] ResolveCombatClips(string clipField, AudioClip[] fallback)
+        {
+            if (combatFolderPools != null)
+                foreach (CombatAudioFolderPool pool in combatFolderPools)
+                    if (pool != null && pool.clipField == clipField && !string.IsNullOrEmpty(pool.folderPath) && pool.clips != null)
+                        foreach (AudioClip clip in pool.clips)
+                            if (clip != null) return pool.clips;
+            return fallback;
+        }
 
         public FootstepSurfaceSet GetFootstepsForSurface(string surfaceTag)
         {
@@ -197,6 +241,16 @@ namespace Project.Audio
             EnsureTerrainLayerSlots();
         }
 #endif
+    }
+
+    [Serializable]
+    public class CombatAudioFolderPool
+    {
+        public string clipField;
+        public string folderPath;
+        // Serialized direct references: folders need not be under Resources and
+        // playback never depends on editor AssetDatabase or filesystem scans.
+        public AudioClip[] clips;
     }
 
     [Serializable]

@@ -246,7 +246,7 @@ namespace Project.Combat
         [Range(1, 24)] public int volumetricBudget = 6;
         [Tooltip("Size of the airborne blood / coolant splatter (the flying fluid only; ground decals keep their own scale). 1 = vendor size. Colour and glow are untouched.")]
         [Range(0.2f, 1.5f)] public float volumetricAirborneScale = 0.7f;
-        [Tooltip("Chance that a normal / light enemy hit shows the blood / coolant spray (less blood overall).")]
+        [Tooltip("Chance that a normal / light hit plays the legacy blood / coolant particle burst (KriptoFX volumetric is not gated by this).")]
         [Range(0f, 1f)] public float lightHitBloodChance = 0.5f;
         [Tooltip("Chance that a heavy / charged hit shows the blood / coolant spray.")]
         [Range(0f, 1f)] public float heavyHitBloodChance = 1f;
@@ -287,6 +287,8 @@ namespace Project.Combat
         [Range(0f, 0.5f)] public float volumetricDecalGroundOffset = 0.08f;
         [Tooltip("Nudge ground decals toward the victim root on XZ (0 = impact point only, 1 = at victim feet).")]
         [Range(0f, 1f)] public float volumetricGroundTowardTarget = 0.55f;
+        [Tooltip("When off, KriptoFX still spawns airborne fluid but skips floor HDRP decals (JitterDecal / BFX_DecalSettings).")]
+        public bool volumetricSpawnGroundDecals = true;
         [Tooltip("When on, player-hit fluids snap BFX ground height (often hides airborne spray). Off = keep vendor airborne arc on the player.")]
         public bool volumetricPlayerFluidGroundSnap = false;
         [Tooltip("BFX_Blood is unlit: under HDRP physical exposure it renders black. On = its color is scaled by the sun intensity (lux / pi) at spawn.")]

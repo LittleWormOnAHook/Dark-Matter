@@ -382,6 +382,21 @@ new DMStudioSubtab(
                             playModeSave: true,
                             sectionFilter: DMStudioProfileSectionFilter.CombatAmmoOnly),
                         new DMStudioSubtab(
+                            "scope-overlay",
+                            "Scope Overlay",
+                            "UITK scoped ADS art — reticle, ring, outer mil-dot, center mask (DM_ScopeProfile). Live in Play; skills still gate sway/zoom/cadence/accuracy/damage.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Combat/DM_ScopeProfile.asset",
+                            playModeSave: true,
+                            sectionFilter: DMStudioProfileSectionFilter.ScopeOverlayOnly),
+                        new DMStudioSubtab(
+                            "scope-profile",
+                            "Scope Profile",
+                            "Full DM_ScopeProfile — scoped range, FOV, fire interval, damage multipliers, ammo gate, audio, overlay. Rifles skill_scope_* modifiers apply in Play.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Combat/DM_ScopeProfile.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
                             "hit-catalog",
                             "Hit Catalog",
                             "Surface tag → hit mark mapping for ranged combat.",
@@ -646,9 +661,10 @@ new DMStudioSubtab(
                         new DMStudioSubtab(
                             "game-audio",
                             "Game Audio",
-                            "Resources/GameAudioProfile — music, combat, UI clips.",
+                            "Music, body impacts, weapon clashes, player pain and circular hit-direction feedback.",
                             DMStudioPanelMode.SingletonAsset,
-                            "Assets/_Project/Resources/GameAudioProfile.asset")
+                            "Assets/_Project/Resources/GameAudioProfile.asset",
+                            playModeSave: true)
                     })
             };
         }

@@ -827,7 +827,7 @@ namespace Project.UI
                     loaded = 0;
             }
 
-            if (Application.isPlaying && GameplayHudVisibility.CinematicChromeHidden)
+            if (Application.isPlaying && GameplayHudVisibility.SuppressesGameplayChrome)
                 show = false;
 
             if (!show)

@@ -7,6 +7,7 @@ namespace Project.Player
     /// <summary>
     /// Records the player's recent movement path for companion stuck recovery.
     /// Keeps a rolling window of the most recent trail length.
+    /// For designer gold debug lines in Play, use <see cref="Project.Diagnostics.DMPlayerMovementPathDebug"/>.
     /// </summary>
     public class PlayerPathTrail : MonoBehaviour
     {

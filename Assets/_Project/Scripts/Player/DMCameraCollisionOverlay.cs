@@ -449,6 +449,8 @@ namespace Project.Player
             _rifleScopePresentationHide = hide;
             if (hide)
                 SetPlayerMeshVisible(false);
+            else if (_playerMeshHidden)
+                SetPlayerMeshVisible(true);
         }
 
         private void UpdatePlayerMeshVisibility(float activeMinFollow, bool pivotEnclosed)

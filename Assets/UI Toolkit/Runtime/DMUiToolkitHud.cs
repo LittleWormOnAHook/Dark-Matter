@@ -71,6 +71,7 @@ namespace Project.UI
         private bool lastHotbarOverlayChrome;
         private bool lastInventoryOpenChrome;
         private bool lastCinematicChrome;
+        private bool lastSuppressChrome;
         private Coroutine promptRoutine;
         private bool bound;
 
@@ -258,7 +259,7 @@ namespace Project.UI
             if (!uguiHidden)
                 HideUguiCounterparts();
 
-            if (!GameplayHudVisibility.CinematicChromeHidden)
+            if (!GameplayHudVisibility.SuppressesGameplayChrome)
             {
                 TickCompanionHud();
                 TickLeftoverChrome();
@@ -424,13 +425,15 @@ namespace Project.UI
             bool menuOpen = gameplayVisible && DMUiToolkitMenus.IsOpen;
             bool inventoryOpen = gameplayVisible && DMUiToolkitMenus.IsInventoryOpen;
             bool cinematic = GameplayHudVisibility.CinematicChromeHidden;
-            bool showHotbarOverlay = !menuOpen && !cinematic;
+            bool suppressChrome = GameplayHudVisibility.SuppressesGameplayChrome;
+            bool showHotbarOverlay = !menuOpen && !suppressChrome;
 
             if (menuChromeApplied
                 && menuOpen == lastMenuOpenChrome
                 && showHotbarOverlay == lastHotbarOverlayChrome
                 && inventoryOpen == lastInventoryOpenChrome
-                && cinematic == lastCinematicChrome)
+                && cinematic == lastCinematicChrome
+                && suppressChrome == lastSuppressChrome)
                 return;
 
             menuChromeApplied = true;
@@ -438,6 +441,7 @@ namespace Project.UI
             lastHotbarOverlayChrome = showHotbarOverlay;
             lastInventoryOpenChrome = inventoryOpen;
             lastCinematicChrome = cinematic;
+            lastSuppressChrome = suppressChrome;
 
             if (minimapHost != null)
                 minimapHost.style.display = DisplayStyle.None;
@@ -458,7 +462,7 @@ namespace Project.UI
             if (companionsHost != null)
                 companionsHost.style.display = showHotbarOverlay ? DisplayStyle.Flex : DisplayStyle.None;
 
-            if (cinematic)
+            if (suppressChrome)
                 ApplyNoPowerVisible(false);
 
             if (document != null && inventoryOpen)
@@ -598,7 +602,7 @@ namespace Project.UI
         {
             if (noPowerRoot == null)
                 return;
-            if (show && GameplayHudVisibility.CinematicChromeHidden)
+            if (show && GameplayHudVisibility.SuppressesGameplayChrome)
                 show = false;
             noPowerRoot.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
         }

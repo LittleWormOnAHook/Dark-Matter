@@ -404,12 +404,16 @@ namespace Project.Combat
             float damage,
             bool allowsBlood)
         {
-            float now = Time.time;
-            if (now - lastBurstTime < profile.perEnemyMinInterval)
-                return;
-
             // §16 bans blood only; coolant and sparks stay for every element.
             DMEnemyBodyHitResponse response = profile.GetResponse(bodyType);
+            bool fleshBlocked = bodyType == DMEnemyBodyType.Humanoid && !allowsBlood;
+            bool fluidKind = response.splatter == DMEnemyHitFxKind.Blood || response.splatter == DMEnemyHitFxKind.Coolant;
+
+            // Volumetric first (not gated by perEnemyMinInterval or lightHitBloodChance — matches body hit marks every shot).
+            DMVolumetricBlood.NextScaleMul = MeleeHeavyContext ? Mathf.Max(1f, profile.heavyHitBloodScale) : 1f;
+            bool volumetricSpawned = !fleshBlocked && fluidKind
+                && DMVolumetricBlood.TrySpawn(profile, bodyType, transform, point, normal, travel);
+
             GameObject splatter = response.splatter == DMEnemyHitFxKind.Blood && !allowsBlood
                 ? null
                 : profile.ResolveFxPrefab(response.splatter);
@@ -417,7 +421,17 @@ namespace Project.Combat
                 ? null
                 : profile.ResolveFxPrefab(response.sparks);
 
+            if (fluidKind && Random.value >= (MeleeHeavyContext ? profile.heavyHitBloodChance : profile.lightHitBloodChance))
+                splatter = null;
+
+            if (volumetricSpawned && fluidKind)
+                splatter = null;
+
             if (splatter == null && sparks == null)
+                return;
+
+            float now = Time.time;
+            if (now - lastBurstTime < profile.perEnemyMinInterval)
                 return;
             if (!DMEnemyHitFx.TryConsumeBurstBudget(profile.fxBurstBudget))
                 return;
@@ -432,20 +446,6 @@ namespace Project.Combat
 
             Vector3 entry = DMEnemyHitFx.ResolveEntrySprayDirection(normal, travel, profile.bloodEntryNormalBlend);
             Vector3 spawnPoint = point + normal * 0.015f;
-
-            // KriptoFX volumetric fluid replaces the blood / coolant particle (flesh needs blood allowed; mechs always); sparks stay.
-            bool fleshBlocked = bodyType == DMEnemyBodyType.Humanoid && !allowsBlood;
-            // 2026-10-13: not every stroke bleeds. Light hits roll lightHitBloodChance, heavy / charged roll heavyHitBloodChance and spray bigger.
-            bool fluidKind = response.splatter == DMEnemyHitFxKind.Blood || response.splatter == DMEnemyHitFxKind.Coolant;
-            if (fluidKind && Random.value >= (MeleeHeavyContext ? profile.heavyHitBloodChance : profile.lightHitBloodChance))
-            {
-                fleshBlocked = true;
-                splatter = null;
-            }
-            DMVolumetricBlood.NextScaleMul = MeleeHeavyContext ? Mathf.Max(1f, profile.heavyHitBloodScale) : 1f;
-            if (!fleshBlocked && DMVolumetricBlood.TrySpawn(profile, bodyType, transform, point, normal, travel)
-                && (response.splatter == DMEnemyHitFxKind.Blood || response.splatter == DMEnemyHitFxKind.Coolant))
-                splatter = null;
 
             if (splatter != null)
             {

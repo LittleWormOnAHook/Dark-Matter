@@ -12,6 +12,88 @@ namespace Project.AI
     {
         private static readonly RaycastHit[] Hits = new RaycastHit[8];
         private static readonly Collider[] OverlapHits = new Collider[16];
+        private static readonly Vector3[] EscapeNodes = new Vector3[18];
+        private static readonly float[] EscapeCosts = new float[18];
+        private static readonly int[] EscapeParents = new int[18];
+        private static readonly bool[] EscapeVisited = new bool[18];
+
+        // Rare loop recovery only, not a predictive fan or a replacement pathfinder.
+        // Try a bounded route around the current collider's expanded footprint.
+        // Every edge is capsule-checked against ALL blockers, including neighbouring rocks.
+        internal static bool TryBuildLocalEscape(Transform self, Collider obstacle, Vector3 goal,
+            DM_EnemyBrainProfile profile, List<Vector3> points)
+        {
+            points.Clear();
+            ResolveCapsule(self, profile, out float radius, out _, out Vector3 bottom, out Vector3 top);
+            Bounds bounds = obstacle.bounds;
+            float padding = radius + ResolveStandoff(profile) + 0.25f;
+            EscapeNodes[0] = self.position;
+            EscapeNodes[1] = goal;
+            for (int i = 0; i < 4; i++)
+                EscapeNodes[i + 2] = new Vector3(i % 2 == 0 ? bounds.min.x - padding : bounds.max.x + padding,
+                    self.position.y, i < 2 ? bounds.min.z - padding : bounds.max.z + padding);
+            int nodeCount = 6;
+            int mask = ChaseObstructionMask;
+            int neighbours = Physics.OverlapSphereNonAlloc(self.position, 10f, OverlapHits, mask, QueryTriggerInteraction.Ignore);
+            for (int h = 0; h < neighbours && nodeCount + 4 <= EscapeNodes.Length; h++)
+            {
+                Collider neighbour = OverlapHits[h];
+                if (neighbour == null || neighbour == obstacle || IsSelfCollider(neighbour, self) ||
+                    (!(neighbour is BoxCollider) && !(neighbour is MeshCollider)) ||
+                    neighbour.GetComponentInParent<EnemyAiController>() != null ||
+                    neighbour.bounds.max.y < self.position.y + radius * 2f) continue;
+                Bounds nearby = neighbour.bounds;
+                for (int corner = 0; corner < 4; corner++)
+                    EscapeNodes[nodeCount++] = new Vector3(corner % 2 == 0 ? nearby.min.x - padding : nearby.max.x + padding,
+                        self.position.y, corner < 2 ? nearby.min.z - padding : nearby.max.z + padding);
+            }
+            for (int i = 0; i < nodeCount; i++)
+            {
+                EscapeCosts[i] = i == 0 ? 0f : float.PositiveInfinity;
+                EscapeParents[i] = -1;
+                EscapeVisited[i] = false;
+            }
+            for (int iteration = 0; iteration < nodeCount; iteration++)
+            {
+                int next = -1;
+                for (int i = 0; i < nodeCount; i++)
+                    if (!EscapeVisited[i] && !float.IsPositiveInfinity(EscapeCosts[i]) &&
+                        (next < 0 || EscapeCosts[i] < EscapeCosts[next])) next = i;
+                if (next < 0) break;
+                if (next == 1)
+                {
+                    for (int at = 1; at > 0; at = EscapeParents[at]) points.Add(EscapeNodes[at]);
+                    points.Reverse();
+                    return points.Count > 0;
+                }
+                EscapeVisited[next] = true;
+                Vector3 offset = EscapeNodes[next] - self.position; offset.y = 0f;
+                for (int to = 1; to < nodeCount; to++)
+                {
+                    if (EscapeVisited[to] || to == next) continue;
+                    Vector3 delta = EscapeNodes[to] - EscapeNodes[next]; delta.y = 0f;
+                    float length = delta.magnitude;
+                    if (length < 0.01f || EscapeCosts[next] + length >= EscapeCosts[to]) continue;
+                    if (TryCapsuleCast(self, bottom + offset, top + offset, radius + 0.05f,
+                        delta / length, length, mask, out _)) continue;
+                    // Casts may miss a collider containing the endpoint.
+                    Vector3 endOffset = EscapeNodes[to] - self.position; endOffset.y = 0f;
+                    int overlaps = Physics.OverlapCapsuleNonAlloc(bottom + endOffset, top + endOffset,
+                        radius, OverlapHits, mask, QueryTriggerInteraction.Ignore);
+                    bool occupied = overlaps == OverlapHits.Length;
+                    for (int h = 0; h < overlaps && !occupied; h++)
+                    {
+                        Collider hit = OverlapHits[h];
+                        if (hit != null && !IsSelfCollider(hit, self) && !(hit is TerrainCollider) &&
+                            hit.bounds.max.y > self.position.y + radius * 2f) occupied = true;
+                    }
+                    if (occupied) continue;
+                    EscapeCosts[to] = EscapeCosts[next] + length;
+                    EscapeParents[to] = next;
+                }
+            }
+            return false;
+        }
         private static readonly Vector3[] BufferProbeDirections =
         {
             Vector3.forward, Vector3.back, Vector3.right, Vector3.left
@@ -113,9 +195,12 @@ namespace Project.AI
             }
 
             Vector3 forward = desiredForSlide.sqrMagnitude > 0.0001f ? desiredForSlide.normalized : desiredStep.normalized;
-            Vector3 probedNormal = Vector3.zero;
+            RaycastHit forwardHit = default;
             bool headOnBlock = forward.sqrMagnitude > 0.0001f &&
-                               TryProbeWallNormal(self, bottom, top, radius, forward, profile, mask, out probedNormal);
+                TryCapsuleCast(self, bottom, top, radius, forward.normalized,
+                    profile.chaseWallProbeDistance, mask, out forwardHit);
+            Vector3 probedNormal = headOnBlock ? forwardHit.normal : Vector3.zero;
+            Collider contactSurface = headOnBlock ? forwardHit.collider : null;
 
             // Retain contact across short-probe misses until the destination corridor
             // clears. The diagonal probe bridges rounded capsule contact at corners.
@@ -138,6 +223,7 @@ namespace Project.AI
                             contactProbe, mask, out sideHit))
                     {
                         probedNormal = sideHit.normal;
+                        contactSurface = sideHit.collider;
                         headOnBlock = true;
                     }
                 }
@@ -146,6 +232,8 @@ namespace Project.AI
                     ai.ChaseWallFollowSideSign = 0;
                     ai.ChaseWallFollowSideLockUntil = 0f;
                     ai.chaseWallLastContactNormal = Vector3.zero;
+                    ai.ChaseWallSurface = null;
+                    ai.ChaseWallSurfaceNormal = Vector3.zero;
                 }
             }
 
@@ -177,6 +265,17 @@ namespace Project.AI
                 toFollowImmediate.y = 0f;
                 Vector3 wallNormalImmediate = probedNormal.sqrMagnitude > 0.0001f ? probedNormal : -forward;
                 wallNormalImmediate.y = 0f;
+                wallNormalImmediate.Normalize();
+                // Around one convex box, a latched winding direction advances the
+                // contact normal in one direction. A cast snapping back to the broad
+                // face at a thin endpoint must not reverse that established progress.
+                if (IsThinWallBox(contactSurface as BoxCollider, radius) && ai.ChaseWallSurface == contactSurface &&
+                    ai.ChaseWallFollowSideSign != 0 && ai.ChaseWallSurfaceNormal.sqrMagnitude > 0.0001f &&
+                    Vector3.SignedAngle(ai.ChaseWallSurfaceNormal, wallNormalImmediate, Vector3.up) *
+                        ai.ChaseWallFollowSideSign < 0f)
+                    wallNormalImmediate = ai.ChaseWallSurfaceNormal;
+                ai.ChaseWallSurface = contactSurface;
+                ai.ChaseWallSurfaceNormal = wallNormalImmediate;
                 if (wallNormalImmediate.sqrMagnitude > 0.0001f)
                 {
                     result.InWallBufferContact = true;
@@ -185,8 +284,39 @@ namespace Project.AI
                 }
 
                 bool keepLatchedSide = ai.ChaseWallFollowSideSign != 0;
+                if (!keepLatchedSide && contactSurface is BoxCollider box && IsThinWallBox(box, radius))
+                {
+                    Vector3 tangent = Vector3.Cross(Vector3.up, wallNormalImmediate).normalized;
+                    Vector3 extent = box.size * 0.5f;
+                    float support = Mathf.Abs(Vector3.Dot(tangent, box.transform.TransformVector(Vector3.right * extent.x))) +
+                        Mathf.Abs(Vector3.Dot(tangent, box.transform.TransformVector(Vector3.up * extent.y))) +
+                        Mathf.Abs(Vector3.Dot(tangent, box.transform.TransformVector(Vector3.forward * extent.z)));
+                    float offset = Vector3.Dot(box.transform.TransformPoint(box.center) - self.position, tangent);
+                    float plus = Mathf.Max(0f, offset + support + radius + standoff);
+                    float minus = Mathf.Max(0f, -offset + support + radius + standoff);
+                    float plusCost = plus + Vector3.Distance(self.position + tangent * plus, worldFollowTarget);
+                    float minusCost = minus + Vector3.Distance(self.position - tangent * minus, worldFollowTarget);
+                    ai.ChaseWallFollowSideSign = plusCost <= minusCost ? 1 : -1;
+                    keepLatchedSide = true;
+                }
                 Vector3 followNow = BuildWallFollowStepLatched(
                     wallNormalImmediate, toFollowImmediate, desiredMag, ai, profile, allowSidePick: !keepLatchedSide);
+                // A walking loop never trips the stationary-stall fallback. Try the
+                // other winding only after sustained route-level lack of progress,
+                // and only if that tangent is actually collision-clear. Cooldown
+                // prevents this recovery from becoming another left/right oscillator.
+                if (ai.WallRouteRecoveryRequested)
+                {
+                    Vector3 escape = SlideCapsuleStep(self, bottom, top, radius, -followNow, standoff, passes, mask);
+                    if (escape.sqrMagnitude >= minProgress * minProgress &&
+                        Vector3.Dot(escape, -followNow) > 0f)
+                    {
+                        ai.ChaseWallFollowSideSign = ai.ChaseWallFollowSideSign > 0 ? -1 : 1;
+                        ai.ChaseWallSurfaceNormal = wallNormalImmediate;
+                        ai.NoteWallRouteRecovery();
+                        followNow = -followNow;
+                    }
+                }
                 Vector3 followedNow = SlideCapsuleStep(self, bottom, top, radius, followNow, standoff, passes, mask);
                 followedNow += standoffPush;
                 if (followedNow.sqrMagnitude > 0.000001f)
@@ -646,6 +776,18 @@ namespace Project.AI
                 sign = 1;
 
             return tangent * sign * magnitude;
+        }
+
+        private static bool IsThinWallBox(BoxCollider box, float radius)
+        {
+            if (box == null) return false;
+            Vector3 scale = box.transform.lossyScale;
+            float x = Mathf.Abs(box.size.x * scale.x);
+            float z = Mathf.Abs(box.size.z * scale.z);
+            float thickness = Mathf.Min(x, z);
+            // Endpoint contacts can sample both broad faces when the wall is thinner
+            // than the mover's diameter. Keep ordinary box/corner steering unchanged.
+            return thickness < radius * 2f && Mathf.Max(x, z) > thickness * 2f;
         }
 
         private static bool TryProbeWallNormal(

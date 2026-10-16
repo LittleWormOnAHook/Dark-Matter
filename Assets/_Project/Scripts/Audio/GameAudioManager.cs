@@ -15,6 +15,9 @@ namespace Project.Audio
         private AudioSource musicSource;
         private AudioSource uiSource;
         private AudioSource loadingSource;
+        private AudioSource playerImpactSource;
+        private AudioSource playerPainSource;
+        private float lastPlayerPainTime = float.NegativeInfinity;
         private AudioSource[] sfxPool;
         private int sfxPoolIndex;
         private int lastMusicTrackIndex = -1;
@@ -51,6 +54,14 @@ namespace Project.Audio
 
         private void BuildSources()
         {
+            playerImpactSource = gameObject.AddComponent<AudioSource>();
+            playerImpactSource.playOnAwake = false;
+            playerImpactSource.spatialBlend = 0f;
+            playerImpactSource.priority = 32;
+            playerPainSource = gameObject.AddComponent<AudioSource>();
+            playerPainSource.playOnAwake = false;
+            playerPainSource.spatialBlend = 0f;
+            playerPainSource.priority = 40;
             musicSource = gameObject.AddComponent<AudioSource>();
             musicSource.loop = true;
             musicSource.playOnAwake = false;
@@ -263,23 +274,64 @@ namespace Project.Audio
             PlayClip3D(clip, position, volume, Random.Range(pitch * 0.97f, pitch * 1.03f));
         }
 
-        public void PlayWeaponSwing(Vector3 position)
+        public void PlayMeleeSwing(Vector3 position)
         {
-            PlayCombatClip(PickClip(profile?.weaponSwingClips), position, 0.55f);
+            PlayCombatClip(PickCombatClip("meleeSwingClips", profile?.meleeSwingClips), position, 0.55f);
         }
 
-        public void PlayWeaponHit(Vector3 position, bool isCritical)
+        public void PlayMeleeHit(Vector3 position, bool isCritical)
         {
-            AudioClip[] clips = isCritical ? profile?.weaponCriticalHitClips : profile?.weaponHitClips;
+            AudioClip clip = PickCombatClip(isCritical ? "meleeBodyCriticalHitClips" : "meleeBodyHitClips", isCritical ? profile?.meleeBodyCriticalHitClips : profile?.meleeBodyHitClips);
+            if (clip == null) clip = PickCombatClip("meleeBodyHitClips", profile?.meleeBodyHitClips);
+            PlayCombatClip(clip, position, profile != null ? profile.meleeBodyHitVolume : 1f);
+        }
+
+        public void PlayMeleeClash(Vector3 position, bool isCritical = false)
+        {
+            AudioClip clip = PickCombatClip(isCritical ? "meleeCriticalHitClips" : "meleeHitClips", isCritical ? profile?.meleeCriticalHitClips : profile?.meleeHitClips);
+            if (clip == null) clip = PickCombatClip("meleeHitClips", profile?.meleeHitClips);
+            PlayCombatClip(clip, position, profile != null ? profile.meleeClashVolume : 1f);
+        }
+
+        public void PlayPlayerBodyHit()
+        {
+            if (profile == null || playerImpactSource == null) return;
+            AudioClip impact = PickCombatClip("playerBodyHitClips", profile.playerBodyHitClips) ?? PickCombatClip("meleeBodyHitClips", profile.meleeBodyHitClips);
+            float volume = GameSettings.SfxVolume * profile.combatVolume;
+            if (impact != null) playerImpactSource.PlayOneShot(impact, volume * profile.playerBodyHitVolume);
+            if (Time.unscaledTime - lastPlayerPainTime < profile.playerPainMinInterval) return;
+            AudioClip pain = PickCombatClip("playerPainClips", profile.playerPainClips);
+            if (pain == null || playerPainSource == null) return;
+            lastPlayerPainTime = Time.unscaledTime;
+            playerPainSource.PlayOneShot(pain, volume * profile.playerPainVolume);
+        }
+
+        public void PlayRangedHit(Vector3 position, bool isCritical)
+        {
+            AudioClip[] clips = isCritical ? profile?.rangedCriticalHitClips : profile?.rangedHitClips;
+            if (profile != null) clips = profile.ResolveCombatClips(isCritical ? "rangedCriticalHitClips" : "rangedHitClips", clips);
+            if (clips == null || clips.Length == 0)
+            {
+                PlayMeleeHit(position, isCritical);
+                return;
+            }
+
             PlayCombatClip(PickClip(clips), position, isCritical ? 1f : 0.85f);
         }
+
+        [System.Obsolete("Use PlayMeleeSwing")]
+        public void PlayWeaponSwing(Vector3 position) => PlayMeleeSwing(position);
+
+        [System.Obsolete("Use PlayMeleeHit")]
+        public void PlayWeaponHit(Vector3 position, bool isCritical) => PlayMeleeHit(position, isCritical);
 
         public void PlayPunchHit(Vector3 position, bool isCritical)
         {
             AudioClip[] clips = isCritical ? profile?.punchCriticalHitClips : profile?.punchHitClips;
+            if (profile != null) clips = profile.ResolveCombatClips(isCritical ? "punchCriticalHitClips" : "punchHitClips", clips);
             if (clips == null || clips.Length == 0)
             {
-                PlayWeaponHit(position, isCritical);
+                PlayMeleeHit(position, isCritical);
                 return;
             }
 
@@ -289,9 +341,10 @@ namespace Project.Audio
         public void PlayPunchSwing(Vector3 position)
         {
             AudioClip[] clips = profile?.punchSwingClips;
+            if (profile != null) clips = profile.ResolveCombatClips("punchSwingClips", clips);
             if (clips == null || clips.Length == 0)
             {
-                PlayWeaponSwing(position);
+                PlayMeleeSwing(position);
                 return;
             }
 
@@ -300,7 +353,7 @@ namespace Project.Audio
 
         public void PlayResourceHit(Vector3 position)
         {
-            PlayCombatClip(PickClip(profile?.resourceHitClips), position, 0.75f);
+            PlayCombatClip(PickCombatClip("resourceHitClips", profile?.resourceHitClips), position, 0.75f);
         }
 
         public void PlayButtonClick()
@@ -463,7 +516,7 @@ namespace Project.Audio
 
         private AudioClip ResolvePoiseStaggerDingClip()
         {
-            AudioClip clip = PickClip(profile?.poiseStaggerDingClips);
+            AudioClip clip = PickCombatClip("poiseStaggerDingClips", profile?.poiseStaggerDingClips);
             if (clip != null)
                 return clip;
 
@@ -565,6 +618,14 @@ namespace Project.Audio
             if (sfxPool == null || sfxPool.Length == 0)
                 return null;
 
+            // Prefer an idle voice so a footstep cannot immediately cut off an impact.
+            for (int i = 0; i < sfxPool.Length; i++)
+            {
+                int index = (sfxPoolIndex + i) % sfxPool.Length;
+                if (sfxPool[index].isPlaying) continue;
+                sfxPoolIndex = (index + 1) % sfxPool.Length;
+                return sfxPool[index];
+            }
             AudioSource source = sfxPool[sfxPoolIndex];
             sfxPoolIndex = (sfxPoolIndex + 1) % sfxPool.Length;
             return source;
@@ -596,12 +657,21 @@ namespace Project.Audio
             return profile.musicTracks[index];
         }
 
+        private AudioClip PickCombatClip(string field, AudioClip[] fallback) =>
+            PickClip(profile != null ? profile.ResolveCombatClips(field, fallback) : fallback);
+
         private static AudioClip PickClip(AudioClip[] clips)
         {
             if (clips == null || clips.Length == 0)
                 return null;
 
-            return clips[Random.Range(0, clips.Length)];
+            int first = Random.Range(0, clips.Length);
+            for (int i = 0; i < clips.Length; i++)
+            {
+                AudioClip clip = clips[(first + i) % clips.Length];
+                if (clip != null) return clip;
+            }
+            return null;
         }
 
         public static void EnsureExists()

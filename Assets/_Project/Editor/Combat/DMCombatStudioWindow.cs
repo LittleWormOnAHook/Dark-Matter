@@ -233,6 +233,7 @@ namespace Project.EditorTools.Combat
                         "poiseRegenDelayAfterHit");
                 });
 
+                DrawCombatHitAudioSection();
                 DrawPoiseStaggerAudioSection();
 
                 DrawCombatActorHeader(
@@ -598,12 +599,18 @@ namespace Project.EditorTools.Combat
             DMStudioStyles.DrawSection("Genesis ranged authoring", DMStudioStyles.ContentPanel, () =>
             {
                 EditorGUILayout.HelpBox(
-                    "Ammo FX, Hit Catalog, and Surface Damage already live in Genesis Studio → Combat. "
+                    "Ammo FX, scope profile/overlay, Hit Catalog, and Surface Damage live in Genesis Studio → Combat. "
                     + "This tab is a jump list — it does not duplicate those inspectors.",
                     MessageType.Info);
 
                 if (GUILayout.Button("Genesis Studio → Combat → Ammo FX", GUILayout.Height(28f)))
                     GenesisStudioWindow.OpenTo("combat", "ammo-fx");
+
+                if (GUILayout.Button("Genesis Studio → Combat → Scope Profile", GUILayout.Height(28f)))
+                    GenesisStudioWindow.OpenTo("combat", "scope-profile");
+
+                if (GUILayout.Button("Genesis Studio → Combat → Scope Overlay", GUILayout.Height(28f)))
+                    GenesisStudioWindow.OpenTo("combat", "scope-overlay");
 
                 if (GUILayout.Button("Genesis Studio → Combat → Hit Catalog", GUILayout.Height(28f)))
                     GenesisStudioWindow.OpenTo("combat", "hit-catalog");
@@ -769,7 +776,7 @@ namespace Project.EditorTools.Combat
                 "Assets/_Project/Documentation/Design/Combat/DM_Enemy_Spacing_And_Hit_Marks_Plan.md";
 
             DMStudioRoadmapPanel.DrawIntro(
-                "§31 order from DMG_Combat_Plan_v2.md (sync Oct 2026). Phase 2 signed off Oct 5; Phase 3 + hit marks/spacing on disk — play-test before calling shipped.",
+                "§31 order from DMG_Combat_Plan_v2.md (v2.4, Oct 2026). Phase 3 signed off Oct 8 in v1.6.5. Active gate: §31 #4 Combat Director. Hybrid moving melee / Hold E / charge A–B–C: play-test WIP on branch before v2.5 doc bump.",
                 MessageType.Info);
 
             DMStudioRoadmapPanel.DrawDocLinks(
@@ -798,8 +805,8 @@ namespace Project.EditorTools.Combat
             DMStudioRoadmapPanel.DrawPhase(
                 "§31 #3",
                 "Unified brain + engagement spacing",
-                DMStudioRoadmapPanel.Status.InProgress,
-                "Oct 7 disk: DMEnemyBrain + DMEnemyEngagementDirector (1 melee engager, Hold ring, hysteresis). Profile toggles rollback. Not play-tested / not committed per handoff.");
+                DMStudioRoadmapPanel.Status.Done,
+                "Signed off Oct 8, 2026: DMEnemyBrain + DMEnemyEngagementDirector (D1 engager, Hold ring, hysteresis). Rollback via enableCombatDirector off. See DM_Enemy_Spacing_And_Hit_Marks_Plan.md §10.");
 
             DMStudioRoadmapPanel.DrawPhase(
                 "§31 #4",
@@ -854,8 +861,8 @@ namespace Project.EditorTools.Combat
             DMStudioRoadmapPanel.DrawPhase(
                 "B",
                 "Hit marks & DMHitbox layer",
-                DMStudioRoadmapPanel.Status.InProgress,
-                "Per-bone triggers (layer 26), HDRP decal projectors, body-type blood/coolant/sparks, DM_EnemyHitMarkProfile + Genesis Hit Marks tab. Play-test pending.");
+                DMStudioRoadmapPanel.Status.Done,
+                "Shipped with Phase 3: per-bone triggers (layer 26), HDRP decals, DM_EnemyHitMarkProfile + Genesis Hit Marks tab. Spot-check FRED/Android in Play as needed.");
 
             DMStudioRoadmapPanel.DrawPhase(
                 "B+",
@@ -878,8 +885,14 @@ namespace Project.EditorTools.Combat
             DMStudioRoadmapPanel.DrawPhase(
                 "A",
                 "Engagement spacing (Part A)",
+                DMStudioRoadmapPanel.Status.Done,
+                "Merged into Phase 3 sign-off: token rotation, world-anchored hold points, facing cone. Ranged token pool unused; UITK debug overlay deferred.");
+
+            DMStudioRoadmapPanel.DrawPhase(
+                "§10",
+                "Melee moving layers (FullBody / UpperBody)",
                 DMStudioRoadmapPanel.Status.InProgress,
-                "Merged into Phase 3: token rotation, world-anchored hold points, facing cone, ring rotation removed. Ranged token pool unused; UITK debug overlay deferred.");
+                "Policy in DM_Melee_Locomotion_Layer_Policy.md: Base locomotion, UpperBody Hold E combo, FullBody charge/release + hybrid moving. Play-test sign-off pending on WIP branch.");
 
             DMStudioRoadmapPanel.DrawPhase(
                 "Sandbox",
@@ -898,6 +911,47 @@ namespace Project.EditorTools.Combat
                     + "Same fields appear under Genesis Studio → Combat → Combat Core.",
                     MessageType.Info);
             });
+        }
+
+        private void DrawCombatHitAudioSection()
+        {
+            if (audioProfile == null)
+                audioProfile = AssetDatabase.LoadAssetAtPath<GameAudioProfile>(AudioProfilePath);
+
+            if (serializedAudioProfile == null && audioProfile != null)
+                serializedAudioProfile = new SerializedObject(audioProfile);
+
+            if (serializedAudioProfile == null)
+                return;
+
+            serializedAudioProfile.Update();
+            EditorGUI.BeginChangeCheck();
+            Undo.RecordObject(audioProfile, "Edit Combat Hit Audio");
+
+            DMStudioStyles.DrawSection("Combat hit audio (GameAudioProfile)", DMStudioStyles.ContentPanel, () =>
+            {
+                EditorGUILayout.ObjectField("Game audio profile", audioProfile, typeof(GameAudioProfile), false);
+                EditorGUILayout.HelpBox(
+                    "Melee swing/hit clips for blades and punches. Ranged hit clips for gun/body impacts; "
+                    + "empty ranged arrays fall back to melee hits.",
+                    MessageType.Info);
+                using (DMStudioStyles.BeginProfileInspector(serializedAudioProfile))
+                {
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedAudioProfile,
+                        "meleeSwingClips",
+                        "meleeHitClips",
+                        "meleeCriticalHitClips",
+                        "rangedHitClips",
+                        "rangedCriticalHitClips");
+                }
+            });
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                serializedAudioProfile.ApplyModifiedProperties();
+                EditorUtility.SetDirty(audioProfile);
+            }
         }
 
         private void DrawPoiseStaggerAudioSection()

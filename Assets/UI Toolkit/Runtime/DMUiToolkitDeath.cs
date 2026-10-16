@@ -300,10 +300,13 @@ namespace Project.UI
             HideInternal();
             UIManager ui = Object.FindAnyObjectByType<UIManager>(FindObjectsInactive.Include);
             if (ui != null)
+            {
                 ui.RetryFromDeath();
-            else if (!GameSaveSystem.TryLoadNewestSave(out _))
-                UnityEngine.SceneManagement.SceneManager.LoadScene(
-                    UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex);
+                return;
+            }
+
+            GameObject player = PlayerLocator.FindPlayerObject();
+            player?.GetComponent<PlayerDeathHandler>()?.Respawn();
         }
 
         private void HandleExit()

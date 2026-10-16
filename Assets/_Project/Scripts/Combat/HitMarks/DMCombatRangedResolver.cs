@@ -169,6 +169,13 @@ namespace Project.Combat
                 return;
             }
 
+            if (receiver != null && receiver.GetComponentInParent<EnemyHealth>() != null)
+            {
+                if (playImpactAudio)
+                    CombatHitResolver.PlayImpactHitAudio(hitPoint, isCritical);
+                return;
+            }
+
             if (!ShouldPlayWorldImpact(receiver, ammoItem))
                 return;
 

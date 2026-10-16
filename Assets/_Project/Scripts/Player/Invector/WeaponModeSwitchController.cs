@@ -115,6 +115,9 @@ namespace Project.Player.Invector
 
         private void LateUpdate()
         {
+            if (IsPlayerAiming())
+                EnforceLaserPrefOffWhileAiming();
+
             if (!lastAppliedAiming || activeAimLaserRoot == null)
                 return;
 
@@ -310,6 +313,22 @@ namespace Project.Player.Invector
         public void ApplyLaserModes()
         {
             ApplyLaserModes(forceAiming: null);
+        }
+
+        private void EnforceLaserPrefOffWhileAiming()
+        {
+            ItemData drawn = equipment != null ? equipment.DrawnWeaponItem : null;
+            if (drawn == null)
+                return;
+
+            bool wantsLaser = IsSciFiPistol(drawn)
+                ? pistolLaserBeamEnabled || pistolLaserSightEnabled
+                : IsSurvivalRifle(drawn) && (rifleLaserBeamEnabled || rifleLaserSightEnabled);
+
+            if (wantsLaser)
+                return;
+
+            DisableLaserStacksOnKnownWeapons();
         }
 
         private void ApplyLaserModes(bool? forceAiming)

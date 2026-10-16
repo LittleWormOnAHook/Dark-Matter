@@ -22,11 +22,52 @@ namespace Project.EditorTools.GenesisStudio
         CombatCoreOnly = 13,
         LootChestTimersOnly = 14,
         LootChestPresentationOnly = 15,
-        EnemyBrainChaseWallOnly = 16
+        EnemyBrainChaseWallOnly = 16,
+        ScopeOverlayOnly = 17
     }
 
     internal static class DMStudioProfileSections
     {
+        private static readonly string[] ScopeOverlayFields =
+        {
+            "scopeCrosshairSprite",
+            "scopeOverlayUseSpriteCrosshair",
+            "rifleScopeMaskRadius",
+            "rifleScopeMaskScale",
+            "rifleScopeCrosshairScale",
+            "pistolScopeMaskRadius",
+            "pistolScopeReticleScale",
+            "useNewScopeArt",
+            "retireUguiOptics",
+            "reticleColor",
+            "ringColor",
+            "reticleLineWidth",
+            "reticleCenterGap",
+            "milDotsPerArm",
+            "rifleScopeLabel",
+            "pistolScopeLabel",
+            "scopeHint",
+            "rifleReticleColor",
+            "rifleRingColor",
+            "rifleOuterCrosshairColor",
+            "rifleOuterCrosshairScale",
+            "rifleOuterCrosshairEmission",
+            "rifleOuterCrosshairEmissionColor",
+            "rifleRingOuterDiameterPx",
+            "pistolReticleColor",
+            "pistolRingColor",
+            "pistolOuterCrosshairColor",
+            "pistolOuterCrosshairScale",
+            "pistolOuterCrosshairEmission",
+            "pistolOuterCrosshairEmissionColor",
+            "pistolRingOuterDiameterPx",
+            "scopeCenterMaskEnabled",
+            "scopeCenterMaskColor",
+            "scopeCenterMaskAlpha",
+            "scopeCenterMaskBlurPixels",
+            "scopeInnerRingViewportEdgeSoftness"
+        };
+
         private static readonly string[] FootstepsAudioFields =
         {
             "defaultFootsteps",
@@ -266,6 +307,12 @@ namespace Project.EditorTools.GenesisStudio
             "hitSlideMaxTotalMeters",
             "hitstopHeavyFrames",
             "parryWindowSeconds",
+            "playerCorpseStayInPlace",
+            "playerCorpseSettleSeconds",
+            "playerCorpseMaxSlideSpeed",
+            "playerRespawnSettleSeconds",
+            "playerRespawnPostStandUpLockSeconds",
+            "playerRespawnPostStandUpSettleSeconds",
             "meleeHitboxWidthScale",
             "meleeHitboxReachScale",
             "meleeBlockDefenseHalfAngle",
@@ -351,6 +398,10 @@ namespace Project.EditorTools.GenesisStudio
             "closeRangeFullAccuracyDistance",
             "closeRangeSpreadScale",
             "fireRate",
+            "rifleScopedFireInterval",
+            "pistolScopedFireInterval",
+            "rifleScopedFireIntervalPercentModifier",
+            "pistolScopedFireIntervalPercentModifier",
             "shotsPerBurst",
             "burstFireRate",
             "magazineSize",
@@ -500,6 +551,7 @@ namespace Project.EditorTools.GenesisStudio
                 DMStudioProfileSectionFilter.LootChestTimersOnly => IsLootChestTimerField(propertyPath),
                 DMStudioProfileSectionFilter.LootChestPresentationOnly => !IsLootChestTimerField(propertyPath),
                 DMStudioProfileSectionFilter.EnemyBrainChaseWallOnly => IsEnemyBrainChaseWallField(propertyPath),
+                DMStudioProfileSectionFilter.ScopeOverlayOnly => IsScopeOverlayField(propertyPath),
                 _ => true
             };
         }
@@ -519,7 +571,7 @@ namespace Project.EditorTools.GenesisStudio
                 DMStudioProfileSectionFilter.FootstepsAudioOnly =>
                     "Default fallback, Unity-tag, and terrain-layer 0-10 clip libraries on GameAudioProfile.",
                 DMStudioProfileSectionFilter.CombatAmmoOnly =>
-                    "Live ammo combat fields (Play Mode edits push to the drawn weapon each tick). Fire Rate / burst / reload / mag on the loaded ammo profile win when greater than zero; else the weapon ItemData is used. Recoil Vertical/Horizontal are aim kick; fireTrauma / impactTrauma feed the CameraShake hub (0 = off). Rifle column on Ammo Recoil Profile still overrides two-hand weapons. Invector weapon recoilUp does nothing.",
+                    "Live ammo combat fields (Play Mode edits push to the drawn weapon each tick). Fire Rate / burst / reload / mag on the loaded ammo profile win when greater than zero; else the weapon ItemData is used. Scoped cadence: DM_ScopeProfile rifle/pistol fire interval wins; ammo Rifle/Pistol Scoped Fire Interval is fallback only when profile interval is unset (≤0). Ammo Rifle/Pistol Scoped Fire Interval Percent Modifier applies ±10% to that base (profile or fallback seconds), then Rifles scope skills, then min interval. Recoil Vertical/Horizontal are aim kick; fireTrauma / impactTrauma feed the CameraShake hub (0 = off). Rifle column on Ammo Recoil Profile still overrides two-hand weapons. Invector weapon recoilUp does nothing.",
                 DMStudioProfileSectionFilter.CombatCoreOnly =>
                     "All DM_CombatCoreProfile combat fields (Resources/Combat). Combat Studio → Core / Melee organizes them under Player vs Enemy.",
                 DMStudioProfileSectionFilter.LandingHeightsOnly =>
@@ -540,9 +592,13 @@ namespace Project.EditorTools.GenesisStudio
                     "Lid timing, loot window delay, interact and auto-close range, storage defaults, dissolve look, and the enemy drop box prefab on DM_LootChestProfile. Timers have their own tab.",
                 DMStudioProfileSectionFilter.EnemyBrainChaseWallOnly =>
                     "NavMesh-free chase wall slide: standoff buffer, retreat, predictive fan, hysteresis, and stuck → investigate on DM_EnemyBrainProfile. Full brain tuning lives under AI & awareness.",
+                DMStudioProfileSectionFilter.ScopeOverlayOnly =>
+                    "UITK scope overlay cosmetics on DM_ScopeProfile — reticle / ring / outer mil-dot colors, emission, outer viewport mask (dims outside ring outer edge), ring diameter. Gameplay zoom, cadence, sway, accuracy, and damage still use profile bases + Rifles scope skills (skill_scope_*).",
                 _ => string.Empty
             };
         }
+
+        private static bool IsScopeOverlayField(string propertyPath) => MatchesField(propertyPath, ScopeOverlayFields);
 
         private static bool IsEnemyBrainChaseWallField(string propertyPath)
         {

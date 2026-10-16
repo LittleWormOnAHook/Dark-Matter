@@ -49,8 +49,8 @@ alwaysApply: true
 
 - **No silent restore** — never checkout/reset/revert to older git or depot save points without explicit user confirmation in the current message.
 - **Auto refresh after edits** — see `unity-agent-workflow.mdc`. Prefer `mode: if_dirty`; avoid `mode: force` unless import stays stale.
-- **After script/asset edits:** wait for compile + domain reload to finish, then check Unity console for **errors** before claiming done. See `unity-agent-workflow.mdc`.
-- **Before git commit:** Unity console must have no errors; stage scenes, prefabs, materials, terrain, and new assets with script changes. See `unity-agent-workflow.mdc`.
+- **After script/asset edits:** wait for compile + domain reload to finish, then check Unity console for **errors and warnings** (zero of both) before claiming done. See `unity-agent-workflow.mdc`.
+- **Before git commit:** Unity console must have no errors or warnings; stage scenes, prefabs, materials, terrain, and new assets with script changes. See `unity-agent-workflow.mdc`.
 - Do not clone this repo onto an agent VM. Play uses the live Unity folder the editor has open.
 
 ## Documentation discovery

@@ -181,6 +181,19 @@ namespace Project.Data
         public float recoilFireRateScale = 4.5f;
         [Tooltip("Single shots or burst groups per second. Loaded ammo overrides the weapon when ammo fireRate > 0.")]
         public float fireRate = 4f;
+        [Header("Scoped fire (seconds per shot in scope ADS)")]
+        [Tooltip("Optional scoped rifle cadence when DM_ScopeProfile rifle interval is unset (≤0). Global scope profile always wins when set (+ scope skills). 0 = use profile.")]
+        [Range(0f, 5f)]
+        public float rifleScopedFireInterval;
+        [Tooltip("Optional scoped pistol cadence when DM_ScopeProfile pistol interval is unset (≤0). Global scope profile always wins when set (+ scope skills). 0 = use profile.")]
+        [Range(0f, 5f)]
+        public float pistolScopedFireInterval;
+        [Tooltip("Per-ammo tweak to scoped rifle interval after DM_ScopeProfile base (or ammo fallback seconds). +10 = 10% faster (shorter interval), −10 = 10% slower. 0 = no change. Scope skills apply after this.")]
+        [Range(-10f, 10f)]
+        public float rifleScopedFireIntervalPercentModifier;
+        [Tooltip("Per-ammo tweak to scoped pistol interval after DM_ScopeProfile base (or ammo fallback seconds). +10 = 10% faster (shorter interval), −10 = 10% slower. 0 = no change. Scope skills apply after this.")]
+        [Range(-10f, 10f)]
+        public float pistolScopedFireIntervalPercentModifier;
         [Header("Burst")]
         [Tooltip("1 = semi / auto single. 2-5 fires that many rounds per trigger cycle.")]
         [Range(1, 5)]

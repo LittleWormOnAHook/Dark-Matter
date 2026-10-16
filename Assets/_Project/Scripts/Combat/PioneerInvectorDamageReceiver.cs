@@ -192,8 +192,8 @@ namespace Project.Combat
             Collider collider = GetComponent<Collider>();
             if (collider != null)
             {
-                PioneerInvectorDamageBridge.ApplyPioneerDamageToCollider(collider, damage, source, isCritical, hitPoint);
-                PlayMeleeHitAudio(hitPoint, isCritical);
+                if (PioneerInvectorDamageBridge.ApplyPioneerDamageToCollider(collider, damage, source, isCritical, hitPoint))
+                    PlayMeleeHitAudio(hitPoint, isCritical);
             }
         }
 
@@ -228,7 +228,7 @@ namespace Project.Combat
         private void PlayMeleeHitAudio(Vector3? hitPoint, bool isCritical)
         {
             Vector3 point = hitPoint ?? transform.position;
-            CombatHitAudio.PlayWeaponHit(point, isCritical, GetComponent<Collider>());
+            MeleeHitAudio.PlayMeleeHit(point, isCritical, GetComponent<Collider>());
         }
 
         private void SpawnHitVfx(float damage, GameObject source, Vector3? hitPoint)

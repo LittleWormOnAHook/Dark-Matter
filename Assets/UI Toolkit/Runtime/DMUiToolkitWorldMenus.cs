@@ -843,6 +843,7 @@ namespace Project.UI
             if (mode == null) return;
             mode.SetPistolScopeEnabled(!mode.PistolScopeEnabled);
             RefreshWeapon();
+            weaponController?.ApplyLaserModes();
         }
 
         private void ToggleRifleScope()
@@ -851,6 +852,7 @@ namespace Project.UI
             if (mode == null) return;
             mode.SetRifleScopeEnabled(!mode.RifleScopeEnabled);
             RefreshWeapon();
+            weaponController?.ApplyLaserModes();
         }
 
         private void RefreshWeapon()

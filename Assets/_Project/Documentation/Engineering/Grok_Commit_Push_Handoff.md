@@ -233,4 +233,30 @@ git push
 
 ---
 
+## 7. ChatGPT death / retry slide fix (Oct 15, 2026)
+
+**Uncommitted (verify in Play before merge with huge WIP commit):**
+
+| File | Change |
+|------|--------|
+| `Assets/_Project/Scripts/Player/Invector/PioneerInvectorDeathRagdoll.cs` | Stop ragdoll coroutines before reset; `ResetMeleeAfterRevive` on respawn/stand-up; `KillBodyMotion` root non-kinematic when alive; ragdoll bone colliders trigger/disabled; clear Invector lock flags after stand-up |
+| `Assets/_Project/Scripts/Survival/SurvivalStats.cs` | Player body-hit SFX + `CombatEvents.RaisePlayerDamaged` on confirmed external damage (split to separate commit if desired) |
+
+**Already committed:** `0650c88e3` (respawn settle), `84830a476` (corpse freeze + `DM_CombatCoreProfile`).
+
+**UX (Oct 15):** Bio Gel = in-place `Respawn()` (consumes gel). **RETRY** = same in-place `Respawn()` without gel (no save reload). Checkpoint rollback = title Continue / load save flow.
+
+**Play-test matrix:** die on flat ground → **RETRY** (in-place Respawn) → idle 1s no skate → WASD normal. Tune on `DM_CombatCoreProfile`: `playerRespawnSettleSeconds` (0.85), `playerRespawnPostStandUpLockSeconds` (0.35), `playerRespawnPostStandUpSettleSeconds` (0.75–1.25 if idle slide persists). No `Player_v7` capsule retune.
+
+**Optional split commit (before or after main §3.3 commit):**
+
+```powershell
+git add "Assets/_Project/Scripts/Player/Invector/PioneerInvectorDeathRagdoll.cs"
+git commit -m @"
+fix: player respawn slide — ragdoll coroutine cancel, bone collider restore, melee tag clear after stand-up.
+"@
+```
+
+---
+
 *End of handoff.*

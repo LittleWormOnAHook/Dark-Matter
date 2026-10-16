@@ -1,4 +1,5 @@
 using Invector.vShooter;
+using Project.Core;
 using Project.Data;
 using Project.Inventory;
 using Project.Progression;
@@ -12,7 +13,9 @@ namespace Project.Combat
     /// 2026-10-13 (h): player scope / sniper mode runtime. Added to the player by WeaponModeSwitchController.
     /// Scope mode on (hold-R menu "Scope") + ranged weapon drawn + aiming = scoped: FOV zoom, UITK scope overlay,
     /// scoped fire interval, scoped range, head/chest damage multipliers, ammo gate, louder/lower shot audio.
-    /// All values in DM_ScopeProfile; skills via SkillModifierType.Scope*.
+    /// Scoped cadence base: loaded ammo rifle/pistolScopedFireInterval when &gt; 0, else DM_ScopeProfile; skills via SkillModifierType.Scope*.
+    /// Profile overlay colors/size/mask are cosmetic only — sway amplitude, zoom, cadence, accuracy, range,
+    /// and headshot damage still come from profile base values modified by allocated scope skills.
     /// </summary>
     [DefaultExecutionOrder(32000)]
     public sealed class DMScopeMode : MonoBehaviour
@@ -34,6 +37,7 @@ namespace Project.Combat
         public static float BlockedAmmoUntil { get; private set; }
 
         private EquipmentController _equipment;
+        private WeaponAmmoState _ammoState;
         private vShooterManager _shooter;
         private Invector.vCharacterController.vShooterMeleeInput _input;
         private bool _rifleOn;
@@ -137,13 +141,22 @@ namespace Project.Combat
             ApplyRifleScopePresentation(_scoped && _scopedRifle && _blend > 0.05f);
         }
 
-        private void ApplyRifleScopePresentation(bool hideBody)
+        private bool _lastRifleScopeHudSuppressed;
+
+        private void ApplyRifleScopePresentation(bool activeRifleScope)
         {
             if (_cameraOverlay == null)
                 _cameraOverlay = FindAnyObjectByType<DMCameraCollisionOverlay>(FindObjectsInactive.Include);
-            _cameraOverlay?.SetRifleScopePresentationHideBody(hideBody);
-            if (hideBody)
-                DMUiToolkitHud.RefreshMenuChrome();
+            // Keep shoulder/body visible in lens (reference); only HUD chrome is suppressed.
+            _cameraOverlay?.SetRifleScopePresentationHideBody(false);
+
+            bool suppressHud = activeRifleScope && _scopedRifle;
+            if (suppressHud == _lastRifleScopeHudSuppressed)
+                return;
+
+            _lastRifleScopeHudSuppressed = suppressHud;
+            DMUiToolkitHud.RefreshMenuChrome();
+            DMUiToolkitPilotCluster.MarkPresentationDirty();
         }
 
         private void EnterScope(bool rifle)
@@ -151,7 +164,7 @@ namespace Project.Combat
             _scoped = true;
             _scopedRifle = rifle;
             DMUiToolkitOpticsOverlay.EnsureAttached();
-            _cam = Camera.main;
+            _cam = ResolveGameplayCamera();
             if (_cam != null && _blend <= 0.001f)
                 _baseFov = _cam.fieldOfView;
         }
@@ -243,7 +256,23 @@ namespace Project.Combat
                 }
             }
             if (_patchedWeapon != null)
-                _patchedWeapon.shootFrequency = Mathf.Max(_patchedOriginalFreq, ScopedFireInterval(_scopedRifle));
+            {
+                ItemData ammo = ResolveLoadedAmmo();
+                _patchedWeapon.shootFrequency = Mathf.Max(_patchedOriginalFreq, ScopedFireInterval(_scopedRifle, ammo));
+            }
+        }
+
+        private ItemData ResolveLoadedAmmo()
+        {
+            if (_equipment == null)
+                _equipment = GetComponentInParent<EquipmentController>() ?? FindAnyObjectByType<EquipmentController>();
+            if (_equipment == null)
+                return null;
+            if (_ammoState == null)
+                _ammoState = GetComponentInParent<WeaponAmmoState>() ?? FindAnyObjectByType<WeaponAmmoState>();
+            return _ammoState != null
+                ? _ammoState.GetLoadedAmmoItem(_equipment.ActiveWeaponHotbarSlot)
+                : null;
         }
 
         private void RestoreFireInterval()
@@ -268,11 +297,14 @@ namespace Project.Combat
 
         private static float Pct(SkillModifierType type) => PlayerSkillAllocator.GetTotalBonusPercent(type) * 0.01f;
 
-        public static float ScopedFireInterval(bool rifle)
+        public static float ScopedFireInterval(bool rifle, ItemData loadedAmmo = null)
         {
             DM_ScopeProfile p = DM_ScopeProfile.Live;
-            float baseI = rifle ? p.rifleScopedFireInterval : p.pistolScopedFireInterval;
-            return Mathf.Max(p.minScopedFireInterval, baseI * (1f - Mathf.Clamp01(Pct(SkillModifierType.ScopeFireIntervalPercent))));
+            float beforeSkills = DMRangedAmmoStats.ResolveScopedFireIntervalBeforeSkills(loadedAmmo, rifle);
+            float interval = Mathf.Max(
+                p.minScopedFireInterval,
+                beforeSkills * (1f - Mathf.Clamp01(Pct(SkillModifierType.ScopeFireIntervalPercent))));
+            return interval + p.ResolveScopedPostShotWaitSeconds(rifle);
         }
 
         /// <summary>Player shot range: scoped range when scoped, else the supplied normal range.</summary>
@@ -280,10 +312,53 @@ namespace Project.Combat
         {
             if (!IsScoped)
                 return normalRange;
+            return Mathf.Max(normalRange, ResolveScopedRangeCapMeters());
+        }
+
+        /// <summary>
+        /// Scoped range cap from profile + Long Shot skill (rifle or pistol). UITK range readout shows "??m" beyond this.
+        /// </summary>
+        public static float ResolveScopedRangeCapMeters()
+        {
+            if (!IsScoped || Instance == null)
+                return 0f;
             DM_ScopeProfile p = DM_ScopeProfile.Live;
             float r = Instance._scopedRifle ? p.rifleScopedRange : p.pistolScopedRange;
             r *= 1f + Mathf.Max(0f, Pct(SkillModifierType.ScopeRangePercent));
-            return Mathf.Max(normalRange, r);
+            return r;
+        }
+
+        /// <summary>
+        /// World distance along scoped reticle aim (camera to impact). Used by UITK scope range label.
+        /// </summary>
+        public static bool TryMeasureScopedAimDistanceMeters(out float distanceMeters)
+        {
+            distanceMeters = 0f;
+            if (!IsScopedRifle || ZoomBlend < 0.05f)
+                return false;
+
+            Camera cam = ResolveGameplayCamera();
+            if (cam == null)
+                return false;
+
+            float cap = ResolveScopedRangeCapMeters();
+            float rayMax = Mathf.Max(cap * 4f, 250f);
+            Vector3 aimPoint = RangedFireSolver.ResolveReticleAimPoint(cam, rayMax, null, null);
+            distanceMeters = Vector3.Distance(cam.transform.position, aimPoint);
+            return true;
+        }
+
+        /// <summary>UITK rifle scope range line — live metres or locked readout when beyond skill cap.</summary>
+        public static string FormatScopedRangeReadout()
+        {
+            if (!TryMeasureScopedAimDistanceMeters(out float meters))
+                return string.Empty;
+
+            float cap = ResolveScopedRangeCapMeters();
+            if (meters > cap)
+                return "??m";
+
+            return Mathf.RoundToInt(meters) + " m";
         }
 
         public static float ScopedAccuracyBonusPercent
@@ -332,5 +407,29 @@ namespace Project.Combat
 
         public static float ShotVolume => IsScoped ? DM_ScopeProfile.Live.scopedShotVolume : 1f;
         public static float ShotPitch => IsScoped ? DM_ScopeProfile.Live.scopedShotPitch : 1f;
+
+        /// <summary>
+        /// Gameplay camera viewport for scoped shots (screen center + reticle sway from Steady Aim skill).
+        /// Aim direction only — spread still uses <see cref="ScopedAccuracyBonusPercent"/> and weapon accuracy.
+        /// </summary>
+        public static Vector2 GetScopedAimViewport()
+        {
+            float w = Mathf.Max(1f, Screen.width);
+            float h = Mathf.Max(1f, Screen.height);
+            Vector2 sway = ReticleSway;
+            return new Vector2(0.5f + sway.x / w, 0.5f - sway.y / h);
+        }
+
+        public static Camera ResolveGameplayCamera()
+        {
+            PlayerController pc = PlayerLocator.FindPlayerController();
+            if (pc != null && pc.GameplayCamera != null)
+                return pc.GameplayCamera;
+
+            if (Instance != null && Instance._cam != null && Instance._cam.enabled)
+                return Instance._cam;
+
+            return Camera.main;
+        }
     }
 }

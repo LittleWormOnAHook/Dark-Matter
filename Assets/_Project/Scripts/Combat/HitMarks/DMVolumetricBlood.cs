@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering.HighDefinition;
 
 namespace Project.Combat
 {
@@ -170,8 +171,6 @@ namespace Project.Combat
             }
         }
 
-        private static readonly Dictionary<Transform, float> LastByTarget = new Dictionary<Transform, float>();
-
         public static bool TrySpawn(DM_EnemyHitMarkProfile p, DMEnemyBodyType body, Transform enemy, Vector3 point, Vector3 normal, Vector3 travel, bool playerHit = false)
         {
             if (p == null || !p.useVolumetricBlood) return false;
@@ -180,16 +179,9 @@ namespace Project.Combat
                 victimRoot = enemy.root;
             DMVolumetricBloodSet set = SetFor(p, body, point);
             if (set == null || set.IsEmpty) return false;
-            if (!DMEnemyHitFx.IsWithinFxDistance(point, p.volumetricMaxDistance)) return true; // 2026-10-12: out of range = handled (no legacy fallback while KriptoFX is on)
-            if (Time.time - _lastSpawnTime < 0.06f && (point - _lastSpawnPoint).sqrMagnitude < 0.25f)
-                return !playerHit; // player: allow second path if first was a no-op duplicate guard
-            if (enemy != null)
-            {
-                Transform id = enemy;
-                if (LastByTarget.TryGetValue(id, out float lt) && Time.time - lt < 0.05f)
-                    return !playerHit;
-                LastByTarget[id] = Time.time;
-            }
+            float maxDist = Mathf.Max(0f, p.volumetricMaxDistance);
+            if (p.fxMaxDistance > maxDist) maxDist = p.fxMaxDistance;
+            if (!DMEnemyHitFx.IsWithinFxDistance(point, maxDist)) return false;
             Sweep();
             if (Active.Count >= Mathf.Max(1, p.volumetricBudget)) RecycleOldest(); // 2026-10-12: was return false -> legacy splatter once 6 sprays were alive
             int side = ResolveSide(p, enemy, travel);
@@ -207,6 +199,9 @@ namespace Project.Combat
             go.transform.SetPositionAndRotation(point, Quaternion.Euler(0f, angle + p.volumetricYawOffset, 0f));
             go.transform.localScale = Vector3.one * (Mathf.Clamp(p.volumetricAirborneScale, 0.2f, 1.5f) * NextScaleMul); NextScaleMul = 1f; // 2026-10-13 (f): smaller airborne splatter (HDRP decal size is scale-invariant)
 
+            if (!p.volumetricSpawnGroundDecals)
+                DisableGroundDecals(go);
+
             var settings = go.GetComponent<BFX_BloodSettings>();
             if (settings != null)
             {
@@ -218,8 +213,9 @@ namespace Project.Combat
                 if (grounded) settings.GroundHeight = gy;
             }
             go.SetActive(true);
-            JitterDecals(p, go, victimRoot);
             ApplyFluidColor(p, go, body);
+            if (p.volumetricSpawnGroundDecals)
+                JitterDecals(p, go, victimRoot);
             _lastSpawnTime = Time.time; _lastSpawnPoint = point;
             Active.Add(new Live { go = go, prefab = prefab, until = Time.time + Mathf.Max(1f, p.volumetricLifetime) });
             if (p.logVolumetricSide)
@@ -240,6 +236,16 @@ namespace Project.Combat
             l.go.SetActive(false);
             if (!Pool.TryGetValue(l.prefab, out var st)) Pool[l.prefab] = st = new Stack<GameObject>();
             st.Push(l.go);
+        }
+
+        private static void DisableGroundDecals(GameObject go)
+        {
+            foreach (BFX.BFX_DecalSettings d in go.GetComponentsInChildren<BFX.BFX_DecalSettings>(true))
+            {
+                DecalProjector proj = d.GetComponent<DecalProjector>();
+                if (proj != null) proj.enabled = false;
+                d.enabled = false;
+            }
         }
 
         private static void JitterDecals(DM_EnemyHitMarkProfile p, GameObject go, Transform victimRoot)

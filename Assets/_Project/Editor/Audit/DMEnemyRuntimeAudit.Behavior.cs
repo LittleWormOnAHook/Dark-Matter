@@ -848,7 +848,7 @@ namespace Project.EditorTools.Audit
             var swish = find(null, "swing plays a swish").ToList();
             R.Add("Fix check", "fix.swish", "vMeleeManager swing swish (PlayWeaponSwing on attack-window open)", !hasSwish ? "FAIL" : verdict(swish), $"code present: {hasSwish}; {summ(swish)}", hasSwish ? (swish.Any(c => c.status == "FAIL") ? "swing rows still silent for: " + string.Join(", ", swish.Where(c => c.status == "FAIL").Select(c => c.label).Take(4)) : "") : "the DMPlaySwingSound call is missing from vMeleeManager.SetActiveAttack");
             // 2 player hit sound
-            bool hasHit = melee.Contains("CombatHitAudio.PlayWeaponHit(hitInfo.hitPoint");
+            bool hasHit = melee.Contains("MeleeHitAudio.PlayMeleeHit(hitInfo.hitPoint");
             var hit = find(null, "hitting the player plays a hit sound").ToList();
             R.Add("Fix check", "fix.hitsound", "Enemy melee hit on the player plays a hit sound (vMeleeManager.OnDamageHit -> CombatHitAudio)", !hasHit ? "FAIL" : verdict(hit), $"code present: {hasHit}; {summ(hit)}", hasHit ? (hit.Any(c => c.status == "FAIL") ? "still silent for: " + string.Join(", ", hit.Where(c => c.status == "FAIL").Select(c => c.label).Take(4)) : "") : "the CombatHitAudio call is missing from vMeleeManager.OnDamageHit");
             // 3 Hot Cross focus sync

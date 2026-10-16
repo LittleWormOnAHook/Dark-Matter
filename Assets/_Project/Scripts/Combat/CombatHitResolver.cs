@@ -81,14 +81,13 @@ namespace Project.Combat
             EnemyNoiseEvents.RaiseCombatImpactNoise(hitPoint, noiseRadius, owner);
         }
 
-        public static void PlayImpactHitAudio(Vector3 hitPoint)
+        public static void PlayImpactHitAudio(Vector3 hitPoint, bool isCritical = false)
         {
             GameAudioManager audio = GameAudioManager.Instance;
             if (audio == null)
                 return;
 
-            // Reuse melee/weapon hit pipeline so ranged impacts stay on the same combat SFX profile.
-            audio.PlayWeaponHit(hitPoint, isCritical: false);
+            audio.PlayRangedHit(hitPoint, isCritical);
         }
 
         /// <summary>Applies direct damage to whatever the collider resolves to, plus VFX/UI feedback.</summary>

@@ -76,7 +76,7 @@ MonoBehaviour:
   chaseWallBlockedFramesBeforeFollow: 2
   chaseWallProbeDistance: 0.6
   chaseWallFollowFaceSlide: 1
-  chaseWallBlockedTurnRate: 480
+  chaseWallBlockedTurnRate: 240
   chaseWallFollowMinSideSeconds: 0.55
   chaseWallFollowSideHysteresis: 0.18
   chaseWallFollowFlipAfterFails: 3

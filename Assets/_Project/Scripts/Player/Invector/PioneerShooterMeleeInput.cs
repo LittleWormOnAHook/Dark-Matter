@@ -1497,6 +1497,37 @@ namespace Project.Player.Invector
         /// Parks FullBody on a verified empty state (Idle_Empty, motion null) so Base locomotion shows.
         /// Nested Attacks.Null CrossFade often never lands after Pioneer CrossFades into SwordAttack.
         /// </summary>
+        public void ResetMeleeAfterRevive()
+        {
+            _strongDamageArmed = false;
+            _strongChargeArmed = false;
+            _strongChargePoseActive = false;
+            _strongSwingStartedAt = float.NegativeInfinity;
+            OnDisableAttack();
+            RestoreMeleeFullBodyIdle();
+            int layer = ResolveFullBodyLayer();
+            int empty = layer >= 0 ? ResolveEmptyFullBodyHash(layer) : 0;
+            if (animator != null && empty != 0)
+            {
+                // A zero-weight stand-up state still supplies Invector tags. Exit
+                // immediately while OnAnimatorMove remains disabled by the revive owner.
+                animator.Play(empty, layer, 0f);
+                animator.Update(0f);
+                StripFullBodyAnimatorTags("LockMovement", "LockRotation", "CustomAction");
+            }
+            if (cc != null)
+            {
+                cc.input = Vector3.zero;
+                cc.moveDirection = Vector3.zero;
+                cc.AnimatorLayerControl();
+                cc.ActionsControl();
+                cc.lockMovement = false;
+                cc.lockAnimMovement = false;
+                cc.lockAnimRotation = false;
+                cc.customAction = false;
+            }
+        }
+
         private void RestoreMeleeFullBodyIdle()
         {
             if (animator == null)
@@ -2347,6 +2378,10 @@ namespace Project.Player.Invector
             if (!successfulBlock)
                 return;
 
+            Project.Audio.GameAudioManager.Instance?.PlayMeleeClash(
+                damage != null && damage.hitPosition != Vector3.zero ? damage.hitPosition : transform.position + Vector3.up,
+                isParry);
+
             if (isParry)
             {
                 PlayParryHitReaction();
@@ -3148,12 +3183,13 @@ namespace Project.Player.Invector
             bool fireHeld = ReadShotHeld();
             var weapon = shooterManager.CurrentWeapon != null ? shooterManager.CurrentWeapon : CurrentActiveWeapon;
 
-            if (IsAiming && !shooterManager.isShooting && aimConditions)
+            bool adsFireReady = IsAiming && !shooterManager.isShooting && aimConditions;
+            if (adsFireReady)
             {
                 if (weapon != null)
                     HandleShotCount(weapon, fireHeld);
             }
-            else if (!IsAiming)
+            else if (!IsAiming || !aimConditions)
             {
                 // Hip fire on RT/LMB even if the Invector hipfireShot checkbox was left off.
                 if (fireHeld && weapon != null)

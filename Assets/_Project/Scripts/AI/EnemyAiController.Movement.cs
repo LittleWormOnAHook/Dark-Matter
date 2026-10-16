@@ -266,6 +266,92 @@ namespace Project.AI
         private Vector3 auditDesiredStep, auditResolvedStep, auditRootAfterStep;
         private int auditStepFrame = -1;
 #endif
+        private Vector3 wallRouteGoal, wallRoutePrevious;
+        private float wallRouteBestDistance, wallRoutePath, wallRouteNoProgress, wallRouteLastSample;
+        private float wallRouteRecoveryCooldown;
+        internal bool WallRouteRecoveryRequested;
+        internal int WallRouteRecoveryCount;
+        private readonly List<Vector3> wallEscapePoints = new List<Vector3>(4);
+        private Vector3 wallEscapeGoal;
+        private float wallEscapeUntil;
+
+        private void ResetWallRouteProgress()
+        {
+            wallRouteLastSample = -1f;
+            WallRouteRecoveryRequested = false;
+            wallEscapePoints.Clear();
+        }
+
+        private void TrackWallRouteProgress(Vector3 goal)
+        {
+            if (wallEscapePoints.Count > 0) return;
+            float distance = HorizontalDistance(transform.position, goal);
+            // Moving combat ring points are new routes, not evidence of circling.
+            if (wallRouteLastSample < 0f || Time.time - wallRouteLastSample > 0.25f ||
+                HorizontalDistance(goal, wallRouteGoal) > 0.75f)
+            {
+                wallRouteGoal = goal;
+                wallRoutePrevious = transform.position;
+                wallRouteBestDistance = distance;
+                wallRoutePath = wallRouteNoProgress = 0f;
+                WallRouteRecoveryRequested = false;
+            }
+            else
+            {
+                wallRoutePath += HorizontalDistance(transform.position, wallRoutePrevious);
+                if (distance < wallRouteBestDistance - 0.35f)
+                {
+                    wallRouteBestDistance = distance;
+                    wallRouteNoProgress = wallRoutePath = 0f;
+                    WallRouteRecoveryRequested = false;
+                }
+                else wallRouteNoProgress += Time.deltaTime;
+
+                var profile = DM_EnemyBrainProfile.Live;
+                float patience = Mathf.Max(4f, (profile != null ? profile.chaseWallBufferStuckSeconds : 1.5f) * 3f);
+                if (wallRouteNoProgress >= patience && wallRoutePath > Mathf.Max(6f, distance) &&
+                    Time.time >= wallRouteRecoveryCooldown && ChaseWallFollowSideSign != 0)
+                    WallRouteRecoveryRequested = true;
+            }
+            wallRoutePrevious = transform.position;
+            wallRouteLastSample = Time.time;
+        }
+
+        internal void NoteWallRouteRecovery()
+        {
+            WallRouteRecoveryRequested = false;
+            WallRouteRecoveryCount++;
+            wallRoutePath = wallRouteNoProgress = 0f;
+            wallRouteBestDistance = HorizontalDistance(transform.position, wallRouteGoal);
+            wallRouteRecoveryCooldown = Time.time + 8f;
+        }
+
+        private void ApplyWallRouteEscape(ref Vector3 target)
+        {
+            if (wallEscapePoints.Count > 0 && (Time.time >= wallEscapeUntil ||
+                HorizontalDistance(target, wallEscapeGoal) > 0.75f))
+            {
+                wallEscapePoints.Clear();
+                ResetWallRouteProgress();
+            }
+            if (WallRouteRecoveryRequested && ChaseWallSurface != null && wallEscapePoints.Count == 0)
+            {
+                if (EnemyChaseWallSlide.TryBuildLocalEscape(transform, ChaseWallSurface, target,
+                    DM_EnemyBrainProfile.Live, wallEscapePoints))
+                {
+                    wallEscapeGoal = target;
+                    wallEscapeUntil = Time.time + 12f;
+                    NoteWallRouteRecovery();
+                    ChaseWallFollowSideSign = 0;
+                    chaseWallLastContactNormal = Vector3.zero;
+                    ChaseWallSurfaceNormal = Vector3.zero;
+                }
+            }
+            while (wallEscapePoints.Count > 0 && HorizontalDistance(transform.position, wallEscapePoints[0]) < 0.55f)
+                wallEscapePoints.RemoveAt(0);
+            if (wallEscapePoints.Count > 0) target = wallEscapePoints[0];
+        }
+
         private void MoveTowards(Vector3 target, float speed, float arriveDistance)
         {
             if (!AllowsTranslation &&
@@ -280,6 +366,9 @@ namespace Project.AI
             if (IsStationary)
                 return;
 
+            TrackWallRouteProgress(target);
+            ApplyWallRouteEscape(ref target);
+            if (wallEscapePoints.Count > 0) arriveDistance = Mathf.Min(arriveDistance, 0.2f);
             TryApplyWallRetreatSidestepTarget(ref target);
 
             Vector3 flatTarget = target;
@@ -319,6 +408,13 @@ namespace Project.AI
                     wallProfile,
                     this);
                 step = wallMove.Step;
+                // Ease into the resolved avoidance direction, rather than maintaining
+                // full speed sideways while the body is still turning toward it.
+                // Do not slow large depenetration/clearance corrections.
+                if (wallMove.InWallBufferContact && step.sqrMagnitude > 0.000001f &&
+                    step.magnitude <= speed * Time.deltaTime * 1.1f)
+                    step *= DMILocomotionFacing.FacingMoveScale(transform, step, ResolveFacingMoveScaleFloor());
+                step = LimitWanderStepToTerritory(step);
 #if UNITY_EDITOR
                 auditResolvedStep = step;
                 auditRootAfterStep = transform.position + step;
@@ -384,7 +480,7 @@ namespace Project.AI
                 return;
 
             DM_EnemyBrainProfile profile = DM_EnemyBrainProfile.Live;
-            float turnRate = profile != null ? profile.chaseWallBlockedTurnRate : 480f;
+            float turnRate = profile != null ? profile.chaseWallBlockedTurnRate : 240f;
             if (!fastTurn)
                 turnRate = Mathf.Min(turnRate, 200f);
 
@@ -395,6 +491,28 @@ namespace Project.AI
                 return;
 
             DMILocomotionFacing.FaceTowardDegrees(transform, transform.position + wishForward, turnRate);
+        }
+
+        private Vector3 LimitWanderStepToTerritory(Vector3 step)
+        {
+            if (state != AiState.Wander || step.sqrMagnitude < 0.000001f) return step;
+            Vector3 from = transform.position - homePosition; from.y = 0f;
+            float radius = Mathf.Max(0.5f, wanderRadius);
+            if ((from + step).sqrMagnitude <= radius * radius) return step;
+
+            // Limit along the already collision-checked segment; projecting the end
+            // onto the circle would introduce an unchecked sideways displacement.
+            float a = step.sqrMagnitude;
+            float b = Vector3.Dot(from, step);
+            float c = from.sqrMagnitude - radius * radius;
+            float fraction = c > 0f ? (b < 0f ? 1f : 0f)
+                : Mathf.Clamp01((-b + Mathf.Sqrt(Mathf.Max(0f, b * b - a * c))) / a);
+            CommitNewWanderDestination();
+            ChaseWallFollowSideSign = 0;
+            ChaseWallFollowSideLockUntil = 0f;
+            ChaseWallSurface = null;
+            ChaseWallSurfaceNormal = Vector3.zero;
+            return step * fraction;
         }
 
         private bool UsesChaseWallSlideLocomotion()

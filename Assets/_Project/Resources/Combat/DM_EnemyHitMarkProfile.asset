@@ -239,6 +239,7 @@ MonoBehaviour:
   volumetricDecalDepth: 0.25
   volumetricDecalGroundOffset: 0.08
   volumetricGroundTowardTarget: 0.55
+  volumetricSpawnGroundDecals: 1
   volumetricPlayerFluidGroundSnap: 0
   volumetricFluidExposureComp: 1
   volumetricFluidBrightness: 0.1

@@ -204,6 +204,9 @@ namespace Project.Player
 
             transform.SetPositionAndRotation(place, upright);
 
+            deathRagdoll?.OnRespawnWorldPlacement();
+            deathRagdoll?.BeginPostLoadMotionSettle();
+
             if (character != null)
 
                 character.SetMovementDirection(Vector3.zero);
@@ -274,7 +277,7 @@ namespace Project.Player
 
             player.GetComponent<DMClimbController>()?.RestoreAfterDeathOrRetry();
 
-            ResolveInvectorDeathRagdoll()?.ResetForRespawn();
+            ResolveInvectorDeathRagdoll()?.PrepareForSaveLoad();
 
             if (character != null)
 
@@ -297,6 +300,96 @@ namespace Project.Player
                 ?? GetComponent<vThirdPersonController>();
 
             motor?.StopCharacter();
+
+            ResetPlayerSystems();
+
+        }
+
+
+
+        /// <summary>After GameSaveSystem.ApplySaveData teleports the player to a save pose.</summary>
+
+        public void FinalizePhysicsAfterSaveLoad()
+
+        {
+
+            GameObject player = PlayerLocator.FindPlayerObject() ?? gameObject;
+
+            if (player == null)
+
+                player = gameObject;
+
+            player.GetComponent<DMClimbController>()?.RestoreAfterDeathOrRetry();
+
+            player.GetComponent<PioneerInvectorSurvivalBridge>()?.PushHealthToInvector();
+
+            PioneerInvectorDeathRagdoll deathRagdoll = ResolveInvectorDeathRagdoll();
+
+            deathRagdoll?.OnRespawnWorldPlacement();
+
+            player.GetComponent<PioneerInvectorBootstrap>()?.EnsureInvectorPhysicsReady();
+
+            Rigidbody body = player.GetComponent<Rigidbody>();
+
+            if (body != null)
+
+            {
+
+                body.isKinematic = false;
+
+                body.useGravity = true;
+
+                body.linearVelocity = Vector3.zero;
+
+                body.angularVelocity = Vector3.zero;
+
+            }
+
+            CapsuleCollider capsule = player.GetComponent<CapsuleCollider>();
+
+            if (capsule != null)
+
+            {
+
+                capsule.enabled = true;
+
+                capsule.isTrigger = false;
+
+            }
+
+            vThirdPersonController motor = player.GetComponent<vThirdPersonController>()
+
+                ?? GetComponent<vThirdPersonController>();
+
+            if (motor != null)
+
+            {
+
+                if (motor.ragdolled)
+
+                    motor.ResetRagdoll();
+
+                motor.lockMovement = true;
+
+                motor.lockAnimMovement = false;
+
+                motor.lockAnimRotation = false;
+
+                motor.customAction = false;
+
+                motor.isJumping = false;
+
+                motor.StopCharacter();
+
+                motor.EnableGravityAndCollision();
+
+            }
+
+            if (character != null)
+
+                character.SetMovementDirection(Vector3.zero);
+
+            deathRagdoll?.BeginPostLoadMotionSettle();
 
             ResetPlayerSystems();
 

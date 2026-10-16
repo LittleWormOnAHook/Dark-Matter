@@ -257,6 +257,7 @@ namespace Project.UI
         {
             UnbindHealth();
             SetVisible(false);
+            PresentationStamp++;
         }
 
         private void BindAndPresent(

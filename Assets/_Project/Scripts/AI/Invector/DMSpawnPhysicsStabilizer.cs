@@ -32,7 +32,6 @@ namespace Project.AI.Invector
         private float _lastValidGroundY;
         private bool _hasLastValidGround;
         private bool _locomotionPaused;
-        private bool _lockMovementReleased;
         private bool _initialSettleComplete;
 
         /// <summary>True only during the short spawn snap (not a combat delay).</summary>
@@ -85,7 +84,6 @@ namespace Project.AI.Invector
             _spawnTime = Time.time;
             _groundedSince = -1f;
             HasConfirmedGrounded = false;
-            _lockMovementReleased = false;
             _initialSettleComplete = false;
             IsSpawnSettleActive = true;
             if (spawnGraceSeconds > MaxSpawnGraceSeconds)
@@ -334,19 +332,8 @@ namespace Project.AI.Invector
             controller.extraGravity = 0f;
             controller.verticalVelocity = 0f;
 
-            bool combatReady = HasConfirmedGrounded;
-            if (combatReady)
-            {
-                if (!_lockMovementReleased)
-                {
-                    controller.lockMovement = false;
-                    _lockMovementReleased = true;
-                }
-            }
-            else if (!_initialSettleComplete)
-            {
-                controller.lockMovement = true;
-            }
+            // Living enemies stay transform-driven (EnemyAiController / StepFlat); keep lockMovement true.
+            controller.lockMovement = true;
 
             DisableRootMotion();
         }

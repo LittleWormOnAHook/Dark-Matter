@@ -358,7 +358,7 @@ namespace Project.UI
         static bool BarVisible()
         {
             return DMBuildingMode.IsActive
-                && !GameplayHudVisibility.CinematicChromeHidden
+                && !GameplayHudVisibility.SuppressesGameplayChrome
                 && !DMUiToolkitMenus.IsOpen;
         }
 

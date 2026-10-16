@@ -41,6 +41,12 @@ namespace Project.EditorTools.Audit
             Launch("{\"filter\":\"HumanoidEnemy_Invector\",\"obstaclesOnly\":true,\"weaponMatrix\":false,\"scenarios\":false,\"mode\":\"full\",\"force\":true}");
         }
 
+        [MenuItem("Tools/Dark Matter Genesis/Combat/Enemy Thin Wall Endpoint Audit (Play)")]
+        private static void LaunchThinWallAudit()
+        {
+            Launch("{\"filter\":\"HumanoidEnemy_Invector\",\"obstaclesOnly\":true,\"thinWallsOnly\":true,\"weaponMatrix\":false,\"scenarios\":false,\"mode\":\"full\",\"force\":true}");
+        }
+
         private static void CleanupObstacleAudit()
         {
             if (_obstacleAuditRoot != null) Object.Destroy(_obstacleAuditRoot);
@@ -60,7 +66,7 @@ namespace Project.EditorTools.Audit
             while (layer < 31 && (mask & (1 << layer)) == 0) layer++;
             box.layer = layer;
             var collider = box.AddComponent<BoxCollider>();
-            collider.size = new Vector3(4f, 3f, 4f);
+            collider.size = _opts.thinWallsOnly ? new Vector3(0.2f, 3f, 6f) : new Vector3(4f, 3f, 4f);
             Physics.SyncTransforms();
             return collider;
         }
@@ -69,6 +75,10 @@ namespace Project.EditorTools.Audit
         {
             position = Ground(position);
             L.go.transform.position = position;
+            // Teleport the scenario context too: retaining the prefab's original
+            // home/last-seen position tests a distant leash, not this obstacle.
+            typeof(EnemyAiController).GetField("homePosition", BF).SetValue(L.ai, position);
+            typeof(EnemyAiController).GetField("lastKnownPlayerPosition", BF).SetValue(L.ai, destination);
             Vector3 forward = destination - position; forward.y = 0f;
             if (forward.sqrMagnitude > 0.001f) L.go.transform.rotation = Quaternion.LookRotation(forward);
             var body = L.go.GetComponent<Rigidbody>();
@@ -82,6 +92,8 @@ namespace Project.EditorTools.Audit
             public string stallTrace = "";
             public string yawTrace = "";
             public float path, maxStall, stall, stationaryAnimation, maxStationaryAnimation, maxTerritoryExcess;
+            public float maxYawRate;
+            public int routeRecoveries;
             private Vector3 previous, lastMove;
             private float lastTime, previousYaw, lastYawDelta;
             private int previousSide;
@@ -90,7 +102,7 @@ namespace Project.EditorTools.Audit
                 previous = L.go.transform.position; previousYaw = L.go.transform.eulerAngles.y;
                 lastTime = Time.time; lastMove = Vector3.zero;
             }
-            public void Sample(Live L, BoxCollider box, bool expectsProgress, Vector3 home, float radius)
+            public void Sample(Live L, Collider box, bool expectsProgress, Vector3 home, float radius)
             {
                 float dt = Time.time - lastTime;
                 if (dt < 0.1f || L.go == null) return;
@@ -99,16 +111,18 @@ namespace Project.EditorTools.Audit
                 Vector3 delta = position - previous; delta.y = 0f;
                 bool contact = WallContactField != null && (bool)WallContactField.GetValue(L.ai);
                 int side = WallSideField != null ? (int)WallSideField.GetValue(L.ai) : 0;
+                routeRecoveries = (int)(typeof(EnemyAiController).GetField("WallRouteRecoveryCount", BF)?.GetValue(L.ai) ?? 0);
                 if (contact && side != 0 && previousSide != 0 && side != previousSide) sideFlips++;
                 if (contact && delta.magnitude > 0.005f && lastMove.magnitude > 0.005f &&
                     Vector3.Dot(delta.normalized, lastMove.normalized) < -0.5f) reversals++;
                 float yawDelta = Mathf.DeltaAngle(previousYaw, L.go.transform.eulerAngles.y);
+                maxYawRate = Mathf.Max(maxYawRate, Mathf.Abs(yawDelta) / dt);
                 if (contact && Mathf.Abs(yawDelta) > 3f && Mathf.Abs(lastYawDelta) > 3f &&
                     Mathf.Sign(yawDelta) != Mathf.Sign(lastYawDelta))
                 {
                     yawReversals++;
                     if (yawReversals <= 12)
-                        yawTrace += $"t={Time.time:F2} yawDelta={yawDelta:F1} move={delta:F3} pos={position:F2}; ";
+                        yawTrace += $"t={Time.time:F2} yawDelta={yawDelta:F1} move={delta:F3} pos={position:F2} normal={typeof(EnemyAiController).GetField("chaseWallLastContactNormal", BF)?.GetValue(L.ai)}; ";
                 }
                 if (Mathf.Abs(yawDelta) > 3f) lastYawDelta = yawDelta;
                 if (delta.magnitude > 0.005f) lastMove = delta;
@@ -146,26 +160,190 @@ namespace Project.EditorTools.Audit
             }
             public string Describe() =>
                 $"samples={samples}, path={path:F2}m, movementReversals={reversals}, yawReversals={yawReversals}, " +
-                $"sideFlips={sideFlips}, maxStall={maxStall:F2}s, stationaryWalk={maxStationaryAnimation:F2}s, " +
+                $"sideFlips={sideFlips}, routeRecoveries={routeRecoveries}, maxYawRate={maxYawRate:F1}deg/s, maxStall={maxStall:F2}s, stationaryWalk={maxStationaryAnimation:F2}s, " +
                 $"penetrationSamples={penetrations}, territoryExcess={maxTerritoryExcess:F2}m; firstStall=[{stallTrace}]; yawTrace=[{yawTrace}]";
+        }
+
+        [MenuItem("Tools/Dark Matter Genesis/Combat/Enemy Rock Mesh Audit (Play)")]
+        private static void LaunchRockMeshAudit()
+        {
+            Launch("{\"filter\":\"HumanoidEnemy_Invector\",\"obstaclesOnly\":true,\"rockMeshesOnly\":true,\"weaponMatrix\":false,\"scenarios\":false,\"mode\":\"full\",\"force\":true}");
+        }
+
+        private static IEnumerator ScnRockMeshes(GameObject prefab, DMAuditEnemyResult R)
+        {
+            var rocks = new List<MeshCollider>();
+            foreach (var collider in Object.FindObjectsByType<MeshCollider>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+                if (collider.enabled && collider.sharedMesh != null && !collider.isTrigger &&
+                    collider.name.IndexOf("rock", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                    (EnemyChaseWallSlide.ChaseObstructionMask & (1 << collider.gameObject.layer)) != 0)
+                    rocks.Add(collider);
+            rocks.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+            R.Add("Rock", "rock.setup", "Active scene rock MeshColliders", rocks.Count > 0 ? "PASS" : "FAIL",
+                $"{rocks.Count} rock colliders; existing scene geometry retained, not replaced with convex proxies", "");
+            if (rocks.Count == 0) yield break;
+            bool combatTested = false;
+            for (int caseIndex = 0; caseIndex < 4; caseIndex++)
+            {
+                var rock = rocks[(caseIndex / 2) * (rocks.Count / 2)];
+                Vector3 direction = caseIndex % 2 == 0 ? Vector3.right : Vector3.forward;
+                Vector3 center = rock.bounds.center;
+                float extent = Mathf.Abs(direction.x) * rock.bounds.extents.x + Mathf.Abs(direction.z) * rock.bounds.extents.z;
+                Vector3 start = Vector3.zero, destination = Vector3.zero;
+                bool clear = false;
+                for (int attempt = 0; attempt < 4; attempt++)
+                {
+                    float arm = extent + 2f + attempt * 2f;
+                    start = Ground(center + direction * arm);
+                    destination = Ground(center - direction * arm);
+                    bool validHeight = Mathf.Abs(start.y - _origin.y) < 2.5f && Mathf.Abs(destination.y - _origin.y) < 2.5f;
+                    bool startClear = !Physics.CheckCapsule(start + Vector3.up * 0.4f, start + Vector3.up * 1.4f,
+                        0.35f, EnemyChaseWallSlide.ChaseObstructionMask, QueryTriggerInteraction.Ignore);
+                    bool endClear = !Physics.CheckCapsule(destination + Vector3.up * 0.4f, destination + Vector3.up * 1.4f,
+                        0.35f, EnemyChaseWallSlide.ChaseObstructionMask, QueryTriggerInteraction.Ignore);
+                    if (validHeight && startClear && endClear) { clear = true; break; }
+                }
+                if (!clear)
+                {
+                    R.Add("Rock", $"rock.{caseIndex}", "Scene rock approach " + rock.name, "WARN",
+                        "No clear ground-level endpoints found in the existing cluster", "Skipped instead of teleporting into/on top of a rock.");
+                    continue;
+                }
+                SetStatus($"rock audit: {caseIndex + 1}/4 {rock.name}");
+                Live L = SpawnMatrixEnemy(prefab, "rock-" + caseIndex);
+                yield return SpawnReady(L);
+                ObstaclePlace(L, start, destination);
+                PlacePlayer(Ground(_origin + Vector3.right * 100f), center);
+                L.ai.BeginPatrolRouteNow(new[] { destination, start }, EnemyPatrolMode.PingPong);
+                var measure = new ObstacleMeasure(); measure.Begin(L);
+                bool arrived = false;
+                float end = Time.time + 25f;
+                while (Time.time < end)
+                {
+                    measure.Sample(L, rock, true, center, 0);
+                    if (HorizontalDistance(L.go.transform.position, destination) < 0.9f) { arrived = true; break; }
+                    yield return null;
+                }
+                bool pass = arrived && measure.reversals <= 2 && measure.maxStall < 2.5f && measure.penetrations == 0;
+                R.Add("Rock", $"rock.{caseIndex}", "Scene rock approach " + rock.name, pass ? "PASS" : "FAIL",
+                    $"arrived={arrived}; mesh={rock.sharedMesh.name}, convex={rock.convex}; " + measure.Describe(),
+                    pass ? "" : "Real MeshCollider/cluster route failed, stalled, repeatedly reversed or penetrated the sampled rock.");
+                Cleanup(); yield return new WaitGame(0.25f);
+                // Use the same verified endpoints for a real three-enemy pursuit.
+                // Existing rocks, brain, spacing and attack authority remain live.
+                if (!combatTested)
+                {
+                    combatTested = true;
+                    yield return ScnRockCombat(prefab, R, rock, start, destination);
+                }
+            }
+        }
+
+        private static IEnumerator ScnRockCombat(GameObject prefab, DMAuditEnemyResult R,
+            MeshCollider rock, Vector3 start, Vector3 destination)
+        {
+            SetStatus("rock audit: three-enemy combat pursuit");
+            var group = new List<Live>();
+            var measures = new List<ObstacleMeasure>();
+            var reached = new bool[3];
+            var attacked = new bool[3];
+            Vector3 lateral = Vector3.Cross(Vector3.up, (destination - start).normalized);
+            for (int i = 0; i < 3; i++)
+            {
+                Vector3 spawn = Ground(start + lateral * ((i - 1) * 1.5f));
+                if (Physics.CheckCapsule(spawn + Vector3.up * 0.4f, spawn + Vector3.up * 1.4f,
+                    0.35f, EnemyChaseWallSlide.ChaseObstructionMask, QueryTriggerInteraction.Ignore))
+                {
+                    R.Add("RockCombat", "rock.combat.setup", "Three clear spawn positions", "WARN",
+                        "A combat spawn was obstructed; group scenario skipped.", "No rock or collider was moved.");
+                    foreach (var member in group) if (member.go != null) Object.Destroy(member.go);
+                    Cleanup(); yield break;
+                }
+                Live memberLive = SpawnMatrixEnemy(prefab, "rock-combat-" + i);
+                group.Add(memberLive);
+                yield return SpawnReady(memberLive);
+                ObstaclePlace(memberLive, spawn, destination);
+                var measure = new ObstacleMeasure(); measure.Begin(memberLive); measures.Add(measure);
+            }
+            PlacePlayer(destination, start);
+            var stateField = typeof(EnemyAiController).GetField("state", BF);
+            foreach (var member in group)
+            {
+                member.combat.SetTarget(_player.transform);
+                typeof(EnemyAiController).GetMethod("EnterState", BF).Invoke(member.ai,
+                    new[] { Enum.Parse(stateField.FieldType, "Chase") });
+            }
+            float until = Time.time + 35f;
+            while (Time.time < until)
+            {
+                for (int i = 0; i < group.Count; i++)
+                {
+                    var member = group[i];
+                    string current = AiState(member.ai);
+                    measures[i].Sample(member, rock, current == "Chase", destination, 0f);
+                    if (PlayerEnemyDist(member) < 4f) reached[i] = true;
+                    if (current == "Attack") attacked[i] = true;
+                }
+                TopUpPlayer();
+                yield return null;
+            }
+            for (int i = 0; i < group.Count; i++)
+            {
+                var measure = measures[i];
+                bool pass = reached[i] && measure.maxStall < 2.5f && measure.penetrations == 0;
+                R.Add("RockCombat", "rock.combat." + i, "Live group combat around scene rock", pass ? "PASS" : "FAIL",
+                    $"reachedEngagementRange={reached[i]}, enteredAttack={attacked[i]}; " + measure.Describe(),
+                    "Stalls measured only during Chase; Hold/Attack pauses are intentional. Penetration checks cover the sampled rock only.");
+            }
+            foreach (var member in group) if (member.go != null) Object.Destroy(member.go);
+            Cleanup(); yield return new WaitGame(0.25f);
         }
 
         private static IEnumerator ScnObstacles(GameObject prefab, DMAuditEnemyResult R)
         {
+            // Deterministic route-detector contract, without moving the root or
+            // overriding steering. Normal approach cases below remain unseeded.
+            Live probe = SpawnMatrixEnemy(prefab, "route-detector");
+            yield return SpawnReady(probe);
+            var aiType = typeof(EnemyAiController);
+            Vector3 probeGoal = probe.go.transform.position + Vector3.right * 10f;
+            Action<string, object> set = (name, value) => aiType.GetField(name, BF).SetValue(probe.ai, value);
+            var track = aiType.GetMethod("TrackWallRouteProgress", BF);
+            Func<bool> requested = () => (bool)aiType.GetField("WallRouteRecoveryRequested", BF).GetValue(probe.ai);
+            set("wallRouteGoal", probeGoal); set("wallRoutePrevious", probe.go.transform.position);
+            set("wallRouteLastSample", Time.time); set("wallRouteBestDistance", 0f);
+            set("wallRouteNoProgress", 30f); set("wallRoutePath", 30f); set("ChaseWallFollowSideSign", 1);
+            track.Invoke(probe.ai, new object[] { probeGoal });
+            bool detectsLoop = requested();
+            track.Invoke(probe.ai, new object[] { probeGoal + Vector3.forward * 2f });
+            bool resetsForNewGoal = !requested();
+            aiType.GetMethod("NoteWallRouteRecovery", BF).Invoke(probe.ai, null);
+            set("wallRouteNoProgress", 30f); set("wallRoutePath", 30f); set("wallRouteBestDistance", 0f);
+            track.Invoke(probe.ai, new object[] { probeGoal + Vector3.forward * 2f });
+            bool cooldownBlocksRepeat = !requested();
+            R.Add("Recovery", "wall.recovery.detector", "No-progress detector, goal change and cooldown",
+                detectsLoop && resetsForNewGoal && cooldownBlocksRepeat ? "PASS" : "FAIL",
+                $"seeded stale history detected={detectsLoop}, changed goal reset={resetsForNewGoal}, cooldown prevented repeat={cooldownBlocksRepeat}",
+                "Detector contract only: seeded history, no injected root movement. Natural recovery counts reported separately.");
+            Cleanup(); yield return new WaitGame(0.25f);
             // Each face from both sides exercises both winding choices at box corners.
-            for (int face = 0; face < 5; face++)
+            for (int face = 0; face < (_opts.thinWallsOnly ? 4 : 5); face++)
             for (int side = -1; side <= 1; side += 2)
             {
-                string id = $"wall.face{face}.side{side}";
+                string id = $"{(_opts.thinWallsOnly ? "thin" : "wall")}.face{face}.side{side}";
                 SetStatus("obstacle audit: " + id);
                 Live L = SpawnMatrixEnemy(prefab, id);
                 yield return SpawnReady(L);
                 Vector3 center = face < 4 ? ObstacleAuditCenter() : Ground(_origin + new Vector3(0, 0, 22));
                 Quaternion rotation = Quaternion.Euler(0, face * 90, 0);
-                Vector3 start = center + rotation * new Vector3(4.5f, 0, 0);
-                Vector3 destination = center + rotation * new Vector3(-5, 0, side * 0.8f);
+                Vector3 start = center + rotation * (_opts.thinWallsOnly
+                    ? new Vector3(2.5f, 0, side * (face % 2 == 0 ? 2.4f : -3.5f))
+                    : new Vector3(4.5f, 0, 0));
+                Vector3 destination = center + rotation * (_opts.thinWallsOnly
+                    ? new Vector3(-3f, 0, side * 2.4f) : new Vector3(-5, 0, side * 0.8f));
                 ObstaclePlace(L, start, destination);
                 BoxCollider box = ObstacleBox(center);
+                if (_opts.thinWallsOnly) { box.transform.rotation = rotation; Physics.SyncTransforms(); }
                 PlacePlayer(Ground(center + Vector3.right * 70), center);
                 L.ai.BeginPatrolRouteNow(new[] { destination, start }, EnemyPatrolMode.PingPong);
                 var measure = new ObstacleMeasure(); measure.Begin(L);
@@ -240,7 +418,7 @@ namespace Project.EditorTools.Audit
                 $"reachedAttackRange={reached}; states={string.Join("/", combat.phaseStates)}; " + cm.Describe(),
                 combatPass ? "" : "Combat pursuit failed to clear obstruction or produced movement instability.");
             R.Add("Coverage", "wall.remaining", "Additional coverage still required", "WARN",
-                "This run covers eight box approaches, ping-pong first leg, native territory wander and combat pursuit.",
+                (_opts.thinWallsOnly ? "Thin wall: 0.2m thickness, both endpoints, perpendicular and oblique approaches, four rotations. " : "Box approaches. ") + "Ping-pong first leg, native territory wander and combat pursuit.",
                 "Multiple enemies, complete repeated four-corner circuits, ping-pong return leg, temporary blockers and in-range combat strafe require additional cases; do not infer coverage.");
         }
     }

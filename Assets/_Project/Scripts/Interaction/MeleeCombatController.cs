@@ -73,10 +73,9 @@ namespace Project.Interaction
 
             float damage = item != null ? item.RollMeleeDamage(isCritical) : 8f;
             Vector3 weaponPoint = hitCollider.bounds.center;
-            PioneerInvectorDamageBridge.ApplyPioneerDamageToCollider(
-                hitCollider, damage, gameObject, isCritical, weaponPoint);
-
-            CombatHitAudio.PlayWeaponHit(weaponPoint, isCritical, hitCollider);
+            if (PioneerInvectorDamageBridge.ApplyPioneerDamageToCollider(
+                hitCollider, damage, gameObject, isCritical, weaponPoint))
+                MeleeHitAudio.PlayMeleeHit(weaponPoint, isCritical, hitCollider);
         }
 
         private void Update()

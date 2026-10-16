@@ -16,7 +16,7 @@ The **live Unity project folder on Anthony's machine** is the play target. Cloud
 ## Before `git commit` or `git push` (agent or human)
 
 1. Unity must not be compiling (poll MCP editor state when available).
-2. **`read_console`** with types `error` — **zero errors** before commit/push.
+2. **`read_console`** for **errors and warnings** — **zero of both** before commit/push (see `unity-agent-workflow.mdc`).
 3. Stage scenes/prefabs/materials/terrain with script changes (`unity-agent-workflow.mdc`).
 4. Run **`Tools/DmUnityGitSafeguard.ps1 -BeforePush`** before push when the branch tracks remote.
 

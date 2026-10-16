@@ -131,11 +131,9 @@ namespace Project.UI
 
         private bool ShouldShowWeaponReticle()
         {
-            if (!gameplayVisible || GameplayHudVisibility.CinematicChromeHidden)
+            if (!gameplayVisible || GameplayHudVisibility.SuppressesGameplayChrome)
                 return false;
             if (DMUiToolkitMenus.IsOpen)
-                return false;
-            if (Project.Combat.DMScopeMode.IsScoped && Project.Combat.DMScopeMode.ZoomBlend > 0.05f)
                 return false;
 
             if (equipmentController == null)

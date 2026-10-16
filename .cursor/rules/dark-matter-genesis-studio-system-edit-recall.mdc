@@ -30,8 +30,8 @@ When a change ships and a **canonical doc already exists** for that system, add 
 Follow **`unity-agent-workflow.mdc`**:
 
 1. After the last write under `Assets/` or `ProjectSettings/`, MCP **`refresh_unity`** (`mode: if_dirty`, `compile: request` when scripts/asmdef changed, `wait_for_ready: true`).
-2. Wait for compile and domain reload; then **`read_console`** (errors) and fix before claiming done.
-3. Never commit while the Unity console has errors.
+2. Wait for compile and domain reload; then **`read_console`** (errors and warnings) and fix/re-check until zero of both before claiming done.
+3. Never commit while the Unity console has errors or warnings.
 
 ## Do not
 

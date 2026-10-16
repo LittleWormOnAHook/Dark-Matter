@@ -233,7 +233,7 @@ namespace Project.AI
         [Tooltip("Face the slide / wall-follow direction instead of staring into the wall.")]
         public bool chaseWallFollowFaceSlide = true;
         [Tooltip("Turn rate (deg/s) while blocked and steering along a wall.")]
-        [Range(120f, 720f)] public float chaseWallBlockedTurnRate = 480f;
+        [Range(120f, 720f)] public float chaseWallBlockedTurnRate = 240f;
         [Tooltip("Min seconds to hold a wall-follow tangent side before picking the other (reduces left/right jitter).")]
         [Range(0.1f, 2f)] public float chaseWallFollowMinSideSeconds = 0.55f;
         [Tooltip("Dot-product gap required before swapping wall-follow side.")]

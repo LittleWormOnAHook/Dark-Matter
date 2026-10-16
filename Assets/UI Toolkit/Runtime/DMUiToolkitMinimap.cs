@@ -332,7 +332,7 @@ namespace Project.UI
                 && GameSession.HasStarted
                 && !MainMenuController.BlocksGameplayHud
                 && !DMUiToolkitLoadingOverlay.IsShowing
-                && !GameplayHudVisibility.CinematicChromeHidden;
+                && !GameplayHudVisibility.SuppressesGameplayChrome;
 
             // Crop-only: feed pilot cluster ViewTexture; no TR chrome bind/show.
             if (hudLive && mapUi != null && Time.unscaledTime >= nextViewRefreshTime)

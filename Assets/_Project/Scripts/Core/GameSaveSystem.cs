@@ -496,6 +496,9 @@ namespace Project.Core
             Vector3 position = new Vector3(data.posX, data.posY, data.posZ);
             player.transform.SetPositionAndRotation(position, Quaternion.Euler(0f, data.rotY, 0f));
 
+            PlayerDeathHandler deathHandler = player.GetComponent<PlayerDeathHandler>();
+            deathHandler?.FinalizePhysicsAfterSaveLoad();
+
             PlayerController playerController = player.GetComponent<PlayerController>();
             if (playerController != null)
             {

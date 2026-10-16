@@ -242,7 +242,10 @@ namespace Project.EditorTools.Audit
             if (_opts.obstaclesOnly)
             {
                 if (prefabs.Count == 0) { Finish("aborted", "No enemy prefab matched obstacle audit filter"); yield break; }
-                yield return Scn("Obstacle movement: corners, wander, ping-pong, combat", prefabs[0], ScnObstacles);
+                if (_opts.rockMeshesOnly)
+                    yield return Scn("Obstacle movement: scene rock MeshColliders", prefabs[0], ScnRockMeshes);
+                else
+                    yield return Scn("Obstacle movement: corners, wander, ping-pong, combat", prefabs[0], ScnObstacles);
                 yield break;
             }
             foreach (GameObject prefab in prefabs)

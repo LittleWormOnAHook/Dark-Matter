@@ -282,7 +282,7 @@ namespace Project.UI
                 return false;
 
             return DMUiToolkitOverlayDocument.GameplayHudWanted()
-                && !GameplayHudVisibility.CinematicChromeHidden;
+                && !GameplayHudVisibility.SuppressesGameplayChrome;
         }
 
         private void BindTree()

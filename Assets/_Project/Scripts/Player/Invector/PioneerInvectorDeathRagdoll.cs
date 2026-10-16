@@ -406,9 +406,36 @@ namespace Project.Player.Invector
 
 
 
+        /// <summary>Clear ragdoll before ApplySaveData; motion settle runs after load via BeginPostLoadMotionSettle.</summary>
+        public void PrepareForSaveLoad()
+        {
+            CancelDeathAndRespawnCoroutines();
+            _pinStandUp = false;
+            _standUpAnimator = null;
+            RestoreLivingBodyFromDeathRagdoll();
+        }
+
+        public void BeginPostLoadMotionSettle()
+        {
+            EnsureReferences();
+            KillBodyMotion();
+            StartRespawnSettle();
+        }
+
         public void ResetForRespawn()
         {
-            ReleaseCorpseFreeze(); // 2026-10-13 (i)
+            CancelDeathAndRespawnCoroutines();
+            _pinStandUp = false;
+            _standUpAnimator = null;
+
+            if (!_lieCaptured)
+                CaptureLieOrientation();
+
+            RestoreLivingBodyFromDeathRagdoll();
+        }
+
+        private void CancelDeathAndRespawnCoroutines()
+        {
             if (_ensureDeathRoutine != null)
             {
                 StopCoroutine(_ensureDeathRoutine);
@@ -421,29 +448,36 @@ namespace Project.Player.Invector
                 _getUpRoutine = null;
             }
 
-            _pinStandUp = false;
-            _standUpAnimator = null;
+            if (_respawnSettleRoutine != null)
+            {
+                StopCoroutine(_respawnSettleRoutine);
+                _respawnSettleRoutine = null;
+            }
+        }
 
-            if (!_lieCaptured)
-                CaptureLieOrientation();
-
+        private void RestoreLivingBodyFromDeathRagdoll()
+        {
             EnsureReferences();
 
             if (_ragdoll != null)
             {
+                _ragdoll.StopAllCoroutines();
                 _ragdoll.keepRagdolled = false;
                 _ragdoll.ignoreGetUpAnimation = true;
                 _ragdoll.RestoreRagdoll();
             }
+
+            ReleaseCorpseFreeze(); // 2026-10-13 (i)
 
             if (_controller != null)
             {
                 if (_controller.ragdolled)
                     _controller.ResetRagdoll();
 
-                _controller.lockMovement = false;
+                _controller.lockMovement = true;
                 _controller.lockAnimMovement = false;
                 _controller.isJumping = false;
+                _controller.customAction = false;
                 _controller.StopCharacter();
                 _controller.EnableGravityAndCollision();
             }
@@ -455,9 +489,21 @@ namespace Project.Player.Invector
                 animator.applyRootMotion = false;
             }
 
-            ResolveTpInput()?.EnableOnAnimatorMove();
+            vThirdPersonInput resetInput = ResolveTpInput();
+            resetInput?.DisableOnAnimatorMove();
+            GetComponent<PioneerShooterMeleeInput>()?.ResetMeleeAfterRevive();
+            resetInput?.EnableOnAnimatorMove();
             GetComponent<PioneerInvectorBootstrap>()?.EnsureInvectorPhysicsReady();
-            StartRespawnSettle(); // 2026-10-14 (a)
+            KillBodyMotion();
+        }
+
+        /// <summary>Called after PlayerDeathHandler teleports the revived body to the retry spot.</summary>
+        public void OnRespawnWorldPlacement()
+        {
+            Physics.SyncTransforms();
+            KillBodyMotion();
+            if (_controller != null)
+                _controller.StopCharacter();
         }
 
         // 2026-10-14 (a): Retry slide fix. The corpse freeze released the ragdoll bones back to their death-time
@@ -476,16 +522,88 @@ namespace Project.Player.Invector
         private IEnumerator RespawnSettleRoutine()
         {
             Project.Combat.DM_CombatCoreProfile p = Project.Combat.DM_CombatCoreProfile.Live;
-            float settle = p != null ? p.playerRespawnSettleSeconds : 0.6f;
-            float until = Time.time + settle;
-            do
+            float minSettle = p != null ? p.playerRespawnSettleSeconds : 0.85f;
+            float postStandUpLock = p != null ? p.playerRespawnPostStandUpLockSeconds : 0.35f;
+            float postStandUpSettle = p != null ? p.playerRespawnPostStandUpSettleSeconds : 0.75f;
+            float minUntil = Time.time + minSettle;
+            float phaseOneCap = minUntil + GetUpTimeoutSeconds + 0.75f;
+
+            while (Time.time < phaseOneCap)
             {
-                KillBodyMotion();
+                ApplyRespawnMotionHold(motorInputIdle: true);
+                bool standUpDone = _getUpRoutine == null && !_pinStandUp;
+                bool grounded = _controller == null || _controller.isGrounded;
+                if (Time.time >= minUntil && standUpDone && grounded)
+                    break;
+
                 yield return new WaitForFixedUpdate();
             }
-            while (Time.time < until);
-            KillBodyMotion();
+
+            float phaseTwoStart = Time.time;
+            float lockUntil = phaseTwoStart + postStandUpLock;
+            float settleUntil = phaseTwoStart + postStandUpLock + postStandUpSettle;
+            float postHardCap = settleUntil + 1.25f;
+            while (Time.time < postHardCap)
+            {
+                bool grounded = _controller == null || _controller.isGrounded;
+                bool inputIdle = _controller == null || !_controller.hasMovementInput;
+                bool inPostLock = Time.time < lockUntil;
+
+                if (_controller != null && !_controller.ragdolled)
+                {
+                    _controller.lockMovement = inPostLock;
+                    _controller.lockAnimMovement = false;
+                }
+
+                if (inputIdle || inPostLock)
+                    ApplyRespawnMotionHold(motorInputIdle: true);
+                else
+                    ClampRootHorizontalVelocityOnly();
+
+                if (Time.time >= settleUntil && grounded && inputIdle)
+                    break;
+
+                yield return new WaitForFixedUpdate();
+            }
+
+            ApplyRespawnMotionHold(motorInputIdle: true);
+            ReleaseRespawnMovementLocks();
             _respawnSettleRoutine = null;
+        }
+
+        private void ApplyRespawnMotionHold(bool motorInputIdle)
+        {
+            KillBodyMotion();
+            if (_controller == null || _controller.ragdolled)
+                return;
+
+            if (motorInputIdle)
+                _controller.StopCharacter();
+        }
+
+        private void ClampRootHorizontalVelocityOnly()
+        {
+            Rigidbody root = GetComponent<Rigidbody>();
+            if (root != null && !root.isKinematic)
+            {
+                Vector3 v = root.linearVelocity;
+                if (v.x * v.x + v.z * v.z > 0.0004f)
+                    root.linearVelocity = new Vector3(0f, v.y, 0f);
+                root.angularVelocity = Vector3.zero;
+            }
+        }
+
+        private void ReleaseRespawnMovementLocks()
+        {
+            if (_controller == null || _controller.ragdolled)
+                return;
+
+            _controller.lockMovement = false;
+            _controller.lockAnimMovement = false;
+            _controller.lockAnimRotation = false;
+            _controller.customAction = false;
+            _controller.StopCharacter();
+            _controller.StopCharacterWithLerp();
         }
 
         private void KillBodyMotion()
@@ -499,6 +617,11 @@ namespace Project.Player.Invector
                     continue;
                 if (rb == root)
                 {
+                    if (_survivalStats != null && !_survivalStats.IsDead)
+                    {
+                        rb.isKinematic = false;
+                        rb.useGravity = true;
+                    }
                     if (!rb.isKinematic)
                     {
                         Vector3 v = rb.linearVelocity;
@@ -517,6 +640,17 @@ namespace Project.Player.Invector
                     rb.linearVelocity = Vector3.zero;
                     rb.angularVelocity = Vector3.zero;
                     rb.isKinematic = true;
+                }
+                // Kinematic ragdoll bones must also regain their alive collision
+                // state. Solid child colliders can otherwise shove the root capsule.
+                if (rb.transform == hips || rb.GetComponent<Joint>() != null)
+                {
+                    Collider boneCollider = rb.GetComponent<Collider>();
+                    if (boneCollider != null)
+                    {
+                        if (_ragdoll != null && _ragdoll.disableColliders) boneCollider.enabled = false;
+                        else boneCollider.isTrigger = true;
+                    }
                 }
             }
 
@@ -610,15 +744,21 @@ namespace Project.Player.Invector
             _pinStandUp = false;
             _standUpAnimator = null;
 
+            // Remove the tagged stand-up state BEFORE restoring animation-driven
+            // movement. Merely setting its layer weight to zero leaves tags active.
+            GetComponent<PioneerShooterMeleeInput>()?.ResetMeleeAfterRevive();
+            if (animator != null && layer >= 0)
+                animator.SetLayerWeight(layer, 1f);
             if (_controller != null)
             {
-                _controller.lockMovement = false;
+                _controller.lockMovement = true;
                 _controller.lockAnimMovement = false;
+                _controller.lockAnimRotation = false;
+                _controller.customAction = false;
                 _controller.StopCharacter();
             }
-
             tpInput?.EnableOnAnimatorMove();
-            KillBodyMotion(); // 2026-10-14 (a)
+            ApplyRespawnMotionHold(motorInputIdle: true);
 
             _lieCaptured = false;
             _deathPoseCaptured = false;
@@ -636,6 +776,13 @@ namespace Project.Player.Invector
             Transform root = _controller != null ? _controller.transform : transform;
             if (root != null)
                 root.SetPositionAndRotation(_standUpPinPosition, _standUpPinRotation);
+
+            Rigidbody rootBody = root != null ? root.GetComponent<Rigidbody>() : null;
+            if (rootBody != null && !rootBody.isKinematic)
+            {
+                rootBody.linearVelocity = Vector3.zero;
+                rootBody.angularVelocity = Vector3.zero;
+            }
 
             if (_controller != null)
             {

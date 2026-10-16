@@ -58,6 +58,8 @@ namespace Project.EditorTools.Audit
         public string sceneEnemies = "";   // interruptsOnly: comma separated names of pre-placed (disabled) scene enemies to use instead of spawned prefab copies, optional "@x;z" picks the one nearest that XZ (e.g. "SwordMaster,Humadroid@-780;-75"). First = primary. Scene is never saved: play-mode changes revert on exit.
         public bool interruptsOnly = false; // run only the Slice 0b attack-interrupt / cadence scenario on the filtered enemies
         public bool obstaclesOnly = false; // targeted wall/corner movement audit, bypass broad combat/weapon suite
+        public bool thinWallsOnly = false; // endpoint-focused variant of obstaclesOnly
+        public bool rockMeshesOnly = false; // real scene-rock MeshCollider movement cases
     }
 
     /// <summary>

@@ -817,7 +817,16 @@ namespace Project.Survival
             bool wasDead = IsDead;
             ApplyDamage(damage, source != null ? source.name : null);
             if (source != null && !wasDead && CurrentHealth < before)
+            {
                 DamagedBySource?.Invoke(source);
+                // Confirmed health loss only: no swing/miss, blocked hit or god-mode cue.
+                if (!source.transform.IsChildOf(transform))
+                {
+                    Project.Audio.GameAudioManager.EnsureExists();
+                    Project.Audio.GameAudioManager.Instance?.PlayPlayerBodyHit();
+                    Project.Combat.CombatEvents.RaisePlayerDamaged(gameObject, source, before - CurrentHealth);
+                }
+            }
         }
 
         public void DevSetHealth(float value)

@@ -157,7 +157,7 @@ namespace Project.UI
 
             bool toastActive = bannerPhase != 0;
             bool want = DMUiToolkitOverlayDocument.GameplayHudWanted()
-                && !GameplayHudVisibility.CinematicChromeHidden;
+                && !GameplayHudVisibility.SuppressesGameplayChrome;
             bool showRoot = want || toastActive;
             if (!hasRootShown || showRoot != lastRootShown)
             {

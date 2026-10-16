@@ -79,7 +79,7 @@ namespace Project.UI
             if (!leftoverBound)
                 return;
 
-            if (!gameplayVisible || GameplayHudVisibility.CinematicChromeHidden)
+            if (!gameplayVisible || GameplayHudVisibility.SuppressesGameplayChrome)
             {
                 HideLeftoverPreviewHosts();
                 oxygenWasCritical = false;

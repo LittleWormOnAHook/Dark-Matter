@@ -49,16 +49,26 @@ namespace Project.UI
         private OpticsOverlayUI boundUgui;
         private Canvas boundOpticsCanvas;
         private DMScopeReticleElement reticle;      // 2026-10-13 (h) new scope art
+        private DMScopeCenterMaskElement centerMask;
         private VisualElement crosshairH;
         private VisualElement crosshairV;
+        private VisualElement scopeCrosshairClip;
         private VisualElement scopeCrosshairSprite;
         private bool scopeShowing;
+        private bool scopeUsesInnerRingViewportMask;
         private float weaponScopeMaskRadius = 0.38f;
         private float maskBuiltRadius = -1f;
+        private float lastScopeCenterMaskDiameterPx = -1f;
         private const float RifleCrosshairBasePixels = 196f;
 
         private static bool WeaponScopeActive =>
             Project.Combat.DMScopeMode.IsScoped || Project.Combat.DMScopeMode.ZoomBlend > 0.001f;
+
+        /// <summary>Legacy rifle procedural ADS — full-screen view without inner-ring viewport vignette.</summary>
+        private bool RifleScopeWithoutPassthroughMask =>
+            scopeShowing
+            && Project.Combat.DMScopeMode.IsScopedRifle
+            && !scopeUsesInnerRingViewportMask;
 
         public static bool IsShowing => instance != null && instance.visible;
 
@@ -166,8 +176,9 @@ namespace Project.UI
                 EnsureAttached();
 
             // Weapon scope + binoculars/scanner: UITK drives; retire uGUI optics canvas (no MainCanvas duplicate).
-            bool driving = DMUiToolkitConfig.IsEnabled && (scopeActive || DMUiToolkitHud.IsDriving || scopeProfile.retireUguiOptics);
-            SetOpticsCanvasEnabled(!driving);
+            bool driving = DMUiToolkitConfig.IsEnabled
+                && (scopeActive || DMUiToolkitHud.IsDriving || scopeProfile.retireUguiOptics);
+            SetOpticsCanvasEnabled(scopeActive && DMUiToolkitConfig.IsEnabled ? false : !driving);
             if (!driving)
                 return;
 
@@ -179,9 +190,12 @@ namespace Project.UI
             if (scopeShowing)
             {
                 scopeShowing = false;
+                scopeUsesInnerRingViewportMask = false;
                 weaponScopeMaskRadius = 0.38f;
+                lastScopeCenterMaskDiameterPx = -1f;
                 if (opticsRoot != null) opticsRoot.style.opacity = 1f;
                 SetDisplay(scopeCrosshairSprite, false);
+                SetDisplay(centerMask, false);
                 ApplyState(false, ToolType.None, true, null);
             }
 
@@ -200,6 +214,8 @@ namespace Project.UI
             boundTexture = null;
 
             bool rifle = Project.Combat.DMScopeMode.IsScopedRifle;
+            Vector2 sway = Project.Combat.DMScopeMode.ReticleSway;
+            float ringDiameterPx = p.ResolveRingOuterDiameterPx(rifle);
 
             SetHostVisible(true);
             SetDisplay(binocularRoot, true);
@@ -209,26 +225,101 @@ namespace Project.UI
             SetDisplay(modeLabel, false);
             SetDisplay(hintLabel, rifle);
             SetDisplay(viewport, false);
+
             float maskRadius = Mathf.Clamp(rifle ? p.rifleScopeMaskRadius : p.pistolScopeMaskRadius, 0.15f, 0.55f);
             if (rifle)
                 maskRadius = Mathf.Clamp(maskRadius * Mathf.Clamp(p.rifleScopeMaskScale, 0.5f, 1f), 0.15f, 0.55f);
             weaponScopeMaskRadius = rifle ? maskRadius : 0f;
 
-            bool rifleSniperSprite = rifle && p.scopeOverlayUseSpriteCrosshair && p.useNewScopeArt;
-            Sprite crossSprite = rifleSniperSprite ? p.ResolveRifleScopeCrosshairSprite() : null;
-            rifleSniperSprite = crossSprite != null && rifleSniperSprite;
+            bool useNewArt = p.useNewScopeArt;
+            bool useSpriteOuter = p.scopeOverlayUseSpriteCrosshair && useNewArt;
+            bool rifleProceduralLegacy = rifle && useNewArt && !p.scopeOverlayUseSpriteCrosshair;
+            Sprite crossSprite = useSpriteOuter ? p.ResolveRifleScopeCrosshairSprite() : null;
+            bool showOuterSprite = crossSprite != null && useSpriteOuter;
 
-            SetDisplay(scopeOuter, false);
+            SetDisplay(scopeOuter, !useNewArt || rifleProceduralLegacy);
             SetDisplay(scopeInner, false);
             SetDisplay(crosshairH, false);
             SetDisplay(crosshairV, false);
 
+            float reticlePresentationScale = rifle ? 1f : Mathf.Clamp(p.pistolScopeReticleScale, 0.1f, 1f);
+            float centerMaskDiameterPx = rifleProceduralLegacy
+                ? Mathf.Max(8f, maskRadius * Mathf.Max(1, Screen.height) * 2f)
+                : p.ResolveCenterMaskOuterDiameterPx(rifle, reticlePresentationScale);
+
+            scopeUsesInnerRingViewportMask = useNewArt && !rifleProceduralLegacy;
+            if (scopeUsesInnerRingViewportMask)
+            {
+                weaponScopeMaskRadius = Project.Combat.DM_ScopeProfile.ViewportMaskRadiusFromOuterDiameterPx(
+                    centerMaskDiameterPx,
+                    Screen.height);
+                if (Mathf.Abs(centerMaskDiameterPx - lastScopeCenterMaskDiameterPx) > 0.01f)
+                {
+                    lastScopeCenterMaskDiameterPx = centerMaskDiameterPx;
+                    maskBuiltRadius = -1f;
+                }
+            }
+
+            if (centerMask != null)
+            {
+                bool showMask = p.scopeCenterMaskEnabled && useNewArt && p.scopeCenterMaskAlpha > 0.001f;
+                if (showMask)
+                {
+                    if (!scopeUsesInnerRingViewportMask
+                        && Mathf.Abs(centerMaskDiameterPx - lastScopeCenterMaskDiameterPx) > 0.01f)
+                    {
+                        lastScopeCenterMaskDiameterPx = centerMaskDiameterPx;
+                        maskBuiltRadius = -1f;
+                    }
+
+                    centerMask.ApplySettings(
+                        centerMaskDiameterPx,
+                        p.scopeCenterMaskColor,
+                        p.scopeCenterMaskAlpha,
+                        p.scopeCenterMaskBlurPixels,
+                        sway);
+                    SetDisplay(centerMask, true);
+                    centerMask.MarkDirtyRepaint();
+                }
+                else
+                {
+                    if (!scopeUsesInnerRingViewportMask)
+                        lastScopeCenterMaskDiameterPx = -1f;
+                    SetDisplay(centerMask, false);
+                }
+            }
+
             if (reticle != null)
             {
-                reticle.Offset = Project.Combat.DMScopeMode.ReticleSway;
-                if (!rifle && p.useNewScopeArt)
+                reticle.Offset = sway;
+                reticle.UseWeaponScopedColors = useNewArt;
+                reticle.WeaponIsRifle = rifle;
+                if (rifleProceduralLegacy)
                 {
-                    float pistolScale = Mathf.Clamp(p.pistolScopeReticleScale, 0.1f, 1f);
+                    reticle.Style = DMScopeReticleElement.ReticleStyle.RifleClassic;
+                    reticle.DrawHexGrid = true;
+                    reticle.RadiusFraction = maskRadius;
+                    reticle.PresentationScale = 1f;
+                    reticle.DrawCrosshair = true;
+                    SetDisplay(reticle, true);
+                    reticle.Refresh();
+                }
+                else if (useNewArt && (showOuterSprite || !rifle))
+                {
+                    float pistolScale = reticlePresentationScale;
+                    reticle.Style = DMScopeReticleElement.ReticleStyle.ScopedInnerRing;
+                    reticle.RingOuterDiameterPx = ringDiameterPx;
+                    reticle.PresentationScale = pistolScale;
+                    reticle.DrawCrosshair = true;
+                    reticle.DrawHexGrid = false;
+                    SetDisplay(reticle, true);
+                    reticle.Refresh();
+                    reticle.BringToFront();
+                }
+                else if (!rifle && useNewArt)
+                {
+                    float pistolScale = reticlePresentationScale;
+                    reticle.Style = DMScopeReticleElement.ReticleStyle.Binocular;
                     reticle.RadiusFraction = maskRadius * pistolScale;
                     reticle.PresentationScale = pistolScale;
                     reticle.DrawCrosshair = true;
@@ -242,30 +333,82 @@ namespace Project.UI
                 }
             }
 
+            SetDisplay(scopeCrosshairClip, false);
             SetDisplay(scopeCrosshairSprite, false);
-            if (rifleSniperSprite && scopeCrosshairSprite != null)
+            if (showOuterSprite && scopeCrosshairSprite != null)
             {
-                SetDisplay(scopeCrosshairSprite, true);
-                Vector2 sway = Project.Combat.DMScopeMode.ReticleSway;
-                float crossPx = RifleCrosshairBasePixels * Mathf.Clamp(p.rifleScopeCrosshairScale, 0.35f, 1.5f);
+                float crossPx = RifleCrosshairBasePixels * p.ResolveOuterCrosshairScale(rifle);
                 scopeCrosshairSprite.style.width = crossPx;
                 scopeCrosshairSprite.style.height = crossPx;
                 scopeCrosshairSprite.style.left = Length.Percent(50f);
                 scopeCrosshairSprite.style.top = Length.Percent(50f);
                 scopeCrosshairSprite.style.right = StyleKeyword.Auto;
                 scopeCrosshairSprite.style.bottom = StyleKeyword.Auto;
-                scopeCrosshairSprite.style.marginLeft = -crossPx * 0.5f + sway.x;
-                scopeCrosshairSprite.style.marginTop = -crossPx * 0.5f + sway.y;
-                scopeCrosshairSprite.style.unityBackgroundImageTintColor = Color.white;
+                scopeCrosshairSprite.style.marginLeft = -crossPx * 0.5f;
+                scopeCrosshairSprite.style.marginTop = -crossPx * 0.5f;
+                scopeCrosshairSprite.style.unityBackgroundImageTintColor = p.ResolveOuterCrosshairTint(rifle);
                 if (!DMUiToolkitStyle.TrySetSpriteBackground(scopeCrosshairSprite, crossSprite, ScaleMode.ScaleToFit)
                     && crossSprite.texture != null)
                     DMUiToolkitStyle.TrySetTextureBackground(scopeCrosshairSprite, crossSprite.texture, ScaleMode.ScaleToFit);
-                scopeCrosshairSprite.BringToFront();
+
+                if (scopeUsesInnerRingViewportMask && scopeCrosshairClip != null)
+                {
+                    ApplyInnerRingCrosshairClip(centerMaskDiameterPx, sway);
+                    SetDisplay(scopeCrosshairClip, true);
+                    SetDisplay(scopeCrosshairSprite, true);
+                }
+                else
+                {
+                    scopeCrosshairSprite.style.marginLeft = -crossPx * 0.5f + sway.x;
+                    scopeCrosshairSprite.style.marginTop = -crossPx * 0.5f + sway.y;
+                    SetDisplay(scopeCrosshairSprite, true);
+                    scopeCrosshairSprite.SendToBack();
+                }
+
+                if (reticle != null)
+                    reticle.BringToFront();
+            }
+
+            if (rangeLabel != null && rifle)
+            {
+                float radiusPx = maskRadius * Screen.height;
+                float bottomInset = Screen.height * 0.5f - radiusPx * 0.88f;
+                rangeLabel.style.bottom = Mathf.Max(36f, bottomInset);
             }
 
             maskBuiltForScanner = false;
-            if (rifle)
+            if (scopeUsesInnerRingViewportMask)
+            {
                 ApplyPassthroughDim(scanner: false);
+                if (dim != null)
+                    dim.SendToBack();
+                if (centerMask != null && centerMask.resolvedStyle.display != DisplayStyle.None)
+                {
+                    if (dim != null)
+                        centerMask.PlaceInFront(dim);
+                    else
+                        centerMask.SendToBack();
+                }
+
+                VisualElement crosshairAnchor = centerMask != null && centerMask.resolvedStyle.display != DisplayStyle.None
+                    ? centerMask
+                    : dim;
+                if (scopeCrosshairClip != null && scopeCrosshairClip.resolvedStyle.display != DisplayStyle.None)
+                {
+                    if (crosshairAnchor != null)
+                        scopeCrosshairClip.PlaceInFront(crosshairAnchor);
+                    scopeCrosshairClip.BringToFront();
+                }
+
+                if (reticle != null && reticle.resolvedStyle.display != DisplayStyle.None)
+                    reticle.BringToFront();
+            }
+            else if (centerMask != null && centerMask.resolvedStyle.display != DisplayStyle.None && reticle != null)
+            {
+                centerMask.PlaceBehind(reticle);
+            }
+            else if (rifle)
+                ClearPassthroughDim();
             else if (dim != null)
                 SetDisplay(dim, false);
 
@@ -282,11 +425,7 @@ namespace Project.UI
             {
                 if (rifle)
                 {
-                    string rangeText = Mathf.RoundToInt(Project.Combat.DMScopeMode.ResolvePlayerRange(0f)) + " m";
-                    EngagedEnemyHealthHud enemyHud = EngagedEnemyHealthHud.Instance;
-                    if (enemyHud != null && enemyHud.TryGetFocus(out string enemyName, out float enemyFill))
-                        rangeText += "   |   " + enemyName + "  " + Mathf.RoundToInt(enemyFill * 100f) + "%";
-                    rangeLabel.text = rangeText;
+                    rangeLabel.text = Project.Combat.DMScopeMode.FormatScopedRangeReadout();
                     SetDisplay(rangeLabel, true);
                 }
                 else
@@ -357,21 +496,46 @@ namespace Project.UI
             scanningLabel = root.Q<Label>("optics-scanning");
             crosshairH = root.Q<VisualElement>("optics-crosshair-h");
             crosshairV = root.Q<VisualElement>("optics-crosshair-v");
+            VisualElement scopeHost = opticsRoot ?? root;
             if (reticle == null || reticle.parent == null)
             {
                 reticle = new DMScopeReticleElement();
-                VisualElement host = opticsRoot ?? root;
-                int idx = binocularRoot != null && binocularRoot.parent == host ? host.IndexOf(binocularRoot) + 1 : host.childCount;
-                host.Insert(idx, reticle);
+                int idx = binocularRoot != null && binocularRoot.parent == scopeHost
+                    ? scopeHost.IndexOf(binocularRoot) + 1
+                    : scopeHost.childCount;
+                scopeHost.Insert(idx, reticle);
             }
 
-            scopeCrosshairSprite = root.Q<VisualElement>("optics-scope-crosshair");
-            if (scopeCrosshairSprite == null || scopeCrosshairSprite.parent == null)
+            if (centerMask == null || centerMask.parent == null)
+            {
+                centerMask = new DMScopeCenterMaskElement();
+                int reticleIndex = scopeHost.IndexOf(reticle);
+                scopeHost.Insert(reticleIndex >= 0 ? reticleIndex : scopeHost.childCount, centerMask);
+            }
+
+            scopeCrosshairClip = root.Q<VisualElement>("optics-scope-crosshair-clip");
+            if (scopeCrosshairClip == null || scopeCrosshairClip.parent == null)
+            {
+                scopeCrosshairClip = new VisualElement { name = "optics-scope-crosshair-clip" };
+                scopeCrosshairClip.pickingMode = PickingMode.Ignore;
+                scopeCrosshairClip.style.position = Position.Absolute;
+                scopeCrosshairClip.style.overflow = Overflow.Hidden;
+                scopeHost.Add(scopeCrosshairClip);
+            }
+
+            scopeCrosshairSprite = scopeCrosshairClip.Q<VisualElement>("optics-scope-crosshair")
+                ?? root.Q<VisualElement>("optics-scope-crosshair");
+            if (scopeCrosshairSprite == null)
             {
                 scopeCrosshairSprite = new VisualElement { name = "optics-scope-crosshair" };
                 scopeCrosshairSprite.AddToClassList("dmg-optics-scope-crosshair");
                 scopeCrosshairSprite.pickingMode = PickingMode.Ignore;
-                (opticsRoot ?? root).Add(scopeCrosshairSprite);
+                scopeCrosshairClip.Add(scopeCrosshairSprite);
+            }
+            else if (scopeCrosshairSprite.parent != scopeCrosshairClip)
+            {
+                scopeCrosshairSprite.RemoveFromHierarchy();
+                scopeCrosshairClip.Add(scopeCrosshairSprite);
             }
 
             ApplySprites();
@@ -501,8 +665,8 @@ namespace Project.UI
                 viewport.style.backgroundImage = StyleKeyword.None;
                 viewport.style.backgroundColor = Color.clear;
                 SetDisplay(viewport, false);
-                if (scanner)
-                    SetDisplay(dim, false);
+                if (scanner || RifleScopeWithoutPassthroughMask)
+                    ClearPassthroughDim();
                 else
                     ApplyPassthroughDim(scanner: false);
                 return;
@@ -519,10 +683,26 @@ namespace Project.UI
             }
         }
 
+        private void ClearPassthroughDim()
+        {
+            if (dim == null)
+                return;
+
+            dim.style.backgroundImage = StyleKeyword.None;
+            dim.style.backgroundColor = Color.clear;
+            SetDisplay(dim, false);
+        }
+
         private void ApplyPassthroughDim(bool scanner)
         {
             if (dim == null)
                 return;
+
+            if (RifleScopeWithoutPassthroughMask)
+            {
+                ClearPassthroughDim();
+                return;
+            }
 
             EnsurePassthroughMask(scanner);
             if (passthroughMask != null)
@@ -571,7 +751,14 @@ namespace Project.UI
             float halfH = settings != null ? settings.scannerRectHalfHeight : 0.24f;
             float softness = scanner
                 ? Mathf.Max(0.02f, settings != null ? settings.scannerEdgeSoftness : 0.02f)
-                : Mathf.Max(0.03f, settings != null ? settings.binocularEdgeSoftness : 0.03f);
+                : scopeShowing && scopeUsesInnerRingViewportMask
+                    ? Mathf.Clamp(
+                        Project.Combat.DM_ScopeProfile.Live.scopeInnerRingViewportEdgeSoftness,
+                        0.005f,
+                        0.08f)
+                    : scopeShowing && Project.Combat.DMScopeMode.IsScopedRifle
+                        ? 0.012f
+                        : Mathf.Max(0.03f, settings != null ? settings.binocularEdgeSoftness : 0.03f);
 
             Color32[] pixels = new Color32[PassthroughMaskResolution * PassthroughMaskResolution];
             for (int y = 0; y < PassthroughMaskResolution; y++)
@@ -709,6 +896,25 @@ namespace Project.UI
         {
             if (element != null)
                 element.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+
+        private void ApplyInnerRingCrosshairClip(float viewportDiameterPx, Vector2 sway)
+        {
+            if (scopeCrosshairClip == null)
+                return;
+
+            float d = Mathf.Max(8f, viewportDiameterPx);
+            scopeCrosshairClip.style.width = d;
+            scopeCrosshairClip.style.height = d;
+            scopeCrosshairClip.style.left = Length.Percent(50f);
+            scopeCrosshairClip.style.top = Length.Percent(50f);
+            scopeCrosshairClip.style.marginLeft = -d * 0.5f + sway.x;
+            scopeCrosshairClip.style.marginTop = -d * 0.5f + sway.y;
+            Length round = Length.Percent(50f);
+            scopeCrosshairClip.style.borderTopLeftRadius = round;
+            scopeCrosshairClip.style.borderTopRightRadius = round;
+            scopeCrosshairClip.style.borderBottomLeftRadius = round;
+            scopeCrosshairClip.style.borderBottomRightRadius = round;
         }
     }
 }

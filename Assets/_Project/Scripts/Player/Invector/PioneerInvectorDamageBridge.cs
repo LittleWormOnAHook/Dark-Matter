@@ -90,14 +90,14 @@ namespace Project.Player.Invector
             return bridge != null ? bridge.ActiveEquippedItem : null;
         }
 
-        public static void ApplyPioneerDamageToCollider(Collider hitCollider, float damage, GameObject source, bool isCritical, Vector3? weaponHitPoint = null)
+        public static bool ApplyPioneerDamageToCollider(Collider hitCollider, float damage, GameObject source, bool isCritical, Vector3? weaponHitPoint = null)
         {
             if (hitCollider == null || damage <= 0f)
-                return;
+                return false;
 
             IDamageable damageable = DamageableUtility.GetDamageable(hitCollider);
             if (damageable == null)
-                return;
+                return false;
 
             // Prefer the weapon hitbox's impact position; clamp it onto the target's surface.
             Vector3 hitPoint = weaponHitPoint.HasValue
@@ -108,10 +108,10 @@ namespace Project.Player.Invector
                 : Vector3.forward;
 
             DamageInfo info = DamageInfo.FromHit(damage, isCritical, source, hitPoint);
-            CombatDamageApplicator.ApplyToDamageable(
+            if (!CombatDamageApplicator.ApplyToDamageable(
                 damageable,
                 hitCollider.transform.root.gameObject,
-                in info);
+                in info)) return false;
 
             EnemyHealth enemyHealth = hitCollider.GetComponentInParent<EnemyHealth>();
             if (enemyHealth != null)
@@ -132,6 +132,7 @@ namespace Project.Player.Invector
 
             EnemyNoiseEvents.RaiseNoise(hitPoint, 12f, source);
             DMCombatCameraShake.TryPlayChargedHit(source);
+            return true;
         }
     }
 }

@@ -1,5 +1,5 @@
 ---
-description: Unity compile/console checks and commit staging for Dark Matter Genesis
+description: Unity refresh, zero console errors/warnings, and commit staging for Dark Matter Genesis
 alwaysApply: true
 ---
 
@@ -21,11 +21,56 @@ When editing Unity C# scripts, shaders, ScriptableObjects, or other assets that 
 3. **Do not** spam MCP tools while compile / domain reload is in progress.
 4. Wait until Unity has **stopped compiling and finished domain reload**:
    - Prefer `refresh_unity` with `wait_for_ready: true`, or poll `mcpforunity://editor/state` until `compilation.is_compiling == false`, `is_domain_reload_pending == false`, and `data.advice.ready_for_tools` is true.
-   - Domain reloads in this project can take 10–20+ seconds — be patient.
-5. Then run `read_console` focused on **errors** (include warnings if relevant).
-6. If new compile errors appear from the change, fix them and repeat steps 2–5.
+   - Domain reloads in this project can take 10–20+ seconds — be patient; heavy script batches can exceed **60 seconds**.
+   - If `refresh_unity` with `wait_for_ready: true` returns a **60s timeout** but Unity is still reloading, **do not** assume compile failed: poll `mcpforunity://editor/state` (or retry `read_console` / `refresh_unity`) for up to **4 minutes (240s)** total before giving up or asking the user for Ctrl+R.
+5. Then run `read_console` for **errors and warnings** (both every pass).
+6. Fix or report any issues; repeat steps 2–6 until the console shows **zero errors and zero warnings**.
+   - Prefer fixing warnings in project code/assets (`Assets/_Project/`).
+   - If a warning is truly unfixable third-party or package noise, document it in the task summary (source, why not fixable) before treating the task done — do not leave fixable project warnings.
 
-Never claim an edit is done while Unity is still compiling or reloading.
+Never claim an edit is done while Unity is still compiling or reloading, or while the console has errors or unexcused warnings.
+
+## MCP `refresh_unity` wait budget (240s)
+
+**Where the 60s cap comes from:** `com.coplaydev.unity-mcp` (`RefreshUnity.cs`) uses `DefaultWaitTimeoutSeconds = 60` when `wait_for_ready: true`. The public MCP tool schema has **no** `wait_timeout`, `max_wait`, or `wait_seconds` parameter (only `mode`, `scope`, `compile`, `wait_for_ready`). Project MCP config (`.cursor/mcp.json`) does not override this.
+
+**Unity 6 HDRP (this project):** when `compile: request`, the package **skips** in-tool `wait_for_ready` (domain reload breaks the EditorApplication.update poll). The tool returns quickly with a hint to poll `mcpforunity://editor/state`. Agents must **poll editor state for up to 240 seconds (4 minutes)** after script/asmdef edits — not assume readiness at 60s.
+
+**When `compile: none` and `wait_for_ready: true`:** the tool may block up to **60s**, then return `refresh_timeout_waiting_for_ready` while Unity is still importing. Treat that as “keep waiting,” not failure — poll editor state until ready or **240s** total elapsed.
+
+**Polling fallback (required after script edits; use after any 60s timeout):**
+
+1. Read `mcpforunity://editor/state` (or equivalent MCP editor state resource).
+2. Wait until `data.compilation.is_compiling == false`, `data.is_domain_reload_pending == false`, and `data.advice.ready_for_tools == true`.
+3. Poll every **5–10s**; stop when ready or **240s** total since the refresh request (include the initial `refresh_unity` call).
+4. Do not hammer MCP during reload; one poll per interval is enough.
+5. Only after ready (or 240s with user guidance): `read_console` (errors and warnings), then fix/re-check per **Console check after edits** before marking done or committing.
+
+**Example MCP call (typical post-edit refresh on this repo):**
+
+```json
+{
+  "mode": "if_dirty",
+  "scope": "all",
+  "compile": "request",
+  "wait_for_ready": true
+}
+```
+
+Then poll editor state up to **240s** even though `compile: request` usually returns before Unity is ready.
+
+**Asset-only refresh (no compile):**
+
+```json
+{
+  "mode": "if_dirty",
+  "scope": "all",
+  "compile": "none",
+  "wait_for_ready": true
+}
+```
+
+If this hits a 60s timeout, continue polling editor state until ready or **240s** total.
 
 ## Auto refresh after edits
 
@@ -35,20 +80,20 @@ When a task changes anything under `Assets/` or `ProjectSettings/` that Unity sh
    - **`mode`:** `if_dirty` (default). Use `force` only if `if_dirty` did not clear `external_changes_dirty` and import is still stale.
    - **`scope`:** `all` (or `scripts` if only `.cs` changed and no other assets).
    - **`compile`:** `request` when C# / `.asmdef` / shader includes changed; `none` for pure asset YAML/material/scene-only edits if compile is not needed.
-   - **`wait_for_ready`:** `true`.
-2. Then **`read_console`** (errors) before marking the task done or committing.
-3. If Unity MCP is unavailable, tell the user to **Ctrl+R** and wait for compile before claiming done.
+   - **`wait_for_ready`:** `true` (still pass it; on Unity 6 with `compile: request`, follow **MCP `refresh_unity` wait budget (240s)** polling).
+2. **Wait for readiness** per **Console check after edits** step 4 and **MCP `refresh_unity` wait budget (240s)** — up to **240s** total, not 60s.
+3. Then **`read_console`** (errors and warnings) and resolve per **Console check after edits** before marking the task done or committing.
+4. If Unity MCP is unavailable, tell the user to **Ctrl+R** and wait for compile before claiming done.
 
-## No commit with console errors
+## No commit with console errors or warnings
 
-Never create a git commit while the Unity Editor console has errors.
+Never create a git commit while the Unity Editor console has errors or warnings.
 
 Before any `git commit` for this project:
 
 1. Wait until Unity is not compiling / domain-reloading (`editor_state` ready).
-2. Check the Unity console for **Error** entries (MCP `read_console` or equivalent).
-3. If any errors exist: **do not commit or push** — fix (or report) them first, re-check console, then commit.
-4. Warnings alone do not block commit unless the user says otherwise.
+2. Check the Unity console for **Error** and **Warning** entries (MCP `read_console` or equivalent).
+3. If any errors or warnings exist: **do not commit or push** — fix them first (or document a truly unfixable third-party warning per **Console check after edits**), re-check until **zero errors and zero warnings**, then commit.
 
 ## Include content assets in commits
 

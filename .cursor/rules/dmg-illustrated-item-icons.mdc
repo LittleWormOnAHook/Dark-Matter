@@ -79,4 +79,4 @@ Use **Tools → Dark Matter Genesis → Art → Create Icon For Selected ItemDat
 
 ## Commits
 
-Stage new PNG + `.meta`, updated `ItemData`, and blueprint assets together (`unity-commit-include-assets` rule). No commit while Unity console has errors.
+Stage new PNG + `.meta`, updated `ItemData`, and blueprint assets together (`unity-commit-include-assets` rule). No commit while Unity console has errors or warnings (`unity-agent-workflow.mdc`).

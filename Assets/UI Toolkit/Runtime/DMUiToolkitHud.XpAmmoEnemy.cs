@@ -41,7 +41,7 @@ namespace Project.UI
                 return;
             }
 
-            if (GameplayHudVisibility.CinematicChromeHidden)
+            if (GameplayHudVisibility.SuppressesGameplayChrome)
             {
                 if (ammoLabel != null)
                     ammoLabel.style.display = DisplayStyle.None;

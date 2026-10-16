@@ -485,8 +485,12 @@ namespace Project.Combat
         [Range(0.2f, 5f)] public float playerCorpseSettleSeconds = 1.5f;
         [Tooltip("Max horizontal bone speed (m/s) while the corpse settles.")]
         [Range(0f, 10f)] public float playerCorpseMaxSlideSpeed = 1.5f;
-        [Tooltip("After Retry/respawn: seconds the player's body is held still (velocity zeroed, ragdoll bones kept kinematic) before control resumes.")]
-        [Range(0f, 3f)] public float playerRespawnSettleSeconds = 0.6f;
+        [Tooltip("After Retry/respawn: minimum seconds velocity is zeroed and ragdoll bones stay kinematic (includes stand-up).")]
+        [Range(0f, 3f)] public float playerRespawnSettleSeconds = 0.85f;
+        [Tooltip("After stand-up finishes: brief movement lock before walk input applies (reduces Invector inputSmooth slide).")]
+        [Range(0f, 1.5f)] public float playerRespawnPostStandUpLockSeconds = 0.35f;
+        [Tooltip("After stand-up: extra seconds horizontal RB velocity is clamped when grounded and movement input is idle.")]
+        [Range(0f, 2f)] public float playerRespawnPostStandUpSettleSeconds = 0.75f;
 
         [Header("Ranged aggro + alerts (2026-10-14 a)")]
         [Tooltip("A player ranged hit provokes the enemy: it targets the shooter and chases past its vision, leash and chase-time limits for this many seconds (refreshed by each hit).")]

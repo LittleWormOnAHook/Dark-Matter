@@ -41,6 +41,7 @@ MonoBehaviour:
   criticalChance: 0.1
   criticalDamageMultiplier: 2
   meleeRange: 2.2
+  meleeBladeLength: -1
   meleeCooldown: 0.65
   attackAnimationSpeed: 0
   meleeStaminaCost: 0
@@ -57,8 +58,12 @@ MonoBehaviour:
   closeRangeSpreadScale: 0.2
   recoilVertical: 2.8
   recoilHorizontal: 0.75
-  recoilFireRateScale: 5.16
-  fireRate: 6
+  recoilFireRateScale: 1
+  fireRate: 4
+  rifleScopedFireInterval: 0
+  pistolScopedFireInterval: 0
+  rifleScopedFireIntervalPercentModifier: 0
+  pistolScopedFireIntervalPercentModifier: 0
   shotsPerBurst: 1
   burstFireRate: 10
   magazineSize: 30
@@ -84,7 +89,7 @@ MonoBehaviour:
   ammoPerPickup: 500
   ammoPickupGrant: 50
   ammoRecoilProfile:
-    pistolCameraVertical: 2.8
+    pistolCameraVertical: 1.5
     pistolCameraHorizontal: 0.75
     pistolAnimationWeight: 0.38
     rifleCameraVertical: 4.2

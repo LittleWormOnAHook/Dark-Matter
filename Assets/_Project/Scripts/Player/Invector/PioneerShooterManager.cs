@@ -59,6 +59,7 @@ namespace Project.Player.Invector
 
             PioneerInvectorRecoilUtility.ApplyShooterManagerDefaults(this);
             PioneerInvectorMeshyAimSnapUtility.ApplyShooterManagerSettings(gameObject, this);
+            hipfireShot = true;
             SuppressNativeRecoil();
             UpdateTotalAmmo();
             onFinishReloadWeapon.AddListener(OnPioneerReloadFinished);

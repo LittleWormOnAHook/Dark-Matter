@@ -129,6 +129,9 @@ namespace Project.AI.Invector
             SyncRigidbodyToTransform();
             ApplyAiLocomotionMotor();
             DMSpawnPhysicsStabilizer.KeepLivingRootKinematic(gameObject);
+            // Transform-driven AI owns root translation; never leave Invector lockMovement off after spawn settle.
+            if (_controller != null)
+                _controller.lockMovement = true;
         }
 
         private void LateUpdate()
@@ -232,6 +235,18 @@ namespace Project.AI.Invector
             bool engaged = _aiController != null && _aiController.IsEngagedWithTarget;
             float speed = _measuredVelocity.magnitude;
 
+            if (_aiController != null &&
+                _aiController.RecentWallBufferContact &&
+                speed < MoveSpeedThreshold * 1.5f)
+            {
+                ReleaseStepPlaybackBoost(animator);
+                _controller.isSprinting = false;
+                _controller.inputMagnitude = 0f;
+                _controller.verticalSpeed = 0f;
+                _controller.horizontalSpeed = 0f;
+                return;
+            }
+
             // Quick steps (strafe / backstep / sidestep): leg-cycle exaggeration, see DM_EnemyEngagementProfile "Step animation".
             bool quick = _aiController != null && _aiController.IsQuickStepActive;
             DM_EnemyEngagementProfile stepProfile = quick ? DM_EnemyEngagementProfile.Live : null;
@@ -282,6 +297,27 @@ namespace Project.AI.Invector
             float offFacing = Mathf.Abs(Mathf.Atan2(localDirection.x, localDirection.z) * Mathf.Rad2Deg);
             float strafeWalk = Mathf.Max(0.1f, strafeWalkClipSpeed * scale);
             float strafeRun = Mathf.Max(strafeWalk + 0.1f, strafeRunClipSpeed * scale);
+            if (_aiController != null &&
+                _aiController.RecentWallBufferContact &&
+                Mathf.Abs(localDirection.z) < 0.2f)
+            {
+                ReleaseStepPlaybackBoost(animator);
+                _strafeLatched = false;
+                _controller.isStrafing = false;
+                _controller.isSprinting = false;
+                _controller.horizontalSpeed = 0f;
+                if (speed < MoveSpeedThreshold * 1.5f)
+                {
+                    _controller.inputMagnitude = 0f;
+                    _controller.verticalSpeed = 0f;
+                    return;
+                }
+
+                _controller.inputMagnitude = FreeInputMagnitudeForSpeed(animSpeed, scale);
+                _controller.verticalSpeed = 1f;
+                return;
+            }
+
             float angleGate = _strafeLatched ? Mathf.Max(0f, strafeAngleThreshold - 10f) : strafeAngleThreshold;
             bool strafe = aiming || (engaged && offFacing > angleGate && (quick || speed <= strafeRun * 1.15f));
             _strafeLatched = strafe;

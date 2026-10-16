@@ -121,7 +121,10 @@ namespace Project.Combat
 
             bool recoiled = false;
             PioneerShooterMeleeInput melee = source != null ? source.GetComponentInParent<PioneerShooterMeleeInput>() : null;
-            if (bp.blockedHitSfx != null)
+            Project.Audio.GameAudioManager audio = Project.Audio.GameAudioManager.Instance;
+            if (audio != null)
+                audio.PlayMeleeClash(enemy.transform.position + Vector3.up * 1.3f);
+            else if (bp.blockedHitSfx != null)
                 AudioSource.PlayClipAtPoint(bp.blockedHitSfx, enemy.transform.position + Vector3.up * 1.3f, bp.blockedHitSfxVolume);
             if (melee != null
                 && bp.playerBlockedRecoilChance > 0f

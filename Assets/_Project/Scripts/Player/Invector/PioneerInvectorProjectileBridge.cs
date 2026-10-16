@@ -70,6 +70,12 @@ namespace Project.Player.Invector
 
             BurstAimLock aimLock = default;
             int burst = DMRangedAmmoStats.ResolveBurstCount(weaponItem, ammoItem);
+            if (DMScopeMode.IsScoped)
+            {
+                StopBurst();
+                burst = 1;
+            }
+
             FireResolvedRound(invectorWeapon, weaponItem, ammoItem, muzzle, ref aimLock, captureLock: burst > 1);
 
             if (burst <= 1)
@@ -232,7 +238,7 @@ namespace Project.Player.Invector
                 bool isAiming = _inputBridge != null && _inputBridge.IsAiming;
                 float maxRange = DMScopeMode.ResolvePlayerRange(DMRangedAmmoStats.ResolveRange(weaponItem, ammoItem)); // (h) scoped range
 
-                Camera cam = ResolveGameplayCamera();
+                Camera cam = DMScopeMode.IsScoped ? DMScopeMode.ResolveGameplayCamera() : ResolveGameplayCamera();
                 float aimDistance = maxRange;
                 Vector3 reticleAim = muzzle.forward;
                 if (cam != null)

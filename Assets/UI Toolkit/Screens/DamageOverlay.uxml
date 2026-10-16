@@ -3,5 +3,6 @@
     <Style src="DamageOverlay.uss"/>
     <ui:VisualElement name="damage-root" picking-mode="Ignore" class="dmg-damage-root">
         <ui:VisualElement name="damage-layer" picking-mode="Ignore" class="dmg-damage-layer"/>
+        <ui:VisualElement name="hit-direction-host" picking-mode="Ignore" class="dmg-hit-direction-host"/>
     </ui:VisualElement>
 </ui:UXML>

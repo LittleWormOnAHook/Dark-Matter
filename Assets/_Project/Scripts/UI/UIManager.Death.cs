@@ -60,21 +60,15 @@ namespace Project.UI
                 RestartScene();
         }
 
+        /// <summary>
+        /// Death menu RETRY: in-place stand-up at the death pose (same path as Bio Gel minus gel cost).
+        /// Does not reload a save file — use load-from-title Continue for checkpoint rollback.
+        /// </summary>
         public void RetryFromDeath()
         {
             Time.timeScale = 1f;
-
-            GameObject player = PlayerLocator.FindPlayerObject();
-            PlayerDeathHandler deathHandler = player != null ? player.GetComponent<PlayerDeathHandler>() : null;
-            deathHandler?.ClearDeathPresentationForLoad();
-
-            if (GameSaveSystem.TryLoadNewestSave(out _))
-            {
-                player?.GetComponent<SurvivalStats>()?.NotifyRevivedAfterRespawn(5f);
-                return;
-            }
-
-            RestartScene();
+            HideDeathPopup();
+            RespawnPlayer();
         }
 
         public void HideDeathPopup()

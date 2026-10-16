@@ -213,18 +213,48 @@ MonoBehaviour:
   minLandingSpeed: 2.5
   hardLandingSpeed: 9
   landingVolume: 0.9
-  weaponSwingClips:
+  meleeSwingClips:
   - {fileID: 8300000, guid: e9c5426fef925204082d3d53fba3f7ab, type: 3}
   - {fileID: 8300000, guid: 6fe7af4a8f27a124ba07d074789b72f4, type: 3}
   - {fileID: 8300000, guid: eeb13b219e9f2e04f8487efffb96f28b, type: 3}
   - {fileID: 8300000, guid: f0d6bd2d101246740b7418d60b2180f0, type: 3}
-  weaponHitClips:
+  meleeHitClips:
   - {fileID: 8300000, guid: 3fbe16d9492fe4948aa5d5884036035e, type: 3}
   - {fileID: 8300000, guid: f5ef3a289b85de348a18f905f0b4cada, type: 3}
   - {fileID: 8300000, guid: 243016b819c50e149a48bc001f398101, type: 3}
-  weaponCriticalHitClips:
+  meleeCriticalHitClips:
   - {fileID: 8300000, guid: f28d6679d37bc6146aabb27bdb29ac51, type: 3}
   - {fileID: 8300000, guid: 3b8d76e7fede964498fbc410796f12e2, type: 3}
+  meleeBodyHitClips:
+  - {fileID: 8300000, guid: d35818b985442874bb6ee76f4b8db916, type: 3}
+  - {fileID: 8300000, guid: 5bb88e64e16601f4ca4f5e1ea8bec12b, type: 3}
+  - {fileID: 8300000, guid: bfd0d772e16cf30488ae1a7e3684511d, type: 3}
+  meleeBodyCriticalHitClips:
+  - {fileID: 8300000, guid: dec715523252fa04898c9bd4a398366b, type: 3}
+  meleeBodyHitVolume: 1
+  meleeClashVolume: 1
+  playerBodyHitClips:
+  - {fileID: 8300000, guid: 304e7b5a4986b90449fe081eaa98166b, type: 3}
+  - {fileID: 8300000, guid: 2f8aa9117f180f842a1860b1bd805406, type: 3}
+  - {fileID: 8300000, guid: 3f9f12180ced468488d0198fd9c17e0c, type: 3}
+  playerPainClips: []
+  playerBodyHitVolume: 1
+  playerPainVolume: 0.922
+  playerPainMinInterval: 0.8
+  playerHitIndicatorEnabled: 1
+  playerHitIndicatorRadius: 402
+  playerHitIndicatorThickness: 8.52
+  playerHitIndicatorArc: 20.8
+  playerHitIndicatorSeconds: 0.704
+  playerHitIndicatorColor: {r: 1, g: 0.669808, b: 0, a: 0.8039216}
+  rangedHitClips:
+  - {fileID: 8300000, guid: 74123cd0d58cf434ba3a5be785d5505a, type: 3}
+  - {fileID: 8300000, guid: 5a4b1788310ec77448d16080ba045955, type: 3}
+  - {fileID: 8300000, guid: 1648242b33b7248449562f86ced3985a, type: 3}
+  rangedCriticalHitClips:
+  - {fileID: 8300000, guid: 74123cd0d58cf434ba3a5be785d5505a, type: 3}
+  - {fileID: 8300000, guid: 74123cd0d58cf434ba3a5be785d5505a, type: 3}
+  - {fileID: 8300000, guid: c0aa87eb803daab448b2eeb14bb1dc3f, type: 3}
   punchSwingClips:
   - {fileID: 8300000, guid: 8c1f9edb0258fb14c87b0987c33c1a55, type: 3}
   - {fileID: 8300000, guid: ab4777bc6c78f8b4a8f8de79569c5729, type: 3}
@@ -279,3 +309,204 @@ MonoBehaviour:
   sfxSpatialBlend: 1
   sfxMinDistance: 1
   sfxMaxDistance: 22
+  combatFolderPools:
+  - clipField: meleeBodyHitClips
+    folderPath: Assets/Audio/Close Combat Sounds Effects/Regular Attack
+    clips:
+    - {fileID: 8300000, guid: d35818b985442874bb6ee76f4b8db916, type: 3}
+    - {fileID: 8300000, guid: 95ac5a4c32e24ba43adad672240a29b0, type: 3}
+    - {fileID: 8300000, guid: 1de7158d55ba2264984742366648e829, type: 3}
+    - {fileID: 8300000, guid: 5e3bcf8a9302d3e44986c289c6134879, type: 3}
+    - {fileID: 8300000, guid: 3b022ed43916ce440a68b77db5e63154, type: 3}
+    - {fileID: 8300000, guid: a4bf2867b6bea3b46a67ab0110bb9e05, type: 3}
+    - {fileID: 8300000, guid: fe581ba2e87d46646a627e34bc185fcf, type: 3}
+    - {fileID: 8300000, guid: 3f9f12180ced468488d0198fd9c17e0c, type: 3}
+    - {fileID: 8300000, guid: 2ee852565107cad4db9654ef644f2e7e, type: 3}
+    - {fileID: 8300000, guid: f0872dfc9665d7d4096dd938e8947423, type: 3}
+    - {fileID: 8300000, guid: 66fcfcc79afec5b44a20939440d150ee, type: 3}
+    - {fileID: 8300000, guid: 5bb88e64e16601f4ca4f5e1ea8bec12b, type: 3}
+    - {fileID: 8300000, guid: 2f8aa9117f180f842a1860b1bd805406, type: 3}
+    - {fileID: 8300000, guid: 39b9e0fe1b23a084bbfe840dda469e5c, type: 3}
+    - {fileID: 8300000, guid: 304e7b5a4986b90449fe081eaa98166b, type: 3}
+    - {fileID: 8300000, guid: 69184cdbdd4024c44ac954496bbd017b, type: 3}
+    - {fileID: 8300000, guid: db428bf3ab77be64b9833ef699fbdedd, type: 3}
+    - {fileID: 8300000, guid: 9a3b13162f602574e8b5f66a70a37656, type: 3}
+    - {fileID: 8300000, guid: 265c75dbd6cc77a40af92ecbdb47f208, type: 3}
+    - {fileID: 8300000, guid: c138b451fb6adde4886c467125ec0635, type: 3}
+    - {fileID: 8300000, guid: 242a13d837e5f8e4f852e167f988a50e, type: 3}
+    - {fileID: 8300000, guid: bfd0d772e16cf30488ae1a7e3684511d, type: 3}
+    - {fileID: 8300000, guid: 3a7c3e9f3f3d2214180d9a814fbc8086, type: 3}
+    - {fileID: 8300000, guid: f22d4b03e9b41bf4280819de588c04cc, type: 3}
+    - {fileID: 8300000, guid: ee422647e307ed2498ce0b07d19c133b, type: 3}
+    - {fileID: 8300000, guid: 3205efa80d9314046812ec685ad06fb8, type: 3}
+    - {fileID: 8300000, guid: 84f8c0c26c8212a45bedeea094296a11, type: 3}
+    - {fileID: 8300000, guid: e5fe97f24ca1d0e4787bd3141c9f18cf, type: 3}
+  - clipField: meleeSwingClips
+    folderPath: Assets/Audio/Close Combat Sounds Effects/Swing On Air
+    clips:
+    - {fileID: 8300000, guid: 8c1f9edb0258fb14c87b0987c33c1a55, type: 3}
+    - {fileID: 8300000, guid: d5345058c176a55408da6f8d048c5c88, type: 3}
+    - {fileID: 8300000, guid: c27ee561ffca603488d78744887950d5, type: 3}
+    - {fileID: 8300000, guid: f96fa98c71b322f4a83b2b227edca9d5, type: 3}
+    - {fileID: 8300000, guid: dc3a05244053b9e4bad45a1a5cc722b7, type: 3}
+    - {fileID: 8300000, guid: 1df3707bbe90040469bbd70252f27f4b, type: 3}
+    - {fileID: 8300000, guid: 20142bf3f62d774488269950198115a7, type: 3}
+    - {fileID: 8300000, guid: d6615f4bb3916ff4cbeb364b5c57063a, type: 3}
+    - {fileID: 8300000, guid: 9044d8ed4e3d68e4cbb464c9d1231876, type: 3}
+    - {fileID: 8300000, guid: e5d3638139b99b84f9272cdd04c05f0c, type: 3}
+    - {fileID: 8300000, guid: 64ecbd3f4f4628848b5cdaaaf940931d, type: 3}
+    - {fileID: 8300000, guid: ab4777bc6c78f8b4a8f8de79569c5729, type: 3}
+    - {fileID: 8300000, guid: 3bda4a141a4c6f74c96b90f52fce2039, type: 3}
+    - {fileID: 8300000, guid: 662512fbd7840e74e9d6706c71d99c38, type: 3}
+    - {fileID: 8300000, guid: 6db3de4a6ea0f8c4d8328227acdd180e, type: 3}
+    - {fileID: 8300000, guid: d278c0e2fb665f7459006549f676fde9, type: 3}
+    - {fileID: 8300000, guid: 05c06d9ce0e142d468af28c897e937c0, type: 3}
+    - {fileID: 8300000, guid: 5e3f894ccf1ca9e4b9a5b95fad5b620d, type: 3}
+    - {fileID: 8300000, guid: fe23d6f257fb90b41abf68fdb85497fd, type: 3}
+    - {fileID: 8300000, guid: 3235954d7aa0f7e41a143e003e8f2cee, type: 3}
+    - {fileID: 8300000, guid: 570d60b817379af48ba0433bb7b3aa81, type: 3}
+    - {fileID: 8300000, guid: 86bd24cac597dbb45a8c5d028374cd9f, type: 3}
+    - {fileID: 8300000, guid: 85cde20b056c53642814edc3b024b976, type: 3}
+    - {fileID: 8300000, guid: 89922f026a767cf45826a2bcc224761f, type: 3}
+    - {fileID: 8300000, guid: 6ba72603485973c48acd4a32c755a7b2, type: 3}
+    - {fileID: 8300000, guid: 91d522cf42c14ff418e88967c1001fe1, type: 3}
+    - {fileID: 8300000, guid: df3e68a07e95ec24f831969b7b6c5995, type: 3}
+    - {fileID: 8300000, guid: da23aad0a95363d45a39ce5f367bd9e7, type: 3}
+    - {fileID: 8300000, guid: 38e168cbcc9305a4f8ed8780873aa642, type: 3}
+    - {fileID: 8300000, guid: 52216b0db46c4414ea7db08f448f01ab, type: 3}
+    - {fileID: 8300000, guid: b6d9491e04e1a8943b1e6854801ef6dd, type: 3}
+    - {fileID: 8300000, guid: 538a156f006b6ae438d9c61831bec7e6, type: 3}
+    - {fileID: 8300000, guid: 18874e87017be2b4a80c88798c046a9b, type: 3}
+    - {fileID: 8300000, guid: c183b1e175e7e5f4ebb4e99faf6b7e92, type: 3}
+    - {fileID: 8300000, guid: b9e4d3b43dc71d74ab48028d3d9933db, type: 3}
+    - {fileID: 8300000, guid: fece5bebcf6d4894c9f27f655c2ac687, type: 3}
+    - {fileID: 8300000, guid: 9e1556b6921f0cc47bdfb44b9c880b59, type: 3}
+    - {fileID: 8300000, guid: e2735b211307e704cafaf620a3ab8710, type: 3}
+    - {fileID: 8300000, guid: 47f0b35d52acccf429abbd44864eb511, type: 3}
+    - {fileID: 8300000, guid: 3bf5cd224ca961c4891650bf6e45e9ff, type: 3}
+    - {fileID: 8300000, guid: 3e43865d9886b61488dae5f3e038f8f9, type: 3}
+    - {fileID: 8300000, guid: a5b1d97edc4a4444fa2d50b5b6ab3fd6, type: 3}
+    - {fileID: 8300000, guid: 57719106ef934bb4dba36754edb82871, type: 3}
+    - {fileID: 8300000, guid: 3d7986f610d748340a52523a757f4f7a, type: 3}
+    - {fileID: 8300000, guid: 3f22eb5d42179f046963234e09b38ca4, type: 3}
+    - {fileID: 8300000, guid: ae54953b1c847da4d81b144467b087e4, type: 3}
+    - {fileID: 8300000, guid: 2724208c5266a054eb6cbcf7fe31e5f7, type: 3}
+    - {fileID: 8300000, guid: 1b33d13e31ab9e74895030d62e18ced3, type: 3}
+    - {fileID: 8300000, guid: aec7cc71681317c4a9e3372c524a451d, type: 3}
+    - {fileID: 8300000, guid: f106f4bebc2fcc646813a11ff39f2186, type: 3}
+    - {fileID: 8300000, guid: 143ce2eb2dfdbb54d9b1ebb76554ff19, type: 3}
+    - {fileID: 8300000, guid: 1afeaa27387955640b58e86cd0a9280e, type: 3}
+    - {fileID: 8300000, guid: 9bc5d5433df8a0d448fbd0975f54110c, type: 3}
+    - {fileID: 8300000, guid: c72a32f6b74c8904abad451e1bd8433b, type: 3}
+    - {fileID: 8300000, guid: 8d1e1a101b432ec42b2d965d703f509e, type: 3}
+    - {fileID: 8300000, guid: de46b5c599362954789aa46698a15b7b, type: 3}
+    - {fileID: 8300000, guid: dda6630ff4182d34f8c42176c600a1c7, type: 3}
+    - {fileID: 8300000, guid: cca9079bdebb8834bb3d37259bd05ae2, type: 3}
+    - {fileID: 8300000, guid: 3e9f4713f00779240a7fe31faba1869c, type: 3}
+    - {fileID: 8300000, guid: 88d29e9c3fcfe574d98047722b509ebe, type: 3}
+    - {fileID: 8300000, guid: 0a6d52d0ead8529498075e880dbe4643, type: 3}
+    - {fileID: 8300000, guid: 7a55738a44f5fff4595eb69df0ea0e8c, type: 3}
+    - {fileID: 8300000, guid: d85374b7d8c7d234390728095b4ef9ee, type: 3}
+    - {fileID: 8300000, guid: 0cc64f8b16da38543831b896e4529e74, type: 3}
+    - {fileID: 8300000, guid: 771d695ce4b79b949bee74878b120a2c, type: 3}
+    - {fileID: 8300000, guid: f3fb11ec30ed8be45aaa75b1431fde4b, type: 3}
+    - {fileID: 8300000, guid: 3ac4fb81ae7234d44ad72479e464591a, type: 3}
+    - {fileID: 8300000, guid: ef2793d8ed432634eb538437ee131681, type: 3}
+    - {fileID: 8300000, guid: 206728829e3f3e44192dd23247f0b344, type: 3}
+    - {fileID: 8300000, guid: 4ea441e5408fe6e48b009bc1f0777d6d, type: 3}
+    - {fileID: 8300000, guid: bfcf03c2c98c0f749900f0f92932a807, type: 3}
+    - {fileID: 8300000, guid: a5d7fab21f94df545aa551ed4ed496d5, type: 3}
+    - {fileID: 8300000, guid: b594735cf9de34b4e9ec0766e400998d, type: 3}
+    - {fileID: 8300000, guid: 890c5dde900c9a243bcbbc3df7154cd9, type: 3}
+    - {fileID: 8300000, guid: dbf2e36f170ea1740951d9614b7f1d5c, type: 3}
+    - {fileID: 8300000, guid: 329908969389caa42af93eae939578c2, type: 3}
+    - {fileID: 8300000, guid: 1589de52e2b0968468abfd65815cc89e, type: 3}
+    - {fileID: 8300000, guid: 23f750fe08435644daab70c6a1e15553, type: 3}
+    - {fileID: 8300000, guid: 876b45422d1e07642acc9b53791a0eb9, type: 3}
+    - {fileID: 8300000, guid: 7e454bc2c94d5f9419f1942a3ac54e22, type: 3}
+    - {fileID: 8300000, guid: 538b882ef330ef946a7e52474ba18c17, type: 3}
+    - {fileID: 8300000, guid: 6e86d961d2adc5f47883e0dd19a356f3, type: 3}
+    - {fileID: 8300000, guid: 8c6e00c96bb9d8b4f860b8af2d1982ee, type: 3}
+    - {fileID: 8300000, guid: 04cfe3d088bec71409a6db43e8aef4a2, type: 3}
+    - {fileID: 8300000, guid: d6e024c8ebfe3414ab0fed5961524f14, type: 3}
+    - {fileID: 8300000, guid: 24ef8696f28cbbd4c8c5240fa9fedce3, type: 3}
+    - {fileID: 8300000, guid: 8f7438b90bb5a6f45996c04894962c65, type: 3}
+  - clipField: playerBodyHitClips
+    folderPath: Assets/Audio/Close Combat Sounds Effects/Player Body Hits
+    clips:
+    - {fileID: 8300000, guid: bc96f54d7f3ea9f4bb9d7bb8c4a04f94, type: 3}
+    - {fileID: 8300000, guid: 49241276ce3214e4cbe9c76b2602ad8b, type: 3}
+    - {fileID: 8300000, guid: 35560cdd43adfb04d989d42440a39bf8, type: 3}
+    - {fileID: 8300000, guid: 00c9982e002a82d4bbfe9038430f6f67, type: 3}
+    - {fileID: 8300000, guid: 3b8d76e7fede964498fbc410796f12e2, type: 3}
+    - {fileID: 8300000, guid: f28d6679d37bc6146aabb27bdb29ac51, type: 3}
+    - {fileID: 8300000, guid: d2e790ecfa0a6a74ba3a352c1e43447b, type: 3}
+    - {fileID: 8300000, guid: 3a427e66f4ba3ca41b47da915a3d36fd, type: 3}
+    - {fileID: 8300000, guid: 5f38a7ad37320474497e799ff66e13b1, type: 3}
+    - {fileID: 8300000, guid: 86055f4e4ab9af1468fb7d5470a71647, type: 3}
+  - clipField: meleeHitClips
+    folderPath: Assets/Audio/Close Combat Sounds Effects/Melee to Melee Hits
+    clips:
+    - {fileID: 8300000, guid: 3fbe16d9492fe4948aa5d5884036035e, type: 3}
+    - {fileID: 8300000, guid: f045a2d00226493439f2b827267dafe1, type: 3}
+    - {fileID: 8300000, guid: 45586ddf42b72ec418095966c5b1afef, type: 3}
+    - {fileID: 8300000, guid: fe2ecd07f501d864dba7b6d76461b1e6, type: 3}
+    - {fileID: 8300000, guid: ce4076afc1f3e2147ac1686717714fe6, type: 3}
+    - {fileID: 8300000, guid: 9f9ccb8fee315754dbc8caaa8f663a64, type: 3}
+    - {fileID: 8300000, guid: 0868cd6e4cb5e0d41b79de82abc07398, type: 3}
+    - {fileID: 8300000, guid: b6bb633eebd518645bc3b97284772f6c, type: 3}
+    - {fileID: 8300000, guid: fb1c562d9d8dc9440bdfa5df442760df, type: 3}
+    - {fileID: 8300000, guid: 62c3a12f4830f164d9e4e699dc009894, type: 3}
+    - {fileID: 8300000, guid: e1e664036da6e1d44bc96c4c6ed9d0b5, type: 3}
+    - {fileID: 8300000, guid: 12baea9d6aa953e4e9e4b1345dc8e3cf, type: 3}
+    - {fileID: 8300000, guid: 7c97c7d53a5995442a9d87054b51bdb6, type: 3}
+    - {fileID: 8300000, guid: 366aa79fb435d97439d661987358fb25, type: 3}
+    - {fileID: 8300000, guid: b26fdce4df9b4d349b9ad320fb58084c, type: 3}
+    - {fileID: 8300000, guid: b43349222fec4c94db66bbd95ae96190, type: 3}
+    - {fileID: 8300000, guid: f5ef3a289b85de348a18f905f0b4cada, type: 3}
+    - {fileID: 8300000, guid: 243016b819c50e149a48bc001f398101, type: 3}
+    - {fileID: 8300000, guid: 3e959515e4ca35240b555c77972d4105, type: 3}
+    - {fileID: 8300000, guid: d30aba54875d53f4db0017a272f7f55d, type: 3}
+    - {fileID: 8300000, guid: 58ef54b136c581f4c8eb37980845a613, type: 3}
+    - {fileID: 8300000, guid: d91941e6c9c0e7d42b81b90acb08b2aa, type: 3}
+    - {fileID: 8300000, guid: cb3a9b2db1dcfdf468639834e6699a42, type: 3}
+  - clipField: meleeCriticalHitClips
+    folderPath: 
+    clips: []
+  - clipField: meleeBodyCriticalHitClips
+    folderPath: Assets/Audio/Close Combat Sounds Effects/Player Body Hits
+    clips:
+    - {fileID: 8300000, guid: bc96f54d7f3ea9f4bb9d7bb8c4a04f94, type: 3}
+    - {fileID: 8300000, guid: 49241276ce3214e4cbe9c76b2602ad8b, type: 3}
+    - {fileID: 8300000, guid: 35560cdd43adfb04d989d42440a39bf8, type: 3}
+    - {fileID: 8300000, guid: 00c9982e002a82d4bbfe9038430f6f67, type: 3}
+    - {fileID: 8300000, guid: 3b8d76e7fede964498fbc410796f12e2, type: 3}
+    - {fileID: 8300000, guid: f28d6679d37bc6146aabb27bdb29ac51, type: 3}
+    - {fileID: 8300000, guid: d2e790ecfa0a6a74ba3a352c1e43447b, type: 3}
+    - {fileID: 8300000, guid: 3a427e66f4ba3ca41b47da915a3d36fd, type: 3}
+    - {fileID: 8300000, guid: 5f38a7ad37320474497e799ff66e13b1, type: 3}
+    - {fileID: 8300000, guid: 86055f4e4ab9af1468fb7d5470a71647, type: 3}
+  - clipField: playerPainClips
+    folderPath: 
+    clips: []
+  - clipField: rangedHitClips
+    folderPath: 
+    clips: []
+  - clipField: rangedCriticalHitClips
+    folderPath: 
+    clips: []
+  - clipField: punchSwingClips
+    folderPath: 
+    clips: []
+  - clipField: punchHitClips
+    folderPath: 
+    clips: []
+  - clipField: punchCriticalHitClips
+    folderPath: 
+    clips: []
+  - clipField: resourceHitClips
+    folderPath: 
+    clips: []
+  - clipField: poiseStaggerDingClips
+    folderPath: 
+    clips: []

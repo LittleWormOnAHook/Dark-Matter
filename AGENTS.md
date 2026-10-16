@@ -29,7 +29,7 @@
 ## Agent workflow (summary)
 
 - Code under `Assets/_Project/`; reuse existing systems.
-- Wait for Unity compile/domain reload; no commit while console has errors.
+- Wait for Unity compile/domain reload; no commit while console has errors or warnings (`unity-agent-workflow.mdc`).
 - Stage scenes, prefabs, materials, terrain, and new assets with related script commits.
 - No silent git/depot restore without explicit user confirmation in the current message.
 - No forced Unity refresh unless the user asks.

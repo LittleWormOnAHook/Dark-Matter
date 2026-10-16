@@ -11,6 +11,10 @@ namespace Project.Combat
         public static event Action<DamageInfo, GameObject> Kill;
         public static event Action<DamageInfo, StatusEffectType, GameObject> StatusApplied;
         public static event Action<GameObject, GameObject> PerfectDodge;
+        public static event Action<GameObject, GameObject, float> PlayerDamaged;
+
+        public static void RaisePlayerDamaged(GameObject player, GameObject source, float amount) =>
+            PlayerDamaged?.Invoke(player, source, amount);
 
         public static bool LogHitsToConsole { get; set; }
 
