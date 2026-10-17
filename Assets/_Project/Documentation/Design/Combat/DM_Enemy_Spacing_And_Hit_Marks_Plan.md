@@ -15,7 +15,7 @@
   - The ranged pool is defined but unused, so ranged enemies keep the legacy logic.
 - Rollback: set `enableEngagementDirector` to off. The legacy ring rotation sits behind `legacyRingSlotRotation`.
 **Project:** `A:\Dark Matter Genesis` · Unity 6000.4.11f1 HDRP · branch `cursor/wip-clean-20260919`
-**Scene:** `Assets/_Project/Scenes/Dark Matter Genesis v1.6.5.unity` · Reference enemy: `Assets/_Project/Prefabs/Combat/Enemies/FRED.prefab`
+**Scene (tune/play, Oct 2026):** `Assets/_Project/Scenes/Dark Matter Genesis v1.6.6.unity` · Phase 3 §10 acceptance was signed off in **v1.6.5** (Oct 8, 2026). · Reference enemy: `Assets/_Project/Prefabs/Combat/Enemies/FRED.prefab`
 **Locks respected:** no NavMesh · `Player_v7` untouched · UI Toolkit only · DM/DMI naming · AAA semi-HD · pooled and capped FX · no per-frame allocations · PC/Mac first.
 All script paths below are relative to `Assets/_Project/Scripts/`. Line numbers come from the working tree on 2026-10-06.
 
@@ -513,7 +513,9 @@ Suggested order: **A1 → B1 → A2 → B2 → B3 → A3 → B4.** A1 and B1 giv
 
 ---
 
-## 10. Verification checklist (play mode, `Dark Matter Genesis v1.6.5`)
+## 10. Verification checklist (play mode, `Dark Matter Genesis v1.6.6`)
+
+Re-run in **v1.6.6** for regression; Phase 3 sign-off used **v1.6.5** (Oct 8, 2026).
 
 **Part A**
 - [ ] 1v1 FRED: player strafes and turns in place for 20 s. Enemy yaw changes only as the player crosses ±35°, and it does **not** orbit (total angular travel around the player < 45° in 20 s unless the player walks around it).

@@ -392,7 +392,7 @@ new DMStudioSubtab(
                         new DMStudioSubtab(
                             "scope-profile",
                             "Scope Profile",
-                            "Full DM_ScopeProfile — scoped range, FOV, fire interval, damage multipliers, ammo gate, audio, overlay. Rifles skill_scope_* modifiers apply in Play.",
+                            "Full DM_ScopeProfile — scoped range, FOV, scopeAdsRightMouseToggle (RMB/LT click toggle vs hold ADS when Scope mode armed), scopeAdsEnablesZoomOverlay, fire interval, damage multipliers, ammo gate, audio, overlay. Rifles skill_scope_* modifiers apply in Play.",
                             DMStudioPanelMode.SingletonAsset,
                             "Assets/_Project/Resources/Combat/DM_ScopeProfile.asset",
                             playModeSave: true),

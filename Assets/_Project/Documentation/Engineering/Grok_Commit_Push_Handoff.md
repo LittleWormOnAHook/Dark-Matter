@@ -25,7 +25,7 @@ Copy-paste instructions for **grok bot** (or any agent) to **stage, commit, and 
 
 ## 2. Authority rules (non-negotiable)
 
-1. **Unity 6 HDRP** live folder: `A:\Dark Matter Genesis`. Play scene: `Assets/_Project/Scenes/Dark Matter Genesis v1.6.5.unity`.
+1. **Unity 6 HDRP** live folder: `A:\Dark Matter Genesis`. Play scene: `Assets/_Project/Scenes/Dark Matter Genesis v1.6.6.unity` (Oct 2026; older handoff text may say v1.6.5 for historical commits).
 2. **Auto Refresh is off** — after disk edits, run MCP **`refresh_unity`** (`mode: if_dirty`, `compile: request` if `.cs` staged, `wait_for_ready: true`). If MCP unavailable, tell Anthony **Ctrl+R** and wait for compile/domain reload.
 3. **Zero Unity console errors** before commit and before push (`read_console`, type `error`). Warnings alone do not block unless Anthony says otherwise.
 4. **Never commit with console errors** (`.cursor/rules/unity-agent-workflow.mdc`).
@@ -86,7 +86,7 @@ git diff --stat --cached
 | UITK perf / HUD | `DMUiToolkitWorldChrome.cs`, `DMUiToolkitPilotCluster.cs`, `DMUiToolkitInputHost.cs`, `DMUiToolkitConfig.cs`, `DMUiToolkitMinimap.cs`, `DMUiToolkitHotCross.cs`, `DMUiToolkitConfig.asset`, `HotCross.uxml`, `HotCross.uss` |
 | Melee double-tick | `PioneerShooterMeleeInput.cs`, `PioneerMeleeSwingHitDedupe.cs` |
 | Loot design docs | `Assets/_Project/Documentation/Design/Loot/DM_Loot_Chest_System_Plan.md`, `DM_Loot_Chest_System_Handoff.md` (+ `.meta`, `Loot.meta`) |
-| Combat / UI / AI WIP | Remaining modified `_Project` scripts (combat, AI/Invector bridges, inventory/ammo, UI shortcuts/registry/toasts), Editor combat/studio tools, profiles, scene `v1.6.5`, `Player_v7 Variant`, `IO_Ancient_Cache`, ammo VFX, enemy controller |
+| Combat / UI / AI WIP | Remaining modified `_Project` scripts (combat, AI/Invector bridges, inventory/ammo, UI shortcuts/registry/toasts), Editor combat/studio tools, profiles, scene `v1.6.6`, `Player_v7 Variant`, `IO_Ancient_Cache`, ammo VFX, enemy controller |
 | New _Project assets | `Animations/Player/MeleeUpper/*`, `DM_MeleeUpper.mask`, melee layer policy doc, Wiki combat policy (if present), `DMSpawnedAudio*`, enemy death cleanup, `DMEnemyHitFlinch`, `DMEnemyMeleeComboDriver` |
 
 **Explicitly NOT staged by the block above (leave dirty unless Anthony asks):**
@@ -106,7 +106,7 @@ git diff --stat --cached
 git commit -m @"
 UITK HUD perf, melee hit dedupe, and combat WIP slice.
 
-Reduce UITK world chrome / pilot cluster / input host churn; fix pioneer melee double-tick via PioneerMeleeSwingHitDedupe and PioneerShooterMeleeInput. Ship enemy combat/death/loot polish, Hot Cross and keyboard shortcut updates, Genesis v1.6.5 scene and profile wiring, MeleeUpper assets, and DM loot chest design docs.
+Reduce UITK world chrome / pilot cluster / input host churn; fix pioneer melee double-tick via PioneerMeleeSwingHitDedupe and PioneerShooterMeleeInput. Ship enemy combat/death/loot polish, Hot Cross and keyboard shortcut updates, Genesis v1.6.6 scene and profile wiring, MeleeUpper assets, and DM loot chest design docs.
 "@
 ```
 
@@ -137,7 +137,7 @@ git push -u origin cursor/wip-clean-20260919
 
 ### 3.6 After push (live Unity machine)
 
-MCP `refresh_unity` or Anthony **Ctrl+R**. Confirm canonical scene still `Dark Matter Genesis v1.6.5.unity`.
+MCP `refresh_unity` or Anthony **Ctrl+R**. Confirm canonical scene still `Dark Matter Genesis v1.6.6.unity`.
 
 ---
 
@@ -170,7 +170,7 @@ Use §3.3 minus docs paths already committed; message:
 
 ```powershell
 git commit -m @"
-UITK perf and combat WIP: melee dedupe, enemy polish, scene v1.6.5.
+UITK perf and combat WIP: melee dedupe, enemy polish, scene v1.6.6.
 "@
 ```
 
@@ -219,7 +219,7 @@ git diff --stat --cached
 git commit -m @"
 UITK HUD perf, melee hit dedupe, and combat WIP slice.
 
-Reduce UITK world chrome / pilot cluster / input host churn; fix pioneer melee double-tick via PioneerMeleeSwingHitDedupe and PioneerShooterMeleeInput. Ship enemy combat/death/loot polish, Hot Cross and keyboard shortcut updates, Genesis v1.6.5 scene and profile wiring, MeleeUpper assets, and DM loot chest design docs.
+Reduce UITK world chrome / pilot cluster / input host churn; fix pioneer melee double-tick via PioneerMeleeSwingHitDedupe and PioneerShooterMeleeInput. Ship enemy combat/death/loot polish, Hot Cross and keyboard shortcut updates, Genesis v1.6.6 scene and profile wiring, MeleeUpper assets, and DM loot chest design docs.
 "@
 
 git status

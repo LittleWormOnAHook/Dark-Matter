@@ -16,13 +16,11 @@ namespace Project.UI
         /// </summary>
         public static bool CinematicChromeHidden { get; private set; }
 
-        /// <summary>Rifle scope overlay active (two-hand scoped ADS).</summary>
-        public static bool RifleScopeChromeSuppressed =>
-            DMScopeMode.IsScopedRifle && DMScopeMode.ZoomBlend > 0.001f;
+        /// <summary>Legacy name — rifle scoped ADS no longer hides gameplay HUD (parity with pistol scope).</summary>
+        public static bool RifleScopeChromeSuppressed => false;
 
-        /// <summary>Hide gameplay HUD chrome (tilde cinematic or rifle scope).</summary>
-        public static bool SuppressesGameplayChrome =>
-            CinematicChromeHidden || RifleScopeChromeSuppressed;
+        /// <summary>Hide gameplay HUD chrome (tilde cinematic only).</summary>
+        public static bool SuppressesGameplayChrome => CinematicChromeHidden;
 
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetCinematicStatic()

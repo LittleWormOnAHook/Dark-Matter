@@ -581,6 +581,10 @@ namespace Project.AI
             if (IsStationary)
                 return;
 
+            // Hit slides and other late movers can re-penetrate static geometry after Update().
+            if (InCombatGeometryRecoveryState && !CombatGeometryRecoveryBlocked)
+                TickCombatGeometryRecovery(afterDisplacement: true);
+
             // NavMeshAgent owns vertical placement while active on the mesh.
             if (navMeshReady && navAgent != null && navAgent.enabled)
                 return;
@@ -613,6 +617,8 @@ namespace Project.AI
             if ((dodgeRollUntil > 0f && TickDodgeRoll()) || (dodgeStrikeUntil > 0f && TickDodgeStrike()))
                 return;
 
+            BeginCombatPositionFrame();
+            TickCombatGeometryRecovery(afterDisplacement: false);
             TickHardSeparation();
             TrySubscribePlayerEvents();
 
@@ -711,6 +717,7 @@ namespace Project.AI
                     break;
             }
 
+            FinalizeCombatPositionFrame();
             LateEngagementBookkeeping();
         }
 

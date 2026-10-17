@@ -39,7 +39,7 @@ namespace Project.Player.Invector
         private const int UiZoomRestoreFrames = 12;
 
         [Header("Pioneer Camera Zoom")]
-        [SerializeField, Tooltip("Optional shared profile (Genesis Studio → Player → Camera). Overrides the fields below when set.")]
+        [SerializeField, Tooltip("Optional shared profile (Genesis Studio â†’ Player â†’ Camera). Overrides the fields below when set.")]
         private DMCameraProfile cameraProfile;
         [SerializeField] private float runtimeMinCameraDistance = 2.25f;
         [SerializeField] private float runtimeMaxCameraDistance = 12f;
@@ -76,7 +76,7 @@ namespace Project.Player.Invector
         private float _adsReleaseSince = -1f;   // unscaled time isAimingByInput first went false; <0 when held
         private vShooterWeapon _adsAudioWeapon; // weapon whose clips belong to the current ADS hold
         private AudioSource _adsEdgeSource;
-        /// <summary>Scroll zoom the player chose â€” preserved across aim/culling so ChangeState cannot wipe it.</summary>
+        /// <summary>Scroll zoom the player chose Ã¢â‚¬â€ preserved across aim/culling so ChangeState cannot wipe it.</summary>
         private float _preferredCameraZoom = -1f;
         private bool _wasAimingCameraLastFrame;
         private bool _wasUiBlockingLastFrame;
@@ -130,7 +130,7 @@ namespace Project.Player.Invector
         private const float FullBodyIdleBlend = 0.1f;
         private const float MeleeOverlayProtectSeconds = 0.22f;
         /// <summary>
-        /// 1HandSwordChargeUp loops the wind-up (frames 24–49). Pin near the end so the hold is a static draw-back, not a pumping swing.
+        /// 1HandSwordChargeUp loops the wind-up (frames 24â€“49). Pin near the end so the hold is a static draw-back, not a pumping swing.
         /// </summary>
         private const float ChargeHoldNormalizedTime = 0.82f;
         private const string FullBodyIdleEmptyName = "Idle_Empty";
@@ -227,7 +227,7 @@ namespace Project.Player.Invector
                 yield return null;
 
             ApplyStartZoomIn();
-            // One more frame â€” loading handoff / ChangeState can rewrite distance after MarkStarted.
+            // One more frame Ã¢â‚¬â€ loading handoff / ChangeState can rewrite distance after MarkStarted.
             yield return null;
             ApplyStartZoomIn();
             _startZoomRoutine = null;
@@ -256,11 +256,21 @@ namespace Project.Player.Invector
             TrackBlockPress();
             TryDrawWeaponOnAimPress();
 
-            // Pad LT can be missed if AimInput runs while Player map was left disabled — nudge ADS early.
+            // Pad LT can be missed if AimInput runs while Player map was left disabled â€” nudge ADS early.
             if (!GameplayKeyboardShortcuts.IsGameplayInputLockedByUi() && ReadAimHeld())
             {
                 if (_equipment == null || _equipment.IsWeaponDrawn)
-                    isAimingByInput = true;
+                {
+                    ItemData drawn = _equipment != null ? _equipment.DrawnWeaponItem : null;
+                    DMScopeMode scopeMode = DMScopeMode.Instance;
+                    if (scopeMode != null && scopeMode.UsesToggleAds(drawn))
+                    {
+                        if (scopeMode.ToggleAdsActive)
+                            isAimingByInput = true;
+                    }
+                    else
+                        isAimingByInput = true;
+                }
             }
 
             base.Update();
@@ -278,10 +288,10 @@ namespace Project.Player.Invector
         }
 
         /// <summary>
-        /// Plays the weapon's aim-in clip once when isAimingByInput goes false→true and the aim-out clip once when
+        /// Plays the weapon's aim-in clip once when isAimingByInput goes falseâ†’true and the aim-out clip once when
         /// it has stayed false for <see cref="AimEdgeReleaseDebounceSeconds"/>. A single latch makes the pair strictly
         /// alternate: no further press sound while held (walking/running/flicker) and no release sound without a press.
-        /// Reads only the final player-controlled ADS flag at the end of Update — never aimConditions / SetActiveAim.
+        /// Reads only the final player-controlled ADS flag at the end of Update â€” never aimConditions / SetActiveAim.
         /// </summary>
         private void TickAdsEdgeAudio()
         {
@@ -413,7 +423,7 @@ namespace Project.Player.Invector
             else if (!held && wasHeld && !ReadAimHeld() && (aimInput == null || !aimInput.GetButton()))
             {
                 // Only release aim we forced. The scanner calls SetMiningScanAimHold(false) EVERY frame when no
-                // mining tool is drawn — clearing here used to wipe RMB/LT ADS (Input System aim, muted aimInput)
+                // mining tool is drawn â€” clearing here used to wipe RMB/LT ADS (Input System aim, muted aimInput)
                 // for every non-mining ranged weapon.
                 isAimingByInput = false;
             }
@@ -464,35 +474,50 @@ namespace Project.Player.Invector
                 weaponDrawn = _equipment.IsWeaponDrawn;
             }
 
-            bool wantAim = !opticsOpen && (_miningScanAimHold || rmbAimHeld || (ltAimHeld && weaponDrawn));
+            ItemData drawnScopeWeapon = _equipment != null ? _equipment.DrawnWeaponItem : null;
+            DMScopeMode scopeMode = DMScopeMode.Instance;
+            bool scopeToggleAds = scopeMode != null && scopeMode.UsesToggleAds(drawnScopeWeapon);
 
-            if (!DMInputSchemeRouter.IsGamepadScheme)
+            if (!weaponDrawn && scopeMode != null)
+                scopeMode.ClearToggleAdsLatch();
+
+            if (scopeToggleAds)
             {
-                // KBM: keep Invector GenericInput aim path, then force RMB if Input System saw it.
-                base.AimInput();
-                if (wantAim)
-                    isAimingByInput = true;
-                else if (!rmbAimHeld && !_miningScanAimHold)
-                {
-                    // Leave base result unless we know RMB is up — base already cleared when Mouse1 up.
-                }
+                bool scopeAimEdge = ReadScopedAimEdgeDown(drawnMeleeOnly, opticsOpen, weaponDrawn);
+                scopeMode.ApplyToggleAdsInput(scopeAimEdge, drawnScopeWeapon);
+                isAimingByInput = _miningScanAimHold || scopeMode.ToggleAdsActive;
             }
             else
             {
-                // Gamepad: muted aimInput would clear ADS every frame if we called base.
-                if (!wantAim)
-                {
-                    isAimingByInput = false;
-                    return;
-                }
+                bool wantAim = !opticsOpen && (_miningScanAimHold || rmbAimHeld || (ltAimHeld && weaponDrawn));
 
-                if (CurrentActiveWeapon == null && weaponDrawn)
+                if (!DMInputSchemeRouter.IsGamepadScheme)
                 {
-                    PioneerInvectorWeaponBridge bridge = GetComponent<PioneerInvectorWeaponBridge>();
-                    bridge?.EnsureDrawnShooterBound();
+                    // KBM: keep Invector GenericInput aim path, then force RMB if Input System saw it.
+                    base.AimInput();
+                    if (wantAim)
+                        isAimingByInput = true;
+                    else if (!rmbAimHeld && !_miningScanAimHold)
+                    {
+                        // Leave base result unless we know RMB is up â€” base already cleared when Mouse1 up.
+                    }
                 }
+                else
+                {
+                    // Gamepad: muted aimInput would clear ADS every frame if we called base.
+                    if (!wantAim)
+                        isAimingByInput = false;
+                    else
+                    {
+                        if (CurrentActiveWeapon == null && weaponDrawn)
+                        {
+                            PioneerInvectorWeaponBridge bridge = GetComponent<PioneerInvectorWeaponBridge>();
+                            bridge?.EnsureDrawnShooterBound();
+                        }
 
-                isAimingByInput = true;
+                        isAimingByInput = true;
+                    }
+                }
             }
 
             if (!isAimingByInput)
@@ -511,7 +536,7 @@ namespace Project.Player.Invector
 
         /// <summary>
         /// ADS only from LT/RMB (isAimingByInput). Ignore Invector hipfire-aim so RT fires from the hip
-        /// without pulling aim camera/strafe — hold LT to ADS, then RT to fire.
+        /// without pulling aim camera/strafe â€” hold LT to ADS, then RT to fire.
         /// </summary>
         public override bool IsAiming
         {
@@ -549,7 +574,7 @@ namespace Project.Player.Invector
             if (_playerController != null && _playerController.IsOpticsOpen)
                 return;
 
-            // Hot Cross Tab focuses a TL weapon without drawing â€” arm that slot on RMB ADS.
+            // Hot Cross Tab focuses a TL weapon without drawing Ã¢â‚¬â€ arm that slot on RMB ADS.
             int focusedLocal = DMUiToolkitHotCross.WeaponLocalIndex;
             if (_equipment.IsWeaponHotbarSlot(focusedLocal)
                 && EquipmentController.IsWeaponItem(_equipment.GetHotbarItem(focusedLocal)))
@@ -746,7 +771,7 @@ namespace Project.Player.Invector
 
             PioneerInvectorAmmoBridge ammoBridge = GetComponent<PioneerInvectorAmmoBridge>();
 
-            // Invector ReloadWeapon always proceeds while isInfinityAmmo is set â€” gate on Pioneer
+            // Invector ReloadWeapon always proceeds while isInfinityAmmo is set Ã¢â‚¬â€ gate on Pioneer
             // reserve ammo first, and play empty-deny SFX/head-shake instead of reload anim.
             if (ammoBridge != null)
             {
@@ -806,7 +831,7 @@ namespace Project.Player.Invector
         }
 
         /// <summary>
-        /// S/back moves away from camera facing without spinning the body 180° (strafe-back).
+        /// S/back moves away from camera facing without spinning the body 180Â° (strafe-back).
         /// </summary>
         private void UpdateBackwardStrafeWithoutTurnaround()
         {
@@ -858,7 +883,7 @@ namespace Project.Player.Invector
 
         public override void JumpInput()
         {
-            // jumpInput GenericInput is muted on Gamepad scheme — still poll Space/A / Jump action.
+            // jumpInput GenericInput is muted on Gamepad scheme â€” still poll Space/A / Jump action.
             if (cc == null || !CanReadGameplayInput())
                 return;
 
@@ -993,7 +1018,7 @@ namespace Project.Player.Invector
         /// <summary>1-based light combo step (A=1, B=2, C=3) of the swing in progress or just finished; 0 when none (hit reactions read it for the swing side).</summary>
         public int CurrentLightComboStep => _lastLightSlot >= 0 && Time.time - _lastLightSlotSeenAt <= 0.9f ? _lastLightSlot + 1 : 0;
 
-        /// <summary>Charged release swing (Strong SwordAttack B) — covers clip even if FullBody state hash mismatches.</summary>
+        /// <summary>Charged release swing (Strong SwordAttack B) â€” covers clip even if FullBody state hash mismatches.</summary>
         public bool IsChargedStrongSwingActive =>
             _strongSwingStartedAt > float.NegativeInfinity
             && Time.time - _strongSwingStartedAt <= StrongDamageWindowSeconds;
@@ -2059,7 +2084,7 @@ namespace Project.Player.Invector
         /// Charge pose is always FullBody SwordCharge, walking or standing. Weight stays 1.
         /// 1HandSwordChargeUp is a looping wind-up, so after the draw-back frame the state is pinned
         /// (Play at ChargeHoldNormalizedTime) until release. Release crossfades to A/B/C; cancel parks Idle_Empty.
-        /// Press must not fire WeakAttack — triggers stay reset while the button is held.
+        /// Press must not fire WeakAttack â€” triggers stay reset while the button is held.
         /// </summary>
         private void MaintainStrongChargeAnimation()
         {
@@ -2410,7 +2435,7 @@ namespace Project.Player.Invector
 
         /// <summary>
         /// Short guard-impact pose. Block and parry use the same mild pose.
-        /// Does not call OnRecoil — that fires ResetState and can drop the block.
+        /// Does not call OnRecoil â€” that fires ResetState and can drop the block.
         /// RecoilID 1 is the mild unarmed recoil. RecoilID 2 is the stronger low recoil
         /// and is not used here. RecoilID above 2 is recoil_hard, tagged CustomAction,
         /// which clears isBlocking. This path does not freeze animator speed.
@@ -2654,7 +2679,7 @@ namespace Project.Player.Invector
 
             EnsureRuntimeZoomState();
 
-            // Sticky Gamepad scheme sets vInput to Joystick — mouse deltas must NOT use joystickSensitivity
+            // Sticky Gamepad scheme sets vInput to Joystick â€” mouse deltas must NOT use joystickSensitivity
             // or ADS+fire hitches (huge delta) violently spin the camera.
             bool restoreDevice = false;
             InvInputDevice previousDevice = InvInputDevice.MouseKeyboard;
@@ -2776,7 +2801,7 @@ namespace Project.Player.Invector
                 Debug.Log($"[PioneerShooterMeleeInput] {KbmLookStamp} look+triggers");
             }
 
-            // Mouse delta always wins when present — sticky Gamepad scheme must not brick KBM look.
+            // Mouse delta always wins when present â€” sticky Gamepad scheme must not brick KBM look.
             if (Mouse.current != null)
             {
                 Vector2 delta = Mouse.current.delta.ReadValue();
@@ -2970,7 +2995,7 @@ namespace Project.Player.Invector
             }
 
             // Only repair a permanently broken zoom (e.g. optics left near-zero).
-            // Do NOT ForceSet when distance alone dips from wall culling â€” that wiped scroll zoom.
+            // Do NOT ForceSet when distance alone dips from wall culling Ã¢â‚¬â€ that wiped scroll zoom.
             if (!aiming
                 && tpCamera.CurrentZoom < MinCamDistance - 0.01f
                 && tpCamera.distance < MinCamDistance - 0.01f)
@@ -2997,7 +3022,7 @@ namespace Project.Player.Invector
             if (tpCamera.lerpState != null && !IsAimCameraStateName(tpCamera.lerpState.Name))
                 ApplyFreeLookZoomRange(tpCamera.lerpState);
 
-            // One-shot restore when leaving aim â€” pull back to the player's scroll preference.
+            // One-shot restore when leaving aim Ã¢â‚¬â€ pull back to the player's scroll preference.
             if (_wasAimingCameraLastFrame)
             {
                 _wasAimingCameraLastFrame = false;
@@ -3068,7 +3093,7 @@ namespace Project.Player.Invector
             if (_lockedAimZoom < AimMinCamDistance - 0.01f)
                 return;
 
-            // Correct target only â€” do not snap distance (ForceSet fought wall-cull lerp).
+            // Correct target only Ã¢â‚¬â€ do not snap distance (ForceSet fought wall-cull lerp).
             float live = tpCamera.CurrentZoom > 0.01f ? tpCamera.CurrentZoom : tpCamera.distance;
             if (live > _lockedAimZoom + 0.12f)
                 tpCamera.SetZoomTarget(_lockedAimZoom);
@@ -3135,7 +3160,7 @@ namespace Project.Player.Invector
             if (tpCamera == null)
                 return;
 
-            // Always restore the player's scroll preference â€” never a UI-bloated follow distance.
+            // Always restore the player's scroll preference Ã¢â‚¬â€ never a UI-bloated follow distance.
             float preferred = GetPreferredZoom();
             if (_preferredCameraZoom < MinCamDistance - 0.05f)
                 preferred = DefaultCamDistance;
@@ -3171,7 +3196,7 @@ namespace Project.Player.Invector
                 return;
             }
 
-            // shotInput GenericInput is muted on Gamepad — drive HandleShotCount from RT / Attack / LMB.
+            // shotInput GenericInput is muted on Gamepad â€” drive HandleShotCount from RT / Attack / LMB.
             if (!shooterManager || CurrentActiveWeapon == null || cc == null || cc.isDead || isReloading || isAttacking || isEquipping)
             {
                 if (shooterManager && CurrentActiveWeapon != null && CurrentActiveWeapon.chargeWeapon && CurrentActiveWeapon.powerCharge != 0)
@@ -3206,6 +3231,15 @@ namespace Project.Player.Invector
         private static bool ReadAimPressedThisFrame()
         {
             return ReadTriggerPressedThisFrame(left: true);
+        }
+
+        private static bool ReadScopedAimEdgeDown(bool drawnMeleeOnly, bool opticsOpen, bool weaponDrawn)
+        {
+            if (opticsOpen || drawnMeleeOnly || !weaponDrawn)
+                return false;
+            if (Mouse.current != null && Mouse.current.rightButton.wasPressedThisFrame)
+                return true;
+            return ReadAimPressedThisFrame();
         }
 
         private static bool ReadAimHeld()
@@ -3337,7 +3371,7 @@ namespace Project.Player.Invector
                         ammoItem = ammoState.GetLoadedAmmoItem(_equipment.ActiveWeaponHotbarSlot);
                 }
 
-                bool isScopeView = IsAiming && isUsingScopeView;
+                bool isScopeView = DMScopeMode.IsScopeViewActive || (IsAiming && isUsingScopeView);
                 float weight = PioneerInvectorRecoilUtility.ResolveShotAnimationWeight(
                     weaponItem,
                     ammoItem,
@@ -3618,7 +3652,7 @@ namespace Project.Player.Invector
             return move;
         }
 
-        /// <summary>UITK HUD owns stamina/health crosshair ticks — skip Invector vHUDController updates.</summary>
+        /// <summary>UITK HUD owns stamina/health crosshair ticks â€” skip Invector vHUDController updates.</summary>
         public override void UpdateHUD()
         {
             if (DMUiToolkitConfig.IsEnabled && DMUiToolkitBootstrap.IsRootActive)

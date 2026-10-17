@@ -60,12 +60,7 @@ namespace Project.EditorTools.GenesisStudio
             "pistolOuterCrosshairScale",
             "pistolOuterCrosshairEmission",
             "pistolOuterCrosshairEmissionColor",
-            "pistolRingOuterDiameterPx",
-            "scopeCenterMaskEnabled",
-            "scopeCenterMaskColor",
-            "scopeCenterMaskAlpha",
-            "scopeCenterMaskBlurPixels",
-            "scopeInnerRingViewportEdgeSoftness"
+            "pistolRingOuterDiameterPx"
         };
 
         private static readonly string[] FootstepsAudioFields =

@@ -468,6 +468,47 @@ namespace Project.AI
 
         public static bool TryExtractFromOverlap(Transform self, DM_EnemyBrainProfile profile, out Vector3 extract, out Vector3 normal)
         {
+            return TryExtractFromOverlap(self, profile, false, out extract, out normal);
+        }
+
+        /// <summary>
+        /// Resolves penetration against static world geometry only. Combat uses this while an attack
+        /// owns locomotion so player/enemy body contact cannot choose the recovery direction.
+        /// </summary>
+        public static bool TryExtractFromStaticOverlap(Transform self, DM_EnemyBrainProfile profile, out Vector3 extract, out Vector3 normal)
+        {
+            return TryExtractFromOverlap(self, profile, true, out extract, out normal);
+        }
+
+        /// <summary>
+        /// Resolves static-world penetration in multiple passes (corners / large per-frame shoves).
+        /// Returns how many extract steps were applied.
+        /// </summary>
+        public static int ApplyStaticOverlapExtract(Transform self, DM_EnemyBrainProfile profile, int maxPasses)
+        {
+            if (self == null || maxPasses < 1)
+                return 0;
+
+            int applied = 0;
+            for (int pass = 0; pass < maxPasses; pass++)
+            {
+                if (!TryExtractFromStaticOverlap(self, profile, out Vector3 extract, out _))
+                    break;
+
+                self.position += extract;
+                applied++;
+            }
+
+            return applied;
+        }
+
+        private static bool TryExtractFromOverlap(
+            Transform self,
+            DM_EnemyBrainProfile profile,
+            bool staticWorldOnly,
+            out Vector3 extract,
+            out Vector3 normal)
+        {
             extract = Vector3.zero;
             normal = Vector3.zero;
             if (self == null)
@@ -494,6 +535,8 @@ namespace Project.AI
                 Collider other = OverlapHits[i];
                 if (other == null || other.isTrigger || IsSelfCollider(other, self))
                     continue;
+                if (staticWorldOnly && ShouldIgnoreForStaticWorldExtract(other, self))
+                    continue;
 
                 if (!Physics.ComputePenetration(
                         cap,
@@ -515,7 +558,10 @@ namespace Project.AI
                 bestDir = dir;
             }
 
-            if (deepest < 0.01f || bestDir.sqrMagnitude < 0.0001f)
+            float minPenetration = profile != null
+                ? Mathf.Max(0.001f, profile.chaseWallSlideSkin * 0.35f)
+                : 0.002f;
+            if (deepest < minPenetration || bestDir.sqrMagnitude < 0.0001f)
                 return false;
 
             bestDir.y = 0f;
@@ -523,7 +569,8 @@ namespace Project.AI
                 return false;
 
             bestDir.Normalize();
-            extract = bestDir * (deepest + 0.04f);
+            float epsilon = profile != null ? profile.chaseWallSlideSkin + 0.05f : 0.06f;
+            extract = bestDir * (deepest + epsilon);
             extract.y = 0f;
             normal = bestDir;
             return extract.sqrMagnitude > 0.0001f;
@@ -909,6 +956,24 @@ namespace Project.AI
         private static bool IsSelfCollider(Collider c, Transform self)
         {
             return c.transform == self || c.transform.IsChildOf(self);
+        }
+
+        /// <summary>
+        /// Static extract ignores living characters and dynamic rigidbodies; kinematic world colliders count as geometry.
+        /// </summary>
+        private static bool ShouldIgnoreForStaticWorldExtract(Collider other, Transform self)
+        {
+            if (other == null || IsSelfCollider(other, self))
+                return true;
+
+            if (other.GetComponentInParent<EnemyAiController>() != null)
+                return true;
+
+            Rigidbody body = other.attachedRigidbody;
+            if (body != null && !body.isKinematic)
+                return true;
+
+            return false;
         }
 
         private static bool TryResolveFanSteerDirection(

@@ -11,8 +11,9 @@ namespace Project.Combat
 {
     /// <summary>
     /// 2026-10-13 (h): player scope / sniper mode runtime. Added to the player by WeaponModeSwitchController.
-    /// Scope mode on (hold-R menu "Scope") + ranged weapon drawn + aiming = scoped: FOV zoom, UITK scope overlay,
-    /// scoped fire interval, scoped range, head/chest damage multipliers, ammo gate, louder/lower shot audio.
+    /// Scope mode on (hold-R menu "Scope") + ranged weapon drawn + ADS active = tactical scoped: fire interval, range,
+    /// damage multipliers, ammo gate, louder/lower shot audio. ADS is Hold (RMB/LT while aiming) or Toggle (RMB/LT edge)
+    /// per DM_ScopeProfile.scopeAdsRightMouseToggle. FOV zoom + UITK overlay require scopeAdsEnablesZoomOverlay (default true).
     /// Scoped cadence base: loaded ammo rifle/pistolScopedFireInterval when &gt; 0, else DM_ScopeProfile; skills via SkillModifierType.Scope*.
     /// Profile overlay colors/size/mask are cosmetic only — sway amplitude, zoom, cadence, accuracy, range,
     /// and headshot damage still come from profile base values modified by allocated scope skills.
@@ -32,6 +33,8 @@ namespace Project.Combat
         public static bool IsScoped => Instance != null && Instance._scoped;
         public static bool IsScopedRifle => IsScoped && Instance._scopedRifle;
         public static float ZoomBlend => Instance != null ? Instance._blend : 0f;
+        /// <summary>True when ADS zoom / scope overlay is active (profile toggle + blend).</summary>
+        public static bool IsScopeViewActive => ZoomBlend > 0.001f;
         public static Vector2 ReticleSway => Instance != null ? Instance._sway : Vector2.zero;
         public static string BlockedAmmoMessage { get; private set; }
         public static float BlockedAmmoUntil { get; private set; }
@@ -44,6 +47,7 @@ namespace Project.Combat
         private bool _pistolOn;
         private bool _scoped;
         private bool _scopedRifle;
+        private bool _toggleAdsActive;
         private float _blend;
         private float _baseFov = -1f;
         private Camera _cam;
@@ -54,6 +58,16 @@ namespace Project.Combat
 
         public bool RifleScopeEnabled => _rifleOn;
         public bool PistolScopeEnabled => _pistolOn;
+        /// <summary>Toggle-mode ADS latched on until the next aim press (Scope mode stays armed).</summary>
+        public bool ToggleAdsActive => _toggleAdsActive;
+
+        /// <summary>Scope mode armed + profile Toggle: RMB/LT press edges latch ADS; hold does not.</summary>
+        public bool UsesToggleAds(ItemData weapon) =>
+            IsUnlocked
+            && DM_ScopeProfile.Live.scopeAdsRightMouseToggle
+            && IsScopeModeArmed(weapon);
+
+        public void ClearToggleAdsLatch() => _toggleAdsActive = false;
 
         public static bool IsUnlocked
         {
@@ -111,14 +125,51 @@ namespace Project.Combat
             return _input != null && (_input.isAimingByInput || _input.IsAiming);
         }
 
+        private bool IsScopeModeArmed(ItemData w)
+        {
+            if (w == null || !w.IsRangedWeapon || w.isMiningTool)
+                return false;
+            return IsRifle(w) ? _rifleOn : _pistolOn;
+        }
+
+        /// <summary>
+        /// Scope mode armed + Toggle ADS: call from Pioneer AimInput on RMB/LT press. Returns true when toggle ADS should drive aim.
+        /// </summary>
+        public bool ApplyToggleAdsInput(bool aimEdgeDown, ItemData weapon)
+        {
+            DM_ScopeProfile p = DM_ScopeProfile.Live;
+            if (!IsUnlocked || !p.scopeAdsRightMouseToggle || !IsScopeModeArmed(weapon))
+            {
+                if (!IsScopeModeArmed(weapon))
+                    _toggleAdsActive = false;
+                return false;
+            }
+
+            if (aimEdgeDown)
+                _toggleAdsActive = !_toggleAdsActive;
+            return _toggleAdsActive;
+        }
+
+        private bool WantsTacticalScoped(DM_ScopeProfile p, bool modeOn)
+        {
+            if (!IsUnlocked || !modeOn)
+                return false;
+            if (p.scopeAdsRightMouseToggle)
+                return _toggleAdsActive;
+            return Aiming();
+        }
+
         private void LateUpdate()
         {
             DM_ScopeProfile p = DM_ScopeProfile.Live;
             ItemData w = ActiveWeapon();
             bool ranged = w != null && w.IsRangedWeapon && !w.isMiningTool;
             bool rifle = ranged && IsRifle(w);
-            bool modeOn = ranged && (rifle ? _rifleOn : _pistolOn);
-            bool want = IsUnlocked && modeOn && Aiming();
+            bool modeOn = IsScopeModeArmed(w);
+            if (!modeOn)
+                _toggleAdsActive = false;
+
+            bool want = WantsTacticalScoped(p, modeOn);
 
             if (want && !_scoped)
                 EnterScope(rifle);
@@ -130,33 +181,23 @@ namespace Project.Combat
                 EnterScope(rifle);
             }
 
-            float target = _scoped ? 1f : 0f;
+            bool wantZoomView = _scoped && p.scopeAdsEnablesZoomOverlay;
+            float target = wantZoomView ? 1f : 0f;
             float inSec = Mathf.Max(0.02f, p.scopeInSeconds * (1f - Mathf.Clamp(Pct(SkillModifierType.ScopeInSpeedPercent), 0f, p.maxScopeInReduction)));
             float outSec = Mathf.Max(0.02f, p.scopeOutSeconds);
-            _blend = Mathf.MoveTowards(_blend, target, Time.unscaledDeltaTime / (_scoped ? inSec : outSec));
+            _blend = Mathf.MoveTowards(_blend, target, Time.unscaledDeltaTime / (wantZoomView ? inSec : outSec));
 
             ApplyFov(p);
             ApplyFireInterval(p);
             UpdateSway(p);
-            ApplyRifleScopePresentation(_scoped && _scopedRifle && _blend > 0.05f);
+            ApplyRifleScopePresentation(_scopedRifle && _blend > 0.05f);
         }
-
-        private bool _lastRifleScopeHudSuppressed;
 
         private void ApplyRifleScopePresentation(bool activeRifleScope)
         {
             if (_cameraOverlay == null)
                 _cameraOverlay = FindAnyObjectByType<DMCameraCollisionOverlay>(FindObjectsInactive.Include);
-            // Keep shoulder/body visible in lens (reference); only HUD chrome is suppressed.
             _cameraOverlay?.SetRifleScopePresentationHideBody(false);
-
-            bool suppressHud = activeRifleScope && _scopedRifle;
-            if (suppressHud == _lastRifleScopeHudSuppressed)
-                return;
-
-            _lastRifleScopeHudSuppressed = suppressHud;
-            DMUiToolkitHud.RefreshMenuChrome();
-            DMUiToolkitPilotCluster.MarkPresentationDirty();
         }
 
         private void EnterScope(bool rifle)
@@ -172,6 +213,8 @@ namespace Project.Combat
         private void ExitScope(bool instant)
         {
             _scoped = false;
+            if (instant)
+                _toggleAdsActive = false;
             ApplyRifleScopePresentation(false);
             RestoreFireInterval();
             if (instant)
@@ -284,7 +327,7 @@ namespace Project.Combat
 
         private void UpdateSway(DM_ScopeProfile p)
         {
-            if (!_scoped)
+            if (_blend <= 0.001f)
             {
                 _sway = Vector2.zero;
                 return;
@@ -334,7 +377,7 @@ namespace Project.Combat
         public static bool TryMeasureScopedAimDistanceMeters(out float distanceMeters)
         {
             distanceMeters = 0f;
-            if (!IsScopedRifle || ZoomBlend < 0.05f)
+            if (!IsScoped || ZoomBlend < 0.05f)
                 return false;
 
             Camera cam = ResolveGameplayCamera();
@@ -348,7 +391,7 @@ namespace Project.Combat
             return true;
         }
 
-        /// <summary>UITK rifle scope range line — live metres or locked readout when beyond skill cap.</summary>
+        /// <summary>UITK scoped range line — live metres or locked readout when beyond skill cap.</summary>
         public static string FormatScopedRangeReadout()
         {
             if (!TryMeasureScopedAimDistanceMeters(out float meters))
@@ -410,7 +453,7 @@ namespace Project.Combat
 
         /// <summary>
         /// Gameplay camera viewport for scoped shots (screen center + reticle sway from Steady Aim skill).
-        /// Aim direction only — spread still uses <see cref="ScopedAccuracyBonusPercent"/> and weapon accuracy.
+        /// Aim direction only â€” spread still uses <see cref="ScopedAccuracyBonusPercent"/> and weapon accuracy.
         /// </summary>
         public static Vector2 GetScopedAimViewport()
         {

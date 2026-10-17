@@ -1,6 +1,6 @@
 # Handoff: Dark Matter Genesis Combat Master Plan (status + next steps)
 
-Written Oct 3, 2026; **execution sync Oct 8, 2026 (plan v2.4)** for a Cursor agent picking up combat work in the live project `A:\Dark Matter Genesis` (Unity 6000.4.11f1 HDRP).
+Written Oct 3, 2026; **execution sync Oct 8, 2026 (plan v2.4)**; **scene sync Oct 16, 2026 (v1.6.6 tune scene)** for a Cursor agent picking up combat work in the live project `A:\Dark Matter Genesis` (Unity 6000.4.11f1 HDRP).
 
 ## Read first
 
@@ -12,15 +12,15 @@ Written Oct 3, 2026; **execution sync Oct 8, 2026 (plan v2.4)** for a Cursor age
 
 | Status | Systems (1-line evidence) |
 |---|---|
-| **Shipped** | Gate 0 attack yaw (`DMMeleeBlockThreatFacing` + `meleeAttackAutoFaceHalfAngle` 16°; regression-only); WorldChrome FPS throttle; Combat Core profile + Genesis Combat Core tab; `DamageInfo` / `CombatEvents` / `IDamageReceiver`; poise; dodge/dash i-frames; block auto-face 30°; v1.6.5 tune scene. **Phase 2:** weak chain A→B→C + random B; charge timing/speed; hitbox + swing dedupe; parry/block stagger; SparksLong; incoming block fix; Combat Studio shell. **Phase 3 (signed off Oct 8):** `DMEnemyBrain` + `DM_EnemyBrainProfile`; `DMEnemyEngagementDirector` + `DM_EnemyEngagementProfile` (D1 single melee engager + Hold); hit marks (`DMEnemyHitMarks`, `DM_EnemyHitMarkProfile`). Commits `a94d0d899`, `6646fdc33`, `e692859f1`, `edfab9a6e`. Legacy Invector melee/ranged/Hot Cross/lock-on/death+loot/companion trio/hex tree. |
+| **Shipped** | Gate 0 attack yaw (`DMMeleeBlockThreatFacing` + `meleeAttackAutoFaceHalfAngle` 16°; regression-only); WorldChrome FPS throttle; Combat Core profile + Genesis Combat Core tab; `DamageInfo` / `CombatEvents` / `IDamageReceiver`; poise; dodge/dash i-frames; block auto-face 30°; **v1.6.6** tune scene (Phase 2–3 acceptance history: v1.6.5). **Phase 2:** weak chain A→B→C + random B; charge timing/speed; hitbox + swing dedupe; parry/block stagger; SparksLong; incoming block fix; Combat Studio shell. **Phase 3 (signed off Oct 8):** `DMEnemyBrain` + `DM_EnemyBrainProfile`; `DMEnemyEngagementDirector` + `DM_EnemyEngagementProfile` (D1 single melee engager + Hold); hit marks (`DMEnemyHitMarks`, `DM_EnemyHitMarkProfile`). Commits `a94d0d899`, `6646fdc33`, `e692859f1`, `edfab9a6e`. Legacy Invector melee/ranged/Hot Cross/lock-on/death+loot/companion trio/hex tree. |
 | **Partial-on-disk** | Block vs parry guard-break (no dedicated parry input/counter); status stacks/immunity (`CombatStatusEffectController`); enemy reach/creep (`EnemyCombat`, `EnemyAiController.States`); **§31 #4 Combat Director** — only Phase 3 spacing layer (`DMEnemyEngagementDirector`), not §10 encounter director. |
-| **Shipped (shell)** | Combat Studio Phase 2 tabs (Core / Melee / Ranged / Play v1.6.5 / Roadmap); Genesis Combat → **AI & awareness** + **Director & tokens** open brain + engagement profiles (Combat Director §10 slice still placeholder). |
+| **Shipped (shell)** | Combat Studio Phase 2 tabs (Core / Melee / Ranged / Play **v1.6.6** / Roadmap); Genesis Combat → **AI & awareness** + **Director & tokens** open brain + engagement profiles (Combat Director §10 slice still placeholder). |
 | **Not started** | Player swing hitstop (`hitstopLightFrames` hooks only); **encounter Combat Director (Phase 4 next — §31 #4)**; Momentum/finishers/specials/Overdrive (§31 #6–8 — **after** #4); Sick Stick; body damage; factions; combat memory; L0–L3 sim; awareness icon UI; full Flank/Objective/Flee states. |
 | **Retired** | Combat_Sandbox as the combat tune target. Leftover scene/spawner may remain — do not use. |
 
 ## Where things stand
 
-- **Tuning scene:** `Assets/_Project/Scenes/Dark Matter Genesis v1.6.5.unity`. Combat_Sandbox **retired**.
+- **Tuning scene:** `Assets/_Project/Scenes/Dark Matter Genesis v1.6.6.unity` (Oct 2026; Phase 2–3 signed off in **v1.6.5** Oct 5–8). Combat_Sandbox **retired**.
 - **Gate 0 (Oct 2026):** attack/charge yaw shipped — **regression-only**. Block assist unchanged (~30°).
 - **FPS:** pre-combat-plan was decent with terrains + full hierarchy. ~10 FPS was UITK WorldChrome per-frame pickup/dot/bar scans — **throttled**. Terrains stay ON.
 - **Phase 1 closed Oct 3, 2026.** Decisions locked; animation tag sheet added.
@@ -56,7 +56,7 @@ Do **not** re-implement attack yaw (regression tests only). Delivered Combat Stu
 1. Utility-scoring brain (`DMEnemyBrain`) beside `EnemyAiController` FSM — auto-attached when `enableUtilityBrain`.
 2. Engagement director (D1 one melee engager, Hold ring, holder sidestep/taunt/feint) — `DMEnemyEngagementDirector`, profile rollback flags.
 3. Enemy bullet hit marks Part B — profiles + Studio **Enemy hit marks** tab.
-4. Acceptance: v1.6.5 play-test + spacing/hit-mark checklists (§10 in spacing plan).
+4. Acceptance: **v1.6.5** play-test + spacing/hit-mark checklists (§10 in spacing plan) — re-run regressions in **v1.6.6** going forward.
 
 **Deferred to Phase 4+:** perception upgrades, awareness icon, Flank state (until director permits), ranged token pool **use**, §10 morale/intensity at encounter level.
 
@@ -100,7 +100,7 @@ Do **not** re-implement attack yaw (regression tests only). Delivered Combat Stu
 - Every combat number is a Genesis Studio profile value, never hardcoded.
 - Real game start is 0 UEA, level 1, empty inventory (200 UEA / level 5 / starter items are test values). Kade lands with 2 companions; more come only from restoring Ethers/Echoes. Never mention wallets or crypto.
 - Bindings: D-Pad up (Journal) and D-Pad right (ammo cycle) are already taken; Sick Stick, finisher, special, Overdrive, parry and the companion radial have no bindings yet. Ask before assigning.
-- Tune combat in **v1.6.5**. Do not permanently disable Gaia terrain, streaming, or HDRP world systems for FPS.
+- Tune combat in **v1.6.6**. Do not permanently disable Gaia terrain, streaming, or HDRP world systems for FPS.
 
 ## Workflow rules
 

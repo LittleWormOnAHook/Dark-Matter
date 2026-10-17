@@ -1,7 +1,7 @@
 # Dark Matter: Genesis — Documentation Index
 
 > **Purpose:** one scannable entry point to every system doc, plan, and roadmap under `Assets/_Project/Documentation/` and `Assets/_Project/Features/`. **§2 lists all known `_Project` docs per system** (Primary vs Related); update this index when adding Design, Architecture, or Features documentation. **Disk truth:** `Architecture/World_Engine_Disk_Status.md` — "shipped" means `.cs` on disk, not "mentioned in a design doc."
-> **Scene note (Oct 2026):** newest Genesis scene on disk is `../Scenes/Dark Matter Genesis v1.6.5.unity`. Do not rename scenes; treat `v1.6.5` as playable until the owner confirms otherwise.
+> **Scene note (Oct 16, 2026):** canonical tune/play scene is `../Scenes/Dark Matter Genesis v1.6.6.unity` (shipped `8b09be6c6`). Phase 2–3 combat acceptance was signed off in **v1.6.5** (Oct 5–8, 2026); use **v1.6.6** for acceptance going forward. Do not rename scenes casually.
 > **Art lock:** never delete/move/empty `Design/ArtReference/` LifeSheets PNGs (see `.cursor/rules/protect-design-art-reference.mdc`); scene-concept `.md` files under `Design/ArtReference/SceneConcepts/` are listed under **Io world content**.
 
 ## 1. Authority stack (how to reference)
@@ -191,5 +191,5 @@ Cross-module architecture index: **§2.11** and `Architecture/Framework_Folder_M
 - **Quest / prologue canon (confirmed Oct 8, 2026 by owner):** `Design/Quests_And_Story_Plan.md` (**0 UEA, 2 Mars survivors**) and `Design/Prologue_Playthrough_And_Camp_Bootstrap_Plan.md` **§3** are step-by-step canonical — no edits unless drift found.
 - **Quest doc links (resolved Oct 8, 2026):** Restored `Design/Quests_And_Story_Plan.md` from git (`c701c830f`). Retargeted `Prologue_Playthrough_Step_By_Step.md` → `Design/Prologue_Playthrough_And_Camp_Bootstrap_Plan.md` (§3) in `Acts_0_to_3_Asset_Mapped_Plan.md`, `Prologue_Acts_Expanded.md`, and `Stages_0_1_Playthrough_Quest_Stages.md`.
 - **Rule/GDD drift (resolved Oct 8, 2026):** `dark-matter-genesis-gdd.mdc` aligned to GDD 5.0 (rev Sep 30, 2026) — **0 UEA, level 1, no inventory, 2 Mars-survivor companions, starter pick retired**.
-- **Scene-label drift (resolved Oct 8, 2026):** `unity-agent-workflow.mdc` + `dark-matter-genesis-core.mdc` + `confirm-before-depot-restore.mdc` aligned to playable `v1.6.5` (matches disk + `AGENTS.md` + GDD). No scenes renamed.
+- **Scene-label drift (resolved Oct 8, 2026; tune scene Oct 16, 2026):** Agent rules + `AGENTS.md` point at playable **`v1.6.6`**; Phase 2–3 sign-off history remains **v1.6.5**. No scenes renamed.
 - **Platform lock (confirmed Oct 8, 2026 by owner):** PC and Mac first, consoles later (Xbox and PlayStation); no mobile ship target. Matches GDD 5.0 and `dark-matter-genesis-core.mdc`.

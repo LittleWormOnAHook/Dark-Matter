@@ -43,7 +43,7 @@ Use this when two sources disagree. **Do not delete or move rules** — update c
 
 | Rule file | Mode | When agents must read it | Key locks | Related |
 |---|---|---|---|---|
-| `dark-matter-genesis-core.mdc` | Always | Every session (canonical locks) | PC+Mac first; AC only; no NavMesh; no in-game LLM; scene v1.6.5; UITK; Player_v7; git source of truth | Links most other rules |
+| `dark-matter-genesis-core.mdc` | Always | Every session (canonical locks) | PC+Mac first; AC only; no NavMesh; no in-game LLM; scene v1.6.6; UITK; Player_v7; git source of truth | Links most other rules |
 | `skill-precedence.mdc` | Always | Imported skills vs project guidance | Skills additive; rules override badjano/generic templates | `unity-agent-workflow.mdc`, core |
 
 ### DCC — 3ds Max (on demand)
@@ -134,7 +134,7 @@ Use this when two sources disagree. **Do not delete or move rules** — update c
 ## 4. Recently aligned (Oct 8, 2026)
 
 - **Economy / roster:** GDD rule + GDD 5.0 — **0 UEA**, level 1, **2 Mars-survivor companions**, starter pick retired (see Documentation INDEX §5).
-- **Playable scene:** `Dark Matter Genesis v1.6.5.unity` in `core`, `unity-agent-workflow`, `AGENTS.md`; **`confirm-before-depot-restore.mdc`** updated from stale **v1.6.2** labels this pass.
+- **Playable scene:** `Dark Matter Genesis v1.6.6.unity` in `core`, `unity-agent-workflow`, `AGENTS.md`; **`confirm-before-depot-restore.mdc`**; Phase 2–3 sign-off history remains v1.6.5 in combat docs.
 - **Platforms:** PC and Mac first; Xbox and PlayStation later; no mobile ship target (`core`, `gdd`, `unity-hdrp`).
 
 ## 5. Git last touch (optional reference)

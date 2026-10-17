@@ -22,13 +22,13 @@ When editing the [GitHub wiki](https://github.com/LittleWormOnAHook/Dark-Matter/
 - **Player melee:** combos, block/charge, poise, hitbox tuning (Invector motor + DM wrappers).
 - **Player ranged:** aim/fire, ammo types, shared resolver; Hot Cross UX (UITK).
 - **Enemies:** FSM + utility brain (`DMEnemyBrain`), engagement director (melee tokens), hit marks / body zones.
-- **FX & tuning:** `DMAmmoFxProfile`, Genesis Studio → Combat, Combat Studio; sandbox builder (forensics — tune in **v1.6.5**).
+- **FX & tuning:** `DMAmmoFxProfile`, Genesis Studio → Combat, Combat Studio; sandbox builder (forensics only — tune/play in **`Dark Matter Genesis v1.6.6.unity`**; Phase 3 acceptance was v1.6.5).
 
 **Out of scope (plan §31):** NavMesh agents, Player_v7 retune, in-game LLM, §31 #4 Combat Director / Momentum / Sick Stick until prior gates close (Phase 4 is active next gate).
 
 ## Phase snapshot (Oct 8, 2026 — plan v2.4)
 
-- **Phase 3 signed off:** utility brain + spacing Part A (`a94d0d899`); hit marks Part B (`6646fdc33`, `e692859f1`, `edfab9a6e`). Acceptance: v1.6.5 play-test + `DM_Enemy_Spacing_And_Hit_Marks_Plan.md` §10 checklists. §31 #3 **Done** in plan Reaudit.
+- **Phase 3 signed off:** utility brain + spacing Part A (`a94d0d899`); hit marks Part B (`6646fdc33`, `e692859f1`, `edfab9a6e`). Acceptance: **v1.6.5** play-test (Oct 8, 2026) + `DM_Enemy_Spacing_And_Hit_Marks_Plan.md` §10 checklists; **current tune scene v1.6.6** for regression going forward. §31 #3 **Done** in plan Reaudit.
 - **Phase 4 next:** **Combat Director (§31 #4)** — encounter intensity, scaled attack slots, flanking, group morale. Phase 3 `DMEnemyEngagementDirector` remains D1 melee spacing; Phase 4 adds encounter-level director (plan §0 **Phase 4** block + §10).
 - **Incremental polish (post–Phase 3):** per-ammo camera trauma (below); see plan Reaudit for commit refs.
 

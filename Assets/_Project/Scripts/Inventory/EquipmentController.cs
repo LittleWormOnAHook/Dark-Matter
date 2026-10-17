@@ -636,7 +636,7 @@ namespace Project.Inventory
                 || IsWeaponDrawn != previousDrawn
                 || drawnWeapon != previousDrawnWeapon;
 
-            // Avoid notifying on every scrap/mushroom pickup — weapon bridge re-equip plays reload SFX.
+            // Avoid notifying on every scrap/mushroom pickup â€” weapon bridge re-equip plays reload SFX.
             if (selectionChanged)
                 NotifySelectionChanged();
         }
@@ -894,6 +894,7 @@ namespace Project.Inventory
                 return;
 
             IsWeaponDrawn = false;
+            Project.Combat.DMScopeMode.Instance?.ClearToggleAdsLatch();
             NotifySelectionChanged();
         }
 

@@ -1,7 +1,9 @@
 # Dark Matter: Genesis — Combat, AI, Companions & Encounters
-## Master Plan v2.4 (Sep 29, 2026 design; code-status sync Oct 8, 2026)
+## Master Plan v2.4 (Sep 29, 2026 design; code-status sync Oct 8, 2026; scene sync Oct 16, 2026)
 
 **Changelog v2.4 (Oct 8, 2026):** Phase 3 **accepted** — Anthony / user sign-off in chat after v1.6.5 play-test gate. §31 #3 marked **Done**; Reaudit + §0 updated; **Phase 4** (§31 #4 Combat Director) defined as the active next gate. Momentum / Sick Stick remain §31 #6–8, not Phase 4.
+
+**Scene sync (Oct 16, 2026):** Current tune/play/acceptance scene is **`Dark Matter Genesis v1.6.6.unity`**. Phase 2–3 acceptance gates above remain tied to **v1.6.5** sign-off dates; re-run §10 / Phase 4 checks in **v1.6.6** unless a task says otherwise.
 
 Items marked *(fill-in)* are proposals added beyond Anthony's spec. All numbers are starting values exposed in Genesis Studio, never hardcoded.
 
@@ -32,7 +34,7 @@ Disk pass against `Scripts/Combat/`, `Scripts/AI/`, Genesis Combat subtabs, and 
 
 ## 0. Current build status (disk truth, Oct 8, 2026)
 
-**Tuning scene:** `Assets/_Project/Scenes/Dark Matter Genesis v1.6.5.unity`. **Combat_Sandbox is RETIRED** for melee/combat tuning (scene + `DMCombatSandboxSpawner` may still exist as a leftover; do not treat it as the play target).
+**Tuning scene:** `Assets/_Project/Scenes/Dark Matter Genesis v1.6.6.unity` (Oct 2026; Phase 2–3 signed off in **v1.6.5** Oct 5–8). **Combat_Sandbox is RETIRED** for melee/combat tuning (scene + `DMCombatSandboxSpawner` may still exist as a leftover; do not treat it as the play target).
 
 **Studio → runtime authority:** Combat Studio + Genesis **Combat Core** fields are **Resources profile → `DM_CombatCoreProfile.Live` at runtime and in builds** (not editor-only applier steps). Exception: **Melee Animations** / **Build And Apply** wires **clip assets** on animator YAML; tunable numbers (stagger, charge, hitbox scale, parry window, strong anim speed, etc.) must apply immediately in Play when sliders move. See `Unity_Compile_Iteration_Audit.md` §6.
 
@@ -81,7 +83,7 @@ Sep 30 audit snapshot (historical): 68 systems — 8 Built, 28 Partial, 25 Missi
 - Intensity → max melee (+ optional ranged) slots applied on top of engagement hand-off.
 - Morale float per group + event sinks (death, leader tag, finisher placeholder event for later Momentum phase).
 - Brain integration: director **permits/denies** Press vs Flank vs Retreat for non-engagers.
-- **5× `Humanoid_Enemy`** scenario in **v1.6.5** as the acceptance fight (§31 #4 test note).
+- **5× `Humanoid_Enemy`** scenario in **v1.6.6** as the acceptance fight (§31 #4 test note).
 
 **Acceptance (done-when)**
 - Anthony sign-off on §31 #4 (Reaudit row + §31 checklist → **Done**).
@@ -119,9 +121,9 @@ Docs-only or Studio placeholders are **Not started**. Evidence is one class/asse
 | Strong melee charge + weak chain A→B→C | **Shipped** (Phase 2) | `strongMeleeChargeSeconds` + `SwordCharge` / Strong `SwordAttack.B`; lights Weak `SwordAttack` A→B→C + `SwordRandomAttack.B` |
 | Parry VFX (SparksLong) + incoming block fix | **Shipped** (Phase 2) | `59368909c` polish pass |
 | Enemy melee reach / creep / reposition | **Partial-on-disk** | `enemyMeleeAttackRangeMultiplier` in `EnemyCombat`; creep in `EnemyAiController.States` |
-| Combat Studio (Phase 2 shell: Core/Melee/Ranged/Play/Roadmap) | **Shipped** (shell) | `DMCombatStudioWindow` tabs Core / Melee / Ranged / Play (v1.6.5) / Roadmap. Sandbox demoted to forensics. |
+| Combat Studio (Phase 2 shell: Core/Melee/Ranged/Play/Roadmap) | **Shipped** (shell) | `DMCombatStudioWindow` tabs Core / Melee / Ranged / Play (opens **v1.6.6**) / Roadmap. Sandbox demoted to forensics. |
 | Genesis placeholders (AI, Director, Momentum, Sick Stick, Body, Encounters) | **Shipped** (labels only) | `DMStudioPanelMode.CombatPlanPlaceholder` — info panels, no empty `.asset` files |
-| v1.6.5 as combat tune scene | **Shipped** (scene exists) | `Dark Matter Genesis v1.6.5.unity` |
+| v1.6.6 as combat tune scene | **Shipped** (scene exists) | `Dark Matter Genesis v1.6.6.unity` (Phase 2–3 acceptance history: v1.6.5) |
 | Combat_Sandbox as tune target | **Retired** | Leftover `Combat_Sandbox.unity` / spawner — do not use |
 | Player hitstop from `hitstopLightFrames` | **Not started** | Profile hooks only; no player TimeScale/hitstop consumer |
 | Per-ammo camera trauma (fire / impact) | **Shipped** | `DMAmmoFxProfile.fireTrauma` / `impactTrauma` → `DMCombatCameraShake` (defaults 0 until tuned in Ammo FX) |
@@ -465,14 +467,14 @@ Relationships: Friendly, Allied, Neutral, Suspicious, Hostile, Fearful, Territor
 Grows every phase. Profiles for: AI (archetype, personality, traits, perception, aggro, leash, memory), combat (damage, speed, reach, poise, attack priority, tokens), elements (status, duration, cost, crit effect, upgrade scaling, combos), Momentum/finishers/specials/Overdrive, Sick Stick triggers, skill tree, body (components, weak points, dismemberment, functional damage), companions (roles, buffs, debuffs, bond), encounters (composition, objectives, reinforcements, escalation, environment), difficulty *(fill-in: scales tokens, detection speed, reaction time and poise damage rather than health)*.
 
 *Current build (audit Sep 30, 2026; execution Oct 4, 2026):*
-- **[Partial] Genesis Studio combat knobs**: Live tabs remain Combat Core, Melee Animations, Combat Studio, Ammo FX, Hit Catalog, Surface Damage (+ Carve Tool). Phase 2 shell **shipped**: Combat Studio is Core / Melee / Ranged / Play (opens v1.6.5) / Roadmap. Genesis Combat now has info-only placeholders (AI & awareness, Director & tokens, Momentum & finishers, Sick Stick & specials, Body & dismemberment, Encounters & difficulty) via `CombatPlanPlaceholder` — no empty profile assets. Runtime profiles for those phases still missing.
+- **[Partial] Genesis Studio combat knobs**: Live tabs remain Combat Core, Melee Animations, Combat Studio, Ammo FX, Hit Catalog, Surface Damage (+ Carve Tool). Phase 2 shell **shipped**: Combat Studio is Core / Melee / Ranged / Play (opens **v1.6.6**) / Roadmap. Genesis Combat now has info-only placeholders (AI & awareness, Director & tokens, Momentum & finishers, Sick Stick & specials, Body & dismemberment, Encounters & difficulty) via `CombatPlanPlaceholder` — no empty profile assets. Runtime profiles for those phases still missing.
 
 ## 27. Combat sandbox (built in Phase 2)
 Start from the existing `TrainingDummy` (+ DummyCombatUI).
 Spawn any enemy, weapon, element, archetype, personality, status, body configuration, companion, encounter. Debug: god mode, infinite stamina/power/plasma/Momentum, force stagger/dismember/status/Sick Stick, spawn/reset encounter. Visualise vision cones, hearing radius, aggro, leash, target, last known position, token, state, objective, personality modifiers, utility scores.
 
 *Current build (audit Sep 30, 2026; execution Oct 4, 2026):*
-- **[Retired as tune target] Combat_Sandbox**: Leftover scene + `DMCombatSandboxSpawner` / TrainingDummy exist. **Do not use for Phase 2 melee tuning.** Play and accept in **Dark Matter Genesis v1.6.5**. Full sandbox (spawn any archetype/personality, god mode, token viz) remains a later Phase 2/16 goal, not the daily tune scene.
+- **[Retired as tune target] Combat_Sandbox**: Leftover scene + `DMCombatSandboxSpawner` / TrainingDummy exist. **Do not use for Phase 2 melee tuning.** Play and accept in **Dark Matter Genesis v1.6.6**. Full sandbox (spawn any archetype/personality, god mode, token viz) remains a later Phase 2/16 goal, not the daily tune scene.
 
 ## 28. Debugging
 Readable reports, e.g. "AI Brain 042, State: Search, Target: Player, Last Known: X/Y/Z, Reason: lost behind obstruction, Next: Investigate, Confidence: 61%". Hold a dev key and look at an enemy to see it *(fill-in)*. Stripped from release builds.
@@ -496,8 +498,8 @@ Each phase: hit detection, damage, stagger, death, finishers, dismemberment, tar
 
 ## 31. Implementation order
 1. **Audit** **[Done Oct 3, 2026]**: architecture and dependency maps; enemy, weapon, damage and animation library inventory (tagged); reuse vs replace candidates; Invector decision (**wrap**); migration table; animation tag sheet.
-2. **Core combat** **[Done — Phase 2 signed off Oct 5, 2026]**: damage profiles, weapon and element interfaces, hit detection, poise/stamina, status framework with immunity, health/damage events. **Tune in v1.6.5; Combat_Sandbox retired.** Batch 1 + melee polish shipped (`59368909c` + branch history). Gate 0 attack yaw regression-only. Combat Studio + Genesis placeholder shell shipped. Jetpack melee: lights → Weak `SwordAttack` A→B→C + `SwordRandomAttack.B`; charge → `SwordCharge` / Strong `SwordAttack.B`; parry/block stagger, SparksLong, incoming block fix.
-3. **Unified brain** **[Done — Phase 3 signed off Oct 8, 2026]** utility scoring, archetype, personality, condition layer, Hold via engagement director, hit marks Part B. Commits `a94d0d899` + hit-mark chain; acceptance in v1.6.5 per Reaudit.
+2. **Core combat** **[Done — Phase 2 signed off Oct 5, 2026]**: damage profiles, weapon and element interfaces, hit detection, poise/stamina, status framework with immunity, health/damage events. **Tune in v1.6.6** (Phase 2 acceptance was v1.6.5); Combat_Sandbox retired. Batch 1 + melee polish shipped (`59368909c` + branch history). Gate 0 attack yaw regression-only. Combat Studio + Genesis placeholder shell shipped. Jetpack melee: lights → Weak `SwordAttack` A→B→C + `SwordRandomAttack.B`; charge → `SwordCharge` / Strong `SwordAttack.B`; parry/block stagger, SparksLong, incoming block fix.
+3. **Unified brain** **[Done — Phase 3 signed off Oct 8, 2026]** utility scoring, archetype, personality, condition layer, Hold via engagement director, hit marks Part B. Commits `a94d0d899` + hit-mark chain; acceptance in **v1.6.5** per Reaudit (current tune scene **v1.6.6**).
 4. **Combat Director** **[Next — Phase 4]**: encounter intensity, scaled attack slots, coordination, flanking, group morale, reinforcement/retreat hooks. **Build on** `DMEnemyEngagementDirector` (D1); test with 5 identical enemies. See **Phase 4 (Oct 8, 2026)** under §0.
 5. **Plasma sword template** **[Partial]**: attack, damage, hit react, crit, burn, resource use, upgrade. Start Blade and Survival skill branches.
 6. **Momentum meter and finishers** **[Missing]**: build-up, finisher selection, first finishers on the migrated enemy. Skill-gated finisher rows on `DM_MeleeFinisherCatalog` (library plan §9).

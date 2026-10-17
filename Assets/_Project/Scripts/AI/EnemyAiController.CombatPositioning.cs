@@ -170,6 +170,7 @@ namespace Project.AI
 
         private Vector3 cachedSeparationDir;
         private float cachedSeparationDepth;
+        private Vector3 combatPositionFrameStart;
 
         private float CrowdingDepthScale(float depth)
         {
@@ -244,6 +245,97 @@ namespace Project.AI
             transform.position += step;
             LastPushDirection = step;
             NoteMover("HardSeparation", step.magnitude);
+        }
+
+        private bool InCombatGeometryRecoveryState =>
+            state == AiState.Attack || state == AiState.Defensive || state == AiState.Hold || state == AiState.Chase;
+
+        private bool CombatGeometryRecoveryBlocked =>
+            ragdollBridge != null &&
+            (ragdollBridge.IsKnockdownActive || ragdollBridge.IsCorpseRagdolled);
+
+        private void BeginCombatPositionFrame()
+        {
+            combatPositionFrameStart = transform.position;
+        }
+
+        /// <summary>
+        /// Attack clips intentionally own locomotion, but physics contact can still press the enemy
+        /// into nearby static geometry. Resolve only actual penetration here so touching a wall does
+        /// not move the fighter and character-to-character contact cannot steer the correction.
+        /// </summary>
+        private void TickCombatGeometryRecovery(bool afterDisplacement)
+        {
+            if (IsStationary || !InCombatGeometryRecoveryState || CombatGeometryRecoveryBlocked)
+                return;
+
+            // Soft hit stagger still slides via DMEnemyHitSlide; keep extracting from static boxes.
+            if (!afterDisplacement && ragdollBridge != null && ragdollBridge.IsHitStaggerActive)
+                return;
+
+            DM_EnemyBrainProfile profile = DM_EnemyBrainProfile.Live;
+            int maxPasses = 2;
+            if (state == AiState.Attack || state == AiState.Hold || state == AiState.Defensive)
+                maxPasses = IsInAttackSequence ? 4 : 3;
+            else if (afterDisplacement)
+                maxPasses = 3;
+
+            float moved = 0f;
+            Vector3 normal = Vector3.zero;
+            for (int pass = 0; pass < maxPasses; pass++)
+            {
+                if (!EnemyChaseWallSlide.TryExtractFromStaticOverlap(
+                        transform,
+                        profile,
+                        out Vector3 extract,
+                        out Vector3 passNormal))
+                    break;
+
+                transform.position += extract;
+                moved += extract.magnitude;
+                if (passNormal.sqrMagnitude > 0.0001f)
+                    normal = passNormal;
+            }
+
+            if (moved <= 0.000001f)
+                return;
+
+            RecentWallBufferContact = true;
+            if (normal.sqrMagnitude > 0.0001f)
+                chaseWallLastContactNormal = normal;
+            chaseWallBlockedFrames = 0;
+            ChaseWallStutterFrames = 0;
+            NoteMover(afterDisplacement ? "CombatWallRecoveryLate" : "CombatWallRecovery", moved);
+        }
+
+        /// <summary>
+        /// Re-clamp the frame's root delta against static geometry during combat (attack swing lock included).
+        /// </summary>
+        private void FinalizeCombatPositionFrame()
+        {
+            if (IsStationary || !InCombatGeometryRecoveryState || CombatGeometryRecoveryBlocked)
+                return;
+
+            if (ragdollBridge != null && ragdollBridge.IsHitStaggerActive)
+            {
+                TickCombatGeometryRecovery(afterDisplacement: true);
+                return;
+            }
+
+            Vector3 delta = transform.position - combatPositionFrameStart;
+            delta.y = 0f;
+            if (delta.sqrMagnitude > 0.000001f)
+            {
+                transform.position = combatPositionFrameStart;
+                Vector3 safeDelta = EnemyChaseWallSlide.ClampStepToGeometry(transform, delta);
+                if (safeDelta.sqrMagnitude > 0.000001f)
+                {
+                    transform.position += safeDelta;
+                    NoteMover("CombatStepClamp", safeDelta.magnitude);
+                }
+            }
+
+            TickCombatGeometryRecovery(afterDisplacement: true);
         }
 
         /// <summary>Waiting enemies (Hold / Holder, or standing between swings) get nudged apart directly; the push grows with overlap depth.</summary>

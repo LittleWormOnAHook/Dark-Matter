@@ -12,7 +12,7 @@
 ## Live editor (Sep 2026)
 
 - **Unity 6 HDRP** `6000.4.11f1` (the `unity-urp` rule filename is leftover — do not target URP)
-- Playable scene: `Assets/_Project/Scenes/Dark Matter Genesis v1.6.5.unity` (main scene, latest v1.6)
+- Playable scene: `Assets/_Project/Scenes/Dark Matter Genesis v1.6.6.unity` (main tune/play scene, Oct 2026; Phase 2–3 acceptance was signed off in **v1.6.5** Oct 5–8, 2026)
 - Git branch for UITK cutover: `cursor/uitoolkit-ui`
 - Editor **Auto Refresh is off**. After script/asset edits, agent runs MCP `refresh_unity` (`if_dirty`, `compile: request` when scripts change, `wait_for_ready: true`). Anthony Ctrl+R only if MCP is unavailable.
 - Git is agent source of truth. Plastic check-in is Anthony in the Plastic window (no `cm` CLI).

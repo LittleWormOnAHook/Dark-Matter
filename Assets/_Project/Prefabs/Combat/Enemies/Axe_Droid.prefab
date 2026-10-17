@@ -50160,16 +50160,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.AI.EnemyLootable
   enableLoot: 1
   lootDisplayName: Axy
-  acDropMin: 1
-  acDropMax: 5
-  randomLootCountMin: 0
-  randomLootCountMax: 2
-  lootItemPool: []
+  acDropMin: 10
+  acDropMax: 30
+  randomLootCountMin: 1
+  randomLootCountMax: 3
+  lootItemPool:
+  - {fileID: 11400000, guid: 8c0ffb94bd49f584d93b40bf253a3555, type: 2}
+  - {fileID: 11400000, guid: 267db052f40152b48ad7de3c8993cb9b, type: 2}
+  - {fileID: 11400000, guid: 7d3d1739874eed3438b054b05869977d, type: 2}
+  - {fileID: 11400000, guid: 8759c1d61f5d64d44b04b86927574895, type: 2}
+  - {fileID: 11400000, guid: 5c4c065abe2a1b342942ff46042096bf, type: 2}
   lootUnlootedLifetime: 20
   lootedBagDissolveDelay: 2
   lootInteractRange: 2.75
   promptText: Press E to loot bag
-  lootBagPrefab: {fileID: 0}
+  lootBagPrefab: {fileID: 5070942837361520457, guid: 171f2890153a93c4c9421280816d02de, type: 3}
   dropMesh: {fileID: 0}
   dropTexture: {fileID: 0}
 --- !u!114 &4821747579657088824

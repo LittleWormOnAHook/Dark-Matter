@@ -12,8 +12,6 @@ namespace Project.AI.Invector
     [DisallowMultipleComponent]
     public sealed class DMEnemyHitSlide : MonoBehaviour
     {
-        private static readonly RaycastHit[] Hits = new RaycastHit[12];
-
         private Vector3 _dir;
         private float _total;
         private float _moved;
@@ -114,13 +112,16 @@ namespace Project.AI.Invector
             }
 
             Vector3 pos = transform.position;
-            if (IsBlocked(pos, delta))
+            Vector3 requestedStep = _dir * delta;
+            Vector3 safeStep = EnemyChaseWallSlide.ClampStepToGeometry(transform, requestedStep);
+            bool geometryLimited = (safeStep - requestedStep).sqrMagnitude > 0.000004f;
+            if (safeStep.sqrMagnitude < 0.000001f)
             {
                 enabled = false;
                 return;
             }
 
-            Vector3 next = pos + _dir * delta;
+            Vector3 next = pos + safeStep;
             if (_hasGround)
             {
                 if (!EnemyGroundUtility.TryGetGroundY(next, out float groundY) || groundY < _lastGroundY - _maxDrop)
@@ -134,24 +135,13 @@ namespace Project.AI.Invector
             }
 
             transform.position = next;
-            { EnemyAiController slideAi = GetComponent<EnemyAiController>(); if (slideAi != null) slideAi.NoteMover("HitSlide", delta); }
-            _moved = want;
-            if (t >= 1f)
+            EnemyChaseWallSlide.ApplyStaticOverlapExtract(transform, DM_EnemyBrainProfile.Live, 3);
+            { EnemyAiController slideAi = GetComponent<EnemyAiController>(); if (slideAi != null) slideAi.NoteMover("HitSlide", safeStep.magnitude); }
+            _moved = geometryLimited
+                ? Mathf.Min(_total, _moved + Mathf.Max(0f, Vector3.Dot(safeStep, _dir)))
+                : want;
+            if (geometryLimited || t >= 1f)
                 enabled = false;
-        }
-
-        private bool IsBlocked(Vector3 pos, float delta)
-        {
-            Vector3 origin = pos + Vector3.up * 0.9f;
-            int count = Physics.RaycastNonAlloc(origin, _dir, Hits, delta + 0.35f, ~0, QueryTriggerInteraction.Ignore);
-            for (int i = 0; i < count; i++)
-            {
-                Collider c = Hits[i].collider;
-                if (c != null && !c.transform.IsChildOf(transform))
-                    return true;
-            }
-
-            return false;
         }
 
         private static float Ease(float t, int pulses)

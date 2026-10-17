@@ -80,7 +80,7 @@ namespace Project.UI
             DM_ScopeProfile profile = DM_ScopeProfile.Live;
             if (profile.retireUguiOptics)
                 return true;
-            if (DMScopeMode.IsScoped || DMScopeMode.ZoomBlend > 0.001f)
+            if (DMScopeMode.IsScopeViewActive)
                 return true;
             return DMUiToolkitHud.IsDriving;
         }

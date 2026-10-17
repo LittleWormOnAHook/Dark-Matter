@@ -173,7 +173,7 @@ namespace Project.EditorTools.Audit
         private static IEnumerator ScnRockMeshes(GameObject prefab, DMAuditEnemyResult R)
         {
             var rocks = new List<MeshCollider>();
-            foreach (var collider in Object.FindObjectsByType<MeshCollider>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            foreach (var collider in Object.FindObjectsByType<MeshCollider>(FindObjectsInactive.Exclude))
                 if (collider.enabled && collider.sharedMesh != null && !collider.isTrigger &&
                     collider.name.IndexOf("rock", StringComparison.OrdinalIgnoreCase) >= 0 &&
                     (EnemyChaseWallSlide.ChaseObstructionMask & (1 << collider.gameObject.layer)) != 0)
@@ -417,9 +417,113 @@ namespace Project.EditorTools.Audit
             R.Add("Obstacle", "wall.combat", "Live combat chase routes around blocking box", combatPass ? "PASS" : "FAIL",
                 $"reachedAttackRange={reached}; states={string.Join("/", combat.phaseStates)}; " + cm.Describe(),
                 combatPass ? "" : "Combat pursuit failed to clear obstruction or produced movement instability.");
+
+            Cleanup(); yield return new WaitGame(0.25f);
+
+            // Reproduce the live failure: the player pressures a melee enemy backward until its
+            // movement capsule overlaps static geometry while the attack state owns locomotion.
+            SetStatus("obstacle audit: melee pressure wall recovery");
+            Live pinned = SpawnMatrixEnemy(prefab, "wall-melee-pressure");
+            yield return SpawnReady(pinned);
+            Vector3 pinCenter = ObstacleAuditCenter();
+            BoxCollider pinBox = ObstacleBox(pinCenter);
+            CapsuleCollider pinCapsule = pinned.go.GetComponent<CapsuleCollider>();
+            float capsuleExtent = pinCapsule != null ? pinCapsule.bounds.extents.x : 0.35f;
+            Vector3 pinPosition = pinCenter + Vector3.right * (pinBox.bounds.extents.x + capsuleExtent - 0.18f);
+            Vector3 pressurePlayer = Ground(pinPosition + Vector3.right * 1.15f);
+            ObstaclePlace(pinned, pinPosition, pressurePlayer);
+            PlacePlayer(pressurePlayer, pinPosition);
+            pinned.combat.SetTarget(_player.transform);
+            typeof(EnemyAiController).GetMethod("EnterState", BF).Invoke(pinned.ai,
+                new[] { Enum.Parse(stateField.FieldType, "Attack") });
+            pinned.combat.TryAttack();
+            Physics.SyncTransforms();
+
+            float initialDepth = 0f;
+            bool beganPenetrating = pinCapsule != null && Physics.ComputePenetration(
+                pinCapsule, pinCapsule.transform.position, pinCapsule.transform.rotation,
+                pinBox, pinBox.transform.position, pinBox.transform.rotation,
+                out _, out initialDepth) && initialDepth > 0.03f;
+            bool attackObserved = pinned.combat.IsAttacking;
+            bool cleared = false;
+            float maxDepth = beganPenetrating ? initialDepth : 0f;
+            end = Time.time + 2f;
+            while (Time.time < end)
+            {
+                TopUpPlayer();
+                attackObserved |= pinned.combat.IsAttacking;
+                Physics.SyncTransforms();
+                float depth = 0f;
+                bool penetrating = pinCapsule != null && Physics.ComputePenetration(
+                    pinCapsule, pinCapsule.transform.position, pinCapsule.transform.rotation,
+                    pinBox, pinBox.transform.position, pinBox.transform.rotation,
+                    out _, out depth) && depth > 0.03f;
+                if (penetrating) maxDepth = Mathf.Max(maxDepth, depth);
+                else if (beganPenetrating) { cleared = true; break; }
+                yield return null;
+            }
+            bool pressurePass = beganPenetrating && cleared && attackObserved;
+            R.Add("Obstacle", "wall.combat-pressure", "Melee pressure extraction during Attack", pressurePass ? "PASS" : "FAIL",
+                $"seededPenetration={beganPenetrating}, initialDepth={initialDepth:F3}m, maxDepth={maxDepth:F3}m, " +
+                $"attackObserved={attackObserved}, clearedWithin2s={cleared}, finalState={AiState(pinned.ai)}",
+                pressurePass ? "" : "Enemy must escape a static box overlap while melee attack owns normal locomotion.");
+
+            Cleanup(); yield return new WaitGame(0.25f);
+
+            // Kinematic rigidbody on the blocker matches building props; static-only extract must not skip it.
+            SetStatus("obstacle audit: kinematic wall recovery");
+            Live kinPinned = SpawnMatrixEnemy(prefab, "wall-kinematic-pressure");
+            yield return SpawnReady(kinPinned);
+            Vector3 kinCenter = ObstacleAuditCenter() + Vector3.forward * 6f;
+            BoxCollider kinBox = ObstacleBox(kinCenter);
+            var kinBody = kinBox.gameObject.AddComponent<Rigidbody>();
+            kinBody.isKinematic = true;
+            kinBody.useGravity = false;
+            CapsuleCollider kinCapsule = kinPinned.go.GetComponent<CapsuleCollider>();
+            float kinExtent = kinCapsule != null ? kinCapsule.bounds.extents.x : 0.35f;
+            Vector3 kinPos = kinCenter + Vector3.right * (kinBox.bounds.extents.x + kinExtent - 0.16f);
+            Vector3 kinPlayer = Ground(kinPos + Vector3.right * 1.1f);
+            ObstaclePlace(kinPinned, kinPos, kinPlayer);
+            PlacePlayer(kinPlayer, kinPos);
+            kinPinned.combat.SetTarget(_player.transform);
+            typeof(EnemyAiController).GetMethod("EnterState", BF).Invoke(kinPinned.ai,
+                new[] { Enum.Parse(stateField.FieldType, "Attack") });
+            kinPinned.combat.TryAttack();
+            Physics.SyncTransforms();
+
+            float kinInitial = 0f;
+            bool kinBegan = kinCapsule != null && Physics.ComputePenetration(
+                kinCapsule, kinCapsule.transform.position, kinCapsule.transform.rotation,
+                kinBox, kinBox.transform.position, kinBox.transform.rotation,
+                out _, out kinInitial) && kinInitial > 0.03f;
+            bool kinCleared = false;
+            float kinMax = kinBegan ? kinInitial : 0f;
+            end = Time.time + 2f;
+            while (Time.time < end)
+            {
+                TopUpPlayer();
+                Vector3 push = kinPos - _player.transform.position;
+                push.y = 0f;
+                if (push.sqrMagnitude > 0.01f)
+                    _player.transform.position += push.normalized * (Time.deltaTime * 1.35f);
+                Physics.SyncTransforms();
+                float depth = 0f;
+                bool penetrating = kinCapsule != null && Physics.ComputePenetration(
+                    kinCapsule, kinCapsule.transform.position, kinCapsule.transform.rotation,
+                    kinBox, kinBox.transform.position, kinBox.transform.rotation,
+                    out _, out depth) && depth > 0.03f;
+                if (penetrating) kinMax = Mathf.Max(kinMax, depth);
+                else if (kinBegan) { kinCleared = true; break; }
+                yield return null;
+            }
+            bool kinPass = kinBegan && kinCleared;
+            R.Add("Obstacle", "wall.combat-pressure-kinematic", "Extract vs kinematic static box during Attack", kinPass ? "PASS" : "FAIL",
+                $"seededPenetration={kinBegan}, initialDepth={kinInitial:F3}m, maxDepth={kinMax:F3}m, clearedWithin2s={kinCleared}",
+                kinPass ? "" : "Static extract ignored kinematic blockers (attachedRigidbody filter).");
+
             R.Add("Coverage", "wall.remaining", "Additional coverage still required", "WARN",
                 (_opts.thinWallsOnly ? "Thin wall: 0.2m thickness, both endpoints, perpendicular and oblique approaches, four rotations. " : "Box approaches. ") + "Ping-pong first leg, native territory wander and combat pursuit.",
-                "Multiple enemies, complete repeated four-corner circuits, ping-pong return leg, temporary blockers and in-range combat strafe require additional cases; do not infer coverage.");
+                "Multiple enemies, complete repeated four-corner circuits, ping-pong return leg and temporary blockers require additional cases; do not infer coverage.");
         }
     }
 }

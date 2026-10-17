@@ -4,10 +4,10 @@ namespace Project.Combat
 {
     /// <summary>
     /// 2026-10-13 (h): player scope / sniper mode settings (Studio-editable, Resources/Combat/DM_ScopeProfile).
-    /// Scope mode is toggled from the hold-R Mode Switch menu; while it is on, aiming (RMB) with the rifle or pistol
-    /// opens the full scope view (UITK overlay + FOV zoom).
+    /// Scope mode is toggled from the hold-R Mode Switch menu; while it is on, ADS input (Hold or Toggle) drives
+    /// scoped gameplay and optional UITK overlay + FOV zoom (<see cref="scopeAdsEnablesZoomOverlay"/>).
     /// Profile fields: base zoom FOV, fire interval, range, damage multipliers, sway pixels, accuracy bonus, overlay art.
-    /// Rifles skill_scope_* assets (via SkillModifierType.Scope*) modify zoom, sway, cadence, range, accuracy, headshot —
+    /// Rifles skill_scope_* assets (via SkillModifierType.Scope*) modify zoom, sway, cadence, range, accuracy, headshot 
     /// never bypass PlayerSkillAllocator. Overlay color/size/mask fields are cosmetic only.
     /// </summary>
     [CreateAssetMenu(menuName = "Project/Combat/Scope Profile", fileName = "DM_ScopeProfile")]
@@ -24,7 +24,11 @@ namespace Project.Combat
         [Range(5f, 150f)] public float rifleScopedRange = 50f;
         [Range(5f, 100f)] public float pistolScopedRange = 28f;
 
-        [Header("Zoom")]
+        [Header("Zoom / ADS input (Scope mode armed in hold-R menu)")]
+        [Tooltip("When Scope mode is armed (hold-R menu): ON = RMB/LT click toggles ADS zoom, overlay, and scoped fire rules until the next click. OFF = hold RMB/LT to ADS (legacy). When Scope mode is off, RMB hold aim is unchanged.")]
+        public bool scopeAdsRightMouseToggle = true;
+        [Tooltip("When false, scoped cadence/range/damage still apply while ADS is active, but FOV zoom and the UITK scope overlay stay off.")]
+        public bool scopeAdsEnablesZoomOverlay = true;
         [Range(3f, 60f)] public float rifleScopedFov = 14f;
         [Range(3f, 60f)] public float pistolScopedFov = 26f;
         [Tooltip("Seconds to reach full zoom (Quick Scope skill shortens it).")]
@@ -83,9 +87,9 @@ namespace Project.Combat
         }
 
         [Range(0.15f, 0.55f)] public float rifleScopeMaskRadius = 0.34f;
-        [Tooltip("Multiplies rifle circular mask radius (0.8 ≈ 20% smaller hole).")]
+        [Tooltip("Multiplies rifle circular mask radius (0.8  20% smaller hole).")]
         [Range(0.5f, 1f)] public float rifleScopeMaskScale = 0.8f;
-        [Tooltip("Legacy alias — use rifleOuterCrosshairScale. Kept for existing assets.")]
+        [Tooltip("Legacy alias  use rifleOuterCrosshairScale. Kept for existing assets.")]
         [Range(0.35f, 1.5f)] public float rifleScopeCrosshairScale = 0.8f;
         [Range(0.15f, 0.55f)] public float pistolScopeMaskRadius = 0.4f;
         [Tooltip("Pistol scope procedural reticle size (0.25 = quarter size).")]
@@ -101,9 +105,9 @@ namespace Project.Combat
         [Range(0, 10)] public int milDotsPerArm = 4;
         public string rifleScopeLabel = "SCOPE";
         public string pistolScopeLabel = "SCOPE";
-        public string scopeHint = "[RMB] Release  |  Standard / Plasma ammo only";
+        public string scopeHint = "[RMB] Toggle ADS  |  Standard / Plasma ammo only";
 
-        [Header("Scope overlay — rifle ADS (reticle / ring / outer crosshair)")]
+        [Header("Scope overlay  rifle ADS (reticle / ring / outer crosshair)")]
         [Tooltip("Center dot and inner plus inside the small ring.")]
         public Color rifleReticleColor = new Color(0.05f, 0.05f, 0.05f, 0.95f);
         [Tooltip("Small circular crosshair outer ring.")]
@@ -115,10 +119,10 @@ namespace Project.Combat
         [Tooltip("HDR-style bloom on UITK overlay (multiplies RGB; 0 = off).")]
         [Range(0f, 8f)] public float rifleOuterCrosshairEmission = 0f;
         public Color rifleOuterCrosshairEmissionColor = Color.white;
-        [Tooltip("Outer diameter in screen pixels of the small ring (center mask matches this).")]
+        [Tooltip("Outer diameter in screen pixels of the small scoped inner ring.")]
         [Range(8f, 320f)] public float rifleRingOuterDiameterPx = 56f;
 
-        [Header("Scope overlay — pistol ADS")]
+        [Header("Scope overlay  pistol ADS")]
         public Color pistolReticleColor = new Color(0.05f, 0.05f, 0.05f, 0.95f);
         public Color pistolRingColor = new Color(0f, 0f, 0f, 1f);
         public Color pistolOuterCrosshairColor = Color.white;
@@ -127,12 +131,16 @@ namespace Project.Combat
         public Color pistolOuterCrosshairEmissionColor = Color.white;
         [Range(8f, 320f)] public float pistolRingOuterDiameterPx = 40f;
 
-        [Header("Scope overlay — outer viewport mask (clear through ring outer edge)")]
-        public bool scopeCenterMaskEnabled = true;
+        [Header("Scope overlay  outer viewport mask (deprecated, runtime ignored)")]
+        [Tooltip("Deprecated: scope viewport masking removed from runtime overlay.")]
+        public bool scopeCenterMaskEnabled = false;
+        [Tooltip("Deprecated: no longer applied at runtime.")]
         public Color scopeCenterMaskColor = new Color(0f, 0f, 0f, 1f);
-        [Range(0f, 1f)] public float scopeCenterMaskAlpha = 0.32f;
-        [Range(0f, 64f)] public float scopeCenterMaskBlurPixels = 12f;
-        [Tooltip("Passthrough vignette edge softness when masking outer mil-dot arms to the inner ring viewport.")]
+        [Range(0f, 1f)] [Tooltip("Deprecated: no longer applied at runtime.")]
+        public float scopeCenterMaskAlpha = 0.32f;
+        [Range(0f, 64f)] [Tooltip("Deprecated: no longer applied at runtime.")]
+        public float scopeCenterMaskBlurPixels = 12f;
+        [Tooltip("Deprecated: passthrough vignette for scope removed from runtime.")]
         [Range(0.005f, 0.08f)] public float scopeInnerRingViewportEdgeSoftness = 0.012f;
 
         public Color ResolveScopedReticleColor(bool rifle) => rifle ? rifleReticleColor : pistolReticleColor;
@@ -151,7 +159,7 @@ namespace Project.Combat
         public float ResolveRingOuterDiameterPx(bool rifle) =>
             Mathf.Clamp(rifle ? rifleRingOuterDiameterPx : pistolRingOuterDiameterPx, 8f, 320f);
 
-        /// <summary>Clear aperture diameter (px) for the outer viewport mask — matches scoped inner ring after presentation scale.</summary>
+        /// <summary>Scoped inner ring outer diameter (px) after presentation scale; used for range label layout.</summary>
         public float ResolveCenterMaskOuterDiameterPx(bool rifle, float presentationScale)
         {
             float scale = Mathf.Clamp(presentationScale, 0.1f, 1.5f);
