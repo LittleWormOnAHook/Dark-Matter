@@ -3,6 +3,7 @@ using Project.Combat;
 using Project.Data;
 using Project.Core;
 using Project.Inventory;
+using Project.Survival;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -32,10 +33,16 @@ namespace Project.UI
         /// <summary>Focused TL weapon hotbar local index (0-3 / inventory slots 1-4). Tab cycles focus only; LMB arms.</summary>
         private static int weaponLocalIndex;
 
-        /// <summary>Last consumable/utility hotbar local index (4"9) shown in TR.</summary>
+        /// <summary>Last ammo hotbar local index (4–9) shown in TR (CountsAsAmmo only).</summary>
         private static int consumableLocalIndex = ConsumableFirstLocal;
 
-        /// <summary>Which tool icon BL shows (B = binoculars, N = scanner). Element specials may share this face later.</summary>
+        /// <summary>Survival consumable hotbar local index shown in BL (meds / food).</summary>
+        private static int survivalLocalIndex = DMISurvivalHotbarUtility.DefaultHotbarLocalIndex;
+
+        /// <summary>Grenade stack hotbar local index shown in BR (tap G cycles, hold G loads).</summary>
+        private static int grenadeLocalIndex = DMIGrenadeHotbarUtility.DefaultHotbarLocalIndex;
+
+        /// <summary>Which tool face B/N toolbar keys last targeted (tools are not shown on the Hot Cross).</summary>
         private static ToolFace toolFace = ToolFace.Binoculars;
 
         private UIDocument document;
@@ -44,16 +51,22 @@ namespace Project.UI
         private VisualElement quadTl;
         private VisualElement quadTr;
         private VisualElement quadBl;
+        private VisualElement quadBr;
         private VisualElement iconTl;
         private VisualElement iconTr;
         private VisualElement iconBl;
+        private VisualElement iconBr;
         private VisualElement glowTl;
         private VisualElement glowTr;
         private VisualElement glowBl;
+        private VisualElement glowBr;
         private DMHotCrossIconRegistry iconRegistry;
         private Label amtTl;
         private Label amtTr;
+        private Label amtBl;
+        private Label amtBr;
         private Label keyBl;
+        private static bool grenadeQuadrantArmed;
         private Label clipLabel;
         private Label loadedAmmoLabel;
         private Label scopeModeTag;
@@ -84,9 +97,22 @@ namespace Project.UI
         private InventorySystem inventory;
         private EquipmentController equipment;
 
+        private HotbarSlotSnapshot[] hotbarSnapshots;
+        private bool hotbarSnapshotsReady;
+
+        private struct HotbarSlotSnapshot
+        {
+            public ItemData Item;
+            public int Amount;
+        }
+
         public static DMUiToolkitHotCross Instance => instance;
 
         public static int ConsumableLocalIndex => consumableLocalIndex;
+
+        public static int SurvivalLocalIndex => survivalLocalIndex;
+
+        public static int GrenadeLocalIndex => grenadeLocalIndex;
 
         public static int WeaponLocalIndex => weaponLocalIndex;
 
@@ -100,6 +126,16 @@ namespace Project.UI
         public static int AmmoLoadHighlightIndex => instance != null ? instance.ammoHighlightIndex : 0;
 
         public static int AmmoLoadOptionCount => instance != null ? instance.ammoOptions.Count : 0;
+
+        /// <summary>Hot Cross lower-right highlight while a grenade is armed / cooking.</summary>
+        public static void SetGrenadeQuadrantArmed(bool armed)
+        {
+            if (grenadeQuadrantArmed == armed)
+                return;
+
+            grenadeQuadrantArmed = armed;
+            instance?.MarkVisualsDirty();
+        }
 
         public static bool TryGetAmmoLoadHighlightedWeapon(out int weaponHotbarSlot)
         {
@@ -235,6 +271,24 @@ namespace Project.UI
             instance?.MarkVisualsDirty();
         }
 
+        public static void NotifySurvivalLocalIndex(int localIndex)
+        {
+            if (localIndex < ConsumableFirstLocal || localIndex > ConsumableLastLocal)
+                return;
+            survivalLocalIndex = localIndex;
+            instance?.MarkVisualsDirty();
+        }
+
+        public static void NotifyGrenadeLocalIndex(int localIndex)
+        {
+            if (localIndex < ConsumableFirstLocal || localIndex > ConsumableLastLocal)
+                return;
+            grenadeLocalIndex = localIndex;
+            instance?.MarkVisualsDirty();
+            DMIGrenadeThrowBridge bridge = PlayerLocator.FindOnLivePlayer<DMIGrenadeThrowBridge>();
+            bridge?.SyncThrowAmountFromHotCrossFocus();
+        }
+
         public static void NotifyWeaponLocalIndex(int localIndex)
         {
             if (localIndex < 0 || localIndex >= WeaponSlotCount)
@@ -367,7 +421,8 @@ namespace Project.UI
                 || root.panel == null
                 || (iconTl != null && iconTl.panel == null)
                 || (iconTr != null && iconTr.panel == null)
-                || (iconBl != null && iconBl.panel == null);
+                || (iconBl != null && iconBl.panel == null)
+                || (iconBr != null && iconBr.panel == null);
         }
 
         private void BindTree()
@@ -386,17 +441,26 @@ namespace Project.UI
             quadTl = tree.Q<VisualElement>("hot-cross-q-tl");
             quadTr = tree.Q<VisualElement>("hot-cross-q-tr");
             quadBl = tree.Q<VisualElement>("hot-cross-q-bl");
+            quadBr = tree.Q<VisualElement>("hot-cross-q-br");
             iconTl = tree.Q<VisualElement>("hot-cross-icon-tl");
             iconTr = tree.Q<VisualElement>("hot-cross-icon-tr");
             iconBl = tree.Q<VisualElement>("hot-cross-icon-bl");
+            iconBr = tree.Q<VisualElement>("hot-cross-icon-br");
             glowTl = tree.Q<VisualElement>("hot-cross-glow-tl");
             glowTr = tree.Q<VisualElement>("hot-cross-glow-tr");
             glowBl = tree.Q<VisualElement>("hot-cross-glow-bl");
+            glowBr = tree.Q<VisualElement>("hot-cross-glow-br");
             if (iconRegistry == null)
                 iconRegistry = DMHotCrossIconRegistry.LoadDefault();
             amtTl = tree.Q<Label>("hot-cross-amt-tl");
             amtTr = tree.Q<Label>("hot-cross-amt-tr");
+            amtBl = tree.Q<Label>("hot-cross-amt-bl");
+            amtBr = tree.Q<Label>("hot-cross-amt-br");
             keyBl = tree.Q<Label>("hot-cross-key-bl");
+            if (keyBl != null)
+                keyBl.text = "V";
+            if (tree.Q<Label>("hot-cross-key-br") is { } keyBr)
+                keyBr.text = "G";
             clipLabel = tree.Q<Label>("hot-cross-clip");
             loadedAmmoLabel = tree.Q<Label>("hot-cross-loaded-ammo");
             scopeModeTag = tree.Q<Label>("hot-cross-scope-tag");
@@ -479,7 +543,170 @@ namespace Project.UI
                 ammoState.OnAmmoChanged -= HandleAmmoChanged;
         }
 
-        private void HandleInventoryChanged() => MarkVisualsDirty();
+        private void HandleInventoryChanged()
+        {
+            SyncHotCrossFocusFromHotbarChanges();
+            MarkVisualsDirty();
+        }
+
+        /// <summary>
+        /// When items land on the hotbar (pickup auto-slot, drag, merge), match weapon-style focus:
+        /// TL weapon, TR ammo, BL survival, BR grenade each jump to the slot that gained the item.
+        /// </summary>
+        private void SyncHotCrossFocusFromHotbarChanges()
+        {
+            ResolveInventory();
+            if (inventory == null || equipment == null || inventory.hotbarSize <= 0)
+                return;
+
+            EnsureHotbarSnapshotCapacity();
+            int hotbarStart = inventory.HotbarStartIndex;
+            int count = Mathf.Min(inventory.hotbarSize, hotbarSnapshots.Length);
+
+            for (int local = 0; local < count; local++)
+            {
+                int absolute = hotbarStart + local;
+                ItemData item = inventory.GetItemAt(absolute);
+                int amount = GetStackAt(absolute);
+
+                ref HotbarSlotSnapshot prev = ref hotbarSnapshots[local];
+                bool wasEmpty = !hotbarSnapshotsReady || prev.Item == null || prev.Amount <= 0;
+                bool nowEmpty = item == null || amount <= 0;
+                bool newlyPlaced = wasEmpty && !nowEmpty;
+                bool itemReplaced = !nowEmpty && hotbarSnapshotsReady && prev.Item != item;
+
+                prev.Item = item;
+                prev.Amount = amount;
+
+                if (!hotbarSnapshotsReady || (!newlyPlaced && !itemReplaced))
+                    continue;
+
+                if (local < WeaponSlotCount && EquipmentController.IsWeaponItem(item))
+                {
+                    NotifyWeaponLocalIndex(local);
+                    continue;
+                }
+
+                if (local < ConsumableFirstLocal || local > ConsumableLastLocal)
+                    continue;
+
+                if (DMISurvivalHotbarUtility.IsHotCrossSurvivalItem(item))
+                {
+                    NotifySurvivalLocalIndex(local);
+                    continue;
+                }
+
+                if (DMIGrenadeThrowBridge.GrenadesEnabled)
+                {
+                    ItemData grenade = ResolveLiveGrenadeItem();
+                    if (grenade != null
+                        && DMIGrenadeHotbarUtility.IsConfiguredGrenadeItem(item, grenade))
+                    {
+                        NotifyGrenadeLocalIndex(local);
+                        continue;
+                    }
+                }
+
+                if (item.CountsAsAmmo)
+                    NotifyConsumableLocalIndex(local);
+            }
+
+            hotbarSnapshotsReady = true;
+            TryAutoFocusEmptyHotCrossQuadrants();
+        }
+
+        private void EnsureHotbarSnapshotCapacity()
+        {
+            int need = inventory != null ? Mathf.Max(10, inventory.hotbarSize) : 10;
+            if (hotbarSnapshots == null || hotbarSnapshots.Length < need)
+                hotbarSnapshots = new HotbarSlotSnapshot[need];
+        }
+
+        /// <summary>Keep quadrant focus on an occupied slot when the current focus slot was cleared.</summary>
+        private void TryAutoFocusEmptyHotCrossQuadrants()
+        {
+            if (inventory == null || equipment == null)
+                return;
+
+            weaponLocalIndex = Mathf.Clamp(weaponLocalIndex, 0, WeaponSlotCount - 1);
+            int weaponAbsolute = inventory.HotbarStartIndex + weaponLocalIndex;
+            if (inventory.GetItemAt(weaponAbsolute) == null
+                && equipment.TryGetNextOccupiedWeaponHotbarLocal(weaponLocalIndex, out int nextWeapon))
+                NotifyWeaponLocalIndex(nextWeapon);
+
+            survivalLocalIndex = Mathf.Clamp(survivalLocalIndex, ConsumableFirstLocal, ConsumableLastLocal);
+            if (!DMISurvivalHotbarUtility.TryGetHotbarSurvivalAtLocal(inventory, survivalLocalIndex, out _, out _)
+                && TryFindFirstSurvivalHotbarLocal(out int survivalLocal))
+                NotifySurvivalLocalIndex(survivalLocal);
+
+            if (DMIGrenadeThrowBridge.GrenadesEnabled)
+            {
+                ItemData grenade = ResolveLiveGrenadeItem();
+                grenadeLocalIndex = Mathf.Clamp(grenadeLocalIndex, ConsumableFirstLocal, ConsumableLastLocal);
+                if (grenade != null
+                    && !DMIGrenadeHotbarUtility.TryGetHotbarStackAtLocal(
+                        inventory, grenadeLocalIndex, grenade, out _, out _)
+                    && TryFindFirstGrenadeHotbarLocal(grenade, out int grenadeLocal))
+                    NotifyGrenadeLocalIndex(grenadeLocal);
+            }
+
+            consumableLocalIndex = Mathf.Clamp(consumableLocalIndex, ConsumableFirstLocal, ConsumableLastLocal);
+            int consumableAbsolute = inventory.HotbarStartIndex + consumableLocalIndex;
+            ItemData consumableItem = inventory.GetItemAt(consumableAbsolute);
+            if ((consumableItem == null || !consumableItem.CountsAsAmmo)
+                && equipment.TryGetAnyAmmoHotbarLocal(out int ammoLocal))
+                NotifyConsumableLocalIndex(ammoLocal);
+        }
+
+        private bool TryFindFirstSurvivalHotbarLocal(out int localHotbarIndex)
+        {
+            localHotbarIndex = -1;
+            if (inventory == null)
+                return false;
+
+            int grenadeLocal = DMIGrenadeHotbarUtility.ResolveHotbarLocalIndex();
+            for (int local = ConsumableFirstLocal; local <= ConsumableLastLocal; local++)
+            {
+                if (local == grenadeLocal)
+                    continue;
+                if (DMISurvivalHotbarUtility.TryGetHotbarSurvivalAtLocal(inventory, local, out _, out _))
+                {
+                    localHotbarIndex = local;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool TryFindFirstGrenadeHotbarLocal(ItemData grenadeItem, out int localHotbarIndex)
+        {
+            localHotbarIndex = -1;
+            if (inventory == null || grenadeItem == null)
+                return false;
+
+            int preferred = DMIGrenadeHotbarUtility.ResolveHotbarLocalIndex();
+            if (DMIGrenadeHotbarUtility.TryGetHotbarStackAtLocal(
+                    inventory, preferred, grenadeItem, out _, out _))
+            {
+                localHotbarIndex = preferred;
+                return true;
+            }
+
+            for (int local = ConsumableFirstLocal; local <= ConsumableLastLocal; local++)
+            {
+                if (local == preferred)
+                    continue;
+                if (DMIGrenadeHotbarUtility.TryGetHotbarStackAtLocal(
+                        inventory, local, grenadeItem, out _, out _))
+                {
+                    localHotbarIndex = local;
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         // Mag load/unload also changes whether the TR ghost should show.
         private void HandleAmmoChanged() => MarkVisualsDirty();
@@ -526,7 +753,8 @@ namespace Project.UI
             ResolveInventory();
             RefreshWeaponQuadrant();
             RefreshConsumableQuadrant();
-            RefreshToolQuadrant();
+            RefreshSurvivalQuadrant();
+            RefreshGrenadeQuadrant();
             RefreshClipCount();
             RefreshScopeModeTag();
         }
@@ -784,6 +1012,18 @@ namespace Project.UI
                 item = inventory.GetItemAt(absolute);
                 stack = GetStackAt(absolute);
 
+                if (DMISurvivalHotbarUtility.IsHotCrossSurvivalItem(item))
+                {
+                    item = null;
+                    stack = 0;
+                }
+
+                if (item != null && !item.CountsAsAmmo)
+                {
+                    item = null;
+                    stack = 0;
+                }
+
                 // Stack fully loaded into the magazine: keep showing that ammo as a ghost on TR so
                 // X cycling still has a visible identity. Prefer the slot that sourced the mag;
                 // otherwise any empty focus when that ammo has 0 inventory left.
@@ -839,38 +1079,67 @@ namespace Project.UI
             return true;
         }
 
-        private void RefreshToolQuadrant()
+        private void RefreshGrenadeQuadrant()
         {
             ItemData item = null;
-            bool selected = false;
+            int stack = 0;
 
-            if (inventory != null && equipment != null)
+            if (inventory != null && DMIGrenadeThrowBridge.GrenadesEnabled)
             {
-                // Prefer live toolbar selection; otherwise last B/N face.
-                if (equipment.IsToolbarActive && equipment.ActiveToolItem != null)
+                ItemData grenade = ResolveLiveGrenadeItem();
+                grenadeLocalIndex = Mathf.Clamp(grenadeLocalIndex, ConsumableFirstLocal, ConsumableLastLocal);
+                if (grenade != null
+                    && DMIGrenadeHotbarUtility.TryGetHotbarStackAtLocal(
+                        inventory, grenadeLocalIndex, grenade, out stack, out _))
                 {
-                    item = equipment.ActiveToolItem;
-                    selected = true;
-                    if (item.toolType == ToolType.Scanner)
-                        toolFace = ToolFace.Scanner;
-                    else if (item.toolType == ToolType.Binoculars)
-                        toolFace = ToolFace.Binoculars;
+                    item = grenade;
                 }
-                else
+                else if (grenade != null && TryFindFirstGrenadeHotbarLocal(grenade, out int resolvedLocal)
+                    && DMIGrenadeHotbarUtility.TryGetHotbarStackAtLocal(
+                        inventory, resolvedLocal, grenade, out stack, out _))
                 {
-                    int toolbarLocal = toolFace == ToolFace.Scanner
-                        ? equipment.ScannerToolbarSlot
-                        : equipment.BinocularsToolbarSlot;
-                    int absolute = inventory.ToolbarStartIndex + toolbarLocal;
-                    item = inventory.GetItemAt(absolute);
+                    grenadeLocalIndex = resolvedLocal;
+                    item = grenade;
                 }
             }
 
-            ApplyIcon(iconBl, glowBl, null, item, 0);
+            ApplyIcon(iconBr, glowBr, amtBr, item, stack);
+            DMUiLevelLockOverlay.Apply(iconBr, item, Project.Progression.LevelUnlockUtility.CachedPlayerLevel);
+            quadBr?.EnableInClassList("hot-cross-quad--selected", grenadeQuadrantArmed || stack > 0);
+        }
+
+        private static ItemData ResolveLiveGrenadeItem()
+        {
+            DMIGrenadeThrowBridge bridge = PlayerLocator.FindOnLivePlayer<DMIGrenadeThrowBridge>();
+            if (bridge != null && bridge.GrenadeItem != null)
+                return bridge.GrenadeItem;
+
+            return ItemRegistry.Resolve("Frag Grenade") ?? ItemRegistry.Resolve("DM_Frag_Grenade");
+        }
+
+        private void RefreshSurvivalQuadrant()
+        {
+            ItemData item = null;
+            int stack = 0;
+
+            if (inventory != null)
+            {
+                survivalLocalIndex = Mathf.Clamp(survivalLocalIndex, ConsumableFirstLocal, ConsumableLastLocal);
+                if (DMISurvivalHotbarUtility.TryGetHotbarSurvivalAtLocal(inventory, survivalLocalIndex, out item, out stack))
+                {
+                    // focused slot holds survival
+                }
+                else if (TryFindFirstSurvivalHotbarLocal(out int resolvedLocal)
+                    && DMISurvivalHotbarUtility.TryGetHotbarSurvivalAtLocal(
+                        inventory, resolvedLocal, out item, out stack))
+                {
+                    survivalLocalIndex = resolvedLocal;
+                }
+            }
+
+            ApplyIcon(iconBl, glowBl, amtBl, item, stack);
             DMUiLevelLockOverlay.Apply(iconBl, item, Project.Progression.LevelUnlockUtility.CachedPlayerLevel);
-            if (keyBl != null)
-                keyBl.text = toolFace == ToolFace.Scanner ? "N" : "B";
-            quadBl?.EnableInClassList("hot-cross-quad--selected", selected);
+            quadBl?.EnableInClassList("hot-cross-quad--selected", stack > 0);
         }
 
         private bool ShowAmmoLoadPopupInternal(

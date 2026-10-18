@@ -193,7 +193,41 @@ MonoBehaviour:
   parryShakeDurationSeconds: 0.1249
   blockShakeAmplitude: 0.403
   blockShakeDurationSeconds: 0.0927
-  enableGrenades: 0
+  enableGrenades: 1
+  grenadeCookSecondsBase: 5
+  grenadeCookSecondsMax: 10
+  grenadeLandingRingUsesSplashSkills: 1
+  grenadeThrowArcLineColor: {r: 0.7509433, g: 0.66885936, b: 0.0155855995, a: 0.88}
+  grenadeLandingRingColor: {r: 1, g: 0, b: 0, a: 0.3647059}
+  grenadeLandingRingSizeMultiplier: 24.37
+  grenadeLandingRingIndicatorTexture: {fileID: 2800000, guid: db48e0e5caa2999469a4f3aa249c188b, type: 3}
+  grenadeCookOutSelfDamage: 50
+  grenadeEnemyStaggerSeconds: 5
+  grenadeHotbarLocalIndex: 9
+  hotCrossGrenadeLoadHoldSeconds: 1
+  grenadeExplosionRadius: 10
+  grenadeMinDamage: 25
+  grenadeMaxDamage: 60
+  grenadeInnerRadiusFullDamage: 2
+  grenadeEdgeDamageFalloff: 0.35
+  grenadeLandFuseSeconds: 3
+  grenadeExplosionForce: 5000
+  grenadeExplosionUpwardsModifier: 1.25
+  grenadeExplosionVfxPrefab: {fileID: 0}
+  grenadeCameraShakeAmplitude: 0.38
+  grenadeCameraShakeDurationSeconds: 0.16
+  grenadeSplashDamagesPlayer: 1
+  grenadeSplashDamagesCompanions: 0
+  grenadePioneerSplashLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  grenadeVExplosiveDamageLayerMask:
+    serializedVersion: 2
+    m_Bits: 33537
+  grenadeVExplosiveForceLayerMask:
+    serializedVersion: 2
+    m_Bits: 33281
+  survivalHotbarLocalIndex: 8
   enableAttackInterrupts: 1
   interruptBaseChanceLight: 0.12
   interruptBaseChanceFollowUp: 0.06
@@ -219,10 +253,25 @@ MonoBehaviour:
   interruptRecoverySeconds: 1.5
   interruptReactionSeconds: 0.45
   logInterruptsInPlay: 0
-  logCombatEventsInPlay: 0
+  godModeCheatEnabled: 1
+  godModeCheatCode: godmode
+  godModeEnemiesUnkillable: 1
+  godModeInfiniteAmmo: 1
+  respawnEnemiesAfterDeath: 1
+  enemyRespawnDelay: 6
+  respawnPlayerAfterDeath: 1
+  playerRespawnDelay: 3
+  auditGodMode: 1
+  godModeToastSeconds: 2
   playerCorpseStayInPlace: 1
   playerCorpseSettleSeconds: 1.5
   playerCorpseMaxSlideSpeed: 1.5
   playerRespawnSettleSeconds: 0.85
   playerRespawnPostStandUpLockSeconds: 0.35
   playerRespawnPostStandUpSettleSeconds: 0.75
+  rangedHitProvokeSeconds: 15
+  rangedImpactAlertRadius: 8
+  gunshotHearingRadius: 25
+  engagedHudLingerSeconds: 6
+  logCombatEventsInPlay: 0
+  logEngagedHudFill: 0

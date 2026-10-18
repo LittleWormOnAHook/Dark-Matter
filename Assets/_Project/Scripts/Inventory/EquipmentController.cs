@@ -27,7 +27,7 @@ namespace Project.Inventory
         [Header("Toolbar")]
         [Tooltip("Toolbar index for the scanner (keyboard N).")]
         [SerializeField] private int scannerToolbarSlot = 0;
-        [Tooltip("Toolbar index for binoculars (keyboard B).")]
+        [Tooltip("Toolbar index for binoculars (keyboard comma; gamepad Binoculars action).")]
         [SerializeField] private int binocularsToolbarSlot = 1;
 
         private InventorySystem inventory;
@@ -93,6 +93,13 @@ namespace Project.Inventory
                 ItemData item = EquippedItem;
                 return item != null && IsWeaponItem(item) ? item : null;
             }
+        }
+
+        /// <summary>True when the mining / multi-tool is physically drawn (Hot Cross hold-B build must stay available).</summary>
+        public bool IsDrawnMiningMultitool()
+        {
+            ItemData drawn = DrawnWeaponItem;
+            return drawn != null && drawn.isMiningTool;
         }
 
         public ItemData ActiveToolItem => GetToolbarItem(selectedToolbarSlot);
@@ -279,11 +286,15 @@ namespace Project.Inventory
             return false;
         }
 
-        /// <summary>Next utility hotbar local index that holds ammo (CountsAsAmmo).</summary>
-        public bool TryGetNextOccupiedAmmoHotbarLocal(int fromLocalHotbarSlot, out int nextLocalHotbarSlot)
+        /// <summary>Next utility hotbar local index that holds the configured grenade item (Hot Cross lower-right).</summary>
+        public bool TryGetNextOccupiedGrenadeHotbarLocal(int fromLocalHotbarSlot, out int nextLocalHotbarSlot)
         {
             nextLocalHotbarSlot = fromLocalHotbarSlot;
-            if (inventory == null || inventory.hotbarSize <= 0)
+            if (inventory == null || inventory.hotbarSize <= 0 || !Project.Combat.DMIGrenadeThrowBridge.GrenadesEnabled)
+                return false;
+
+            ItemData grenadeItem = ResolveConfiguredGrenadeItem();
+            if (grenadeItem == null)
                 return false;
 
             int lastWeaponHotbar = Mathf.Max(
@@ -300,6 +311,124 @@ namespace Project.Inventory
             {
                 int candidate = first + ((start - first + offset) % span);
                 if (!IsUtilityHotbarSlot(candidate))
+                    continue;
+
+                ItemData item = GetHotbarItem(candidate);
+                if (!Project.Combat.DMIGrenadeHotbarUtility.IsConfiguredGrenadeItem(item, grenadeItem))
+                    continue;
+
+                nextLocalHotbarSlot = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static ItemData ResolveConfiguredGrenadeItem()
+        {
+            Project.Combat.DMIGrenadeThrowBridge bridge =
+                Project.Core.PlayerLocator.FindOnLivePlayer<Project.Combat.DMIGrenadeThrowBridge>();
+            if (bridge != null && bridge.GrenadeItem != null)
+                return bridge.GrenadeItem;
+
+            return ItemRegistry.Resolve("Frag Grenade") ?? ItemRegistry.Resolve("DM_Frag_Grenade");
+        }
+
+        /// <summary>Next utility hotbar local index that holds a survival consumable (meds/food).</summary>
+        public bool TryGetNextOccupiedSurvivalHotbarLocal(int fromLocalHotbarSlot, out int nextLocalHotbarSlot)
+        {
+            nextLocalHotbarSlot = fromLocalHotbarSlot;
+            if (inventory == null || inventory.hotbarSize <= 0)
+                return false;
+
+            int lastWeaponHotbar = Mathf.Max(
+                Mathf.Max(primaryWeaponHotbarSlot, secondaryWeaponHotbarSlot),
+                Mathf.Max(tertiaryWeaponHotbarSlot, quaternaryWeaponHotbarSlot));
+            int first = lastWeaponHotbar + 1;
+            int last = inventory.hotbarSize - 1;
+            if (last < first)
+                return false;
+
+            int grenadeLocal = Project.Combat.DMIGrenadeHotbarUtility.ResolveHotbarLocalIndex();
+            int span = last - first + 1;
+            int start = Mathf.Clamp(fromLocalHotbarSlot, first, last);
+            for (int offset = 1; offset <= span; offset++)
+            {
+                int candidate = first + ((start - first + offset) % span);
+                if (!IsUtilityHotbarSlot(candidate) || candidate == grenadeLocal)
+                    continue;
+
+                ItemData item = GetHotbarItem(candidate);
+                if (!Project.Survival.DMISurvivalHotbarUtility.IsSurvivalConsumable(item))
+                    continue;
+
+                nextLocalHotbarSlot = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>Next utility hotbar local index that holds ammo or non-survival utilities (Hot Cross upper-right).</summary>
+        public bool TryGetNextOccupiedNonSurvivalUtilityHotbarLocal(int fromLocalHotbarSlot, out int nextLocalHotbarSlot)
+        {
+            nextLocalHotbarSlot = fromLocalHotbarSlot;
+            if (inventory == null || inventory.hotbarSize <= 0)
+                return false;
+
+            int lastWeaponHotbar = Mathf.Max(
+                Mathf.Max(primaryWeaponHotbarSlot, secondaryWeaponHotbarSlot),
+                Mathf.Max(tertiaryWeaponHotbarSlot, quaternaryWeaponHotbarSlot));
+            int first = lastWeaponHotbar + 1;
+            int last = inventory.hotbarSize - 1;
+            if (last < first)
+                return false;
+
+            int grenadeLocal = Project.Combat.DMIGrenadeHotbarUtility.ResolveHotbarLocalIndex();
+            int span = last - first + 1;
+            int start = Mathf.Clamp(fromLocalHotbarSlot, first, last);
+            for (int offset = 1; offset <= span; offset++)
+            {
+                int candidate = first + ((start - first + offset) % span);
+                if (!IsUtilityHotbarSlot(candidate) || candidate == grenadeLocal)
+                    continue;
+
+                ItemData item = GetHotbarItem(candidate);
+                if (item == null)
+                    continue;
+
+                if (Project.Survival.DMISurvivalHotbarUtility.IsSurvivalConsumable(item))
+                    continue;
+
+                nextLocalHotbarSlot = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>Next utility hotbar local index that holds ammo (CountsAsAmmo).</summary>
+        public bool TryGetNextOccupiedAmmoHotbarLocal(int fromLocalHotbarSlot, out int nextLocalHotbarSlot)
+        {
+            nextLocalHotbarSlot = fromLocalHotbarSlot;
+            if (inventory == null || inventory.hotbarSize <= 0)
+                return false;
+
+            int lastWeaponHotbar = Mathf.Max(
+                Mathf.Max(primaryWeaponHotbarSlot, secondaryWeaponHotbarSlot),
+                Mathf.Max(tertiaryWeaponHotbarSlot, quaternaryWeaponHotbarSlot));
+            int first = lastWeaponHotbar + 1;
+            int last = inventory.hotbarSize - 1;
+            if (last < first)
+                return false;
+
+            int grenadeLocal = Project.Combat.DMIGrenadeHotbarUtility.ResolveHotbarLocalIndex();
+            int span = last - first + 1;
+            int start = Mathf.Clamp(fromLocalHotbarSlot, first, last);
+            for (int offset = 1; offset <= span; offset++)
+            {
+                int candidate = first + ((start - first + offset) % span);
+                if (!IsUtilityHotbarSlot(candidate) || candidate == grenadeLocal)
                     continue;
                 ItemData item = GetHotbarItem(candidate);
                 if (!IsAmmoItem(item))
@@ -323,9 +452,10 @@ namespace Project.Inventory
                 Mathf.Max(primaryWeaponHotbarSlot, secondaryWeaponHotbarSlot),
                 Mathf.Max(tertiaryWeaponHotbarSlot, quaternaryWeaponHotbarSlot));
             int first = lastWeaponHotbar + 1;
+            int grenadeLocal = Project.Combat.DMIGrenadeHotbarUtility.ResolveHotbarLocalIndex();
             for (int slot = first; slot < inventory.hotbarSize; slot++)
             {
-                if (!IsUtilityHotbarSlot(slot))
+                if (!IsUtilityHotbarSlot(slot) || slot == grenadeLocal)
                     continue;
                 if (!IsAmmoItem(GetHotbarItem(slot)))
                     continue;

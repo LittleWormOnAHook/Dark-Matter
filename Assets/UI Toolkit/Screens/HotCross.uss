@@ -225,10 +225,6 @@
     -unity-text-align: upper-right;
 }
 
-.hot-cross-q-br--reserved {
-    opacity: 0.25;
-}
-
 /* Ammo load popup — shown/hidden from C# only (do not set display:none here). */
 .hot-cross-ammo-popup {
     position: absolute;

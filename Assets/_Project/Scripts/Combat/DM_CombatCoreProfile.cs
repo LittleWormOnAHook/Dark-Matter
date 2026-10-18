@@ -413,6 +413,64 @@ namespace Project.Combat
         [Header("Grenades")]
         [Tooltip("Master switch for throwable grenades. On: G (LB) arms; hold LMB (LT) to cook; release LMB (LT) to throw. Off = stacks stay in inventory but cannot be thrown. Default off.")]
         public bool enableGrenades = false;
+        [Tooltip("Uncooked / minimum cook fuse before Grenade Cook Mastery skill ranks.")]
+        [Range(1f, 15f)] public float grenadeCookSecondsBase = 5f;
+        [Tooltip("Hard cap on cook fuse (base + skill ranks, +1s per rank up to this).")]
+        [Range(1f, 20f)] public float grenadeCookSecondsMax = 10f;
+        [Tooltip("Landing projector ring diameter scales with splash radius skills.")]
+        public bool grenadeLandingRingUsesSplashSkills = true;
+        [Tooltip("Tint for the throw arc LineRenderer while aiming.")]
+        public Color grenadeThrowArcLineColor = new Color(1f, 0f, 0f, 0.88f);
+        [Tooltip("Tint for the landing target projector ring.")]
+        public Color grenadeLandingRingColor = new Color(1f, 0f, 0f, 0.42f);
+        [Tooltip("Multiplies blast radius for the throw landing projector ring (ring diameter vs splash).")]
+        [Range(1f, 25f)] public float grenadeLandingRingSizeMultiplier = 10f;
+        [Tooltip("Optional ring projector texture (Invector damage indicator ring). Null = color-only ring sizing.")]
+        public Texture2D grenadeLandingRingIndicatorTexture;
+        [Tooltip("Flat HP removed from Kade when a cooked grenade detonates in hand (cook-out). Enemy splash still uses grenade min/max damage.")]
+        [Range(1f, 200f)] public float grenadeCookOutSelfDamage = 50f;
+        [Tooltip("Enemy locomotion + attack lockout after a grenade blast (severe full-body reaction). Thrown and cook-out detonations.")]
+        [Range(0f, 10f)] public float grenadeEnemyStaggerSeconds = 5f;
+        [Tooltip("Hotbar local index (0–9) for frag grenades. Must match this slot to arm with G; shown on Hot Cross lower-right.")]
+        [Range(0, 9)] public int grenadeHotbarLocalIndex = 9;
+        [Tooltip("Hold G / LB this long (seconds) on Hot Cross lower-right to load a grenade to the right hand. Tap still cycles stacks.")]
+        [Range(0.25f, 2.5f)] public float hotCrossGrenadeLoadHoldSeconds = 1f;
+
+        [Header("Grenades — splash & detonation")]
+        [Tooltip("AOE splash radius (world units). Also drives Invector vExplosive max radius for force/VFX sync.")]
+        [Range(0.5f, 25f)] public float grenadeExplosionRadius = 10f;
+        [Tooltip("Random damage roll min (before splash damage skills).")]
+        [Range(1f, 200f)] public float grenadeMinDamage = 25f;
+        [Tooltip("Random damage roll max (before splash damage skills).")]
+        [Range(1f, 200f)] public float grenadeMaxDamage = 60f;
+        [Tooltip("Full damage at or inside this distance from blast center.")]
+        [Range(0f, 15f)] public float grenadeInnerRadiusFullDamage = 2f;
+        [Tooltip("Damage multiplier at outer edge of splash (1 at/inside inner radius).")]
+        [Range(0f, 1f)] public float grenadeEdgeDamageFalloff = 0.35f;
+        [Tooltip("Uncooked throw: seconds after first bounce before land detonation (vExplosive collisionEnterTimer).")]
+        [Range(0.1f, 15f)] public float grenadeLandFuseSeconds = 3f;
+        [Tooltip("Physics knockback on vExplosive apply-force pass.")]
+        [Range(0f, 15000f)] public float grenadeExplosionForce = 5000f;
+        [Tooltip("Upward modifier on explosion force.")]
+        [Range(0f, 3f)] public float grenadeExplosionUpwardsModifier = 1f;
+        [Tooltip("Optional extra explosion VFX prefab spawned at detonation (Invector child VFX still runs). Null = skip.")]
+        public GameObject grenadeExplosionVfxPrefab;
+        [Tooltip("Trauma when the player's grenade detonates. 0 = off.")]
+        [Range(0f, 2f)] public float grenadeCameraShakeAmplitude = 0.38f;
+        [Range(0f, 0.5f)] public float grenadeCameraShakeDurationSeconds = 0.16f;
+        [Tooltip("When on, Pioneer splash can hurt Kade (not cook-out flat self damage).")]
+        public bool grenadeSplashDamagesPlayer = false;
+        [Tooltip("When on, splash can hurt expedition companions.")]
+        public bool grenadeSplashDamagesCompanions = false;
+        [Tooltip("Pioneer AOE OverlapSphere mask on DMIGrenadeExplosive. 0 = keep prefab/component hitLayers (do not overwrite at runtime).")]
+        public LayerMask grenadePioneerSplashLayerMask;
+        [Tooltip("vExplosive applyDamageLayer. 0 = keep prefab (e.g. DM_Frag_Grenade Enemy + BodyPart). Pioneer splash ignores Invector damage.")]
+        public LayerMask grenadeVExplosiveDamageLayerMask;
+        [Tooltip("vExplosive applyForceLayer. 0 = keep prefab force layers.")]
+        public LayerMask grenadeVExplosiveForceLayerMask;
+
+        [Tooltip("Hotbar local index (0–9) for survival consumables (meds/food). Must be on hotbar to use; shown Hot Cross lower-left.")]
+        [Range(0, 9)] public int survivalHotbarLocalIndex = 8;
 
         [Header("Attack interrupts (player hit interrupts an enemy attack)")]
         [Tooltip("Master switch. Off = enemy attacks are never interrupted by a player hit (poise break / parry / guard break still stagger).")]

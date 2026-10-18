@@ -32,9 +32,15 @@
             <ui:VisualElement name="hot-cross-q-bl" picking-mode="Ignore" class="hot-cross-quad hot-cross-q-bl">
                 <ui:VisualElement name="hot-cross-glow-bl" picking-mode="Ignore" class="hot-cross-icon hot-cross-icon-glow"/>
                 <ui:VisualElement name="hot-cross-icon-bl" picking-mode="Ignore" class="hot-cross-icon"/>
-                <ui:Label name="hot-cross-key-bl" text="B/N" picking-mode="Ignore" class="hot-cross-key"/>
+                <ui:Label name="hot-cross-key-bl" text="V" picking-mode="Ignore" class="hot-cross-key"/>
+                <ui:Label name="hot-cross-amt-bl" text="" picking-mode="Ignore" class="hot-cross-amt"/>
             </ui:VisualElement>
-            <ui:VisualElement name="hot-cross-q-br" picking-mode="Ignore" class="hot-cross-quad hot-cross-q-br hot-cross-q-br--reserved"/>
+            <ui:VisualElement name="hot-cross-q-br" picking-mode="Ignore" class="hot-cross-quad hot-cross-q-br">
+                <ui:VisualElement name="hot-cross-glow-br" picking-mode="Ignore" class="hot-cross-icon hot-cross-icon-glow"/>
+                <ui:VisualElement name="hot-cross-icon-br" picking-mode="Ignore" class="hot-cross-icon"/>
+                <ui:Label name="hot-cross-key-br" text="G" picking-mode="Ignore" class="hot-cross-key"/>
+                <ui:Label name="hot-cross-amt-br" text="" picking-mode="Ignore" class="hot-cross-amt"/>
+            </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="hot-cross-ammo-popup" picking-mode="Position" class="hot-cross-ammo-popup">
             <ui:Label name="hot-cross-ammo-title" text="Load ammo into" picking-mode="Ignore" class="hot-cross-ammo-title"/>

@@ -2,9 +2,12 @@ using System;
 using System.Reflection;
 using Invector.Throw;
 using Invector.vCharacterController;
+using Project.Building;
 using Project.Core;
 using Project.Data;
 using Project.Inventory;
+using Project.Player.Invector;
+using Project.Progression;
 using Project.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -13,8 +16,9 @@ namespace Project.Combat
 {
     /// <summary>
     /// Dark Matter grenade controls (when <see cref="DM_CombatCoreProfile.enableGrenades"/> / bridge switch is on):
-    /// KBM — G tap arms (Invector throw-ready); hold LMB cooks; release LMB throws (cooked or not).
-    /// Gamepad — LB tap arms; hold LT cooks; release RB throws.
+    /// KBM — Hot Cross G hold (~1s, DM_CombatCoreProfile.hotCrossGrenadeLoadHoldSeconds) loads grenade from focused BR stack; holsters drawn weapons first.
+    /// Hold LMB cooks; release LMB throws (cooked or not). Tap G cycles BR focus (GameplayKeyboardShortcuts).
+    /// Gamepad — LB hold loads; hold LT cooks; release RB throws.
     /// Replaces Invector hold-G aim and RMB/Ctrl cook by unsubscribing <see cref="vThrowManagerBase.UpdateThrowInput"/>.
     /// </summary>
     [DisallowMultipleComponent]
@@ -22,6 +26,8 @@ namespace Project.Combat
     public class DMIGrenadeCookController : MonoBehaviour
     {
         private const float CookTriggerThreshold = 0.35f;
+        /// <summary>LMB/LT must be held this long before throw transfers cook fuse (tap = land fuse).</summary>
+        private const float MinCookHoldBeforeThrowTransferSeconds = 0.12f;
 
         [Header("Refs")]
         [SerializeField] private vThrowManager throwManager;
@@ -29,8 +35,9 @@ namespace Project.Combat
         [SerializeField] private InventorySystem inventory;
 
         [Header("Cook")]
-        [SerializeField] private float cookFuseSeconds = DMIGrenadeExplosive.DefaultCookFuseSeconds;
         [SerializeField] private float cookTriggerThreshold = CookTriggerThreshold;
+
+        private static DMIGrenadeCookController _playerCookInputOwner;
 
         private bool _holdingGrenade;
         private bool _throwCommitted;
@@ -54,7 +61,12 @@ namespace Project.Combat
         /// <summary>True while a grenade is armed for throw and/or cooking — blocks weapon fire.</summary>
         public bool BlocksWeaponFire => IsGrenadeInputBlocking;
 
-        public bool IsGrenadeInputBlocking => InThrowFlow || IsCooking;
+        /// <summary>True from grenade equip through throw finish or cook-out cleanup — blocks weapon draw/fire.</summary>
+        public bool IsGrenadeInputBlocking => InThrowFlow || IsCooking || _holdingGrenade;
+
+        /// <summary>Live player grenade flow (Hot Cross weapon arm must defer).</summary>
+        public static bool PlayerBlocksWeaponDraw =>
+            _playerCookInputOwner != null && _playerCookInputOwner.IsGrenadeInputBlocking;
 
         public bool IsHoldingGrenade => _holdingGrenade;
         public bool IsCooking => _activeCookExplosive != null && _activeCookExplosive.IsFuseRunning;
@@ -78,6 +90,7 @@ namespace Project.Combat
             BindThrowEvents(true);
             _lastGrenadesEnabled = DMIGrenadeThrowBridge.GrenadesEnabled;
             TryHookThrowInput();
+            RegisterPlayerInputOwner(true);
         }
 
         private void OnDisable()
@@ -87,6 +100,32 @@ namespace Project.Combat
             ClearCookState(cancelExplosive: true);
             _holdingGrenade = false;
             _throwCommitted = false;
+            DMUiToolkitHotCross.SetGrenadeQuadrantArmed(false);
+            RegisterPlayerInputOwner(false);
+        }
+
+        /// <summary>G hold load: companion follow defers while arming (see PioneerExpeditionCommandInput).</summary>
+        public static bool CompanionCommandsShouldDeferGKey =>
+            GameplayKeyboardShortcuts.HotCrossGrenadeLoadHoldActive
+            || (_playerCookInputOwner != null && _playerCookInputOwner.ShouldDeferCompanionGKey());
+
+        private void RegisterPlayerInputOwner(bool enable)
+        {
+            if (GetComponentInParent<PioneerShooterMeleeInput>(true) == null)
+                return;
+
+            if (enable)
+                _playerCookInputOwner = this;
+            else if (_playerCookInputOwner == this)
+                _playerCookInputOwner = null;
+        }
+
+        private bool ShouldDeferCompanionGKey()
+        {
+            if (!DMIGrenadeThrowBridge.GrenadesEnabled)
+                return false;
+
+            return InThrowFlow || _holdingGrenade || IsCooking;
         }
 
         private void Update()
@@ -121,8 +160,64 @@ namespace Project.Combat
             if (GameplayKeyboardShortcuts.IsGameplayInputLockedByUi())
                 return;
 
-            UpdateArmInput();
+            if (DMBuildingMode.BlocksWeaponFireInput)
+            {
+                if (InThrowFlow || _holdingGrenade || IsCooking)
+                    ForceExitThrowMode();
+                return;
+            }
+
             UpdateCookAndThrowInput();
+        }
+
+        /// <summary>Called from Hot Cross G / LB hold — not from tap cycle.</summary>
+        public void RequestArmFromHotCross()
+        {
+            if (!DMIGrenadeThrowBridge.GrenadesEnabled)
+                return;
+
+            if (!_throwInputHooked)
+            {
+                TryHookThrowInput();
+                if (!_throwInputHooked)
+                {
+                    PickupToastUI.Show("Grenade throw input is not ready — holster weapons and try again.");
+                    return;
+                }
+            }
+
+            if (GameplayKeyboardShortcuts.IsGameplayInputLockedByUi())
+                return;
+
+            if (IsThrowingAnim)
+                return;
+
+            if (InThrowFlow)
+            {
+                if (!_cookInputHeld)
+                    ForceExitThrowMode();
+                return;
+            }
+
+            throwBridge?.SyncThrowAmountFromHotCrossFocus();
+
+            if (!CanEnterThrow())
+            {
+                MaybeToastMissingHotbarGrenade();
+                MaybeToastBlockedThrowConditions();
+                return;
+            }
+
+            HolsterDrawnWeapon();
+
+            try
+            {
+                _enterThrowMode?.Invoke(throwManager, null);
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
         }
 
         private void ResolveRefs()
@@ -229,12 +324,16 @@ namespace Project.Combat
         {
             _holdingGrenade = true;
             _throwCommitted = false;
+            EnsureHandThrowableVisible();
+            DMUiToolkitHotCross.SetGrenadeQuadrantArmed(true);
         }
 
         private void HandleGrenadeAimEnabled()
         {
             _holdingGrenade = true;
             _throwCommitted = false;
+            EnsureHandThrowableVisible();
+            DMUiToolkitHotCross.SetGrenadeQuadrantArmed(true);
         }
 
         private void HandleGrenadeAimCancelled()
@@ -243,13 +342,26 @@ namespace Project.Combat
                 ClearCookState(cancelExplosive: true);
 
             _holdingGrenade = false;
+            throwBridge?.CleanupInactiveHandGrenade();
+            DMUiToolkitHotCross.SetGrenadeQuadrantArmed(false);
         }
 
         private void HandleThrowCommitted()
         {
             _throwCommitted = true;
-            if (_activeCookExplosive != null)
-                _activeCookExplosive.NotifyThrown();
+            if (_activeCookExplosive == null)
+                return;
+
+            if (_activeCookExplosive.IsFuseRunning)
+            {
+                float elapsed = _activeCookExplosive.FuseDuration - _activeCookExplosive.FuseRemaining;
+                if (elapsed >= MinCookHoldBeforeThrowTransferSeconds)
+                    DMIGrenadeExplosive.StageThrownCookFuse(_activeCookExplosive.FuseRemaining);
+                else
+                    _activeCookExplosive.CancelCook();
+            }
+
+            _activeCookExplosive.NotifyThrown();
         }
 
         private void HandleThrown()
@@ -257,12 +369,14 @@ namespace Project.Combat
             if (_activeCookExplosive != null)
             {
                 _activeCookExplosive.CookFuseExpired -= HandleCookFuseExpired;
-                _activeCookExplosive.NotifyThrown();
+                // Invector reuses ObjectToThrow as the world projectile — do not CancelCook here
+                // or land/cook fuses are cleared on the live grenade (no explosion + scene clutter).
                 _activeCookExplosive = null;
             }
 
             _holdingGrenade = false;
             _throwCommitted = false;
+            DMUiToolkitHotCross.SetGrenadeQuadrantArmed(false);
         }
 
         private void HandleThrowFinished()
@@ -272,34 +386,7 @@ namespace Project.Combat
 
             _holdingGrenade = false;
             _throwCommitted = false;
-        }
-
-        private void UpdateArmInput()
-        {
-            if (!ReadArmPressedThisFrame())
-                return;
-
-            if (IsThrowingAnim)
-                return;
-
-            if (InThrowFlow)
-            {
-                if (!_cookInputHeld)
-                    ForceExitThrowMode();
-                return;
-            }
-
-            if (!CanEnterThrow())
-                return;
-
-            try
-            {
-                _enterThrowMode?.Invoke(throwManager, null);
-            }
-            catch (Exception)
-            {
-                // ignored
-            }
+            DMUiToolkitHotCross.SetGrenadeQuadrantArmed(false);
         }
 
         private void UpdateCookAndThrowInput()
@@ -312,6 +399,9 @@ namespace Project.Combat
             bool cookReleased = !cookHeld && _cookInputHeld;
             _cookInputHeld = cookHeld;
 
+            if (InThrowFlow || _holdingGrenade)
+                EnsureHandThrowableVisible();
+
             if (cookPressed && !_throwCommitted && !IsThrowingAnim)
                 TryStartCook();
 
@@ -319,21 +409,11 @@ namespace Project.Combat
                 TryTriggerThrow();
         }
 
-        private bool ReadArmPressedThisFrame()
-        {
-            Keyboard keyboard = Keyboard.current;
-            if (keyboard != null && keyboard.gKey.wasPressedThisFrame)
-                return true;
-
-            Gamepad pad = Gamepad.current;
-            if (pad != null && pad.leftShoulder.wasPressedThisFrame)
-                return true;
-
-            return false;
-        }
-
         private bool ReadCookHeld()
         {
+            if (DMBuildingMode.BlocksWeaponFireInput)
+                return false;
+
             Gamepad pad = Gamepad.current;
             if (pad != null && pad.leftTrigger.ReadValue() >= cookTriggerThreshold)
                 return true;
@@ -386,10 +466,26 @@ namespace Project.Combat
             }
         }
 
+        private void EnsureHandThrowableVisible()
+        {
+            if (throwManager == null)
+                return;
+
+            vThrowableObject throwable = throwManager.ObjectToThrow;
+            if (throwable == null)
+                return;
+
+            GameObject handObject = throwable.gameObject;
+            if (!handObject.activeSelf)
+                handObject.SetActive(true);
+        }
+
         private void TryStartCook()
         {
             if (IsCooking)
                 return;
+
+            EnsureHandThrowableVisible();
 
             vThrowableObject throwable = throwManager != null ? throwManager.ObjectToThrow : null;
             if (throwable == null)
@@ -399,11 +495,35 @@ namespace Project.Combat
             if (explosive == null)
                 explosive = throwable.gameObject.AddComponent<DMIGrenadeExplosive>();
 
-            if (!explosive.BeginCook(cookFuseSeconds, gameObject))
+            if (!explosive.BeginCook(ResolveMaxCookSeconds(), gameObject))
                 return;
 
             _activeCookExplosive = explosive;
             _activeCookExplosive.CookFuseExpired += HandleCookFuseExpired;
+        }
+
+        /// <summary>Called from <see cref="DMIGrenadeExplosive"/> immediately before cook-out detonation (not after).</summary>
+        public static bool TryPrepareCookOutDetonation(DMIGrenadeExplosive explosive)
+        {
+            if (explosive == null || _playerCookInputOwner == null)
+                return false;
+
+            return _playerCookInputOwner.PrepareCookOutDetonationIfInHand(explosive);
+        }
+
+        private bool PrepareCookOutDetonationIfInHand(DMIGrenadeExplosive explosive)
+        {
+            if (explosive == null)
+                return false;
+
+            bool inHand = !_throwCommitted && _holdingGrenade &&
+                          (throwManager == null ||
+                           throwManager.ObjectToThrow == explosive.GetComponent<vThrowableObject>());
+
+            if (inHand)
+                explosive.PrepareDetonationDamagesPlayer(true);
+
+            return inHand;
         }
 
         private void HandleCookFuseExpired(DMIGrenadeExplosive explosive)
@@ -414,7 +534,8 @@ namespace Project.Combat
             explosive.CookFuseExpired -= HandleCookFuseExpired;
 
             bool inHand = !_throwCommitted && _holdingGrenade &&
-                          (throwManager == null || throwManager.ObjectToThrow == explosive.GetComponent<vThrowableObject>());
+                          (throwManager == null ||
+                           throwManager.ObjectToThrow == explosive.GetComponent<vThrowableObject>());
 
             if (inHand)
                 HandleInHandDetonation(explosive);
@@ -427,7 +548,7 @@ namespace Project.Combat
         private void HandleInHandDetonation(DMIGrenadeExplosive explosive)
         {
             ConsumeGrenadeForInHandDetonation();
-            ForceExitThrowMode();
+            ForceExitThrowMode(cancelActiveCook: false);
 
             if (throwManager != null && throwManager.CurrentThrowable != null)
                 throwManager.CurrentThrowable.ResetThrowable();
@@ -437,6 +558,7 @@ namespace Project.Combat
 
             _throwCommitted = false;
             _holdingGrenade = false;
+            DMUiToolkitHotCross.SetGrenadeQuadrantArmed(false);
         }
 
         private void ConsumeGrenadeForInHandDetonation()
@@ -445,11 +567,10 @@ namespace Project.Combat
             if (item == null)
                 item = ItemRegistry.Resolve("Frag Grenade") ?? ItemRegistry.Resolve("DM_Frag_Grenade");
 
-            if (inventory != null && item != null && inventory.CountItem(item) > 0)
-            {
-                inventory.RemoveItem(item, 1);
+            if (inventory != null && item != null
+                && DMIGrenadeHotbarUtility.TryConsumeOneFromHotbar(
+                    inventory, item, DMUiToolkitHotCross.GrenadeLocalIndex))
                 item.TryGrantConfiguredXp();
-            }
 
             if (throwManager != null && throwManager.CurrentThrowable != null)
             {
@@ -458,12 +579,15 @@ namespace Project.Combat
             }
         }
 
-        private void ForceExitThrowMode()
+        private void ForceExitThrowMode(bool cancelActiveCook = true)
         {
             if (throwManager == null)
                 return;
 
-            ClearCookState(cancelExplosive: true);
+            if (cancelActiveCook)
+                ClearCookState(cancelExplosive: true);
+
+            throwBridge?.CleanupInactiveHandGrenade();
 
             try
             {
@@ -484,12 +608,92 @@ namespace Project.Combat
 
         private void ClearCookState(bool cancelExplosive)
         {
-            if (_activeCookExplosive != null)
+            if (_activeCookExplosive == null)
+                return;
+
+            DMIGrenadeExplosive explosive = _activeCookExplosive;
+            explosive.CookFuseExpired -= HandleCookFuseExpired;
+            _activeCookExplosive = null;
+
+            if (cancelExplosive)
+                explosive.CancelCook();
+        }
+
+        private static float ResolveMaxCookSeconds() => PlayerSkillAllocator.GetGrenadeMaxCookSeconds();
+
+        private bool HasGrenadeOnHotbar(ItemData item)
+        {
+            if (inventory == null || item == null)
+                return false;
+
+            return DMIGrenadeHotbarUtility.TryGetHotbarStackAtLocal(
+                       inventory,
+                       DMUiToolkitHotCross.GrenadeLocalIndex,
+                       item,
+                       out int amount,
+                       out _)
+                   && amount > 0;
+        }
+
+        private void HolsterDrawnWeapon()
+        {
+            if (inventory == null)
+                return;
+
+            EquipmentController equipment = inventory.GetComponent<EquipmentController>()
+                ?? inventory.GetComponentInChildren<EquipmentController>(true);
+            if (equipment == null || !equipment.IsWeaponDrawn)
+                return;
+
+            equipment.HolsterWeapon();
+        }
+
+        private void MaybeToastMissingHotbarGrenade()
+        {
+            if (throwBridge == null || inventory == null)
+                return;
+
+            ItemData item = throwBridge.GrenadeItem;
+            if (item == null)
+                return;
+
+            if (!LevelUnlockUtility.PassesUseGate(item, showToast: false))
+                return;
+
+            if (inventory.CountItem(item) <= 0)
+                return;
+
+            if (HasGrenadeOnHotbar(item))
+                return;
+
+            UIManager ui = FindAnyObjectByType<UIManager>();
+            ui?.ShowTimedInteractionPrompt("Place frag grenades on the hotbar (lower-right Hot Cross slot).");
+        }
+
+        private void MaybeToastBlockedThrowConditions()
+        {
+            if (throwBridge == null || inventory == null || throwManager == null)
+                return;
+
+            ItemData item = throwBridge.GrenadeItem;
+            if (item == null || !HasGrenadeOnHotbar(item))
+                return;
+
+            if (DMBuildingMode.BlocksWeaponFireInput)
             {
-                _activeCookExplosive.CookFuseExpired -= HandleCookFuseExpired;
-                if (cancelExplosive)
-                    _activeCookExplosive.CancelCook();
-                _activeCookExplosive = null;
+                PickupToastUI.Show("Exit build mode to arm a grenade.");
+                return;
+            }
+
+            if (_tpInput != null && !_tpInput.enabled)
+            {
+                PickupToastUI.Show("Cannot arm grenade while movement is locked.");
+                return;
+            }
+
+            if (_tpInput != null && _tpInput.cc != null && _tpInput.cc.customAction)
+            {
+                PickupToastUI.Show("Finish the current action before arming a grenade.");
             }
         }
 
