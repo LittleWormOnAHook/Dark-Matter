@@ -135,6 +135,10 @@ namespace Project.UI
                     if (GameplayKeyboardShortcuts.TryHandleToolbarKeyCode(KeyCode.B))
                         evt.StopImmediatePropagation();
                     return;
+                case KeyCode.G:
+                    if (GameplayKeyboardShortcuts.TryHandleHotCrossKeyCode(evt.keyCode))
+                        evt.StopImmediatePropagation();
+                    return;
                 case KeyCode.Alpha1:
                 case KeyCode.Alpha2:
                 case KeyCode.Alpha3:
@@ -168,6 +172,8 @@ namespace Project.UI
                         GameplayKeyboardShortcuts.TryHandleDevPanel();
                         evt.StopImmediatePropagation();
                     }
+                    else if (GameplayKeyboardShortcuts.TryHandleHotCrossKeyCode(evt.keyCode))
+                        evt.StopImmediatePropagation();
                     break;
             }
         }

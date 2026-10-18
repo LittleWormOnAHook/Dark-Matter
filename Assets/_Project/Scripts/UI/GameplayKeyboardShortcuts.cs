@@ -1,3 +1,5 @@
+using Project.Combat;
+using Project.Combat.Turrets;
 using Project.Core;
 using Project.Data;
 using Project.Interaction;
@@ -15,7 +17,9 @@ namespace Project.UI
     /// <summary>
     /// Shared keyboard shortcuts for hotbar, journal tabs, toolbar tools, and pause menu.
     /// When UITK is enabled, <see cref="DMUiToolkitInputHost"/> is the sole caller.
-    /// stamp: hotcross-tab-arm-x-ammo 0920f
+    /// Hot Cross: V = survival BL (tap cycle, hold use); G = grenade BR; B tap = binoculars, hold B = stone build
+    /// (works with mining multi-tool drawn — Input System Binoculars action defers KBM B to <see cref="HandleBinocularsKey"/>).
+    /// stamp: hotcross-bl-br-survival-grenade 1017
     /// </summary>
     public static class GameplayKeyboardShortcuts
     {
@@ -52,6 +56,9 @@ namespace Project.UI
 
             PlayerController player = PlayerLocator.FindPlayerController();
             if (player != null && player.IsGameplayPaused && !journalOpen)
+                return false;
+
+            if (DMTurretPlayerControl.IsActive)
                 return false;
 
             if (IsTypingInTextField())
@@ -165,8 +172,28 @@ namespace Project.UI
         private static float binocularsHoldStart = -1f;
         private static bool binocularsHoldConsumed;
 
+        /// <summary>True while KBM B is held for build-mode entry (after hold threshold, or hold in progress).</summary>
+        public static bool HoldBBuildingChannelActive
+        {
+            get
+            {
+                Keyboard keyboard = Keyboard.current;
+                if (keyboard == null || !keyboard.bKey.isPressed || binocularsHoldStart < 0f)
+                    return false;
+                return binocularsHoldConsumed
+                    || Time.unscaledTime - binocularsHoldStart >= Project.Building.DMBuildingMode.HoldSeconds;
+            }
+        }
+
         private static void HandleBinocularsKey(Keyboard keyboard)
         {
+            if (UiInputGuard.BlocksGameplayEquipmentInput)
+            {
+                binocularsHoldStart = -1f;
+                binocularsHoldConsumed = false;
+                return;
+            }
+
             if (keyboard.bKey.wasPressedThisFrame)
             {
                 binocularsHoldStart = Time.unscaledTime;
@@ -229,6 +256,8 @@ namespace Project.UI
                 // not replayed later as a stray ammo-cycle tap via the lost-key path.
                 ResetHotCrossConsumableHold();
                 ResetHotCrossGamepadAmmoHold();
+                ResetHotCrossSurvivalHold();
+                ResetHotCrossGamepadSurvivalHold();
                 TryHandleJournalHotkeys();
                 return;
             }
@@ -236,8 +265,9 @@ namespace Project.UI
             TryHandleCinematicHudToggle();
             TryHandleJournalHotkeys();
             TryHandleHotbarHotkeys();
-            TryHandleHotCrossHotkeys();
+            // B hold/build before Hot Cross so survival (V) never shares the B channel.
             TryHandleToolbarHotkeys();
+            TryHandleHotCrossHotkeys();
             TryHandleMinimapZoom();
         }
 
@@ -393,6 +423,8 @@ namespace Project.UI
             {
                 DMUiToolkitHotCross.HideAmmoLoadPopup();
                 ResetHotCrossConsumableHold();
+                ResetHotCrossSurvivalHold();
+                ResetHotCrossGamepadSurvivalHold();
                 return;
             }
 
@@ -542,6 +574,8 @@ namespace Project.UI
             {
                 DMUiToolkitHotCross.HideAmmoLoadPopup();
                 ResetHotCrossConsumableHold();
+                ResetHotCrossSurvivalHold();
+                ResetHotCrossGamepadSurvivalHold();
                 return;
             }
 
@@ -658,7 +692,10 @@ namespace Project.UI
                 return false;
 
             if (keyCode == KeyCode.B)
-                return false;
+            {
+                // Tap/hold ownership lives in TryHandleToolbarHotkeys (Update poll).
+                return true;
+            }
 
             if (keyCode == KeyCode.N)
             {
@@ -752,6 +789,9 @@ namespace Project.UI
 
             if (item.IsConsumable)
             {
+                if (inventory.IsHotbarIndex(slotIndex))
+                    DMUiToolkitHotCross.NotifySurvivalLocalIndex(hotbarIndex);
+
                 if (itemActions != null)
                     itemActions.TryUse(slotIndex);
                 else
@@ -812,6 +852,14 @@ namespace Project.UI
 
         
         private const float HotCrossConsumableHoldSeconds = 0.5f;
+
+        private static float ResolveHotCrossGrenadeLoadHoldSeconds()
+        {
+            DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
+            return profile != null
+                ? Mathf.Clamp(profile.hotCrossGrenadeLoadHoldSeconds, 0.25f, 2.5f)
+                : 1f;
+        }
         private const int HotCrossLostKeyFrames = 3;
 
         private static int hotCrossTabHandledFrame = -1;
@@ -826,6 +874,29 @@ namespace Project.UI
         private static bool hotCrossGamepadAmmoHoldUsed;
         private static int hotCrossGamepadAmmoLostFrames;
 
+        private static bool hotCrossSurvivalKeyHeld;
+        private static float hotCrossSurvivalKeyDownTime;
+        private static bool hotCrossSurvivalHoldUsed;
+        private static int hotCrossSurvivalLostKeyFrames;
+
+        private static bool hotCrossGamepadSurvivalHeld;
+        private static float hotCrossGamepadSurvivalDownTime;
+        private static bool hotCrossGamepadSurvivalHoldUsed;
+        private static int hotCrossGamepadSurvivalLostFrames;
+
+        private static bool hotCrossGrenadeKeyHeld;
+        private static float hotCrossGrenadeKeyDownTime;
+        private static bool hotCrossGrenadeHoldUsed;
+        private static int hotCrossGrenadeLostKeyFrames;
+
+        private static bool hotCrossGamepadGrenadeHeld;
+        private static float hotCrossGamepadGrenadeDownTime;
+        private static bool hotCrossGamepadGrenadeHoldUsed;
+        private static int hotCrossGamepadGrenadeLostFrames;
+
+        /// <summary>True while G / LB is held past load threshold (companion follow defers).</summary>
+        public static bool HotCrossGrenadeLoadHoldActive { get; private set; }
+
         // Tab / Y (North): tap = cycle weapon focus; hold ~0.5s = arm focused weapon.
         private static bool hotCrossWeaponKeyHeld;
         private static float hotCrossWeaponKeyDownTime;
@@ -834,10 +905,10 @@ namespace Project.UI
 
         /// <summary>
         /// Hot Cross face keys: Tab cycles TL weapon focus 1-4 (no equip), LMB arms focused TL,
-        /// X / D-Pad Right tap cycles TR utility focus 5-10 (no use), hold 0.5s uses focused TR
-        /// (food/meds consume; ammo loads into the drawn ranged weapon).
-        /// B/N are handled via toolbar hotkeys (binoculars / scanner). J opens Journal.
-        /// stamp: controller-ammo-autoload 0920
+        /// X / D-Pad Right tap cycles TR ammo focus, hold 0.5s loads/equips TR ammo.
+        /// V / D-Pad Left tap cycles BL survival focus (meds/food on hotbar), hold 0.5s consumes BL.
+        /// G / LB tap cycles BR grenade stacks, hold ~1s loads grenade to hand. B binoculars (hold = build); N scanner.
+        /// J opens Journal. stamp: hotcross-bl-br-survival-grenade 1017
         /// </summary>
         public static void TryHandleHotCrossHotkeys()
         {
@@ -847,6 +918,11 @@ namespace Project.UI
                     DMUiToolkitHotCross.HideAmmoLoadPopup();
                 ResetHotCrossConsumableHold();
                 ResetHotCrossGamepadAmmoHold();
+                ResetHotCrossSurvivalHold();
+                ResetHotCrossGamepadSurvivalHold();
+                ResetHotCrossGrenadeHold();
+                ResetHotCrossGamepadGrenadeHold();
+                HotCrossGrenadeLoadHoldActive = false;
                 return;
             }
 
@@ -866,9 +942,21 @@ namespace Project.UI
             UpdateHotCrossWeaponCycleArm(wpnPressed, wpnReleased, wpnDown);
 
             if (keyboard != null)
+            {
                 UpdateHotCrossConsumableKey(keyboard);
+                UpdateHotCrossSurvivalKey(keyboard);
+                UpdateHotCrossGrenadeKey(keyboard);
+            }
 
             UpdateHotCrossGamepadAmmoSelect();
+            UpdateHotCrossGamepadSurvivalSelect();
+            UpdateHotCrossGamepadGrenadeSelect();
+            float grenadeLoadHold = ResolveHotCrossGrenadeLoadHoldSeconds();
+            HotCrossGrenadeLoadHoldActive = hotCrossGrenadeHoldUsed || hotCrossGamepadGrenadeHoldUsed
+                || (hotCrossGrenadeKeyHeld && hotCrossGrenadeKeyDownTime > 0f
+                    && Time.unscaledTime - hotCrossGrenadeKeyDownTime >= grenadeLoadHold)
+                || (hotCrossGamepadGrenadeHeld && hotCrossGamepadGrenadeDownTime > 0f
+                    && Time.unscaledTime - hotCrossGamepadGrenadeDownTime >= grenadeLoadHold);
             // LMB still arms focused TL weapon (combat click when already drawn leaves fire alone).
             TryArmFocusedHotCrossWeaponFromMouse();
         }
@@ -884,14 +972,12 @@ namespace Project.UI
                 return true;
             }
 
-            if (keyCode == KeyCode.X)
+            if (keyCode == KeyCode.X || keyCode == KeyCode.V || keyCode == KeyCode.G)
             {
                 // Hold/tap ownership lives in TryHandleHotCrossHotkeys (Update poll).
-                // Swallow UITK key so focus navigation does not steal X.
                 return true;
             }
 
-            // B/N are handled by TryHandleToolbarHotkeys (Update poll) â€” do not also handle here.
             return false;
         }
 
@@ -951,6 +1037,8 @@ namespace Project.UI
         private static void TryArmFocusedHotCrossWeaponNow()
         {
             if (Time.frameCount == hotCrossArmHandledFrame)
+                return;
+            if (DMIGrenadeCookController.PlayerBlocksWeaponDraw)
                 return;
             if (!TryResolveInventory(out InventorySystem inventory, out EquipmentController equipment, out _))
                 return;
@@ -1129,6 +1217,259 @@ namespace Project.UI
             hotCrossGamepadAmmoLostFrames = 0;
         }
 
+        private static void ResetHotCrossSurvivalHold()
+        {
+            hotCrossSurvivalKeyHeld = false;
+            hotCrossSurvivalHoldUsed = false;
+            hotCrossSurvivalKeyDownTime = 0f;
+            hotCrossSurvivalLostKeyFrames = 0;
+        }
+
+        private static void ResetHotCrossGamepadSurvivalHold()
+        {
+            hotCrossGamepadSurvivalHeld = false;
+            hotCrossGamepadSurvivalHoldUsed = false;
+            hotCrossGamepadSurvivalDownTime = 0f;
+            hotCrossGamepadSurvivalLostFrames = 0;
+        }
+
+        private static void UpdateHotCrossSurvivalKey(Keyboard keyboard)
+        {
+            if (UiInputGuard.BlocksGameplayEquipmentInput || HoldBBuildingChannelActive)
+            {
+                ResetHotCrossSurvivalHold();
+                return;
+            }
+
+            bool pressed = keyboard.vKey.wasPressedThisFrame;
+            bool released = keyboard.vKey.wasReleasedThisFrame;
+            bool down = keyboard.vKey.isPressed;
+
+            ProcessHotCrossSurvivalChannel(
+                pressed,
+                released,
+                down,
+                ref hotCrossSurvivalKeyHeld,
+                ref hotCrossSurvivalKeyDownTime,
+                ref hotCrossSurvivalHoldUsed,
+                ref hotCrossSurvivalLostKeyFrames);
+        }
+
+        private static void UpdateHotCrossGamepadSurvivalSelect()
+        {
+            if (UiInputGuard.BlocksGameplayEquipmentInput)
+            {
+                ResetHotCrossGamepadSurvivalHold();
+                return;
+            }
+
+            Gamepad pad = Gamepad.current;
+            if (pad == null)
+            {
+                ResetHotCrossGamepadSurvivalHold();
+                return;
+            }
+
+            bool pressed = pad.dpad.left.wasPressedThisFrame;
+            bool released = pad.dpad.left.wasReleasedThisFrame;
+            bool down = pad.dpad.left.isPressed;
+
+            ProcessHotCrossSurvivalChannel(
+                pressed,
+                released,
+                down,
+                ref hotCrossGamepadSurvivalHeld,
+                ref hotCrossGamepadSurvivalDownTime,
+                ref hotCrossGamepadSurvivalHoldUsed,
+                ref hotCrossGamepadSurvivalLostFrames);
+        }
+
+        private static void ProcessHotCrossSurvivalChannel(
+            bool pressed,
+            bool released,
+            bool down,
+            ref bool keyHeld,
+            ref float keyDownTime,
+            ref bool holdUsed,
+            ref int lostKeyFrames)
+        {
+            if (pressed)
+            {
+                keyHeld = true;
+                keyDownTime = Time.unscaledTime;
+                holdUsed = false;
+                lostKeyFrames = 0;
+            }
+
+            if (keyHeld && down)
+            {
+                lostKeyFrames = 0;
+                if (!holdUsed && Time.unscaledTime - keyDownTime >= HotCrossConsumableHoldSeconds)
+                {
+                    holdUsed = true;
+                    TryUseFocusedHotCrossSurvival();
+                }
+            }
+
+            bool lostKey = false;
+            if (keyHeld && !down && !pressed && !released)
+            {
+                lostKeyFrames++;
+                lostKey = lostKeyFrames >= HotCrossLostKeyFrames;
+            }
+
+            if (keyHeld && (released || lostKey))
+            {
+                if (!holdUsed)
+                    TryCycleHotCrossSurvivalFocus();
+
+                keyHeld = false;
+                holdUsed = false;
+                keyDownTime = 0f;
+                lostKeyFrames = 0;
+            }
+        }
+
+        private static void ResetHotCrossGrenadeHold()
+        {
+            hotCrossGrenadeKeyHeld = false;
+            hotCrossGrenadeHoldUsed = false;
+            hotCrossGrenadeKeyDownTime = 0f;
+            hotCrossGrenadeLostKeyFrames = 0;
+        }
+
+        private static void ResetHotCrossGamepadGrenadeHold()
+        {
+            hotCrossGamepadGrenadeHeld = false;
+            hotCrossGamepadGrenadeHoldUsed = false;
+            hotCrossGamepadGrenadeDownTime = 0f;
+            hotCrossGamepadGrenadeLostFrames = 0;
+        }
+
+        private static void UpdateHotCrossGrenadeKey(Keyboard keyboard)
+        {
+            if (UiInputGuard.BlocksGameplayEquipmentInput || !DMIGrenadeThrowBridge.GrenadesEnabled)
+            {
+                ResetHotCrossGrenadeHold();
+                return;
+            }
+
+            bool pressed = keyboard.gKey.wasPressedThisFrame;
+            bool released = keyboard.gKey.wasReleasedThisFrame;
+            bool down = keyboard.gKey.isPressed;
+
+            ProcessHotCrossGrenadeChannel(
+                pressed,
+                released,
+                down,
+                ref hotCrossGrenadeKeyHeld,
+                ref hotCrossGrenadeKeyDownTime,
+                ref hotCrossGrenadeHoldUsed,
+                ref hotCrossGrenadeLostKeyFrames);
+        }
+
+        private static void UpdateHotCrossGamepadGrenadeSelect()
+        {
+            if (UiInputGuard.BlocksGameplayEquipmentInput || !DMIGrenadeThrowBridge.GrenadesEnabled)
+            {
+                ResetHotCrossGamepadGrenadeHold();
+                return;
+            }
+
+            Gamepad pad = Gamepad.current;
+            if (pad == null)
+            {
+                ResetHotCrossGamepadGrenadeHold();
+                return;
+            }
+
+            bool pressed = pad.leftShoulder.wasPressedThisFrame;
+            bool released = pad.leftShoulder.wasReleasedThisFrame;
+            bool down = pad.leftShoulder.isPressed;
+
+            ProcessHotCrossGrenadeChannel(
+                pressed,
+                released,
+                down,
+                ref hotCrossGamepadGrenadeHeld,
+                ref hotCrossGamepadGrenadeDownTime,
+                ref hotCrossGamepadGrenadeHoldUsed,
+                ref hotCrossGamepadGrenadeLostFrames);
+        }
+
+        private static void ProcessHotCrossGrenadeChannel(
+            bool pressed,
+            bool released,
+            bool down,
+            ref bool keyHeld,
+            ref float keyDownTime,
+            ref bool holdUsed,
+            ref int lostKeyFrames)
+        {
+            if (pressed)
+            {
+                keyHeld = true;
+                keyDownTime = Time.unscaledTime;
+                holdUsed = false;
+                lostKeyFrames = 0;
+            }
+
+            float loadHoldSeconds = ResolveHotCrossGrenadeLoadHoldSeconds();
+
+            if (keyHeld && down)
+            {
+                lostKeyFrames = 0;
+                if (!holdUsed && Time.unscaledTime - keyDownTime >= loadHoldSeconds)
+                {
+                    holdUsed = true;
+                    TryLoadFocusedHotCrossGrenade();
+                }
+            }
+
+            bool lostKey = false;
+            if (keyHeld && !down && !pressed && !released)
+            {
+                lostKeyFrames++;
+                lostKey = lostKeyFrames >= HotCrossLostKeyFrames;
+            }
+
+            if (keyHeld && (released || lostKey))
+            {
+                if (!holdUsed)
+                    TryCycleHotCrossGrenadeFocus();
+
+                keyHeld = false;
+                holdUsed = false;
+                keyDownTime = 0f;
+                lostKeyFrames = 0;
+            }
+        }
+
+        private static void TryCycleHotCrossGrenadeFocus()
+        {
+            if (UiInputGuard.BlocksGameplayEquipmentInput || !DMIGrenadeThrowBridge.GrenadesEnabled)
+                return;
+            if (!TryResolveInventory(out _, out EquipmentController equipment, out _))
+                return;
+
+            int current = DMUiToolkitHotCross.GrenadeLocalIndex;
+            if (!equipment.TryGetNextOccupiedGrenadeHotbarLocal(current, out int next))
+                return;
+
+            DMUiToolkitHotCross.NotifyGrenadeLocalIndex(next);
+            DMIGrenadeThrowBridge bridge = PlayerLocator.FindOnLivePlayer<DMIGrenadeThrowBridge>();
+            bridge?.SyncThrowAmountFromHotCrossFocus();
+        }
+
+        private static void TryLoadFocusedHotCrossGrenade()
+        {
+            if (UiInputGuard.BlocksGameplayEquipmentInput || !DMIGrenadeThrowBridge.GrenadesEnabled)
+                return;
+
+            DMIGrenadeCookController cook = PlayerLocator.FindOnLivePlayer<DMIGrenadeCookController>();
+            cook?.RequestArmFromHotCross();
+        }
+
         private const int HotCrossUtilityFirstLocal = 4;
         private const int HotCrossUtilityLastLocal = 9;
 
@@ -1149,16 +1490,62 @@ namespace Project.UI
                 return;
             }
 
-            if (!equipment.TryGetNextOccupiedUtilityHotbarLocal(current, out int next))
+            if (!equipment.TryGetNextOccupiedAmmoHotbarLocal(current, out int next))
                 return;
 
             DMUiToolkitHotCross.NotifyConsumableLocalIndex(next);
 
-            // Holstered / melee: focus only (hold uses it). Ammo still hints to draw a ranged weapon.
+            // Holstered / melee: ammo focus only (hold loads when a ranged weapon is drawn).
             int absolute = inventory.HotbarStartIndex + next;
             ItemData item = inventory.GetItemAt(absolute);
             if (item != null && item.CountsAsAmmo && itemActions != null)
                 itemActions.TryEquipAmmoToActiveRangedWeapon(absolute);
+        }
+
+        private static void TryCycleHotCrossSurvivalFocus()
+        {
+            if (UiInputGuard.BlocksGameplayEquipmentInput)
+                return;
+            if (!TryResolveInventory(out _, out EquipmentController equipment, out _))
+                return;
+
+            int current = DMUiToolkitHotCross.SurvivalLocalIndex;
+            if (!equipment.TryGetNextOccupiedSurvivalHotbarLocal(current, out int next))
+                return;
+
+            DMUiToolkitHotCross.NotifySurvivalLocalIndex(next);
+        }
+
+        private static void TryUseFocusedHotCrossSurvival()
+        {
+            if (UiInputGuard.BlocksGameplayEquipmentInput)
+                return;
+            if (!TryResolveInventory(out InventorySystem inventory, out _, out InventoryItemActions itemActions))
+                return;
+
+            int local = DMUiToolkitHotCross.SurvivalLocalIndex;
+            int absolute = inventory.HotbarStartIndex + local;
+            ItemData item = inventory.GetItemAt(absolute);
+            if (item == null || !Project.Survival.DMISurvivalHotbarUtility.IsHotCrossSurvivalItem(item))
+            {
+                PickupToastUI.Show("Assign survival items to the hotbar (lower-left Hot Cross).");
+                return;
+            }
+
+            if (Project.Survival.DMISurvivalHotbarUtility.IsPlasmaFuelItem(item))
+            {
+                if (itemActions != null && itemActions.TryRefillMiningTool(absolute))
+                    return;
+
+                PickupToastUI.Show("Equip a mining tool to recharge with Plasma Fuel.");
+                return;
+            }
+
+            bool used = itemActions != null
+                ? itemActions.TryUse(absolute)
+                : inventory.UseItemAt(absolute);
+            if (!used)
+                PickupToastUI.Show($"Cannot use {item.itemName}");
         }
 
         private static readonly System.Collections.Generic.List<ItemData> ammoCycleItems =
@@ -1274,9 +1661,10 @@ namespace Project.UI
             // the player must move it onto the Hot Cross before it can load.
             // stamp: x-cycle-hotcross-only 1006
             int last = Mathf.Min(HotCrossUtilityLastLocal, inventory.hotbarSize - 1);
+            int grenadeLocal = DMIGrenadeHotbarUtility.ResolveHotbarLocalIndex();
             for (int local = HotCrossUtilityFirstLocal; local <= last; local++)
             {
-                if (equipment.IsWeaponHotbarSlot(local))
+                if (equipment.IsWeaponHotbarSlot(local) || local == grenadeLocal)
                     continue;
                 TryAddAmmoCycleEntry(inventory, itemActions, inventory.HotbarStartIndex + local);
             }
@@ -1392,27 +1780,13 @@ namespace Project.UI
                 return;
             }
 
-            // Food / meds / oxygen: consume+heal via InventoryItemActions (same as digit use path),
-            // but do not fall through to SelectInventorySlot which never applies restores.
-            if (item.IsConsumable)
+            if (Project.Survival.DMISurvivalHotbarUtility.IsHotCrossSurvivalItem(item))
             {
-                bool used = itemActions != null
-                    ? itemActions.TryUse(absolute)
-                    : inventory.UseItemAt(absolute);
-                if (!used)
-                    PickupToastUI.Show($"Cannot use {item.itemName}");
+                PickupToastUI.Show("Use survival items with V (lower-left Hot Cross).");
                 return;
             }
 
-            // Storage modules etc. that expose CanUse.
-            if (itemActions != null && itemActions.CanUse(absolute))
-            {
-                if (!itemActions.TryUse(absolute))
-                    PickupToastUI.Show($"Cannot use {item.itemName}");
-                return;
-            }
-
-            PickupToastUI.Show($"{item.itemName} cannot be used from Hot Cross");
+            PickupToastUI.Show("Upper-right Hot Cross is ammo only — move other utilities off slots 5–0 or use inventory.");
         }
 
         private static void TryArmFocusedHotCrossWeaponFromMouse()
@@ -1421,6 +1795,8 @@ namespace Project.UI
             if (mouse == null || !mouse.leftButton.wasPressedThisFrame)
                 return;
             if (UiInputGuard.BlocksGameplayEquipmentInput)
+                return;
+            if (DMIGrenadeCookController.PlayerBlocksWeaponDraw)
                 return;
             if (Time.frameCount == hotCrossArmHandledFrame)
                 return;
