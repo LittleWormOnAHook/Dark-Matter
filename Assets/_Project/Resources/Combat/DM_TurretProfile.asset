@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fd02e2ef3413fe34fb0c504856cd9c2b, type: 3}
+  m_Name: DM_TurretProfile
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.Turrets.DMTurretProfile
+  defaultPlacedFaction: 0
+  defaultControlMode: 0
+  scanRange: 45
+  trackRange: 32
+  fireRange: 22
+  autoRestAfterNoTargetSeconds: 15
+  targetLosGraceSeconds: 0.65
+  targetLosFailuresBeforeDrop: 4
+  scanHeadingSpeed: 18
+  scanRetargetSeconds: 2.4
+  scanElevationDegrees: {x: -8, y: 12}
+  headingTrackingSpeed: 40
+  elevationTrackingSpeed: 30
+  headingLimit: {x: -180, y: 180}
+  elevationLimit: {x: -15, y: 45}
+  defaultAmmoMode: 0
+  gameWeaponItem: {fileID: 0}
+  gameAmmoItem: {fileID: 0}
+  gameFireInterval: 0.15
+  gameSpreadDegrees: 1.5
+  ammoType: 0
+  damage: 18
+  splashRadius: 0
+  beamDamageInterval: 0.2
+  maxHealth: 100
+  enemyDestroyChanceMin: 0.1
+  enemyDestroyChanceMax: 0.4
+  enemyFleeMargin: 6
+  enemyTurretDecisionSeconds: 8
+  playerCameraLocalPosition: {x: 0, y: 3.5, z: -5.38}
+  playerCameraLocalEuler: {x: 0, y: 0, z: 0}
+  playerCameraFov: 50
+  playerAimMouseSensitivity: 0.05
+  playerReticleScreenBias: 0.06
+  debugDraw: 1

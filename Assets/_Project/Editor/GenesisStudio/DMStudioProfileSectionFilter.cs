@@ -23,7 +23,8 @@ namespace Project.EditorTools.GenesisStudio
         LootChestTimersOnly = 14,
         LootChestPresentationOnly = 15,
         EnemyBrainChaseWallOnly = 16,
-        ScopeOverlayOnly = 17
+        ScopeOverlayOnly = 17,
+        CombatThrowablesOnly = 18
     }
 
     internal static class DMStudioProfileSections
@@ -158,9 +159,15 @@ namespace Project.EditorTools.GenesisStudio
             "buildHubZoneHeightStepMeters",
             "buildHubMaxLevel",
             "buildHubZoneMustBeClear",
+            "terrainBootstrapDeployRangeMeters",
+            "terrainBootstrapHubPieceId",
             "blockPatrolPaths",
             "patrolPathClearanceMeters",
-            "patrolPathHeightToleranceMeters"
+            "patrolPathHeightToleranceMeters",
+            "turretInteractRangeMeters",
+            "turretPlayerCameraBackMeters",
+            "turretPlayerCameraUpMeters",
+            "turretPlayerCameraFov"
         };
 
         private static readonly string[] BuildingDoorFields =
@@ -209,6 +216,38 @@ namespace Project.EditorTools.GenesisStudio
             "thermalRecoveryPerSecond"
         };
 
+        private static readonly string[] CombatThrowablesFields =
+        {
+            "enableGrenades",
+            "grenadeCookSecondsBase",
+            "grenadeCookSecondsMax",
+            "grenadeLandingRingUsesSplashSkills",
+            "grenadeThrowArcLineColor",
+            "grenadeLandingRingColor",
+            "grenadeLandingRingSizeMultiplier",
+            "grenadeLandingRingIndicatorTexture",
+            "grenadeCookOutSelfDamage",
+            "grenadeEnemyStaggerSeconds",
+            "grenadeHotbarLocalIndex",
+            "hotCrossGrenadeLoadHoldSeconds",
+            "grenadeExplosionRadius",
+            "grenadeMinDamage",
+            "grenadeMaxDamage",
+            "grenadeInnerRadiusFullDamage",
+            "grenadeEdgeDamageFalloff",
+            "grenadeLandFuseSeconds",
+            "grenadeExplosionForce",
+            "grenadeExplosionUpwardsModifier",
+            "grenadeExplosionVfxPrefab",
+            "grenadeCameraShakeAmplitude",
+            "grenadeCameraShakeDurationSeconds",
+            "grenadeSplashDamagesPlayer",
+            "grenadeSplashDamagesCompanions",
+            "grenadePioneerSplashLayerMask",
+            "grenadeVExplosiveDamageLayerMask",
+            "grenadeVExplosiveForceLayerMask"
+        };
+
         private static readonly string[] CombatCoreFields =
         {
             "trainingDummyPoiseMax",
@@ -229,6 +268,7 @@ namespace Project.EditorTools.GenesisStudio
             "parryShakeDurationSeconds",
             "blockShakeAmplitude",
             "blockShakeDurationSeconds",
+            "survivalHotbarLocalIndex",
             "poiseDamageFromHealthMultiplier",
             "maxPoiseDamageFractionPerHit",
             "poiseRegenPerSecond",
@@ -537,6 +577,7 @@ namespace Project.EditorTools.GenesisStudio
                 DMStudioProfileSectionFilter.FootstepsAudioOnly => IsFootstepsAudioField(propertyPath),
                 DMStudioProfileSectionFilter.CombatAmmoOnly => IsCombatAmmoField(propertyPath),
                 DMStudioProfileSectionFilter.CombatCoreOnly => IsCombatCoreField(propertyPath),
+                DMStudioProfileSectionFilter.CombatThrowablesOnly => IsCombatThrowablesField(propertyPath),
                 DMStudioProfileSectionFilter.LandingHeightsOnly => IsLandingHeightField(propertyPath),
                 DMStudioProfileSectionFilter.BuildingPreviewOnly => IsBuildingPreviewField(propertyPath),
                 DMStudioProfileSectionFilter.BuildingBuiltTintsOnly => IsBuildingBuiltTintField(propertyPath),
@@ -568,7 +609,9 @@ namespace Project.EditorTools.GenesisStudio
                 DMStudioProfileSectionFilter.CombatAmmoOnly =>
                     "Live ammo combat fields (Play Mode edits push to the drawn weapon each tick). Fire Rate / burst / reload / mag on the loaded ammo profile win when greater than zero; else the weapon ItemData is used. Scoped cadence: DM_ScopeProfile rifle/pistol fire interval wins; ammo Rifle/Pistol Scoped Fire Interval is fallback only when profile interval is unset (≤0). Ammo Rifle/Pistol Scoped Fire Interval Percent Modifier applies ±10% to that base (profile or fallback seconds), then Rifles scope skills, then min interval. Recoil Vertical/Horizontal are aim kick; fireTrauma / impactTrauma feed the CameraShake hub (0 = off). Rifle column on Ammo Recoil Profile still overrides two-hand weapons. Invector weapon recoilUp does nothing.",
                 DMStudioProfileSectionFilter.CombatCoreOnly =>
-                    "All DM_CombatCoreProfile combat fields (Resources/Combat). Combat Studio → Core / Melee organizes them under Player vs Enemy.",
+                    "DM_CombatCoreProfile combat fields (Resources/Combat) except grenades — Combat Studio → Core / Melee groups Player vs Enemy; throwables live under Throwables.",
+                DMStudioProfileSectionFilter.CombatThrowablesOnly =>
+                    "Grenade / throwable tuning on DM_CombatCoreProfile — splash radius/damage, layer masks (0 = prefab), VFX/force/shake, cook fuse, landing ring. Live in Play.",
                 DMStudioProfileSectionFilter.LandingHeightsOnly =>
                     "Jump/Landing 3-tier height band on DM_ClimbDashProfile (bounce / hero / hero+damage + jetpack grace) - same asset as Climb/Dash; Play-mode edits persist via Profile Save.",
                 DMStudioProfileSectionFilter.BuildingPreviewOnly =>
@@ -658,6 +701,11 @@ namespace Project.EditorTools.GenesisStudio
         private static bool IsCombatCoreField(string propertyPath)
         {
             return MatchesField(propertyPath, CombatCoreFields);
+        }
+
+        private static bool IsCombatThrowablesField(string propertyPath)
+        {
+            return MatchesField(propertyPath, CombatThrowablesFields);
         }
 
         private static bool MatchesField(string propertyPath, string[] fields)

@@ -1,6 +1,8 @@
+using FORGE3D;
 using Project.AI;
 using Project.Audio;
 using Project.Combat;
+using Project.Combat.Turrets;
 using Project.EditorTools;
 using Project.EditorTools.GenesisStudio;
 using UnityEditor;
@@ -10,32 +12,37 @@ using UnityEngine;
 namespace Project.EditorTools.Combat
 {
     /// <summary>
-    /// Combat Studio Phase 2 shell: Core / Melee (Player vs Enemy groupings) / Ranged / Play / Roadmap.
+    /// Combat Studio Phase 2 shell: Core / Melee (Player vs Enemy groupings) / Ranged / Throwables / Play / Roadmap.
     /// Runtime numbers live on DM_CombatCoreProfile. Combat_Sandbox is forensics only.
     /// </summary>
     public sealed class DMCombatStudioWindow : EditorWindow
     {
         private const string ProfileResourcesPath = "Assets/_Project/Resources/Combat/DM_CombatCoreProfile.asset";
         private const string AudioProfilePath = "Assets/_Project/Resources/GameAudioProfile.asset";
-        private const string PlayableScenePath = "Assets/_Project/Scenes/Dark Matter Genesis v1.6.5.unity";
+        private const string PlayableScenePath = "Assets/_Project/Scenes/Dark Matter Genesis v1.6.6.unity";
         private const string SandboxScenePath = "Assets/_Project/Scenes/Combat/Combat_Sandbox.unity";
         private const string CombatPlanPath = "Assets/_Project/Documentation/Design/Combat/DMG_Combat_Plan_v2.md";
 
         public const int TabCore = 0;
         public const int TabMelee = 1;
         public const int TabRanged = 2;
-        public const int TabPlay = 3;
-        public const int TabDirector = 4;
-        public const int TabRoadmap = 5;
+        public const int TabThrowables = 3;
+        public const int TabTurrets = 4;
+        public const int TabPlay = 5;
+        public const int TabDirector = 6;
+        public const int TabRoadmap = 7;
 
         private const string DirectorProfilePath = "Assets/_Project/Resources/Combat/DM_CombatDirectorProfile.asset";
+        private const string TurretProfilePath = DMTurretProfile.AssetPath;
 
-        private static readonly string[] Tabs = { "Core", "Melee", "Ranged", "Play", "Director", "Roadmap" };
+        private static readonly string[] Tabs = { "Core", "Melee", "Ranged", "Throwables", "Turrets", "Play", "Director", "Roadmap" };
 
         private DM_CombatCoreProfile profile;
         private SerializedObject serializedProfile;
         private DM_CombatDirectorProfile directorProfile;
         private SerializedObject serializedDirector;
+        private DMTurretProfile turretProfile;
+        private SerializedObject serializedTurret;
         private GameAudioProfile audioProfile;
         private SerializedObject serializedAudioProfile;
         private Vector2 scrollPosition;
@@ -62,6 +69,8 @@ namespace Project.EditorTools.Combat
             serializedProfile = profile != null ? new SerializedObject(profile) : null;
             audioProfile = AssetDatabase.LoadAssetAtPath<GameAudioProfile>(AudioProfilePath);
             serializedAudioProfile = audioProfile != null ? new SerializedObject(audioProfile) : null;
+            turretProfile = LoadOrCreateTurretProfile();
+            serializedTurret = turretProfile != null ? new SerializedObject(turretProfile) : null;
             tab = EditorPrefs.GetInt("DM.CombatStudio.Tab", 0);
             if (tab < 0 || tab >= Tabs.Length)
                 tab = 0;
@@ -78,7 +87,7 @@ namespace Project.EditorTools.Combat
 
             DMStudioStyles.DrawHeroHeader(
                 "Combat Studio",
-                "Core and Melee group tunables under Player vs Enemy. Ranged links, v1.6.5 Play, §31 roadmap — runtime reads DM_CombatCoreProfile.");
+                "Core and Melee group tunables under Player vs Enemy. Ranged links, Throwables, Turrets (FORGE3D wrap), v1.6.6 Play, §31 roadmap.");
 
             DMStudioStyles.DrawHorizontalTabBar(() =>
             {
@@ -102,6 +111,12 @@ namespace Project.EditorTools.Combat
                     break;
                 case TabRanged:
                     DrawRangedTab();
+                    break;
+                case TabThrowables:
+                    DrawThrowablesTab();
+                    break;
+                case TabTurrets:
+                    DrawTurretsTab();
                     break;
                 case TabPlay:
                     DrawPlayTab();
@@ -596,6 +611,28 @@ namespace Project.EditorTools.Combat
 
         private void DrawRangedTab()
         {
+            DrawRangedGenesisLinksPanel();
+
+            DMStudioStyles.DrawSection("Combat Studio / Genesis", DMStudioStyles.ContentPanel, () =>
+            {
+                if (GUILayout.Button("Open Genesis Studio (Combat Core)", GUILayout.Height(28f)))
+                    GenesisStudioWindow.OpenTo("combat", "combat-core");
+
+                var meleeBlockers = DMStudioActionValidation.CollectMeleeBuildAndApplyBlockers();
+                DMStudioActionValidation.DrawBlockersHelpBox(meleeBlockers, "Build and apply melee animation set");
+                if (GUILayout.Button("Build and apply melee animation set", GUILayout.Height(28f)))
+                {
+                    DMStudioActionValidation.TryRunPrimaryAction(
+                        DMStudioActionValidation.CombatStudioDialogTitle,
+                        meleeBlockers,
+                        DMMeleeAnimationSetApplier.BuildAndApply);
+                }
+            });
+        }
+
+        /// <summary>Shared with Genesis Studio → Combat → Ranged.</summary>
+        public static void DrawRangedGenesisLinksPanel()
+        {
             DMStudioStyles.DrawSection("Genesis ranged authoring", DMStudioStyles.ContentPanel, () =>
             {
                 EditorGUILayout.HelpBox(
@@ -618,21 +655,91 @@ namespace Project.EditorTools.Combat
                 if (GUILayout.Button("Genesis Studio → Combat → Surface Damage", GUILayout.Height(28f)))
                     GenesisStudioWindow.OpenTo("combat", "surface-damage");
             });
+        }
 
-            DMStudioStyles.DrawSection("Combat Studio / Genesis", DMStudioStyles.ContentPanel, () =>
+        private void DrawThrowablesTab()
+        {
+            DrawProfileHeader("Throwables (DM_CombatCoreProfile)");
+            if (profile == null)
             {
-                if (GUILayout.Button("Open Genesis Studio (Combat Core)", GUILayout.Height(28f)))
-                    GenesisStudioWindow.OpenTo("combat", "combat-core");
+                var blockers = DMStudioActionValidation.CollectMissingProfileAsset(
+                    ProfileResourcesPath,
+                    "DM_CombatCoreProfile");
+                DMStudioActionValidation.DrawBlockersHelpBox(blockers, "edit throwables");
+                return;
+            }
 
-                var meleeBlockers = DMStudioActionValidation.CollectMeleeBuildAndApplyBlockers();
-                DMStudioActionValidation.DrawBlockersHelpBox(meleeBlockers, "Build and apply melee animation set");
-                if (GUILayout.Button("Build and apply melee animation set", GUILayout.Height(28f)))
+            if (serializedProfile == null)
+                return;
+
+            serializedProfile.Update();
+            EditorGUI.BeginChangeCheck();
+            Undo.RecordObject(profile, "Edit Combat Throwables Profile");
+
+            using (DMStudioStyles.BeginProfileInspector(serializedProfile))
+            {
+                EditorGUILayout.HelpBox(
+                    "Grenade tunables on DM_CombatCoreProfile (Genesis Studio → Combat → Throwables). "
+                    + "Runtime reads Live on detonation; splash skills still scale damage/radius when enabled.",
+                    MessageType.Info);
+
+                DMStudioStyles.DrawSection("Grenades — enable & input", DMStudioStyles.ContentPanel, () =>
                 {
-                    DMStudioActionValidation.TryRunPrimaryAction(
-                        DMStudioActionValidation.CombatStudioDialogTitle,
-                        meleeBlockers,
-                        DMMeleeAnimationSetApplier.BuildAndApply);
-                }
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedProfile,
+                        "enableGrenades",
+                        "grenadeHotbarLocalIndex",
+                        "hotCrossGrenadeLoadHoldSeconds",
+                        "grenadeCookSecondsBase",
+                        "grenadeCookSecondsMax",
+                        "grenadeCookOutSelfDamage",
+                        "grenadeEnemyStaggerSeconds");
+                });
+
+                DMStudioStyles.DrawSection("Grenades — splash & detonation", DMStudioStyles.ContentPanel, () =>
+                {
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedProfile,
+                        "grenadeExplosionRadius",
+                        "grenadeMinDamage",
+                        "grenadeMaxDamage",
+                        "grenadeInnerRadiusFullDamage",
+                        "grenadeEdgeDamageFalloff",
+                        "grenadeLandFuseSeconds",
+                        "grenadeExplosionForce",
+                        "grenadeExplosionUpwardsModifier",
+                        "grenadeExplosionVfxPrefab",
+                        "grenadeCameraShakeAmplitude",
+                        "grenadeCameraShakeDurationSeconds",
+                        "grenadeSplashDamagesPlayer",
+                        "grenadeSplashDamagesCompanions",
+                        "grenadePioneerSplashLayerMask",
+                        "grenadeVExplosiveDamageLayerMask",
+                        "grenadeVExplosiveForceLayerMask");
+                });
+
+                DMStudioStyles.DrawSection("Grenades — throw projector", DMStudioStyles.ContentPanel, () =>
+                {
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedProfile,
+                        "grenadeLandingRingUsesSplashSkills",
+                        "grenadeThrowArcLineColor",
+                        "grenadeLandingRingColor",
+                        "grenadeLandingRingSizeMultiplier",
+                        "grenadeLandingRingIndicatorTexture");
+                });
+            }
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                serializedProfile.ApplyModifiedProperties();
+                EditorUtility.SetDirty(profile);
+            }
+
+            DMStudioStyles.DrawSection("Genesis Studio", DMStudioStyles.ContentPanel, () =>
+            {
+                if (GUILayout.Button("Genesis Studio → Combat → Throwables", GUILayout.Height(28f)))
+                    GenesisStudioWindow.OpenTo("combat", "combat-throwables");
             });
         }
 
@@ -641,10 +748,10 @@ namespace Project.EditorTools.Combat
             DMStudioStyles.DrawSection("Tune scene", DMStudioStyles.ContentPanel, () =>
             {
                 EditorGUILayout.HelpBox(
-                    "Phase 2 combat is accepted in Dark Matter Genesis v1.6.5. Terrains and hierarchy stay on.",
+                    "Tune on Dark Matter Genesis v1.6.6. Terrains and hierarchy stay on.",
                     MessageType.Info);
 
-                if (GUILayout.Button("Open Dark Matter Genesis v1.6.5", GUILayout.Height(32f)))
+                if (GUILayout.Button("Open Dark Matter Genesis v1.6.6", GUILayout.Height(32f)))
                     OpenSceneIfExists(PlayableScenePath, "Playable scene");
             });
 
@@ -1037,6 +1144,221 @@ namespace Project.EditorTools.Combat
             if (!string.IsNullOrEmpty(help))
                 EditorGUILayout.HelpBox(help, MessageType.None);
             EditorGUILayout.Space(4f);
+        }
+
+        private void DrawTurretsTab()
+        {
+            if (turretProfile == null)
+                turretProfile = LoadOrCreateTurretProfile();
+            if (serializedTurret == null && turretProfile != null)
+                serializedTurret = new SerializedObject(turretProfile);
+
+            DMStudioStyles.DrawSection("Turret profile", DMStudioStyles.ContentPanel, () =>
+            {
+                EditorGUILayout.ObjectField("Asset", turretProfile, typeof(DMTurretProfile), false);
+                EditorGUILayout.HelpBox(
+                    "Designer authority: faction, ranges, ammo mode, vendor VFX, barrel, and Instance Authority live on DMTurretRuntime / this profile. "
+                    + "Playable menu is Auto or Enter Turret plus a mixed game/vendor ammo cycle. "
+                    + "Scene turrets bootstrap as Enemy; placed equipment uses Placement defaults.",
+                    MessageType.Info);
+            });
+
+            if (serializedTurret != null && turretProfile != null)
+            {
+                serializedTurret.Update();
+                EditorGUI.BeginChangeCheck();
+                Undo.RecordObject(turretProfile, "Edit Turret Profile");
+                using (DMStudioStyles.BeginProfileInspector(serializedTurret))
+                {
+                    DMStudioStyles.DrawSection("Placement defaults", DMStudioStyles.ContentPanel, () =>
+                    {
+                        DMStudioStyles.DrawPropertyFields(
+                            serializedTurret,
+                            "defaultPlacedFaction",
+                            "defaultControlMode");
+                    });
+                    DMStudioStyles.DrawSection("Ranges", DMStudioStyles.ContentPanel, () =>
+                    {
+                        DMStudioStyles.DrawPropertyFields(
+                            serializedTurret,
+                            "scanRange",
+                            "trackRange",
+                            "fireRange");
+                    });
+                    DMStudioStyles.DrawSection("Scan / tracking", DMStudioStyles.ContentPanel, () =>
+                    {
+                        DMStudioStyles.DrawPropertyFields(
+                            serializedTurret,
+                            "autoRestAfterNoTargetSeconds",
+                            "targetLosGraceSeconds",
+                            "targetLosFailuresBeforeDrop",
+                            "scanHeadingSpeed",
+                            "scanRetargetSeconds",
+                            "scanElevationDegrees",
+                            "headingTrackingSpeed",
+                            "elevationTrackingSpeed",
+                            "headingLimit",
+                            "elevationLimit");
+                    });
+                    DMStudioStyles.DrawSection("Ammo mode", DMStudioStyles.ContentPanel, () =>
+                    {
+                        DMStudioStyles.DrawPropertyFields(
+                            serializedTurret,
+                            "defaultAmmoMode",
+                            "gameWeaponItem",
+                            "gameAmmoItem",
+                            "gameFireInterval",
+                            "gameSpreadDegrees");
+                    });
+                    DMStudioStyles.DrawSection("Damage & hull", DMStudioStyles.ContentPanel, () =>
+                    {
+                        DMStudioStyles.DrawPropertyFields(
+                            serializedTurret,
+                            "ammoType",
+                            "damage",
+                            "splashRadius",
+                            "beamDamageInterval",
+                            "maxHealth");
+                    });
+                    DMStudioStyles.DrawSection("Enemy vs turret", DMStudioStyles.ContentPanel, () =>
+                    {
+                        DMStudioStyles.DrawPropertyFields(
+                            serializedTurret,
+                            "enemyDestroyChanceMin",
+                            "enemyDestroyChanceMax",
+                            "enemyFleeMargin",
+                            "enemyTurretDecisionSeconds");
+                    });
+                    DMStudioStyles.DrawSection("Player seat camera", DMStudioStyles.ContentPanel, () =>
+                    {
+                        DMStudioStyles.DrawPropertyFields(
+                            serializedTurret,
+                            "playerCameraLocalPosition",
+                            "playerCameraLocalEuler",
+                            "playerCameraFov",
+                            "playerAimMouseSensitivity");
+                        EditorGUILayout.HelpBox(
+                            "Baked prefabs get a disabled DMTurretPlayerCamera child on *SOCKET_SWIVEL. "
+                            + "Re-bake or Register all templates after changing offsets.",
+                            MessageType.None);
+                    });
+                    DMStudioStyles.DrawSection("Debug", DMStudioStyles.ContentPanel, () =>
+                    {
+                        DMStudioStyles.DrawPropertyFields(serializedTurret, "debugDraw");
+                    });
+                }
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    serializedTurret.ApplyModifiedProperties();
+                    EditorUtility.SetDirty(turretProfile);
+                }
+            }
+
+            DMStudioStyles.DrawSection("FORGE3D Turret Editor", DMStudioStyles.ContentPanel, () =>
+            {
+                EditorGUILayout.HelpBox(
+                    "Pick a template in the FORGE3D Turret Editor, then Add/Bake placeable. "
+                    + "Register current template or Register all templates so Stone Equipment gets one part per type (si_turret_*).",
+                    MessageType.Info);
+                if (GUILayout.Button("Open FORGE3D Turret Editor…", GUILayout.Height(28f)))
+                    F3DTurretEditorWindow.ShowWindow();
+                if (GUILayout.Button("Add placeable turret (current template)", GUILayout.Height(24f)))
+                    DMTurretEditorIntegration.MenuAddPlaceable();
+                if (GUILayout.Button("Bake placeable prefab (current template)", GUILayout.Height(24f)))
+                    DMTurretEditorIntegration.MenuBakeCurrentTemplate();
+                if (GUILayout.Button("Bake selected scene turret → prefab", GUILayout.Height(24f)))
+                    DMTurretEditorIntegration.MenuBakeSelection();
+                if (GUILayout.Button("Register current template in Building Equipment", GUILayout.Height(24f)))
+                    DMTurretEditorIntegration.MenuRegisterBuildingEquipment();
+                if (GUILayout.Button("Register all templates in Building Equipment", GUILayout.Height(24f)))
+                    DMTurretEditorIntegration.MenuRegisterAllBuildingEquipment();
+                if (GUILayout.Button("Bind DM wrap on scene FORGE3D turrets", GUILayout.Height(24f)))
+                {
+                    F3DTurret[] turrets = Object.FindObjectsByType<F3DTurret>(FindObjectsInactive.Include);
+                    int added = 0;
+                    for (int i = 0; i < turrets.Length; i++)
+                    {
+                        if (turrets[i] == null)
+                            continue;
+                        if (turrets[i].GetComponent<DMTurretRuntime>() != null)
+                            continue;
+                        Undo.AddComponent<DMTurretRuntime>(turrets[i].gameObject);
+                        added++;
+                    }
+
+                    DMTurretRuntime.StripAllDemoInput();
+                    Debug.Log("[Combat Studio] Bound DMTurretRuntime on " + added + " FORGE3D turrets.");
+                }
+            });
+
+            GameObject selected = Selection.activeGameObject;
+            F3DTurret selectedTurret = selected != null ? selected.GetComponentInParent<F3DTurret>() : null;
+            DMTurretRuntime selectedRuntime = selected != null
+                ? selected.GetComponentInParent<DMTurretRuntime>()
+                : null;
+            DMStudioStyles.DrawSection("Selected scene turret", DMStudioStyles.ContentPanel, () =>
+            {
+                if (selectedTurret == null)
+                {
+                    EditorGUILayout.HelpBox("Select a FORGE3D turret in the Hierarchy to edit faction, ammo, VFX, and barrel.", MessageType.Info);
+                    return;
+                }
+
+                EditorGUILayout.ObjectField("F3DTurret", selectedTurret, typeof(F3DTurret), true);
+                if (selectedRuntime == null)
+                {
+                    if (GUILayout.Button("Add DMTurretRuntime"))
+                        Undo.AddComponent<DMTurretRuntime>(selectedTurret.gameObject);
+                    return;
+                }
+
+                EditorGUI.BeginChangeCheck();
+                SerializedObject so = new SerializedObject(selectedRuntime);
+                so.Update();
+                EditorGUILayout.PropertyField(so.FindProperty("faction"));
+                EditorGUILayout.PropertyField(so.FindProperty("controlMode"));
+                EditorGUILayout.PropertyField(so.FindProperty("ammoMode"));
+                EditorGUILayout.PropertyField(so.FindProperty("vendorFxType"), new GUIContent("Vendor VFX"));
+                EditorGUILayout.PropertyField(so.FindProperty("ammoType"), new GUIContent("Ammo type (damage)"));
+                SerializedProperty authority = so.FindProperty("instanceAuthority");
+                DMTurretBarrelInspectorGui.Draw(so, authority);
+                EditorGUILayout.PropertyField(so.FindProperty("useProfileDamage"));
+                EditorGUILayout.PropertyField(so.FindProperty("damageOverride"));
+                if (authority != null)
+                    EditorGUILayout.PropertyField(authority, includeChildren: true);
+                so.ApplyModifiedProperties();
+                if (EditorGUI.EndChangeCheck())
+                {
+                    selectedRuntime.ApplyDesignerVisuals();
+                    EditorUtility.SetDirty(selectedRuntime);
+                }
+            });
+
+            DMStudioStyles.DrawSection("Genesis Studio", DMStudioStyles.ContentPanel, () =>
+            {
+                if (GUILayout.Button("Genesis Studio → Combat → Turrets", GUILayout.Height(28f)))
+                    GenesisStudioWindow.OpenTo("combat", "combat-turrets");
+            });
+        }
+
+        private static DMTurretProfile LoadOrCreateTurretProfile()
+        {
+            DMTurretProfile asset = AssetDatabase.LoadAssetAtPath<DMTurretProfile>(TurretProfilePath);
+            if (asset != null)
+                return asset;
+
+            if (!AssetDatabase.IsValidFolder("Assets/_Project/Resources/Combat"))
+            {
+                if (!AssetDatabase.IsValidFolder("Assets/_Project/Resources"))
+                    AssetDatabase.CreateFolder("Assets/_Project", "Resources");
+                AssetDatabase.CreateFolder("Assets/_Project/Resources", "Combat");
+            }
+
+            asset = ScriptableObject.CreateInstance<DMTurretProfile>();
+            AssetDatabase.CreateAsset(asset, TurretProfilePath);
+            AssetDatabase.SaveAssets();
+            return asset;
         }
 
         private static DM_CombatCoreProfile LoadOrCreateProfile()

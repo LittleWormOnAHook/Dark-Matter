@@ -25,7 +25,8 @@ namespace Project.EditorTools.GenesisStudio
         EnvironmentStrata = 16,
         CombatPlanPlaceholder = 17,
         EnemyTypesTable = 18,
-        CharacterCreatorCombined = 19
+        CharacterCreatorCombined = 19,
+        CombatRangedLinks = 20
     }
 
     public readonly struct DMStudioSubtab
@@ -372,6 +373,27 @@ new DMStudioSubtab(
                             "Combat Studio — Core & Melee use Player / Enemy headings; Ranged links, Play (v1.6.5), §31 Roadmap (Oct 2026 disk sync).",
                             DMStudioPanelMode.ExternalTool,
                             externalMenuPath: "Tools/Dark Matter Genesis/Combat/Combat Studio"),
+                        new DMStudioSubtab(
+                            "combat-ranged",
+                            "Ranged",
+                            "Genesis ranged authoring jump list — same links as Combat Studio → Ranged (Ammo FX, scope, hit catalog, surface damage).",
+                            DMStudioPanelMode.CombatRangedLinks),
+                        new DMStudioSubtab(
+                            "combat-throwables",
+                            "Throwables",
+                            "DM_CombatCoreProfile — grenade enable, splash radius/damage, VFX/force/shake, cook fuse, landing ring, Hot Cross arm hold. Live in Play.",
+                            DMStudioPanelMode.AssetFolder,
+                            searchFolder: "Assets/_Project/Resources/Combat",
+                            typeFilter: "t:DM_CombatCoreProfile",
+                            playModeSave: true,
+                            sectionFilter: DMStudioProfileSectionFilter.CombatThrowablesOnly),
+                        new DMStudioSubtab(
+                            "combat-turrets",
+                            "Turrets",
+                            "DM_TurretProfile — defaults for placed turrets. Per-prefab faction, ammo mode, vendor VFX, barrel, and ranges live on DMTurretRuntime / Instance Authority. Playable menu is Auto or Enter. Live in Play.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Combat/DM_TurretProfile.asset",
+                            playModeSave: true),
                         new DMStudioSubtab(
                             "ammo-fx",
                             "Ammo FX",
