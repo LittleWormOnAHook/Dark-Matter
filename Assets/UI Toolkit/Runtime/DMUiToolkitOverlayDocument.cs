@@ -46,6 +46,8 @@ namespace Project.UI
         public const string ContextName = "UITK_Context";
         public const string PetChromeName = "UITK_PetChrome";
         public const string DevPanelName = "UITK_DevPanel";
+        public const string TurretMenuName = "UITK_TurretMenu";
+        public const string TurretCrosshairName = "UITK_TurretCrosshair";
 
         /// <summary>Interactive modal overlays must sort above <see cref="DMUiToolkitBootstrap.HudSortingOrder"/> (95).</summary>
         public const int ModalInteractiveSort = 130;
@@ -72,6 +74,8 @@ namespace Project.UI
         public const int ContextSort = 150;
         public const int PetChromeSort = 111;
         public const int DevPanelSort = ModalInteractiveSort + 25;
+        public const int TurretMenuSort = ModalInteractiveSort;
+        public const int TurretCrosshairSort = 20;
 
         public static void PromoteInteractiveOverlay(UIDocument document)
         {
@@ -126,6 +130,10 @@ namespace Project.UI
         public const string PetChromeUss = "Assets/UI Toolkit/Screens/FloatingMenu.uss";
         public const string DevPanelUxml = "Assets/UI Toolkit/Screens/DevPanel.uxml";
         public const string DevPanelUss = "Assets/UI Toolkit/Screens/DevPanel.uss";
+        public const string TurretMenuUxml = "Assets/UI Toolkit/Screens/TurretMenu.uxml";
+        public const string TurretMenuUss = "Assets/UI Toolkit/Screens/TurretMenu.uss";
+        public const string TurretCrosshairUxml = "Assets/UI Toolkit/Screens/TurretCrosshair.uxml";
+        public const string TurretCrosshairUss = "Assets/UI Toolkit/Screens/TurretCrosshair.uss";
 
         public static UIDocument Ensure(string objectName, string uxmlPath, string ussPath, int sortingOrder)
         {

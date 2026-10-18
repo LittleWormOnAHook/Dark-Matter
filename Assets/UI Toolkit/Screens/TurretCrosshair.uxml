@@ -1,0 +1,9 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="../Themes/DarkMatterGenesis.uss"/>
+    <Style src="TurretCrosshair.uss"/>
+    <ui:VisualElement name="turret-cross-root" picking-mode="Ignore" class="dmg-turret-cross-root">
+        <ui:VisualElement name="turret-cross-h" picking-mode="Ignore" class="dmg-turret-cross-h"/>
+        <ui:VisualElement name="turret-cross-v" picking-mode="Ignore" class="dmg-turret-cross-v"/>
+        <ui:VisualElement name="turret-cross-dot" picking-mode="Ignore" class="dmg-turret-cross-dot"/>
+    </ui:VisualElement>
+</ui:UXML>

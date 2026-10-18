@@ -1,0 +1,69 @@
+.dmg-turret-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    flex-grow: 1;
+}
+
+.dmg-turret-veil {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(12, 16, 22, 0.62);
+}
+
+.dmg-turret-panel {
+    position: absolute;
+    left: 28%;
+    top: 22%;
+    right: 28%;
+    bottom: 28%;
+    background-color: rgba(28, 42, 56, 0.96);
+    border-color: rgb(74, 74, 90);
+    border-width: 2px;
+    padding: 18px;
+    flex-direction: column;
+}
+
+.dmg-turret-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.dmg-turret-row {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 10px;
+    margin-bottom: 8px;
+}
+
+.dmg-turret-ammo {
+    color: rgb(237, 233, 228);
+    font-size: 18px;
+    -unity-font-style: bold;
+    flex-grow: 1;
+    unity-text-align: middle-center;
+}
+
+#turret-title {
+    color: rgb(212, 160, 23);
+    font-size: 26px;
+    letter-spacing: 5px;
+    -unity-font-style: bold;
+}
+
+#turret-enter {
+    margin-top: 14px;
+    height: 36px;
+}
+
+.dmg-turret-selected {
+    background-color: rgba(192, 46, 122, 0.85);
+    border-color: rgb(212, 160, 23);
+}

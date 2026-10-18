@@ -1,0 +1,24 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="../Themes/DarkMatterGenesis.uss"/>
+    <Style src="TurretMenu.uss"/>
+    <ui:VisualElement name="turret-root" picking-mode="Position" class="dmg-turret-root">
+        <ui:VisualElement name="turret-veil" picking-mode="Position" class="dmg-turret-veil"/>
+        <ui:VisualElement name="turret-panel" picking-mode="Position" class="dmg-turret-panel">
+            <ui:VisualElement name="turret-header" picking-mode="Ignore" class="dmg-turret-header">
+                <ui:Label name="turret-title" text="TURRET" picking-mode="Ignore" class="dmg-section-title dmg-gold"/>
+                <ui:Button name="turret-close" text="Close" picking-mode="Position" class="dmg-tab"/>
+            </ui:VisualElement>
+            <ui:Label name="turret-hint" text="Auto tracks targets · Enter seats you at the barrel · Ammo is game or vendor" picking-mode="Ignore" class="dmg-hint"/>
+            <ui:VisualElement name="turret-mode-row" picking-mode="Ignore" class="dmg-turret-row">
+                <ui:Button name="turret-mode-auto" text="Auto" picking-mode="Position" class="dmg-tab"/>
+                <ui:Button name="turret-enter" text="Enter Turret" picking-mode="Position" class="dmg-tab"/>
+            </ui:VisualElement>
+            <ui:Label name="turret-ammo-heading" text="Ammo" picking-mode="Ignore" class="dmg-gold-heading"/>
+            <ui:VisualElement name="turret-ammo-row" picking-mode="Ignore" class="dmg-turret-row">
+                <ui:Button name="turret-ammo-prev" text="&lt;" picking-mode="Position" class="dmg-tab"/>
+                <ui:Label name="turret-ammo-label" text="Vendor · Vulcan" picking-mode="Ignore" class="dmg-turret-ammo"/>
+                <ui:Button name="turret-ammo-next" text="&gt;" picking-mode="Position" class="dmg-tab"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,41 @@
+.dmg-turret-cross-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    flex-grow: 1;
+}
+
+.dmg-turret-cross-h {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 22px;
+    height: 2px;
+    margin-left: -11px;
+    margin-top: -1px;
+    background-color: rgb(237, 233, 228);
+}
+
+.dmg-turret-cross-v {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 2px;
+    height: 22px;
+    margin-left: -1px;
+    margin-top: -11px;
+    background-color: rgb(237, 233, 228);
+}
+
+.dmg-turret-cross-dot {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 4px;
+    height: 4px;
+    margin-left: -2px;
+    margin-top: -2px;
+    background-color: rgb(212, 160, 23);
+}
