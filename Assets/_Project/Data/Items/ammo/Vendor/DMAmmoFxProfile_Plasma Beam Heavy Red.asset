@@ -1,0 +1,184 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b2d9e4c1a5f6083b4c7d8e9f0a1b2c3, type: 3}
+  m_Name: DMAmmoFxProfile_Plasma Beam Heavy Red
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.DMAmmoFxProfile
+  itemName: Plasma Beam Heavy Red
+  icon: {fileID: 21300000, guid: 91e684c9c8589d843a4ea31f57597823, type: 3}
+  worldPrefab: {fileID: 8192638575074664305, guid: 1fbea856b9287554eba236be0cee26a1, type: 3}
+  maxStack: 999
+  stableItemId: dbce242ce2a5b694095a342625c69279
+  itemType: 4
+  functionalTag: 0
+  deployedPrefab: {fileID: 0}
+  weaponGrip: 0
+  heldPrefab: {fileID: 0}
+  equipSocketName: RightHand
+  heldLocalPosition: {x: 0, y: 0, z: 0}
+  heldLocalEuler: {x: 0, y: 0, z: 0}
+  useHeldLocalRotation: 0
+  heldLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  heldLocalScale: {x: 1, y: 1, z: 1}
+  swingEulerAngles: {x: -120, y: 0, z: 0}
+  sheatheSocketName: Spine
+  sheathedLocalPosition: {x: 0.02, y: 0.18, z: -0.22}
+  sheathedLocalEuler: {x: 75, y: 90, z: 90}
+  useSheathedLocalRotation: 0
+  sheathedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  sheathedLocalScale: {x: 1, y: 1, z: 1}
+  invectorWeaponPrefab: {fileID: 0}
+  invectorWeaponId: 
+  meleeDamage: 10
+  meleeDamageRandomRange: 3
+  criticalChance: 0.1
+  criticalDamageMultiplier: 2
+  meleeRange: 2.2
+  meleeBladeLength: -1
+  meleeCooldown: 0.65
+  attackAnimationSpeed: 0
+  meleeStaminaCost: 0
+  meleeKnockback: 0
+  gatherPower: 1
+  attackTrigger: Attack
+  rangedDamage: 22
+  rangedDamageRandomRange: 4
+  rangedRange: 45
+  projectileSpeed: 230
+  projectileSpreadDegrees: 1.2
+  weaponAccuracy: 78
+  closeRangeFullAccuracyDistance: 12
+  closeRangeSpreadScale: 0.18
+  recoilVertical: 1
+  recoilHorizontal: 0.48
+  recoilFireRateScale: 1
+  fireRate: 2
+  rifleScopedFireInterval: 0
+  pistolScopedFireInterval: 0
+  rifleScopedFireIntervalPercentModifier: 0
+  pistolScopedFireIntervalPercentModifier: 0
+  shotsPerBurst: 1
+  burstFireRate: 10
+  magazineSize: 40
+  reloadTimeSeconds: 1.8
+  defaultAmmoType: 0
+  compatibleAmmoTypes: 00000000
+  defaultAmmoItem: {fileID: 0}
+  grantRandomStartingAmmo: 0
+  startingAmmoMin: 1
+  startingAmmoMax: 12
+  projectilePrefab: {fileID: 0}
+  muzzleSocketName: Muzzle
+  aimFovMultiplier: 0.78
+  hipFireMaxDeviationDegrees: 15
+  hipFireSpreadMultiplier: 1
+  useAimHeldGrip: 0
+  aimHeldLocalPosition: {x: 0, y: 0, z: 0}
+  aimHeldLocalEuler: {x: 0, y: 0, z: 0}
+  useAimHeldLocalRotation: 0
+  aimHeldLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  aimHeldLocalScale: {x: 1, y: 1, z: 1}
+  ammoType: 1
+  ammoPerPickup: 50
+  ammoPickupGrant: 50
+  ammoRecoilProfile:
+    pistolCameraVertical: 0.9
+    pistolCameraHorizontal: 0.95
+    pistolAnimationWeight: 0.45
+    rifleCameraVertical: 5.4
+    rifleCameraHorizontal: 1.45
+    rifleAnimationWeight: 0.24
+  isHitscanBeam: 1
+  projectileGravityScale: 0
+  splashRadius: 0
+  splashDamageFalloff: 0.25
+  fxProfile: {fileID: 11400000}
+  muzzleFlashPrefab: {fileID: 0}
+  tracerPrefab: {fileID: 0}
+  impactVfxPrefab: {fileID: 0}
+  beamVfxPrefab: {fileID: 3134296795614276583, guid: f99e5d69a2d643b44a7e47fc0561eb79, type: 3}
+  isMiningTool: 0
+  miningPassesRequired: 2
+  miningDropMin: 1
+  miningDropMax: 5
+  miningLockBreakDegrees: 30
+  miningPassDuration: 1.25
+  miningChunkVfxPrefab: {fileID: 0}
+  miningChargeDrainPerSecond: 4
+  miningChargePerPlasmaFuel: 50
+  fireSound: {fileID: 8300000, guid: 5ff5bd936a30a904da907f35c8dd382e, type: 3}
+  projectileTravelSound: {fileID: 8300000, guid: dab4dfa00ed487b44bf0f2c9115a3da3, type: 3}
+  isContinuousLaser: 0
+  continuousLoopSound: {fileID: 0}
+  continuousStartSound: {fileID: 0}
+  continuousStopSound: {fileID: 0}
+  miningScanLoopSound: {fileID: 0}
+  miningScanSuccessSound: {fileID: 0}
+  miningScanDeniedSound: {fileID: 0}
+  statusEffectOverride: 2
+  statusEffectDamagePerTick: 5
+  statusEffectTickInterval: 1
+  statusEffectDuration: 10
+  statusEffectVfxPrefab: {fileID: 100008, guid: 6a2bfef2799f241b4806226d67789a78, type: 3}
+  componentCategory: 0
+  toolType: 0
+  toolRange: 8
+  scanRange: 24
+  opticsZoomFov: 38
+  opticsMinZoomFov: 18
+  opticsMaxZoomFov: 55
+  healthRestore: 0
+  energyRestore: 0
+  staminaRestore: 0
+  oxygenRestore: 0
+  isAcInfused: 0
+  acValue: 6
+  rarity: 0
+  canSell: 1
+  canBuy: 1
+  vendorClass: 1
+  cannotSellLastCopy: 0
+  grantsXp: 0
+  xpAmount: 10
+  xpSource: 5
+  grantXpEveryPickupOrUse: 0
+  requiredLevelToEquip: 1
+  requiredLevelToCraft: 1
+  requiredLevelToUse: 1
+  requiredLevelToPickup: 1
+  tooltipDescription: Vendor ammo (FORGE3D Sci-Fi Effects) - Plasma Beam Heavy Red.
+    Plasma compatible, hitscan beam.
+  unlocksInventoryStorageRow: 0
+  delivery: 0
+  spawnLaserBurn: 0
+  enemyBlood: 0
+  enemyBurnMark: 0
+  useHitMarks: 0
+  defaultDecals: []
+  defaultHitEffects: []
+  surfaces: []
+  fallBackToCatalog: 1
+  catalog: {fileID: 11400000, guid: b6c7d8e9f0a12b3c4d5e6f708192a356, type: 2}
+  surfaceDamage:
+    mode: 0
+    custom:
+      style: 2
+      radius: 0.85
+      depth: 0.45
+      roughness: 1
+      debrisCount: 3
+      debrisScale: 0.05
+  fireTrauma: 0.055
+  fireTraumaDurationSeconds: 0.0194
+  impactTrauma: 0.126
+  impactTraumaDurationSeconds: 0.032
+  impactTraumaRadius: 25.8
+  impactTraumaMinDistance: 0.11

@@ -333,7 +333,7 @@ namespace Project.UI
             ResourceNode bestHarvest = null;
             bool found = false;
 
-            ItemPickup[] pickups = SceneComponentCache.GetAll<ItemPickup>(FindObjectsInactive.Exclude, refreshInterval: 0.2f);
+            ItemPickup[] pickups = ScanScene<ItemPickup>(0.2f);
             for (int i = 0; i < pickups.Length; i++)
             {
                 ItemPickup pickup = pickups[i];
@@ -359,7 +359,7 @@ namespace Project.UI
                 found = true;
             }
 
-            RecipePickup[] recipes = SceneComponentCache.GetAll<RecipePickup>(FindObjectsInactive.Exclude, refreshInterval: 0.2f);
+            RecipePickup[] recipes = ScanScene<RecipePickup>(0.2f);
             for (int i = 0; i < recipes.Length; i++)
             {
                 RecipePickup recipe = recipes[i];
@@ -383,7 +383,7 @@ namespace Project.UI
                 found = true;
             }
 
-            ResourceNode[] nodes = SceneComponentCache.GetAll<ResourceNode>(FindObjectsInactive.Exclude, refreshInterval: 0.2f);
+            ResourceNode[] nodes = ScanScene<ResourceNode>(0.2f);
             for (int i = 0; i < nodes.Length; i++)
             {
                 ResourceNode node = nodes[i];
@@ -607,9 +607,7 @@ namespace Project.UI
             if (into == null)
                 return;
 
-            QuestGiverNpc[] givers = SceneComponentCache.GetAll<QuestGiverNpc>(
-                FindObjectsInactive.Exclude,
-                refreshInterval: 0.35f);
+            QuestGiverNpc[] givers = ScanScene<QuestGiverNpc>(0.35f);
             for (int i = 0; i < givers.Length; i++)
             {
                 QuestGiverNpc giver = givers[i];
@@ -618,9 +616,7 @@ namespace Project.UI
                 into.Add(MakeStemDot(giver.transform.position, ProximityDotStyle.QuestGiverColor, InteractStemMeters));
             }
 
-            CraftingStation[] stations = SceneComponentCache.GetAll<CraftingStation>(
-                FindObjectsInactive.Exclude,
-                refreshInterval: 0.35f);
+            CraftingStation[] stations = ScanScene<CraftingStation>(0.35f);
             for (int i = 0; i < stations.Length; i++)
             {
                 CraftingStation station = stations[i];
@@ -629,9 +625,7 @@ namespace Project.UI
                 into.Add(MakeStemDot(station.transform.position, ProximityDotStyle.CraftingColor, InteractStemMeters));
             }
 
-            BuildingControlPanel[] panels = SceneComponentCache.GetAll<BuildingControlPanel>(
-                FindObjectsInactive.Exclude,
-                refreshInterval: 0.35f);
+            BuildingControlPanel[] panels = ScanScene<BuildingControlPanel>(0.35f);
             for (int i = 0; i < panels.Length; i++)
             {
                 BuildingControlPanel panel = panels[i];
@@ -640,9 +634,7 @@ namespace Project.UI
                 into.Add(MakeStemDot(panel.transform.position, ProximityDotStyle.BuildingColor, 0.9f));
             }
 
-            EnemyLootBag[] bags = SceneComponentCache.GetAll<EnemyLootBag>(
-                FindObjectsInactive.Exclude,
-                refreshInterval: 0.35f);
+            EnemyLootBag[] bags = ScanScene<EnemyLootBag>(0.35f);
             for (int i = 0; i < bags.Length; i++)
             {
                 EnemyLootBag bag = bags[i];
@@ -652,9 +644,7 @@ namespace Project.UI
             }
 
 
-            InjuredPioneerLabRecoverable[] recoverables = SceneComponentCache.GetAll<InjuredPioneerLabRecoverable>(
-                FindObjectsInactive.Exclude,
-                refreshInterval: 0.35f);
+            InjuredPioneerLabRecoverable[] recoverables = ScanScene<InjuredPioneerLabRecoverable>(0.35f);
             for (int i = 0; i < recoverables.Length; i++)
             {
                 InjuredPioneerLabRecoverable recoverable = recoverables[i];
@@ -665,9 +655,7 @@ namespace Project.UI
                 into.Add(MakeStemDot(recoverable.transform.position, ProximityDotStyle.ScienceLabColor, 0.85f));
             }
 
-            EchoWorldEntity[] echoes = SceneComponentCache.GetAll<EchoWorldEntity>(
-                FindObjectsInactive.Exclude,
-                refreshInterval: 0.35f);
+            EchoWorldEntity[] echoes = ScanScene<EchoWorldEntity>(0.35f);
             for (int i = 0; i < echoes.Length; i++)
             {
                 EchoWorldEntity echo = echoes[i];
@@ -678,9 +666,7 @@ namespace Project.UI
                 into.Add(MakeStemDot(echo.transform.position, ProximityDotStyle.EchoColor, InteractStemMeters));
             }
 
-            PetWorldAdoptable[] adoptables = SceneComponentCache.GetAll<PetWorldAdoptable>(
-                FindObjectsInactive.Exclude,
-                refreshInterval: 0.35f);
+            PetWorldAdoptable[] adoptables = ScanScene<PetWorldAdoptable>(0.35f);
             for (int i = 0; i < adoptables.Length; i++)
             {
                 PetWorldAdoptable adoptable = adoptables[i];
@@ -1197,9 +1183,7 @@ namespace Project.UI
             nextBarPaintTime = Time.unscaledTime + BarPaintInterval();
 
             Camera camera = worldCamera;
-            FloatingTargetHealthBar[] bars = SceneComponentCache.GetAll<FloatingTargetHealthBar>(
-                FindObjectsInactive.Exclude,
-                refreshInterval: 0.12f);
+            FloatingTargetHealthBar[] bars = ScanScene<FloatingTargetHealthBar>(0.12f);
             if (bars.Length == 0)
             {
                 RecycleBars(0);
@@ -1561,6 +1545,22 @@ namespace Project.UI
             player = playerTransform;
             camera = worldCamera;
             return player != null && camera != null;
+        }
+
+        // perf-1018: types with no live instances are rescanned at most once a second
+        // (types that exist keep their original refresh interval).
+        private const float EmptyScanRetrySeconds = 1f;
+        private static readonly Dictionary<System.Type, bool> scanWasEmpty = new Dictionary<System.Type, bool>(16);
+
+        private static T[] ScanScene<T>(float refreshInterval) where T : Object
+        {
+            System.Type type = typeof(T);
+            bool wasEmpty = scanWasEmpty.TryGetValue(type, out bool empty) && empty;
+            T[] found = SceneComponentCache.GetAll<T>(
+                FindObjectsInactive.Exclude,
+                refreshInterval: wasEmpty ? Mathf.Max(refreshInterval, EmptyScanRetrySeconds) : refreshInterval);
+            scanWasEmpty[type] = found == null || found.Length == 0;
+            return found;
         }
 
         private void HideUguiCounterparts()

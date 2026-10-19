@@ -24,14 +24,8 @@ namespace Project.Core
 
         public static void ApplyAfterSettingsLoad()
         {
-#if UNITY_EDITOR
-            if (Application.isPlaying)
-            {
-                ForceEditorPlayModePcProfile();
-                return;
-            }
-#endif
-
+            // perf-1018b: the Editor no longer forces the PC tier here (that overrode the player's saved
+            // tier on every settings load / Apply). Editor Play now behaves like a build: saved tier wins.
             if (!PlayerPrefs.HasKey(QualityKey))
             {
                 int defaultLevel = PlatformGraphicsProfile.DefaultQualityIndex;
@@ -79,14 +73,18 @@ namespace Project.Core
         }
 
 #if UNITY_EDITOR
+        /// <summary>
+        /// Editor Play boot: apply the player's saved tier (PlayerPrefs settings.quality); the PC tier is only
+        /// the fallback when nothing is saved. perf-1018b (was: always forced the PC/High tier).
+        /// </summary>
         public static void ForceEditorPlayModePcProfile()
         {
-            int pcLevel = Mathf.Clamp(
-                PlatformGraphicsProfile.PcQualityIndex,
-                0,
-                Mathf.Max(0, QualitySettings.names.Length - 1));
-            QualitySettings.SetQualityLevel(pcLevel, applyExpensiveChanges: true);
-            ApplyTierOverrides(pcLevel);
+            int level = PlayerPrefs.HasKey(QualityKey)
+                ? PlayerPrefs.GetInt(QualityKey)
+                : PlatformGraphicsProfile.PcQualityIndex;
+            level = Mathf.Clamp(level, 0, Mathf.Max(0, QualitySettings.names.Length - 1));
+            QualitySettings.SetQualityLevel(level, applyExpensiveChanges: true);
+            ApplyTierOverrides(level);
         }
 #endif
     }

@@ -51,6 +51,41 @@ namespace Project.UI
 
         public bool IsOpen => panelRoot != null && panelRoot.activeSelf;
 
+        // perf-1018: live instances register here so gameplay input gates never scan the scene.
+        private static readonly List<SettingsPanelController> liveInstances = new List<SettingsPanelController>(2);
+
+        /// <summary>First enabled settings panel (replaces FindAnyObjectByType in per-frame input gates).</summary>
+        public static SettingsPanelController ActiveInstance
+        {
+            get
+            {
+                for (int i = liveInstances.Count - 1; i >= 0; i--)
+                {
+                    if (liveInstances[i] == null)
+                        liveInstances.RemoveAt(i);
+                }
+
+                return liveInstances.Count > 0 ? liveInstances[0] : null;
+            }
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetLiveInstances()
+        {
+            liveInstances.Clear();
+        }
+
+        private void OnEnable()
+        {
+            if (!liveInstances.Contains(this))
+                liveInstances.Add(this);
+        }
+
+        private void OnDisable()
+        {
+            liveInstances.Remove(this);
+        }
+
         public void SetClosedCallback(System.Action callback)
         {
             closedCallback = callback;

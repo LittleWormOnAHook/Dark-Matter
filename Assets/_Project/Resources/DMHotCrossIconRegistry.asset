@@ -275,3 +275,75 @@ MonoBehaviour:
     alpha: 1
     emissionColor: {r: 1, g: 1, b: 1, a: 1}
     emission: 0
+  - item: {fileID: 11400000, guid: e44ffb12320554b42a00df3130fb1ed4, type: 2}
+    icon: {fileID: 21300000, guid: e9ef7546420cc414694a0f13c62ee305, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: dff971dfd2701d5488c808bdecddd7bb, type: 2}
+    icon: {fileID: 21300000, guid: e9ef7546420cc414694a0f13c62ee305, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: b49ab2766d198a544b5f7ce99e079bbf, type: 2}
+    icon: {fileID: 21300000, guid: e9ef7546420cc414694a0f13c62ee305, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 7af48d113acb8714ba7bad5b109c438d, type: 2}
+    icon: {fileID: 21300000, guid: e9ef7546420cc414694a0f13c62ee305, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: cab6e42711d8499449fe07fe7669cc50, type: 2}
+    icon: {fileID: 21300000, guid: e9ef7546420cc414694a0f13c62ee305, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 0376b2cbf9af07f4887812ba970b22b9, type: 2}
+    icon: {fileID: 21300000, guid: e9ef7546420cc414694a0f13c62ee305, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 7cc54848181339a479610428586a7d44, type: 2}
+    icon: {fileID: 21300000, guid: e9ef7546420cc414694a0f13c62ee305, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 583d9dd61ae23664e974381c34c3b982, type: 2}
+    icon: {fileID: 21300000, guid: e9ef7546420cc414694a0f13c62ee305, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: b81dc7ff159106c429cc582e01606ddd, type: 2}
+    icon: {fileID: 21300000, guid: e9ef7546420cc414694a0f13c62ee305, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 5bc4efee6110e224f884c5138268a08e, type: 2}
+    icon: {fileID: 21300000, guid: e9ef7546420cc414694a0f13c62ee305, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: dbce242ce2a5b694095a342625c69279, type: 2}
+    icon: {fileID: 21300000, guid: e9ef7546420cc414694a0f13c62ee305, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0
+  - item: {fileID: 11400000, guid: 161bdafa60dc671409b3f5d2a89fd940, type: 2}
+    icon: {fileID: 21300000, guid: e9ef7546420cc414694a0f13c62ee305, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0

@@ -193,10 +193,17 @@ namespace Project.Combat
             ApplyRifleScopePresentation(_scopedRifle && _blend > 0.05f);
         }
 
+        // perf-1018b: retry missing scene searches at most once a second (were per LateUpdate).
+        private float _nextOverlaySearchTime;
+        private float _nextTpSearchTime;
+
         private void ApplyRifleScopePresentation(bool activeRifleScope)
         {
-            if (_cameraOverlay == null)
+            if (_cameraOverlay == null && Time.unscaledTime >= _nextOverlaySearchTime)
+            {
+                _nextOverlaySearchTime = Time.unscaledTime + 1f;
                 _cameraOverlay = FindAnyObjectByType<DMCameraCollisionOverlay>(FindObjectsInactive.Include);
+            }
             _cameraOverlay?.SetRifleScopePresentationHideBody(false);
         }
 
@@ -255,8 +262,11 @@ namespace Project.Combat
 
         private void DriveInvectorStateFov(float fov)
         {
-            if (_tp == null)
+            if (_tp == null && Time.unscaledTime >= _nextTpSearchTime)
+            {
+                _nextTpSearchTime = Time.unscaledTime + 1f;
                 _tp = FindAnyObjectByType<Invector.vCamera.vThirdPersonCamera>();
+            }
             if (_tp == null)
                 return;
             if (_tp.currentState != _drivenState || _tp.lerpState != _drivenLerp)

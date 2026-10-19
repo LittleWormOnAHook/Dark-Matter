@@ -95,6 +95,7 @@ Quick map — full lists in **§2.1–§2.19**.
 ### 2.8 HDRP / graphics
 
 - **Primary:** `Architecture/HDRP_Settings_UI_Plan.md` (plan); `Architecture/HDRP_Vendor_Material_Audit.md` (refresh via HDRP menu); `System_Requirements.md` (RT advisories, PC/Mac first)
+- **Performance baseline:** `Performance/DM_FPS_Baseline_20261018.md` (Editor Play FPS before/after the Oct 18, 2026 CPU round; settings, method, top remaining costs)
 - **Related:** `Rendering/DmReflectionProbeLodAuthoring.md`; **Archive (historical only):** stub `Architecture/HDRP_Migration_Plan.md` → `Archive/HDRP_Migration_Plan.md`; summary `Archive/Historical_Engineering_Notes.md` §3
 
 ### 2.9 Audio / comms

@@ -884,11 +884,19 @@ namespace Project.UI
                     player = equipment.GetComponent<PlayerController>();
             }
 
-            if (ammoState == null)
-                ammoState = FindAnyObjectByType<WeaponAmmoState>();
-            if (player == null)
-                player = FindAnyObjectByType<PlayerController>();
+            // perf-1018b: scene-wide fallbacks retry at most once a second while missing
+            // (CacheCombatRefs runs every frame when no equipment is bound).
+            if ((ammoState == null || player == null) && Time.unscaledTime >= nextCombatRefSearchTime)
+            {
+                nextCombatRefSearchTime = Time.unscaledTime + 1f;
+                if (ammoState == null)
+                    ammoState = FindAnyObjectByType<WeaponAmmoState>();
+                if (player == null)
+                    player = FindAnyObjectByType<PlayerController>();
+            }
         }
+
+        private float nextCombatRefSearchTime;
 
         public static Color ResolveAmmoColor(AmmoType type)
         {

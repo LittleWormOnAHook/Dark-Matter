@@ -108,6 +108,11 @@ namespace Project.UI
         private bool bound;
         private bool playerArrowBound;
         private MapUI cachedMapUi;
+        // perf-1018: retry scene searches for missing objects at most once a second.
+        private const float MissingRefRetrySeconds = 1f;
+        private float nextMapUiSearchTime;
+        private float nextJetpackSearchTime;
+        private float nextMinimapSearchTime;
         private bool legacyStartSpanApplied;
         private InventorySystem cachedInventory;
         private SurvivalStats cachedStats;
@@ -121,6 +126,16 @@ namespace Project.UI
         private string lastHealthText;
         private string lastLoadText;
         private string lastElevText;
+        // perf-1018b: cached skill dashes + int keys so readout strings are only rebuilt on change.
+        private float nextUpgradeDashRefresh;
+        private int cachedEnergyBonus;
+        private int cachedStaminaBonus;
+        private int cachedOxygenBonus;
+        private int cachedHealthBonus;
+        private int lastElevValue = int.MinValue;
+        private int lastLatValue = int.MinValue;
+        private int lastLongValue = int.MinValue;
+        private int lastTempValue = int.MinValue;
         private string lastLatText;
         private string lastLongText;
         private readonly Dictionary<ExposureZoneKind, ZoneIconVisual> zoneIconVisuals =
@@ -613,10 +628,24 @@ private void EnsureArcs()
                 }
             }
 
-            int energyBonus = GetEnergyUpgradeDashes();
-            int staminaBonus = GetStaminaUpgradeDashes();
-            int oxygenBonus = GetOxygenUpgradeDashes();
-            int healthBonus = GetHealthUpgradeDashes();
+            // perf-1018b: skill-rank dashes walk every SkillDefinition (list alloc + name strings) x4;
+            // ranks change rarely, so refresh them on a Studio-editable interval (DMUiToolkitConfig).
+            float dashNow = Time.unscaledTime;
+            if (dashNow >= nextUpgradeDashRefresh || nextUpgradeDashRefresh - dashNow > 10f)
+            {
+                DMUiToolkitConfig dashConfig = DMUiToolkitConfig.Instance;
+                float dashInterval = dashConfig != null ? dashConfig.pilotClusterSkillDashRefreshSeconds : 1f;
+                nextUpgradeDashRefresh = dashNow + Mathf.Clamp(dashInterval, 0.1f, 5f);
+                cachedEnergyBonus = GetEnergyUpgradeDashes();
+                cachedStaminaBonus = GetStaminaUpgradeDashes();
+                cachedOxygenBonus = GetOxygenUpgradeDashes();
+                cachedHealthBonus = GetHealthUpgradeDashes();
+            }
+
+            int energyBonus = cachedEnergyBonus;
+            int staminaBonus = cachedStaminaBonus;
+            int oxygenBonus = cachedOxygenBonus;
+            int healthBonus = cachedHealthBonus;
 
             if (arcs != null)
                 arcs.SetFills(energy, stamina, oxygen, energyBonus, staminaBonus, oxygenBonus);
@@ -665,19 +694,34 @@ private void EnsureArcs()
             ResolveExposure(stats);
 
             int elev = Mathf.RoundToInt(pos.y);
-            if (elevLabel != null)
+            if (elevLabel != null && elev != lastElevValue)
+            {
+                lastElevValue = elev;
                 SetLabelText(elevLabel, "Elevation " + FormatSignedCoord(elev) + " M", ref lastElevText);
+            }
 
             if (hasPos)
             {
                 WorldMapProvider map = WorldMapProvider.Instance;
                 Vector2 grid = map != null ? map.WorldToGridXz(pos) : new Vector2(pos.x, pos.z);
                 // North is world +X, so grid.x is latitude and grid.y (world Z) is longitude.
-                SetLabelText(latLabel, "Lat " + FormatSignedCoord(Mathf.RoundToInt(grid.x)), ref lastLatText);
-                SetLabelText(longLabel, "Long " + FormatSignedCoord(Mathf.RoundToInt(grid.y)), ref lastLongText);
+                int latValue = Mathf.RoundToInt(grid.x);
+                int longValue = Mathf.RoundToInt(grid.y);
+                if (latValue != lastLatValue)
+                {
+                    lastLatValue = latValue;
+                    SetLabelText(latLabel, "Lat " + FormatSignedCoord(latValue), ref lastLatText);
+                }
+                if (longValue != lastLongValue)
+                {
+                    lastLongValue = longValue;
+                    SetLabelText(longLabel, "Long " + FormatSignedCoord(longValue), ref lastLongText);
+                }
             }
             else
             {
+                lastLatValue = int.MinValue;
+                lastLongValue = int.MinValue;
                 SetLabelText(latLabel, "Lat ----", ref lastLatText);
                 SetLabelText(longLabel, "Long ----", ref lastLongText);
             }
@@ -686,8 +730,12 @@ private void EnsureArcs()
 
             float fahrenheit = stats != null ? stats.GetDisplayTemperatureFahrenheit() : 70f;
             float thermal01 = ExposureTemperatureDisplay.FahrenheitToGaugeNormalized(fahrenheit);
-            if (tempLabel != null)
-                SetLabelText(tempLabel, Mathf.RoundToInt(fahrenheit) + "\u00B0F", ref lastTempText);
+            int tempValue = Mathf.RoundToInt(fahrenheit);
+            if (tempLabel != null && tempValue != lastTempValue)
+            {
+                lastTempValue = tempValue;
+                SetLabelText(tempLabel, tempValue + "\u00B0F", ref lastTempText);
+            }
             if (thermal != null)
                 thermal.SetNormalized(thermal01);
 
@@ -719,7 +767,7 @@ private void EnsureArcs()
 
             RenderTexture cropped = null;
             DMUiToolkitMinimap minimap = cachedMinimap != null ? cachedMinimap : DMUiToolkitMinimap.Instance;
-            if (minimap == null)
+            if (minimap == null && RetryDue(ref nextMinimapSearchTime))
                 minimap = FindAnyObjectByType<DMUiToolkitMinimap>(FindObjectsInactive.Include);
             if (minimap != null)
                 cachedMinimap = minimap;
@@ -1152,7 +1200,7 @@ private void EnsureArcs()
 
         private float ResolveJetpackFuel()
         {
-            if (cachedJetpack == null)
+            if (cachedJetpack == null && RetryDue(ref nextJetpackSearchTime))
                 cachedJetpack = FindAnyObjectByType<DMJetpackController>(FindObjectsInactive.Exclude);
 
             return cachedJetpack != null ? cachedJetpack.FuelNormalized : 0f;
@@ -1206,8 +1254,21 @@ private void EnsureArcs()
             if (cachedMapUi != null)
                 return cachedMapUi;
 
+            if (!RetryDue(ref nextMapUiSearchTime))
+                return null;
+
             cachedMapUi = FindAnyObjectByType<MapUI>(FindObjectsInactive.Include);
             return cachedMapUi;
+        }
+
+        /// <summary>perf-1018: true at most once per <see cref="MissingRefRetrySeconds"/> per slot.</summary>
+        private static bool RetryDue(ref float nextTime)
+        {
+            float now = Time.unscaledTime;
+            if (now < nextTime && nextTime - now <= MissingRefRetrySeconds)
+                return false;
+            nextTime = now + MissingRefRetrySeconds;
+            return true;
         }
 
 

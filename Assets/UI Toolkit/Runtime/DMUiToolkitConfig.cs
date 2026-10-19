@@ -40,6 +40,14 @@ namespace Project.UI
         [Range(5f, 60f)]
         public float pilotClusterRefreshHz = 15f;
 
+        [Tooltip("Seconds between skill-rank lookups for the pilot cluster upgrade dashes (ranks change rarely). Higher = cheaper. perf-1018b")]
+        [Range(0.1f, 5f)]
+        public float pilotClusterSkillDashRefreshSeconds = 1f;
+
+        [Tooltip("Minimap crop blit rate that feeds the pilot cluster map (Hz). Lower = cheaper but steppier map scroll. perf-1018b")]
+        [Range(5f, 60f)]
+        public float minimapCropRefreshHz = 15f;
+
         [Header("World Chrome (proximity dots / bars)")]
         [Tooltip("Max repaint rate for non-exclusive interaction dots when the exclusive pickup stem is stable (Hz). Exclusive stem + Hold-E stay every frame.")]
         [Range(10f, 60f)]

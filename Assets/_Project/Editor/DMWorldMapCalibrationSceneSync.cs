@@ -21,6 +21,9 @@ namespace Project.EditorTools
 
         private static string lastCapturedJson;
         private static bool restoreQueued;
+        // perf-1018: Play snapshot check runs at most every editorPlaySnapshotIntervalSeconds (profile, default 1 s).
+        private const float DefaultSnapshotIntervalSeconds = 1f;
+        private static double nextCaptureTime;
 
         private static string SnapshotPath =>
             Path.GetFullPath(Path.Combine(Application.dataPath, "../Library/DMWorldMapCalibrationPlay.json"));
@@ -36,7 +39,13 @@ namespace Project.EditorTools
             if (!EditorApplication.isPlaying || EditorApplication.isCompiling)
                 return;
 
-            CaptureLive(writeEvenIfUnchanged: false);
+            double now = EditorApplication.timeSinceStartup;
+            if (now < nextCaptureTime)
+                return;
+
+            DMWorldMapCalibrationProfile profile = CaptureLive(writeEvenIfUnchanged: false);
+            float interval = profile != null ? profile.editorPlaySnapshotIntervalSeconds : DefaultSnapshotIntervalSeconds;
+            nextCaptureTime = now + Mathf.Max(0.1f, interval);
         }
 
         private static void OnPlayMode(PlayModeStateChange state)
@@ -45,6 +54,7 @@ namespace Project.EditorTools
             {
                 lastCapturedJson = null;
                 restoreQueued = false;
+                nextCaptureTime = 0d;
                 return;
             }
 
@@ -61,18 +71,18 @@ namespace Project.EditorTools
             EditorApplication.delayCall += RestoreThenSyncScene;
         }
 
-        private static void CaptureLive(bool writeEvenIfUnchanged)
+        private static DMWorldMapCalibrationProfile CaptureLive(bool writeEvenIfUnchanged)
         {
             DMWorldMapCalibrationProfile profile = FindLiveProfile();
             if (profile == null)
-                return;
+                return null;
 
             string json = EditorJsonUtility.ToJson(profile);
             if (string.IsNullOrEmpty(json))
-                return;
+                return profile;
 
             if (!writeEvenIfUnchanged && json == lastCapturedJson)
-                return;
+                return profile;
 
             lastCapturedJson = json;
             try
@@ -83,6 +93,8 @@ namespace Project.EditorTools
             {
                 Debug.LogWarning($"[{Stamp}] could not write Play snapshot: {ex.Message}");
             }
+
+            return profile;
         }
 
         private static DMWorldMapCalibrationProfile FindLiveProfile()

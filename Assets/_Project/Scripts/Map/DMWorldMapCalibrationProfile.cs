@@ -14,6 +14,11 @@ namespace Project.Map
         [Tooltip("Arrow keys nudge map UV offset while playing.")]
         public bool enableRuntimeTuning = true;
 
+        [Header("Editor (Play)")]
+        [Tooltip("Editor only: seconds between Play-mode snapshots of this profile (DMWorldMapCalibrationSceneSync). Higher = cheaper. A final snapshot always runs when Play stops.")]
+        [Min(0.1f)]
+        public float editorPlaySnapshotIntervalSeconds = 1f;
+
         [Header("Map fog of war")]
         [Tooltip("Gold fog overlay on the world map / minimap. Off skips land-mask bake and walk stamps (much cheaper while moving).")]
         public bool enableMapFogOfWar = true;

@@ -431,6 +431,8 @@ namespace Project.UI
             }
         }
 
+        private float nextReceiverSearchTime;
+
         private void BindZoneReceiver()
         {
             if (boundReceiver != null)
@@ -440,8 +442,12 @@ namespace Project.UI
             ExposureReceiver receiver = service != null
                 ? service.GetComponent<ExposureReceiver>()
                 : null;
-            if (receiver == null)
+            if (receiver == null && Time.unscaledTime >= nextReceiverSearchTime)
+            {
+                // perf-1018b: retry at most once a second while no receiver exists (was every LateUpdate).
+                nextReceiverSearchTime = Time.unscaledTime + 1f;
                 receiver = FindAnyObjectByType<ExposureReceiver>();
+            }
             if (receiver == null)
                 return;
 

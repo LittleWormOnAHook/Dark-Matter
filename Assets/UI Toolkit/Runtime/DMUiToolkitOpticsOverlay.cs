@@ -47,6 +47,7 @@ namespace Project.UI
         private float maskBuiltAspect = -1f;
         private readonly List<VisualElement> markerPool = new List<VisualElement>();
         private OpticsOverlayUI boundUgui;
+        private float nextBoundUguiSearchTime;
         private Canvas boundOpticsCanvas;
         private DMScopeReticleElement reticle;      // 2026-10-13 (h) new scope art
         private VisualElement crosshairH;
@@ -184,8 +185,12 @@ namespace Project.UI
                 ApplyState(false, ToolType.None, true, null);
             }
 
-            if (boundUgui == null)
+            if (boundUgui == null && Time.unscaledTime >= nextBoundUguiSearchTime)
+            {
+                // perf-1018b: retry at most once a second while the legacy overlay is missing.
+                nextBoundUguiSearchTime = Time.unscaledTime + 1f;
                 boundUgui = FindAnyObjectByType<OpticsOverlayUI>(FindObjectsInactive.Include);
+            }
             if (boundUgui != null)
                 ApplyState(boundUgui.IsVisible, boundUgui.ActiveToolType, boundUgui.IsPassthroughMode, boundUgui.BoundRenderTexture);
         }

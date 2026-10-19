@@ -1,0 +1,61 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &6700663101685433830
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 100000, guid: b5fd958c5b684284e8a29592094a6a50, type: 3}
+      propertyPath: m_Name
+      value: Plasma Beam Blue_Beam
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000, guid: b5fd958c5b684284e8a29592094a6a50, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 2.2943234
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000, guid: b5fd958c5b684284e8a29592094a6a50, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 2.7619715
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000, guid: b5fd958c5b684284e8a29592094a6a50, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -7.9273663
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000, guid: b5fd958c5b684284e8a29592094a6a50, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000, guid: b5fd958c5b684284e8a29592094a6a50, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000, guid: b5fd958c5b684284e8a29592094a6a50, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000, guid: b5fd958c5b684284e8a29592094a6a50, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000, guid: b5fd958c5b684284e8a29592094a6a50, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000, guid: b5fd958c5b684284e8a29592094a6a50, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000, guid: b5fd958c5b684284e8a29592094a6a50, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 11400000, guid: b5fd958c5b684284e8a29592094a6a50, type: 3}
+    - {fileID: 11400002, guid: b5fd958c5b684284e8a29592094a6a50, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: b5fd958c5b684284e8a29592094a6a50, type: 3}

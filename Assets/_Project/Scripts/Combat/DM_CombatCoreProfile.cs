@@ -560,6 +560,12 @@ namespace Project.Combat
         [Tooltip("Engaged enemy health bar stays up this long after the last hit even if the enemy isn't targeting the player.")]
         [Range(1f, 30f)] public float engagedHudLingerSeconds = 6f;
 
+        [Header("Enemy spawn stabilizer (perf 2026-10-18 b)")]
+        [Tooltip("Seconds after an enemy's spawn settle (grounded) before DMSpawnPhysicsStabilizer drops to watch mode: ground raycasts run on the interval below instead of every frame/physics step. Root stays kinematic every step. 0 = never (old every-frame behaviour).")]
+        [Range(0f, 30f)] public float spawnStabilizerWatchAfterSettleSeconds = 2f;
+        [Tooltip("Watch mode: seconds between ground / launch raycast checks per enemy.")]
+        [Range(0.02f, 2f)] public float spawnStabilizerWatchCheckInterval = 0.2f;
+
         [Header("Debug")]
         public bool logCombatEventsInPlay;
         [Tooltip("Logs engaged enemy HUD fill (0-1) on each health change when that enemy is focused.")]

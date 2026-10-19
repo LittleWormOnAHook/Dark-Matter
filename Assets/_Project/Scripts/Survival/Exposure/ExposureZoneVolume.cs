@@ -554,6 +554,12 @@ namespace Project.Survival.Exposure
             if (root == null)
                 return;
 
+            // perf-1018b: zoneParticles can point at a prefab asset (e.g. FX_Snow). Only shape scene instances;
+            // writing the asset made every Play/OnValidate rewrite the prefab on disk. The Play-time instance
+            // spawned by EnsureZoneParticles is shaped as before.
+            if (!root.gameObject.scene.IsValid())
+                return;
+
             ApplyColliderShapeToParticleSystem(root, ResolveOuter());
         }
 

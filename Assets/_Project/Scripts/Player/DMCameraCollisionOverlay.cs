@@ -107,6 +107,7 @@ namespace Project.Player
 
         private Rigidbody _body;
         private Project.Features.Climb.DMClimbController _climb;
+        private float _nextClimbSearchTime;
         private float _smoothDist = -1f;
         private bool _tuned;
         private bool _logged;
@@ -932,8 +933,12 @@ namespace Project.Player
             if (_climb == null && playerRoot != null)
                 _climb = playerRoot.GetComponent<Project.Features.Climb.DMClimbController>()
                     ?? playerRoot.GetComponentInChildren<Project.Features.Climb.DMClimbController>(true);
-            if (_climb == null)
+            if (_climb == null && Time.unscaledTime >= _nextClimbSearchTime)
+            {
+                // perf-1018b: CacheRefs runs every LateUpdate; retry the scene search at most once a second.
+                _nextClimbSearchTime = Time.unscaledTime + 1f;
                 _climb = FindAnyObjectByType<Project.Features.Climb.DMClimbController>(FindObjectsInactive.Include);
+            }
         }
 
         private void TuneInvector()

@@ -66,6 +66,9 @@ namespace Project.UI
         private bool lastFogBlitInvertH;
         private bool lastFogBlitInvertV;
         private MapUI cachedMapUi;
+        // perf-1018: retry the MapUI scene search at most once a second while it is missing.
+        private const float MapUiSearchRetrySeconds = 1f;
+        private float nextMapUiSearchTime;
         private global::UnityEngine.CanvasGroup hiddenMinimapGroup;
         private GameObject hiddenMinimapRoot;
         private GameObject hiddenCompass;
@@ -337,7 +340,9 @@ namespace Project.UI
             // Crop-only: feed pilot cluster ViewTexture; no TR chrome bind/show.
             if (hudLive && mapUi != null && Time.unscaledTime >= nextViewRefreshTime)
             {
-                nextViewRefreshTime = Time.unscaledTime + MinimapRefreshInterval;
+                DMUiToolkitConfig cropConfig = DMUiToolkitConfig.Instance;
+                float cropHz = cropConfig != null ? cropConfig.minimapCropRefreshHz : 1f / MinimapRefreshInterval;
+                nextViewRefreshTime = Time.unscaledTime + 1f / Mathf.Clamp(cropHz, 5f, 60f); // perf-1018b: Studio-editable
                 EnsureCroppedView(mapUi);
             }
 
@@ -362,6 +367,11 @@ namespace Project.UI
         {
             if (cachedMapUi != null)
                 return cachedMapUi;
+
+            float now = Time.unscaledTime;
+            if (now < nextMapUiSearchTime && nextMapUiSearchTime - now <= MapUiSearchRetrySeconds)
+                return null;
+            nextMapUiSearchTime = now + MapUiSearchRetrySeconds;
 
             cachedMapUi = FindAnyObjectByType<MapUI>(FindObjectsInactive.Include);
             return cachedMapUi;

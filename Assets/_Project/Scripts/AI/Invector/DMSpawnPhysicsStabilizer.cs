@@ -33,6 +33,12 @@ namespace Project.AI.Invector
         private bool _hasLastValidGround;
         private bool _locomotionPaused;
         private bool _initialSettleComplete;
+        // perf-1018b: cached child bodies (was GetComponentsInChildren alloc every FixedUpdate) and settled watch mode.
+        private Rigidbody[] _bodies;
+        private float _nextBodiesRefresh;
+        private float _settleCompleteTime = -1f;
+        private float _nextWatchLateCheck;
+        private float _nextWatchFixedCheck;
 
         /// <summary>True only during the short spawn snap (not a combat delay).</summary>
         public bool IsSpawnSettleActive { get; private set; }
@@ -85,6 +91,8 @@ namespace Project.AI.Invector
             _groundedSince = -1f;
             HasConfirmedGrounded = false;
             _initialSettleComplete = false;
+            _settleCompleteTime = -1f;
+            _bodies = null;
             IsSpawnSettleActive = true;
             if (spawnGraceSeconds > MaxSpawnGraceSeconds)
                 spawnGraceSeconds = MaxSpawnGraceSeconds;
@@ -139,13 +147,40 @@ namespace Project.AI.Invector
             ResumeLocomotionIfAlive();
 
             _initialSettleComplete = true;
+            _settleCompleteTime = Time.time;
             IsSpawnSettleActive = false;
             _routine = null;
+        }
+
+        /// <summary>
+        /// perf-1018b: once settled and grounded for spawnStabilizerWatchAfterSettleSeconds, ground/launch raycasts
+        /// run every spawnStabilizerWatchCheckInterval instead of every frame. Kinematic root enforcement is unchanged.
+        /// </summary>
+        private bool WatchCheckDue(ref float nextCheck)
+        {
+            if (!_initialSettleComplete || !HasConfirmedGrounded || _settleCompleteTime < 0f)
+                return true;
+
+            Project.Combat.DM_CombatCoreProfile profile = Project.Combat.DM_CombatCoreProfile.Live;
+            float after = profile != null ? profile.spawnStabilizerWatchAfterSettleSeconds : 2f;
+            if (after <= 0f || Time.time - _settleCompleteTime < after)
+                return true;
+
+            float now = Time.time;
+            if (now < nextCheck)
+                return false;
+
+            float interval = profile != null ? profile.spawnStabilizerWatchCheckInterval : 0.2f;
+            nextCheck = now + Mathf.Clamp(interval, 0.02f, 2f);
+            return true;
         }
 
         private void LateUpdate()
         {
             if (IsDead())
+                return;
+
+            if (!WatchCheckDue(ref _nextWatchLateCheck))
                 return;
 
             UpdateGroundedConfirmation();
@@ -162,7 +197,7 @@ namespace Project.AI.Invector
             ForceLivingRootKinematic();
             ZeroAllVelocities();
 
-            if (HasVerticalLaunch())
+            if (WatchCheckDue(ref _nextWatchFixedCheck) && HasVerticalLaunch())
             {
                 SnapFeetToGround();
                 ClampMotorLaunch();
@@ -185,6 +220,8 @@ namespace Project.AI.Invector
             if (IsDead())
                 return;
 
+            _bodies = null; // perf-1018b: re-collect child bodies after a full pass
+
             DisableActiveRagdoll();
             SnapFeetToGround();
             StabilizeRigidbodies();
@@ -192,6 +229,7 @@ namespace Project.AI.Invector
             ZeroAllVelocities();
             LockMotorUntilGroundedConfirmed();
             Physics.SyncTransforms();
+            _settleCompleteTime = _initialSettleComplete ? Time.time : _settleCompleteTime;
         }
 
         private void DisableActiveRagdoll()
@@ -301,7 +339,13 @@ namespace Project.AI.Invector
 
         private void ZeroAllVelocities()
         {
-            Rigidbody[] bodies = GetComponentsInChildren<Rigidbody>(true);
+            if (_bodies == null || Time.time >= _nextBodiesRefresh)
+            {
+                _bodies = GetComponentsInChildren<Rigidbody>(true);
+                _nextBodiesRefresh = Time.time + 1f;
+            }
+
+            Rigidbody[] bodies = _bodies;
             for (int i = 0; i < bodies.Length; i++)
             {
                 Rigidbody body = bodies[i];

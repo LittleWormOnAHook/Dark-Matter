@@ -333,14 +333,25 @@ namespace Project.UI
 
         private static bool uguiHidden;
 
+        // perf-1018: when no legacy ActiveQuestHudUI exists, retry the scene search at most once a second.
+        private const float UguiSearchRetrySeconds = 1f;
+        private static float nextUguiSearchTime;
+
         private static void HideUgui()
         {
             if (!DMUiToolkitHud.IsDriving || uguiHidden)
                 return;
 
+            float now = Time.unscaledTime;
+            if (now < nextUguiSearchTime && nextUguiSearchTime - now <= UguiSearchRetrySeconds)
+                return;
+
             ActiveQuestHudUI hud = Object.FindAnyObjectByType<ActiveQuestHudUI>(FindObjectsInactive.Include);
             if (hud == null)
+            {
+                nextUguiSearchTime = now + UguiSearchRetrySeconds;
                 return;
+            }
 
             CanvasGroup group = hud.GetComponent<CanvasGroup>();
             if (group != null)

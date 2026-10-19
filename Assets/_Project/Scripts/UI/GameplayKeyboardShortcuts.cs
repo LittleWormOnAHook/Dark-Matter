@@ -431,7 +431,7 @@ namespace Project.UI
             if (DMUiToolkitConfig.IsEnabled && DMUiToolkitMenuPanels.TryHandleEscapeBack())
                 return;
 
-            SettingsPanelController settings = Object.FindAnyObjectByType<SettingsPanelController>();
+            SettingsPanelController settings = SettingsPanelController.ActiveInstance;
             if (settings != null && settings.IsOpen)
             {
                 settings.Close();
@@ -498,7 +498,7 @@ namespace Project.UI
                 return true;
             if (GameplayMenuTime.IsInventoryPaused)
                 return true;
-            SettingsPanelController settings = Object.FindAnyObjectByType<SettingsPanelController>();
+            SettingsPanelController settings = SettingsPanelController.ActiveInstance;
             if (settings != null && settings.IsOpen)
                 return true;
             if (DMUiToolkitControls.IsOpen)
@@ -506,10 +506,24 @@ namespace Project.UI
             return false;
         }
 
+        // perf-1018: ~12 gameplay scripts ask this every frame; evaluate once per frame in Play.
+        private static int gameplayInputLockFrame = -1;
+        private static bool gameplayInputLockCached;
+
         /// <summary>Menus own input: only UI Navigate / Submit / Cancel should fire. Modal UI locks gameplay.</summary>
         public static bool IsGameplayInputLockedByUi()
         {
-            return IsModalUiOpenForCancel();
+            if (!Application.isPlaying)
+                return IsModalUiOpenForCancel();
+
+            int frame = Time.frameCount;
+            if (frame != gameplayInputLockFrame)
+            {
+                gameplayInputLockCached = IsModalUiOpenForCancel();
+                gameplayInputLockFrame = frame;
+            }
+
+            return gameplayInputLockCached;
         }
 
         /// <summary>Escape: close sub-panels, journal layers, then pause menu toggle.</summary>
@@ -582,7 +596,7 @@ namespace Project.UI
             if (DMUiToolkitConfig.IsEnabled && DMUiToolkitMenuPanels.TryHandleEscapeBack())
                 return;
 
-            SettingsPanelController settings = Object.FindAnyObjectByType<SettingsPanelController>();
+            SettingsPanelController settings = SettingsPanelController.ActiveInstance;
             if (settings != null && settings.IsOpen)
             {
                 settings.Close();
