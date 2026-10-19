@@ -28,7 +28,8 @@ namespace Project.Combat
 
         private void Update()
         {
-            DMVolumetricBlood.PrewarmStep();
+            if ((Time.frameCount & 3) == 0)
+                DMVolumetricBlood.PrewarmStep();
             DM_CombatCoreProfile p = DM_CombatCoreProfile.Live;
             if (p == null || !p.logHitchesInPlay) return;
             int g0 = System.GC.CollectionCount(0), g1 = System.GC.CollectionCount(1), g2 = System.GC.CollectionCount(2);

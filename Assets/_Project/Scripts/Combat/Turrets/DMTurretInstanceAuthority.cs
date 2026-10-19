@@ -74,11 +74,39 @@ namespace Project.Combat.Turrets
         public bool overrideMaxHealth;
         public float maxHealth = 100f;
 
+        [Header("Auto brain")]
+        [Tooltip("Degrees — barrel must be within this angle of target to auto-fire.")]
+        public bool overrideAimAcceptDegrees;
+        [Range(1f, 45f)] public float aimAcceptDegrees = 8f;
+
+        public bool overrideAutoRestAfterNoTargetSeconds;
+        public float autoRestAfterNoTargetSeconds = 15f;
+
+        public bool overrideTargetLosGraceSeconds;
+        public float targetLosGraceSeconds = 0.65f;
+
+        public bool overrideTargetLosFailuresBeforeDrop;
+        [Range(1, 12)] public int targetLosFailuresBeforeDrop = 4;
+
+        [Header("Scan motion (non-auto control)")]
+        public bool overrideScanHeadingSpeed;
+        public float scanHeadingSpeed = 18f;
+
+        public bool overrideScanRetargetSeconds;
+        public float scanRetargetSeconds = 2.4f;
+
+        public bool overrideScanElevationDegrees;
+        public Vector2 scanElevationDegrees = new Vector2(-8f, 12f);
+
         public bool Any =>
             overrideAmmoMode || overrideVendorFxType || overrideAmmoType || overrideBarrelKind
             || overrideDatabaseBarrel
             || overrideGameAmmoItems || overrideGameFireInterval
             || overrideGameSpread || overrideDamage || overrideSplashRadius || overrideBeamDamageInterval
-            || overrideScanRange || overrideTrackRange || overrideFireRange || overrideMaxHealth;
+            || overrideScanRange || overrideTrackRange || overrideFireRange || overrideMaxHealth
+            || overrideAimAcceptDegrees || overrideAutoRestAfterNoTargetSeconds
+            || overrideTargetLosGraceSeconds || overrideTargetLosFailuresBeforeDrop
+            || overrideScanHeadingSpeed || overrideScanRetargetSeconds || overrideScanElevationDegrees;
     }
 }
+

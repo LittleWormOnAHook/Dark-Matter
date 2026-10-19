@@ -26,6 +26,9 @@ namespace Project.Combat.Turrets
         private const float TargetRescanSeconds = 0.35f;
         private const float LongRestTargetRescanSeconds = 1.2f;
 
+        /// <summary>Combat gate off — sustained FX torn down once, not every frame (FindObjects scan).</summary>
+        private bool combatGateSuspendedCleanupDone;
+
         private void Awake()
         {
             runtime = GetComponent<DMTurretRuntime>();
@@ -41,21 +44,39 @@ namespace Project.Combat.Turrets
             if (DMTurretPlayerControl.IsControlling(runtime))
                 return;
 
-            if (!DMTurretCombatGate.ShouldRunAutoBrain())
+            if (runtime.TickPlayerProximityDormancy())
             {
                 if (runtime.IsFiring)
                     runtime.StopFire();
-                else
+                runtime.HoldAutoIdle();
+                return;
+            }
+
+            if (!DMTurretCombatGate.ShouldRunAutoBrain())
+            {
+                if (runtime.IsFiring)
+                {
+                    runtime.StopFire();
+                    combatGateSuspendedCleanupDone = false;
+                }
+                else if (!combatGateSuspendedCleanupDone)
+                {
                     runtime.StopStuckSustainedForgeFx();
+                    combatGateSuspendedCleanupDone = true;
+                }
+
                 runtime.HoldAutoIdle();
                 SuspendForNonCombat();
                 return;
             }
 
+            combatGateSuspendedCleanupDone = false;
+
             if (runtime.ControlMode != DMTurretControlMode.Auto)
             {
                 if (runtime.IsFiring)
                     runtime.StopFire();
+                runtime.ClearAlarmEngageDistance();
                 runtime.BrainMode = DMTurretBrainMode.Scan;
                 TickScan();
                 return;
@@ -67,6 +88,7 @@ namespace Project.Combat.Turrets
 
             if (runtime.IsFiring)
                 runtime.StopFire();
+            runtime.ClearAlarmEngageDistance();
             runtime.BrainMode = DMTurretBrainMode.Scan;
             TickAutoRest();
         }
@@ -81,6 +103,7 @@ namespace Project.Combat.Turrets
                 return false;
 
             noEngageableTargetSince = -1f;
+            runtime.SetAlarmEngageDistance(distance);
 
             Vector3 aim = AimPoint(currentTarget);
             runtime.AimAt(aim);
@@ -114,9 +137,7 @@ namespace Project.Combat.Turrets
             if (noEngageableTargetSince < 0f)
                 return false;
 
-            DMTurretProfile profile = DMTurretProfile.Live;
-            float threshold = profile != null ? profile.AutoRestAfterNoTargetSeconds : 15f;
-            return Time.time - noEngageableTargetSince >= threshold;
+            return Time.time - noEngageableTargetSince >= runtime.AutoRestAfterNoTargetSeconds;
         }
 
         private float ResolveTargetRescanInterval()
@@ -128,12 +149,11 @@ namespace Project.Combat.Turrets
 
         private void TickScan()
         {
-            DMTurretProfile profile = DMTurretProfile.Live;
-            float interval = profile != null ? profile.ScanRetargetSeconds : 2.4f;
+            float interval = runtime.ScanRetargetSeconds;
             if (Time.time >= nextScanPoseTime || scanAimPoint == Vector3.zero)
             {
                 nextScanPoseTime = Time.time + interval;
-                scanAimPoint = PickScanPoint(profile);
+                scanAimPoint = PickScanPoint();
             }
 
             runtime.AimAt(scanAimPoint);
@@ -149,7 +169,10 @@ namespace Project.Combat.Turrets
             targetLastSeenTime = -1f;
             consecutiveLosFailures = 0;
             if (runtime != null)
+            {
                 runtime.CurrentAutoTarget = null;
+                runtime.ClearAlarmEngageDistance();
+            }
         }
 
         private Transform ResolveAutoTarget()
@@ -187,6 +210,7 @@ namespace Project.Combat.Turrets
         {
             currentTarget = null;
             runtime.CurrentAutoTarget = null;
+            runtime.ClearAlarmEngageDistance();
             runtime.StopFireAndCleanupForgeFx();
             targetLastSeenTime = -1f;
             consecutiveLosFailures = 0;
@@ -201,6 +225,7 @@ namespace Project.Combat.Turrets
 
             currentTarget = null;
             runtime.CurrentAutoTarget = null;
+            runtime.ClearAlarmEngageDistance();
             targetLastSeenTime = -1f;
             consecutiveLosFailures = 0;
             noEngageableTargetSince = -1f;
@@ -231,9 +256,8 @@ namespace Project.Combat.Turrets
             if (distance > runtime.ScanRange)
                 return false;
 
-            DMTurretProfile profile = DMTurretProfile.Live;
-            float grace = profile != null ? profile.TargetLosGraceSeconds : 0.65f;
-            int maxFailures = profile != null ? profile.TargetLosFailuresBeforeDrop : 4;
+            float grace = runtime.TargetLosGraceSeconds;
+            int maxFailures = runtime.TargetLosFailuresBeforeDrop;
 
             if (runtime.HasLineOfSight(target))
             {
@@ -258,15 +282,15 @@ namespace Project.Combat.Turrets
             if (runtime.HasLineOfSight(target))
                 return true;
 
-            DMTurretProfile profile = DMTurretProfile.Live;
-            float grace = profile != null ? profile.TargetLosGraceSeconds : 0.65f;
+            float grace = runtime.TargetLosGraceSeconds;
             return targetLastSeenTime >= 0f && Time.time - targetLastSeenTime <= grace;
         }
 
-        private Vector3 PickScanPoint(DMTurretProfile profile)
+        private Vector3 PickScanPoint()
         {
+            DMTurretProfile profile = DMTurretProfile.Live;
             Vector2 headingLimit = profile != null ? profile.headingLimit : new Vector2(-180f, 180f);
-            Vector2 elevation = profile != null ? profile.scanElevationDegrees : new Vector2(-8f, 12f);
+            Vector2 elevation = runtime.ScanElevationDegrees;
             if (runtime.ForgeTurret != null)
             {
                 headingLimit = runtime.ForgeTurret.HeadingLimit;

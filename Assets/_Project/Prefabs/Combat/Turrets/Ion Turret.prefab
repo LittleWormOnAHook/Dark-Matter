@@ -106,7 +106,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &3575933522041861741
 Transform:
   m_ObjectHideFlags: 0
@@ -274,6 +274,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 6711544251810966909}
   - {fileID: 119722783779132188}
   - {fileID: 273065025362121309}
   m_Father: {fileID: 8188405746669216712}
@@ -293,6 +294,7 @@ GameObject:
   - component: {fileID: 8535053191724240202}
   - component: {fileID: 200314602889892250}
   - component: {fileID: 1066836863011935543}
+  - component: {fileID: 8822446611335500012}
   - component: {fileID: 4769018043668329210}
   m_Layer: 0
   m_Name: Ion Turret
@@ -332,13 +334,13 @@ MonoBehaviour:
   destroyIt: 0
   Mount: {fileID: 5970568164807684810}
   Swivel: {fileID: 1146537922728305950}
-  HeadingTrackingSpeed: 2
-  ElevationTrackingSpeed: 2
+  HeadingTrackingSpeed: 40
+  ElevationTrackingSpeed: 30
   headingVetor: {x: 0, y: 0, z: 0}
-  HeadingLimit: {x: 0, y: 0}
-  ElevationLimit: {x: 0, y: 0}
-  smoothControlling: 0
-  DebugDraw: 0
+  HeadingLimit: {x: -60, y: 60}
+  ElevationLimit: {x: -10, y: 15}
+  smoothControlling: 1
+  DebugDraw: 1
   DebugTarget: {fileID: 0}
   Animators: []
 --- !u!114 &8342815122841192644
@@ -354,14 +356,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FORGE3D.F3DFXController
   TurretSocket:
-  - {fileID: 4729001935649550687}
+  - {fileID: 8318912395825011228}
   ShellParticles: []
-  DefaultFXType: 0
+  DefaultFXType: 8
   vulcanProjectile: {fileID: 400000, guid: e496166a742ada640b89650ebebbd052, type: 3}
   vulcanMuzzle: {fileID: 400002, guid: ca6dec307275d294ba519247d04b6733, type: 3}
   vulcanImpact: {fileID: 400000, guid: bfa7781c328a236468eda51a8ae2be55, type: 3}
   vulcanOffset: 0
-  VulcanFireRate: 0.11
+  VulcanFireRate: 0.07
   soloGunProjectile: {fileID: 400012, guid: 440fe57f42038354092415c07a4d55a9, type: 3}
   soloGunMuzzle: {fileID: 400000, guid: b16d97c287e513344af2399ff138cd27, type: 3}
   soloGunImpact: {fileID: 400004, guid: fd953838f1872d042a334b466e298967, type: 3}
@@ -413,25 +415,25 @@ MonoBehaviour:
   faction: 0
   controlMode: 0
   ammoMode: 0
-  vendorFxType: 0
+  vendorFxType: 7
   ammoType: 6
   barrelKind: 0
   barrelDatabase: {fileID: 11400000, guid: eb3473c212bed93408925d4f24d42e1a, type: 2}
-  databaseBarrelId: 
-  databaseBarrelPrefab: {fileID: 0}
+  databaseBarrelId: TURRET_BARREL_Gauss_LOD0
+  databaseBarrelPrefab: {fileID: 1000010655800876, guid: 25bb9e0ef835ced4a92b68a75caf0903, type: 3}
   useProfileDamage: 1
-  damageOverride: 18
+  damageOverride: 10
   instanceAuthority:
-    overrideAmmoMode: 0
+    overrideAmmoMode: 1
     ammoMode: 0
-    overrideVendorFxType: 0
-    vendorFxType: 0
+    overrideVendorFxType: 1
+    vendorFxType: 8
     overrideAmmoType: 0
     ammoType: 0
     overrideBarrelKind: 0
     barrelKind: 0
-    overrideDatabaseBarrel: 0
-    databaseBarrelId: 
+    overrideDatabaseBarrel: 1
+    databaseBarrelId: TURRET_BARREL_Electric_LOD0
     overrideGameAmmoItems: 0
     gameWeaponItem: {fileID: 0}
     gameAmmoItem: {fileID: 0}
@@ -439,23 +441,62 @@ MonoBehaviour:
     gameFireInterval: 0.15
     overrideGameSpread: 0
     gameSpreadDegrees: 1.5
-    overrideDamage: 0
-    damage: 18
-    overrideSplashRadius: 0
-    splashRadius: 0
-    overrideBeamDamageInterval: 0
+    overrideDamage: 1
+    damage: 3
+    overrideSplashRadius: 1
+    splashRadius: 3
+    overrideBeamDamageInterval: 1
     beamDamageInterval: 0.2
-    overrideScanRange: 0
-    scanRange: 45
-    overrideTrackRange: 0
-    trackRange: 32
-    overrideFireRange: 0
-    fireRange: 22
-    overrideMaxHealth: 0
+    overrideScanRange: 1
+    scanRange: 25
+    overrideTrackRange: 1
+    trackRange: 20
+    overrideFireRange: 1
+    fireRange: 15
+    overrideMaxHealth: 1
     maxHealth: 100
+    overrideAimAcceptDegrees: 1
+    aimAcceptDegrees: 8
+    overrideAutoRestAfterNoTargetSeconds: 1
+    autoRestAfterNoTargetSeconds: 2
+    overrideTargetLosGraceSeconds: 1
+    targetLosGraceSeconds: 0.65
+    overrideTargetLosFailuresBeforeDrop: 1
+    targetLosFailuresBeforeDrop: 4
+    overrideScanHeadingSpeed: 0
+    scanHeadingSpeed: 18
+    overrideScanRetargetSeconds: 0
+    scanRetargetSeconds: 2.4
+    overrideScanElevationDegrees: 0
+    scanElevationDegrees: {x: -8, y: 12}
+  trackingAuthority:
+    overrideMountSwivel: 1
+    mount: {fileID: 5970568164807684810}
+    swivel: {fileID: 1146537922728305950}
+    overrideHeadingTrackingSpeed: 1
+    headingTrackingSpeed: 40
+    overrideElevationTrackingSpeed: 1
+    elevationTrackingSpeed: 30
+    overrideHeadingLimit: 1
+    headingLimit: {x: -60, y: 60}
+    overrideElevationLimit: 1
+    elevationLimit: {x: -10, y: 15}
+    overrideSmoothControlling: 1
+    smoothControlling: 1
+    editorDrawVisionCones: 1
+    overrideDebugDraw: 1
+    debugDraw: 1
+    overrideDebugTarget: 0
+    debugTarget: {fileID: 0}
+    overrideAnimators: 0
+    animators: []
+  vendorFxAuthority:
+    overrideVulcanFireRate: 1
+    vulcanFireRate: 0.07
+  interactRangeMeters: 3.5
   forgeTurret: {fileID: 2741734575685052951}
   fxController: {fileID: 8342815122841192644}
-  barrel: {fileID: 8435221572670305038}
+  barrel: {fileID: 8318912395825011228}
   playerSeatCamera: {fileID: 3741762286465503378}
   placedByPlayer: 1
 --- !u!114 &8535053191724240202
@@ -494,8 +535,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e6b14c2ede9371543bfd1aeaf880d843, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.Turrets.DMTurretInteract
-  interactRange: 3.5
   interactCollider: {fileID: 0}
+--- !u!114 &8822446611335500012
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1369709433678640171}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e9c2a8b1f3d4658907abcde12345678, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.Turrets.DMTurretAlarmLight
+  targetRenderer: {fileID: 2277937746078474436}
+  emissionIntensity: 10
+  useProfileColors: 1
+  rimBlinkHz: 0.85
+  centerBlinkHz: 8
+  blinkTrough: 0.12
 --- !u!65 &4769018043668329210
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -743,7 +801,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &5706418914010835622
 Transform:
   m_ObjectHideFlags: 0
@@ -957,7 +1015,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1303067019413262066
 Transform:
   m_ObjectHideFlags: 0
@@ -988,7 +1046,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &5538554750718812997
 Transform:
   m_ObjectHideFlags: 0
@@ -1050,7 +1108,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &3181423122252330001
 Transform:
   m_ObjectHideFlags: 0
@@ -1094,7 +1152,8 @@ Transform:
   m_LocalPosition: {x: 0, y: -0.074, z: 0.723}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 2293038081470841747}
   m_Father: {fileID: 2152640289779690972}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &4981384653656301984
@@ -1155,7 +1214,7 @@ Transform:
   m_GameObject: {fileID: 5209759518607033410}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 2.22, z: -5.38}
+  m_LocalPosition: {x: 0, y: 3.5, z: -5.38}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1194,7 +1253,7 @@ Camera:
     height: 1
   near clip plane: 0.05
   far clip plane: 1000
-  field of view: 60
+  field of view: 50
   orthographic: 0
   orthographic size: 5
   m_Depth: 0
@@ -1345,6 +1404,111 @@ LODGroup:
     - renderer: {fileID: 8778843939306609744}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!1 &5921282408752276603
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2293038081470841747}
+  - component: {fileID: 6372272379696299453}
+  - component: {fileID: 4071842689692816386}
+  - component: {fileID: 7131044408075087789}
+  m_Layer: 0
+  m_Name: TURRET_BARREL_Electric_LOD0
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2293038081470841747
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5921282408752276603}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 891231656449505497}
+  m_Father: {fileID: 8318912395825011228}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &6372272379696299453
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5921282408752276603}
+  m_Mesh: {fileID: 4300044, guid: 991ce2be8d84b5c4ab7cf566f62c94f6, type: 3}
+--- !u!23 &4071842689692816386
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5921282408752276603}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 06e037229958f5e4ba3ece1975a7fd4e, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &7131044408075087789
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5921282408752276603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff37076ea490767459a4c445ebe4b983, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.Turrets.DMTurretSpawnedBarrel
+  catalogId: TURRET_BARREL_Electric_LOD0
 --- !u!1 &5970568164807684810
 GameObject:
   m_ObjectHideFlags: 0
@@ -1392,7 +1556,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &8435221572670305038
 Transform:
   m_ObjectHideFlags: 0
@@ -1456,6 +1620,96 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6372829176576696870}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 06e037229958f5e4ba3ece1975a7fd4e, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &6685908843106834548
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 891231656449505497}
+  - component: {fileID: 2551576008126037501}
+  - component: {fileID: 3724885596880650920}
+  m_Layer: 0
+  m_Name: TURRET_BARREL_Electric_LOD1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &891231656449505497
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6685908843106834548}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2293038081470841747}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &2551576008126037501
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6685908843106834548}
+  m_Mesh: {fileID: 4300046, guid: 991ce2be8d84b5c4ab7cf566f62c94f6, type: 3}
+--- !u!23 &3724885596880650920
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6685908843106834548}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -1607,7 +1861,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1689664385702703750
 Transform:
   m_ObjectHideFlags: 0
@@ -1722,3 +1976,115 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &8562747903765612277
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6711544251810966909}
+  - component: {fileID: 6803500194522188407}
+  - component: {fileID: 2277937746078474436}
+  - component: {fileID: 1625423020911444340}
+  m_Layer: 0
+  m_Name: Alarm
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6711544251810966909
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8562747903765612277}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -0, y: 1.342, z: -0.668}
+  m_LocalScale: {x: 0.28583, y: 0.28583, z: 0.28583}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3908112146142551962}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &6803500194522188407
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8562747903765612277}
+  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!23 &2277937746078474436
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8562747903765612277}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 8c27aff30a993b9458792e68616fe0be, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!135 &1625423020911444340
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8562747903765612277}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.5
+  m_Center: {x: 0, y: 0, z: 0}

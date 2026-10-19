@@ -12,8 +12,15 @@ namespace Project.Interaction
             if (collider == null)
                 return null;
 
-            if (collider.TryGetComponent(out DMEnemyHitbox enemyHitbox))
+            if (collider.TryGetComponent(out DMEnemyHitbox enemyHitbox) && enemyHitbox.IsLive)
             {
+                if (enemyHitbox.PlayerRig != null)
+                {
+                    SurvivalStats playerStats = enemyHitbox.GetComponentInParent<SurvivalStats>();
+                    if (playerStats != null)
+                        return playerStats;
+                }
+
                 Project.AI.EnemyHealth enemyHealth = enemyHitbox.GetComponentInParent<Project.AI.EnemyHealth>();
                 if (enemyHealth != null)
                     return enemyHealth;
@@ -26,6 +33,10 @@ namespace Project.Interaction
             SurvivalStats survival = collider.GetComponentInParent<SurvivalStats>();
             if (survival != null)
                 return survival;
+
+            Project.Combat.Turrets.DMTurretHealth turretHealth = collider.GetComponentInParent<Project.Combat.Turrets.DMTurretHealth>();
+            if (turretHealth != null)
+                return turretHealth;
 
             if (collider.TryGetComponent(out IDamageable onCollider))
                 return onCollider;

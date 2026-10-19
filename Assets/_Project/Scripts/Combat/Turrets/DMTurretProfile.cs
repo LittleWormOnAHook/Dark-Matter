@@ -1,4 +1,5 @@
 using Project.Data;
+using Project.UI;
 using UnityEngine;
 
 namespace Project.Combat.Turrets
@@ -116,6 +117,17 @@ namespace Project.Combat.Turrets
         [Tooltip("Normalized screen Y bias below center for the turret reticle and aim ray (0.06 ≈ lower crosshair).")]
         [Range(0f, 0.2f)] public float playerReticleScreenBias = 0.06f;
 
+        [Header("Alarm light (swivel tracking indicator)")]
+        [Tooltip("When off, uses palette defaults (Gold scan, Map POI red track, PositiveGreen fire).")]
+        public bool useCustomAlarmColors;
+
+        public Color alarmScanColor = DarkMatterGenesisUiPalette.Gold;
+        public Color alarmTrackColor = DarkMatterGenesisUiPalette.MapPoiRed;
+        public Color alarmFireColor = DarkMatterGenesisUiPalette.PositiveGreen;
+
+        [Tooltip("HDR emission multiplier for the Alarm sphere MaterialPropertyBlock.")]
+        [Min(0f)] public float alarmEmissionIntensity = 5f;
+
         [Header("Debug")]
         public bool debugDraw = false;
 
@@ -143,6 +155,10 @@ namespace Project.Combat.Turrets
         public DMTurretAmmoMode DefaultAmmoMode => defaultAmmoMode;
         public float GameFireInterval => Positive(gameFireInterval, 0.15f);
         public float GameSpreadDegrees => Mathf.Clamp(gameSpreadDegrees, 0f, 12f);
+        public Color AlarmScanColor => useCustomAlarmColors ? alarmScanColor : DarkMatterGenesisUiPalette.Gold;
+        public Color AlarmTrackColor => useCustomAlarmColors ? alarmTrackColor : DarkMatterGenesisUiPalette.MapPoiRed;
+        public Color AlarmFireColor => useCustomAlarmColors ? alarmFireColor : DarkMatterGenesisUiPalette.PositiveGreen;
+        public float AlarmEmissionIntensity => alarmEmissionIntensity > 0.001f ? alarmEmissionIntensity : 5f;
 
         public float RollEnemyDestroyChance()
         {

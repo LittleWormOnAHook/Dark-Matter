@@ -11,7 +11,7 @@ namespace Project.Core
     /// </summary>
     public static class SceneComponentCache
     {
-        private const float DefaultRefreshInterval = 0.4f;
+        private const float DefaultRefreshInterval = 0.5f;
 
         private struct Entry
         {

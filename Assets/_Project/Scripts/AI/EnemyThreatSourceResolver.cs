@@ -36,6 +36,10 @@ namespace Project.AI
             if (companionBridge != null)
                 return companionBridge.transform;
 
+            Project.Combat.Turrets.DMTurretRuntime turret = source.GetComponentInParent<Project.Combat.Turrets.DMTurretRuntime>();
+            if (turret != null)
+                return turret.transform;
+
             return null;
         }
     }

@@ -170,6 +170,37 @@ namespace Project.EditorTools.Combat
                 databaseProp.objectReferenceValue = AssetDatabase.LoadAssetAtPath<F3DTurretScriptable>(DatabasePath);
             so.ApplyModifiedPropertiesWithoutUndo();
             runtime.ApplyDesignerVisuals();
+            // Authority → FORGE only; never read F3D back into tracking (Capture is explicit in inspector).
+            runtime.ApplyTrackingToForge();
+            runtime.ApplyVendorFxToController();
+            WireAlarmLight(root);
+        }
+
+        /// <summary>Optional swivel Alarm sphere → <see cref="DMTurretAlarmLight"/> on runtime root.</summary>
+        public static void WireAlarmLight(GameObject root)
+        {
+            if (root == null)
+                return;
+
+            DMTurretRuntime runtime = root.GetComponent<DMTurretRuntime>();
+            if (runtime == null)
+                return;
+
+            DMTurretAlarmEnsure.EnsureAlarmSphere(root);
+
+            DMTurretAlarmLight alarm = root.GetComponent<DMTurretAlarmLight>();
+            if (alarm == null)
+                alarm = root.AddComponent<DMTurretAlarmLight>();
+
+            Renderer alarmRenderer = DMTurretAlarmResolve.TryFindAlarmRenderer(root.transform);
+            if (alarmRenderer == null)
+                return;
+
+            SerializedObject alarmSo = new SerializedObject(alarm);
+            alarmSo.FindProperty("targetRenderer").objectReferenceValue = alarmRenderer;
+            alarmSo.ApplyModifiedPropertiesWithoutUndo();
+            alarm.SetTargetRenderer(alarmRenderer);
+            EditorUtility.SetDirty(alarm);
         }
 
         static Transform ResolveBarrelTransform(Transform root, F3DTurret forge)

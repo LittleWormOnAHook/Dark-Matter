@@ -380,6 +380,9 @@ namespace Project.AI
         /// <summary>EnemyCombat.TryAttack gate: token, hand-off grace, facing cone, off-screen wind-up.</summary>
         public bool CanEngagementAttack(Transform target)
         {
+            if (Project.Combat.Turrets.DMTurretHealth.IsTurretTransform(target))
+                return true;
+
             if (engagementState.Ring == null || engagementState.Role == DMEngagementRole.None)
                 return true;
 

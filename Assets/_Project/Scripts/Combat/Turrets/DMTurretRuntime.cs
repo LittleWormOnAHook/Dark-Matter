@@ -33,6 +33,9 @@ namespace Project.Combat.Turrets
         [SerializeField] private bool useProfileDamage = true;
         [SerializeField] private float damageOverride = 18f;
         [SerializeField] private DMTurretInstanceAuthority instanceAuthority = new DMTurretInstanceAuthority();
+        [SerializeField] private DMTurretTrackingAuthority trackingAuthority = new DMTurretTrackingAuthority();
+        [SerializeField] private DMTurretVendorFxAuthority vendorFxAuthority = new DMTurretVendorFxAuthority();
+        [SerializeField] private float interactRangeMeters = 3.5f;
         [SerializeField] private F3DTurret forgeTurret;
         [SerializeField] private F3DFXController fxController;
         [SerializeField] private Transform barrel;
@@ -43,8 +46,21 @@ namespace Project.Combat.Turrets
         private bool firing;
         private bool destroyed;
         private float nextGameAmmoShotTime;
+        private DMTurretBrainMode brainMode;
+        private DMTurretAlarmLight alarmLight;
+        private bool playerProximityDormant;
+        private float nextPlayerProximityCheckTime;
+
+        /// <summary>Player beyond scan band — FORGE3D turret + alarm blink paused until they return.</summary>
+        public bool IsPlayerProximityDormant => playerProximityDormant;
+
+        private const float PlayerDormantBeyondScanMeters = 24f;
+        private const float PlayerDormantWakeCheckSeconds = 0.45f;
+        private const float PlayerDormantActiveCheckSeconds = 0.18f;
 
         public DMTurretInstanceAuthority InstanceAuthority => instanceAuthority;
+        public DMTurretTrackingAuthority TrackingAuthority => trackingAuthority;
+        public DMTurretVendorFxAuthority VendorFxAuthority => vendorFxAuthority;
         public DMTurretFaction Faction => faction;
         public DMTurretControlMode ControlMode => controlMode;
         public AmmoType EffectiveAmmoType
@@ -116,10 +132,53 @@ namespace Project.Combat.Turrets
         public bool IsDestroyed => destroyed || (health != null && health.IsDead);
         public bool IsFiring => firing;
         public bool PlacedByPlayer => placedByPlayer;
-        public DMTurretBrainMode BrainMode { get; internal set; }
+        public DMTurretBrainMode BrainMode
+        {
+            get => brainMode;
+            internal set => SetBrainMode(value);
+        }
+
+        internal void SetBrainMode(DMTurretBrainMode value)
+        {
+            if (brainMode == value)
+                return;
+
+            brainMode = value;
+            alarmLight?.OnRuntimeBrainModeChanged(value);
+        }
+
+        internal void RegisterAlarmLight(DMTurretAlarmLight light)
+        {
+            alarmLight = light;
+            light?.RefreshFromRuntime(force: true);
+        }
+
+        internal void UnregisterAlarmLight(DMTurretAlarmLight light)
+        {
+            if (alarmLight == light)
+                alarmLight = null;
+        }
+
+        private void NotifyAlarmFireStateChanged()
+        {
+            alarmLight?.RefreshFromRuntime(force: true);
+        }
 
         /// <summary>Auto-brain lock target (avoids re-scanning every frame / from enemy AI).</summary>
         public Transform CurrentAutoTarget { get; internal set; }
+
+        /// <summary>Planar distance to the engaged auto target; negative when none (alarm proximity blink).</summary>
+        public float AlarmEngageDistance { get; private set; } = -1f;
+
+        internal void SetAlarmEngageDistance(float horizontalDistance)
+        {
+            AlarmEngageDistance = horizontalDistance >= 0f ? horizontalDistance : -1f;
+        }
+
+        internal void ClearAlarmEngageDistance()
+        {
+            AlarmEngageDistance = -1f;
+        }
 
         public float ScanRange => ResolveRange(
             instanceAuthority != null && instanceAuthority.overrideScanRange,
@@ -213,6 +272,63 @@ namespace Project.Combat.Turrets
             }
         }
 
+        public float InteractRangeMeters
+        {
+            get
+            {
+                float fromGhost = Project.Building.DMBuildingGhostProfile.TurretInteractRangeMeters;
+                if (fromGhost > 0.1f)
+                    return fromGhost;
+                return Mathf.Max(0.5f, interactRangeMeters);
+            }
+        }
+
+        public float AimAcceptDegrees => ResolveFloat(
+            instanceAuthority != null && instanceAuthority.overrideAimAcceptDegrees,
+            instanceAuthority != null ? instanceAuthority.aimAcceptDegrees : 8f,
+            _ => 8f,
+            8f,
+            clampMin: 1f,
+            clampMax: 45f);
+
+        public float AutoRestAfterNoTargetSeconds => ResolveFloat(
+            instanceAuthority != null && instanceAuthority.overrideAutoRestAfterNoTargetSeconds,
+            instanceAuthority != null ? instanceAuthority.autoRestAfterNoTargetSeconds : 15f,
+            p => p.AutoRestAfterNoTargetSeconds,
+            15f);
+
+        public float TargetLosGraceSeconds => ResolveFloat(
+            instanceAuthority != null && instanceAuthority.overrideTargetLosGraceSeconds,
+            instanceAuthority != null ? instanceAuthority.targetLosGraceSeconds : 0.65f,
+            p => p.TargetLosGraceSeconds,
+            0.65f);
+
+        public int TargetLosFailuresBeforeDrop => ResolveInt(
+            instanceAuthority != null && instanceAuthority.overrideTargetLosFailuresBeforeDrop,
+            instanceAuthority != null ? instanceAuthority.targetLosFailuresBeforeDrop : 4,
+            p => p.TargetLosFailuresBeforeDrop,
+            4,
+            1,
+            12);
+
+        public float ScanHeadingSpeed => ResolveFloat(
+            instanceAuthority != null && instanceAuthority.overrideScanHeadingSpeed,
+            instanceAuthority != null ? instanceAuthority.scanHeadingSpeed : 18f,
+            p => p.ScanHeadingSpeed,
+            18f);
+
+        public float ScanRetargetSeconds => ResolveFloat(
+            instanceAuthority != null && instanceAuthority.overrideScanRetargetSeconds,
+            instanceAuthority != null ? instanceAuthority.scanRetargetSeconds : 2.4f,
+            p => p.ScanRetargetSeconds,
+            2.4f);
+
+        public Vector2 ScanElevationDegrees => ResolveVector2(
+            instanceAuthority != null && instanceAuthority.overrideScanElevationDegrees,
+            instanceAuthority != null ? instanceAuthority.scanElevationDegrees : new Vector2(-8f, 12f),
+            p => p.scanElevationDegrees,
+            new Vector2(-8f, 12f));
+
         private static float ResolveRange(
             bool instanceOverride,
             float instanceValue,
@@ -223,6 +339,45 @@ namespace Project.Combat.Turrets
                 return Mathf.Max(0.1f, instanceValue);
             DMTurretProfile profile = DMTurretProfile.Live;
             return profile != null ? profileValue(profile) : fallback;
+        }
+
+        private static float ResolveFloat(
+            bool instanceOverride,
+            float instanceValue,
+            System.Func<DMTurretProfile, float> profileValue,
+            float fallback,
+            float clampMin = 0.001f,
+            float clampMax = float.MaxValue)
+        {
+            float value = instanceOverride
+                ? instanceValue
+                : (DMTurretProfile.Live != null ? profileValue(DMTurretProfile.Live) : fallback);
+            return Mathf.Clamp(value, clampMin, clampMax);
+        }
+
+        private static int ResolveInt(
+            bool instanceOverride,
+            int instanceValue,
+            System.Func<DMTurretProfile, int> profileValue,
+            int fallback,
+            int min,
+            int max)
+        {
+            int value = instanceOverride
+                ? instanceValue
+                : (DMTurretProfile.Live != null ? profileValue(DMTurretProfile.Live) : fallback);
+            return Mathf.Clamp(value, min, max);
+        }
+
+        private static Vector2 ResolveVector2(
+            bool instanceOverride,
+            Vector2 instanceValue,
+            System.Func<DMTurretProfile, Vector2> profileValue,
+            Vector2 fallback)
+        {
+            return instanceOverride
+                ? instanceValue
+                : (DMTurretProfile.Live != null ? profileValue(DMTurretProfile.Live) : fallback);
         }
 
         private void EnsureFxSockets()
@@ -353,7 +508,7 @@ namespace Project.Combat.Turrets
             if (GetComponent<DMTurretInteract>() == null)
                 gameObject.AddComponent<DMTurretInteract>();
             StripDemoInput(gameObject);
-            ApplyProfileLimits();
+            ApplyTrackingToForge();
             EnsureFxSockets();
             TryCopyFxFromSceneDonor();
             SyncVendorFxFromControllerIfUnset();
@@ -477,6 +632,73 @@ namespace Project.Combat.Turrets
         {
             if (forgeTurret != null && forgeTurret.isActiveAndEnabled)
                 forgeTurret.HoldCurrentAim();
+        }
+
+        /// <summary>
+        /// When auto mode has nothing to engage and Kade is far past scan range, disable the FORGE
+        /// turret tick (and alarm work) until he closes in again.
+        /// </summary>
+        public bool TickPlayerProximityDormancy()
+        {
+            if (IsDestroyed || DMTurretPlayerControl.IsControlling(this))
+            {
+                SetPlayerProximityDormant(false);
+                return false;
+            }
+
+            if (ControlMode != DMTurretControlMode.Auto)
+            {
+                SetPlayerProximityDormant(false);
+                return false;
+            }
+
+            if (IsFiring || CurrentAutoTarget != null
+                || brainMode == DMTurretBrainMode.Track || brainMode == DMTurretBrainMode.Fire)
+            {
+                SetPlayerProximityDormant(false);
+                return false;
+            }
+
+            float interval = playerProximityDormant
+                ? PlayerDormantWakeCheckSeconds
+                : PlayerDormantActiveCheckSeconds;
+            if (Time.time < nextPlayerProximityCheckTime)
+                return playerProximityDormant;
+
+            nextPlayerProximityCheckTime = Time.time + interval;
+
+            Transform player = PlayerReference.ResolveTransform();
+            if (player == null || DMTurretPlayerControl.IsSeatedPlayer(player))
+            {
+                SetPlayerProximityDormant(false);
+                return false;
+            }
+
+            float dormantRange = ScanRange + PlayerDormantBeyondScanMeters;
+            bool dormant = HorizontalDistanceTo(player.position) > dormantRange;
+            SetPlayerProximityDormant(dormant);
+            return dormant;
+        }
+
+        private void SetPlayerProximityDormant(bool dormant)
+        {
+            if (playerProximityDormant == dormant)
+                return;
+
+            playerProximityDormant = dormant;
+            if (forgeTurret == null)
+                return;
+
+            if (dormant)
+            {
+                if (forgeTurret.isActiveAndEnabled)
+                    forgeTurret.HoldCurrentAim();
+                forgeTurret.enabled = false;
+                return;
+            }
+
+            if (!forgeTurret.enabled)
+                forgeTurret.enabled = true;
         }
 
         public void ApplySeatCameraPitch()
@@ -650,7 +872,7 @@ namespace Project.Combat.Turrets
         {
             if (forgeTurret == null || forgeTurret.Mount == null)
                 return true;
-            return forgeTurret.GetAngleToTarget() <= 8f;
+            return forgeTurret.GetAngleToTarget() <= AimAcceptDegrees;
         }
 
         public void BeginFire()
@@ -664,6 +886,7 @@ namespace Project.Combat.Turrets
                 nextGameAmmoShotTime = 0f;
                 if (forgeTurret != null)
                     forgeTurret.PlayAnimationLoop();
+                NotifyAlarmFireStateChanged();
                 return;
             }
 
@@ -675,6 +898,7 @@ namespace Project.Combat.Turrets
             if (forgeTurret != null)
                 forgeTurret.PlayAnimationLoop();
             firing = true;
+            NotifyAlarmFireStateChanged();
         }
 
         private void OnDisable()
@@ -720,6 +944,7 @@ namespace Project.Combat.Turrets
                 nextGameAmmoShotTime = 0f;
                 if (DMTurretWeaponContext.Current == this)
                     DMTurretWeaponContext.EndFire(this);
+                NotifyAlarmFireStateChanged();
             }
         }
 
@@ -777,6 +1002,7 @@ namespace Project.Combat.Turrets
         public void NotifyDestroyed()
         {
             destroyed = true;
+            alarmLight?.RefreshFromRuntime(force: true);
             StopFireAndCleanupForgeFx();
             if (DMTurretPlayerControl.IsControlling(this))
                 DMTurretPlayerControl.Exit();
@@ -848,16 +1074,130 @@ namespace Project.Combat.Turrets
             return null;
         }
 
-        private void ApplyProfileLimits()
+        private void OnEnable()
         {
-            DMTurretProfile profile = DMTurretProfile.Live;
-            if (profile == null || forgeTurret == null)
+            if (forgeTurret == null)
+                BindForge();
+            // Play + Edit: runtime authority is source of truth; F3DTurret is output only.
+            ApplyTrackingToForge();
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            // OnValidate can run while isPlaying during domain reload; never capture from F3D/profile here.
+            if (Application.isPlaying)
+                return;
+            if (forgeTurret == null)
+                BindForge();
+            ApplyTrackingToForge();
+        }
+#endif
+
+        /// <summary>Pushes enabled tracking overrides onto the linked <see cref="F3DTurret"/>.</summary>
+        public void ApplyTrackingToForge()
+        {
+            if (forgeTurret == null)
+                BindForge();
+            if (forgeTurret == null || trackingAuthority == null)
                 return;
 
-            forgeTurret.HeadingTrackingSpeed = profile.HeadingTrackingSpeed;
-            forgeTurret.ElevationTrackingSpeed = profile.ElevationTrackingSpeed;
-            forgeTurret.HeadingLimit = profile.headingLimit;
-            forgeTurret.ElevationLimit = profile.elevationLimit;
+            DMTurretTrackingAuthority t = trackingAuthority;
+            if (t.overrideMountSwivel)
+            {
+                if (t.mount != null)
+                    forgeTurret.Mount = t.mount;
+                if (t.swivel != null)
+                    forgeTurret.Swivel = t.swivel;
+            }
+
+            if (t.overrideHeadingTrackingSpeed)
+                forgeTurret.HeadingTrackingSpeed = Positive(t.headingTrackingSpeed, forgeTurret.HeadingTrackingSpeed);
+            if (t.overrideElevationTrackingSpeed)
+                forgeTurret.ElevationTrackingSpeed = Positive(t.elevationTrackingSpeed, forgeTurret.ElevationTrackingSpeed);
+            if (t.overrideHeadingLimit)
+                forgeTurret.HeadingLimit = t.headingLimit;
+            if (t.overrideElevationLimit)
+                forgeTurret.ElevationLimit = t.elevationLimit;
+            if (t.overrideSmoothControlling)
+                forgeTurret.smoothControlling = t.smoothControlling;
+            // F3D DebugDraw runs every Update (Debug.DrawLine). Never in Play — use profile gizmos in Edit mode only.
+            if (Application.isPlaying)
+                forgeTurret.DebugDraw = false;
+            else if (t.overrideDebugDraw)
+                forgeTurret.DebugDraw = t.debugDraw;
+            if (t.overrideDebugTarget)
+                forgeTurret.DebugTarget = t.debugTarget;
+            if (t.overrideAnimators)
+                forgeTurret.Animators = t.animators;
+        }
+
+        /// <summary>
+        /// Copies current F3DTurret tracking into authority fields and enables matching overrides.
+        /// Call only from explicit designer actions (inspector Capture) — not from play exit, OnValidate, or wire.
+        /// </summary>
+        public void CaptureTrackingFromForge(bool enableOverrides = true)
+        {
+            if (forgeTurret == null)
+                BindForge();
+            if (forgeTurret == null || trackingAuthority == null)
+                return;
+
+            DMTurretTrackingAuthority t = trackingAuthority;
+            if (enableOverrides)
+            {
+                t.mount = forgeTurret.Mount;
+                t.swivel = forgeTurret.Swivel;
+                t.headingTrackingSpeed = forgeTurret.HeadingTrackingSpeed;
+                t.elevationTrackingSpeed = forgeTurret.ElevationTrackingSpeed;
+                t.headingLimit = forgeTurret.HeadingLimit;
+                t.elevationLimit = forgeTurret.ElevationLimit;
+                t.smoothControlling = forgeTurret.smoothControlling;
+                t.debugDraw = forgeTurret.DebugDraw;
+                t.debugTarget = forgeTurret.DebugTarget;
+                t.animators = forgeTurret.Animators;
+            }
+            else
+            {
+                // Legacy wire path: sync mount/swivel refs only — do not stomp limit/speed authority fields.
+                t.mount = forgeTurret.Mount;
+                t.swivel = forgeTurret.Swivel;
+                return;
+            }
+
+            t.overrideMountSwivel = forgeTurret.Mount != null || forgeTurret.Swivel != null;
+            t.overrideHeadingTrackingSpeed = true;
+            t.overrideElevationTrackingSpeed = true;
+            t.overrideHeadingLimit = true;
+            t.overrideElevationLimit = true;
+            t.overrideSmoothControlling = true;
+            t.overrideDebugDraw = false;
+            t.debugDraw = false;
+            t.overrideDebugTarget = forgeTurret.DebugTarget != null;
+            t.overrideAnimators = t.animators != null && t.animators.Length > 0;
+        }
+
+        /// <summary>Copies live profile tracking into authority and enables speed/limit overrides (Combat Studio defaults).</summary>
+        public void CaptureTrackingFromProfile()
+        {
+            DMTurretProfile profile = DMTurretProfile.Live;
+            if (profile == null || trackingAuthority == null)
+                return;
+
+            DMTurretTrackingAuthority t = trackingAuthority;
+            t.headingTrackingSpeed = profile.HeadingTrackingSpeed;
+            t.elevationTrackingSpeed = profile.ElevationTrackingSpeed;
+            t.headingLimit = profile.headingLimit;
+            t.elevationLimit = profile.elevationLimit;
+            t.overrideHeadingTrackingSpeed = true;
+            t.overrideElevationTrackingSpeed = true;
+            t.overrideHeadingLimit = true;
+            t.overrideElevationLimit = true;
+        }
+
+        private static float Positive(float value, float fallback)
+        {
+            return value > 0.001f ? value : fallback;
         }
 
         public static void StripAllDemoInput()
@@ -920,6 +1260,20 @@ namespace Project.Combat.Turrets
             if (fxController == null)
                 return;
             fxController.DefaultFXType = EffectiveVendorFxType;
+            if (vendorFxAuthority != null && vendorFxAuthority.overrideVulcanFireRate)
+                fxController.VulcanFireRate = Mathf.Max(0.01f, vendorFxAuthority.vulcanFireRate);
+        }
+
+        public void CaptureVendorFxFromController(bool enableOverrides = true)
+        {
+            if (fxController == null)
+                fxController = GetComponent<F3DFXController>() ?? GetComponentInChildren<F3DFXController>(true);
+            if (fxController == null || vendorFxAuthority == null)
+                return;
+
+            vendorFxAuthority.vulcanFireRate = fxController.VulcanFireRate;
+            if (enableOverrides)
+                vendorFxAuthority.overrideVulcanFireRate = true;
         }
 
         public void ApplyBarrelChoice()
@@ -1331,6 +1685,139 @@ namespace Project.Combat.Turrets
                 angle -= 360f;
             return angle;
         }
+
+#if UNITY_EDITOR
+        static readonly List<Transform> BarrelForwardChainScratch = new List<Transform>(8);
+
+        /// <summary>Scene-view vision cones (Edit mode only). Controlled by Tracking Authority.</summary>
+        public bool EditorDrawVisionCones =>
+            !Application.isPlaying
+            && trackingAuthority != null
+            && trackingAuthority.editorDrawVisionCones;
+
+        public Vector2 ResolveEffectiveHeadingLimit()
+        {
+            DMTurretTrackingAuthority t = trackingAuthority;
+            if (t != null && t.overrideHeadingLimit)
+                return t.headingLimit;
+            if (forgeTurret == null)
+                BindForge();
+            if (forgeTurret != null)
+                return forgeTurret.HeadingLimit;
+            return t != null ? t.headingLimit : new Vector2(-180f, 180f);
+        }
+
+        public Vector2 ResolveEffectiveElevationLimit()
+        {
+            DMTurretTrackingAuthority t = trackingAuthority;
+            if (t != null && t.overrideElevationLimit)
+                return t.elevationLimit;
+            if (forgeTurret == null)
+                BindForge();
+            if (forgeTurret != null)
+                return forgeTurret.ElevationLimit;
+            return t != null ? t.elevationLimit : new Vector2(-15f, 45f);
+        }
+
+        /// <summary>F3D aim pivot: swivel (yaw) and mount/barrel (pitch). Binds forge refs when needed.</summary>
+        public bool TryResolveAimPivot(out Transform swivel, out Transform barrelMount)
+        {
+            swivel = null;
+            barrelMount = null;
+            if (forgeTurret == null)
+                BindForge();
+            if (forgeTurret == null)
+                return false;
+
+            DMTurretTrackingAuthority t = trackingAuthority;
+            GameObject swivelGo = t != null && t.overrideMountSwivel && t.swivel != null
+                ? t.swivel
+                : forgeTurret.Swivel;
+            GameObject mountGo = t != null && t.overrideMountSwivel && t.mount != null
+                ? t.mount
+                : forgeTurret.Mount;
+
+            if (swivelGo != null)
+                swivel = swivelGo.transform;
+            if (mountGo != null)
+                barrelMount = mountGo.transform;
+            if (barrelMount == null && barrel != null)
+                barrelMount = barrel;
+            if (swivel == null && barrelMount != null)
+                swivel = barrelMount;
+            return swivel != null;
+        }
+
+        /// <summary>World rotation of F3D swivel after applying signed local Y (heading), preserving local X/Z.</summary>
+        public static Quaternion SwivelWorldRotationAtLocalHeading(Transform swivel, float headingLocalY)
+        {
+            if (swivel == null)
+                return Quaternion.identity;
+
+            Vector3 sEuler = swivel.localEulerAngles;
+            sEuler.y = headingLocalY;
+            Transform parent = swivel.parent;
+            return (parent != null ? parent.rotation : Quaternion.identity) * Quaternion.Euler(sEuler);
+        }
+
+        /// <summary>
+        /// World-space barrel forward at F3D <c>curHeadingAngle</c> / <c>curElevationAngle</c> (swivel local Y, mount local X).
+        /// Walks the transform chain from swivel to mount so nested LOD/socket hierarchies match runtime.
+        /// </summary>
+        public static Vector3 BarrelForwardAtLocalLimits(
+            Transform swivel,
+            Transform barrelMount,
+            float headingLocalY,
+            float elevationLocalX)
+        {
+            if (swivel == null)
+                return Vector3.forward;
+
+            Quaternion world = SwivelWorldRotationAtLocalHeading(swivel, headingLocalY);
+
+            if (barrelMount == null || barrelMount == swivel)
+                return world * Vector3.forward;
+
+            if (!barrelMount.IsChildOf(swivel))
+            {
+                Vector3 mEuler = barrelMount.localEulerAngles;
+                mEuler.x = elevationLocalX;
+                return barrelMount.parent != null
+                    ? barrelMount.parent.rotation * Quaternion.Euler(mEuler) * Vector3.forward
+                    : Quaternion.Euler(mEuler) * Vector3.forward;
+            }
+
+            Transform walk = barrelMount;
+            int depth = 0;
+            while (walk != null && walk != swivel)
+            {
+                depth++;
+                walk = walk.parent;
+            }
+
+            if (walk != swivel || depth == 0)
+                return world * Vector3.forward;
+
+            BarrelForwardChainScratch.Clear();
+            walk = barrelMount;
+            while (walk != null && walk != swivel)
+            {
+                BarrelForwardChainScratch.Add(walk);
+                walk = walk.parent;
+            }
+
+            for (int i = BarrelForwardChainScratch.Count - 1; i >= 0; i--)
+            {
+                Transform node = BarrelForwardChainScratch[i];
+                Vector3 eu = node.localEulerAngles;
+                if (node == barrelMount)
+                    eu.x = elevationLocalX;
+                world = world * Quaternion.Euler(eu);
+            }
+
+            return world * Vector3.forward;
+        }
+#endif
 
         private void OnDrawGizmosSelected()
         {

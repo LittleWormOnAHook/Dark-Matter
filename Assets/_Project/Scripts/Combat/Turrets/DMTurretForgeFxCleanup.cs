@@ -22,8 +22,9 @@ namespace Project.Combat.Turrets
             if (owner == null)
                 return;
 
-            DespawnContinuousUnderSockets(fxController != null ? fxController.TurretSocket : null);
-            StopForgeLoopAudio(owner.transform);
+            Transform[] sockets = fxController != null ? fxController.TurretSocket : null;
+            DespawnContinuousUnderSockets(sockets);
+            StopForgeLoopAudio(owner.transform, sockets);
         }
 
         private const float PooledAudioCleanupRadius = 96f;
@@ -56,23 +57,52 @@ namespace Project.Combat.Turrets
             }
         }
 
-        private static void StopForgeLoopAudio(Transform ownerRoot)
+        private static void StopForgeLoopAudio(Transform ownerRoot, Transform[] sockets)
         {
             if (ownerRoot == null || !TryGetPool(out F3DPool pool))
                 return;
 
-            StopAndDespawnLoopAudioOnHierarchy(ownerRoot, ownerRoot, pool);
+            bool stoppedAny = StopAndDespawnLoopAudioOnHierarchy(ownerRoot, ownerRoot, pool);
 
             // LightningGunLoop parents loop audio to loopParent.parent (often above the turret root).
             Transform parent = ownerRoot.parent;
             if (parent != null)
-                StopAndDespawnLoopAudioOnHierarchy(parent, ownerRoot, pool);
+                stoppedAny |= StopAndDespawnLoopAudioOnHierarchy(parent, ownerRoot, pool);
 
-            DespawnDetachedLoopAudioNear(ownerRoot.position, ownerRoot, pool);
+            // Scene-wide scan is expensive — only when local hierarchy had loop audio or sockets still have beams.
+            if (stoppedAny || HasContinuousFxUnderSockets(sockets))
+                DespawnDetachedLoopAudioNear(ownerRoot.position, ownerRoot, pool);
         }
 
-        private static void StopAndDespawnLoopAudioOnHierarchy(Transform searchRoot, Transform ownerRoot, F3DPool pool)
+        private static bool HasContinuousFxUnderSockets(Transform[] sockets)
         {
+            if (sockets == null || sockets.Length == 0)
+                return false;
+
+            for (int s = 0; s < sockets.Length; s++)
+            {
+                Transform socket = sockets[s];
+                if (socket == null)
+                    continue;
+
+                for (int i = 0; i < socket.childCount; i++)
+                {
+                    Transform child = socket.GetChild(i);
+                    if (child == null)
+                        continue;
+                    if (child.GetComponent<F3DBeam>() != null
+                        || child.GetComponent<F3DLightning>() != null
+                        || child.GetComponent<F3DFlameThrower>() != null)
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool StopAndDespawnLoopAudioOnHierarchy(Transform searchRoot, Transform ownerRoot, F3DPool pool)
+        {
+            bool stoppedAny = false;
             AudioSource[] sources = searchRoot.GetComponentsInChildren<AudioSource>(true);
             for (int i = 0; i < sources.Length; i++)
             {
@@ -85,7 +115,10 @@ namespace Project.Combat.Turrets
 
                 source.Stop();
                 pool.Despawn(source.transform);
+                stoppedAny = true;
             }
+
+            return stoppedAny;
         }
 
         private static void DespawnDetachedLoopAudioNear(Vector3 origin, Transform ownerRoot, F3DPool pool)

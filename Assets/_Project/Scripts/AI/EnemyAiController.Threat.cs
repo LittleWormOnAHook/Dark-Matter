@@ -160,13 +160,26 @@ namespace Project.AI
                 return;
             }
 
+            Project.Combat.DM_CombatCoreProfile cp = Project.Combat.DM_CombatCoreProfile.Live;
+            float provoke = cp != null ? cp.rangedHitProvokeSeconds : 15f;
+
             // 2026-10-14 (a): a player hit (ranged from any distance, or melee) provokes the enemy so it keeps
             // hunting the shooter past vision / leash / chase-time limits (DM_CombatCoreProfile.rangedHitProvokeSeconds).
             if (IsCombatTargetPlayer(attacker))
             {
-                Project.Combat.DM_CombatCoreProfile cp = Project.Combat.DM_CombatCoreProfile.Live;
-                float provoke = cp != null ? cp.rangedHitProvokeSeconds : 15f;
                 if (provoke > 0f)
+                {
+                    provokedBy = attacker;
+                    provokedUntil = Time.time + provoke;
+                }
+            }
+            else if (Project.Combat.Turrets.DMTurretHealth.IsTurretTransform(attacker))
+            {
+                Project.Combat.Turrets.DMTurretRuntime turretRuntime =
+                    attacker.GetComponentInParent<Project.Combat.Turrets.DMTurretRuntime>();
+                if (turretRuntime != null
+                    && turretRuntime.Faction == Project.Combat.Turrets.DMTurretFaction.Player
+                    && provoke > 0f)
                 {
                     provokedBy = attacker;
                     provokedUntil = Time.time + provoke;
@@ -260,6 +273,9 @@ namespace Project.AI
                 ThreatEntry entry = pair.Value;
                 if (entry.Root == null || !IsLivingThreat(entry.Root))
                     continue;
+                if (IsPlayerInCombatRange(out _)
+                    && Project.Combat.Turrets.DMTurretHealth.IsTurretTransform(entry.Root))
+                    continue;
 
                 if (entry.TotalDamage > bestDamage ||
                     (Mathf.Approximately(entry.TotalDamage, bestDamage) && entry.LastHitTime > bestRecent))
@@ -294,6 +310,10 @@ namespace Project.AI
             if (companionHealth != null)
                 return !companionHealth.IsDead;
 
+            Project.Combat.Turrets.DMTurretHealth turret = candidate.GetComponentInParent<Project.Combat.Turrets.DMTurretHealth>();
+            if (turret != null)
+                return !turret.IsDead;
+
             SurvivalStats stats = candidate.GetComponentInParent<SurvivalStats>();
             return stats == null || !stats.IsDead;
         }
@@ -309,6 +329,9 @@ namespace Project.AI
 
             if (!IsCombatTargetPlayer(candidate))
                 return true;
+
+            if (Project.Combat.Turrets.DMTurretPlayerControl.IsSeatedPlayer(candidate))
+                return false;
 
             SurvivalStats stats = candidate.GetComponent<SurvivalStats>();
             if (stats != null && (stats.IsDead || stats.HasEnemyCombatImmunity))
@@ -345,7 +368,9 @@ namespace Project.AI
 
         private bool HasActivePlayerAggro()
         {
-            return HasActiveAggroTarget() && !IsPioneer(aggroTarget);
+            return HasActiveAggroTarget()
+                && !IsPioneer(aggroTarget)
+                && !Project.Combat.Turrets.DMTurretHealth.IsTurretTransform(aggroTarget);
         }
 
         /// <summary>
@@ -397,6 +422,9 @@ namespace Project.AI
             if (player == null)
                 return false;
 
+            if (Project.Combat.Turrets.DMTurretPlayerControl.IsSeatedPlayer(player))
+                return false;
+
             SurvivalStats stats = player.GetComponent<SurvivalStats>();
             if (stats != null && (stats.IsDead || stats.HasEnemyCombatImmunity))
                 return false;
@@ -423,9 +451,16 @@ namespace Project.AI
             if (aggroTarget == null || Time.time >= aggroUntil)
                 return false;
 
+            if (Project.Combat.Turrets.DMTurretPlayerControl.IsSeatedPlayer(aggroTarget))
+                return false;
+
             CompanionHealth companionHealth = aggroTarget.GetComponentInParent<CompanionHealth>();
             if (companionHealth != null)
                 return !companionHealth.IsDead;
+
+            Project.Combat.Turrets.DMTurretHealth turret = aggroTarget.GetComponentInParent<Project.Combat.Turrets.DMTurretHealth>();
+            if (turret != null)
+                return !turret.IsDead;
 
             SurvivalStats stats = aggroTarget.GetComponentInParent<SurvivalStats>();
             return stats == null || !stats.IsDead;

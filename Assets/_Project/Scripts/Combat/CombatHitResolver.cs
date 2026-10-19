@@ -2,6 +2,7 @@ using Project.AI;
 using Project.AI.Invector;
 using Project.Audio;
 using Project.Companions;
+using Project.Combat.Turrets;
 using Project.Core;
 using Project.Data;
 using Project.Interaction;
@@ -113,6 +114,13 @@ namespace Project.Combat
             IDamageable damageable = DamageableUtility.GetDamageable(collider);
             if (damageable == null)
                 return;
+
+            if (owner != null)
+            {
+                DMTurretRuntime turretOwner = owner.GetComponent<DMTurretRuntime>();
+                if (turretOwner != null && !turretOwner.CanDamage(damageable))
+                    return;
+            }
 
             GameObject damageSource = owner != null ? owner : collider.gameObject;
 

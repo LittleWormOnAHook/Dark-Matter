@@ -90,6 +90,7 @@ namespace Project.EditorTools
         public const string BlueprintCraftingManager = Crafting + "Blueprint and Crafting Manager";
         public const string Quests = Root + "Quests/";
         public const string Combat = Root + "Combat/";
+        public const string CombatTurrets = Combat + "Turrets/";
         public const string CombatExperiment = Combat + "Experiment/";
         public const string CombatAnimations = Combat + "Animations/";
         public const string RebuildEnemyControllerFromShooterMelee = CombatAnimations + "Rebuild Selected Controller from ShooterMelee Base";

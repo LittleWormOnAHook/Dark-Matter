@@ -183,6 +183,9 @@ namespace Project.AI
         private float chaseSpeedMultiplierJitter = 1f;
         private float combatRingSlotAngle;
         private int perfPhase;
+        private float nextCalmStateTickTime;
+        private const float CalmDormantBeyondSenseMeters = 12f;
+        private const float CalmStateTickSeconds = 0.16f;
         private Vector3 cachedSeparationOffset;
         private static readonly Collider[] AvoidanceHits = new Collider[12];
         private const float AggroDuration = 8f;
@@ -613,6 +616,9 @@ namespace Project.AI
             if (locomotionPaused)
                 return;
 
+            if (ShouldSkipCalmStateAiTick())
+                return;
+
             // A dodge roll owns the enemy until it ends: state changes (target lost while facing sideways, token hand-off, ...) must not cancel its movement.
             if ((dodgeRollUntil > 0f && TickDodgeRoll()) || (dodgeStrikeUntil > 0f && TickDodgeStrike()))
                 return;
@@ -863,6 +869,40 @@ namespace Project.AI
                 navAgent.enabled = false;
 
             enabled = false;
+        }
+
+        /// <summary>
+        /// Distant idle/patrol enemies do not need a full AI pass every frame; senses still refresh on their own interval.
+        /// </summary>
+        private bool ShouldSkipCalmStateAiTick()
+        {
+            if (IsEngagedWithTarget || HasActiveAggroTarget())
+                return false;
+
+            if (state != AiState.Idle && state != AiState.Wander && state != AiState.Patrol && state != AiState.ReturnHome)
+                return false;
+
+            if (senses == null)
+                senses = GetComponent<EnemySenses>();
+
+            float wakeRange = (senses != null ? senses.OuterSenseRange : 18f) + CalmDormantBeyondSenseMeters;
+            Transform player = PlayerReference.ResolveTransform();
+            if (player == null)
+                return false;
+
+            Vector3 delta = transform.position - player.position;
+            delta.y = 0f;
+            if (delta.sqrMagnitude <= wakeRange * wakeRange)
+            {
+                nextCalmStateTickTime = 0f;
+                return false;
+            }
+
+            if (Time.time < nextCalmStateTickTime)
+                return true;
+
+            nextCalmStateTickTime = Time.time + CalmStateTickSeconds + perfPhase * 0.02f;
+            return false;
         }
 
         private void OnDrawGizmosSelected()

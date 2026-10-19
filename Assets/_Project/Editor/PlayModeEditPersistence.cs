@@ -1059,6 +1059,8 @@ namespace Project.EditorTools
                     $"saved {savedScenes} scene(s), updated {appliedProjectAssets} data/material/text asset(s), " +
                     $"and {appliedPrefabAssets} prefab asset(s).");
             }
+
+            Project.EditorTools.Combat.DMTurretEditModeTrackingHooks.ReapplyAfterPlayModePersistence();
         }
 
         private static int ApplyPrefabAssetSnapshots(PrefabAssetSnapshot[] prefabAssetSnapshots)

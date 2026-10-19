@@ -137,12 +137,22 @@ namespace Project.AI.Invector
         private void LateUpdate()
         {
             RunPendingEnableEvaluate(); // 2026-10-12 deferred stiff-pose evaluate
-            // Sample every frame (even while blocked) so the first frame after a stagger has no spike.
-            SampleMeasuredVelocity();
-            TrackSlide();
 
             if (_health != null && _health.IsDead)
                 return;
+
+            bool farIdleMotor =
+                !IsWithinMotorLod()
+                && (_aiController == null || !_aiController.IsEngagedWithTarget)
+                && (_enemyCombat == null || !_enemyCombat.IsAttacking)
+                && _measuredVelocity.sqrMagnitude < MoveSpeedThreshold * MoveSpeedThreshold
+                && !IsMotorBlocked;
+            if (farIdleMotor)
+                return;
+
+            // Sample every frame (even while blocked) so the first frame after a stagger has no spike.
+            SampleMeasuredVelocity();
+            TrackSlide();
 
             if (_stabilizer != null && _stabilizer.IsSpawnSettleActive)
                 return;

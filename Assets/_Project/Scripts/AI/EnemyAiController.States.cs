@@ -197,6 +197,9 @@ namespace Project.AI
 
         private void UpdateChase()
         {
+            if (TickTurretThreatResponse())
+                return;
+
             Transform chaseTarget = combat.CurrentTarget;
             Vector3 chasePosition = ResolveChasePosition(chaseTarget);
             float chaseSpeedResolved = ResolveChaseSpeed();
@@ -314,6 +317,9 @@ namespace Project.AI
 
         private void UpdateDefensive()
         {
+            if (TickTurretThreatResponse())
+                return;
+
             Transform target = combat.CurrentTarget;
             if (target == null && HasActiveAggroTarget())
                 target = aggroTarget;
@@ -422,6 +428,12 @@ namespace Project.AI
         {
             if (chaseTarget == null)
                 return lastKnownPlayerPosition;
+
+            if (Project.Combat.Turrets.DMTurretHealth.IsTurretTransform(chaseTarget))
+            {
+                lastKnownPlayerPosition = chaseTarget.position;
+                return chaseTarget.position;
+            }
 
             if (senses.CanSeePlayer() || IsProvokedBy(chaseTarget))
             {
@@ -541,6 +553,9 @@ namespace Project.AI
 
         private void UpdateAttack()
         {
+            if (TickTurretThreatResponse())
+                return;
+
             Transform primaryThreat = ResolvePrimaryThreat();
             if (primaryThreat != null && AllowsCombatTarget(primaryThreat))
                 combat.SetTarget(primaryThreat);

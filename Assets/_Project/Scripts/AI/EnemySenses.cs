@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Project.Combat.Turrets;
 using Project.Companions;
 using Project.Core;
 using UnityEngine;
@@ -81,6 +82,9 @@ namespace Project.AI
             if (player == null)
                 return null;
 
+            if (DMTurretPlayerControl.IsSeatedPlayer(player))
+                return null;
+
             Vector3 enemyPos = transform.position;
             Vector3 playerPos = player.position;
             float distance = HorizontalDistance(enemyPos, playerPos);
@@ -149,7 +153,7 @@ namespace Project.AI
         private Transform EvaluateVisiblePlayer()
         {
             EnsurePlayer();
-            if (player == null)
+            if (player == null || DMTurretPlayerControl.IsSeatedPlayer(player))
                 return null;
 
             Vector3 enemyPos = transform.position;

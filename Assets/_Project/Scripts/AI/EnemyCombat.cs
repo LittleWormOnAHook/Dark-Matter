@@ -23,6 +23,7 @@ namespace Project.AI
         private Transform target;
         private SurvivalStats targetStats;
         private CompanionHealth targetCompanionHealth;
+        private Project.Combat.Turrets.DMTurretHealth targetTurretHealth;
         private EnemyAiController aiController;
         private EnemyInvectorCombatBridge invectorCombat;
         private EnemySenses senses;
@@ -99,6 +100,13 @@ namespace Project.AI
         {
             newTarget = ResolveCombatTargetRoot(newTarget);
 
+            if (Project.Combat.Turrets.DMTurretHealth.IsTurretTransform(newTarget)
+                && aiController != null
+                && aiController.IsPlayerInCombatRange(out Transform playerInRange))
+            {
+                newTarget = aiController.AllowsCombatTarget(playerInRange) ? playerInRange : null;
+            }
+
             if (newTarget != null && aiController != null && !aiController.AllowsCombatTarget(newTarget))
                 newTarget = null;
 
@@ -113,6 +121,9 @@ namespace Project.AI
             target = newTarget;
             targetStats = newTarget != null ? newTarget.GetComponentInParent<SurvivalStats>() : null;
             targetCompanionHealth = newTarget != null ? newTarget.GetComponentInParent<CompanionHealth>() : null;
+            targetTurretHealth = newTarget != null
+                ? newTarget.GetComponentInParent<Project.Combat.Turrets.DMTurretHealth>()
+                : null;
             if (changed)
                 TargetChanged?.Invoke(newTarget);
         }
@@ -127,6 +138,9 @@ namespace Project.AI
 
             if (targetCompanionHealth != null)
                 return !targetCompanionHealth.IsDead;
+
+            if (targetTurretHealth != null)
+                return !targetTurretHealth.IsDead;
 
             return false;
         }
@@ -499,6 +513,8 @@ namespace Project.AI
             {
                 if (stats.IsDead || stats.HasEnemyCombatImmunity)
                     return;
+                if (Project.Combat.Turrets.DMTurretPlayerControl.IsSeatedPlayer(stats.transform))
+                    return;
 
                 float healthBefore = stats.CurrentHealth;
                 stats.ApplyDamageFromSource(damage, gameObject);
@@ -509,6 +525,16 @@ namespace Project.AI
                     $"[EnemyDamage] {attackerName} hit Player for {damage:0.#} " +
                     $"(health {healthBefore:0.#} → {healthAfter:0.#})");
 #endif
+                return;
+            }
+
+            Project.Combat.Turrets.DMTurretHealth turretHealth = hitTarget.GetComponentInParent<Project.Combat.Turrets.DMTurretHealth>();
+            if (turretHealth != null)
+            {
+                if (turretHealth.IsDead)
+                    return;
+                turretHealth.TakeDamage(damage, gameObject, false);
+                CombatHitVfx.SpawnIncomingEnemyHit(transform, turretHealth.transform, damage);
                 return;
             }
 
@@ -544,6 +570,10 @@ namespace Project.AI
             SurvivalStats stats = candidate.GetComponentInParent<SurvivalStats>();
             if (stats != null)
                 return stats.transform;
+
+            Project.Combat.Turrets.DMTurretHealth turret = candidate.GetComponentInParent<Project.Combat.Turrets.DMTurretHealth>();
+            if (turret != null)
+                return turret.transform;
 
             return candidate;
         }

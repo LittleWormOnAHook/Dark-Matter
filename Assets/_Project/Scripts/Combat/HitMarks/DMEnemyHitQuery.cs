@@ -223,6 +223,43 @@ namespace Project.Combat
             return bestCollider != null;
         }
 
+        /// <summary>
+        /// All live per-bone hitboxes within a sphere (grenade splash, etc.). Writes valid colliders into
+        /// <paramref name="buffer"/> from index 0 and returns the count. Skips <paramref name="owner"/> colliders.
+        /// </summary>
+        public static int CollectHitboxesInRadiusNonAlloc(
+            Vector3 center,
+            float radius,
+            GameObject owner,
+            Collider[] buffer)
+        {
+            if (buffer == null || buffer.Length == 0 || !AnyRigActive)
+                return 0;
+
+            SyncOncePerFrame();
+            int rawCount = Physics.OverlapSphereNonAlloc(
+                center,
+                Mathf.Max(0.001f, radius),
+                buffer,
+                HitboxMask,
+                QueryTriggerInteraction.Collide);
+
+            int written = 0;
+            for (int i = 0; i < rawCount; i++)
+            {
+                Collider candidate = buffer[i];
+                buffer[i] = null;
+                if (candidate == null || !TryGetHitbox(candidate, out _))
+                    continue;
+                if (CombatHitResolver.IsOwnerCollider(owner, candidate))
+                    continue;
+
+                buffer[written++] = candidate;
+            }
+
+            return written;
+        }
+
         private static bool PickNearestHitbox(int count, GameObject owner, out RaycastHit best)
         {
             best = default;

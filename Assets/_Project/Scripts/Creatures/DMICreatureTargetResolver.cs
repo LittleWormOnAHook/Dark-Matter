@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Project.Combat.Turrets;
 using Project.Companions;
 using Project.Core;
 using Project.Pet;
@@ -35,7 +36,7 @@ namespace Project.Creatures
             CandidateBuffer.Clear();
 
             Transform player = PlayerReference.ResolveTransform();
-            if (player != null)
+            if (player != null && !DMTurretPlayerControl.IsSeatedPlayer(player))
                 CandidateBuffer.Add(player);
 
             IReadOnlyList<PetController> pets = GameplayActorRegistry.ActivePets;
@@ -111,8 +112,9 @@ namespace Project.Creatures
             if (IsAllyCreature(self, other))
                 return false;
 
-            if (other.GetComponentInParent<SurvivalStats>() != null)
-                return true;
+            SurvivalStats survival = other.GetComponentInParent<SurvivalStats>();
+            if (survival != null)
+                return !DMTurretPlayerControl.IsSeatedPlayer(survival.transform);
 
             if (other.GetComponentInParent<CompanionHealth>() != null)
                 return true;

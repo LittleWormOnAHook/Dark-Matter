@@ -197,6 +197,8 @@ namespace Project.AI
             Vector3 me = transform.position;
             Vector3 push = Vector3.zero;
             float deepest = 0f;
+            float maxCheck = p.hardEnemySeparation * 2.5f;
+            float maxCheckSqr = maxCheck * maxCheck;
             for (int i = 0; i < ActiveEnemies.Count; i++)
             {
                 EnemyAiController o = ActiveEnemies[i];
@@ -207,6 +209,8 @@ namespace Project.AI
 
                 Vector3 d = me - o.transform.position;
                 d.y = 0f;
+                if (d.sqrMagnitude > maxCheckSqr)
+                    continue;
                 float dist = d.magnitude;
                 if (dist >= p.hardEnemySeparation)
                     continue;

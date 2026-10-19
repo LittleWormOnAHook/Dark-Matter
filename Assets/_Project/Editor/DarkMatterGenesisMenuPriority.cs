@@ -34,6 +34,7 @@ namespace Project.EditorTools
         public const int Tools_Dark_Matter_Genesis_Buildings_Add_Build_Hub_Equipment = 300;
         public const int Tools_Dark_Matter_Genesis_Buildings_Add_Generator_Equipment = 400;
         public const int Tools_Dark_Matter_Genesis_Buildings_Add_Storage_Crate_All_Styles = 500;
+        public const int Tools_Dark_Matter_Genesis_Buildings_Add_Turret_Equipment = 550;
         public const int Tools_Dark_Matter_Genesis_Buildings_Apply_Mesh_Upgrades_All_Styles = 600;
         public const int Tools_Dark_Matter_Genesis_Buildings_Bake_Missing_Part_Icons_All_Styles = 700;
         public const int Tools_Dark_Matter_Genesis_Buildings_Build_Surface_Items_Lights_Decor = 800;
@@ -84,6 +85,17 @@ namespace Project.EditorTools
         public const int Tools_Dark_Matter_Genesis_Combat_Reset_Player_Invector_T_Pose_Weapon_Slots = Tools_Dark_Matter_Genesis_Combat_Menu_Band;
         public const int Tools_Dark_Matter_Genesis_Combat_Setup_Phase_C_Ranged_Crafting = Tools_Dark_Matter_Genesis_Combat_Menu_Band;
         public const int Tools_Dark_Matter_Genesis_Combat_Strip_NavMesh_From_Combat_Prefabs = Tools_Dark_Matter_Genesis_Combat_Menu_Band;
+        public const int Tools_Dark_Matter_Genesis_Combat_Turrets_Add_Placeable_To_Scene = Tools_Dark_Matter_Genesis_Combat_Menu_Band;
+        public const int Tools_Dark_Matter_Genesis_Combat_Turrets_Bake_Combat_Prefab = Tools_Dark_Matter_Genesis_Combat_Menu_Band;
+        public const int Tools_Dark_Matter_Genesis_Combat_Turrets_Bake_Placeable_Prefab = Tools_Dark_Matter_Genesis_Combat_Menu_Band;
+        public const int Tools_Dark_Matter_Genesis_Combat_Turrets_Bake_Selected_Scene_Turret = Tools_Dark_Matter_Genesis_Combat_Menu_Band;
+        public const int Tools_Dark_Matter_Genesis_Combat_Turrets_Center_Pivot = Tools_Dark_Matter_Genesis_Combat_Menu_Band;
+        public const int Tools_Dark_Matter_Genesis_Combat_Turrets_Ensure_Alarm_All_Prefabs = Tools_Dark_Matter_Genesis_Combat_Menu_Band;
+        public const int Tools_Dark_Matter_Genesis_Combat_Turrets_Ensure_Alarm_Selected = Tools_Dark_Matter_Genesis_Combat_Menu_Band;
+        public const int Tools_Dark_Matter_Genesis_Combat_Turrets_Register_All_Equipment = Tools_Dark_Matter_Genesis_Combat_Menu_Band;
+        public const int Tools_Dark_Matter_Genesis_Combat_Turrets_Register_Current_Equipment = Tools_Dark_Matter_Genesis_Combat_Menu_Band;
+        public const int Tools_Dark_Matter_Genesis_Combat_Turrets_Sync_All_Combat = Tools_Dark_Matter_Genesis_Combat_Menu_Band;
+        public const int Tools_Dark_Matter_Genesis_Combat_Turrets_Wire_Runtime_References = Tools_Dark_Matter_Genesis_Combat_Menu_Band;
         public const int Tools_Dark_Matter_Genesis_Combat_Surface_Carve_Tool = Tools_Dark_Matter_Genesis_Combat_Menu_Band;
         public const int Tools_Dark_Matter_Genesis_Combat_Swap_Pioneer_Scene_Player_To_Invector = Tools_Dark_Matter_Genesis_Combat_Menu_Band;
         public const int Tools_Dark_Matter_Genesis_Combat_Update_All_Enemy_Prefabs_And_Scene = Tools_Dark_Matter_Genesis_Combat_Menu_Band;

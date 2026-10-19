@@ -1,3 +1,4 @@
+using Project.Combat.Turrets;
 using Project.Core;
 using Project.Player;
 using Project.Player.Invector;
@@ -9,10 +10,22 @@ namespace Project.Combat
     /// <summary>Recognizes player / pioneer outgoing damage for engaged HUD and feedback routing.</summary>
     public static class CombatPlayerSourceUtility
     {
+        public static bool IsPlayerTurretSource(GameObject source)
+        {
+            if (source == null)
+                return false;
+
+            DMTurretRuntime runtime = source.GetComponentInParent<DMTurretRuntime>();
+            return runtime != null && runtime.Faction == DMTurretFaction.Player && !runtime.IsDestroyed;
+        }
+
         public static bool IsPlayerOrPioneerSource(GameObject source)
         {
             if (source == null)
                 return false;
+
+            if (IsPlayerTurretSource(source))
+                return true;
 
             if (source.CompareTag("Player"))
                 return true;

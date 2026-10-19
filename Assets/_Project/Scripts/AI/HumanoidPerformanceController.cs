@@ -28,6 +28,7 @@ namespace Project.AI
         private float _nextCheckTime;
         private float _spawnVisibleUntil;
         private bool _culled;
+        private float _lastPlanarDistance;
         private int _perfPhase;
 
         private void Awake()
@@ -235,6 +236,7 @@ namespace Project.AI
             Vector3 delta = transform.position - cameraTransform.position;
             delta.y = 0f;
             float distance = delta.magnitude;
+            _lastPlanarDistance = distance;
 
             if (distance >= cullDistance)
             {
@@ -248,8 +250,7 @@ namespace Project.AI
 
             EnsureProtectedBodyVisible();
 
-            if (_animator != null && _animator.cullingMode != AnimatorCullingMode.AlwaysAnimate)
-                _animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            ApplyAnimatorCullingForBand();
         }
 
         private bool ShouldKeepAnimatorLive()
@@ -263,10 +264,43 @@ namespace Project.AI
             return false;
         }
 
+        /// <summary>
+        /// Off-screen skinned updates are only for spawn stabilization, combat, or close idle band.
+        /// Far / culled humanoids otherwise drive the "updated skinned meshes" stat without being visible.
+        /// </summary>
+        private bool ShouldForceOffscreenSkinnedUpdates()
+        {
+            if (Time.time < _spawnVisibleUntil)
+                return true;
+            if (ShouldKeepAnimatorLive())
+                return true;
+            if (_culled)
+                return false;
+            return _lastPlanarDistance < fullDetailDistance;
+        }
+
+        private void ApplyAnimatorCullingForBand()
+        {
+            if (_animator == null)
+                return;
+            if (ShouldKeepAnimatorLive() || Time.time < _spawnVisibleUntil)
+            {
+                _animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+                return;
+            }
+
+            if (_culled || _lastPlanarDistance >= fullDetailDistance)
+                _animator.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
+            else
+                _animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+        }
+
         private void EnsureProtectedBodyVisible()
         {
             if (_skinnedRenderers == null || _protectFromCull == null)
                 return;
+
+            bool forceOffscreen = ShouldForceOffscreenSkinnedUpdates();
 
             for (int i = 0; i < _skinnedRenderers.Length; i++)
             {
@@ -274,8 +308,7 @@ namespace Project.AI
                 if (renderer == null)
                     continue;
 
-                if (!renderer.updateWhenOffscreen)
-                    renderer.updateWhenOffscreen = true;
+                renderer.updateWhenOffscreen = forceOffscreen;
 
                 if (_protectFromCull != null && i < _protectFromCull.Length && !_protectFromCull[i])
                     continue;
@@ -310,8 +343,7 @@ namespace Project.AI
                 renderer.enabled = true;
                 if (!renderer.gameObject.activeSelf)
                     renderer.gameObject.SetActive(true);
-                if (!renderer.updateWhenOffscreen)
-                    renderer.updateWhenOffscreen = true;
+                renderer.updateWhenOffscreen = ShouldForceOffscreenSkinnedUpdates();
             }
         }
 
@@ -350,7 +382,7 @@ namespace Project.AI
 
             if (!_animator.enabled)
                 _animator.enabled = true;
-            _animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            ApplyAnimatorCullingForBand();
         }
 
         private void SetCulled(bool culled)
@@ -364,7 +396,7 @@ namespace Project.AI
                 if (_health == null || !_health.IsDead)
                 {
                     _animator.enabled = true;
-                    _animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+                    ApplyAnimatorCullingForBand();
                 }
                 else
                 {
@@ -425,6 +457,8 @@ namespace Project.AI
 
             if (_lodGroup != null)
                 _lodGroup.enabled = !culled;
+
+            EnsureProtectedBodyVisible();
         }
 
         private bool TryGetCameraTransform(out Transform cameraTransform)

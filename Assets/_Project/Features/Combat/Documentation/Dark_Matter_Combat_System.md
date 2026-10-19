@@ -100,16 +100,29 @@ FX & world impact:
 - `MoltenImpact/`, laser burn mark spawner/host interfaces
 - `Experiment/Carve/` — carve experiment ammo + utilities (**lab only**)
 
+Turrets (FORGE3D wrap — Oct 2026):
+
+- `Turrets/DMTurretProfile.cs` + `Resources/Combat/DM_TurretProfile.asset` — placement faction/mode, scan/track/fire ranges, hull (100 HP default), enemy flee/destroy chance (10–40%)
+- `Turrets/DMTurretRuntime.cs` — faction/target, ammo mode, vendor `F3DFXType`, FORGE3D `database.asset` barrel id/prefab (Instance Authority), fire through `F3DFXController`. Designer Inspector / Combat Studio list catalog barrels; playable menu is Auto or Enter plus mixed game/vendor ammo
+- `Turrets/DMTurretPlayerControl.cs` — E UITK Auto/Enter; seated look is mouse-delta swivel/elevation; player renderers + combat/jetpack/climb ticks hide/disable while seated and restore on exit
+- Enemy vs player turret: `EnemyAiController.Turrets` prefers the living **visible** player in combat/sense range; seated (hidden) Kade is not a valid target — enemies may engage the player-faction turret instead
+- `Turrets/DMTurretBrain.cs` — Scan / Track / Fire; acquire and fire require barrel LOS
+- `Turrets/DMTurretHealth.cs` — `IDamageable` / `IDamageReceiver` (player and enemies both damage hull)
+- `Turrets/DMTurretLos.cs` + `DMForge3DHitBridge` — FORGE3D beams/projectiles use Default/Terrain/Building/rock occluders (`QueryTriggerInteraction.Ignore`); no damage if a collider sits between muzzle and hit
+- `Turrets/DMForge3DHitBridge.cs` — project damage pipeline; strips `AddForceAtPosition` torque on Kade (layer 8)
+- `Turrets/DMTurretInteract.cs` + `DMTurretPlayerControl.cs` — E UITK Auto/Enter menu; idle mouse holds aim
+- Building: Equipment piece `si_turret` (`DMBuildingTurretBuilder`), ghost-profile seat camera/interact range
+
 ### AI — `Assets/_Project/Scripts/AI/`
 
-- `EnemyAiController` FSM (legacy chase/attack — **no NavMesh**)
+- `EnemyAiController` FSM (legacy chase/attack — **no NavMesh**); `EnemyAiController.Turrets.cs` — player in combat/sense/aggro range always beats a turret; otherwise flee past fire range or roll destroy-chance
 - `Brain/DMEnemyBrain.cs` — utility Press / Defend / Retreat / Hold (**Phase 3 signed off Oct 8, 2026**)
 - `Brain/DMEnemyEngagementDirector.cs` — melee token + hold ring (**Phase 3 Part A**; encounter director §31 #4 is Phase 4)
 - `EnemyHealthSceneRegistry.cs` (HUD/threat perf)
 
 ### Editor — `Assets/_Project/Editor/Combat/`
 
-- `DMCombatStudioWindow.cs` — Core / Melee / Ranged / Play / Roadmap
+- `DMCombatStudioWindow.cs` — Core / Melee / Ranged / Throwables / Turrets / Play / Director / Roadmap
 - `DMEnemyHitMarksBuilder.cs`, `DMMeleeAnimationSetApplier.cs`, `DMCombatSandboxSceneBuilder.cs`
 - `Experiment/DMCarveExperimentAuthoring.cs`, `DMCarveStaticMeshSetupUtility.cs`
 
@@ -123,6 +136,7 @@ FX & world impact:
 | `DM_EnemyBrainProfile.asset` | Archetype × personality × condition utility weights |
 | `DM_EnemyEngagementProfile.asset` | Token hand-off, hold ring, facing/tracking |
 | `DM_CombatDirectorProfile.asset` | Phase 4 start: attack slots by enemy count (1v1=1, 2–4=1–2, 5–8=2–3, larger scales), intensity, rotation; flank/morale stubs. `enableCombatDirector` off = Phase 3 only |
+| `DM_TurretProfile.asset` | FORGE3D wrap: placed Auto vs Player-control, Player vs Enemy faction, scan/track/fire ranges, 100 HP hull, enemy destroy-chance min/max |
 | `DMMoltenImpactMap.asset` | Molten surface response |
 | Prefabs/VFX under same folder | Dummy target, floating damage/bar, projectiles, blood/smoke |
 
@@ -177,8 +191,8 @@ Stamina/tension and skill modifiers sit in progression/survival systems (`ItemDa
 
 | Surface | Menu / location | Profiles |
 |---------|-----------------|----------|
-| **Genesis Studio → Combat** | In-editor studio registry | Combat Core, Melee Animations, Ammo FX, Hit Marks, AI & awareness, Director & tokens; §31 placeholders (doc links only) |
-| **Combat Studio** | `Tools/Dark Matter Genesis/Combat/Combat Studio` | Grouped view of Combat Core + melee/ranged/play roadmap |
+| **Genesis Studio → Combat** | In-editor studio registry | Combat Core, Melee Animations, Ammo FX, Hit Marks, AI & awareness, Director & tokens, **Turrets** (`DM_TurretProfile`, `playModeSave`); §31 placeholders (doc links only) |
+| **Combat Studio** | `Tools/Dark Matter Genesis/Combat/Combat Studio` | Grouped view of Combat Core + melee/ranged/throwables/**turrets**/play roadmap |
 | **Live Play edits** | Sliders in studio | `DM_CombatCoreProfile.Live`, brain/engagement/hit-mark profiles where `playModeSave` registered |
 
 Registry reference: `Assets/_Project/Editor/GenesisStudio/DMStudioRegistry.cs` (Combat category).

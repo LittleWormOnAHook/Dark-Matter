@@ -13,7 +13,6 @@ namespace Project.Combat.Turrets
     {
         private static readonly List<DMTurretInteract> Active = new List<DMTurretInteract>(8);
 
-        [SerializeField] private float interactRange = 3.5f;
         [SerializeField] private Collider interactCollider;
 
         private DMTurretRuntime runtime;
@@ -107,7 +106,7 @@ namespace Project.Combat.Turrets
                 context.PlayerPosition,
                 interactCollider,
                 transform.position);
-            float range = DMBuildingGhostProfileRange();
+            float range = ResolveInteractRange();
             if (distance > range)
                 return false;
 
@@ -124,10 +123,9 @@ namespace Project.Combat.Turrets
             return off <= Mathf.Max(1.4f, bounds.extents.magnitude * 0.7f);
         }
 
-        private float DMBuildingGhostProfileRange()
+        private float ResolveInteractRange()
         {
-            float fromGhost = Project.Building.DMBuildingGhostProfile.TurretInteractRangeMeters;
-            return fromGhost > 0.1f ? fromGhost : interactRange;
+            return runtime != null ? runtime.InteractRangeMeters : 3.5f;
         }
     }
 }

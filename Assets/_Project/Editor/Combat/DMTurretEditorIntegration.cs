@@ -49,6 +49,58 @@ namespace Project.EditorTools.Combat
             BakeSelectedSceneTurret();
         }
 
+        [MenuItem(DarkMatterGenesisEditorMenus.CombatTurrets + "Ensure alarm on all combat turret prefabs", false,
+            DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Turrets_Ensure_Alarm_All_Prefabs)]
+        public static void MenuEnsureAlarmAllCombatPrefabs()
+        {
+            int ok = DMTurretAlarmEnsure.EnsureAllCombatTurretPrefabs();
+            Debug.Log("[DM Turret] Ensured Alarm on " + ok + " combat turret prefab(s) under "
+                + DMTurretPrefabBakeUtility.CombatTurretFolder + ". Re-place scene instances from prefabs if needed.");
+        }
+
+        [MenuItem(DarkMatterGenesisEditorMenus.CombatTurrets + "Ensure alarm on selected/scene turrets", false,
+            DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Turrets_Ensure_Alarm_Selected)]
+        public static void MenuEnsureAlarmSelectedOrScene()
+        {
+            var roots = new System.Collections.Generic.List<GameObject>();
+            if (Selection.gameObjects != null && Selection.gameObjects.Length > 0)
+            {
+                for (int i = 0; i < Selection.gameObjects.Length; i++)
+                {
+                    DMTurretRuntime runtime = Selection.gameObjects[i].GetComponentInParent<DMTurretRuntime>();
+                    if (runtime != null)
+                        roots.Add(runtime.gameObject);
+                }
+            }
+            else
+            {
+                DMTurretRuntime[] sceneTurrets = Object.FindObjectsByType<DMTurretRuntime>(FindObjectsInactive.Exclude);
+                for (int i = 0; i < sceneTurrets.Length; i++)
+                {
+                    if (sceneTurrets[i] != null)
+                        roots.Add(sceneTurrets[i].gameObject);
+                }
+            }
+
+            if (roots.Count == 0)
+            {
+                Debug.LogWarning("[DM Turret] Select turret root(s) with DMTurretRuntime, or run with nothing selected to batch the open scene.");
+                return;
+            }
+
+            int ok = 0;
+            for (int i = 0; i < roots.Count; i++)
+            {
+                Undo.RegisterFullObjectHierarchyUndo(roots[i], "Ensure turret Alarm");
+                if (DMTurretAlarmEnsure.EnsureAlarmSphere(roots[i]))
+                    ok++;
+                DMTurretPrefabBakeUtility.WireAlarmLight(roots[i]);
+                EditorUtility.SetDirty(roots[i]);
+            }
+
+            Debug.Log("[DM Turret] Ensured Alarm on " + roots.Count + " turret(s) (" + ok + " new sphere(s)).");
+        }
+
         [MenuItem(DarkMatterGenesisEditorMenus.CombatTurrets + "Center pivot on selected turret", false,
             DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_Combat_Turrets_Center_Pivot)]
         public static void MenuRecenterSelectedTurret()

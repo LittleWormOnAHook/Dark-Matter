@@ -340,6 +340,7 @@ Transform:
   m_Children:
   - {fileID: 5438756938931660768}
   - {fileID: 2313076157764848787}
+  - {fileID: 1381399935517549670}
   m_Father: {fileID: 7437939571429546084}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2600576475747841269
@@ -1031,6 +1032,7 @@ GameObject:
   - component: {fileID: 4016677705585219327}
   - component: {fileID: 6882854506830791832}
   - component: {fileID: 5186248083121234825}
+  - component: {fileID: 772100280106061298}
   m_Layer: 0
   m_Name: Repeater Turret
   m_TagString: Untagged
@@ -1149,14 +1151,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.Turrets.DMTurretRuntime
   faction: 0
   controlMode: 0
+  ammoMode: 0
+  vendorFxType: 0
   ammoType: 0
+  barrelKind: 0
+  barrelDatabase: {fileID: 0}
+  databaseBarrelId: 
+  databaseBarrelPrefab: {fileID: 0}
   useProfileDamage: 1
   damageOverride: 18
   instanceAuthority:
     overrideAmmoMode: 0
     ammoMode: 0
+    overrideVendorFxType: 0
+    vendorFxType: 0
     overrideAmmoType: 0
     ammoType: 0
+    overrideBarrelKind: 0
+    barrelKind: 0
+    overrideDatabaseBarrel: 0
+    databaseBarrelId: 
     overrideGameAmmoItems: 0
     gameWeaponItem: {fileID: 0}
     gameAmmoItem: {fileID: 0}
@@ -1178,6 +1192,45 @@ MonoBehaviour:
     fireRange: 22
     overrideMaxHealth: 0
     maxHealth: 100
+    overrideAimAcceptDegrees: 0
+    aimAcceptDegrees: 8
+    overrideAutoRestAfterNoTargetSeconds: 0
+    autoRestAfterNoTargetSeconds: 15
+    overrideTargetLosGraceSeconds: 0
+    targetLosGraceSeconds: 0.65
+    overrideTargetLosFailuresBeforeDrop: 0
+    targetLosFailuresBeforeDrop: 4
+    overrideScanHeadingSpeed: 0
+    scanHeadingSpeed: 18
+    overrideScanRetargetSeconds: 0
+    scanRetargetSeconds: 2.4
+    overrideScanElevationDegrees: 0
+    scanElevationDegrees: {x: -8, y: 12}
+  trackingAuthority:
+    overrideMountSwivel: 0
+    mount: {fileID: 0}
+    swivel: {fileID: 0}
+    overrideHeadingTrackingSpeed: 0
+    headingTrackingSpeed: 40
+    overrideElevationTrackingSpeed: 0
+    elevationTrackingSpeed: 30
+    overrideHeadingLimit: 0
+    headingLimit: {x: -180, y: 180}
+    overrideElevationLimit: 0
+    elevationLimit: {x: -15, y: 45}
+    overrideSmoothControlling: 0
+    smoothControlling: 0
+    editorDrawVisionCones: 0
+    overrideDebugDraw: 0
+    debugDraw: 0
+    overrideDebugTarget: 0
+    debugTarget: {fileID: 0}
+    overrideAnimators: 0
+    animators: []
+  vendorFxAuthority:
+    overrideVulcanFireRate: 0
+    vulcanFireRate: 0.07
+  interactRangeMeters: 3.5
   forgeTurret: {fileID: 8614891456569935109}
   fxController: {fileID: 5737162682661824783}
   barrel: {fileID: 3293072872726307482}
@@ -1219,7 +1272,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e6b14c2ede9371543bfd1aeaf880d843, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.Turrets.DMTurretInteract
-  interactRange: 3.5
   interactCollider: {fileID: 0}
 --- !u!65 &5186248083121234825
 BoxCollider:
@@ -1242,6 +1294,24 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 3.9194202, y: 2.4747853, z: 5.3849754}
   m_Center: {x: 0, y: 1.2373927, z: 0}
+--- !u!114 &772100280106061298
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5825648256069219643}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e9c2a8b1f3d4658907abcde12345678, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.Turrets.DMTurretAlarmLight
+  targetRenderer: {fileID: 9022029954910031333}
+  emissionIntensity: 5
+  useProfileColors: 1
+  rimBlinkHz: 0.85
+  centerBlinkHz: 8
+  blinkTrough: 0.12
 --- !u!1 &6302946364931302408
 GameObject:
   m_ObjectHideFlags: 0
@@ -1318,6 +1388,96 @@ MeshRenderer:
   m_ScaleInLightmap: 1
   m_ReceiveGI: 1
   m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &6447986654891641148
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1381399935517549670}
+  - component: {fileID: 2771006507459732775}
+  - component: {fileID: 9022029954910031333}
+  m_Layer: 0
+  m_Name: Alarm
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1381399935517549670
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6447986654891641148}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.306, z: -0.668}
+  m_LocalScale: {x: 0.28583, y: 0.28583, z: 0.28583}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1752293836419781988}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &2771006507459732775
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6447986654891641148}
+  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!23 &9022029954910031333
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6447986654891641148}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 8c27aff30a993b9458792e68616fe0be, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
   m_StitchLightmapSeams: 1

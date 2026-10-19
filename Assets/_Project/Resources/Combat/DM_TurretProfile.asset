@@ -46,4 +46,4 @@ MonoBehaviour:
   playerCameraFov: 50
   playerAimMouseSensitivity: 0.05
   playerReticleScreenBias: 0.06
-  debugDraw: 1
+  debugDraw: 0
