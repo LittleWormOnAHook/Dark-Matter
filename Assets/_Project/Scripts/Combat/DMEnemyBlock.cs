@@ -55,7 +55,7 @@ namespace Project.Combat
 
             // Forced block test (Tools > Dark Matter Genesis > Combat > Test > Force Enemy Block, runtime only): every player melee hit meets a raised guard.
             if (ForceBlockTest && !bridge.IsBlockActive)
-                bridge.TryBeginBlock(Mathf.Max(0.4f, bp.blockDurationSeconds), out _);
+                bridge.TryBeginBlock(Mathf.Max(0.4f, bp.blockDurationSeconds), out _, ignoreGuardStamina: true); // 2026-10-19 e: test switch ignores the tired-guard gate
 
             if (!bridge.IsBlockActive && bp.reactiveBlockChance > 0f)
             {

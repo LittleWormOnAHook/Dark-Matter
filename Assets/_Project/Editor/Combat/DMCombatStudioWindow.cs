@@ -350,6 +350,164 @@ namespace Project.EditorTools.Combat
                         "heavyFallbackScale");
                 });
 
+                DMStudioStyles.DrawSection("Directional reactions v2: strike direction (Slice 2b)", DMStudioStyles.ContentPanel, () =>
+                {
+                    EditorGUILayout.HelpBox("Slice 2b master switch and strike direction. The lean follows the blade motion at the hit (combo-step table above as fallback). Off = Slice 2 behaviour.", MessageType.Info);
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedProfile,
+                        "enableDirectionalReactionsV2",
+                        "swingDirectionSource",
+                        "bladeVelocityMinSpeed",
+                        "bladeVelocityWindowSeconds",
+                        "strikeLeanSideShare");
+                });
+
+                DMStudioStyles.DrawSection("Light lean: weighted spring + head whip (Slice 2b)", DMStudioStyles.ContentPanel, () =>
+                {
+                    EditorGUILayout.HelpBox("Light hits lean the spine / chest / head along the strike, fast attack then a spring settle with overshoot; the head starts late and swings further. Root never moves (Light Backstep Meters = 0). Hold Peak Through Hitstop = the lean snaps in during the freeze and releases after it.", MessageType.Info);
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedProfile,
+                        "lightLeanDegrees",
+                        "lightTwistDegrees",
+                        "lightLeanAttackSeconds",
+                        "lightLeanSettleSeconds",
+                        "leanSpringFrequency",
+                        "leanSpringDamping",
+                        "leanSpineWeight",
+                        "leanChestWeight",
+                        "leanHeadWeight",
+                        "headWhipDelaySeconds",
+                        "headWhipMultiplier",
+                        "critLeanMultiplier",
+                        "leanHoldPeakThroughHitstop");
+                });
+
+                DMStudioStyles.DrawSection("Reaction weight: damage / heavy attack (Slice 2b)", DMStudioStyles.ContentPanel, () =>
+                {
+                    EditorGUILayout.HelpBox("Every reaction scales with (damage / reference) ^ exponent, clamped, x heavy attack multiplier. Weapon heft shows up through damage. Hitstop Weight Bonus Frames adds freeze frames to the heaviest hits.", MessageType.Info);
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedProfile,
+                        "reactionDamageReference",
+                        "reactionDamageExponent",
+                        "reactionDamageScaleMin",
+                        "reactionDamageScaleMax",
+                        "heavyAttackWeightMultiplier",
+                        "hitstopWeightBonusFrames");
+                });
+
+                DMStudioStyles.DrawSection("Reaction randomness (Slice 2b)", DMStudioStyles.ContentPanel, () =>
+                {
+                    EditorGUILayout.HelpBox("Rolled per hit. Avoid Repeat Variation = never the same clip / start variation twice in a row on one enemy and consecutive lean directions kept apart.", MessageType.Info);
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedProfile,
+                        "leanAngleJitterDegrees",
+                        "reactionIntensityRandomMin",
+                        "reactionIntensityRandomMax",
+                        "twistRandomDegrees",
+                        "twistSignFlipChance",
+                        "clipSpeedRandomMin",
+                        "clipSpeedRandomMax",
+                        "clipWeightRandomMin",
+                        "clipWeightRandomMax",
+                        "clipStartOffsetRandomMax",
+                        "avoidRepeatVariation",
+                        "heavyStumbleStepChance",
+                        "heavyStumbleStepMeters");
+                });
+
+                DMStudioStyles.DrawSection("Medium / heavy directional clips (Slice 2b)", DMStudioStyles.ContentPanel, () =>
+                {
+                    EditorGUILayout.HelpBox("PROTOFACTOR GetHitLight / GetHitHeavy on the DM_HitReact layers of Invector@ShooterMelee.controller. Arms and hands are masked so every enemy keeps its own sword / rifle / pistol / unarmed grip. Medium = chain hit 2 (additive torso), heavy = charged hit / stumble / poise break (body). Controllers without the layers fall back to the lean (+ Invector Big reaction on heavy).", MessageType.Info);
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedProfile,
+                        "mediumUsesClip",
+                        "mediumClipWeight",
+                        "mediumClipSpeed",
+                        "mediumLeanScale",
+                        "mediumAltHeavyClipChance",
+                        "mediumAltHeavyClipWeight",
+                        "heavyUsesClip",
+                        "heavyClipWeight",
+                        "heavyClipSpeed",
+                        "heavyLeanDegrees",
+                        "heavyLeanSettleSeconds",
+                        "reactionBlendInSeconds",
+                        "reactionBlendOutSeconds");
+                });
+
+                DMStudioStyles.DrawSection("Knockdown: animation only, no ragdoll (Slice 2b)", DMStudioStyles.ContentPanel, () =>
+                {
+                    EditorGUILayout.HelpBox("Heavy-tier hits roll the chance below (poise-break chance replaces the base; low-poise and crit bonuses; cap; x (1 - EnemyDefinition knockdownResistance)). Death* fall cut at the land point -> Dead* hold -> GetBackUp*, matched by strike side. Weapon stays in hand, aim off while down. Downed enemies take damage but get no new reactions; the down time is not extended. Ragdoll stays for death only.", MessageType.Info);
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedProfile,
+                        "knockdownEnabled",
+                        "knockdownChancePercent",
+                        "knockdownLowPoiseBonusPercent",
+                        "knockdownCritBonusPercent",
+                        "knockdownOnPoiseBreakPercent",
+                        "knockdownMaxChancePercent",
+                        "knockdownPushMeters",
+                        "knockdownPushSeconds",
+                        "knockdownFallSpeed",
+                        "knockdownFallExitFront",
+                        "knockdownFallExitBack",
+                        "knockdownFallExitLeft",
+                        "knockdownFallExitRight",
+                        "knockdownDownSeconds",
+                        "knockdownDownRandomSeconds",
+                        "getUpPlaybackSpeed",
+                        "getUpExitNormalized",
+                        "knockdownAimFadeInSeconds",
+                        "getUpInvulnerableSeconds",
+                        "knockdownImmunitySeconds",
+                        "knockdownReleasesAttackSlot",
+                        "knockdownMaxSlopeDegrees",
+                        "knockdownLedgeCheckMeters",
+                        "retireCritRagdollKnockdown",
+                        "logHitReactionsInPlay");
+                });
+
+                DMStudioStyles.DrawSection("Player hit reactions (DM)", DMStudioStyles.ContentPanel, () =>
+                {
+                    EditorGUILayout.HelpBox("Enemy hits on the player: lean every hit, light / heavy gated by the stagger chances, rare knockdown on heavy hits only (cap + cooldown). God mode / audit: see playerReactionsUnderGodMode.", MessageType.Info);
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedProfile,
+                        "enablePlayerHitReactions",
+                        "playerLeanDegreesMin",
+                        "playerLeanDegreesMax",
+                        "playerLeanAttackSeconds",
+                        "playerLeanSettleSeconds",
+                        "playerHeadWhipScale",
+                        "playerLeanJitterDegrees",
+                        "playerIntensityJitter",
+                        "playerReactionIntensityMax",
+                        "playerClipSpeedMin",
+                        "playerClipSpeedMax",
+                        "playerClipWeightMin",
+                        "playerClipWeightMax",
+                        "playerHeavyDamageFraction",
+                        "playerPushMeters",
+                        "playerPushSeconds",
+                        "playerStumbleChance",
+                        "playerLightLockSeconds",
+                        "playerHeavyLockSeconds",
+                        "playerHeavyMoveScale",
+                        "playerKnockdownChance",
+                        "playerKnockdownBonusChance",
+                        "playerKnockdownChanceCap",
+                        "playerKnockdownCooldownSeconds",
+                        "playerDownHoldSecondsMin",
+                        "playerDownHoldSecondsMax",
+                        "playerDownedDamageScale",
+                        "playerGetUpIFrameSeconds",
+                        "playerRollCancel",
+                        "playerRollCancelAfterSeconds",
+                        "playerReactionsUnderGodMode",
+                        "playerAdsLeanScale",
+                        "logPlayerHitReactions",
+                        "playerHitSoundUnderGodMode");
+                });
+
             }
 
             if (EditorGUI.EndChangeCheck())
@@ -402,6 +560,68 @@ namespace Project.EditorTools.Combat
                         "meleeBlockAutoFaceTurnSpeed",
                         "enableCombatCameraSnap",
                         "combatCameraSnapSeconds");
+                });
+
+                DMStudioStyles.DrawSection("Melee combo target lock", DMStudioStyles.ContentPanel, () =>
+                {
+                    EditorGUILayout.HelpBox("One target per combo; eased wind-up-only turn, capped per swing; single rotation owner in FixedUpdate.", MessageType.Info);
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedProfile,
+                        "meleeComboTargetLock",
+                        "meleeTargetAcquireDistance",
+                        "meleeTargetReleaseDistance",
+                        "meleeTargetIntentConeHalfAngle",
+                        "meleeTargetAngleWeight",
+                        "meleeComboLockGraceSeconds",
+                        "meleeRetargetStickAngle",
+                        "meleeRetargetMinSeconds",
+                        "meleeRetargetStickMagnitude",
+                        "meleeAssistTurnSpeed",
+                        "meleeAssistSmoothTime",
+                        "meleeAssistMaxPerSwingDegrees",
+                        "meleeAssistWindupFraction",
+                        "meleeAssistSoftFadeDegrees",
+                        "meleeTargetIgnoreDowned",
+                        "lightComboForcesStrafe",
+                        "logMeleeFacing");
+                });
+
+                DMStudioStyles.DrawSection("Melee block target lock", DMStudioStyles.ContentPanel, () =>
+                {
+                    EditorGUILayout.HelpBox("Block auto-face: sticky target (acquire / release / cone / retarget from the combo lock), eased turn, single FixedUpdate owner.", MessageType.Info);
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedProfile,
+                        "meleeBlockTargetLock",
+                        "meleeBlockAssistTurnSpeed",
+                        "meleeBlockAssistSmoothTime",
+                        "meleeBlockLockGraceSeconds",
+                        "meleeBlockFacingToleranceDegrees");
+                });
+
+                DMStudioStyles.DrawSection("Slow motion (charged attack / perfect parry)", DMStudioStyles.ContentPanel, () =>
+                {
+                    EditorGUILayout.HelpBox("DMSlowMotionDirector owns Time.timeScale + fixedDeltaTime. Yields to menus, pause, loot, main menu and audits. Times are real seconds.", MessageType.Info);
+                    DMStudioStyles.DrawPropertyFields(
+                        serializedProfile,
+                        "enableChargedSlowMo",
+                        "chargedSlowMoChance",
+                        "chargedSlowMoCooldownSeconds",
+                        "chargedSlowMoSeconds",
+                        "chargedSlowMoTimeScale",
+                        "chargedSlowMoEaseInSeconds",
+                        "chargedSlowMoEaseOutSeconds",
+                        "chargedSlowMoReach",
+                        "chargedSlowMoConeHalfAngle",
+                        "enableParrySlowMo",
+                        "parrySlowMoChance",
+                        "parrySlowMoTotalSeconds",
+                        "parrySlowMoTimeScale",
+                        "parrySlowMoEaseInSeconds",
+                        "parrySlowMoEaseOutSeconds",
+                        "parrySlowMoThreatRadius",
+                        "parrySlowMoCooldownSeconds",
+                        "slowMoAllowInAudit",
+                        "logSlowMo");
                 });
 
                 DMStudioStyles.DrawSection("Player combat buffer (enemy AI)", DMStudioStyles.ContentPanel, () =>

@@ -131,6 +131,10 @@ namespace Project.Combat
                 return;
             }
 
+            // Slice 2b: no stagger while knocked down (the get-up is not interrupted; down time is not extended).
+            if (DMEnemyKnockdown.IsDown(gameObject))
+                return;
+
             var pioneerDamage = new vDamage(Mathf.Max(1, Mathf.RoundToInt(info.Amount)))
             {
                 sender = info.Source != null ? info.Source.transform : null

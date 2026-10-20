@@ -130,6 +130,30 @@ namespace Project.EditorTools.Audit
             catch (Exception e) { log.Add("bypass exception: " + (e.InnerException != null ? e.InnerException.Message : e.Message)); }
         }
 
+        private static double _nextMenuCheck;
+        private static int _menuReBypassCount;
+
+        /// <summary>2026-10-19 e: re-applies the bypass whenever the main menu / title pause re-appears during the run (once a second).</summary>
+        private static void MenuBypassWatchdog()
+        {
+            double now = EditorApplication.timeSinceStartup;
+            if (now < _nextMenuCheck)
+                return;
+            _nextMenuCheck = now + 1.0;
+            string problems = VerifyGameplayState();
+            if (problems.Length == 0)
+                return;
+            bool menuish = problems.Contains("GameSession not started") || problems.Contains("main menu visible") || problems.Contains("still displayed")
+                || problems.Contains("pause overlay") || (problems.Contains("timeScale 0") && !Project.UI.GameplayMenuTime.IsInventoryPaused);
+            if (!menuish)
+                return;
+            var log = new List<string>();
+            ApplyBypass(log);
+            _menuReBypassCount++;
+            if (_menuReBypassCount <= 3 && _run != null)
+                _run.environment.Add($"Menu watchdog re-bypass #{_menuReBypassCount}: {problems} -> {(VerifyGameplayState().Length == 0 ? "clean" : VerifyGameplayState())}");
+        }
+
         private static string VerifyGameplayState()
         {
             var p = new List<string>();

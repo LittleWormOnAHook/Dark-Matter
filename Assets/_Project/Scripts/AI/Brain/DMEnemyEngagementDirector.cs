@@ -533,6 +533,15 @@ namespace Project.AI
         private static float s_nextMeleeStart;
         private static EnemyAiController s_meleeStartOwner;
 
+        // 2026-10-19 g: stale stagger gate (owner destroyed / left over from a previous Play without domain reload) held
+        // every melee start for over a minute. Reset on Play start; the gate also self-heals below.
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetMeleeStartGate()
+        {
+            s_nextMeleeStart = 0f;
+            s_meleeStartOwner = null;
+        }
+
         private static bool IsRangedAgent(EnemyAiController a)
         {
             var b = a != null ? a.GetComponent<Project.AI.Invector.EnemyInvectorCombatBridge>() : null;
@@ -558,6 +567,12 @@ namespace Project.AI
                 return false;
 
             float now = Time.time;
+            float staggerCap = Mathf.Max(p.meleeSwingStaggerMin, p.meleeSwingStaggerMax);
+            if (s_nextMeleeStart > now && (s_meleeStartOwner == null || !s_meleeStartOwner.isActiveAndEnabled || s_nextMeleeStart > now + staggerCap + 0.01f))
+            {
+                s_nextMeleeStart = 0f; // 2026-10-19 g: owner gone or window impossible -> release
+                s_meleeStartOwner = null;
+            }
             if (now < s_nextMeleeStart && s_meleeStartOwner != agent)
                 return false; // stagger window held by the enemy that just started
 

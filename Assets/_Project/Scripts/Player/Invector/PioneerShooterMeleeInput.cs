@@ -87,6 +87,17 @@ namespace Project.Player.Invector
         private float _lastGuardImpactTime = -99f;
         private float _lastBlockShakeTime = -99f;
         public bool IsChargeHoldActive => _strongChargePoseActive;
+        // 2026-10-19 d: DMMeleeAttackFacing (combo target lock) accessors.
+        private Project.Combat.DMMeleeAttackFacing _attackFacing;
+        public bool IsMeleeComboActive => isAttacking || _strongChargeArmed || _strongChargePoseActive || IsInLightComboAttackMoveState();
+        public bool IsStrongChargeWindup => _strongChargeArmed || _strongChargePoseActive;
+        public int MeleeFullBodyLayer => ResolveFullBodyLayer();
+        public bool WantsMeleeAttackFacing => !IsGameplayInputDeferred() && cc != null && !cc.isDead && !cc.customAction && !cc.ragdolled
+            && !ReadBlockHeld() && ShouldApplyAttackThreatFacing();
+        // 2026-10-19 e: block auto-face owner + slow-mo input.
+        public bool WantsMeleeBlockFacing => !IsGameplayInputDeferred() && cc != null && !cc.isDead && !cc.customAction && !cc.ragdolled
+            && ReadBlockHeld() && (IsDrawnMeleeWeaponActive() || isBlocking);
+        public bool IsBlockInputHeld => !IsGameplayInputDeferred() && ReadBlockHeld();
         private const float BlockGuardPoseSeconds = 0.12f;
         private const float StrongAttackBlockSuppressSeconds = 0.2f;
         private const float StrongDamageWindowSeconds = 4.0f; // Strong B runs ~3.7 s at 1.25x; disarms early when the swing ends.
@@ -629,7 +640,13 @@ namespace Project.Player.Invector
                 return;
 
             bool attackMoveFrame = BeginLightComboAttackMoveForFixedUpdate(out DM_CombatCoreProfile attackProfile);
+            // 2026-10-19 d: combo target lock owns attack rotation for this step (Invector ControlRotation skipped).
+            if (_attackFacing == null && (Project.Combat.DMMeleeAttackFacing.IsEnabled(DM_CombatCoreProfile.Live) || Project.Combat.DMMeleeAttackFacing.IsBlockEnabled(DM_CombatCoreProfile.Live)))
+                _attackFacing = Project.Combat.DMMeleeAttackFacing.Ensure(this);
+            bool facingOwned = _attackFacing != null && _attackFacing.BeginFixedStep();
             base.FixedUpdate();
+            if (_attackFacing != null)
+                _attackFacing.EndFixedStep(facingOwned);
             EndLightComboAttackMoveForFixedUpdate(attackMoveFrame);
         }
 
@@ -1641,13 +1658,15 @@ namespace Project.Player.Invector
             if (moving)
             {
                 cc.input = input;
-                cc.isStrafing = true;
+                if (profile == null || profile.lightComboForcesStrafe) // 2026-10-19 d: default off (was always on)
+                    cc.isStrafing = true;
                 cc.speedMultiplier = _lightComboAttackMoveSavedSpeedMultiplier * strafeMult;
             }
             else if (drift > 0.001f)
             {
                 cc.input = input;
-                cc.isStrafing = true;
+                if (profile == null || profile.lightComboForcesStrafe) // 2026-10-19 d
+                    cc.isStrafing = true;
                 cc.speedMultiplier = _lightComboAttackMoveSavedSpeedMultiplier * strafeMult;
             }
 
@@ -2409,6 +2428,7 @@ namespace Project.Player.Invector
 
             if (isParry)
             {
+                Project.Combat.DMSlowMotionDirector.NotifyParry(); // 2026-10-19 e
                 PlayParryHitReaction();
                 DMParryClashVfx.TryPlay(damage, transform, damageSender);
                 DMCombatCameraShake.PlayParry();
@@ -2564,11 +2584,14 @@ namespace Project.Player.Invector
                 if (!IsDrawnMeleeWeaponActive() && !isBlocking)
                     return;
 
-                DMMeleeBlockThreatFacing.ApplyBlockFacing(transform, profile);
+                if (!Project.Combat.DMMeleeAttackFacing.IsBlockEnabled(profile)) // 2026-10-19 e: FixedUpdate owner when on
+                    DMMeleeBlockThreatFacing.ApplyBlockFacing(transform, profile);
                 return;
             }
 
-            DMMeleeBlockThreatFacing.ApplyAttackFacing(transform, profile);
+            // 2026-10-19 d: with the combo target lock on, DMMeleeAttackFacing (FixedUpdate) is the only attack rotation owner.
+            if (!Project.Combat.DMMeleeAttackFacing.IsEnabled(profile))
+                DMMeleeBlockThreatFacing.ApplyAttackFacing(transform, profile);
         }
 
         private bool ShouldApplyAttackThreatFacing()

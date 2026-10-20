@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 
 
 
@@ -130,6 +131,123 @@ namespace Project.Player.Invector
 
 
         }
+
+        // 2026-10-19 f: Retry slide root cause. DMLandingDirector's fall flop sets vRagdoll.disableColliders=false (and
+        // verticalMultiplier 1) and nothing restored them, so after a revive ~13 bone colliders stayed solid and one bone
+        // body stayed dynamic under the capsule, shoving it around (0.3-0.4 m drift after releasing input). Capture the
+        // living body once after vRagdoll.Start and put all of it back in one place on revive.
+        private sealed class LivingBodySnapshot
+        {
+            public bool disableColliders, ignoreGetUp;
+            public float verticalMultiplier, horizontalMultiplier;
+            public readonly List<KeyValuePair<Rigidbody, BodyState>> bodies = new List<KeyValuePair<Rigidbody, BodyState>>();
+            public readonly List<KeyValuePair<Collider, Vector2Int>> colliders = new List<KeyValuePair<Collider, Vector2Int>>();
+        }
+
+        private struct BodyState
+        {
+            public bool kinematic, gravity, detect;
+            public RigidbodyConstraints constraints;
+        }
+
+        private LivingBodySnapshot _living;
+
+        private IEnumerator Start()
+        {
+            yield return null; // after vRagdoll.Start disabled the bone colliders
+            yield return new WaitForFixedUpdate();
+            CaptureLivingBody();
+        }
+
+        private void CaptureLivingBody()
+        {
+            EnsureReferences();
+            if (_living != null || (_controller != null && (_controller.isDead || _controller.ragdolled)))
+                return;
+            var snap = new LivingBodySnapshot();
+            if (_ragdoll != null)
+            {
+                snap.disableColliders = _ragdoll.disableColliders;
+                snap.ignoreGetUp = _ragdoll.ignoreGetUpAnimation;
+                snap.verticalMultiplier = _ragdoll.verticalMultiplier;
+                snap.horizontalMultiplier = _ragdoll.horizontalMultiplier;
+            }
+            // Ragdoll bones only (under the hips): weapon hitboxes and attachments keep their own runtime state.
+            Animator anim = GetComponent<Animator>();
+            Transform hips = anim != null && anim.isHuman ? anim.GetBoneTransform(HumanBodyBones.Hips) : null;
+            if (hips == null)
+                return;
+            foreach (Rigidbody rb in hips.GetComponentsInChildren<Rigidbody>(true))
+            {
+                if (rb.transform != hips && rb.GetComponent<Joint>() == null) continue;
+                snap.bodies.Add(new KeyValuePair<Rigidbody, BodyState>(rb, new BodyState { kinematic = rb.isKinematic, gravity = rb.useGravity, detect = rb.detectCollisions, constraints = rb.constraints }));
+            }
+            // Every collider under the hips: DMLandingDirector.ApplyFallVelocityToBones makes ALL of them solid (bone
+            // colliders plus the vHitBox body hitboxes and vFootStep foot triggers). x = 1 when the collider sits on a
+            // ragdoll bone body (enabled state restored too); others keep their runtime enabled state, only isTrigger.
+            foreach (Collider c in hips.GetComponentsInChildren<Collider>(true))
+            {
+                Rigidbody own = c.GetComponent<Rigidbody>();
+                bool bone = own != null && (own.transform == hips || own.GetComponent<Joint>() != null);
+                snap.colliders.Add(new KeyValuePair<Collider, Vector2Int>(c, new Vector2Int(bone ? (c.enabled ? 1 : 0) : -1, c.isTrigger ? 1 : 0)));
+            }
+            _living = snap;
+        }
+
+        /// <summary>Put ragdoll config, bone bodies and bone colliders back to the captured living state.</summary>
+        public void RestoreLivingBodyState()
+        {
+            if (_living == null)
+                return;
+            if (_ragdoll != null)
+            {
+                _ragdoll.disableColliders = _living.disableColliders;
+                _ragdoll.ignoreGetUpAnimation = _living.ignoreGetUp;
+                _ragdoll.verticalMultiplier = _living.verticalMultiplier;
+                _ragdoll.horizontalMultiplier = _living.horizontalMultiplier;
+            }
+            foreach (var b in _living.bodies)
+            {
+                if (b.Key == null) continue;
+                if (!b.Key.isKinematic) { b.Key.linearVelocity = Vector3.zero; b.Key.angularVelocity = Vector3.zero; }
+                b.Key.isKinematic = b.Value.kinematic;
+                b.Key.useGravity = b.Value.gravity;
+                b.Key.detectCollisions = b.Value.detect;
+                b.Key.constraints = b.Value.constraints;
+            }
+            foreach (var c in _living.colliders)
+            {
+                if (c.Key == null) continue;
+                c.Key.isTrigger = c.Value.y == 1;
+                if (c.Value.x >= 0) c.Key.enabled = c.Value.x == 1;
+            }
+            // 2026-10-19 h: real-hit combat death drops/re-equips the drawn weapon with its SOLID pickup collider.
+            // Parented under the player, it joins the root rigidbody's compound collider and drags/shoves the body
+            // while the arm animates (slide on every move, fine idle). The living player has no solid child colliders.
+            Rigidbody rootBody = GetComponent<Rigidbody>();
+            Collider rootCapsule = GetComponent<Collider>();
+            if (rootBody != null)
+            {
+                foreach (Collider c in GetComponentsInChildren<Collider>(true))
+                {
+                    if (c == null || c == rootCapsule || c.isTrigger || c.attachedRigidbody == null) continue;
+                    if (c.attachedRigidbody != rootBody && !c.attachedRigidbody.transform.IsChildOf(transform)) continue; // own body, or bone body (hand)
+                    c.isTrigger = true;
+                }
+            }
+        }
+
+        private IEnumerator ReapplyLivingBodyAfterStandUp()
+        {
+            float until = Time.unscaledTime + 6f; // 2026-10-19 h: weapon re-equip lands after the stand-up
+            while (Time.unscaledTime < until)
+            {
+                yield return new WaitForSecondsRealtime(0.5f);
+                if (_controller != null && (_controller.isDead || _controller.ragdolled)) yield break;
+                RestoreLivingBodyState();
+            }
+        }
+
 
 
 
@@ -493,6 +611,7 @@ namespace Project.Player.Invector
             resetInput?.DisableOnAnimatorMove();
             GetComponent<PioneerShooterMeleeInput>()?.ResetMeleeAfterRevive();
             resetInput?.EnableOnAnimatorMove();
+            RestoreLivingBodyState(); // 2026-10-19 f
             GetComponent<PioneerInvectorBootstrap>()?.EnsureInvectorPhysicsReady();
             KillBodyMotion();
         }
@@ -500,8 +619,10 @@ namespace Project.Player.Invector
         /// <summary>Called after PlayerDeathHandler teleports the revived body to the retry spot.</summary>
         public void OnRespawnWorldPlacement()
         {
+            RestoreLivingBodyState(); // 2026-10-19 f
             Physics.SyncTransforms();
             KillBodyMotion();
+            if (isActiveAndEnabled) StartCoroutine(ReapplyLivingBodyAfterStandUp());
             if (_controller != null)
                 _controller.StopCharacter();
         }

@@ -87,8 +87,10 @@ namespace Project.EditorTools.Audit
         private static void TopUpPlayer()
         {
             if (_player == null) return;
+            var dmCore = Project.Combat.DM_CombatCoreProfile.Live; // 2026-10-19 h: death/Retry phase keeps real damage
+            bool keepHp = dmCore != null && dmCore.auditAllowPlayerDeath;
             var c = _player.GetComponent<vThirdPersonController>();
-            if (c != null) c.ResetHealth(c.maxHealth);
+            if (c != null && !keepHp) c.ResetHealth(c.maxHealth);
             if (c != null)
             {
                 const System.Reflection.BindingFlags bf = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
@@ -96,7 +98,7 @@ namespace Project.EditorTools.Audit
                 if (cur != null && mx != null && cur.FieldType == typeof(float) && mx.FieldType == typeof(float)) cur.SetValue(c, (float)mx.GetValue(c)); // melee swings cost stamina: keep it full so the audit player can always swing
             }
             var s = _player.GetComponent<Project.Survival.SurvivalStats>();
-            if (s != null) s.DevSetHealth(s.maxHealth);
+            if (s != null && !keepHp) s.DevSetHealth(s.maxHealth);
             if (_live != null) _live.ResyncHp();
         }
 

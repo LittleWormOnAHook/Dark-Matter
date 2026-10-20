@@ -894,6 +894,7 @@ namespace Project.Combat.Turrets
                 return;
 
             DMTurretWeaponContext.BeginFire(this);
+            DMTurretForgeFxCleanup.SuppressPooledLightShadows();
             fxController.Fire();
             if (forgeTurret != null)
                 forgeTurret.PlayAnimationLoop();

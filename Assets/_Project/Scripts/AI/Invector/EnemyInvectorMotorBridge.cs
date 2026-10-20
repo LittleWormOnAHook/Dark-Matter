@@ -72,8 +72,9 @@ namespace Project.AI.Invector
         }
 
         private bool IsMotorBlocked =>
-            _ragdollBridge != null &&
-            (_ragdollBridge.IsHitStaggerActive || _ragdollBridge.IsCorpseRagdolled);
+            (_ragdollBridge != null &&
+            (_ragdollBridge.IsHitStaggerActive || _ragdollBridge.IsCorpseRagdolled)) ||
+            DMEnemyKnockdown.IsDown(gameObject); // Slice 2b: animation-only knockdown
 
         // Stiff-pose fix (2026-10-12): a re-enabled / freshly spawned enemy showed its bind pose for the first frames. Evaluate the animator now.
         // 2026-10-12 crash fix: Animator.Update inside OnEnable ran synchronously inside the Inspector's activate-toggle

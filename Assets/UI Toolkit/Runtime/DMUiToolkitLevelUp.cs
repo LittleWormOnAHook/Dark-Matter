@@ -457,14 +457,24 @@ namespace Project.UI
             if (!DMUiToolkitHud.IsDriving)
                 return;
 
-            DMILevelUpPopupUI level = FindAnyObjectByType<DMILevelUpPopupUI>(FindObjectsInactive.Include);
-            DMUiToolkitOverlayDocument.HideGameObject(level != null ? level.gameObject : null);
+            // 2026-10-19 e perf: was 3 FindAnyObjectByType(Include inactive) EVERY frame (~10 ms, grows with scene object
+            // count). Cache the popups; search again at most once a second while one is missing.
+            if ((s_level == null || s_require == null || s_achievement == null) && Time.unscaledTime >= s_nextToastSearch)
+            {
+                s_nextToastSearch = Time.unscaledTime + 1f;
+                if (s_level == null) s_level = FindAnyObjectByType<DMILevelUpPopupUI>(FindObjectsInactive.Include);
+                if (s_require == null) s_require = FindAnyObjectByType<DMIRequireLevelPopupUI>(FindObjectsInactive.Include);
+                if (s_achievement == null) s_achievement = FindAnyObjectByType<AchievementUnlockPopupUI>(FindObjectsInactive.Include);
+            }
 
-            DMIRequireLevelPopupUI require = FindAnyObjectByType<DMIRequireLevelPopupUI>(FindObjectsInactive.Include);
-            DMUiToolkitOverlayDocument.HideGameObject(require != null ? require.gameObject : null);
-
-            AchievementUnlockPopupUI achievement = FindAnyObjectByType<AchievementUnlockPopupUI>(FindObjectsInactive.Include);
-            DMUiToolkitOverlayDocument.HideGameObject(achievement != null ? achievement.gameObject : null);
+            DMUiToolkitOverlayDocument.HideGameObject(s_level != null ? s_level.gameObject : null);
+            DMUiToolkitOverlayDocument.HideGameObject(s_require != null ? s_require.gameObject : null);
+            DMUiToolkitOverlayDocument.HideGameObject(s_achievement != null ? s_achievement.gameObject : null);
         }
+
+        private static DMILevelUpPopupUI s_level;
+        private static DMIRequireLevelPopupUI s_require;
+        private static AchievementUnlockPopupUI s_achievement;
+        private static float s_nextToastSearch;
     }
 }

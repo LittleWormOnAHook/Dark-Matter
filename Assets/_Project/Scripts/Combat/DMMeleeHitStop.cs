@@ -34,6 +34,12 @@ namespace Project.Combat
             PlayerHoldUntil = 0f;
         }
 
+        /// <summary>Slice 2b: true while this enemy Animator is inside a hit-stop freeze (the hit lean holds its peak meanwhile).</summary>
+        public static bool IsEnemyAnimatorHeld(Animator anim)
+        {
+            return anim != null && anim.TryGetComponent(out DMMeleeHitStopHold hold) && hold.IsHolding;
+        }
+
         public static void OnPlayerMeleeHit(GameObject source, EnemyHealth enemy, bool isCritical)
         {
             DM_CombatCoreProfile p = DM_CombatCoreProfile.Live;
@@ -48,6 +54,8 @@ namespace Project.Combat
             int frames = heavy ? p.hitstopHeavyFrames : p.hitstopLightFrames;
             if (isCritical)
                 frames += p.hitstopCritBonusFrames;
+            // Slice 2b: heavier hits (damage / heavy attack weight) earn a few extra freeze frames for impact punch.
+            frames += DMEnemyHitReaction.ConsumeHitstopBonusFrames(enemy);
             if (frames <= 0)
                 return;
 
@@ -73,6 +81,8 @@ namespace Project.Combat
         private float _holdSpeed;
         private float _saved = 1f;
         private bool _active;
+
+        internal bool IsHolding => _active && Time.unscaledTime < _until;
 
         public static void Begin(Animator anim, float seconds, float holdSpeed)
         {

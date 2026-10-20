@@ -342,6 +342,14 @@ namespace Project.AI
             if (ragdollBridge != null && ragdollBridge.IsCorpseRagdolled)
                 return false;
 
+            // Slice 2b: a knocked-down enemy gives up its melee token / attack slot (DM_CombatCoreProfile.knockdownReleasesAttackSlot).
+            if (DMEnemyKnockdown.IsDown(gameObject))
+            {
+                Project.Combat.DM_CombatCoreProfile kdProfile = Project.Combat.DM_CombatCoreProfile.Live;
+                if (kdProfile == null || kdProfile.knockdownReleasesAttackSlot)
+                    return false;
+            }
+
             if (brain != null && brain.IsRetreating)
                 return false;
 

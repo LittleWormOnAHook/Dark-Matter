@@ -283,6 +283,7 @@ namespace Project.Audio
         {
             AudioClip clip = PickCombatClip(isCritical ? "meleeBodyCriticalHitClips" : "meleeBodyHitClips", isCritical ? profile?.meleeBodyCriticalHitClips : profile?.meleeBodyHitClips);
             if (clip == null) clip = PickCombatClip("meleeBodyHitClips", profile?.meleeBodyHitClips);
+            if (clip != null) StatMeleeHitPlays++; // 2026-10-19 e: audit counter
             PlayCombatClip(clip, position, profile != null ? profile.meleeBodyHitVolume : 1f);
         }
 
@@ -293,12 +294,15 @@ namespace Project.Audio
             PlayCombatClip(clip, position, profile != null ? profile.meleeClashVolume : 1f);
         }
 
+        /// <summary>2026-10-19 e: audit-only play counters (enemy->player body hit, player->enemy melee hit).</summary>
+        public static int StatPlayerBodyHitPlays, StatMeleeHitPlays;
+
         public void PlayPlayerBodyHit()
         {
             if (profile == null || playerImpactSource == null) return;
             AudioClip impact = PickCombatClip("playerBodyHitClips", profile.playerBodyHitClips) ?? PickCombatClip("meleeBodyHitClips", profile.meleeBodyHitClips);
             float volume = GameSettings.SfxVolume * profile.combatVolume;
-            if (impact != null) playerImpactSource.PlayOneShot(impact, volume * profile.playerBodyHitVolume);
+            if (impact != null) { playerImpactSource.PlayOneShot(impact, volume * profile.playerBodyHitVolume); StatPlayerBodyHitPlays++; }
             if (Time.unscaledTime - lastPlayerPainTime < profile.playerPainMinInterval) return;
             AudioClip pain = PickCombatClip("playerPainClips", profile.playerPainClips);
             if (pain == null || playerPainSource == null) return;

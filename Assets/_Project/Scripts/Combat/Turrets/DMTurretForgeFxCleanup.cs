@@ -28,6 +28,31 @@ namespace Project.Combat.Turrets
         }
 
         private const float PooledAudioCleanupRadius = 96f;
+        private const float PooledLightScanIntervalSeconds = 2f;
+        private static float nextPooledLightScanTime;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            nextPooledLightScanTime = 0f;
+        }
+
+        /// <summary>
+        /// FORGE3D example muzzles/beams/flames ship shadow-casting point lights (6 HDRP shadow requests
+        /// each). Strips shadows on the GeneratedPool's scene instances (never the prefab assets), throttled.
+        /// </summary>
+        public static void SuppressPooledLightShadows()
+        {
+            float now = Time.unscaledTime;
+            if (now < nextPooledLightScanTime)
+                return;
+            nextPooledLightScanTime = now + PooledLightScanIntervalSeconds;
+
+            if (!TryGetPool(out F3DPool pool))
+                return;
+
+            TracerVfxCache.SuppressLightShadows(pool.GetComponentsInChildren<Light>(true));
+        }
 
         private static void DespawnContinuousUnderSockets(Transform[] sockets)
         {

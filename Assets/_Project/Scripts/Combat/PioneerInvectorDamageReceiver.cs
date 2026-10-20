@@ -120,6 +120,10 @@ namespace Project.Combat
                     EnemyInvectorRagdollBridge ragdollBridge = enemyHealth.GetComponent<EnemyInvectorRagdollBridge>();
                     if (ragdollBridge != null)
                     {
+                        // Slice 2b: player melee and the animation-only knockdown (DMEnemyKnockdown).
+                        bool playerMelee = source != null && source.GetComponentInParent<PioneerShooterMeleeInput>() != null;
+                        if (playerMelee && DMEnemyKnockdown.IsInvulnerable(enemyHealth.gameObject))
+                            return; // last part of the get-up (getUpInvulnerableSeconds)
                         // Killing blows must feed corpse impulse before Died runs death presentation.
                         ragdollBridge.RememberHitForDeath(staggerSnapshot);
                         bool heavyHit = AttackInterruptEvaluator.IsPlayerChargedHit(source, out _);
@@ -131,6 +135,8 @@ namespace Project.Combat
                             isCritical = false;
                         enemyHealth.TakeDamage(damage, source, isCritical);
                         CombatUiSpawner.NextEnemyDamageHeavy = false;
+                        if (blockResult == DMEnemyBlock.Result.GuardBroken)
+                            DMEnemyHitReaction.MarkGuardBreak(enemyHealth); // heavy tier, no knockdown on the same hit
                         if (blockResult == DMEnemyBlock.Result.Blocked)
                         {
                             bool guardPoiseBreak = hitPoise != null && hitPoise.LastBreakFrame == Time.frameCount;
@@ -141,7 +147,10 @@ namespace Project.Combat
                             }
 
                             if (guardPoiseBreak)
+                            {
                                 DMEnemyBlock.BreakGuard(enemyHealth, "poise break");
+                                DMEnemyHitReaction.MarkGuardBreak(enemyHealth);
+                            }
                         }
 
                         DMEnemyHitMarks.MeleeHeavyContext = heavyHit;
@@ -158,18 +167,26 @@ namespace Project.Combat
                         }
                         else
                         {
-                            ragdollBridge.TryHitStagger(
-                                staggerSnapshot,
-                                damage,
-                                isCritical,
-                                wantsHitStagger,
-                                staggerSeconds);
-                            if (ragdollBridge.IsHitStaggerActive)
+                            // Slice 2b: hits while knocked down deal damage only (no stagger, interrupt or new reaction; down time unchanged).
+                            bool downed = DMEnemyKnockdown.IsDown(enemyHealth.gameObject);
+                            // Slice 2b: player melee crits never take the old crit-ragdoll knockdown (crit damage / numbers / VFX unchanged).
+                            DM_CombatCoreProfile reactProfile = DM_CombatCoreProfile.Live;
+                            bool retireCritKnockdown = playerMelee && reactProfile != null && reactProfile.retireCritRagdollKnockdown;
+                            if (!downed)
                             {
-                                EnemyInvectorCombatBridge staggerGuard = enemyHealth.GetComponent<EnemyInvectorCombatBridge>();
-                                if (staggerGuard != null) staggerGuard.SpendGuardStamina(DM_EnemyBrainProfile.Live.enemyStaggerStaminaCost); // 2026-10-13
+                                ragdollBridge.TryHitStagger(
+                                    staggerSnapshot,
+                                    damage,
+                                    isCritical && !retireCritKnockdown,
+                                    wantsHitStagger,
+                                    staggerSeconds);
+                                if (ragdollBridge.IsHitStaggerActive)
+                                {
+                                    EnemyInvectorCombatBridge staggerGuard = enemyHealth.GetComponent<EnemyInvectorCombatBridge>();
+                                    if (staggerGuard != null) staggerGuard.SpendGuardStamina(DM_EnemyBrainProfile.Live.enemyStaggerStaminaCost); // 2026-10-13
+                                }
+                                NotifyAttackInterrupt(enemyHealth, damage, source, isCritical, hitPoint, staggerSnapshot);
                             }
-                            NotifyAttackInterrupt(enemyHealth, damage, source, isCritical, hitPoint, staggerSnapshot);
                             bool poiseBreak = hitPoise != null && hitPoise.LastBreakFrame == Time.frameCount;
                             DMEnemyHitReaction.OnPlayerMeleeHit(enemyHealth, ragdollBridge, staggerSnapshot, damage, source, isCritical, poiseBreak);
                             DMCombatCameraShake.TryPlayMeleeHit(source, isCritical, poiseBreak);

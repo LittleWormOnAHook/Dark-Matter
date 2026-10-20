@@ -848,9 +848,11 @@ namespace Project.EditorTools.Audit
             var swish = find(null, "swing plays a swish").ToList();
             R.Add("Fix check", "fix.swish", "vMeleeManager swing swish (PlayWeaponSwing on attack-window open)", !hasSwish ? "FAIL" : verdict(swish), $"code present: {hasSwish}; {summ(swish)}", hasSwish ? (swish.Any(c => c.status == "FAIL") ? "swing rows still silent for: " + string.Join(", ", swish.Where(c => c.status == "FAIL").Select(c => c.label).Take(4)) : "") : "the DMPlaySwingSound call is missing from vMeleeManager.SetActiveAttack");
             // 2 player hit sound
-            bool hasHit = melee.Contains("MeleeHitAudio.PlayMeleeHit(hitInfo.hitPoint");
+            // 2026-10-19 e: player body-hit audio moved to SurvivalStats (confirmed health loss) + the bridge god-mode cue.
+            bool hasHit = melee.Contains("MeleeHitAudio.PlayMeleeHit(hitInfo.hitPoint")
+                || (System.IO.File.Exists("Assets/_Project/Scripts/Survival/SurvivalStats.cs") && System.IO.File.ReadAllText("Assets/_Project/Scripts/Survival/SurvivalStats.cs").Contains("PlayPlayerBodyHit()"));
             var hit = find(null, "hitting the player plays a hit sound").ToList();
-            R.Add("Fix check", "fix.hitsound", "Enemy melee hit on the player plays a hit sound (vMeleeManager.OnDamageHit -> CombatHitAudio)", !hasHit ? "FAIL" : verdict(hit), $"code present: {hasHit}; {summ(hit)}", hasHit ? (hit.Any(c => c.status == "FAIL") ? "still silent for: " + string.Join(", ", hit.Where(c => c.status == "FAIL").Select(c => c.label).Take(4)) : "") : "the CombatHitAudio call is missing from vMeleeManager.OnDamageHit");
+            R.Add("Fix check", "fix.hitsound", "Enemy melee hit on the player plays a hit sound (SurvivalStats confirmed loss / god-mode cue -> GameAudioManager.PlayPlayerBodyHit)", !hasHit ? "FAIL" : verdict(hit), $"code present: {hasHit}; {summ(hit)}", hasHit ? (hit.Any(c => c.status == "FAIL") ? "still silent for: " + string.Join(", ", hit.Where(c => c.status == "FAIL").Select(c => c.label).Take(4)) : "") : "no PlayPlayerBodyHit call in SurvivalStats");
             // 3 Hot Cross focus sync
             var hc = find("scenario", "survives a teleport").ToList();
             R.Add("Fix check", "fix.hotcross", "Hot Cross weapon focus stays in sync with the equipped weapon (no revert to the first weapon)", hc.Count == 0 ? "WARN" : verdict(hc), summ(hc) + $"; weapon reverts recorded this run: {_equipReverts}", hc.Count == 0 ? "no Hot Cross row ran (cached or scenario skipped)" : "");

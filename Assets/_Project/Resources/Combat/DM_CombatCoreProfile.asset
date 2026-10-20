@@ -58,11 +58,86 @@ MonoBehaviour:
   playerStaggerChanceMax: 0.4
   playerStaggerImmunitySeconds: 1.5
   playerStaggerInterruptsCharge: 1
+  enablePlayerHitReactions: 1
+  playerLeanDegreesMin: 10
+  playerLeanDegreesMax: 14
+  playerLeanAttackSeconds: 0.06
+  playerLeanSettleSeconds: 0.3
+  playerHeadWhipScale: 0.7
+  playerLeanJitterDegrees: 18
+  playerIntensityJitter: 0.15
+  playerReactionIntensityMax: 0.85
+  playerClipSpeedMin: 0.95
+  playerClipSpeedMax: 1.1
+  playerClipWeightMin: 0.7
+  playerClipWeightMax: 0.9
+  playerHeavyDamageFraction: 0.18
+  playerPushMeters: 0.25
+  playerPushSeconds: 0.25
+  playerStumbleChance: 0.35
+  playerLightLockSeconds: 0.2
+  playerHeavyLockSeconds: 0.35
+  playerHeavyMoveScale: 0.4
+  playerKnockdownChance: 0.05
+  playerKnockdownBonusChance: 0.04
+  playerKnockdownChanceCap: 0.12
+  playerKnockdownCooldownSeconds: 20
+  playerDownHoldSecondsMin: 0.6
+  playerDownHoldSecondsMax: 1
+  playerDownedDamageScale: 0.5
+  playerGetUpIFrameSeconds: 0.6
+  playerRollCancel: 1
+  playerRollCancelAfterSeconds: 0.4
+  playerReactionsUnderGodMode: 2
+  playerAdsLeanScale: 0.5
+  logPlayerHitReactions: 0
+  playerHitSoundUnderGodMode: 1
   guardImpactMinIntervalSeconds: 0.45
   blockShakeMinIntervalSeconds: 0.35
   chargeHoldPinTolerance: 0.05
   meleeFacingTargetLockSeconds: 1.5
   meleeFacingSwitchCloserFraction: 0.7
+  meleeComboTargetLock: 1
+  meleeTargetAcquireDistance: 4.5
+  meleeTargetReleaseDistance: 6.5
+  meleeTargetIntentConeHalfAngle: 60
+  meleeTargetAngleWeight: 1
+  meleeComboLockGraceSeconds: 0.3
+  meleeRetargetStickAngle: 45
+  meleeRetargetMinSeconds: 0.4
+  meleeRetargetStickMagnitude: 0.5
+  meleeAssistTurnSpeed: 360
+  meleeAssistSmoothTime: 0.08
+  meleeAssistMaxPerSwingDegrees: 70
+  meleeAssistWindupFraction: 0.35
+  meleeAssistSoftFadeDegrees: 22
+  meleeTargetIgnoreDowned: 1
+  lightComboForcesStrafe: 0
+  logMeleeFacing: 0
+  meleeBlockTargetLock: 1
+  meleeBlockAssistTurnSpeed: 300
+  meleeBlockAssistSmoothTime: 0.1
+  meleeBlockLockGraceSeconds: 0.25
+  meleeBlockFacingToleranceDegrees: 3
+  enableChargedSlowMo: 1
+  chargedSlowMoChance: 0.3002
+  chargedSlowMoCooldownSeconds: 15
+  chargedSlowMoSeconds: 3
+  chargedSlowMoTimeScale: 0.3
+  chargedSlowMoEaseInSeconds: 0.12
+  chargedSlowMoEaseOutSeconds: 0.8
+  chargedSlowMoReach: 2.4
+  chargedSlowMoConeHalfAngle: 35
+  enableParrySlowMo: 0
+  parrySlowMoChance: 1
+  parrySlowMoTotalSeconds: 1
+  parrySlowMoTimeScale: 0.25
+  parrySlowMoEaseInSeconds: 0.08
+  parrySlowMoEaseOutSeconds: 0.35
+  parrySlowMoThreatRadius: 3.5
+  parrySlowMoCooldownSeconds: 3
+  slowMoAllowInAudit: 0
+  logSlowMo: 0
   logHitchesInPlay: 0
   hitchThresholdMs: 120
   quickStepEnabled: 1
@@ -130,10 +205,10 @@ MonoBehaviour:
   hitstopHoldSpeed: 0.3
   playerRigidbodyInterpolation: 2
   hitstopFreezesAttacker: 1
-  lightHitShakeAmplitude: 0.102
-  lightHitShakeDurationSeconds: 0.065
-  heavyHitShakeAmplitude: 0.2
-  heavyHitShakeDurationSeconds: 0.08
+  lightHitShakeAmplitude: 0.104
+  lightHitShakeDurationSeconds: 0.1034
+  heavyHitShakeAmplitude: 0.131
+  heavyHitShakeDurationSeconds: 0.1025
   useDamageNumberTiers: 1
   damageNumberNormalColor: {r: 1, g: 0.96, b: 0.78, a: 1}
   damageNumberCritColor: {r: 1, g: 0, b: 0.06236458, a: 1}
@@ -154,7 +229,7 @@ MonoBehaviour:
   directionalFlinchDegrees: 6
   directionalFlinchSeconds: 0.28
   swingLateralBias: 0.35
-  lightBackstepMeters: 0.08
+  lightBackstepMeters: 0
   lightBackstepSeconds: 0.18
   poiseBreakBackstepMeters: 0.35
   chainReactionsEnabled: 1
@@ -169,14 +244,89 @@ MonoBehaviour:
   bigReactionImmunitySeconds: 2.5
   heavyReactionEnabled: 1
   heavyBigReactionSeconds: 0.7
-  heavySlideMeters: 0.8
-  heavySlideSeconds: 0.35
+  heavySlideMeters: 0.35
+  heavySlideSeconds: 0.3
   heavyWaistBendDegrees: 20
   heavyWaistBendSeconds: 0.5
   heavyRespectsCommitment: 1
   heavyFallbackScale: 0.4
   hitSlideMaxLedgeDrop: 0.5
   hitSlideMaxTotalMeters: 1.2
+  enableDirectionalReactionsV2: 1
+  swingDirectionSource: 0
+  bladeVelocityMinSpeed: 2
+  bladeVelocityWindowSeconds: 0.05
+  strikeLeanSideShare: 0.7
+  lightLeanDegrees: 16
+  lightTwistDegrees: 12
+  lightLeanAttackSeconds: 0.045
+  lightLeanSettleSeconds: 0.6
+  leanSpringFrequency: 2.6
+  leanSpringDamping: 0.42
+  leanSpineWeight: 0.35
+  leanChestWeight: 0.4
+  leanHeadWeight: 0.25
+  headWhipDelaySeconds: 0.035
+  headWhipMultiplier: 1.7
+  critLeanMultiplier: 1.4
+  leanHoldPeakThroughHitstop: 1
+  reactionDamageReference: 25
+  reactionDamageExponent: 0.6
+  reactionDamageScaleMin: 0.75
+  reactionDamageScaleMax: 1.6
+  heavyAttackWeightMultiplier: 1.35
+  hitstopWeightBonusFrames: 2
+  leanAngleJitterDegrees: 14
+  reactionIntensityRandomMin: 0.85
+  reactionIntensityRandomMax: 1.2
+  twistRandomDegrees: 4
+  twistSignFlipChance: 0.2
+  clipSpeedRandomMin: 0.9
+  clipSpeedRandomMax: 1.15
+  clipWeightRandomMin: 0.85
+  clipWeightRandomMax: 1
+  clipStartOffsetRandomMax: 0.1
+  avoidRepeatVariation: 1
+  heavyStumbleStepChance: 0.3
+  heavyStumbleStepMeters: 0.15
+  mediumUsesClip: 1
+  mediumClipWeight: 0.75
+  mediumClipSpeed: 1.15
+  mediumLeanScale: 1.25
+  mediumAltHeavyClipChance: 0.35
+  mediumAltHeavyClipWeight: 0.55
+  heavyUsesClip: 1
+  heavyClipWeight: 1
+  heavyClipSpeed: 1.2
+  heavyLeanDegrees: 24
+  heavyLeanSettleSeconds: 0.8
+  reactionBlendInSeconds: 0.06
+  reactionBlendOutSeconds: 0.22
+  knockdownEnabled: 1
+  knockdownChancePercent: 15
+  knockdownLowPoiseBonusPercent: 15
+  knockdownCritBonusPercent: 10
+  knockdownOnPoiseBreakPercent: 25
+  knockdownMaxChancePercent: 40
+  knockdownPushMeters: 0.5
+  knockdownPushSeconds: 0.4
+  knockdownFallSpeed: 1.1
+  knockdownFallExitFront: 0.75
+  knockdownFallExitBack: 0.63
+  knockdownFallExitLeft: 0.45
+  knockdownFallExitRight: 0.52
+  knockdownDownSeconds: 1
+  knockdownDownRandomSeconds: 0.25
+  getUpPlaybackSpeed: 1.25
+  getUpExitNormalized: 0.92
+  knockdownAimFadeInSeconds: 0.25
+  getUpInvulnerableSeconds: 0.4
+  knockdownImmunitySeconds: 8
+  knockdownReleasesAttackSlot: 1
+  knockdownMaxSlopeDegrees: 20
+  knockdownLedgeCheckMeters: 1
+  retireCritRagdollKnockdown: 1
+  logHitReactionsInPlay: 0
   hitstopLightFrames: 2
   hitstopHeavyFrames: 6
   parryWindowSeconds: 0.2
@@ -186,12 +336,12 @@ MonoBehaviour:
   enableCombatCameraSnap: 0
   combatCameraSnapSeconds: 0.35
   enableGlobalCombatSeparation: 0
-  playerCombatBufferRadius: 0.119
-  chargedHitShakeAmplitude: 0.697
-  chargedHitShakeDurationSeconds: 0.1553
-  parryShakeAmplitude: 0.587
+  playerCombatBufferRadius: 0.104
+  chargedHitShakeAmplitude: 0.242
+  chargedHitShakeDurationSeconds: 0.1044
+  parryShakeAmplitude: 0.25
   parryShakeDurationSeconds: 0.1249
-  blockShakeAmplitude: 0.403
+  blockShakeAmplitude: 0.247
   blockShakeDurationSeconds: 0.0927
   enableGrenades: 1
   grenadeCookSecondsBase: 5
@@ -252,7 +402,7 @@ MonoBehaviour:
   interruptImmunitySeconds: 2
   interruptRecoverySeconds: 1.5
   interruptReactionSeconds: 0.45
-  logInterruptsInPlay: 0
+  logInterruptsInPlay: 1
   godModeCheatEnabled: 1
   godModeCheatCode: godmode
   godModeEnemiesUnkillable: 1
@@ -262,6 +412,7 @@ MonoBehaviour:
   respawnPlayerAfterDeath: 1
   playerRespawnDelay: 3
   auditGodMode: 1
+  auditAllowPlayerDeath: 0
   godModeToastSeconds: 2
   playerCorpseStayInPlace: 1
   playerCorpseSettleSeconds: 1.5
@@ -273,5 +424,7 @@ MonoBehaviour:
   rangedImpactAlertRadius: 8
   gunshotHearingRadius: 25
   engagedHudLingerSeconds: 6
-  logCombatEventsInPlay: 0
+  spawnStabilizerWatchAfterSettleSeconds: 2
+  spawnStabilizerWatchCheckInterval: 0.2
+  logCombatEventsInPlay: 1
   logEngagedHudFill: 0

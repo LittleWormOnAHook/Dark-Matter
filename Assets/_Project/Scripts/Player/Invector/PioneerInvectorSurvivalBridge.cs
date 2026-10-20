@@ -195,6 +195,7 @@ namespace Project.Player.Invector
             if (melee != null && melee.TryAbsorbBlockedMelee(damage))
                 return;
 
+            DMPlayerKnockdown.FilterIncomingDamage(gameObject, damage); // 2026-10-19 d: get-up i-frames / half damage while down
             if (_survivalStats.IsDead || damage.damageValue <= 0f)
                 return;
 
@@ -210,6 +211,13 @@ namespace Project.Player.Invector
                     _survivalStats.ApplyDamage(damage.damageValue, "unknown");
                 PlayerCombatEvents.RaisePlayerAttackedBySender(damage.sender);
                 PushHealthToInvector();
+                // 2026-10-19 e: god mode / audit blocks the health loss, so SurvivalStats' confirmed-loss body-hit cue stays silent.
+                DM_CombatCoreProfile hitCore = DM_CombatCoreProfile.Live;
+                if (Project.Core.DMDevCommandState.BlocksDamage && hitCore != null && hitCore.playerHitSoundUnderGodMode && damage.sender != null && !damage.sender.IsChildOf(transform))
+                {
+                    Project.Audio.GameAudioManager.EnsureExists();
+                    Project.Audio.GameAudioManager.Instance?.PlayPlayerBodyHit();
+                }
             }
             finally
             {
@@ -238,6 +246,24 @@ namespace Project.Player.Invector
 
             DM_CombatCoreProfile core = DM_CombatCoreProfile.Live;
             bool immune = core != null && core.playerStaggerUseProfile && Time.time < _staggerImmuneUntil;
+
+            // 2026-10-19 d: DM player hit reactions replace the stock Invector reaction for enemy hits.
+            if (core != null && core.enablePlayerHitReactions && damage.hitReaction)
+            {
+                int dmReactionId = 0;
+                bool rolled = !immune && TryRollHitReaction(settings, damage, out dmReactionId);
+                DMPlayerHitReaction.Result r = DMPlayerHitReaction.Ensure(gameObject).OnEnemyHit(damage, rolled, dmReactionId == 1, IsIncomingCrit(damage));
+                if (r >= DMPlayerHitReaction.Result.Light)
+                {
+                    _staggerImmuneUntil = Time.time + core.playerStaggerImmunitySeconds;
+                    if (core.playerStaggerStaminaCost > 0f && _survivalStats != null)
+                        _survivalStats.SpendStamina(core.playerStaggerStaminaCost);
+                    TryShakeOnReaction(dmReactionId);
+                }
+                SuppressStockDamageReaction();
+                return;
+            }
+
             if (!immune && TryRollHitReaction(settings, damage, out int reactionId))
             {
                 damage.hitReaction = true;

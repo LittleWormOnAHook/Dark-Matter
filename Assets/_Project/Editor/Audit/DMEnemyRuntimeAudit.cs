@@ -175,6 +175,7 @@ namespace Project.EditorTools.Audit
             Stack.Clear();
             _wait = null;
             _bypassDone = false;
+            _menuReBypassCount = 0;
             _running = true;
             _realStart = EditorApplication.timeSinceStartup;
             _lastProgressReal = _realStart;
@@ -197,6 +198,7 @@ namespace Project.EditorTools.Audit
             _running = false;
             Application.logMessageReceived -= OnLog;
             try { ReleaseAuditPlayerGuard(); } catch { /* best effort */ }
+            try { var cp = Project.Combat.DM_CombatCoreProfile.Live; if (cp != null && cp.auditAllowPlayerDeath) { cp.auditAllowPlayerDeath = false; EditorUtility.SetDirty(cp); } } catch { /* 2026-10-19 h: audit-only option reset */ }
             try { Cleanup(); } catch { /* best effort */ }
             try { RestoreAuditState(); } catch { /* best effort */ }
             try { AuditTiming.End(); BuildFixRegression(); } catch (Exception ex) { Debug.LogWarning("DMAudit: regression summary failed: " + ex.Message); }
@@ -271,6 +273,7 @@ namespace Project.EditorTools.Audit
             }
 
             if (_bypassDone && _player != null) { GuardFloor(); AuditPlayerGuard(); }
+            if (_bypassDone) MenuBypassWatchdog(); // 2026-10-19 e: the main menu / title pause must not come back mid-run
             double now = EditorApplication.timeSinceStartup;
             if (!_bypassDone) _lastProgressReal = now; // watchdog only after the menu bypass succeeded
             if (Time.time > _lastGameTime + 0.001f) { _lastGameTime = Time.time; _lastProgressReal = now; }

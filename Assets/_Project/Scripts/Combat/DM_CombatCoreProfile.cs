@@ -127,6 +127,52 @@ namespace Project.Combat
         [Tooltip("Allow a stagger while the player holds a charged attack (interrupts the charge).")]
         public bool playerStaggerInterruptsCharge = true;
 
+        [Header("Player hit reactions (DM, 2026-10-19 d; replaces stock Invector reaction for enemy hits)")]
+        [Tooltip("On = DMPlayerHitReaction (lean / light / heavy / rare knockdown) replaces the stock Invector TriggerReaction. The stagger chances above still gate light/heavy.")]
+        public bool enablePlayerHitReactions = true;
+        [Range(0f, 40f)] public float playerLeanDegreesMin = 10f;
+        [Range(0f, 40f)] public float playerLeanDegreesMax = 14f;
+        [Range(0.01f, 0.3f)] public float playerLeanAttackSeconds = 0.06f;
+        [Range(0.05f, 1f)] public float playerLeanSettleSeconds = 0.3f;
+        [Tooltip("Multiplier on the shared headWhipMultiplier (player camera rides the head less).")]
+        [Range(0f, 1.5f)] public float playerHeadWhipScale = 0.7f;
+        [Range(0f, 45f)] public float playerLeanJitterDegrees = 18f;
+        [Range(0f, 0.5f)] public float playerIntensityJitter = 0.15f;
+        [Range(0.5f, 1.5f)] public float playerReactionIntensityMax = 0.85f;
+        [Range(0.5f, 1.5f)] public float playerClipSpeedMin = 0.95f;
+        [Range(0.5f, 1.5f)] public float playerClipSpeedMax = 1.1f;
+        [Range(0.1f, 1.2f)] public float playerClipWeightMin = 0.7f;
+        [Range(0.1f, 1.2f)] public float playerClipWeightMax = 0.9f;
+        [Tooltip("A hit of at least this fraction of max HP counts as heavy (also Invector big reaction / crit).")]
+        [Range(0.05f, 0.6f)] public float playerHeavyDamageFraction = 0.18f;
+        [Range(0f, 1f)] public float playerPushMeters = 0.25f;
+        [Range(0.05f, 1f)] public float playerPushSeconds = 0.25f;
+        [Tooltip("Chance a heavy push becomes a longer stumble (x1.6).")]
+        [Range(0f, 1f)] public float playerStumbleChance = 0.35f;
+        [Range(0f, 1f)] public float playerLightLockSeconds = 0.2f;
+        [Range(0f, 1.5f)] public float playerHeavyLockSeconds = 0.35f;
+        [Range(0f, 1f)] public float playerHeavyMoveScale = 0.4f;
+        [Tooltip("Knockdown chance on a HEAVY hit only.")]
+        [Range(0f, 0.5f)] public float playerKnockdownChance = 0.05f;
+        [Tooltip("Added on crit or HP < 30%.")]
+        [Range(0f, 0.5f)] public float playerKnockdownBonusChance = 0.04f;
+        [Range(0f, 0.5f)] public float playerKnockdownChanceCap = 0.12f;
+        [Range(0f, 120f)] public float playerKnockdownCooldownSeconds = 20f;
+        [Range(0.1f, 3f)] public float playerDownHoldSecondsMin = 0.6f;
+        [Range(0.1f, 3f)] public float playerDownHoldSecondsMax = 1f;
+        [Tooltip("Damage multiplier while knocked down.")]
+        [Range(0f, 1f)] public float playerDownedDamageScale = 0.5f;
+        [Tooltip("Invulnerable for this long from get-up start (and after a roll-cancel).")]
+        [Range(0f, 2f)] public float playerGetUpIFrameSeconds = 0.6f;
+        public bool playerRollCancel = true;
+        [Range(0f, 2f)] public float playerRollCancelAfterSeconds = 0.4f;
+        [Tooltip("God mode / audit: which tiers still play (default lean + light; no heavy push, no knockdown).")]
+        public DMPlayerReactionsUnderGodMode playerReactionsUnderGodMode = DMPlayerReactionsUnderGodMode.LeanAndLight;
+        [Range(0f, 1f)] public float playerAdsLeanScale = 0.5f;
+        public bool logPlayerHitReactions = false;
+        [Tooltip("God mode / audit: enemy hits still play the player body-hit sound (health does not drop, so SurvivalStats stays silent).")]
+        public bool playerHitSoundUnderGodMode = true;
+
         [Header("Player feel guards (shake while blocking / charging)")]
         [Tooltip("Min seconds between guard-impact recoil poses while holding block. Hits inside the window are still absorbed, just no new pose (group fights re-triggered it every hit = shaking).")]
         [Range(0f, 2f)] public float guardImpactMinIntervalSeconds = 0.45f;
@@ -140,6 +186,70 @@ namespace Project.Combat
         [Range(0f, 5f)] public float meleeFacingTargetLockSeconds = 1.5f;
         [Tooltip("After the lock, switch only when another enemy is closer than this fraction of the current target's distance (0.7 = 30% closer).")]
         [Range(0.1f, 1f)] public float meleeFacingSwitchCloserFraction = 0.7f;
+
+        [Header("Melee combo target lock (DMMeleeAttackFacing, 2026-10-19 d)")]
+        [Tooltip("On = one target per combo, eased wind-up-only turn in FixedUpdate (single rotation owner). Off = legacy per-frame ApplyAttackFacing.")]
+        public bool meleeComboTargetLock = true;
+        [Range(1f, 10f)] public float meleeTargetAcquireDistance = 4.5f;
+        [Range(1f, 15f)] public float meleeTargetReleaseDistance = 6.5f;
+        [Tooltip("Half-angle of the intent cone around the stick (else camera) direction for acquiring.")]
+        [Range(10f, 180f)] public float meleeTargetIntentConeHalfAngle = 60f;
+        [Tooltip("Score = distance/acquire + weight * angle/cone.")]
+        [Range(0f, 3f)] public float meleeTargetAngleWeight = 1f;
+        [Range(0f, 2f)] public float meleeComboLockGraceSeconds = 0.3f;
+        [Tooltip("Stick must point more than this away from the target to retarget.")]
+        [Range(10f, 180f)] public float meleeRetargetStickAngle = 45f;
+        [Range(0f, 2f)] public float meleeRetargetMinSeconds = 0.4f;
+        [Range(0.1f, 1f)] public float meleeRetargetStickMagnitude = 0.5f;
+        [Tooltip("Max assist turn speed (deg/s), eased.")]
+        [Range(30f, 1080f)] public float meleeAssistTurnSpeed = 360f;
+        [Range(0.01f, 0.5f)] public float meleeAssistSmoothTime = 0.08f;
+        [Range(0f, 180f)] public float meleeAssistMaxPerSwingDegrees = 70f;
+        [Tooltip("Turn only during the first fraction of each swing (wind-up).")]
+        [Range(0.05f, 1f)] public float meleeAssistWindupFraction = 0.35f;
+        [Tooltip("Turn speed fades in over this error (no hard deadband edge).")]
+        [Range(1f, 90f)] public float meleeAssistSoftFadeDegrees = 22f;
+        public bool meleeTargetIgnoreDowned = true;
+        [Tooltip("Legacy: light combo attack-move forces strafe on (caused feet pivot). Default off.")]
+        public bool lightComboForcesStrafe = false;
+        public bool logMeleeFacing = false;
+
+        [Header("Melee block target lock (DMMeleeAttackFacing, 2026-10-19 e)")]
+        [Tooltip("On = block auto-face uses the same sticky target / cone / eased FixedUpdate turn as attacks (acquire / release / cone / retarget settings above). Off = legacy per-frame nearest pick.")]
+        public bool meleeBlockTargetLock = true;
+        [Range(30f, 1080f)] public float meleeBlockAssistTurnSpeed = 300f;
+        [Range(0.01f, 0.5f)] public float meleeBlockAssistSmoothTime = 0.1f;
+        [Range(0f, 2f)] public float meleeBlockLockGraceSeconds = 0.25f;
+        [Tooltip("No turn while the guard already faces the target within this angle (no micro-turning).")]
+        [Range(0f, 20f)] public float meleeBlockFacingToleranceDegrees = 3f;
+
+        [Header("Slow motion (DMSlowMotionDirector, 2026-10-19 e)")]
+        [Tooltip("Charged attack: slow-mo when the hit window opens and an enemy is predicted to be hit (in reach + cone).")]
+        public bool enableChargedSlowMo = true;
+        [Range(0f, 1f)] public float chargedSlowMoChance = 0.1f;
+        [Range(0f, 120f)] public float chargedSlowMoCooldownSeconds = 15f;
+        [Tooltip("Total real-time length incl. ease in / out.")]
+        [Range(2f, 4f)] public float chargedSlowMoSeconds = 3f;
+        [Range(0.05f, 1f)] public float chargedSlowMoTimeScale = 0.3f;
+        [Range(0f, 1f)] public float chargedSlowMoEaseInSeconds = 0.12f;
+        [Range(0.05f, 2f)] public float chargedSlowMoEaseOutSeconds = 0.8f;
+        [Tooltip("Predicted hit: nearest standing enemy within this distance...")]
+        [Range(0.5f, 5f)] public float chargedSlowMoReach = 2.4f;
+        [Tooltip("...and within this half-angle of the player's forward.")]
+        [Range(5f, 90f)] public float chargedSlowMoConeHalfAngle = 35f;
+        [Tooltip("Perfect parry: block press with an incoming enemy attack starts the before half; a confirmed parry holds the after half.")]
+        public bool enableParrySlowMo = true;
+        [Range(0f, 1f)] public float parrySlowMoChance = 1f;
+        [Tooltip("Total real time, split evenly before / after the parry moment.")]
+        [Range(1f, 3f)] public float parrySlowMoTotalSeconds = 2f;
+        [Range(0.05f, 1f)] public float parrySlowMoTimeScale = 0.25f;
+        [Range(0f, 1f)] public float parrySlowMoEaseInSeconds = 0.08f;
+        [Range(0.05f, 2f)] public float parrySlowMoEaseOutSeconds = 0.35f;
+        [Range(1f, 8f)] public float parrySlowMoThreatRadius = 3.5f;
+        [Range(0f, 30f)] public float parrySlowMoCooldownSeconds = 3f;
+        [Tooltip("Audit only: allow slow-mo while an audit session runs (off = audits never slow time).")]
+        public bool slowMoAllowInAudit = false;
+        public bool logSlowMo = false;
 
         [Header("Hitch monitor (lightweight, play mode)")]
         [Tooltip("Logs any frame longer than hitchThresholdMs with GC counts and the last combat event (blood spawn, hit, etc.). Off = zero cost.")]
@@ -326,8 +436,8 @@ namespace Project.Combat
         [Range(0.15f, 0.5f)] public float directionalFlinchSeconds = 0.28f;
         [Tooltip("Share of the backstep that follows the swing sideways (0 = straight away from the player).")]
         [Range(0f, 1f)] public float swingLateralBias = 0.35f;
-        [Tooltip("Backstep on a plain hit (meters) and how long it takes. 0.08 m = 8 cm.")]
-        [Range(0f, 0.5f)] public float lightBackstepMeters = 0.08f;
+        [Tooltip("Backstep on a plain hit (meters) and how long it takes. Slice 2b default 0 = light hits never move the enemy (was 0.08).")]
+        [Range(0f, 0.5f)] public float lightBackstepMeters = 0f;
         [Range(0.05f, 0.5f)] public float lightBackstepSeconds = 0.18f;
         [Tooltip("Extra backstep (meters) on a poise break.")]
         [Range(0f, 1.5f)] public float poiseBreakBackstepMeters = 0.35f;
@@ -352,9 +462,9 @@ namespace Project.Combat
         public bool heavyReactionEnabled = true;
         [Tooltip("Big reaction length on a charged / heavy hit (seconds).")]
         [Range(0.3f, 2f)] public float heavyBigReactionSeconds = 0.7f;
-        [Tooltip("Slide-back distance (meters) and duration on a heavy hit. 0.5 - 1.0 m reads as a shove.")]
-        [Range(0f, 2f)] public float heavySlideMeters = 0.8f;
-        [Range(0.1f, 1f)] public float heavySlideSeconds = 0.35f;
+        [Tooltip("Slide-back distance (meters) and duration on a heavy hit. Slice 2b default 0.35 m (was 0.8) = push a bit.")]
+        [Range(0f, 2f)] public float heavySlideMeters = 0.35f;
+        [Range(0.1f, 1f)] public float heavySlideSeconds = 0.3f;
         [Tooltip("Procedural waist bend (degrees) and duration on a heavy hit.")]
         [Range(0f, 40f)] public float heavyWaistBendDegrees = 20f;
         [Range(0.2f, 1f)] public float heavyWaistBendSeconds = 0.5f;
@@ -365,6 +475,138 @@ namespace Project.Combat
         [Tooltip("Slides stop at a ledge: max ground drop (meters) under the next step. Total distance of stacked slides is capped at Max Total Slide.")]
         [Range(0.1f, 2f)] public float hitSlideMaxLedgeDrop = 0.5f;
         [Range(0.2f, 3f)] public float hitSlideMaxTotalMeters = 1.2f;
+
+        [Header("Slice 2b: directional reactions v2 (strike direction)")]
+        [Tooltip("Master switch for Slice 2b: lean along the actual strike direction, weighted spring lean with head whip, directional hit clips (medium / heavy) and the animation-only knockdown. Off = Slice 2 behaviour.")]
+        public bool enableDirectionalReactionsV2 = true;
+        [Tooltip("BladeVelocity = read the player's blade motion at the hit (fallback: combo table below). ComboTable = Slice 2 swingSide table only.")]
+        public DMSwingDirectionSource swingDirectionSource = DMSwingDirectionSource.BladeVelocity;
+        [Tooltip("Blade speed (m/s, relative to the player root) below which the combo table is used instead.")]
+        [Range(0f, 10f)] public float bladeVelocityMinSpeed = 2f;
+        [Tooltip("How far back (seconds) the blade sampler looks to measure the swing.")]
+        [Range(0.016f, 0.15f)] public float bladeVelocityWindowSeconds = 0.05f;
+        [Tooltip("Share of the lean that follows the blade sideways (rest = straight away from the player). 1 = pure strike direction.")]
+        [Range(0f, 1f)] public float strikeLeanSideShare = 0.7f;
+
+        [Header("Slice 2b: light lean (procedural, weighted, root never moves)")]
+        [Tooltip("Peak lean (degrees) of a plain light hit, spread over spine / chest / head. Light hits never move the root (lightBackstepMeters 0).")]
+        [Range(0f, 35f)] public float lightLeanDegrees = 16f;
+        [Tooltip("Torso twist (degrees) toward the strike side on a light hit.")]
+        [Range(0f, 30f)] public float lightTwistDegrees = 12f;
+        [Tooltip("Seconds to snap to the peak lean (fast attack = impact).")]
+        [Range(0.02f, 0.15f)] public float lightLeanAttackSeconds = 0.045f;
+        [Tooltip("Seconds of the weighted settle after the peak (spring with overshoot).")]
+        [Range(0.15f, 1.5f)] public float lightLeanSettleSeconds = 0.6f;
+        [Tooltip("Settle spring frequency (Hz). Lower = heavier, slower sway back.")]
+        [Range(0.5f, 8f)] public float leanSpringFrequency = 2.6f;
+        [Tooltip("Settle spring damping ratio. Lower = more overshoot past neutral (weight); 1 = no overshoot.")]
+        [Range(0.1f, 1f)] public float leanSpringDamping = 0.42f;
+        [Range(0f, 1f)] public float leanSpineWeight = 0.35f;
+        [Range(0f, 1f)] public float leanChestWeight = 0.4f;
+        [Range(0f, 1f)] public float leanHeadWeight = 0.25f;
+        [Tooltip("Head whip: the head starts this many seconds after the torso and swings further (multiplier) - reads as a snap.")]
+        [Range(0f, 0.12f)] public float headWhipDelaySeconds = 0.035f;
+        [Range(1f, 3f)] public float headWhipMultiplier = 1.7f;
+        [Tooltip("Lean / twist multiplier on a critical hit.")]
+        [Range(1f, 2.5f)] public float critLeanMultiplier = 1.4f;
+        [Tooltip("Hit stop punch: the lean snaps to its peak during the hit-stop freeze and holds there until the freeze ends, then settles.")]
+        public bool leanHoldPeakThroughHitstop = true;
+
+        [Header("Slice 2b: weight scaling (damage / heavy attack)")]
+        [Tooltip("Damage that gives a 1x reaction. Reactions scale with (damage / this) ^ exponent, clamped to min / max. Weapon heft is read through damage (heavier weapons hit harder).")]
+        [Range(1f, 500f)] public float reactionDamageReference = 25f;
+        [Range(0.1f, 2f)] public float reactionDamageExponent = 0.6f;
+        [Range(0.2f, 1f)] public float reactionDamageScaleMin = 0.75f;
+        [Range(1f, 3f)] public float reactionDamageScaleMax = 1.6f;
+        [Tooltip("Extra multiplier for charged / strong player attacks.")]
+        [Range(1f, 3f)] public float heavyAttackWeightMultiplier = 1.35f;
+        [Tooltip("Hit stop frames added at the top of the weight range (scaled by weight). Adds punch to big hits. 0 = hit stop unchanged.")]
+        [Range(0, 6)] public int hitstopWeightBonusFrames = 2;
+
+        [Header("Slice 2b: randomness (per hit)")]
+        [Tooltip("Random +/- degrees added to the lean direction each hit.")]
+        [Range(0f, 45f)] public float leanAngleJitterDegrees = 14f;
+        [Tooltip("Random intensity range multiplied into every reaction (lean, twist, clip weight).")]
+        [Range(0.3f, 1f)] public float reactionIntensityRandomMin = 0.85f;
+        [Range(1f, 2f)] public float reactionIntensityRandomMax = 1.2f;
+        [Tooltip("Random +/- degrees added to the twist each hit.")]
+        [Range(0f, 15f)] public float twistRandomDegrees = 4f;
+        [Tooltip("Chance (0-1) the twist goes the opposite way (sign variance).")]
+        [Range(0f, 0.5f)] public float twistSignFlipChance = 0.2f;
+        [Tooltip("Random hit clip playback speed range (medium / heavy).")]
+        [Range(0.5f, 1f)] public float clipSpeedRandomMin = 0.9f;
+        [Range(1f, 1.6f)] public float clipSpeedRandomMax = 1.15f;
+        [Tooltip("Random hit clip layer weight range (multiplied into the tier weight).")]
+        [Range(0.3f, 1f)] public float clipWeightRandomMin = 0.85f;
+        [Range(0.3f, 1f)] public float clipWeightRandomMax = 1f;
+        [Tooltip("Max random start offset (normalized) into a hit clip, for variety.")]
+        [Range(0f, 0.3f)] public float clipStartOffsetRandomMax = 0.1f;
+        [Tooltip("Never play the same clip / variation twice in a row on the same enemy, and keep consecutive lean directions apart.")]
+        public bool avoidRepeatVariation = true;
+        [Tooltip("Heavy hits: chance (0-1) of an extra stumble step after the push, and its length (meters).")]
+        [Range(0f, 1f)] public float heavyStumbleStepChance = 0.3f;
+        [Range(0f, 0.5f)] public float heavyStumbleStepMeters = 0.15f;
+
+        [Header("Slice 2b: medium / heavy directional clips (arms masked = weapon grip kept)")]
+        [Tooltip("Medium = chain hit 2: PROTOFACTOR GetHitLight* on the additive torso layer (arms / hands masked).")]
+        public bool mediumUsesClip = true;
+        [Range(0f, 1f)] public float mediumClipWeight = 0.75f;
+        [Range(0.5f, 2f)] public float mediumClipSpeed = 1.15f;
+        [Tooltip("Lean scale on top of the medium clip (x light lean).")]
+        [Range(0f, 2f)] public float mediumLeanScale = 1.25f;
+        [Tooltip("Medium variation: chance of using the GetHitHeavy clip at reduced weight instead of GetHitLight.")]
+        [Range(0f, 1f)] public float mediumAltHeavyClipChance = 0.35f;
+        [Range(0f, 1f)] public float mediumAltHeavyClipWeight = 0.55f;
+        [Tooltip("Heavy = charged / strong hit, chain stumble, poise break: GetHitHeavy* on the body layer (hips, spine, head, legs; arms masked).")]
+        public bool heavyUsesClip = true;
+        [Range(0f, 1f)] public float heavyClipWeight = 1f;
+        [Range(0.5f, 2f)] public float heavyClipSpeed = 1.2f;
+        [Tooltip("Peak procedural lean (degrees) on top of the heavy clip.")]
+        [Range(0f, 45f)] public float heavyLeanDegrees = 24f;
+        [Range(0.2f, 2f)] public float heavyLeanSettleSeconds = 0.8f;
+        [Range(0.02f, 0.3f)] public float reactionBlendInSeconds = 0.06f;
+        [Range(0.05f, 0.6f)] public float reactionBlendOutSeconds = 0.22f;
+
+        [Header("Slice 2b: knockdown (animation only, no ragdoll)")]
+        [Tooltip("Heavy hits can knock the enemy down: PROTOFACTOR Death* fall (cut at the land point) -> Dead* hold -> GetBackUp*, matched by strike direction. No ragdoll (ragdoll is death only). Weapon stays in hand.")]
+        public bool knockdownEnabled = true;
+        [Range(0f, 100f)] public float knockdownChancePercent = 15f;
+        [Tooltip("Bonus when the enemy's poise is below 30%.")]
+        [Range(0f, 100f)] public float knockdownLowPoiseBonusPercent = 15f;
+        [Range(0f, 100f)] public float knockdownCritBonusPercent = 10f;
+        [Tooltip("Replaces the base chance when the hit breaks poise.")]
+        [Range(0f, 100f)] public float knockdownOnPoiseBreakPercent = 25f;
+        [Range(0f, 100f)] public float knockdownMaxChancePercent = 40f;
+        [Tooltip("Push along the strike direction during the fall (meters). Clip root motion is ignored.")]
+        [Range(0f, 1.5f)] public float knockdownPushMeters = 0.5f;
+        [Range(0.1f, 1f)] public float knockdownPushSeconds = 0.4f;
+        [Range(0.5f, 2f)] public float knockdownFallSpeed = 1.1f;
+        [Tooltip("Normalized time in each Death* fall clip where the body lands (cut there, cross-fade to the lying hold). Named by FALL direction: Front = falls forward (hit from behind), Back = falls backward (hit in front), Left / Right = falls to that side. Defaults measured from the clips' body height (Oct 19).")]
+        [Range(0.1f, 1f)] public float knockdownFallExitFront = 0.75f;
+        [Range(0.1f, 1f)] public float knockdownFallExitBack = 0.63f;
+        [Range(0.1f, 1f)] public float knockdownFallExitLeft = 0.45f;
+        [Range(0.1f, 1f)] public float knockdownFallExitRight = 0.52f;
+        [Tooltip("Seconds lying down before the get-up (hits while down do not extend it).")]
+        [Range(0.2f, 4f)] public float knockdownDownSeconds = 1f;
+        [Tooltip("Random +/- seconds on the lying time.")]
+        [Range(0f, 1f)] public float knockdownDownRandomSeconds = 0.25f;
+        [Range(0.5f, 2.5f)] public float getUpPlaybackSpeed = 1.25f;
+        [Tooltip("Normalized time in the GetBackUp clip where control returns (layer blends out, aim fades back in).")]
+        [Range(0.6f, 1f)] public float getUpExitNormalized = 0.92f;
+        [Tooltip("Aim / chest pitch fade back in after the get-up (the knockdown layer blends out over this time).")]
+        [Range(0.05f, 1f)] public float knockdownAimFadeInSeconds = 0.25f;
+        [Tooltip("Player melee cannot damage the enemy during the last part of the get-up (seconds).")]
+        [Range(0f, 1.5f)] public float getUpInvulnerableSeconds = 0.4f;
+        [Tooltip("Seconds after a get-up before the same enemy can be knocked down again.")]
+        [Range(0f, 30f)] public float knockdownImmunitySeconds = 8f;
+        [Tooltip("A downed enemy gives up its melee token / attack slot (the next attacker still waits its staggered start).")]
+        public bool knockdownReleasesAttackSlot = true;
+        [Tooltip("Skip the knockdown (heavy reaction instead) on ground steeper than this or near a ledge.")]
+        [Range(5f, 45f)] public float knockdownMaxSlopeDegrees = 20f;
+        [Range(0.2f, 3f)] public float knockdownLedgeCheckMeters = 1f;
+        [Tooltip("On = player melee crits never take the old crit-ragdoll knockdown (EnemyInvectorRagdollBridge). Crit damage / numbers / VFX unchanged.")]
+        public bool retireCritRagdollKnockdown = true;
+        public bool logHitReactionsInPlay = false;
 
         [Header("Future tuning hooks")]
         [Range(0, 12)] public int hitstopLightFrames = 2;
@@ -535,6 +777,8 @@ namespace Project.Combat
         [Range(0.5f, 60f)] public float playerRespawnDelay = 3f;
         [Tooltip("Enemy Runtime Audit / tests: player-only protection (no damage, health refill, infinite ammo) for the run; enemies take real damage. Cleared when the run ends or play stops. Does not touch the typed godmode cheat.")]
         public bool auditGodMode = true;
+        [Tooltip("2026-10-19 h: audit-only. When on, the audit player-health guard is released so the player can die to real enemy hits (death / Retry tests). Reset to off when the audit finishes.")]
+        public bool auditAllowPlayerDeath = false;
         [Range(0.5f, 10f)] public float godModeToastSeconds = 2f;
 
         [Header("Player corpse (2026-10-13 i)")]
@@ -570,5 +814,13 @@ namespace Project.Combat
         public bool logCombatEventsInPlay;
         [Tooltip("Logs engaged enemy HUD fill (0-1) on each health change when that enemy is focused.")]
         public bool logEngagedHudFill;
+    }
+
+    public enum DMPlayerReactionsUnderGodMode
+    {
+        None = 0,
+        LeanOnly = 1,
+        LeanAndLight = 2,
+        All = 3
     }
 }

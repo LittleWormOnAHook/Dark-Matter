@@ -32,6 +32,11 @@ namespace Project.EditorTools.Audit
         internal static void AuditPlayerGuard()
         {
             DM_CombatCoreProfile p = DM_CombatCoreProfile.Live;
+            if (p != null && p.auditAllowPlayerDeath) // 2026-10-19 h: death/Retry phase
+            {
+                if (DMDevCommandState.AuditSessionActive) DMDevCommandState.EndAuditSession();
+                return;
+            }
             if (p != null && !p.auditGodMode) return;
             if (!DMDevCommandState.AuditSessionActive) DMDevCommandState.BeginAuditSession();
         }

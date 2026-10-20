@@ -25,6 +25,7 @@ Constitutional architecture: `Architecture/Dark_Matter_Framework_2.0_High_Level_
 | Agent session pickup | `Architecture/CursorPlans/combat_master_plan_handoff.md` | Handoff between agents / chats |
 | Spacing & hit marks | `Design/Combat/DM_Enemy_Spacing_And_Hit_Marks_Plan.md` + `Architecture/Combat_Weapon_Base_Stats.md` | Engagement director, hit marks, weapon base stats |
 | Melee layers / animation | `Design/Combat/DM_Melee_Locomotion_Layer_Policy.md`, `Design/Combat/DM_Melee_Animation_Library_Plan.md`, `Design/Combat/DMG_Combat_Animation_Tag_Sheet.md` | Animator layer policy, clip shopping, tag sheet |
+| Hit reactions (enemy + player) | `Design/Combat/DM_Directional_Melee_Hit_Reactions_Plan.md` (Rev 3, Slice 2b built, uncommitted); `Design/Combat/DM_Player_Hit_Reactions_Plan.md` (Rev 1, Oct 19 2026 - plan only) | Directional lean/whip, layered GetHit, knockdown, player reactions |
 
 **Relationship:** `Dark_Matter_Combat_System.md` = **Features-layer disk/engineering authority**; `DMG_Combat_Plan_v2.md` = **design phased roadmap & acceptance** (keep both aligned; plan reaudit tracks git/disk, Features doc tracks implementation shape).
 
@@ -63,6 +64,7 @@ Quick map — full lists in **§2.1–§2.19**.
 
 - **Primary:** `Architecture/Audits/Audit_02_Player.md`; `../Features/Climb/CLIMB_PROBE_BAKER.md` (climb probe bake tool v3)
 - **Related:** `.cursor/rules/dark-matter-genesis-player-physics.mdc` (capsule/climb/jetpack locks — not under Documentation); `Design/Combat/DM_Melee_Locomotion_Layer_Policy.md` (melee-on-locomotion layers — cross-ref combat); **Genesis Studio → Player → Player Prefab / Enemy Prefab / Definitions** (Meshy Invector prefab swap + definition library; Tools → Prefab Creator windows keep the left Custom list)
+- **Related - strafe locomotion:** `Design/Player/DM_Player_Strafe_Locomotion_Plan.md` (Rev 2, Oct 19 2026 - decisions recorded: hybrid strafe, 30 deg forward zone, backpedal 0.55x, forward-only sprint +/-50 deg, melee/bow strafe capped at walk; **Parked - resume later**)
 
 ### 2.3 Combat
 
@@ -70,6 +72,7 @@ Quick map — full lists in **§2.1–§2.19**.
 - **Related — audits & handoffs:** `Design/Combat/DMG_Combat_Audit_Phase1.md` (Sep 30, §4 locked); `Architecture/Audits/Audit_03_Combat.md`; `Architecture/CursorPlans/combat_master_plan_handoff.md`; `Architecture/CursorPlans/README.md` (plan archive index)
 - **Related — spacing & hit marks:** `Design/Combat/DM_Enemy_Spacing_And_Hit_Marks_Plan.md` (rev 3, Oct 7 — Part A built/untested); `Architecture/Combat_Weapon_Base_Stats.md` (shipped Jul 2026); `Combat/Moller-Trumbore Technique/Mesh_Hit_and_Surface_Damage_Plan.md` (narrow-phase kernel / MT plan)
 - **Related — melee & animation:** `Design/Combat/DM_Melee_Locomotion_Layer_Policy.md` (canon); `Design/Combat/DM_Melee_Animation_Library_Plan.md` (shopping plan, no imports); `Design/Combat/DMG_Combat_Animation_Tag_Sheet.md` (clip counts); `Wiki/Combat-Moving-Melee-Layer-Policy.md` (wiki mirror of melee layer policy)
+- **Related — hit reactions:** `Design/Combat/DM_Directional_Melee_Hit_Reactions_Plan.md` (enemy Slice 2b, Rev 3); `Design/Combat/DM_Player_Hit_Reactions_Plan.md` (player, Rev 1 plan, Oct 19 2026)
 - **Related — wiki mirrors (GitHub sync):** `Wiki/README.md` (map + push steps); `Wiki/Documentation-Index.md`; `Wiki/Cursor-Rules-Index.md`; `Wiki/Combat-System.md`; `Wiki/Archive-Policy.md`; `Wiki/Economy-UEA-and-The-Overseer.md`
 
 ### 2.4 Building (stone mode)

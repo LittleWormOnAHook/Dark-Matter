@@ -185,6 +185,13 @@ namespace Project.AI.Invector
             bool inEngagement = (_aiController != null && _aiController.IsInRangedEngagement)
                 || (Time.time < _aimRequestUntil && HasRangedWeaponEquipped());
 
+            // Slice 2b: no aim stance while knocked down; it comes back as the knockdown layer blends out after the get-up.
+            if (DMEnemyKnockdown.IsDown(gameObject))
+            {
+                inEngagement = false;
+                _aimHoldTimer = 0f;
+            }
+
             if (inEngagement)
             {
                 // Reset the hold timer whenever actively engaged — it only counts down after.
@@ -429,14 +436,20 @@ namespace Project.AI.Invector
             return !IsAimReady;
         }
 
-        public bool TryBeginBlock(float blockDuration, out float duration)
+        public bool TryBeginBlock(float blockDuration, out float duration, bool ignoreGuardStamina = false)
         {
             duration = blockDuration > 0f ? blockDuration : defensiveBlockDurationFallback;
             if (_controller == null || _animator == null)
                 return false;
+            if (DMEnemyKnockdown.IsDown(gameObject))
+                return false; // 2026-10-19 e: no guard while knocked down
             var gp = GuardProfile;
-            if (gp != null && GuardStamina < gp.enemyMinGuardStaminaToBlock)
+            if (!ignoreGuardStamina && gp != null && GuardStamina < gp.enemyMinGuardStaminaToBlock)
                 return false; // 2026-10-13: too tired to guard
+            // 2026-10-19 e: a full-body hit clip (DM_HitReact_Body) would hide the guard pose: fade it out.
+            DMEnemyHitReactionPlayer hrClips = GetComponent<DMEnemyHitReactionPlayer>();
+            if (hrClips != null)
+                hrClips.Cancel();
 
             _controller.isStrafing = true;
             // 2026-10-13 (d5): melee weapon drawn -> weapon block (DefenseID >= 1, same as the player), never Defense_Unarmed (0).

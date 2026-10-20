@@ -460,6 +460,7 @@ namespace Project.Combat
             _shooterInput = GetComponent<PioneerShooterMeleeInput>();
             _motor = GetComponent<vThirdPersonMotor>();
             _animator = GetComponent<Animator>();
+            DMMeleeSwingVelocity.Ensure(gameObject); // Slice 2b.1: blade velocity for strike-direction hit reactions
         }
 
         private void OnDestroy()

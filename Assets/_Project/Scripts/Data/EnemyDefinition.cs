@@ -153,6 +153,8 @@ namespace Project.AI
         public EnemyAttackArmor attackArmor = EnemyAttackArmor.None;
         [Tooltip("Scales this enemy's max poise (1 = DM_CombatCoreProfile humanoid poise; 1.5 = tougher to break; 0.7 = easier).")]
         [Range(0.25f, 4f)] public float poiseMultiplier = 1f;
+        [Tooltip("Slice 2b: 0-1 resistance to the animation-only knockdown (multiplies the chance by 1 - this). 0 = grunt, 0.5 = elite, 1 = never knocked down (boss).")]
+        [Range(0f, 1f)] public float knockdownResistance = 0f;
 
         [Header("Health")]
         public float maxHealth = 60f;
