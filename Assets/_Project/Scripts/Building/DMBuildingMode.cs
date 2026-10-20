@@ -10,6 +10,9 @@ namespace Project.Building
         public const float HoldSeconds = 0.4f;
 
         public static bool IsActive { get; private set; }
+
+        /// <summary>Stone build mode: block weapon attack/fire LMB (placement reads mouse separately).</summary>
+        public static bool BlocksWeaponFireInput => IsActive;
         public static string HotbarId { get; private set; } = DMBuildingCatalog.StoneId;
         public static int SelectedIndex { get; private set; }
         public static int SlotFocus { get; private set; }

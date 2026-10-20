@@ -466,7 +466,8 @@ namespace Project.Player.Invector
                 && weaponDrawn;
             bool ltAimHeld = !opticsOpen && !drawnMeleeOnly && ReadAimHeld();
             // LT held while sheathed: draw so ADS can engage (press helper only sees wasPressed).
-            if (ltAimHeld && !weaponDrawn && _equipment != null)
+            if (ltAimHeld && !weaponDrawn && _equipment != null
+                && (_inputBridge == null || !_inputBridge.BlocksWeaponFireForGrenade))
             {
                 TryDrawWeaponOnAimPress();
                 if (!_equipment.IsWeaponDrawn)
@@ -531,6 +532,9 @@ namespace Project.Player.Invector
                 }
             }
 
+            // Invector base AimInput sets this every frame; scope toggle ADS skips base so the body must still turn with the camera while latched.
+            cc.strafeSpeed.rotateWithCamera = IsAiming ? true : cc.strafeSpeed.defaultRotateWithCamera;
+
             if (!isAimingByInput)
                 return;
 
@@ -569,6 +573,9 @@ namespace Project.Player.Invector
         private void TryDrawWeaponOnAimPress()
         {
             if (_equipment == null || _equipment.IsWeaponDrawn)
+                return;
+
+            if (_inputBridge != null && _inputBridge.BlocksWeaponFireForGrenade)
                 return;
 
             bool rmbPressed = Mouse.current != null && Mouse.current.rightButton.wasPressedThisFrame;
@@ -1007,6 +1014,9 @@ namespace Project.Player.Invector
         /// </summary>
         public override void MeleeWeakAttackInput()
         {
+            if (DMBuildingMode.BlocksWeaponFireInput)
+                return;
+
             if (IsDrawnMeleeWeaponActive())
                 return;
 
@@ -1018,6 +1028,9 @@ namespace Project.Player.Invector
         /// </summary>
         public override void MeleeStrongAttackInput()
         {
+            if (DMBuildingMode.BlocksWeaponFireInput)
+                return;
+
             if (IsDrawnMeleeWeaponActive())
                 return;
 
@@ -2290,6 +2303,9 @@ namespace Project.Player.Invector
 
         private static bool ReadLightAttackHeld()
         {
+            if (DMBuildingMode.BlocksWeaponFireInput)
+                return false;
+
             if (DMPlayerInputActions.IsPressed("Attack"))
                 return true;
             if (Mouse.current != null && Mouse.current.leftButton.isPressed)
@@ -2301,6 +2317,9 @@ namespace Project.Player.Invector
 
         private static bool ReadLightAttackPressedThisFrame()
         {
+            if (DMBuildingMode.BlocksWeaponFireInput)
+                return false;
+
             if (DMPlayerInputActions.WasPressedThisFrame("Attack"))
                 return true;
             if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
@@ -3213,7 +3232,7 @@ namespace Project.Player.Invector
 
         public override void ShotInput()
         {
-            if (Project.Building.DMBuildingMode.IsActive)
+            if (DMBuildingMode.BlocksWeaponFireInput)
             {
                 shootCountA = 0;
                 return;
@@ -3287,6 +3306,9 @@ namespace Project.Player.Invector
 
         private static bool ReadShotHeld()
         {
+            if (DMBuildingMode.BlocksWeaponFireInput)
+                return false;
+
             if (DMPlayerInputActions.IsPressed("Attack"))
                 return true;
 
