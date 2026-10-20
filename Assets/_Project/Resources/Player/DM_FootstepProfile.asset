@@ -37,7 +37,7 @@ MonoBehaviour:
     spawnStepMark: 1
     stepMarkPrefab: {fileID: 184202, guid: b8cf3efdf419ad74f8c0f66ab6418371, type: 3}
     dustPrefab: {fileID: 1510200187091628226, guid: 35b0d1e6d5ee183499ac2b3e3be83fe8, type: 3}
-    dustMaterial: {fileID: 0}
+    dustMaterial: {fileID: 2100000, guid: 46a43ce8397caab4a8db6c3908fd1f35, type: 2}
   - tag: Untagged
     enabled: 1
     volume: 1
@@ -45,7 +45,7 @@ MonoBehaviour:
     spawnStepMark: 1
     stepMarkPrefab: {fileID: 184202, guid: b8cf3efdf419ad74f8c0f66ab6418371, type: 3}
     dustPrefab: {fileID: 1510200187091628226, guid: 35b0d1e6d5ee183499ac2b3e3be83fe8, type: 3}
-    dustMaterial: {fileID: 0}
+    dustMaterial: {fileID: 2100000, guid: 46a43ce8397caab4a8db6c3908fd1f35, type: 2}
   - tag: Climbable
     enabled: 1
     volume: 1
@@ -53,7 +53,7 @@ MonoBehaviour:
     spawnStepMark: 1
     stepMarkPrefab: {fileID: 184202, guid: b8cf3efdf419ad74f8c0f66ab6418371, type: 3}
     dustPrefab: {fileID: 1510200187091628226, guid: 35b0d1e6d5ee183499ac2b3e3be83fe8, type: 3}
-    dustMaterial: {fileID: 0}
+    dustMaterial: {fileID: 2100000, guid: 46a43ce8397caab4a8db6c3908fd1f35, type: 2}
   - tag: Default
     enabled: 1
     volume: 1
@@ -61,7 +61,7 @@ MonoBehaviour:
     spawnStepMark: 1
     stepMarkPrefab: {fileID: 184202, guid: b8cf3efdf419ad74f8c0f66ab6418371, type: 3}
     dustPrefab: {fileID: 1510200187091628226, guid: 35b0d1e6d5ee183499ac2b3e3be83fe8, type: 3}
-    dustMaterial: {fileID: 0}
+    dustMaterial: {fileID: 2100000, guid: 46a43ce8397caab4a8db6c3908fd1f35, type: 2}
   terrainTextureLayers:
   - layerIndex: 0
     label: 0 Sand Fine

@@ -21,7 +21,7 @@ MonoBehaviour:
   lastModelSource: {fileID: 919132149155446097, guid: c648c365b8b81b245b439c3a0d905034, type: 3}
   meleeWeaponItem: {fileID: 0}
   rangedWeaponItem: {fileID: 11400000, guid: 051378d9c28e82544a585c86b3dbbfc3, type: 2}
-  preferRangedWeapon: 1
+  preferRangedWeapon: 0
   canThrowGrenades: 0
   enemyCategory: 0
   bodyType: 0
@@ -68,6 +68,8 @@ MonoBehaviour:
   attackWindup: 0.35
   meleeDuration: 1
   unarmedDuration: 0.55
+  rangedAmmoType: 5
+  rangedAmmoPool: 0
   rangedEngageRange: 16
   rangedHoldDistance: 0
   rangedRetreatFraction: 0.6

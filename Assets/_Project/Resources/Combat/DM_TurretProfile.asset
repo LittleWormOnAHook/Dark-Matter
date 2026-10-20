@@ -46,4 +46,9 @@ MonoBehaviour:
   playerCameraFov: 50
   playerAimMouseSensitivity: 0.05
   playerReticleScreenBias: 0.06
+  useCustomAlarmColors: 0
+  alarmScanColor: {r: 0.096292675, g: 1, b: 0, a: 1}
+  alarmTrackColor: {r: 0.8313726, g: 0.627451, b: 0.09019608, a: 1}
+  alarmFireColor: {r: 1, g: 0.08745244, b: 0, a: 1}
+  alarmEmissionIntensity: 10
   debugDraw: 0

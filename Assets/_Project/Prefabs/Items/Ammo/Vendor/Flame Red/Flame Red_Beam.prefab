@@ -64,6 +64,10 @@ PrefabInstance:
       propertyPath: m_InnerSpotAngle
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 10800004, guid: fcef370c5d7985444bc66193f421a484, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2123318585766903174, guid: fcef370c5d7985444bc66193f421a484, type: 3}
       propertyPath: m_Version
       value: 15

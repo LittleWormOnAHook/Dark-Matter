@@ -1497,6 +1497,26 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: -30.074
       objectReference: {fileID: 0}
+    - target: {fileID: 1487658469402899135, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.9035884
+      objectReference: {fileID: 0}
+    - target: {fileID: 1487658469402899135, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.8671578
+      objectReference: {fileID: 0}
+    - target: {fileID: 1487658469402899135, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.3394
+      objectReference: {fileID: 0}
+    - target: {fileID: 1487658469402899135, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.017
+      objectReference: {fileID: 0}
+    - target: {fileID: 1487658469402899135, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.2913
+      objectReference: {fileID: 0}
     - target: {fileID: 1580882428048425304, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0.755
@@ -1753,6 +1773,14 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 3278546401063871098, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
+      propertyPath: m_Layer
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3278546401063871098, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
+      propertyPath: m_TagString
+      value: Ignore Ragdoll
+      objectReference: {fileID: 0}
     - target: {fileID: 3287564139342491671, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
       propertyPath: hitBoxes.Array.size
       value: 2
@@ -1889,6 +1917,14 @@ PrefabInstance:
       propertyPath: m_LocalPosition.z
       value: -0.031
       objectReference: {fileID: 0}
+    - target: {fileID: 4209143216260980920, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
+      propertyPath: m_Layer
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4209143216260980920, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
+      propertyPath: m_TagString
+      value: Ignore Ragdoll
+      objectReference: {fileID: 0}
     - target: {fileID: 4221732360576970771, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0.766
@@ -1936,6 +1972,14 @@ PrefabInstance:
     - target: {fileID: 5491042555274626591, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
       propertyPath: requireSkillTreeUnlocks
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5591854998339818570, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
+      propertyPath: m_Layer
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5591854998339818570, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
+      propertyPath: m_TagString
+      value: Ignore Ragdoll
       objectReference: {fileID: 0}
     - target: {fileID: 5618221144003866558, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
       propertyPath: meleeWeaponSlots.Array.size
@@ -2129,6 +2173,10 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 6533702124975424067, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6688050184474195105, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
       propertyPath: dithering
       value: 0
@@ -2269,6 +2317,46 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: -132.312
       objectReference: {fileID: 0}
+    - target: {fileID: 7540662977314077426, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.0645
+      objectReference: {fileID: 0}
+    - target: {fileID: 7540662977314077426, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.1742
+      objectReference: {fileID: 0}
+    - target: {fileID: 7540662977314077426, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.7566
+      objectReference: {fileID: 0}
+    - target: {fileID: 7540662977314077426, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: -0.19481793
+      objectReference: {fileID: 0}
+    - target: {fileID: 7540662977314077426, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.97790766
+      objectReference: {fileID: 0}
+    - target: {fileID: 7540662977314077426, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0.05609309
+      objectReference: {fileID: 0}
+    - target: {fileID: 7540662977314077426, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.050953798
+      objectReference: {fileID: 0}
+    - target: {fileID: 7540662977314077426, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 22.752
+      objectReference: {fileID: 0}
+    - target: {fileID: 7540662977314077426, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 184.84
+      objectReference: {fileID: 0}
+    - target: {fileID: 7540662977314077426, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: -185.592
+      objectReference: {fileID: 0}
     - target: {fileID: 7927037086280897714, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0.1128
@@ -2369,6 +2457,14 @@ PrefabInstance:
       propertyPath: 'hitBoxes.Array.data[1]'
       value: 
       objectReference: {fileID: 2936631190259843813}
+    - target: {fileID: 8546571137815648635, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
+      propertyPath: m_Layer
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8546571137815648635, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
+      propertyPath: m_TagString
+      value: Ignore Ragdoll
+      objectReference: {fileID: 0}
     - target: {fileID: 8665380074235796123, guid: 6acd5ea802cc4cb4d99f0e8692159fbe, type: 3}
       propertyPath: damagePercentage
       value: 25

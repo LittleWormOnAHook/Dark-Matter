@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Robot_Enemy
   m_EditorClassIdentifier: Assembly-CSharp::Project.AI.EnemyDefinition
   enemyId: robot_enemy
-  displayName: Robot
+  displayName: Fred
   prefabFileName: Robot
   archetype: 1
   surfaceThreatKind: 3
@@ -29,7 +29,7 @@ MonoBehaviour:
   brainArchetype: 4
   primaryPersonality: 5
   secondaryPersonality: 6
-  brainProfileOverride: {fileID: 11400000, guid: 68b6602a08614823b7a96c2719601550, type: 2}
+  brainProfileOverride: {fileID: 0}
   engagementProfileOverride: {fileID: 0}
   hitMarkProfileOverride: {fileID: 0}
   backoffDistanceMultiplier: 1

@@ -27,8 +27,8 @@ MonoBehaviour:
   bodyType: 0
   overrideBrain: 1
   brainArchetype: 0
-  primaryPersonality: 10
-  secondaryPersonality: 6
+  primaryPersonality: 3
+  secondaryPersonality: 12
   brainProfileOverride: {fileID: 0}
   engagementProfileOverride: {fileID: 0}
   hitMarkProfileOverride: {fileID: 0}
@@ -68,7 +68,7 @@ MonoBehaviour:
   attackWindup: 0.35
   meleeDuration: 0.85
   unarmedDuration: 0.55
-  rangedAmmoType: 1
+  rangedAmmoType: 2
   rangedAmmoPool: 6
   rangedEngageRange: 12
   rangedHoldDistance: 0

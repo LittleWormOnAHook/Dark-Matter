@@ -16,13 +16,13 @@ MonoBehaviour:
   scopeUnlockedByDefault: 1
   rifleScopedRange: 50
   pistolScopedRange: 20
-  scopeAdsRightMouseToggle: 0
+  scopeAdsRightMouseToggle: 1
   scopeAdsEnablesZoomOverlay: 1
-  rifleScopedFov: 22.4
-  pistolScopedFov: 31.5
+  rifleScopedFov: 25
+  pistolScopedFov: 55
   scopeInSeconds: 0.197
   scopeOutSeconds: 0.193
-  rifleScopedFireInterval: 1.38
+  rifleScopedFireInterval: 1.331
   pistolScopedFireInterval: 0.96
   minScopedFireInterval: 1
   rifleScopedPostShotWaitSeconds: 1
@@ -39,41 +39,41 @@ MonoBehaviour:
   scopedShotVolume: 3
   scopedShotPitch: 0.568
   maxSwayReduction: 0.8
-  maxScopeInReduction: 0.7
+  maxScopeInReduction: 0.9
   maxExtraZoom: 1
   scopeCrosshairSprite: {fileID: 21300000, guid: 9492cb595eb55c9409ddcdeffebdda6e, type: 3}
   scopeOverlayUseSpriteCrosshair: 1
   rifleScopeMaskRadius: 0.15
   rifleScopeMaskScale: 0.5
-  rifleScopeCrosshairScale: 0.892
-  pistolScopeMaskRadius: 0.284
-  pistolScopeReticleScale: 0.453
+  rifleScopeCrosshairScale: 0.935
+  pistolScopeMaskRadius: 0.3182
+  pistolScopeReticleScale: 0.395
   useNewScopeArt: 1
   retireUguiOptics: 1
-  reticleColor: {r: 0.03771144, g: 1, b: 0, a: 0.95}
-  ringColor: {r: 1, g: 0, b: 0, a: 1}
-  reticleLineWidth: 2.25
+  reticleColor: {r: 0, g: 0, b: 0, a: 0}
+  ringColor: {r: 0, g: 0, b: 0, a: 0}
+  reticleLineWidth: 0.867
   reticleCenterGap: 40
-  milDotsPerArm: 9
+  milDotsPerArm: 0
   rifleScopeLabel: SCOPED
   pistolScopeLabel: SCOPED
   scopeHint: '[RMB] Toggle ADS  |  Standard / Plasma / Ion ammo only'
-  rifleReticleColor: {r: 0.05, g: 0.05, b: 0.05, a: 0.95}
-  rifleRingColor: {r: 0, g: 1, b: 0.054740727, a: 1}
-  rifleOuterCrosshairColor: {r: 1, g: 0, b: 0, a: 1}
-  rifleOuterCrosshairScale: 1.226
-  rifleOuterCrosshairEmission: 3.34
-  rifleOuterCrosshairEmissionColor: {r: 1, g: 0, b: 0, a: 1}
-  rifleRingOuterDiameterPx: 125.8
-  pistolReticleColor: {r: 1, g: 0, b: 0, a: 0.95}
-  pistolRingColor: {r: 1, g: 0, b: 0, a: 1}
-  pistolOuterCrosshairColor: {r: 1, g: 0.2655012, b: 0, a: 1}
-  pistolOuterCrosshairScale: 0.82
+  rifleReticleColor: {r: 1, g: 0, b: 0, a: 1}
+  rifleRingColor: {r: 1, g: 0.7176471, b: 0, a: 1}
+  rifleOuterCrosshairColor: {r: 1, g: 0, b: 0.7459817, a: 1}
+  rifleOuterCrosshairScale: 2.194
+  rifleOuterCrosshairEmission: 7.95
+  rifleOuterCrosshairEmissionColor: {r: 0, g: 0, b: 0, a: 0}
+  rifleRingOuterDiameterPx: 103.2
+  pistolReticleColor: {r: 1, g: 0, b: 0.06666684, a: 1}
+  pistolRingColor: {r: 1, g: 0.7160353, b: 0, a: 1}
+  pistolOuterCrosshairColor: {r: 1, g: 0, b: 0.7459817, a: 1}
+  pistolOuterCrosshairScale: 1.668
   pistolOuterCrosshairEmission: 6.11
-  pistolOuterCrosshairEmissionColor: {r: 0, g: 0.84761655, b: 1, a: 1}
-  pistolRingOuterDiameterPx: 320
+  pistolOuterCrosshairEmissionColor: {r: 1, g: 1, b: 1, a: 1}
+  pistolRingOuterDiameterPx: 244.1
   scopeCenterMaskEnabled: 0
   scopeCenterMaskColor: {r: 0, g: 0, b: 0.9764706, a: 1}
-  scopeCenterMaskAlpha: 0.293
+  scopeCenterMaskAlpha: 0.048
   scopeCenterMaskBlurPixels: 0
   scopeInnerRingViewportEdgeSoftness: 0.0624

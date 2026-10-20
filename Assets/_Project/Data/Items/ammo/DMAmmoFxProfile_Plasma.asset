@@ -18,6 +18,7 @@ MonoBehaviour:
   maxStack: 999
   stableItemId: a5e3de4e-5188-4129-9d86-fba6f375e5e6
   itemType: 4
+  functionalTag: 0
   deployedPrefab: {fileID: 0}
   weaponGrip: 0
   heldPrefab: {fileID: 0}
@@ -165,7 +166,7 @@ MonoBehaviour:
   defaultDecals: []
   defaultHitEffects: []
   surfaces: []
-  fallBackToCatalog: 0
+  fallBackToCatalog: 1
   catalog: {fileID: 11400000, guid: b6c7d8e9f0a12b3c4d5e6f708192a356, type: 2}
   surfaceDamage:
     mode: 0

@@ -18,6 +18,7 @@ MonoBehaviour:
   maxStack: 999
   stableItemId: 5c14bbf7-b859-40c2-8b86-d3fd91043be6
   itemType: 4
+  functionalTag: 0
   deployedPrefab: {fileID: 0}
   weaponGrip: 0
   heldPrefab: {fileID: 0}
@@ -41,6 +42,7 @@ MonoBehaviour:
   criticalChance: 0.1
   criticalDamageMultiplier: 2
   meleeRange: 2.2
+  meleeBladeLength: -1
   meleeCooldown: 0.65
   attackAnimationSpeed: 0
   meleeStaminaCost: 0
@@ -59,6 +61,8 @@ MonoBehaviour:
   recoilHorizontal: 0.22
   recoilFireRateScale: 0
   fireRate: 4
+  rifleScopedFireInterval: 0
+  pistolScopedFireInterval: 0
   rifleScopedFireIntervalPercentModifier: 0
   pistolScopedFireIntervalPercentModifier: 0
   shotsPerBurst: 1
@@ -92,15 +96,15 @@ MonoBehaviour:
     rifleCameraVertical: 1.05
     rifleCameraHorizontal: 0.35
     rifleAnimationWeight: 0.08
-  isHitscanBeam: 1
+  isHitscanBeam: 0
   projectileGravityScale: 0
   splashRadius: 0
   splashDamageFalloff: 0.25
   fxProfile: {fileID: 11400000}
-  muzzleFlashPrefab: {fileID: 1266052911378142, guid: f6d1b4c37e8059a5d2f3a4b5c6d7e8f9, type: 3}
-  tracerPrefab: {fileID: 7048032083067295583, guid: ef03efed27122084884eb9cbb3785b11, type: 3}
+  muzzleFlashPrefab: {fileID: 100002, guid: 0193a223b1a2f4a4fb1e7fecea3ac974, type: 3}
+  tracerPrefab: {fileID: 100000, guid: 1cbda689bb465ea49b41a3db35577a6d, type: 3}
   impactVfxPrefab: {fileID: 0}
-  beamVfxPrefab: {fileID: 7048032083067295583, guid: ef03efed27122084884eb9cbb3785b11, type: 3}
+  beamVfxPrefab: {fileID: 100000, guid: 9f5540b03de998343a2a3d96a010b623, type: 3}
   isMiningTool: 0
   miningPassesRequired: 2
   miningDropMin: 1
@@ -162,7 +166,7 @@ MonoBehaviour:
   defaultDecals: []
   defaultHitEffects: []
   surfaces: []
-  fallBackToCatalog: 0
+  fallBackToCatalog: 1
   catalog: {fileID: 11400000, guid: b6c7d8e9f0a12b3c4d5e6f708192a356, type: 2}
   surfaceDamage:
     mode: 0

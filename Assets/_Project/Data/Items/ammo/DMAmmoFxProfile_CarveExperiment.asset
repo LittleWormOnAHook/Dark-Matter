@@ -18,6 +18,7 @@ MonoBehaviour:
   maxStack: 500
   stableItemId: carve0exp3d90e2b2add51ee4ebb1875ec5
   itemType: 4
+  functionalTag: 0
   deployedPrefab: {fileID: 0}
   weaponGrip: 0
   heldPrefab: {fileID: 0}
@@ -60,6 +61,8 @@ MonoBehaviour:
   recoilHorizontal: 0.5
   recoilFireRateScale: 4.5
   fireRate: 6
+  rifleScopedFireInterval: 0
+  pistolScopedFireInterval: 0
   rifleScopedFireIntervalPercentModifier: 0
   pistolScopedFireIntervalPercentModifier: 0
   shotsPerBurst: 1
@@ -163,8 +166,8 @@ MonoBehaviour:
   defaultDecals: []
   defaultHitEffects: []
   surfaces: []
-  fallBackToCatalog: 0
-  catalog: {fileID: 0}
+  fallBackToCatalog: 1
+  catalog: {fileID: 11400000, guid: b6c7d8e9f0a12b3c4d5e6f708192a356, type: 2}
   surfaceDamage:
     mode: 1
     custom:

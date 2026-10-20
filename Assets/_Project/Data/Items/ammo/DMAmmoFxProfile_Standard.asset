@@ -18,6 +18,7 @@ MonoBehaviour:
   maxStack: 999
   stableItemId: ed0a2d18-862e-41aa-9853-2d7b8b86501b
   itemType: 4
+  functionalTag: 0
   deployedPrefab: {fileID: 0}
   weaponGrip: 0
   heldPrefab: {fileID: 0}
@@ -61,9 +62,9 @@ MonoBehaviour:
   recoilFireRateScale: 1
   fireRate: 4
   rifleScopedFireInterval: 0
-  pistolScopedFireInterval: 0
+  pistolScopedFireInterval: 4.61
   rifleScopedFireIntervalPercentModifier: 0
-  pistolScopedFireIntervalPercentModifier: 0
+  pistolScopedFireIntervalPercentModifier: 8.33
   shotsPerBurst: 1
   burstFireRate: 10
   magazineSize: 30
@@ -272,5 +273,5 @@ MonoBehaviour:
   fireTraumaDurationSeconds: 0.0352
   impactTrauma: 0.168
   impactTraumaDurationSeconds: 0.0336
-  impactTraumaRadius: 20.5
+  impactTraumaRadius: 9.8
   impactTraumaMinDistance: 0.23

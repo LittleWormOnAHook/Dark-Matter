@@ -45,6 +45,7 @@ GameObject:
   - component: {fileID: 6552745687112328345}
   - component: {fileID: 5848084994099898968}
   - component: {fileID: 5730495229828058455}
+  - component: {fileID: 8734567890123456789}
   - component: {fileID: 6229026061165566659}
   - component: {fileID: 5592180711614195447}
   - component: {fileID: 7793681219969741252}
@@ -2101,6 +2102,8 @@ MonoBehaviour:
   throwableName: Fragment Grenade
   maxCarry: 6
   dmiThrowablePrefab: {fileID: 1472589237813678126, guid: 2c9e6a4744c5f8a45976d7ab73abf53c, type: 3}
+  grenadeHandHandlerOverride: {fileID: 6901361731884431877}
+  grenadeHandlerObjectName: GrenadeHandler
 --- !u!114 &5730495229828058455
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2116,8 +2119,20 @@ MonoBehaviour:
   throwManager: {fileID: 7003506458934846346}
   throwBridge: {fileID: 5848084994099898968}
   inventory: {fileID: 974530526351442323}
-  cookFuseSeconds: 5
   cookTriggerThreshold: 0.35
+--- !u!114 &8734567890123456789
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 114070}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e793583423534812abe5251226573de9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.DMIGrenadeThrowLandingRing
+  throwManager: {fileID: 7003506458934846346}
 --- !u!114 &6229026061165566659
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -83985,6 +84000,10 @@ PrefabInstance:
       propertyPath: throwables.Array.data[0].throwable
       value: 
       objectReference: {fileID: 1472589237813678126, guid: 2c9e6a4744c5f8a45976d7ab73abf53c, type: 3}
+    - target: {fileID: 114857766368708610, guid: 322f523885a65e746816ed5774b95d38, type: 3}
+      propertyPath: throwables.Array.data[0].handler
+      value: 
+      objectReference: {fileID: 6901361731884431877}
     - target: {fileID: 224863294064242038, guid: 322f523885a65e746816ed5774b95d38, type: 3}
       propertyPath: m_LocalPosition.z
       value: 0

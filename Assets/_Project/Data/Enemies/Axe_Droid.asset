@@ -23,12 +23,12 @@ MonoBehaviour:
   rangedWeaponItem: {fileID: 11400000, guid: 051378d9c28e82544a585c86b3dbbfc3, type: 2}
   preferRangedWeapon: 0
   canThrowGrenades: 1
-  enemyCategory: 0
+  enemyCategory: 2
   bodyType: 1
   overrideBrain: 1
   brainArchetype: 0
-  primaryPersonality: 2
-  secondaryPersonality: 8
+  primaryPersonality: 9
+  secondaryPersonality: 11
   brainProfileOverride: {fileID: 0}
   engagementProfileOverride: {fileID: 0}
   hitMarkProfileOverride: {fileID: 0}
@@ -68,7 +68,7 @@ MonoBehaviour:
   attackWindup: 0.35
   meleeDuration: 0.85
   unarmedDuration: 0.55
-  rangedAmmoType: 0
+  rangedAmmoType: 8
   rangedAmmoPool: 30
   rangedEngageRange: 12
   rangedHoldDistance: 0
