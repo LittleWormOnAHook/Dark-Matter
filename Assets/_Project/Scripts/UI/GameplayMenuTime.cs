@@ -33,6 +33,7 @@ namespace Project.UI
         public const string ReasonDevPanel = "DevPanel";
         public const string ReasonVendorShop = "VendorShop";
         public const string ReasonStorageCrate = "StorageCrate";
+        public const string ReasonTurretMenu = "TurretMenu";
 
         private static readonly HashSet<string> pauseReasons = new HashSet<string>();
         private static readonly HashSet<string> slowReasons = new HashSet<string>();

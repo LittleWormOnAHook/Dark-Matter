@@ -34,6 +34,16 @@ namespace Project.Data
         Binoculars
     }
 
+    /// <summary>
+    /// Gameplay tag on <see cref="ItemData"/> (not Unity collider tags).
+    /// Terrain = portable base-camp seed that registers a Build Hub zone for stone build mode.
+    /// </summary>
+    public enum ItemFunctionalTag
+    {
+        None = 0,
+        Terrain = 1,
+    }
+
     public enum WeaponGrip
     {
         OneHanded,
@@ -85,6 +95,12 @@ namespace Project.Data
 
         [Header("Use Type")]
         public ItemType itemType = ItemType.Consumable;
+
+        [Header("Functional Tag")]
+        [Tooltip("Terrain: deploy/use places a Build Hub build zone (50 m square at profile level 0) so Hold-B stone building is allowed inside it.")]
+        public ItemFunctionalTag functionalTag = ItemFunctionalTag.None;
+
+        public bool IsBuildingTerrainBootstrap => functionalTag == ItemFunctionalTag.Terrain;
 
         [Header("Deployable / Vehicle")]
         [Tooltip("Prefab spawned into the world when this item is 'Deployed' from the inventory (e.g. a stored hovercraft). Used by Vehicle, WorldDeployable, and deployable shelters.")]

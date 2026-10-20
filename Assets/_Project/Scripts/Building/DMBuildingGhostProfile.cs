@@ -112,6 +112,12 @@ namespace Project.Building
         [Tooltip("A Build Hub's whole zone must be free of colliders except terrain (characters, creatures, items and built pieces are ignored; triggers count). Also checked when upgrading.")]
         public bool buildHubZoneMustBeClear = true;
 
+        [Header("Terrain item bootstrap (building node)")]
+        [Tooltip("Horizontal distance from the player when a Terrain-tagged item deploys a Build Hub zone.")]
+        public float terrainBootstrapDeployRangeMeters = 8f;
+        [Tooltip("Built piece id spawned as the zone anchor (default Stone Build Hub).")]
+        public string terrainBootstrapHubPieceId = "stone_si_build_hub";
+
         [Header("Patrol paths (0926-build-hub)")]
         [Tooltip("Pieces may not be built on or across creature / pet patrol paths (DMIPathFollowProvider).")]
         public bool blockPatrolPaths = true;
@@ -147,6 +153,16 @@ namespace Project.Building
         public float gateSwingDegrees = 90f;
         [Tooltip("Kit phase 3: gates are heavy, so they swing slower than doors.")]
         public float gateSwingSeconds = 1.4f;
+
+        [Header("Turrets (placed equipment)")]
+        [Tooltip("Press E interact range for a placed turret.")]
+        public float turretInteractRangeMeters = 3.5f;
+        [Tooltip("Player-control camera sits this far behind the barrel.")]
+        public float turretPlayerCameraBackMeters = 1.8f;
+        [Tooltip("Player-control camera sits this far above the barrel.")]
+        public float turretPlayerCameraUpMeters = 0.55f;
+        [Tooltip("FOV while seated in a turret.")]
+        public float turretPlayerCameraFov = 60f;
 
         static DMBuildingGhostProfile live;
 
@@ -234,6 +250,12 @@ namespace Project.Building
         public static float BuildHubZoneHeightStepMeters => Mathf.Max(0f, Live != null ? Live.buildHubZoneHeightStepMeters : 25f);
         public static int BuildHubMaxLevel => Mathf.Max(0, Live != null ? Live.buildHubMaxLevel : 10);
         public static bool BuildHubZoneMustBeClear => Live == null || Live.buildHubZoneMustBeClear;
+        public static float TerrainBootstrapDeployRangeMeters =>
+            Positive(Live != null ? Live.terrainBootstrapDeployRangeMeters : 8f, 8f);
+        public static string TerrainBootstrapHubPieceId =>
+            Live != null && !string.IsNullOrWhiteSpace(Live.terrainBootstrapHubPieceId)
+                ? Live.terrainBootstrapHubPieceId.Trim()
+                : "stone_si_build_hub";
         public static bool BlockPatrolPaths => Live == null || Live.blockPatrolPaths;
         public static float PatrolPathClearanceMeters => Mathf.Max(0f, Live != null ? Live.patrolPathClearanceMeters : 1.5f);
         public static float PatrolPathHeightToleranceMeters => Mathf.Max(0f, Live != null ? Live.patrolPathHeightToleranceMeters : 2f);
@@ -243,6 +265,14 @@ namespace Project.Building
         public static float DoorInteractRangeMeters => Positive(Live != null ? Live.doorInteractRangeMeters : 2.4f, 2.4f);
         public static float GateSwingDegrees => Positive(Live != null ? Live.gateSwingDegrees : 90f, 90f);
         public static float GateSwingSeconds => Positive(Live != null ? Live.gateSwingSeconds : 1.4f, 1.4f);
+        public static float TurretInteractRangeMeters =>
+            Positive(Live != null ? Live.turretInteractRangeMeters : 3.5f, 3.5f);
+        public static float TurretPlayerCameraBackMeters =>
+            Positive(Live != null ? Live.turretPlayerCameraBackMeters : 1.8f, 1.8f);
+        public static float TurretPlayerCameraUpMeters =>
+            Mathf.Max(0f, Live != null ? Live.turretPlayerCameraUpMeters : 0.55f);
+        public static float TurretPlayerCameraFov =>
+            Positive(Live != null ? Live.turretPlayerCameraFov : 60f, 60f);
 
         public static string BuildingLayerName => Live != null && !string.IsNullOrWhiteSpace(Live.buildingLayerName) ? Live.buildingLayerName.Trim() : "Building";
         public static int BuiltAimLayersRaw => Live != null ? Live.builtAimLayers.value : 0;

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using Project.Data;
+using Project.Inventory;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -516,6 +518,130 @@ namespace Project.Building
             zoneMesh.triangles = triangles;
             zoneMesh.RecalculateBounds();
             return zoneMesh;
+        }
+    }
+
+    /// <summary>
+    /// Terrain-tagged inventory items deploy a Build Hub (50 m build zone at profile level 0) without Hold-B placement or stone costs.
+    /// </summary>
+    public static class DMBuildingTerrainBootstrapUtility
+    {
+        public static float DeployRangeMeters => DMBuildingGhostProfile.TerrainBootstrapDeployRangeMeters;
+
+        public static bool TryDeploy(InventorySystem inventory, ItemData terrainItem, Transform playerTransform, out string message)
+        {
+            message = string.Empty;
+
+            if (inventory == null || terrainItem == null || playerTransform == null)
+            {
+                message = "Cannot place a build zone right now.";
+                return false;
+            }
+
+            if (!terrainItem.IsBuildingTerrainBootstrap)
+            {
+                message = "This item cannot establish a build zone.";
+                return false;
+            }
+
+            if (inventory.CountItem(terrainItem) <= 0)
+            {
+                message = "No build zone item in inventory.";
+                return false;
+            }
+
+            DMBuildingPiece hubPiece = DMBuildingCatalog.Find(DMBuildingGhostProfile.TerrainBootstrapHubPieceId);
+            if (hubPiece == null)
+            {
+                message = "Build Hub piece is not configured on the building profile.";
+                return false;
+            }
+
+            if (!TryResolveHubSeat(hubPiece, playerTransform, out Vector3 position, out Quaternion rotation))
+            {
+                message = "Not enough clear ground nearby to place the build zone.";
+                return false;
+            }
+
+            if (!DMBuildingPlacementController.TryValidateNewHubZone(position, rotation, out string blockReason))
+            {
+                message = string.IsNullOrEmpty(blockReason)
+                    ? "This site cannot host a build zone."
+                    : blockReason;
+                return false;
+            }
+
+            DMBuildingGhost placed = DMBuildingPlacementController.RestorePiece(hubPiece, position, rotation, terrainItem, 0, null);
+            if (placed == null)
+            {
+                message = "Failed to spawn the build zone anchor.";
+                return false;
+            }
+
+            if (!inventory.RemoveItem(terrainItem, 1))
+            {
+                if (Application.isPlaying)
+                    UnityEngine.Object.Destroy(placed.gameObject);
+                message = "Could not remove the item from inventory.";
+                return false;
+            }
+
+            float zoneSize = DMBuildingGhostProfile.BuildHubZoneMeters;
+            message = $"Build zone established ({zoneSize:0.#} m). Hold B to build stone structures inside it.";
+            return true;
+        }
+
+        static bool TryResolveHubSeat(DMBuildingPiece hubPiece, Transform playerTransform, out Vector3 position, out Quaternion rotation)
+        {
+            position = default;
+            rotation = Quaternion.identity;
+
+            Vector3 flatForward = playerTransform.forward;
+            flatForward.y = 0f;
+            if (flatForward.sqrMagnitude < 0.0001f)
+                flatForward = Vector3.forward;
+            flatForward.Normalize();
+
+            float range = DeployRangeMeters;
+            Vector3 probe = playerTransform.position + flatForward * range;
+            if (!TryGroundPoint(probe, playerTransform.position.y, out Vector3 ground))
+                return false;
+
+            rotation = Quaternion.LookRotation(flatForward, Vector3.up);
+            float halfHeight = hubPiece.Size.y * 0.5f + Mathf.Max(0f, hubPiece.SurfaceOffset);
+            position = ground + Vector3.up * halfHeight;
+            return true;
+        }
+
+        static bool TryGroundPoint(Vector3 horizontalProbe, float fallbackY, out Vector3 ground)
+        {
+            ground = horizontalProbe;
+            const float rayStartLift = 4f;
+            const float rayLength = 40f;
+            Vector3 origin = horizontalProbe + Vector3.up * rayStartLift;
+            int mask = DMBuildingGhostProfile.GroundLayersRaw;
+            if (mask == 0)
+                mask = LayerMask.GetMask("Default", "Terrain");
+
+            if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit, rayLength, mask, QueryTriggerInteraction.Ignore))
+            {
+                if (hit.normal.y < 0.7f)
+                    return false;
+                if (hit.collider != null && hit.collider.GetComponentInParent<DMBuildingGhost>() != null)
+                    return false;
+                ground = hit.point;
+                return true;
+            }
+
+            if (Terrain.activeTerrain != null)
+            {
+                float y = Terrain.activeTerrain.SampleHeight(horizontalProbe) + Terrain.activeTerrain.transform.position.y;
+                ground = new Vector3(horizontalProbe.x, y, horizontalProbe.z);
+                return true;
+            }
+
+            ground = new Vector3(horizontalProbe.x, fallbackY, horizontalProbe.z);
+            return true;
         }
     }
 }

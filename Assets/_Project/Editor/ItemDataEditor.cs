@@ -17,6 +17,7 @@ namespace Project.EditorTools
         private SerializedProperty maxStack;
         private SerializedProperty stableItemId;
         private SerializedProperty itemType;
+        private SerializedProperty functionalTag;
         private SerializedProperty deployedPrefab;
         private SerializedProperty weaponGrip;
         private SerializedProperty heldPrefab;
@@ -151,6 +152,7 @@ namespace Project.EditorTools
             maxStack = serializedObject.FindProperty("maxStack");
             stableItemId = serializedObject.FindProperty("stableItemId");
             itemType = serializedObject.FindProperty("itemType");
+            functionalTag = serializedObject.FindProperty("functionalTag");
             deployedPrefab = serializedObject.FindProperty("deployedPrefab");
             weaponGrip = serializedObject.FindProperty("weaponGrip");
             heldPrefab = serializedObject.FindProperty("heldPrefab");
@@ -290,6 +292,7 @@ namespace Project.EditorTools
             DrawIdentity();
             EditorGUILayout.Space(4f);
             EditorGUILayout.PropertyField(itemType);
+            EditorGUILayout.PropertyField(functionalTag);
             EditorGUILayout.LabelField("Inspector Category", category.ToString());
 
             EditorGUI.BeginChangeCheck();

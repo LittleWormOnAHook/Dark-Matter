@@ -35,6 +35,7 @@ namespace Project.UI
             AppendToolLines(text, item);
             AppendVehicleLines(text, item);
             AppendDeployableShelterLines(text, item);
+            AppendBuildingTerrainBootstrapLines(text, item);
             AppendAcLine(text, item, alwaysShow: false);
             AppendProgressionLines(text, item);
             AppendCraftedItemLine(text, item);
@@ -253,7 +254,7 @@ namespace Project.UI
             {
                 string openHint = item.toolType == ToolType.Scanner
                     ? "[N] Use tool  |  [RMB] Toggle optics"
-                    : "[B] Binoculars  |  [Hold B] Build  |  [RMB] Close optics";
+                    : "[B] Binoculars (tap)  |  Hold [B] Build  |  [RMB] Close optics";
                 text.AppendLine($"  Toolbar: {openHint}");
                 text.AppendLine("  [Scroll] Zoom while optics are open");
             }
@@ -269,6 +270,18 @@ namespace Project.UI
             text.AppendLine($"  Fuel Capacity: {Mathf.RoundToInt(HovercraftStorageState.DefaultMaxFuel)}");
             text.AppendLine($"  Fuel Remaining: {Mathf.RoundToInt(HovercraftStorageState.StoredFuel)}");
             text.AppendLine("<color=#8890A0><i>Right-click to Refuel or Deploy.</i></color>");
+        }
+
+        private static void AppendBuildingTerrainBootstrapLines(StringBuilder text, ItemData item)
+        {
+            if (!item.IsBuildingTerrainBootstrap)
+                return;
+
+            float zone = Project.Building.DMBuildingGhostProfile.BuildHubZoneMeters;
+            text.AppendLine("<color=#A0A8B8>Base build zone:</color>");
+            text.AppendLine($"  Area: {zone:0.#} m square (Build Hub zone)");
+            text.AppendLine($"  Deploy range: {Project.Building.DMBuildingTerrainBootstrapUtility.DeployRangeMeters:0.#} m");
+            text.AppendLine("<color=#8890A0><i>Right-click or Use to Deploy. Then hold B to build inside the zone.</i></color>");
         }
 
         private static void AppendDeployableShelterLines(StringBuilder text, ItemData item)

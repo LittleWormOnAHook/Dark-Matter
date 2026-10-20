@@ -540,6 +540,9 @@ namespace Project.EditorTools.GenesisStudio
                 case DMStudioPanelMode.CombatPlanPlaceholder:
                     DrawCombatPlanPlaceholder(sub);
                     break;
+                case DMStudioPanelMode.CombatRangedLinks:
+                    Project.EditorTools.Combat.DMCombatStudioWindow.DrawRangedGenesisLinksPanel();
+                    break;
                 case DMStudioPanelMode.EnemyTypesTable:
                     enemyTypesPanel.Draw();
                     break;

@@ -1194,7 +1194,10 @@ namespace Project.Building
         public static bool IsFloorOnlyItem(string pieceId)
         {
             return !string.IsNullOrEmpty(pieceId)
-                && (pieceId.EndsWith("si_storage_crate", StringComparison.Ordinal) || IsGenerator(pieceId) || IsBuildHub(pieceId));
+                && (pieceId.EndsWith("si_storage_crate", StringComparison.Ordinal)
+                    || IsGenerator(pieceId)
+                    || IsBuildHub(pieceId)
+                    || IsTurret(pieceId));
         }
 
         /// <summary>0926-build-hub: the Build Hub Equipment piece; its zone is where everything else may be built.</summary>
@@ -1207,6 +1210,14 @@ namespace Project.Building
         public static bool IsGenerator(string pieceId)
         {
             return !string.IsNullOrEmpty(pieceId) && pieceId.EndsWith("si_generator", StringComparison.Ordinal);
+        }
+
+        /// <summary>Player-placed FORGE3D turret equipment (legacy si_turret or per-template si_turret_*).</summary>
+        public static bool IsTurret(string pieceId)
+        {
+            if (string.IsNullOrEmpty(pieceId))
+                return false;
+            return pieceId.IndexOf("si_turret", StringComparison.Ordinal) >= 0;
         }
 
         static bool IsLegacyStoneItem(ItemData item)

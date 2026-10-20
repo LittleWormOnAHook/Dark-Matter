@@ -119,6 +119,39 @@ namespace Project.Building
             canCommit = false;
         }
 
+        /// <summary>
+        /// Validates a new Build Hub or Terrain bootstrap node at this anchor (overlap, zone clear, patrol paths).
+        /// </summary>
+        public static bool TryValidateNewHubZone(Vector3 hubPosition, Quaternion hubRotation, out string reason)
+        {
+            if (DMBuildHub.ZoneFor(hubPosition) != null)
+            {
+                reason = ReasonHubOverlap;
+                return false;
+            }
+
+            if (DMBuildingGhostProfile.BuildHubZoneMustBeClear)
+            {
+                reason = ZoneClearReason(hubPosition, DMBuildHub.SizeForLevel(0), hubRotation);
+                if (reason != null)
+                    return false;
+            }
+
+            if (DMBuildingGhostProfile.BlockPatrolPaths)
+            {
+                DMBuildingPiece hubPiece = DMBuildingCatalog.Find(DMBuildingGhostProfile.TerrainBootstrapHubPieceId);
+                if (hubPiece != null)
+                {
+                    reason = PatrolPathReason(GhostWorldBounds(hubPiece, hubPosition, hubRotation));
+                    if (reason != null)
+                        return false;
+                }
+            }
+
+            reason = null;
+            return true;
+        }
+
         static string BuildZoneReason(DMBuildingPiece piece, bool isHub, Vector3 position, Quaternion rotation)
         {
             Bounds bounds = GhostWorldBounds(piece, position, rotation);

@@ -44,7 +44,9 @@ namespace Project.Progression
         ScopeZoomPercent,
         ScopeHeadshotDamagePercent,
         ScopeRangePercent,
-        ScopeFireIntervalPercent
+        ScopeFireIntervalPercent,
+        /// <summary>+seconds to grenade cook fuse cap per rank (flat sum via bonusPercentPerRank).</summary>
+        GrenadeCookSecondsFlat
     }
 
     /// <summary>Journal hex skill-tree branches.</summary>
@@ -73,6 +75,7 @@ namespace Project.Progression
         public const string OverpressureSkillId = "skill_overpressure";
         public const string ClusterMunitionsSkillId = "skill_cluster_munitions";
         public const string PersistentHazardSkillId = "skill_persistent_hazard";
+        public const string GrenadeCookMasterySkillId = "skill_grenade_cook_mastery";
         public const string ClimbSystemSkillId = "skill_system_climb";
         public const string JetpackSystemSkillId = "skill_system_jetpack";
         public const string DashSystemSkillId = "skill_system_dash";

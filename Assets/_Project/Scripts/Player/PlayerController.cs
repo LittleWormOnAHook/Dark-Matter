@@ -737,10 +737,12 @@ namespace Project.Player
             bool deathOpen = Project.UI.DMUiToolkitDeath.IsOpen;
             bool vendorOpen = DMUiToolkitVendor.IsOpen;
             bool crateOpen = DMUiToolkitCrate.IsOpen || Project.UI.DMUiToolkitGenerator.IsOpen;
+            bool turretMenuOpen = Project.UI.DMUiToolkitTurretMenu.IsOpen;
+            bool turretControl = Project.Combat.Turrets.DMTurretPlayerControl.IsActive;
             bool cursorFree = deathOpen || _inventoryOpen || _journalOpen || _mapOpen || _questDialogOpen || _lootDialogOpen ||
                               _buildingControlOpen || QuoraShelterMenuUI.IsOpen || _gameplayPaused || !GameSession.HasStarted || Time.timeScale <= 0f ||
                               DMDevCommandState.UnlockCursor || DMUiToolkitDevPanel.IsOpen
-                              || vendorOpen || crateOpen;
+                              || vendorOpen || crateOpen || turretMenuOpen;
 
             CursorLockMode wantLock;
             bool wantVisible;
@@ -753,6 +755,11 @@ namespace Project.Player
             {
                 wantLock = CursorLockMode.None;
                 wantVisible = true;
+            }
+            else if (turretControl)
+            {
+                wantLock = CursorLockMode.Locked;
+                wantVisible = false;
             }
             else if (cursorFree)
             {

@@ -209,10 +209,10 @@ namespace Project.Player.Invector
                     // Tap/hold owned by GameplayKeyboardShortcuts Hot Cross poll (reads this action).
                     break;
                 case "Binoculars":
-                    // Keyboard B is tap vs hold in GameplayKeyboardShortcuts.
-                    // This action still opens binoculars for the gamepad binding.
+                    // KBM B tap/hold owned by GameplayKeyboardShortcuts.HandleBinocularsKey (tap optics, hold build).
                     if (context.performed
-                        && (Keyboard.current == null || !Keyboard.current.bKey.isPressed))
+                        && context.control != null
+                        && context.control.device is Gamepad)
                         GameplayKeyboardShortcuts.TryUseToolFromAction(ToolType.Binoculars);
                     break;
                 case "Scanner":

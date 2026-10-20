@@ -7,6 +7,7 @@ using Project.UI;
 using Project.Vehicles;
 using Project.Shelter;
 using Project.World;
+using Project.Building;
 using UnityEngine;
 
 namespace Project.Inventory
@@ -77,8 +78,15 @@ namespace Project.Inventory
             if (useItem != null && !LevelUnlockUtility.PassesUseGate(useItem, showToast: true))
                 return false;
 
+            if (inventory != null
+                && !Project.Survival.DMISurvivalHotbarUtility.CanUseSurvivalFromSlot(inventory, slotIndex, showToast: true))
+                return false;
+
             if (CanInstallStorageModule(slotIndex))
                 return TryInstallStorageModule(slotIndex);
+
+            if (CanDeployBuildingTerrain(slotIndex))
+                return TryDeployBuildingTerrain(slotIndex);
 
             if (inventory == null || !inventory.UseItemAt(slotIndex))
                 return false;
@@ -188,12 +196,18 @@ namespace Project.Inventory
             if (TryDeployWalkerDrill(slotIndex))
                 return true;
 
+            if (TryDeployBuildingTerrain(slotIndex))
+                return true;
+
             return TryDeployShelter(slotIndex);
         }
 
         public bool CanDeploy(int slotIndex)
         {
-            return CanDeployVehicle(slotIndex) || CanDeployWalkerDrill(slotIndex) || CanDeployShelter(slotIndex);
+            return CanDeployVehicle(slotIndex)
+                || CanDeployWalkerDrill(slotIndex)
+                || CanDeployBuildingTerrain(slotIndex)
+                || CanDeployShelter(slotIndex);
         }
 
         /// <summary>Spawns the stored vehicle near the player and removes the item from the inventory.
@@ -303,6 +317,35 @@ namespace Project.Inventory
             return deployItem != null && LevelUnlockUtility.PassesUseGate(deployItem, showToast: false);
         }
 
+        /// <summary>Places a Build Hub zone from a Terrain-tagged item (base camp bootstrap).</summary>
+        public bool TryDeployBuildingTerrain(int slotIndex)
+        {
+            ItemData item = inventory?.GetItemAt(slotIndex);
+            if (item == null || !item.IsBuildingTerrainBootstrap)
+                return false;
+
+            if (!LevelUnlockUtility.PassesUseGate(item, showToast: true))
+                return false;
+
+            Transform playerTransform = PlayerLocator.FindPlayerObject()?.transform;
+            bool deployed = DMBuildingTerrainBootstrapUtility.TryDeploy(inventory, item, playerTransform, out string message);
+            if (!string.IsNullOrEmpty(message))
+                PickupToastUI.Show(message);
+
+            if (deployed)
+                GameAudioManager.Instance?.PlayItemEquip();
+
+            return deployed;
+        }
+
+        public bool CanDeployBuildingTerrain(int slotIndex)
+        {
+            ItemData item = inventory?.GetItemAt(slotIndex);
+            return item != null
+                && item.IsBuildingTerrainBootstrap
+                && LevelUnlockUtility.PassesUseGate(item, showToast: false);
+        }
+
         private static ItemData ResolveDeployableShelterItem(ItemData item)
         {
             if (item == null)
@@ -322,7 +365,7 @@ namespace Project.Inventory
         public bool TryRefillMiningTool(int slotIndex)
         {
             ItemData item = inventory?.GetItemAt(slotIndex);
-            if (item == null || !IsPlasmaFuelItem(item))
+            if (item == null || !Project.Survival.DMISurvivalHotbarUtility.IsPlasmaFuelItem(item))
                 return false;
 
             if (ammoState == null || equipment == null)
@@ -365,7 +408,7 @@ namespace Project.Inventory
         public bool CanRefillMiningTool(int slotIndex)
         {
             ItemData item = inventory?.GetItemAt(slotIndex);
-            return item != null && IsPlasmaFuelItem(item);
+            return item != null && Project.Survival.DMISurvivalHotbarUtility.IsPlasmaFuelItem(item);
         }
 
         private bool TryResolveMiningToolHotbarSlot(out int hotbarSlot, out ItemData miningTool)
@@ -406,19 +449,6 @@ namespace Project.Inventory
             return true;
         }
 
-        private static bool IsPlasmaFuelItem(ItemData item)
-        {
-            if (item == null)
-                return false;
-
-            ItemData plasma = ItemRegistry.Resolve("Plasma Fuel");
-            if (plasma != null && (item == plasma || item.itemName == plasma.itemName))
-                return true;
-
-            return string.Equals(item.itemName, "Plasma Fuel", System.StringComparison.OrdinalIgnoreCase)
-                || string.Equals(item.name, "Plasma Fuel", System.StringComparison.OrdinalIgnoreCase);
-        }
-
         public bool CanUse(int slotIndex)
         {
             ItemData item = inventory?.GetItemAt(slotIndex);
@@ -431,7 +461,14 @@ namespace Project.Inventory
             if (item.IsInventoryStorageModule)
                 return inventory.CanUnlockNextStorageRow();
 
-            return item.IsConsumable;
+            if (item.IsBuildingTerrainBootstrap)
+                return true;
+
+            if (Project.Survival.DMISurvivalHotbarUtility.IsPlasmaFuelItem(item))
+                return CanRefillMiningTool(slotIndex);
+
+            return item.IsConsumable
+                || Project.Survival.DMISurvivalHotbarUtility.HasSurvivalStatRestore(item);
         }
 
         public bool CanEquip(int slotIndex)

@@ -32,8 +32,7 @@ namespace Project.Companions
             if (Keyboard.current.hKey.wasPressedThisFrame)
                 TryHoldAllAtCursor();
 
-            if (Keyboard.current.gKey.wasPressedThisFrame)
-                rosterBridge?.SetAllFollow();
+            // G is Hot Cross grenade tap/hold (GameplayKeyboardShortcuts) — follow uses companion wheel / other bindings.
         }
 
         public bool TryHoldAllAtCursor()

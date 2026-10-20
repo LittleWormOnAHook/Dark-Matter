@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Project.Combat;
 using Project.Data;
 using UnityEngine;
 
@@ -185,6 +186,16 @@ namespace Project.Progression
 
             PlayerProgressionManager progression = PlayerProgressionManager.EnsureExists();
             return progression != null ? progression.GetSkillRank(skillId) : 0;
+        }
+
+        /// <summary>Max cook fuse for held grenades (profile base + GrenadeCookSecondsFlat skill, clamped).</summary>
+        public static float GetGrenadeMaxCookSeconds()
+        {
+            DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
+            float baseSec = profile != null ? profile.grenadeCookSecondsBase : 5f;
+            float maxSec = profile != null ? profile.grenadeCookSecondsMax : 10f;
+            float skillSeconds = GetTotalBonusPercent(SkillModifierType.GrenadeCookSecondsFlat);
+            return Mathf.Clamp(baseSec + skillSeconds, baseSec, maxSec);
         }
 
         /// <summary>Splash / explosive trigger-bubble radius multiplier from ordinance skills.</summary>

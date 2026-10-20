@@ -601,10 +601,15 @@ namespace Project.Inventory
             if (!LevelUnlockUtility.PassesUseGate(slot.item, showToast: true))
                 return false;
 
+            if (!Project.Survival.DMISurvivalHotbarUtility.CanUseSurvivalFromSlot(this, index, showToast: true))
+                return false;
+
             if (survivalStats == null)
                 survivalStats = GetComponent<SurvivalStats>();
 
-            if (survivalStats != null && slot.item.IsConsumable)
+            if (survivalStats != null
+                && (slot.item.IsConsumable
+                    || Project.Survival.DMISurvivalHotbarUtility.HasSurvivalStatRestore(slot.item)))
             {
                 ItemData consumed = slot.item;
                 survivalStats.Consume(consumed);

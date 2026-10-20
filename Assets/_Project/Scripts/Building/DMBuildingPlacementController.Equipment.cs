@@ -48,6 +48,28 @@ namespace Project.Building
                 ghostObject.AddComponent<DMBaseGenerator>();
             if (DMBuildingCatalog.IsBuildHub(piece.Id) && ghostObject.GetComponent<DMBuildHub>() == null)
                 ghostObject.AddComponent<DMBuildHub>(); // 0926-build-hub
+            if (DMBuildingCatalog.IsTurret(piece.Id))
+                AttachPlacedTurret(ghostObject);
+        }
+
+        static void AttachPlacedTurret(GameObject ghostObject)
+        {
+            if (ghostObject == null)
+                return;
+
+            Project.Combat.Turrets.DMTurretRuntime runtime =
+                ghostObject.GetComponent<Project.Combat.Turrets.DMTurretRuntime>();
+            if (runtime == null)
+                runtime = ghostObject.AddComponent<Project.Combat.Turrets.DMTurretRuntime>();
+
+            Project.Combat.Turrets.DMTurretProfile profile = Project.Combat.Turrets.DMTurretProfile.Live;
+            Project.Combat.Turrets.DMTurretFaction faction = profile != null
+                ? profile.defaultPlacedFaction
+                : Project.Combat.Turrets.DMTurretFaction.Player;
+            Project.Combat.Turrets.DMTurretControlMode mode = profile != null
+                ? profile.defaultControlMode
+                : Project.Combat.Turrets.DMTurretControlMode.Auto;
+            runtime.ConfigurePlaced(faction, mode);
         }
 
         /// <summary>
@@ -62,7 +84,8 @@ namespace Project.Building
             bool glowCounts = !IsEquipmentPiece(piece)
                 && !DMBuildingCatalog.IsForceField(piece.Id)
                 && !DMBuildingCatalog.IsGenerator(piece.Id)
-                && !DMBuildingCatalog.IsBuildHub(piece.Id);
+                && !DMBuildingCatalog.IsBuildHub(piece.Id)
+                && !DMBuildingCatalog.IsTurret(piece.Id);
             DMBasePoweredLights.Ensure(ghostObject, glowCounts);
         }
 

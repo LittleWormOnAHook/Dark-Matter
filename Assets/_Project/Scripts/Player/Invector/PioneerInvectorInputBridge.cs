@@ -109,7 +109,7 @@ namespace Project.Player.Invector
         {
             bool lockLocomotion = ShouldLockLocomotionInput();
             bool lockCombat = lockLocomotion || _combatBlockedByUiPointer;
-            bool lockWeaponFire = lockCombat || BlocksWeaponFireForGrenade || DMBuildingMode.IsActive;
+            bool lockWeaponFire = lockCombat || BlocksWeaponFireForGrenade || DMBuildingMode.BlocksWeaponFireInput;
             input.SetLockBasicInput(lockLocomotion);
             input.SetLockMeleeInput(lockWeaponFire);
             input.lockCameraInput = ShouldLockCameraInput();

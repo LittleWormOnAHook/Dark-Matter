@@ -162,6 +162,7 @@ namespace Project.EditorTools.Building
                 DMStudioStyles.DrawSection(null, DMStudioStyles.ContentPanel, DrawSnapSection);
                 DMStudioStyles.DrawSection(null, DMStudioStyles.ContentPanel, DrawPlacementSection);
                 DMStudioStyles.DrawSection(null, DMStudioStyles.ContentPanel, DrawDoorSection);
+                DMStudioStyles.DrawSection(null, DMStudioStyles.ContentPanel, DrawTurretSection);
             }
 
             if (EditorGUI.EndChangeCheck())
@@ -291,6 +292,15 @@ namespace Project.EditorTools.Building
             profile.buildHubZoneMustBeClear = EditorGUILayout.Toggle(new GUIContent("Zone must be clear", "A hub's whole zone must be free of colliders except terrain (characters, creatures, items and built pieces are ignored; triggers count). Also checked on upgrade."), profile.buildHubZoneMustBeClear);
 
             EditorGUILayout.Space(4f);
+            EditorGUILayout.LabelField("Terrain item bootstrap", EditorStyles.boldLabel);
+            profile.terrainBootstrapDeployRangeMeters = EditorGUILayout.FloatField(
+                new GUIContent("Deploy range (m)", "Horizontal distance from the player when a Terrain-tagged item places a Build Hub zone."),
+                profile.terrainBootstrapDeployRangeMeters);
+            profile.terrainBootstrapHubPieceId = EditorGUILayout.TextField(
+                new GUIContent("Hub piece id", "Catalog piece id spawned as the zone anchor (default Stone Build Hub)."),
+                profile.terrainBootstrapHubPieceId);
+
+            EditorGUILayout.Space(4f);
             EditorGUILayout.LabelField("Patrol paths", EditorStyles.boldLabel);
             profile.blockPatrolPaths = EditorGUILayout.Toggle(new GUIContent("Block patrol paths", "Pieces may not be built on or across creature / pet patrol paths (DMIPathFollowProvider)."), profile.blockPatrolPaths);
             profile.patrolPathClearanceMeters = EditorGUILayout.FloatField(new GUIContent("Path clearance (m)", "The ghost bounds grow by this much before the patrol path test."), profile.patrolPathClearanceMeters);
@@ -358,6 +368,26 @@ namespace Project.EditorTools.Building
             profile.doorInteractRangeMeters = EditorGUILayout.FloatField("Interact range (m)", profile.doorInteractRangeMeters);
             profile.gateSwingDegrees = EditorGUILayout.FloatField("Gate swing degrees", profile.gateSwingDegrees);
             profile.gateSwingSeconds = EditorGUILayout.FloatField("Gate swing duration (s)", profile.gateSwingSeconds);
+        }
+
+        void DrawTurretSection()
+        {
+            EditorGUILayout.LabelField("Turrets (placed equipment)", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                "Combat numbers (scan/track/fire, faction, hull) live on DM_TurretProfile in Combat Studio → Turrets.",
+                MessageType.Info);
+            profile.turretInteractRangeMeters = EditorGUILayout.FloatField(
+                new GUIContent("Turret E range (m)", "Press E interact range for a placed turret."),
+                profile.turretInteractRangeMeters);
+            profile.turretPlayerCameraBackMeters = EditorGUILayout.FloatField(
+                new GUIContent("Seat camera back (m)", "Player-control camera distance behind the barrel."),
+                profile.turretPlayerCameraBackMeters);
+            profile.turretPlayerCameraUpMeters = EditorGUILayout.FloatField(
+                new GUIContent("Seat camera up (m)", "Player-control camera height above the barrel."),
+                profile.turretPlayerCameraUpMeters);
+            profile.turretPlayerCameraFov = EditorGUILayout.FloatField(
+                new GUIContent("Seat camera FOV", "Field of view while seated in a turret."),
+                profile.turretPlayerCameraFov);
         }
 
         void DrawCreationFx()

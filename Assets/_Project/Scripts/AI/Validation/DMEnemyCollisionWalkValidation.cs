@@ -16,8 +16,6 @@ namespace Project.AI.Validation
     [DisallowMultipleComponent]
     public sealed class DMEnemyCollisionWalkValidation : MonoBehaviour
     {
-        [Tooltip("When off, this component only logs metrics if started manually; it never hijacks AI on Start.")]
-        [SerializeField] private bool allowPatrolRouteDrive;
         [SerializeField] private Transform orbitCenter;
         [SerializeField] private float orbitRadius = 14f;
         [SerializeField] private int ringPointCount = 10;
@@ -42,10 +40,7 @@ namespace Project.AI.Validation
         public bool IsValidationPatrolActive => validationPatrolActive;
 
         /// <summary>Play menu / explicit test only — does not change brain profile or other enemies.</summary>
-        public void EnablePatrolDriveForManualRun()
-        {
-            allowPatrolRouteDrive = true;
-        }
+        public void EnablePatrolDriveForManualRun() { }
 
         private void Awake()
         {
@@ -100,7 +95,7 @@ namespace Project.AI.Validation
 
         private void Update()
         {
-            if (routePoints == null || ai == null || sampleInterval <= 0.05f)
+            if (!validationPatrolActive || routePoints == null || ai == null || sampleInterval <= 0.05f)
                 return;
 
             if (Time.time < nextSampleTime)

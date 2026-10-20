@@ -1433,6 +1433,10 @@ namespace Project.Interaction
             if (!string.IsNullOrEmpty(generatorPrompt))
                 return generatorPrompt;
 
+            string turretPrompt = Project.Combat.Turrets.DMTurretInteract.TryGetPrompt(context);
+            if (!string.IsNullOrEmpty(turretPrompt))
+                return turretPrompt;
+
             // Close-range UITK Hold-E chrome owns the prompt; skip duplicate bottom text.
         if (WorldPickupFocus.Item != null
             && WorldPickupFocus.IsWithinClosePromptRange(context.PlayerPosition, WorldPickupFocus.Item.GetIndicatorWorldAnchor()))

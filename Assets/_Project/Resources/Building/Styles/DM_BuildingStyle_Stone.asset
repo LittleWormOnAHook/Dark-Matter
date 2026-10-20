@@ -109,6 +109,168 @@ MonoBehaviour:
       amount: 20
     - item: {fileID: 11400000, guid: 7d3d1739874eed3438b054b05869977d, type: 2}
       amount: 30
+  - id: stone_si_turret_mortar_0
+    displayName: Turret Mortar (0)
+    shape: 20
+    category: 6
+    prefab: {fileID: 8025046864792945783, guid: d7185978e95710941a5021d83fd5896c, type: 3}
+    icon: {fileID: 2800000, guid: 43019e2c9b13c4f4ab777c12a3a3e193, type: 3}
+    cost: 60
+    enabled: 1
+    applyStyleFinish: 0
+    materialOverride: {fileID: 0}
+    surfaceOffsetMeters: 0
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    customCost:
+    - item: {fileID: 11400000, guid: 22d2fe71fa16cbc45901218ef6195945, type: 2}
+      amount: 25
+    - item: {fileID: 11400000, guid: 7d3d1739874eed3438b054b05869977d, type: 2}
+      amount: 20
+  - id: stone_si_turret_repeater_0
+    displayName: Turret Repeater (0)
+    shape: 20
+    category: 6
+    prefab: {fileID: 5373170978864205779, guid: 0f6422c105c14a34e84a60bf1ce2a781, type: 3}
+    icon: {fileID: 2800000, guid: 30e4b2475bea5bb46873e018ae09fa21, type: 3}
+    cost: 60
+    enabled: 1
+    applyStyleFinish: 0
+    materialOverride: {fileID: 0}
+    surfaceOffsetMeters: 0
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    customCost:
+    - item: {fileID: 11400000, guid: 22d2fe71fa16cbc45901218ef6195945, type: 2}
+      amount: 25
+    - item: {fileID: 11400000, guid: 7d3d1739874eed3438b054b05869977d, type: 2}
+      amount: 20
+  - id: stone_si_turret_electric_mobile_1
+    displayName: Turret Electric Mobile (1)
+    shape: 20
+    category: 6
+    prefab: {fileID: 9218717048719040530, guid: d089963f83c74af499af8217056e5fff, type: 3}
+    icon: {fileID: 2800000, guid: 6c33d2247059f774cb39bc39f2683dc2, type: 3}
+    cost: 60
+    enabled: 1
+    applyStyleFinish: 0
+    materialOverride: {fileID: 0}
+    surfaceOffsetMeters: 0
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    customCost:
+    - item: {fileID: 11400000, guid: 22d2fe71fa16cbc45901218ef6195945, type: 2}
+      amount: 25
+    - item: {fileID: 11400000, guid: 7d3d1739874eed3438b054b05869977d, type: 2}
+      amount: 20
+  - id: stone_si_turret_mortar
+    displayName: Turret Mortar
+    shape: 20
+    category: 6
+    prefab: {fileID: 7879596580156416929, guid: cd2b189c07f7fb04aaecc620ef02d3a6, type: 3}
+    icon: {fileID: 2800000, guid: c976e6ad1486ec1409a4554ddff27b3d, type: 3}
+    cost: 60
+    enabled: 1
+    applyStyleFinish: 0
+    materialOverride: {fileID: 0}
+    surfaceOffsetMeters: 0
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    customCost:
+    - item: {fileID: 11400000, guid: 22d2fe71fa16cbc45901218ef6195945, type: 2}
+      amount: 25
+    - item: {fileID: 11400000, guid: 7d3d1739874eed3438b054b05869977d, type: 2}
+      amount: 20
+  - id: stone_si_turret_laser
+    displayName: Turret Laser
+    shape: 20
+    category: 6
+    prefab: {fileID: 5107116590352889368, guid: 57963eadf4201f9468eb5b26108ab1b6, type: 3}
+    icon: {fileID: 2800000, guid: afc1f500dc863d942982a7d4681a4725, type: 3}
+    cost: 60
+    enabled: 1
+    applyStyleFinish: 0
+    materialOverride: {fileID: 0}
+    surfaceOffsetMeters: 0
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    customCost:
+    - item: {fileID: 11400000, guid: 22d2fe71fa16cbc45901218ef6195945, type: 2}
+      amount: 25
+    - item: {fileID: 11400000, guid: 7d3d1739874eed3438b054b05869977d, type: 2}
+      amount: 20
+  - id: stone_si_turret_mlrs
+    displayName: Turret MLRS
+    shape: 20
+    category: 6
+    prefab: {fileID: 4280420429149880232, guid: a035cad6f75bf704597667db5867b303, type: 3}
+    icon: {fileID: 2800000, guid: 673ea2266ff87e84fbd663a1e785ccbe, type: 3}
+    cost: 60
+    enabled: 1
+    applyStyleFinish: 0
+    materialOverride: {fileID: 0}
+    surfaceOffsetMeters: 0
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    customCost:
+    - item: {fileID: 11400000, guid: 22d2fe71fa16cbc45901218ef6195945, type: 2}
+      amount: 25
+    - item: {fileID: 11400000, guid: 7d3d1739874eed3438b054b05869977d, type: 2}
+      amount: 20
+  - id: stone_si_turret_heavymissile
+    displayName: Turret HeavyMissile
+    shape: 20
+    category: 6
+    prefab: {fileID: 185165675622495922, guid: 1d723ef20ebca974fb87fa48cf2327a4, type: 3}
+    icon: {fileID: 2800000, guid: 014ce47bdd2e7d643af04d50f1e863a3, type: 3}
+    cost: 60
+    enabled: 1
+    applyStyleFinish: 0
+    materialOverride: {fileID: 0}
+    surfaceOffsetMeters: 0
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    customCost:
+    - item: {fileID: 11400000, guid: 22d2fe71fa16cbc45901218ef6195945, type: 2}
+      amount: 25
+    - item: {fileID: 11400000, guid: 7d3d1739874eed3438b054b05869977d, type: 2}
+      amount: 20
+  - id: stone_si_turret_electric
+    displayName: Turret Electric
+    shape: 20
+    category: 6
+    prefab: {fileID: 1831730515761463205, guid: f9051aaa8a692674694946fd4c676b24, type: 3}
+    icon: {fileID: 2800000, guid: 671305a7363a7ec41b1e058665e107da, type: 3}
+    cost: 60
+    enabled: 1
+    applyStyleFinish: 0
+    materialOverride: {fileID: 0}
+    surfaceOffsetMeters: 0
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    customCost:
+    - item: {fileID: 11400000, guid: 22d2fe71fa16cbc45901218ef6195945, type: 2}
+      amount: 25
+    - item: {fileID: 11400000, guid: 7d3d1739874eed3438b054b05869977d, type: 2}
+      amount: 20
+  - id: stone_si_turret_repeater
+    displayName: Turret Repeater
+    shape: 20
+    category: 6
+    prefab: {fileID: 2296742278803701747, guid: 0ca2845049fc8a346b7157d831e390c5, type: 3}
+    icon: {fileID: 2800000, guid: 197af7e88c1ccbe4c9ff17e9ad2db9cc, type: 3}
+    cost: 60
+    enabled: 1
+    applyStyleFinish: 0
+    materialOverride: {fileID: 0}
+    surfaceOffsetMeters: 0
+    sizeOverride: {x: 0, y: 0, z: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    customCost:
+    - item: {fileID: 11400000, guid: 22d2fe71fa16cbc45901218ef6195945, type: 2}
+      amount: 25
+    - item: {fileID: 11400000, guid: 7d3d1739874eed3438b054b05869977d, type: 2}
+      amount: 20
   - id: stone_si_build_hub
     displayName: Build Hub
     shape: 20
