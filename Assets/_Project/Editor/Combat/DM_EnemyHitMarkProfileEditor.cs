@@ -41,6 +41,7 @@ namespace Project.EditorTools.Combat
             new Group("Blood FX (KriptoFX) - budget, distance, lifetime", true, null,
                 "volumetricBudget", "volumetricMaxDistance", "volumetricLifetime"),
             new Group("Slash & burn marks", false, "Per-type tints, size and limits.",
+                "decalRandomSpin", "decalSpinRange", "slashSpinJitter",
                 "maxBurnMarksPerEnemy", "regenFadeSeconds", "androidMarkTint", "robotMarkTint",
                 "slashSize", "slashProjectionDepth", "meleeSlashMarkSizeMultiplier",
                 "burnSize", "burnProjectionDepth", "rangedAmmoMarkSizeMultiplier", "markSurfaceNormalOffset", "markDepthCenterBias",

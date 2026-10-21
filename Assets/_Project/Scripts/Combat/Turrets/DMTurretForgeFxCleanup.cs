@@ -35,14 +35,58 @@ namespace Project.Combat.Turrets
         private static void ResetStatics()
         {
             nextPooledLightScanTime = 0f;
+            processedLights.Clear();
+            lastPoolSignature = -1;
+            lastPoolId = 0;
         }
 
         /// <summary>
         /// FORGE3D example muzzles/beams/flames ship shadow-casting point lights (6 HDRP shadow requests
         /// each). Strips shadows on the GeneratedPool's scene instances (never the prefab assets), throttled.
         /// </summary>
+        // 2026-10-20j: was a full pool GetComponentsInChildren every 2 s (frame hitch -> 2 s player jerk). Now: each light
+        // once (cached by id), rescan only when the pool's hierarchy signature changes; no per-call allocs.
+        private static readonly System.Collections.Generic.HashSet<int> processedLights = new System.Collections.Generic.HashSet<int>();
+        private static readonly System.Collections.Generic.List<Light> lightBuffer = new System.Collections.Generic.List<Light>(256);
+        private static int lastPoolSignature = -1;
+        private static int lastPoolId;
+
+        private static int PoolSignature(Transform root)
+        {
+            int sig = root.childCount;
+            for (int i = 0; i < root.childCount; i++)
+                sig = sig * 31 + root.GetChild(i).childCount;
+            return sig;
+        }
+
         public static void SuppressPooledLightShadows()
         {
+            DM_CombatCoreProfile cp = DM_CombatCoreProfile.Live;
+            if (cp == null || !cp.turretPooledLightRescanLegacy)
+            {
+                if (!TryGetPool(out F3DPool p) || p == null)
+                    return;
+                Transform root = p.transform;
+                int id = root.GetHashCode();
+                int sig = PoolSignature(root);
+                if (id == lastPoolId && sig == lastPoolSignature)
+                    return; // cheap early-out: nothing new spawned into the pool
+                lastPoolId = id;
+                lastPoolSignature = sig;
+                lightBuffer.Clear();
+                root.GetComponentsInChildren(true, lightBuffer);
+                for (int i = 0; i < lightBuffer.Count; i++)
+                {
+                    Light l = lightBuffer[i];
+                    if (l == null || !processedLights.Add(l.GetHashCode()))
+                        continue;
+                    if (l.shadows != LightShadows.None && l.gameObject.scene.IsValid())
+                        l.shadows = LightShadows.None;
+                }
+                lightBuffer.Clear();
+                return;
+            }
+
             float now = Time.unscaledTime;
             if (now < nextPooledLightScanTime)
                 return;

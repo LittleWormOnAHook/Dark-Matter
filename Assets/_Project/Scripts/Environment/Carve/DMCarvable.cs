@@ -57,6 +57,14 @@ namespace Project.SurfaceCarve
         public int SourceSubmeshCount => sourceSubmeshCount;
 
 
+        private static readonly System.Collections.Generic.HashSet<int> s_warned = new System.Collections.Generic.HashSet<int>();
+
+        private static void WarnOnce(GameObject go, string why)
+        {
+            if (go == null || !s_warned.Add(go.GetHashCode())) return;
+            Debug.LogWarning($"[Carve] '{go.name}' (tag {go.tag}) matches Auto Carvable but cannot carve: {why}.", go);
+        }
+
         /// <summary>Find the carvable for a hit object, auto-adding one to matching rocks.</summary>
         public static DMCarvable ResolveForImpact(GameObject receiver, DMCarveSettings settings)
         {
@@ -70,6 +78,10 @@ namespace Project.SurfaceCarve
             if (c != null)
                 return c;
 
+            DMCarveUnbatchedLink unbatched = receiver.GetComponentInParent<DMCarveUnbatchedLink>(); // 2026-10-20x
+            if (unbatched != null && unbatched.target != null)
+                return unbatched.target;
+
             DMCarveSkinnedCarveTarget skinnedTarget = receiver.GetComponentInParent<DMCarveSkinnedCarveTarget>();
             if (skinnedTarget != null && skinnedTarget.TryResolveCarvable(out DMCarvable skinnedCarvable))
                 return skinnedCarvable;
@@ -77,17 +89,65 @@ namespace Project.SurfaceCarve
             if (settings == null || !settings.MatchesAutoCarvable(receiver))
                 return null;
 
+            // 2026-10-20v: the mesh may be on a parent of the hit collider (tag on the prop root, collider child).
+            GameObject host = receiver;
             MeshFilter mf = receiver.GetComponent<MeshFilter>();
-            MeshRenderer mr = receiver.GetComponent<MeshRenderer>();
+            if (mf == null || mf.sharedMesh == null)
+            {
+                mf = receiver.GetComponentInParent<MeshFilter>();
+                if (mf == null || mf.sharedMesh == null) mf = LodOrChildMesh(receiver); // 2026-10-20x: collider root with LOD / child meshes
+                if (mf != null) host = mf.gameObject;
+            }
+            MeshRenderer mr = host.GetComponent<MeshRenderer>();
             if (mf == null || mr == null || mf.sharedMesh == null)
-                return null;
-            if (Application.isPlaying && (mr.isPartOfStaticBatch || !mf.sharedMesh.isReadable))
-                return null;
-            Rigidbody rb = receiver.GetComponent<Rigidbody>();
+            { WarnOnce(receiver, "no MeshFilter/MeshRenderer on the hit object or its parents"); return null; }
+            if (Application.isPlaying && mr.isPartOfStaticBatch)
+            {
+                // 2026-10-20x: detach instead of refusing (scene static flags untouched).
+                if (!settings.carveUnbatchesStatic) { WarnOnce(host, "static-batched (untick Batching Static, or turn on Carve Unbatches Static)"); return null; }
+                Rigidbody brb = host.GetComponent<Rigidbody>();
+                if (brb != null && !brb.isKinematic) { WarnOnce(host, "non-kinematic Rigidbody"); return null; }
+                DMCarvable detached = DMCarveUnbatch.Detach(host, mr, out string why);
+                if (detached == null) WarnOnce(host, why);
+                return detached;
+            }
+            if (Application.isPlaying && !mf.sharedMesh.isReadable)
+            {
+                // 2026-10-20x: runtime readable copy (CPU) where Unity allows it; the import asset is not modified.
+                Mesh copy = DMCarveUnbatch.ReadableCopy(mf.sharedMesh, out string why);
+                if (copy == null) { WarnOnce(host, $"mesh '{mf.sharedMesh.name}' is not Read/Write enabled and a runtime copy failed ({why}); enable Read/Write on its model import, or use Tools > Carve > Enable Read/Write For Auto-Carvable Tags"); return null; }
+                Mesh orig = mf.sharedMesh;
+                mf.sharedMesh = copy;
+                MeshCollider omc = host.GetComponent<MeshCollider>();
+                if (omc != null && omc.sharedMesh == orig) omc.sharedMesh = copy;
+                Debug.Log($"[Carve] '{host.name}': mesh '{orig.name}' is not Read/Write; carving a runtime readable copy.", host);
+            }
+            Rigidbody rb = host.GetComponent<Rigidbody>();
             if (rb != null && !rb.isKinematic)
-                return null;
+            { WarnOnce(host, "non-kinematic Rigidbody"); return null; }
 
-            return receiver.AddComponent<DMCarvable>();
+            DMCarvable existing = host.GetComponent<DMCarvable>();
+            return existing != null ? existing : host.AddComponent<DMCarvable>();
+        }
+
+        // 2026-10-20x: tagged collider object whose mesh sits on LOD / child objects (e.g. moss rocks): LOD0 first, else first child mesh.
+        private static MeshFilter LodOrChildMesh(GameObject receiver)
+        {
+            LODGroup lg = receiver.GetComponentInParent<LODGroup>();
+            if (lg == null) lg = receiver.GetComponentInChildren<LODGroup>();
+            if (lg != null)
+            {
+                LOD[] lods = lg.GetLODs();
+                if (lods.Length > 0)
+                    foreach (Renderer r in lods[0].renderers)
+                    {
+                        MeshFilter f = r != null ? r.GetComponent<MeshFilter>() : null;
+                        if (f != null && f.sharedMesh != null) return f;
+                    }
+            }
+            foreach (MeshFilter f in receiver.GetComponentsInChildren<MeshFilter>())
+                if (f.sharedMesh != null && f.GetComponent<MeshRenderer>() != null) return f;
+            return null;
         }
 
         /// <summary>Carve at a surface hit: cutter sinks along -normal by depth x radius.</summary>
@@ -105,7 +165,7 @@ namespace Project.SurfaceCarve
             skinnedNotify?.NotifyCarveSucceeded();
 
             if (spawnDebris && allowDebris && Application.isPlaying && damage.debrisCount > 0)
-                DMCarveDebris.Spawn(cutter, normal, damage, lastFractureMaterial, gameObject.layer);
+                DMCarveDebris.Spawn(cutter, normal, damage, lastFractureMaterial, gameObject.layer, gameObject, point);
             return true;
         }
 

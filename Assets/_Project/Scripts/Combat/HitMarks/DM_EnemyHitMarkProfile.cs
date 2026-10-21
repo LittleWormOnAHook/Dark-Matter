@@ -208,6 +208,31 @@ namespace Project.Combat
         [Tooltip("SparksLarge kind (falls back to small when empty).")] public GameObject sparkHitLargePrefab;
         [Tooltip("Ember / glow burst on glowing burns.")] public GameObject burnEmberPrefab;
 
+        [Header("Decal spin (all hit marks / decals)")]
+        [Tooltip("Random spin around the surface normal for every hit mark / decal (bullet holes, burns, blood floor decals, impact decals, laser / molten marks). Keeps surface alignment.")]
+        public bool decalRandomSpin = true;
+        [Tooltip("Spin range in degrees (min, max). Default 0-360.")]
+        public Vector2 decalSpinRange = new Vector2(0f, 360f);
+        [Tooltip("Melee slash marks stay aligned to the swing; this is their extra random jitter (+/- deg).")]
+        [Range(0f, 45f)] public float slashSpinJitter = 8f;
+
+        /// <summary>2026-10-20m: random spin (deg) for a surface decal, or 0 when disabled.</summary>
+        public static float NextDecalSpin()
+        {
+            DM_EnemyHitMarkProfile p = LiveOrDefault;
+            if (p == null) return UnityEngine.Random.Range(0f, 360f);
+            if (!p.decalRandomSpin) return 0f;
+            return UnityEngine.Random.Range(Mathf.Min(p.decalSpinRange.x, p.decalSpinRange.y), Mathf.Max(p.decalSpinRange.x, p.decalSpinRange.y));
+        }
+
+        /// <summary>2026-10-20m: small jitter (deg) for swing-aligned slash marks.</summary>
+        public static float NextSlashJitter()
+        {
+            DM_EnemyHitMarkProfile p = LiveOrDefault;
+            float j = p != null ? p.slashSpinJitter : 8f;
+            return UnityEngine.Random.Range(-j, j);
+        }
+
         [Header("Melee slash marks")]
         [Tooltip("Elongated decal along the swing (length × width in metres) before meleeSlashMarkSizeMultiplier.")]
         public Vector2 slashSize = new Vector2(0.6f, 0.1f);

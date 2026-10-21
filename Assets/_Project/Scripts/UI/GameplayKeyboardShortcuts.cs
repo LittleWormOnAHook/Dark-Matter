@@ -482,6 +482,8 @@ namespace Project.UI
                 return true;
             if (DMUiToolkitMenuPanels.IsAnySubPanelOpen)
                 return true;
+            if (DMUiToolkitTurretMenu.IsOpen) // 2026-10-20e
+                return true;
             if (DMUiToolkitVendor.IsOpen || DMUiToolkitCrate.IsOpen || DMUiToolkitLoot.IsOpen
                 || Project.UI.DMUiToolkitGenerator.IsOpen)
                 return true;
@@ -557,6 +559,10 @@ namespace Project.UI
                 return;
 
             // 0926-move: Esc drops a carried build piece back where it was before anything else.
+            // 2026-10-20e: Esc / B closes the turret menu only (was also opening the pause menu on top).
+            if (DMUiToolkitTurretMenu.TryHandleBack())
+                return;
+
             if (Project.Building.DMBuildingPlacementController.TryCancelMove())
                 return;
 

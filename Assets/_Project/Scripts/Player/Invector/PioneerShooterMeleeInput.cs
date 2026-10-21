@@ -862,6 +862,14 @@ namespace Project.Player.Invector
             if (cc == null)
                 return;
 
+            // 2026-10-20c: retired while DMStrafeLocomotionDirector owns isStrafing (strafe plan P1).
+            var strafeDirector = Project.Features.Locomotion.DMStrafeLocomotionDirector.Instance;
+            if (strafeDirector != null && strafeDirector.IsActive && strafeDirector.gameObject == gameObject)
+            {
+                _strafeForBackwardLocomotion = false;
+                return;
+            }
+
             if (IsAimingActive || cc.lockInStrafe || cc.isRolling || cc.isJumping
                 || (cc.customAction && !IsInLightComboAttackMoveState()))
             {
@@ -1264,6 +1272,10 @@ namespace Project.Player.Invector
                 TriggerWeakAttack();
                 return;
             }
+
+            // 2026-10-20q Downed Combo: authored ground-strike states take over while the target is knocked down.
+            if (DMDownedCombo.TryPlayDownedSwing(this, animator, layer))
+                return;
 
             // A tap during A or B queues the next swing. The chain is driven here, not by the WeakAttack
             // trigger: taps fire on release, and every press resets the triggers (charge needs that), so a

@@ -15,8 +15,8 @@ MonoBehaviour:
   walkMaxSlopeDeg: 45
   climbMinSlopeDeg: 60
   climbMaxSlopeDeg: 95
-  attachRange: 2
-  climbJumpRange: 5
+  attachRange: 0.659
+  climbJumpRange: 1.54
   probeRadius: 0.24
   faceDotMin: 0.15
   standOff: 0.35
@@ -70,6 +70,108 @@ MonoBehaviour:
   jogSpeedMultiplier: 1
   sprintBurstSpeedMultiplier: 1.2
   shiftDoubleTapWindow: 0.28
+  strafeLocoMode: 2
+  strafeLocoForwardConeHalfAngle: 67
+  strafeLocoHysteresis: 10
+  strafeLocoMinHoldSeconds: 0.15
+  strafeLocoCombatFullStrafe: 1
+  strafeLocoCombatIgnoresForwardCone: 0
+  strafeLocoCombatEngageRadius: 12
+  strafeLocoSprintConeHalfAngle: 50
+  strafeLocoPadDeadzoneMagnitude: 0.2
+  strafeLocoDebugOverlay: 0
+  bodyWeightEnabled: 1
+  bodyWeightPreset: 0
+  bodyWeightIntensity: 1
+  bodyWeightDebugExaggerate: 1
+  bodyWeightDebugReadout: 0
+  bodyWeightAimScale: 0.15
+  bodyWeightAccelSmooth: 0.08
+  bodyWeightLeanAccel: 1
+  bodyWeightStopCarry: 1.4
+  bodyWeightLeanTurn: 0.9
+  bodyWeightYawLag: 4
+  bodyWeightMaxSpineDegrees: 14
+  bodyWeightSpineSmooth: 0.2
+  bodyWeightSettleDamping: 0.4
+  bodyWeightChestLag: 0.12
+  bodyWeightArmTrail: 1.3
+  bodyWeightMaxArmDegrees: 18
+  bodyWeightArmSmooth: 0.15
+  bodyWeightElbowTrail: 1.5
+  bodyWeightWristTrail: 1.8
+  bodyWeightLandingDrop: 0.08
+  bodyWeightLandingRecovery: 0.3
+  bodyWeightDirChangeDrop: 0.03
+  bodyWeightDirChangeAccel: 8
+  bodyWeightHipSpring: 90
+  bodyWeightMaxHipDrop: 0.1
+  bodyWeightPelvisLead: 3
+  bodyWeightPelvisSmooth: 0.12
+  bodyWeightCounterRotation: 0.8
+  bodyWeightComShift: 0.012
+  bodyWeightMaxComShift: 0.05
+  bodyWeightAnticipation: 4
+  bodyWeightDecelCompression: 0.02
+  bodyWeightHeadStabilize: 0.5
+  bodyWeightHeadSmooth: 0.12
+  bodyWeightSwingAmount: 0.55
+  bodyWeightSwingStiffness: 60
+  bodyWeightSwingDamping: 0.5
+  bodyWeightSwingMaxDegrees: 7.2
+  bodyWeightWeaponEnabled: 1
+  bodyWeightWeaponUnarmed: 0.6
+  bodyWeightWeaponMelee: 1.64
+  bodyWeightWeaponHeavyMult: 2.12
+  bodyWeightWeaponRanged: 1
+  bodyWeightWeaponSwingGain: 2.03
+  bodyWeightWeaponWindup: 4.95
+  bodyWeightWeaponHipPull: 0.459
+  bodyWeightWeaponImpactJolt: 8
+  bodyWeightWeaponImpactHipDrop: 0.03
+  bodyWeightWeaponRecoilKick: 4
+  bodyWeightWeaponRecoilHipPush: 0.02
+  bodyWeightWeaponRecoilStiffness: 180
+  bodyWeightWeaponRecoilDamping: 0.45
+  bodyWeightWeaponDrawDip: 5.9
+  bodyWeightWeaponDrawHipDrop: 0.025
+  bodyWeightHitEnabled: 1
+  bodyWeightHitImpulse: 7
+  bodyWeightHitHipShove: 0.025
+  bodyWeightHitHeadWhip: 5
+  bodyWeightHitRecovery: 110
+  bodyWeightHitDamping: 0.5
+  bodyWeightHitDamageRef: 20
+  bodyWeightHitPoiseWeight: 0.5
+  bodyWeightHitMinScale: 0.35
+  bodyWeightHitMaxScale: 2
+  bodyWeightFootPlantEnabled: 1
+  bodyWeightFootPlantMaxSpeed: 1.5
+  bodyWeightFootPlantHeight: 0.06
+  bodyWeightFootPlantMaxCorrection: 0.1
+  bodyWeightFootPlantBlend: 0.1
+  bodyWeightFootPlantHipLower: 0.03
+  bodyWeightBreathEnabled: 1
+  bodyWeightBreathRate: 0.25
+  bodyWeightBreathDepth: 0.8
+  bodyWeightBreathShoulder: 0.6
+  bodyWeightBreathExertRate: 0.45
+  bodyWeightBreathExertDepth: 1.8
+  bodyWeightBreathExertRise: 4
+  bodyWeightBreathExertDecay: 5
+  bodyWeightBreathAimScale: 0.25
+  bodyWeightEnemyEnabled: 1
+  bodyWeightEnemyLean: 0.8
+  bodyWeightEnemyStopCarry: 1.1
+  bodyWeightEnemyMaxDegrees: 12
+  bodyWeightEnemySettleSmooth: 0.22
+  bodyWeightEnemySettleDamping: 0.45
+  bodyWeightEnemySwing: 4
+  bodyWeightEnemyHitImpulse: 8
+  bodyWeightEnemyHitDamageRef: 25
+  bodyWeightEnemyCullDistance: 40
+  bodyWeightEnemyTypeScales: Brute=1.4;Heavy=1.3;Drone=0;Turret=0
+  bodyWeightAppliedPresetInternal: 0
   standingJumpHeight: 2
   walkJumpHeightMultiplier: 1
   jogJumpHeightMultiplier: 1.05
@@ -93,15 +195,15 @@ MonoBehaviour:
   stepLiftSpeed: 3.01
   stepLiftForwardPush: 1.191
   stepIgnoreSlopeBlock: 1
-  maxHealth: 1000
+  maxHealth: 500
   maxEnergy: 100
-  maxStamina: 1000
-  maxOxygen: 2400
+  maxStamina: 200
+  maxOxygen: 5000
   energyDrainPerSecond: 0
   toolEnergyDrainPerSecond: 0.5
   handCraftEnergyPerItem: 0.5
   oxygenDrainPerSecond: 2
-  lowOxygenWarningPercent: 10
+  lowOxygenWarningPercent: 25
   lowOxygenFlashPerSecond: 1.5
   lowOxygenWarningText: Low Oxygen
   lowOxygenWarningEnabled: 1
@@ -110,7 +212,7 @@ MonoBehaviour:
   oxygenDepletedHealthDrainMultiplier: 10
   enableHealthRegen: 1
   healthRegenPerSecond: 5
-  healthRegenDelayAfterDamage: 5
+  healthRegenDelayAfterDamage: 15
   maxThermalStress: 100
   maxRadiation: 100
   maxSulfur: 100

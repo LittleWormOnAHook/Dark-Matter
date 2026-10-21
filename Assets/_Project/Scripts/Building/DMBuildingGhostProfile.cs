@@ -155,8 +155,8 @@ namespace Project.Building
         public float gateSwingSeconds = 1.4f;
 
         [Header("Turrets (placed equipment)")]
-        [Tooltip("Press E interact range for a placed turret.")]
-        public float turretInteractRangeMeters = 3.5f;
+        [Tooltip("Radius of each turret's InteractZone trigger (sole interact authority, 2026-10-20f). Player inside = can press E; no aim needed.")]
+        public float turretInteractRangeMeters = 10f;
         [Tooltip("Player-control camera sits this far behind the barrel.")]
         public float turretPlayerCameraBackMeters = 1.8f;
         [Tooltip("Player-control camera sits this far above the barrel.")]
@@ -266,7 +266,7 @@ namespace Project.Building
         public static float GateSwingDegrees => Positive(Live != null ? Live.gateSwingDegrees : 90f, 90f);
         public static float GateSwingSeconds => Positive(Live != null ? Live.gateSwingSeconds : 1.4f, 1.4f);
         public static float TurretInteractRangeMeters =>
-            Positive(Live != null ? Live.turretInteractRangeMeters : 3.5f, 3.5f);
+            Positive(Live != null ? Live.turretInteractRangeMeters : 10f, 10f);
         public static float TurretPlayerCameraBackMeters =>
             Positive(Live != null ? Live.turretPlayerCameraBackMeters : 1.8f, 1.8f);
         public static float TurretPlayerCameraUpMeters =>

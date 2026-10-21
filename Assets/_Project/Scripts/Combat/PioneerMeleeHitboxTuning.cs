@@ -26,6 +26,9 @@ namespace Project.Combat
                 reachScale = profile.enemyMeleeHitboxReachScale;
             }
 
+            // 2026-10-20d: player hitboxes keep their hand-set size (Anthony's resizes were re-enlarged by x2.1 / x1.75 on every equip / profile refresh).
+            bool keepAuthored = profile != null && (enemyWeapon ? profile.enemyMeleeHitboxUseAuthoredSize : profile.playerMeleeHitboxUseAuthoredSize);
+
             vHitBox[] boxes = weapon.GetComponentsInChildren<vHitBox>(true);
             for (int i = 0; i < boxes.Length; i++)
             {
@@ -33,7 +36,10 @@ namespace Project.Combat
                 if (box == null || IsLegacyAuxiliary(box))
                     continue;
 
-                ScalePrimaryTrigger(box, widthScale, reachScale);
+                if (keepAuthored)
+                    RestoreAuthored(box);
+                else
+                    ScalePrimaryTrigger(box, widthScale, reachScale);
             }
         }
 
@@ -51,6 +57,19 @@ namespace Project.Combat
                 if (box != null && IsLegacyAuxiliary(box))
                     Object.Destroy(box.gameObject);
             }
+        }
+
+        /// <summary>Undo any earlier runtime enlargement once (baseline = captured authored size), then stop managing the size.</summary>
+        private static void RestoreAuthored(vHitBox box)
+        {
+            Collider trigger = box.trigger != null ? box.trigger : box.GetComponent<Collider>();
+            if (trigger == null)
+                return;
+            PioneerMeleeHitboxBaseline baseline = trigger.GetComponent<PioneerMeleeHitboxBaseline>();
+            if (baseline == null)
+                return;
+            baseline.ApplyScaled(1f, 1f);
+            Object.Destroy(baseline);
         }
 
         private static void ScalePrimaryTrigger(vHitBox box, float widthScale, float reachScale)

@@ -75,7 +75,7 @@ namespace Project.SurfaceCarve
             Material mat = carvable != null ? carvable.ResolveFractureMaterial(source) : DMCarvable.FractureMaterialFor(source);
             float radius = Mathf.Max(0.01f, damage.radius * settings.ammoRadiusScale);
             DMCarveCutter cutter = DMCarvable.MakeSurfaceCutter(point, normal, radius, damage.depth, damage.style, damage.roughness, Random.Range(1, int.MaxValue));
-            DMCarveDebris.Spawn(cutter, normal, damage, mat, receiver.layer);
+            DMCarveDebris.Spawn(cutter, normal, damage, mat, receiver.layer, receiver, point);
         }
 
         private static Vector3 FindNewSurface(DMCarvable carvable, Vector3 point, Vector3 normal, float radius)

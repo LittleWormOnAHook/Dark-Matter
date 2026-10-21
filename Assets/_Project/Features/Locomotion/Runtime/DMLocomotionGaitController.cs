@@ -37,6 +37,7 @@ namespace Project.Features.Locomotion
     public sealed class DMLocomotionGaitController : MonoBehaviour
 
     {
+        private DMStrafeLocomotionDirector _strafeDirector;
 
         public enum Gait
 
@@ -216,6 +217,7 @@ namespace Project.Features.Locomotion
 
 
 
+            _strafeDirector = DMStrafeLocomotionDirector.Ensure(gameObject); // 2026-10-20c strafe plan P1 (runtime add, no prefab edit)
             CacheBaselineSpeeds();
 
             motor.useContinuousSprint = false;
@@ -251,6 +253,7 @@ namespace Project.Features.Locomotion
                 return;
 
             EnforceGamepadAutoCrouchLatch();
+            _strafeDirector?.Tick(); // 2026-10-20c: after Invector InputHandle (PSMI.Update), before FixedUpdate
 
             bool shiftHeld = EffectiveShiftHeld();
 
@@ -667,6 +670,10 @@ namespace Project.Features.Locomotion
             if (_survival == null)
 
                 return true;
+
+            // 2026-10-20c: forward-only burst (strafe plan A4.1).
+            if (!DMStrafeLocomotionDirector.SprintConeAllows(motor as vThirdPersonController))
+                return false;
 
             return _survival.CurrentStamina > 0.01f;
 

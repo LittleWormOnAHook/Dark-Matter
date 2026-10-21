@@ -58,6 +58,8 @@ namespace Project.UI
         private const float RifleCrosshairBasePixels = 196f;
 
         private static bool WeaponScopeActive => Project.Combat.DMScopeMode.IsScopeViewActive;
+        /// <summary>2026-10-20r: optics overlay root (same UIDocument) for reticle-anchored popups (aim rating).</summary>
+        public static VisualElement PopupLayer => instance != null ? instance.opticsRoot : null;
 
         public static bool IsShowing => instance != null && instance.visible;
 
@@ -282,9 +284,17 @@ namespace Project.UI
 
             if (rangeLabel != null)
             {
-                float viewportRadiusPx = ringLayoutDiameterPx * 0.5f;
-                float bottomInset = Screen.height * 0.5f - viewportRadiusPx * 0.88f;
-                rangeLabel.style.bottom = Mathf.Max(36f, bottomInset);
+                // pass y: anchor just above the outer orange circle's top edge; follows sway + scale.
+                float outerRadiusPx = Mathf.Max(8f, ringDiameterPx * reticlePresentationScale) * 0.5f;
+                if (showOuterSprite)
+                    outerRadiusPx = Mathf.Max(outerRadiusPx, RifleCrosshairBasePixels * p.ResolveOuterCrosshairScale(rifle) * 0.5f);
+                float labelH = rangeLabel.resolvedStyle.height;
+                if (float.IsNaN(labelH) || labelH <= 0f) labelH = 28f;
+                rangeLabel.style.bottom = StyleKeyword.Auto;
+                rangeLabel.style.top = Length.Percent(50f);
+                rangeLabel.style.marginTop = sway.y - outerRadiusPx - p.rangeLabelGapPx - labelH;
+                rangeLabel.style.translate = new Translate(sway.x, 0f);
+                rangeLabel.style.unityTextAlign = TextAnchor.LowerCenter;
             }
 
             if (reticle != null && reticle.resolvedStyle.display != DisplayStyle.None)

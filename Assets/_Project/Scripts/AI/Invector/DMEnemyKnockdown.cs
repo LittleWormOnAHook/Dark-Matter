@@ -174,6 +174,9 @@ namespace Project.AI.Invector
         private void Awake()
         {
             Resolve();
+            if (GetComponent<DMEnemyAnimStallGuard>() == null)
+                gameObject.AddComponent<DMEnemyAnimStallGuard>(); // 2026-10-20o failsafe
+            if (GetComponent<DMEnemyBodyWeight>() == null) gameObject.AddComponent<DMEnemyBodyWeight>(); // 2026-10-20w body weight
         }
 
         private void OnEnable()

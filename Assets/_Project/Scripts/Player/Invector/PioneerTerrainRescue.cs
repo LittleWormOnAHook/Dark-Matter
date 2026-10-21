@@ -56,7 +56,14 @@ namespace Project.Player.Invector
             if (position.y >= surfaceY - sink)
                 return;
 
+            // 2026-10-20g: a grounded Invector player is standing on something real (mesh/building over terrain); don't yank him.
+            var cp = Project.Combat.DM_CombatCoreProfile.Live;
+            var motor = GetComponent<global::Invector.vCharacterController.vThirdPersonMotor>();
+            if (cp != null && cp.terrainRescueSkipWhenGrounded && motor != null && motor.isGrounded && surfaceY - position.y < 2f)
+                return;
+
             float drop = surfaceY - position.y;
+            Project.Combat.DMPlayerPositionCorrections.Note("PioneerTerrainRescue (sink " + drop.ToString("0.00") + " m)");
             position.y = surfaceY + 0.25f;
             transform.position = position;
 

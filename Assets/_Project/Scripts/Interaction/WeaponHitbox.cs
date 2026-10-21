@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Project.Data;
 using UnityEngine;
 
@@ -299,7 +299,10 @@ namespace Project.Interaction
         {
             if (hitCollider != null)
             {
-                FitColliderToWeapon(hitCollider.transform, hitCollider, item);
+                // 2026-10-20d: keep a hand-set size; only auto-fit when the collider is created below.
+                Project.Combat.DM_CombatCoreProfile authoredProfile = Project.Combat.DM_CombatCoreProfile.Live;
+                if (authoredProfile == null || !authoredProfile.playerMeleeHitboxUseAuthoredSize)
+                    FitColliderToWeapon(hitCollider.transform, hitCollider, item);
                 return;
             }
 

@@ -122,6 +122,9 @@ namespace Project.Combat
             if (tangent.sqrMagnitude < 0.001f)
                 tangent = Vector3.Cross(n, Vector3.right);
             tangent.Normalize();
+            DM_EnemyHitMarkProfile hmp = DM_EnemyHitMarkProfile.LiveOrDefault;
+            if (hmp != null && hmp.decalRandomSpin)
+                twistDegrees = DM_EnemyHitMarkProfile.NextDecalSpin(); // 2026-10-20m: random spin replaces ping-pong twist
             Quaternion rotation = Quaternion.AngleAxis(twistDegrees, n) * Quaternion.LookRotation(-n, tangent);
             Vector3 spawnPos = point + n * 0.014f;
 

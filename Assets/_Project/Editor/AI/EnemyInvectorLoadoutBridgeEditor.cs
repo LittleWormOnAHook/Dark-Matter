@@ -1,43 +1,66 @@
 #if UNITY_EDITOR
 using Project.AI.Invector;
+using Project.EditorTools.Theme;
 using UnityEditor;
-using UnityEngine;
+using UnityEditor.UIElements;
+using UnityEngine.UIElements;
 
 namespace Project.EditorTools.AI
 {
+    /// <summary>
+    /// LoadoutBridge inspector. 2026-10-20b: UI Toolkit + GenesisTheme (same look as GenesisFallbackInspector),
+    /// keeps the "Ranged Ammo Type" relabel and its Override Brain gate. Field names / serialization unchanged.
+    /// </summary>
     [CustomEditor(typeof(EnemyInvectorLoadoutBridge))]
     [CanEditMultipleObjects]
     public sealed class EnemyInvectorLoadoutBridgeEditor : Editor
     {
-        public override void OnInspectorGUI()
+        public override VisualElement CreateInspectorGUI()
         {
-            serializedObject.Update();
-            SerializedProperty iterator = serializedObject.GetIterator();
+            var root = new VisualElement();
+            if (GenesisTheme.Enabled && GenesisTheme.Apply(root))
+                root.AddToClassList("g-inspector");
+
+            SerializedProperty overrideBrain = serializedObject.FindProperty("overrideBrain");
+            SerializedProperty it = serializedObject.GetIterator();
             bool enterChildren = true;
-            while (iterator.NextVisible(enterChildren))
+            while (it.NextVisible(enterChildren))
             {
                 enterChildren = false;
-                if (iterator.name == "m_Script")
+                SerializedProperty prop = it.Copy();
+                if (prop.name == "m_Script")
                 {
-                    EditorGUI.BeginDisabledGroup(true);
-                    EditorGUILayout.PropertyField(iterator);
-                    EditorGUI.EndDisabledGroup();
+                    var script = new PropertyField(prop);
+                    script.SetEnabled(false);
+                    root.Add(script);
                     continue;
                 }
 
-                if (iterator.name == "overrideRangedAmmoType")
+                if (prop.name == "overrideRangedAmmoType")
                 {
-                    SerializedProperty overrideBrain = serializedObject.FindProperty("overrideBrain");
-                    EditorGUI.BeginDisabledGroup(overrideBrain == null || !overrideBrain.boolValue);
-                    EditorGUILayout.PropertyField(iterator, new GUIContent("Ranged Ammo Type"));
-                    EditorGUI.EndDisabledGroup();
+                    var ammo = new PropertyField(prop, "Ranged Ammo Type");
+                    var poolNote = new HelpBox("Ignored: Ranged Ammo Type Pool is in use.", HelpBoxMessageType.Info);
+                    SerializedProperty pool = serializedObject.FindProperty("rangedAmmoTypePool");
+                    void Refresh()
+                    {
+                        bool poolInUse = pool != null && (pool.hasMultipleDifferentValues || pool.arraySize > 0);
+                        bool brainOn = overrideBrain != null && overrideBrain.boolValue;
+                        ammo.SetEnabled(brainOn && !poolInUse);
+                        ammo.tooltip = poolInUse ? "Ignored: Ranged Ammo Type Pool is in use." : "";
+                        poolNote.style.display = poolInUse ? DisplayStyle.Flex : DisplayStyle.None;
+                    }
+                    Refresh();
+                    if (overrideBrain != null) ammo.TrackPropertyValue(overrideBrain, _ => Refresh());
+                    if (pool != null) ammo.TrackPropertyValue(pool, _ => Refresh()); // 2026-10-20c: grey out while the pool has entries
+                    root.Add(ammo);
+                    root.Add(poolNote);
                     continue;
                 }
 
-                EditorGUILayout.PropertyField(iterator, true);
+                root.Add(new PropertyField(prop));
             }
 
-            serializedObject.ApplyModifiedProperties();
+            return root;
         }
     }
 }

@@ -437,6 +437,12 @@ namespace Project.Combat
                 return null;
 
             ApplyPlayerRigidbodyInterpolation(player);
+            DMPlayerSelfCollisionGuard.Ensure(player); // 2026-10-20d
+            DMCameraFixedStepInterpolator.EnsureOnCamera(); // 2026-10-20e
+            DMPlayerSnapProbe.Ensure(player); // 2026-10-20g
+            DMPlayerAnimatorUpdateMode.Ensure(player); // 2026-10-20i
+            Invector.vCharacterController.vThirdPersonMotor.DMRotateViaRigidbody =
+                DM_CombatCoreProfile.Live != null && DM_CombatCoreProfile.Live.playerRotateViaRigidbody; // 2026-10-20e
 
             DMPlayerHitboxRig rig = player.GetComponent<DMPlayerHitboxRig>();
             if (rig != null && rig.HitboxCount > 0)

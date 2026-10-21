@@ -300,6 +300,8 @@ namespace Project.Combat
         [Range(0f, 0.05f)] public float statusVfxNormalOffset = 0.004f;
 
         [Header("Melee hit detection")]
+        [Tooltip("2026-10-20d: ON = player weapon hitboxes keep their hand-authored size (width/reach scales below are NOT applied to the player). Enemy scales still apply. OFF = legacy runtime enlargement.")]
+        public bool playerMeleeHitboxUseAuthoredSize = true;
         [Tooltip("Scales Invector vHitBox trigger width (left/right thickness).")]
         [Range(1f, 2.5f)] public float meleeHitboxWidthScale = 2.1f;
         [Tooltip("Scales reach along the blade (box depth / length).")]
@@ -317,6 +319,8 @@ namespace Project.Combat
         [Tooltip("Extra reach scale for humanoid enemy melee hitboxes only.")]
         [Range(1f, 2.5f)] public float enemyMeleeHitboxWidthScale = 2.25f;
         [Range(1f, 2.5f)] public float enemyMeleeHitboxReachScale = 2.15f;
+        [Tooltip("2026-10-20d: ON = enemy weapon hitboxes keep their authored (mesh-fit) size; the enemy width/reach scales above are not applied.")]
+        public bool enemyMeleeHitboxUseAuthoredSize = true;
         [Tooltip("Multiplies EnemyCombat.attackRange for AI strike distance (prefab values are often short).")]
         [Range(1f, 1.5f)] public float enemyMeleeAttackRangeMultiplier = 1.26f;
         [Tooltip("When > 0, overrides each enemy prefab attackStandoffFraction for melee ring / creep stop (lower = stand closer). 0 = prefab only.")]
@@ -391,6 +395,33 @@ namespace Project.Combat
         [Range(0f, 0.5f)] public float hitstopHoldSpeed = 0.3f;
         [Tooltip("Rigidbody interpolation applied at runtime to the live player root (Player_v7 prefab untouched). The prefab ships with None: the motor moves in FixedUpdate (60 Hz) while rendering runs at the frame rate, which shows up as a small shake / judder. Interpolate smooths it. Keep = leave as the prefab has it.")]
         public PlayerRigidbodyInterpolationMode playerRigidbodyInterpolation = PlayerRigidbodyInterpolationMode.Interpolate;
+        // 2026-10-20d: DMPlayerSelfCollisionGuard (melee jolt / armed jitter fix).
+        [Tooltip("Keep the player's own child colliders (weapons, foot spheres, bones) from shoving the root capsule: IgnoreCollision re-applied every interval, solid colliders in the root rigidbody compound become triggers. Off = legacy.")]
+        public bool playerSelfCollisionGuard = true;
+        [Tooltip("Seconds between guard passes (Unity drops ignore pairs when a collider is re-enabled).")]
+        [Range(0.05f, 2f)] public float playerSelfCollisionGuardInterval = 0.25f;
+        [Tooltip("Solid colliders attached to the player ROOT rigidbody (e.g. a re-equipped weapon pickup collider) become triggers.")]
+        public bool playerSelfCollisionForceRootTriggers = true;
+        [Tooltip("Console log (once per collider) whenever the guard fixes something. Use to find the offender.")]
+        public bool playerSelfCollisionGuardLog = true;
+        // 2026-10-20e: strafe/aim player jitter (camera fixed-step vs interpolated player).
+        [Tooltip("Invector's camera moves in FixedUpdate while the player Rigidbody is interpolated per frame, so the player shimmers on screen while strafing + panning. ON = render the camera interpolated between its fixed steps (Invector logic untouched). Off = legacy.")]
+        public bool playerCameraFixedStepInterpolation; // 2026-10-20h default OFF (A/B: jitter worse)
+        [Tooltip("Player turn (RotateToDirection, e.g. strafe facing the camera) goes through Rigidbody.MoveRotation when the body is interpolated, instead of writing transform.rotation (which breaks interpolation and steps the turn at physics rate). Off = legacy.")]
+        public bool playerRotateViaRigidbody; // 2026-10-20h default OFF: fights transform.rotation writers (root-motion rotation, strafe facing)
+        // 2026-10-20j: FORGE3D pooled light shadow strip.
+        [Tooltip("ON = legacy: rescan the whole FORGE3D GeneratedPool for lights every 2 s while turrets fire (frame hitch, seen as a 2 s player jerk). OFF = strip each pooled light once, rescan only when the pool grows.")]
+        public bool turretPooledLightRescanLegacy;
+        // 2026-10-20i: Player Animator Per-Frame Update.
+        [Tooltip("Run the player's Animator every rendered frame (Normal) instead of Invector's physics-tick (Fixed) update, so the pose and aim IK stop stepping against the smooth, interpolated root. Off = Invector default (Fixed).")]
+        public bool playerAnimatorPerFrameUpdate; // 2026-10-20k default OFF: upper-body jitter (Invector aim IK smoothing is tuned for physics-tick evaluation)
+        // 2026-10-20g: periodic backward snap probe.
+        [Tooltip("Console warning whenever the moving player snaps backward: RB (a position correction) or VISUAL (animation loop vs capsule), with the gap since the last one and the DM script that corrected position, if any.")]
+        public bool playerSnapProbeLog = true;
+        [Tooltip("Also log every DM position correction (terrain rescue, landing feet snap, step lift) even without a detected snap. Noisy.")]
+        public bool playerSnapProbeLogEveryCorrection;
+        [Tooltip("Terrain rescue: skip while the player is grounded per Invector (only rescue real fall-through). Off = legacy (checks every 0.1 s regardless).")]
+        public bool terrainRescueSkipWhenGrounded = true;
         [Tooltip("Also freeze the player's own swing for the same time (the blade 'sticks'). Off = victim only.")]
         public bool hitstopFreezesAttacker = true;
 
@@ -604,6 +635,83 @@ namespace Project.Combat
         [Tooltip("Skip the knockdown (heavy reaction instead) on ground steeper than this or near a ledge.")]
         [Range(5f, 45f)] public float knockdownMaxSlopeDegrees = 20f;
         [Range(0.2f, 3f)] public float knockdownLedgeCheckMeters = 1f;
+        [Tooltip("2026-10-20o failsafe: if an alive, non-ragdolled enemy's animator is disabled, near speed 0, or frozen on one frame while its root moves (outside hit-stop), for longer than Enemy Anim Stall Seconds, force it back: speed 1, knockdown layer off, ResetState to locomotion.")]
+        public bool enemyAnimStallFailsafe = true;
+        [Range(0.1f, 5f)] public float enemyAnimStallSeconds = 0.6f;
+        [Tooltip("Animator speed below this (outside hit-stop) counts as stalled.")]
+        [Range(0f, 1f)] public float enemyAnimStallMinSpeed = 0.3f;
+        [Tooltip("Log [AnimStall] when the failsafe fires.")]
+        public bool enemyAnimStallLog = true;
+
+        [Header("Downed Combo (2026-10-20q)")]
+        [Tooltip("When the player's melee target (soft-lock target, else nearest in front within reach) is knocked down, light attacks switch to the ground-strike combo; reverts when it gets up.")]
+        public bool downedComboEnabled = true;
+        [Tooltip("Max planar distance to a downed target (m).")]
+        [Range(0.5f, 6f)] public float downedComboReach = 2.6f;
+        [Tooltip("Half-angle of the front cone used to find a downed target (deg).")]
+        [Range(10f, 180f)] public float downedComboConeDegrees = 75f;
+        [Tooltip("Damage multiplier per hit on a downed enemy (applies to the low strike, and tops up normal hitbox hits).")]
+        [Range(0f, 5f)] public float downedComboDamageMultiplier = 1.25f;
+        [Tooltip("Base damage of the low strike when the weapon damage is unknown.")]
+        [Range(0f, 500f)] public float downedComboBaseDamage = 20f;
+        [Tooltip("Default Downed Attack 1..N: FullBody layer state paths (e.g. Attacks.DownedAttacks.Downed_1). Empty = fallback (normal light combo + downward pitch + low strike).")]
+        public string[] downedComboStates = new string[0];
+        [Tooltip("Per-weapon overrides (matched by the right-hand weapon GameObject name containing the key).")]
+        public DownedComboWeaponSet[] downedComboWeaponSets = new DownedComboWeaponSet[0];
+        [Tooltip("Crossfade into a downed attack state (s).")]
+        [Range(0f, 0.5f)] public float downedComboBlendSeconds = 0.08f;
+        [Tooltip("Fallback: spine/chest pitch down while swinging at a downed target (deg).")]
+        [Range(0f, 80f)] public float downedComboFallbackPitchDegrees = 28f;
+        [Tooltip("Pitch blend in/out time (s).")]
+        [Range(0.02f, 0.5f)] public float downedComboPitchBlendSeconds = 0.1f;
+        [Tooltip("Low strike: guaranteed low hit on the downed target inside this normalized window of the swing (covers bodies under the weapon hitbox). Visual hitboxes untouched.")]
+        public bool downedComboLowStrike = true;
+        public Vector2 downedComboStrikeWindow = new Vector2(0.3f, 0.55f);
+        [Tooltip("Rotate the player toward the downed target at each swing start.")]
+        public bool downedComboFaceTarget = true;
+        [Tooltip("Max yaw snap toward the downed target per swing (deg).")]
+        [Range(0f, 180f)] public float downedComboFaceMaxDegrees = 60f;
+        public bool downedComboLog = false;
+
+        [Header("Aim Rating (2026-10-20r)")]
+        [Tooltip("Scoped reticle accuracy popup: on a shot, red reticle offset from the center dot as a fraction of its max sway travel -> Perfect / Good / OK.")]
+        public bool aimRatingEnabled = true;
+        [Tooltip("Only rate shots that hit a target (within Hit Window). Off = rate every shot.")]
+        public bool aimRatingRequireHit = true;
+        [Tooltip("Seconds after the shot a hit still counts (projectile travel).")]
+        [Range(0.05f, 3f)] public float aimRatingHitWindowSeconds = 0.6f;
+        [Tooltip("Only while the scope reticle is shown (the reticle that sways).")]
+        public bool aimRatingScopedOnly = true;
+        [Range(0f, 1f)] public float aimRatingPerfect = 0.10f;
+        [Range(0f, 1f)] public float aimRatingGood = 0.25f;
+        [Range(0f, 1f)] public float aimRatingOk = 0.50f;
+        [Tooltip("Popup lifetime (s).")]
+        [Range(0.2f, 4f)] public float aimRatingDuration = 0.9f;
+        [Tooltip("Popup size multiplier.")]
+        [Range(0.2f, 4f)] public float aimRatingScale = 1f;
+        [Tooltip("Pop overshoot scale at the start of the popup.")]
+        [Range(1f, 3f)] public float aimRatingPopScale = 1.45f;
+        [Tooltip("Offset from the reticle (px, +x right, +y down).")]
+        public Vector2 aimRatingOffset = new Vector2(0f, -72f);
+        [Tooltip("Follow the swaying reticle (else anchored at the center dot).")]
+        public bool aimRatingFollowReticle = true;
+        public Color aimRatingPerfectColor = new Color(1f, 0.82f, 0.2f, 1f);
+        public Color aimRatingGoodColor = new Color(0.45f, 1f, 0.45f, 1f);
+        public Color aimRatingOkColor = new Color(0.85f, 0.9f, 1f, 1f);
+        [Range(8f, 96f)] public float aimRatingFontSize = 30f;
+
+        [System.Serializable]
+        public class DownedComboWeaponSet
+        {
+            [Tooltip("Matched against the right-hand weapon GameObject name (contains, case-insensitive).")]
+            public string weaponNameContains = "";
+            [Tooltip("FullBody state paths: Downed Attack 1..N for this weapon.")]
+            public string[] states = new string[0];
+            [Tooltip("0 = use the default multiplier.")]
+            [Range(0f, 5f)] public float damageMultiplier = 0f;
+            [Tooltip("0 = use the default reach.")]
+            [Range(0f, 6f)] public float reach = 0f;
+        }
         [Tooltip("On = player melee crits never take the old crit-ragdoll knockdown (EnemyInvectorRagdollBridge). Crit damage / numbers / VFX unchanged.")]
         public bool retireCritRagdollKnockdown = true;
         public bool logHitReactionsInPlay = false;

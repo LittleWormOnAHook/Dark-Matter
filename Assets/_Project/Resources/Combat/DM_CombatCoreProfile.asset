@@ -161,6 +161,7 @@ MonoBehaviour:
   statusImmunityWindowSeconds: 2
   statusBossMultiplier: 0.5
   statusVfxNormalOffset: 0.004
+  playerMeleeHitboxUseAuthoredSize: 1
   meleeHitboxWidthScale: 2.1
   meleeHitboxReachScale: 1.75
   meleeBlockDefenseHalfAngle: 130
@@ -170,7 +171,8 @@ MonoBehaviour:
   meleeAttackAutoFaceHalfAngle: 22
   enemyMeleeHitboxWidthScale: 2.25
   enemyMeleeHitboxReachScale: 2.15
-  enemyMeleeAttackRangeMultiplier: 1.26
+  enemyMeleeHitboxUseAuthoredSize: 1
+  enemyMeleeAttackRangeMultiplier: 1
   enemyMeleeStandoffFraction: 0.56
   enemyMeleeMaxOrbitFactor: 0.9
   enemyIntentionalMeleeMissChance: 0.1
@@ -204,6 +206,17 @@ MonoBehaviour:
   hitstopCritBonusFrames: 2
   hitstopHoldSpeed: 0.3
   playerRigidbodyInterpolation: 2
+  playerSelfCollisionGuard: 1
+  playerSelfCollisionGuardInterval: 0.25
+  playerSelfCollisionForceRootTriggers: 1
+  playerSelfCollisionGuardLog: 1
+  playerCameraFixedStepInterpolation: 0
+  playerRotateViaRigidbody: 0
+  turretPooledLightRescanLegacy: 0
+  playerAnimatorPerFrameUpdate: 0
+  playerSnapProbeLog: 1
+  playerSnapProbeLogEveryCorrection: 0
+  terrainRescueSkipWhenGrounded: 1
   hitstopFreezesAttacker: 1
   lightHitShakeAmplitude: 0.104
   lightHitShakeDurationSeconds: 0.1034

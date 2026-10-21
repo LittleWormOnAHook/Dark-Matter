@@ -82,7 +82,7 @@ namespace Project.Features.Climb
         [Range(0.08f, 0.4f)]
         public float handSpread = 0.18f;
 
-        [Tooltip("Grab when airborne and a climbable is in attachRange. Off — start climb is second Space + forward.")]
+        [Tooltip("Grab when airborne and a climbable is in attachRange. Off â€” start climb is second Space + forward.")]
         public bool autoGrabInAir;
 
         [Header("Motion")]
@@ -132,7 +132,7 @@ namespace Project.Features.Climb
         [Range(0.2f, 2f)]
         public float airControlSeconds = 0.95f;
 
-        [Tooltip("From a walkable ledge top: walk forward into the void, hold S toward the drop, or press E near the lip — reverse-mantles into hang (180 to face the wall). Standing still at the edge does not trigger.")]
+        [Tooltip("From a walkable ledge top: walk forward into the void, hold S toward the drop, or press E near the lip â€” reverse-mantles into hang (180 to face the wall). Standing still at the edge does not trigger.")]
         public bool dropToHang = true;
 
         [Tooltip("How far below the lip we look for a climbable face when drop-to-hang / reverse mantle starts.")]
@@ -159,7 +159,7 @@ namespace Project.Features.Climb
         [Range(0.02f, 0.25f)]
         public float overhangMinProbeOut = 0.05f;
 
-        [Tooltip("Planar lip distance from the climb wall that counts as deep protrusion. Drives short-hop grab — not vertical thickness.")]
+        [Tooltip("Planar lip distance from the climb wall that counts as deep protrusion. Drives short-hop grab â€” not vertical thickness.")]
         [Range(0.25f, 1.6f)]
         public float overhangDeepProtrusion = 0.65f;
 
@@ -213,7 +213,7 @@ namespace Project.Features.Climb
         [Range(-0.2f, 0.2f)]
         public float mantleStandPad = 0.04f;
 
-        [Tooltip("Seconds to lerp hang → lip → stand.")]
+        [Tooltip("Seconds to lerp hang â†’ lip â†’ stand.")]
         [Range(0.5f, 2.4f)]
         public float mantleSeconds = 1.4f;
 
@@ -246,16 +246,16 @@ namespace Project.Features.Climb
         [Range(0f, 20f)]
         public float jetpackLethalDelay = 6f;
 
-        [Header("Locomotion — walk / run / sprint")]
-        [Tooltip("Default slow walk = Invector runningSpeed × this (0.5 = half prior jog speed).")]
+        [Header("Locomotion â€” walk / run / sprint")]
+        [Tooltip("Default slow walk = Invector runningSpeed Ã— this (0.5 = half prior jog speed).")]
         [Range(0.25f, 1f)]
         public float slowWalkSpeedMultiplier = 0.5f;
 
-        [Tooltip("Shift hold jog = Invector runningSpeed × this.")]
+        [Tooltip("Shift hold jog = Invector runningSpeed Ã— this.")]
         [Range(0.5f, 1.5f)]
         public float jogSpeedMultiplier = 1f;
 
-        [Tooltip("Double-tap Shift burst = Invector sprintSpeed × this (+20% = 1.2). Stamina drain scales by the same factor.")]
+        [Tooltip("Double-tap Shift burst = Invector sprintSpeed Ã— this (+20% = 1.2). Stamina drain scales by the same factor.")]
         [Min(1f)]
         public float sprintBurstSpeedMultiplier = 1.2f;
 
@@ -263,24 +263,411 @@ namespace Project.Features.Climb
         [Min(0.05f)]
         public float shiftDoubleTapWindow = 0.28f;
 
-        [Header("Locomotion — jump height (gait)")]
+        // 2026-10-20c: Strafe locomotion plan P1 (DMStrafeLocomotionDirector). Defaults = Anthony's 2026-10-19 decisions.
+        [Header("Locomotion - strafe / backpedal")]
+        [Tooltip("Off = legacy free locomotion. Hybrid = free inside the forward cone, strafe outside (side steps / diagonals / backpedal). CombatContext = strafe only with a drawn weapon near enemies. AlwaysStrafe = always.")]
+        public DMStrafeLocomotionMode strafeLocoMode = DMStrafeLocomotionMode.Hybrid;
+        [Tooltip("Hybrid: input within this angle of camera forward uses the free tree (turn-lean run). 67 = W, W+A, W+D on keyboard; A/D/S strafe.")]
+        [Range(0f, 90f)] public float strafeLocoForwardConeHalfAngle = 67f; // 2026-10-20e: 30 -> 67 (W+A / W+D free)
+        [Tooltip("Degrees of hysteresis around the forward cone (stops analog flicker).")]
+        [Range(0f, 30f)] public float strafeLocoHysteresis = 10f;
+        [Tooltip("Minimum seconds between free/strafe switches.")]
+        [Range(0f, 1f)] public float strafeLocoMinHoldSeconds = 0.15f;
+        [Tooltip("Weapon drawn + enemy within the engage radius = combat context (holds camera yaw while idle; see Combat Ignores Forward Cone).")]
+        public bool strafeLocoCombatFullStrafe = true;
+        [Tooltip("2026-10-20e: ON = legacy full strafe in combat (W also strafes, slower). OFF = combat keeps the forward free cone (W / W+A / W+D free at normal speed).")]
+        public bool strafeLocoCombatIgnoresForwardCone;
+        [Tooltip("Enemy distance (m) that counts as engaged for combat context.")]
+        [Min(0f)] public float strafeLocoCombatEngageRadius = 12f;
+        [Tooltip("Burst sprint (double-tap Shift) only arms when input is within this angle of camera forward.")]
+        [Range(0f, 180f)] public float strafeLocoSprintConeHalfAngle = 50f;
+        [Tooltip("Stick magnitude below which the input angle is ignored (pad).")]
+        [Range(0f, 0.9f)] public float strafeLocoPadDeadzoneMagnitude = 0.2f;
+        [Tooltip("On-screen label: director mode / yield reason / input angle.")]
+        public bool strafeLocoDebugOverlay;
+
+        [Header("Body weight (ground secondary motion, 2026-10-20l/n)")]
+        [Tooltip("Master toggle: grounded spine/chest lag, lean, stop carry, arm trailing, landing hip drop (like the jetpack limb dangle). Visual only.")]
+        public bool bodyWeightEnabled;
+        [Tooltip("Intensity preset. Custom = use Body Weight Intensity below. Subtle x1, Visible x2.5, Extreme x6.")]
+        public BodyWeightPreset bodyWeightPreset = BodyWeightPreset.Custom;
+        [Tooltip("Global multiplier on every body-weight offset (rotations, hip drop, CoM shift, swing). 1 = authored values. Only NaN/explosion guards clamp the result.")]
+        [Range(0f, 10f)] public float bodyWeightIntensity = 1f;
+        [Tooltip("Verification multiplier stacked on top of intensity (e.g. 4). Set back to 1 when done.")]
+        [Range(1f, 10f)] public float bodyWeightDebugExaggerate = 1f;
+        [Tooltip("On-screen live readout: attached / enabled / weight / gates / offsets.")]
+        public bool bodyWeightDebugReadout;
+        [Tooltip("Effect scale while aiming (keeps aim IK clean). 0 = off while aiming.")]
+        [Range(0f, 1f)] public float bodyWeightAimScale = 0.15f;
+        [Tooltip("Smoothing (s) of the measured body acceleration / turn rate.")]
+        [Range(0.01f, 0.5f)] public float bodyWeightAccelSmooth = 0.08f;
+        [Tooltip("Spine pitch (deg per m/s^2) leaning into forward acceleration.")]
+        [Range(0f, 10f)] public float bodyWeightLeanAccel = 0.6f;
+        [Tooltip("Spine pitch (deg per m/s^2) carried forward when braking / stopping.")]
+        [Range(0f, 10f)] public float bodyWeightStopCarry = 0.6f;
+        [Tooltip("Spine roll (deg per m/s^2) leaning into lateral acceleration / turns.")]
+        [Range(0f, 10f)] public float bodyWeightLeanTurn = 0.9f;
+        [Tooltip("Spine/chest yaw lag behind body turns (deg per 100 deg/s).")]
+        [Range(0f, 30f)] public float bodyWeightYawLag = 4f;
+        [Tooltip("Clamp for spine + chest offsets before intensity (deg).")]
+        [Range(0f, 90f)] public float bodyWeightMaxSpineDegrees = 14f;
+        [Tooltip("Spine spring smoothing (s). Higher = heavier, slower.")]
+        [Range(0.02f, 1f)] public float bodyWeightSpineSmooth = 0.2f;
+        [Tooltip("Trunk settle spring damping ratio (1 = no overshoot; lower = sway past and settle after stops).")]
+        [Range(0.1f, 1.2f)] public float bodyWeightSettleDamping = 0.4f;
+        [Tooltip("Chest phase lag behind spine/hips (s). Breaks up the rigid-block torso on turns.")]
+        [Range(0f, 0.6f)] public float bodyWeightChestLag = 0.12f;
+        [Tooltip("Arm trailing strength (deg per m/s^2), like the jetpack dangle inertia.")]
+        [Range(0f, 10f)] public float bodyWeightArmTrail = 1.3f;
+        [Tooltip("Clamp for arm offsets before intensity (deg).")]
+        [Range(0f, 90f)] public float bodyWeightMaxArmDegrees = 18f;
+        [Tooltip("Arm spring smoothing (s). Elbows/wrists use progressively more lag.")]
+        [Range(0.02f, 1f)] public float bodyWeightArmSmooth = 0.15f;
+        [Tooltip("Elbow (forearm) whip relative to the upper arm.")]
+        [Range(0f, 4f)] public float bodyWeightElbowTrail = 1.5f;
+        [Tooltip("Wrist (hand) whip relative to the upper arm.")]
+        [Range(0f, 4f)] public float bodyWeightWristTrail = 2.3f;
+        [Tooltip("Hip drop impulse on landing, scaled by fall speed.")]
+        [Range(0f, 1f)] public float bodyWeightLandingDrop = 0.08f;
+        [Tooltip("Landing recovery speed (fraction of hip spring used while rising back up). Lower = slower recovery.")]
+        [Range(0.05f, 1f)] public float bodyWeightLandingRecovery = 0.4f;
+        [Tooltip("Hip dip per sharp direction change.")]
+        [Range(0f, 1f)] public float bodyWeightDirChangeDrop = 0.03f;
+        [Tooltip("Acceleration (m/s^2) that counts as a sharp direction change.")]
+        [Range(1f, 30f)] public float bodyWeightDirChangeAccel = 8f;
+        [Tooltip("Hip spring stiffness (compression side).")]
+        [Range(10f, 400f)] public float bodyWeightHipSpring = 90f;
+        [Tooltip("Max hip drop before intensity (m).")]
+        [Range(0f, 0.6f)] public float bodyWeightMaxHipDrop = 0.1f;
+
+        [Header("Body weight: regions (biomechanics)")]
+        [Tooltip("Pelvis: leads body turns (deg per 100 deg/s of turn).")]
+        [Range(0f, 20f)] public float bodyWeightPelvisLead = 3f;
+        [Tooltip("Pelvis / CoM spring smoothing (s).")]
+        [Range(0.02f, 1f)] public float bodyWeightPelvisSmooth = 0.12f;
+        [Tooltip("Shoulder-hip counter-rotation: chest turns against the pelvis lead (0-1 of pelvis yaw).")]
+        [Range(0f, 3f)] public float bodyWeightCounterRotation = 0.8f;
+        [Tooltip("Centre-of-mass / weight shift: hips slide toward lateral acceleration (m per m/s^2).")]
+        [Range(0f, 0.1f)] public float bodyWeightComShift = 0.012f;
+        [Tooltip("Max CoM shift before intensity (m).")]
+        [Range(0f, 0.4f)] public float bodyWeightMaxComShift = 0.05f;
+        [Tooltip("Anticipation: lean toward the input direction before velocity catches up (deg).")]
+        [Range(0f, 30f)] public float bodyWeightAnticipation = 4f;
+        [Tooltip("Knee/hip compression when braking (feet stay planted by foot IK).")]
+        [Range(0f, 0.3f)] public float bodyWeightDecelCompression = 0.02f;
+        [Tooltip("Head stabilisation: neck+head cancel this share of trunk offsets (gaze stays level). 0-1.")]
+        [Range(0f, 1f)] public float bodyWeightHeadStabilize = 0.5f;
+        [Tooltip("Neck/head spring smoothing (s).")]
+        [Range(0.02f, 0.6f)] public float bodyWeightHeadSmooth = 0.12f;
+
+        [Header("Body weight: melee swing spring")]
+        [Tooltip("Torso/arm/pelvis follow-through from the swinging hand's angular velocity (deg per 100 deg/s). Visual only; hitboxes/timing unchanged. 0 = off.")]
+        [Range(0f, 10f)] public float bodyWeightSwingAmount = 1f;
+        [Tooltip("Swing spring stiffness. Higher = snappier settle.")]
+        [Range(10f, 400f)] public float bodyWeightSwingStiffness = 60f;
+        [Tooltip("Swing spring damping ratio (1 = no overshoot, lower = more overshoot).")]
+        [Range(0.1f, 1.2f)] public float bodyWeightSwingDamping = 0.5f;
+        [Tooltip("Clamp for swing offsets before intensity (deg).")]
+        [Range(0f, 90f)] public float bodyWeightSwingMaxDegrees = 12f;
+
+        [Header("Body weight: weapon weight (2026-10-20p, visual only; scaled by preset/intensity)")]
+        [Tooltip("Master toggle for melee windup / follow-through / impact jolt, ranged recoil absorption and draw/holster weight.")]
+        public bool bodyWeightWeaponEnabled = true;
+        [Tooltip("Weight factor: unarmed melee.")]
+        [Range(0f, 5f)] public float bodyWeightWeaponUnarmed = 0.6f;
+        [Tooltip("Weight factor: melee weapon in hand.")]
+        [Range(0f, 5f)] public float bodyWeightWeaponMelee = 1f;
+        [Tooltip("Extra multiplier during strong / charged swings.")]
+        [Range(1f, 5f)] public float bodyWeightWeaponHeavyMult = 1.6f;
+        [Tooltip("Weight factor: ranged weapon in hand.")]
+        [Range(0f, 5f)] public float bodyWeightWeaponRanged = 1f;
+        [Tooltip("Follow-through gain on the swing spring (x Swing Amount). Round 1 was effectively 1.")]
+        [Range(0f, 20f)] public float bodyWeightWeaponSwingGain = 4f;
+        [Tooltip("Windup anticipation: torso counter-twists against the hand's angular acceleration at swing start (deg per 1000 deg/s^2).")]
+        [Range(0f, 20f)] public float bodyWeightWeaponWindup = 3f;
+        [Tooltip("Share of the swing that pulls the hips round (pelvis yaw).")]
+        [Range(0f, 3f)] public float bodyWeightWeaponHipPull = 0.6f;
+        [Tooltip("Impact jolt on melee contact (hit-stop start): torso bounce back (deg).")]
+        [Range(0f, 60f)] public float bodyWeightWeaponImpactJolt = 8f;
+        [Tooltip("Impact hip dip on melee contact (m).")]
+        [Range(0f, 0.3f)] public float bodyWeightWeaponImpactHipDrop = 0.03f;
+        [Tooltip("Ranged: per-shot spine kick (deg). Chest counter-rotates so the shoulders / aim stay on target.")]
+        [Range(0f, 40f)] public float bodyWeightWeaponRecoilKick = 4f;
+        [Tooltip("Ranged: per-shot hip push back (m).")]
+        [Range(0f, 0.2f)] public float bodyWeightWeaponRecoilHipPush = 0.02f;
+        [Tooltip("Recoil / draw spring stiffness.")]
+        [Range(20f, 600f)] public float bodyWeightWeaponRecoilStiffness = 180f;
+        [Tooltip("Recoil / draw spring damping ratio (lower = more settle wobble).")]
+        [Range(0.1f, 1.2f)] public float bodyWeightWeaponRecoilDamping = 0.45f;
+        [Tooltip("Draw / holster: forward torso dip + right arm sag (deg).")]
+        [Range(0f, 45f)] public float bodyWeightWeaponDrawDip = 6f;
+        [Tooltip("Draw / holster hip drop (m).")]
+        [Range(0f, 0.3f)] public float bodyWeightWeaponDrawHipDrop = 0.025f;
+        [Header("Body weight: hit reactions (2026-10-20w, visual only)")]
+        [Tooltip("Player takes damage: directional torso impulse (bend away), hip shove, head whip, spring recovery.")]
+        public bool bodyWeightHitEnabled = true;
+        [Tooltip("Peak torso bend away from the hit (deg) at reference damage.")]
+        [Range(0f, 60f)] public float bodyWeightHitImpulse = 7f;
+        [Tooltip("Hip shove in the push direction (m) at reference damage.")]
+        [Range(0f, 0.3f)] public float bodyWeightHitHipShove = 0.025f;
+        [Tooltip("Head whip (deg) at reference damage; lags the torso and settles.")]
+        [Range(0f, 60f)] public float bodyWeightHitHeadWhip = 5f;
+        [Tooltip("Recovery spring stiffness (higher = snappier return).")]
+        [Range(30f, 600f)] public float bodyWeightHitRecovery = 110f;
+        [Tooltip("Recovery damping ratio (lower = more wobble).")]
+        [Range(0.15f, 1.5f)] public float bodyWeightHitDamping = 0.5f;
+        [Tooltip("Damage that gives scale 1.")]
+        [Range(1f, 300f)] public float bodyWeightHitDamageRef = 20f;
+        [Tooltip("Poise damage counted as extra damage (x this).")]
+        [Range(0f, 5f)] public float bodyWeightHitPoiseWeight = 0.5f;
+        [Tooltip("Smallest / largest hit scale.")]
+        [Range(0f, 2f)] public float bodyWeightHitMinScale = 0.35f;
+        [Range(0.1f, 6f)] public float bodyWeightHitMaxScale = 2f;
+
+        [Header("Body weight: foot planting (2026-10-20w, no NavMesh)")]
+        [Tooltip("Pins planted feet during stops / slow turns with a two-bone leg IK (capped), lowers the hips when the plant is out of reach. Off while climbing/hanging/airborne.")]
+        public bool bodyWeightFootPlantEnabled = true;
+        [Tooltip("Planting only below this body speed (m/s).")]
+        [Range(0f, 10f)] public float bodyWeightFootPlantMaxSpeed = 1.5f;
+        [Tooltip("Foot counts as planted within this height above its lowest pose (m).")]
+        [Range(0.01f, 0.5f)] public float bodyWeightFootPlantHeight = 0.06f;
+        [Tooltip("Max distance a foot is held away from the animation before it releases (m).")]
+        [Range(0f, 0.5f)] public float bodyWeightFootPlantMaxCorrection = 0.1f;
+        [Tooltip("Plant blend in/out time (s).")]
+        [Range(0.01f, 1f)] public float bodyWeightFootPlantBlend = 0.1f;
+        [Tooltip("Max hip lowering so an out-of-reach planted foot still lands (m).")]
+        [Range(0f, 0.3f)] public float bodyWeightFootPlantHipLower = 0.03f;
+
+        [Header("Body weight: breathing / idle (2026-10-20w)")]
+        public bool bodyWeightBreathEnabled = true;
+        [Tooltip("Resting breaths per second.")]
+        [Range(0.05f, 2f)] public float bodyWeightBreathRate = 0.25f;
+        [Tooltip("Resting chest rise (deg).")]
+        [Range(0f, 10f)] public float bodyWeightBreathDepth = 0.8f;
+        [Tooltip("Resting shoulder lift (deg).")]
+        [Range(0f, 10f)] public float bodyWeightBreathShoulder = 0.6f;
+        [Tooltip("Extra breaths per second at full exertion (sprint / jetpack).")]
+        [Range(0f, 3f)] public float bodyWeightBreathExertRate = 0.45f;
+        [Tooltip("Extra chest rise at full exertion (deg).")]
+        [Range(0f, 15f)] public float bodyWeightBreathExertDepth = 1.8f;
+        [Tooltip("Seconds of sprint / jetpack to reach full exertion.")]
+        [Range(0.05f, 30f)] public float bodyWeightBreathExertRise = 4f;
+        [Tooltip("Seconds to recover from exertion (time constant).")]
+        [Range(0.1f, 60f)] public float bodyWeightBreathExertDecay = 5f;
+        [Tooltip("Breathing kept while aiming (0-1).")]
+        [Range(0f, 1f)] public float bodyWeightBreathAimScale = 0.25f;
+        [Tooltip("2026-10-20y aim fade: upper-body channels (pelvis yaw, spine, chest, shoulders, arms, hands, neck, head; incl. breathing, hit reactions, swing/settle springs, chest lag) while aiming. 0 = rock steady.")]
+        [Range(0f, 1f)] public float bodyWeightAimUpperBodyScale = 0f;
+        [Tooltip("2026-10-20y aim fade: time (s) to fade the upper body in/out when aim starts/ends.")]
+        [Range(0.01f, 1f)] public float bodyWeightAimFadeTime = 0.12f;
+        [Tooltip("2026-10-20y aim fade: hip sway (COM shift / hit shove) kept while aiming (moves the whole gun).")]
+        [Range(0f, 1f)] public float bodyWeightAimHipSwayScale = 0f;
+        [Tooltip("2026-10-20y aim recoil: kick kept while aiming (impulse on the shot frame only).")]
+        [Range(0f, 2f)] public float bodyWeightAimRecoilScale = 0.6f;
+        [Tooltip("2026-10-20y aim recoil: settle speed multiplier while aiming (stiffness x this; critically damped) so the kick is gone in a few frames.")]
+        [Range(1f, 8f)] public float bodyWeightAimRecoilSettle = 3f;
+
+        [Header("Body weight: enemies (2026-10-20w, visual only, never touches weapons)")]
+        public bool bodyWeightEnemyEnabled = true;
+        [Tooltip("Lean into acceleration (deg per m/s^2).")]
+        [Range(0f, 10f)] public float bodyWeightEnemyLean = 0.8f;
+        [Tooltip("Forward carry when stopping (deg per m/s^2).")]
+        [Range(0f, 10f)] public float bodyWeightEnemyStopCarry = 1.1f;
+        [Tooltip("Lean clamp (deg).")]
+        [Range(0f, 90f)] public float bodyWeightEnemyMaxDegrees = 12f;
+        [Tooltip("Settle spring time (s).")]
+        [Range(0.02f, 2f)] public float bodyWeightEnemySettleSmooth = 0.22f;
+        [Tooltip("Settle damping ratio.")]
+        [Range(0.1f, 1.5f)] public float bodyWeightEnemySettleDamping = 0.45f;
+        [Tooltip("Attack windup / follow-through torso pitch (deg).")]
+        [Range(0f, 40f)] public float bodyWeightEnemySwing = 4f;
+        [Tooltip("Hit reaction bend away (deg) at reference damage.")]
+        [Range(0f, 60f)] public float bodyWeightEnemyHitImpulse = 8f;
+        [Range(1f, 300f)] public float bodyWeightEnemyHitDamageRef = 25f;
+        [Tooltip("No body weight beyond this camera distance (m); off-screen enemies are skipped too.")]
+        [Range(0f, 300f)] public float bodyWeightEnemyCullDistance = 40f;
+        [Tooltip("Per enemy type scale: nameContains=scale; separated by ';' (first match wins). Example: Brute=1.4;Drone=0")]
+        public string bodyWeightEnemyTypeScales = "Brute=1.4;Heavy=1.3;Drone=0;Turret=0";
+
+        public enum BodyWeightPreset { Custom, Subtle, Visible, Extreme }
+
+        /// <summary>Global multiplier: intensity x debug exaggerate. 2026-10-20t: presets are value sets now (no hidden multiplier).</summary>
+        public float BodyWeightScale => Mathf.Max(0f, bodyWeightIntensity) * Mathf.Max(1f, bodyWeightDebugExaggerate);
+
+        // ---- 2026-10-20t body weight presets (reproducible value tables, built from the code defaults) ----
+        [SerializeField, HideInInspector] private BodyWeightPreset bodyWeightAppliedPresetInternal = BodyWeightPreset.Custom;
+
+        // Not touched by presets / reset (user toggles and meta).
+        private static readonly string[] BodyWeightKeep = { "bodyWeightEnabled", "bodyWeightPreset", "bodyWeightDebugReadout" };
+
+        // Magnitude fields scaled by the preset factor (smoothing, stiffness, ratios and thresholds are not scaled).
+        private static readonly string[] BodyWeightScaled =
+        {
+            "bodyWeightLeanAccel", "bodyWeightStopCarry", "bodyWeightLeanTurn", "bodyWeightYawLag", "bodyWeightMaxSpineDegrees",
+            "bodyWeightArmTrail", "bodyWeightMaxArmDegrees", "bodyWeightLandingDrop", "bodyWeightDirChangeDrop", "bodyWeightMaxHipDrop",
+            "bodyWeightPelvisLead", "bodyWeightComShift", "bodyWeightMaxComShift", "bodyWeightAnticipation", "bodyWeightDecelCompression",
+            "bodyWeightSwingAmount", "bodyWeightSwingMaxDegrees",
+            "bodyWeightWeaponWindup", "bodyWeightWeaponImpactJolt", "bodyWeightWeaponImpactHipDrop", "bodyWeightWeaponRecoilKick",
+            "bodyWeightWeaponRecoilHipPush", "bodyWeightWeaponDrawDip", "bodyWeightWeaponDrawHipDrop",
+            "bodyWeightHitImpulse", "bodyWeightHitHipShove", "bodyWeightHitHeadWhip", "bodyWeightBreathDepth", "bodyWeightBreathShoulder",
+            "bodyWeightBreathExertDepth", "bodyWeightEnemyLean", "bodyWeightEnemyStopCarry", "bodyWeightEnemyMaxDegrees", "bodyWeightEnemySwing", "bodyWeightEnemyHitImpulse"
+        };
+
+        /// <summary>Subtle = code defaults (x1). Visible x2.5 and Extreme x6 match the old multiplier look; Extreme also wobbles more.</summary>
+        public static float BodyWeightPresetFactor(BodyWeightPreset preset) =>
+            preset == BodyWeightPreset.Visible ? 2.5f : preset == BodyWeightPreset.Extreme ? 6f : 1f;
+
+        private static System.Collections.Generic.List<System.Reflection.FieldInfo> s_bwFields;
+        private static System.Collections.Generic.List<System.Reflection.FieldInfo> BodyWeightFields
+        {
+            get
+            {
+                if (s_bwFields != null) return s_bwFields;
+                s_bwFields = new System.Collections.Generic.List<System.Reflection.FieldInfo>();
+                foreach (var f in typeof(DM_ClimbDashProfile).GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+                    if (f.Name.StartsWith("bodyWeight", System.StringComparison.Ordinal) && System.Array.IndexOf(BodyWeightKeep, f.Name) < 0)
+                        s_bwFields.Add(f);
+                return s_bwFields;
+            }
+        }
+
+        // 2026-10-20w: Visible values tuned by the body-weight harness (fields not listed fall back to defaults x2.5).
+        private static readonly System.Collections.Generic.Dictionary<string, float> BodyWeightVisibleTuned = new System.Collections.Generic.Dictionary<string, float>
+        {
+            { "bodyWeightLeanAccel", 1.1f }, { "bodyWeightStopCarry", 0.95f }, { "bodyWeightArmTrail", 2f }, { "bodyWeightWristTrail", 2.3f },
+            { "bodyWeightLandingRecovery", 0.55f }, { "bodyWeightMaxSpineDegrees", 30f }, { "bodyWeightYawLag", 8f }, { "bodyWeightPelvisLead", 6f },
+        };
+
+        /// <summary>Preset table value for one field (from a fresh defaults instance).</summary>
+        private static object BodyWeightPresetValue(System.Reflection.FieldInfo f, DM_ClimbDashProfile defaults, BodyWeightPreset preset)
+        {
+            object v = f.GetValue(defaults);
+            if (f.Name == "bodyWeightIntensity") return 1f;
+            if (f.Name == "bodyWeightDebugExaggerate") return 1f;
+            if (preset == BodyWeightPreset.Visible && BodyWeightVisibleTuned.TryGetValue(f.Name, out float tv)) return tv;
+            if (preset == BodyWeightPreset.Extreme)
+            {
+                if (f.Name == "bodyWeightSettleDamping") return 0.3f;
+                if (f.Name == "bodyWeightSwingDamping") return 0.4f;
+                if (f.Name == "bodyWeightWeaponRecoilDamping") return 0.35f;
+                // 2026-10-20w (chaos pass): x6 on the angle caps folded the spine past 90 deg; Extreme keeps the x6 drive but caps the look.
+                if (f.Name == "bodyWeightMaxSpineDegrees") return 40f;
+                if (f.Name == "bodyWeightMaxArmDegrees") return 50f;
+                if (f.Name == "bodyWeightSwingMaxDegrees") return 45f;
+            }
+            if (v is float fv && System.Array.IndexOf(BodyWeightScaled, f.Name) >= 0)
+            {
+                fv *= BodyWeightPresetFactor(preset);
+                var r = (RangeAttribute)System.Attribute.GetCustomAttribute(f, typeof(RangeAttribute));
+                if (r != null) fv = Mathf.Clamp(fv, r.min, r.max);
+                return fv;
+            }
+            return v;
+        }
+
+        /// <summary>Writes the full value set of a preset into every body-weight field (Custom = no-op). Intensity/Exaggerate end at 1.</summary>
+        public void ApplyBodyWeightPreset(BodyWeightPreset preset)
+        {
+            if (preset == BodyWeightPreset.Custom) { bodyWeightPreset = preset; bodyWeightAppliedPresetInternal = preset; return; }
+            var d = CreateInstance<DM_ClimbDashProfile>();
+            try { foreach (var f in BodyWeightFields) f.SetValue(this, BodyWeightPresetValue(f, d, preset)); }
+            finally { if (Application.isPlaying) Destroy(d); else DestroyImmediate(d); }
+            bodyWeightPreset = preset;
+            bodyWeightAppliedPresetInternal = preset;
+        }
+
+        /// <summary>Every bodyWeight* field (incl. weapon weight) back to its code default = Subtle. Enabled / readout toggles kept.</summary>
+        public void ResetBodyWeightToDefault() => ApplyBodyWeightPreset(BodyWeightPreset.Subtle);
+
+        public bool BodyWeightMatchesPreset(BodyWeightPreset preset)
+        {
+            if (preset == BodyWeightPreset.Custom) return true;
+            var d = CreateInstance<DM_ClimbDashProfile>();
+            try
+            {
+                foreach (var f in BodyWeightFields)
+                {
+                    object want = BodyWeightPresetValue(f, d, preset), have = f.GetValue(this);
+                    if (want is float a && have is float b) { if (Mathf.Abs(a - b) > 1e-4f) return false; }
+                    else if (!Equals(want, have)) return false;
+                }
+                return true;
+            }
+            finally { if (Application.isPlaying) Destroy(d); else DestroyImmediate(d); }
+        }
+
+#if UNITY_EDITOR
+        [ContextMenu("Reset Body Weight to Default")]
+        private void ContextResetBodyWeight()
+        {
+            UnityEditor.Undo.RecordObject(this, "Reset Body Weight to Default");
+            ResetBodyWeightToDefault();
+            SaveBodyWeightSoon();
+        }
+
+        private bool _bwValidateQueued;
+
+        private void OnValidate()
+        {
+            // Deferred one editor tick: no CreateInstance during load/validate, and Undo records cleanly.
+            if (_bwValidateQueued) return;
+            if (bodyWeightPreset == BodyWeightPreset.Custom && bodyWeightAppliedPresetInternal == BodyWeightPreset.Custom) return;
+            _bwValidateQueued = true;
+            UnityEditor.EditorApplication.delayCall += () =>
+            {
+                if (this == null) return;
+                _bwValidateQueued = false;
+                ValidateBodyWeightPreset();
+            };
+        }
+
+        private void ValidateBodyWeightPreset()
+        {
+            // Preset picked -> write its value set. Any hand edit while on a preset -> Custom (values untouched).
+            if (bodyWeightPreset != bodyWeightAppliedPresetInternal)
+            {
+                UnityEditor.Undo.RecordObject(this, "Apply Body Weight Preset");
+                ApplyBodyWeightPreset(bodyWeightPreset);
+                SaveBodyWeightSoon();
+            }
+            else if (bodyWeightPreset != BodyWeightPreset.Custom && !BodyWeightMatchesPreset(bodyWeightPreset))
+            {
+                UnityEditor.Undo.RecordObject(this, "Body Weight -> Custom");
+                bodyWeightPreset = BodyWeightPreset.Custom;
+                bodyWeightAppliedPresetInternal = BodyWeightPreset.Custom;
+                SaveBodyWeightSoon();
+            }
+        }
+
+        private void SaveBodyWeightSoon()
+        {
+            UnityEditor.EditorApplication.delayCall += () =>
+            {
+                if (this == null) return;
+                UnityEditor.EditorUtility.SetDirty(this);
+                UnityEditor.AssetDatabase.SaveAssetIfDirty(this);
+            };
+        }
+#endif
+
+        [Header("Locomotion â€” jump height (gait)")]
         [Tooltip("Standing still and slow-walk jumps (Invector jumpHeight for this hop).")]
         [Min(0.35f)]
         public float standingJumpHeight = 2.5f;
 
-        [Tooltip("Slow-walk + move uses standingJumpHeight × this (1 = same as standing hop).")]
+        [Tooltip("Slow-walk + move uses standingJumpHeight Ã— this (1 = same as standing hop).")]
         [Min(0.5f)]
         public float walkJumpHeightMultiplier = 1f;
 
-        [Tooltip("Shift-hold jog jump = standingJumpHeight × this.")]
+        [Tooltip("Shift-hold jog jump = standingJumpHeight Ã— this.")]
         [Min(1f)]
         public float jogJumpHeightMultiplier = 1.4f;
 
-        [Tooltip("Double-tap Shift sprint burst jump = standingJumpHeight × this.")]
+        [Tooltip("Double-tap Shift sprint burst jump = standingJumpHeight Ã— this.")]
         [Min(1f)]
         public float sprintJumpHeightMultiplier = 1.9f;
 
-        [Tooltip("Extra scale from horizontal speed: mult *= exp(exponent × speed01) / exp(exponent). 0 = gait tiers only.")]
+        [Tooltip("Extra scale from horizontal speed: mult *= exp(exponent Ã— speed01) / exp(exponent). 0 = gait tiers only.")]
         [Min(0f)]
         public float jumpHeightSpeedExponent = 1.35f;
 
@@ -352,7 +739,7 @@ namespace Project.Features.Climb
         [Tooltip("Ignore Invector's steep-slope block while a valid step is ahead, so angled riser faces don't stop you.")]
         public bool stepIgnoreSlopeBlock = true;
 
-        [Header("Survival — pools (authority)")]
+        [Header("Survival â€” pools (authority)")]
         public float maxHealth = 100f;
         public float maxEnergy = 100f;
         public float maxStamina = 100f;
@@ -389,7 +776,7 @@ namespace Project.Features.Climb
         public float healthRegenPerSecond = 1f;
         public float healthRegenDelayAfterDamage = 5f;
 
-        [Header("Survival — exposure caps & recovery")]
+        [Header("Survival â€” exposure caps & recovery")]
         public float maxThermalStress = 100f;
         public float maxRadiation = 100f;
         public float maxSulfur = 100f;
@@ -397,16 +784,16 @@ namespace Project.Features.Climb
         public float exposureRecoveryPerSecond = 8f;
         public float thermalRecoveryPerSecond = 12f;
 
-        [Header("Stamina — idle")]
+        [Header("Stamina â€” idle")]
         [Tooltip("Passive regen when not sprinting, climbing, dashing, or in dash recovery.")]
         public float idleStaminaRegenPerSecond = 3f;
 
-        [Header("Stamina — sprint")]
+        [Header("Stamina â€” sprint")]
         public float sprintStaminaDrainPerSecond = 12f;
         [Tooltip("Regen while sprinting (usually 0).")]
         public float sprintStaminaRegenPerSecond;
 
-        [Header("Stamina — climb")]
+        [Header("Stamina â€” climb")]
         [Tooltip("Flat stamina spent when attaching to a wall.")]
         public float climbStartStaminaCost = 5f;
         public float climbMoveStaminaDrainPerSecond = 8f;
@@ -414,7 +801,7 @@ namespace Project.Features.Climb
         [Tooltip("Regen while climbing (usually 0).")]
         public float climbStaminaRegenPerSecond;
 
-        [Header("Stamina — dash")]
+        [Header("Stamina â€” dash")]
         [Tooltip("Flat stamina spent when a dash starts.")]
         public float dashStaminaCost = 22f;
         [Tooltip("Extra stamina drained over the dash duration, as a fraction of dashStaminaCost (0.2 = +20%).")]
@@ -427,7 +814,7 @@ namespace Project.Features.Climb
         [Tooltip("Seconds after dash ends where only dashRecoveryStaminaRegenPerSecond applies.")]
         public float dashStaminaRecoverySeconds = 2.5f;
 
-        [Header("Dash — input & motion")]
+        [Header("Dash â€” input & motion")]
         [Tooltip("Max seconds between two taps of the same WASD key.")]
         public float dashDoubleTapWindow = 0.28f;
 
@@ -461,13 +848,13 @@ namespace Project.Features.Climb
         [Tooltip("Allow double-tap dash input while clinging to a wall.")]
         public bool dashAllowedWhileClimbing = true;
 
-        [Header("Dash — hologram")]
+        [Header("Dash â€” hologram")]
         public Color dashHologramColor = new Color(0.25f, 0.85f, 1f, 0.42f);
         public float dashHologramEmission = 4f;
         [Tooltip("Optional override. If empty, an HDRP unlit hologram is built at runtime.")]
         public Material dashHologramMaterial;
 
-        [Header("Dash — speed streaks")]
+        [Header("Dash â€” speed streaks")]
         public Color dashStreakColor = new Color(0.55f, 0.95f, 1f, 0.85f);
         public int dashStreakCount = 18;
         public float dashStreakLifetime = 0.22f;
@@ -477,7 +864,7 @@ namespace Project.Features.Climb
         public Material dashStreakMaterial;
         public GameObject dashStreakPrefab;
 
-        [Header("Dash — smoke")]
+        [Header("Dash â€” smoke")]
         public Color dashSmokeColor = new Color(0.55f, 0.62f, 0.7f, 0.45f);
         public int dashSmokeCount = 14;
         public float dashSmokeLifetime = 0.55f;
@@ -511,7 +898,7 @@ namespace Project.Features.Climb
         [Range(0.35f, 3.5f)]
         public float probeStepMax = 1.6f;
 
-        /// <summary>Jump height for the current on-foot gait (Genesis Studio → Survival → Walk / Run / Sprint).</summary>
+        /// <summary>Jump height for the current on-foot gait (Genesis Studio â†’ Survival â†’ Walk / Run / Sprint).</summary>
         public float ResolveJumpHeight(DMLocomotionGaitController.Gait gait, bool moving, float horizontalSpeed01 = 0f)
         {
             float h = Mathf.Max(0.35f, standingJumpHeight);

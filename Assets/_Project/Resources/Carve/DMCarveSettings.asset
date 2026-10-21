@@ -30,6 +30,8 @@ MonoBehaviour:
   - cliff
   - stone
   - outcrop
+  - terrain
+  - wall
   maxTrianglesPerObject: 300000
   ammoDeformsMeshes: 0
   debrisWithoutDeform: 1
@@ -51,6 +53,15 @@ MonoBehaviour:
   debrisImpulse: 2.5
   maxLiveDebris: 40
   debrisSizeScale: 3
+  debrisLookEnabled: 1
+  debrisColorSource: 0
+  debrisTintStrength: 0.85
+  debrisOverlayTexture: {fileID: 2800000, guid: 4e72649af1eefd344960d042c17e15bd, type: 3}
+  debrisOverlayStrength: 0.55
+  debrisOverlayTiling: 2
+  debrisBrightness: 1
+  debrisSaturation: 0.9
+  debrisColorVariance: 0.08
   dragStampSpacing: 0.35
   runtimeColliderRefresh: 0.12
   keepDedicatedColliderInPlay: 1

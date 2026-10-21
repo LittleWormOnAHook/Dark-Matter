@@ -309,6 +309,14 @@ namespace Project.AI.Invector
                 return;
             }
 
+            // 2026-10-20o: animation knockdown owns the body while down (hits add no reactions). A stagger here froze the
+            // animator (hit-stop speed 0) under the KD layer and let the KD time fallbacks finish -> upright frozen glide.
+            if (DMEnemyKnockdown.IsDown(gameObject))
+            {
+                LogStaggerDev(poiseBreak, "knockdown active (reactions ignored)");
+                return;
+            }
+
             if (_health != null && _health.IsDead)
             {
                 LogStaggerDev(poiseBreak, "target dead");
@@ -556,6 +564,8 @@ namespace Project.AI.Invector
             _isHitStaggerActive = false;
             EndAnimatorHitstop();
             PauseAiLocomotion(false);
+            if (pauseLocomotion)
+                RestoreMeleeAfterStaggerInterrupt();
         }
 
         private Animator ResolveStaggerAnimator()
@@ -574,7 +584,8 @@ namespace Project.AI.Invector
 
             if (!_animatorHitstopActive)
             {
-                _animatorSpeedBeforeHitstop = animator.speed;
+                // 2026-10-20o: never capture a melee hit-stop hold speed (~0.05) as the "normal" speed to restore.
+                _animatorSpeedBeforeHitstop = animator.speed >= 0.5f ? animator.speed : 1f;
                 _animatorHitstopActive = true;
             }
 
@@ -606,6 +617,7 @@ namespace Project.AI.Invector
                 if (hadRagdollStagger && (_health == null || !_health.IsDead))
                     RestoreFromHitStagger();
                 PauseAiLocomotion(false);
+                RestoreMeleeAfterStaggerInterrupt();
             }
 
             if (!isActiveAndEnabled)
@@ -1000,7 +1012,10 @@ namespace Project.AI.Invector
             PauseAiLocomotion(false);
 
             if (_health == null || !_health.IsDead)
+            {
                 RestoreFromHitStagger();
+                RestoreMeleeAfterStaggerInterrupt();
+            }
         }
 
         private void AbortHitStaggerCoroutine()
@@ -1020,10 +1035,19 @@ namespace Project.AI.Invector
                 aiController.SetLocomotionPaused(paused);
         }
 
+        private void RestoreMeleeAfterStaggerInterrupt()
+        {
+            if (_health != null && _health.IsDead)
+                return;
+
+            if (_controller != null && (_controller.isDead || IsCorpseRagdolled))
+                return;
+
+            EnemyInvectorCombatShutdown.EnableMeleeIfSafe(gameObject);
+        }
+
         private void InterruptEnemyCombatForStagger(float attackLockoutSeconds)
         {
-            EnemyInvectorCombatShutdown.DisableMeleeBeforeAnimatorEvents(gameObject);
-
             EnemyCombat combat = GetComponent<EnemyCombat>();
             if (combat != null)
                 combat.InterruptAttackForStagger(attackLockoutSeconds);

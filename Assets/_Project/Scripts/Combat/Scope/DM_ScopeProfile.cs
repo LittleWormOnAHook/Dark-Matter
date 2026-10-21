@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace Project.Combat
 {
@@ -106,6 +106,8 @@ namespace Project.Combat
         public string rifleScopeLabel = "SCOPE";
         public string pistolScopeLabel = "SCOPE";
         public string scopeHint = "[RMB] Toggle ADS  |  Standard / Plasma ammo only";
+        [Tooltip("Gap (px) between the top edge of the outer orange circle and the bottom of the range label (e.g. '11 m'). Negative = overlap.")]
+        public float rangeLabelGapPx = 4f;
 
         [Header("Scope overlay  rifle ADS (reticle / ring / outer crosshair)")]
         [Tooltip("Center dot and inner plus inside the small ring.")]

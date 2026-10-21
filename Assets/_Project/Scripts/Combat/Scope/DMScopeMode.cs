@@ -36,6 +36,8 @@ namespace Project.Combat
         /// <summary>True when ADS zoom / scope overlay is active (profile toggle + blend).</summary>
         public static bool IsScopeViewActive => ZoomBlend > 0.001f;
         public static Vector2 ReticleSway => Instance != null ? Instance._sway : Vector2.zero;
+        /// <summary>2026-10-20r: current max reticle sway travel (px, per axis) = amplitude after Steady Aim and zoom blend.</summary>
+        public static float ReticleSwayMax => Instance != null ? Instance._swayAmp : 0f;
         public static string BlockedAmmoMessage { get; private set; }
         public static float BlockedAmmoUntil { get; private set; }
 
@@ -335,15 +337,19 @@ namespace Project.Combat
             _patchedWeapon = null;
         }
 
+        private float _swayAmp;
+
         private void UpdateSway(DM_ScopeProfile p)
         {
             if (_blend <= 0.001f)
             {
+                _swayAmp = 0f;
                 _sway = Vector2.zero;
                 return;
             }
             float reduce = Mathf.Clamp(Pct(SkillModifierType.ScopeSteadyAimPercent), 0f, p.maxSwayReduction);
             float amp = p.reticleSwayPixels * (1f - reduce) * _blend;
+            _swayAmp = amp;
             float t = Time.time * p.reticleSwaySpeed;
             _sway = new Vector2(Mathf.PerlinNoise(t, 0.37f) - 0.5f, Mathf.PerlinNoise(0.71f, t) - 0.5f) * 2f * amp;
         }

@@ -1103,6 +1103,7 @@ namespace Project.Player
             if (delta <= 0.001f)
                 return;
 
+            Project.Combat.DMPlayerPositionCorrections.Note("DMLandingDirector.SnapFeetToGround");
             Vector3 p = transform.position;
             p.y -= Mathf.Min(delta, maxSnap);
             transform.position = p;

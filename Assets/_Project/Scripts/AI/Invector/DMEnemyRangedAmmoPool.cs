@@ -19,6 +19,8 @@ namespace Project.AI.Invector
         public bool IsUnlimited => _unlimited;
         public int Remaining => _unlimited ? int.MaxValue : _remaining;
         public int MaxShots => _maxShots;
+        /// <summary>Increments on every refill (spawn + each reload). Instance ammo-type pools re-roll on change.</summary>
+        public int RefillCount { get; private set; }
         public bool IsReloading => _reloadPending && Time.time < _reloadReadyTime;
 
         public bool CanFire => _unlimited || (_remaining > 0 && !IsReloading);
@@ -43,6 +45,9 @@ namespace Project.AI.Invector
             DMEnemyBrain perBrain = GetComponent<DMEnemyBrain>();
             DM_EnemyBrainProfile resolvedBrain = perBrain != null ? perBrain.Profile : brain;
             _maxShots = ResolveMaxShots(definition, resolvedBrain);
+            EnemyInvectorLoadoutBridge loadout = GetComponent<EnemyInvectorLoadoutBridge>(); // 2026-10-20a instance override
+            if (loadout != null && loadout.RangedAmmoPoolOverride > 0)
+                _maxShots = loadout.RangedAmmoPoolOverride;
             _unlimited = _maxShots <= 0;
             _reloadSeconds = ResolveReloadSeconds(resolvedBrain);
             Refill();
@@ -52,6 +57,7 @@ namespace Project.AI.Invector
         {
             _reloadPending = false;
             _reloadReadyTime = 0f;
+            RefillCount++;
             _remaining = _unlimited ? 0 : _maxShots;
         }
 

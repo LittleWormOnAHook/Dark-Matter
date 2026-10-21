@@ -1,4 +1,4 @@
-﻿
+
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
@@ -403,6 +403,8 @@ namespace Invector.vCharacterController
 
         #region Components
 
+        /// <summary>DM 2026-10-20e: set from DM_CombatCoreProfile.playerRotateViaRigidbody (jitter fix).</summary>
+        public static bool DMRotateViaRigidbody;
         internal Rigidbody _rigidbody;                                                      // access the Rigidbody component
         internal PhysicsMaterial frictionPhysics, maxFrictionPhysics, slippyPhysics;         // create PhysicMaterial for the Rigidbody
         internal CapsuleCollider _capsuleCollider;                                          // access CapsuleCollider information
@@ -1031,7 +1033,12 @@ namespace Invector.vCharacterController
             var targetEuler = Quaternion.LookRotation(direction.normalized).eulerAngles.NormalizeAngle();
             euler.y = Mathf.LerpAngle(euler.y, targetEuler.y, rotationSpeed * Time.fixedDeltaTime);
             Quaternion _newRotation = Quaternion.Euler(euler);
-            transform.rotation = _newRotation;
+            // DM 2026-10-20e: writing transform.rotation on an interpolated body steps the turn at physics rate (jitter).
+            if (DMRotateViaRigidbody && _rigidbody != null && !_rigidbody.isKinematic
+                && _rigidbody.interpolation != RigidbodyInterpolation.None)
+                _rigidbody.MoveRotation(_newRotation);
+            else
+                transform.rotation = _newRotation;
         }
 
         /// <summary>

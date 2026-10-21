@@ -27,6 +27,7 @@ namespace Project.UI
         private bool open;
         private DMTurretInteract turret;
         private int openedFrame = -1;
+        private bool pauseHidden;
 
         public static bool IsOpen => instance != null && instance.open;
 
@@ -106,6 +107,17 @@ namespace Project.UI
             if (enterButton != null)
                 enterButton.clicked += EnterControl;
 
+            // 2026-10-20e: gamepad / D-pad focus order (UITK navigation), mouse hover also moves focus so styles don't fight.
+            Button[] order = { modeAuto, enterButton, ammoPrev, ammoNext, closeButton };
+            foreach (Button b in order)
+            {
+                if (b == null)
+                    continue;
+                b.focusable = true;
+                Button bb = b;
+                b.RegisterCallback<PointerEnterEvent>(_ => { if (open && !pauseHidden) bb.Focus(); });
+            }
+
             bound = true;
             DMUiToolkitOverlayDocument.SetShown(root, false);
         }
@@ -121,13 +133,25 @@ namespace Project.UI
             DMUiToolkitOverlayDocument.SetShown(root, true);
             DMUiToolkitOverlayDocument.PromoteInteractiveOverlay(document);
             ApplyOverlaySession(true);
-            if (closeButton != null)
-                closeButton.Focus();
+            FocusDefault(); // 2026-10-20e: gamepad starts on Enter Turret
+        }
+
+        private void FocusDefault()
+        {
+            Button first = enterButton ?? modeAuto ?? closeButton;
+            first?.Focus();
+        }
+
+        private bool HasFocusInPanel()
+        {
+            Focusable f = root?.focusController?.focusedElement;
+            return f is VisualElement ve && root.Contains(ve);
         }
 
         private void HideInternal()
         {
             open = false;
+            pauseHidden = false;
             turret = null;
             DMUiToolkitOverlayDocument.SetShown(root, false);
             ApplyOverlaySession(false);
@@ -195,11 +219,45 @@ namespace Project.UI
                 return;
             }
 
+            // 2026-10-20e: while the pause menu is up, hide this panel + drop picking so the two never overlap / flicker.
+            bool pauseUp = MainMenuController.IsPauseOverlayActive || DMUiToolkitMainMenu.IsVisible;
+            if (pauseUp != pauseHidden)
+            {
+                pauseHidden = pauseUp;
+                DMUiToolkitOverlayDocument.SetShown(root, !pauseUp);
+                if (!pauseUp)
+                {
+                    DMUiToolkitOverlayDocument.PromoteInteractiveOverlay(document);
+                    ApplyOverlaySession(true);
+                    FocusDefault();
+                }
+            }
+
+            if (pauseHidden || Time.frameCount <= openedFrame)
+                return;
+
+            // Esc / gamepad B go through GameplayKeyboardShortcuts.HandleEscapePressed (TryHandleBack); E toggles.
             Keyboard keyboard = Keyboard.current;
-            if (keyboard != null
-                && Time.frameCount > openedFrame
-                && (keyboard.escapeKey.wasPressedThisFrame || keyboard.eKey.wasPressedThisFrame))
+            if (keyboard != null && keyboard.eKey.wasPressedThisFrame)
+            {
                 HideInternal();
+                return;
+            }
+
+            Gamepad pad = Gamepad.current;
+            if (pad != null)
+            {
+                if (pad.buttonEast.wasPressedThisFrame)
+                {
+                    GameplayKeyboardShortcuts.HandleEscapePressed(); // same frame-guarded Back path
+                    return;
+                }
+
+                if (!HasFocusInPanel()
+                    && (pad.dpad.ReadValue().sqrMagnitude > 0.25f || pad.leftStick.ReadValue().sqrMagnitude > 0.25f
+                        || pad.buttonSouth.wasPressedThisFrame))
+                    FocusDefault();
+            }
         }
     }
 }

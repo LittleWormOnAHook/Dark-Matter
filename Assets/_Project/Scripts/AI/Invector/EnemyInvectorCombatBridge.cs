@@ -37,7 +37,11 @@ namespace Project.AI.Invector
         [SerializeField] private float aimChestPitchSpeed = 90f;
         [Tooltip("0 = perfect aim every shot, 1 = always misses. Scales a random lateral+vertical offset applied to each shot's aim point.")]
         [SerializeField] [Range(0f, 1f)] private float missRate = 0.25f;
+        // 2026-10-20b: relabelled only (names/serialization unchanged). Fire-time order: LoadoutBridge ammo pool -> definition ammo type -> these.
+        [Header("Fallback ammo (only if ItemRegistry has no row)")]
+        [Tooltip("FALLBACK only: used for one-handed weapons when the LoadoutBridge ammo pool is empty AND the definition ammo type has no ItemRegistry row. Normally never used.")]
         [SerializeField] private ItemData enemyPistolAmmo;
+        [Tooltip("FALLBACK only: used for two-handed weapons when the LoadoutBridge ammo pool is empty AND the definition ammo type has no ItemRegistry row. Normally never used.")]
         [SerializeField] private ItemData enemyRifleAmmo;
 
         private const string StandardAmmoPath = "Assets/_Project/Data/Items/Ammo/DMAmmoFxProfile_Standard.asset";
@@ -51,6 +55,7 @@ namespace Project.AI.Invector
         private EnemyCombat _enemyCombat;
         private EnemyAiController _aiController;
         private DMEnemyRangedAmmoPool _rangedAmmoPool;
+        private int _pooledAmmoShotKey;
         private Animator _animator;
         private bool _isAimStanceActive;
         private float _aimHoldTimer;
@@ -1014,6 +1019,14 @@ namespace Project.AI.Invector
         {
             if (weapon == null)
                 return null;
+
+            // 2026-10-20a: per-instance ammo type pool (empty = definition below). Re-rolls each reload.
+            if (_loadoutBridge != null)
+            {
+                int rollKey = _rangedAmmoPool != null && !_rangedAmmoPool.IsUnlimited ? _rangedAmmoPool.RefillCount : ++_pooledAmmoShotKey; // unlimited mag = per shot
+                if (_loadoutBridge.TryPickPooledAmmo(weapon, rollKey, out ItemData pooled))
+                    return pooled;
+            }
 
             DMEnemyRangedAmmoChoice choice = _loadoutBridge != null
                 ? _loadoutBridge.EffectiveRangedAmmoChoice

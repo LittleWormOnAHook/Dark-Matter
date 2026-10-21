@@ -568,7 +568,7 @@ namespace Project.Combat
             if (tangent.sqrMagnitude < 0.0001f)
                 tangent = Vector3.Cross(n, Vector3.right);
             tangent.Normalize();
-            Quaternion rotation = Quaternion.LookRotation(-n, tangent) * Quaternion.AngleAxis(Random.Range(-8f, 8f), Vector3.forward);
+            Quaternion rotation = Quaternion.LookRotation(-n, tangent) * Quaternion.AngleAxis(DM_EnemyHitMarkProfile.NextSlashJitter(), Vector3.forward); // 2026-10-20m: swing-aligned + jitter
             root.SetPositionAndRotation(point, rotation);
 
             float slashScale = Mathf.Max(1f, profile.meleeSlashMarkSizeMultiplier);
@@ -649,7 +649,7 @@ namespace Project.Combat
             Vector3 n = normal.sqrMagnitude > 0.0001f ? normal.normalized : Vector3.up;
             Vector3 forward = -n;
             Vector3 up = Mathf.Abs(Vector3.Dot(forward, Vector3.up)) > 0.98f ? Vector3.forward : Vector3.up;
-            Quaternion rotation = Quaternion.LookRotation(forward, up) * Quaternion.AngleAxis(Random.Range(0f, 360f), Vector3.forward);
+            Quaternion rotation = Quaternion.LookRotation(forward, up) * Quaternion.AngleAxis(DM_EnemyHitMarkProfile.NextDecalSpin(), Vector3.forward); // 2026-10-20m
             root.SetPositionAndRotation(point, rotation);
 
             float ammoScale = Mathf.Max(1f, profile.rangedAmmoMarkSizeMultiplier);

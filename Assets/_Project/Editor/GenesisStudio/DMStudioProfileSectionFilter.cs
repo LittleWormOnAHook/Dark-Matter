@@ -250,6 +250,9 @@ namespace Project.EditorTools.GenesisStudio
 
         private static readonly string[] CombatCoreFields =
         {
+            "playerSelfCollisionGuard", "playerSelfCollisionGuardInterval", "playerSelfCollisionForceRootTriggers", "playerSelfCollisionGuardLog",
+            "playerCameraFixedStepInterpolation", "playerRotateViaRigidbody",
+            "playerAnimatorPerFrameUpdate", "turretPooledLightRescanLegacy", "playerSnapProbeLog", "playerSnapProbeLogEveryCorrection", "terrainRescueSkipWhenGrounded",
             "trainingDummyPoiseMax",
             "humanoidPoiseMax",
             "humanoidPoiseStaggerSeconds",
@@ -413,6 +416,41 @@ namespace Project.EditorTools.GenesisStudio
             "knockdownReleasesAttackSlot",
             "knockdownMaxSlopeDegrees",
             "knockdownLedgeCheckMeters",
+            "enemyAnimStallFailsafe",
+            "enemyAnimStallSeconds",
+            "enemyAnimStallMinSpeed",
+            "enemyAnimStallLog",
+            "downedComboEnabled",
+            "downedComboReach",
+            "downedComboConeDegrees",
+            "downedComboDamageMultiplier",
+            "downedComboBaseDamage",
+            "downedComboStates",
+            "downedComboWeaponSets",
+            "downedComboBlendSeconds",
+            "downedComboFallbackPitchDegrees",
+            "downedComboPitchBlendSeconds",
+            "downedComboLowStrike",
+            "downedComboStrikeWindow",
+            "downedComboFaceTarget",
+            "downedComboFaceMaxDegrees",
+            "downedComboLog",
+            "aimRatingEnabled",
+            "aimRatingRequireHit",
+            "aimRatingHitWindowSeconds",
+            "aimRatingScopedOnly",
+            "aimRatingPerfect",
+            "aimRatingGood",
+            "aimRatingOk",
+            "aimRatingDuration",
+            "aimRatingScale",
+            "aimRatingPopScale",
+            "aimRatingOffset",
+            "aimRatingFollowReticle",
+            "aimRatingPerfectColor",
+            "aimRatingGoodColor",
+            "aimRatingOkColor",
+            "aimRatingFontSize",
             "retireCritRagdollKnockdown",
             "logHitReactionsInPlay",
             "meleeComboTargetLock",
@@ -498,6 +536,8 @@ namespace Project.EditorTools.GenesisStudio
             "playerRespawnSettleSeconds",
             "playerRespawnPostStandUpLockSeconds",
             "playerRespawnPostStandUpSettleSeconds",
+            "playerMeleeHitboxUseAuthoredSize",
+            "enemyMeleeHitboxUseAuthoredSize",
             "meleeHitboxWidthScale",
             "meleeHitboxReachScale",
             "meleeBlockDefenseHalfAngle",
@@ -823,6 +863,9 @@ namespace Project.EditorTools.GenesisStudio
 
         private static bool IsLocomotionField(string propertyPath)
         {
+            if (propertyPath.StartsWith("strafeLoco", System.StringComparison.Ordinal) || propertyPath.StartsWith("bodyWeight", System.StringComparison.Ordinal)) // 2026-10-20c strafe director knobs; 2026-10-20n body weight
+                return true;
+
             for (int i = 0; i < LocomotionFields.Length; i++)
             {
                 if (propertyPath == LocomotionFields[i])

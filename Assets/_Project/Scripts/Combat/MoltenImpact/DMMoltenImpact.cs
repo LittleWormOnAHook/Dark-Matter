@@ -118,7 +118,7 @@ namespace Project.Combat
 
             Transform t = transform;
             t.SetParent(attach, true);
-            t.SetPositionAndRotation(point, Quaternion.LookRotation(normal, Mathf.Abs(normal.y) > 0.95f ? Vector3.forward : Vector3.up));
+            t.SetPositionAndRotation(point, Quaternion.AngleAxis(Project.Combat.DM_EnemyHitMarkProfile.NextDecalSpin(), normal) * Quaternion.LookRotation(normal, Mathf.Abs(normal.y) > 0.95f ? Vector3.forward : Vector3.up)); // 2026-10-20m
             CombatVfxUtility.NormalizeAttachedWorldScale(t);
             gameObject.SetActive(true);
 

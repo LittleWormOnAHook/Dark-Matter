@@ -185,6 +185,20 @@ namespace Project.EditorTools.GenesisStudio
             if (serialized.ApplyModifiedProperties())
                 EditorUtility.SetDirty(asset);
 
+            // 2026-10-20t: body weight reset (Locomotion body weight + weapon weight groups).
+            if (asset is Project.Features.Climb.DM_ClimbDashProfile climbProfile && DMStudioProfileSections.IncludesField("bodyWeightEnabled", section))
+            {
+                EditorGUILayout.Space(6f);
+                if (GUILayout.Button("Reset Body Weight to Default", GUILayout.Height(24f)))
+                {
+                    Undo.RecordObject(climbProfile, "Reset Body Weight to Default");
+                    climbProfile.ResetBodyWeightToDefault();
+                    EditorUtility.SetDirty(climbProfile);
+                    AssetDatabase.SaveAssetIfDirty(climbProfile);
+                    GUIUtility.ExitGUI();
+                }
+            }
+
             DMAmmoFxProfile profile = asset as DMAmmoFxProfile;
             if (profile == null)
                 return;

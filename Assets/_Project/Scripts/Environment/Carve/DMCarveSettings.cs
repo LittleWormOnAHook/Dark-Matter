@@ -33,6 +33,8 @@ namespace Project.SurfaceCarve
         public string[] autoCarvableTags = new string[0];
         [Tooltip("Hit objects whose name contains one of these words (case-insensitive) get a DMCarvable added on first hit. Clear the list to only carve objects marked carvable.")]
         public string[] autoCarvableNameContains = { "rock", "boulder", "cliff", "stone", "outcrop" };
+        [Tooltip("2026-10-20x: carving a statically batched object detaches it at runtime (unbatched readable copy of its original mesh). Scene static flags are not changed.")]
+        public bool carveUnbatchesStatic = true;
         [Tooltip("Stop carving an object once it reaches this many triangles.")]
         public int maxTrianglesPerObject = 300000;
         [Tooltip("Ammo impacts dig craters into meshes. Off = meshes stay intact (no runtime mesh copy, no collider re-cook); shots leave molten marks (Resources/Combat/DMMoltenImpactMap) and, on carvable rocks, debris only. The Carve Tool is not affected.")]
@@ -71,6 +73,32 @@ namespace Project.SurfaceCarve
         [Min(0)] public int maxLiveDebris = 40;
         [Tooltip("Global multiplier on debris chunk size, on top of each recipe's Debris Scale.")]
         [Range(0.1f, 10f)] public float debrisSizeScale = 3f;
+
+        [Header("Impact VFX (2026-10-20v)")]
+        [Tooltip("Explosive impact ground ring / glow circle (horizontal billboard ring in the explosion VFX). Off = hidden at spawn (assets untouched).")]
+        public bool explosionRing = false;
+        [Tooltip("Impact VFX particles using non-HDRP shaders (render pink) get runtime HDRP materials (one cached copy per source material; assets untouched).")]
+        public bool impactVfxHdrpFix = true;
+        [Tooltip("Debris-like impact particles (mesh particles, or names with debris/chunk/rock/dirt/stone/dots) become HDRP Lit tinted with the hit surface color (Debris Look settings).")]
+        public bool impactDebrisSurfaceColor = true;
+
+        public enum DebrisColorSource { SurfaceSample, MaterialAverage, FractureMaterial }
+        [Header("Debris Look (2026-10-20u, MaterialPropertyBlock - no material/prefab changes)")]
+        [Tooltip("Tint debris chunks from the surface that was hit, with a rough overlay.")]
+        public bool debrisLookEnabled = true;
+        [Tooltip("SurfaceSample: base map at the hit UV when readable / terrain layer mix at the hit point, else material average. MaterialAverage: averaged material color. FractureMaterial: keep the cut material color (overlay still applies).")]
+        public DebrisColorSource debrisColorSource = DebrisColorSource.SurfaceSample;
+        [Tooltip("0 = fracture material color, 1 = fully the sampled surface color.")]
+        [Range(0f, 1f)] public float debrisTintStrength = 0.85f;
+        [Tooltip("Rough grayscale overlay (base map). Empty = generated tileable noise.")]
+        public Texture2D debrisOverlayTexture;
+        [Range(0f, 1f)] public float debrisOverlayStrength = 0.55f;
+        [Tooltip("Overlay tiles per UV unit (debris UVs are box-projected at Cut UV Tile Meters).")]
+        [Range(0.1f, 16f)] public float debrisOverlayTiling = 2f;
+        [Range(0f, 3f)] public float debrisBrightness = 1f;
+        [Range(0f, 2f)] public float debrisSaturation = 0.9f;
+        [Tooltip("Random per-chunk variance (value / slight hue).")]
+        [Range(0f, 0.5f)] public float debrisColorVariance = 0.08f;
 
         [Header("Tools")]
         [Tooltip("Drag spacing between stamps, in cutter-radius units.")]
@@ -126,12 +154,16 @@ namespace Project.SurfaceCarve
             if (autoCarvableTags != null && autoCarvableTags.Length > 0)
             {
                 // Plain string compare: CompareTag logs "Tag: X is not defined" for tags missing from the Tag Manager.
-                string goTag = go.tag;
-                for (int i = 0; i < autoCarvableTags.Length; i++)
+                // 2026-10-20v: case-insensitive, and the tag may sit on any parent (collider child of a tagged prop).
+                for (Transform tr = go.transform; tr != null; tr = tr.parent)
                 {
-                    string t = autoCarvableTags[i];
-                    if (!string.IsNullOrEmpty(t) && string.Equals(goTag, t, StringComparison.Ordinal))
-                        return true;
+                    string goTag = tr.gameObject.tag;
+                    for (int i = 0; i < autoCarvableTags.Length; i++)
+                    {
+                        string t = autoCarvableTags[i];
+                        if (!string.IsNullOrEmpty(t) && string.Equals(goTag, t.Trim(), StringComparison.OrdinalIgnoreCase))
+                            return true;
+                    }
                 }
             }
 

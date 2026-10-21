@@ -142,6 +142,7 @@ namespace Project.Combat
             GameObject impactVfxOverride = null)
         {
             DMAmmoFxProfile profile = ResolveProfile(ammoItem, weapon);
+            DMImpactVfxFixer.SetContext(receiver, point, normal, HasSplashImpact(ammoItem, profile)); // 2026-10-20v: explosive (splash) impacts only
 
             // Enemies never get world impacts, surface decals, laser burns, or carve — only DMEnemyHitMarks body FX.
             // Experiment carve ammo may still deform carvable mesh on enemies (carve-only path).
@@ -258,7 +259,7 @@ namespace Project.Combat
             {
                 GameObject instance = SpawnPooled(decal, point, rotation, receiver != null ? receiver.transform : null, DecalLifeSeconds);
                 if (instance != null)
-                    instance.transform.Rotate(Vector3.forward, Random.Range(0f, 360f), Space.Self);
+                    instance.transform.Rotate(Vector3.forward, DM_EnemyHitMarkProfile.NextDecalSpin(), Space.Self); // 2026-10-20m (rotation reset by spawn each reuse)
             }
 
             Transform attach = CombatVfxUtility.ResolveImpactAttachTransform(receiver);
@@ -285,6 +286,7 @@ namespace Project.Combat
 
             CombatVfxUtility.NormalizeAttachedWorldScale(instance.transform);
             CombatVfxUtility.PreparePooledOneShotVfx(instance, life);
+            DMImpactVfxFixer.Process(instance); // 2026-10-20v: HDRP materials for pink particles, surface-tinted debris, ring toggle
             return instance;
         }
 

@@ -11,7 +11,7 @@ namespace Project.SurfaceCarve
         private static readonly List<Vector3> Normals = new List<Vector3>();
         private static readonly List<int> Tris = new List<int>();
 
-        public static void Spawn(DMCarveCutter cutter, Vector3 normal, DMSurfaceDamageSettings damage, Material material, int layer)
+        public static void Spawn(DMCarveCutter cutter, Vector3 normal, DMSurfaceDamageSettings damage, Material material, int layer, GameObject receiver = null, Vector3? hitPoint = null)
         {
             if (!Application.isPlaying || cutter == null || damage == null || damage.style == DMCarveStyle.Erosion)
                 return;
@@ -23,6 +23,8 @@ namespace Project.SurfaceCarve
             Vector3 n = normal.sqrMagnitude > 1e-8f ? normal.normalized : Vector3.up;
             var rng = new System.Random(cutter.Seed);
             int count = Mathf.Clamp(damage.debrisCount, 0, 8);
+            // 2026-10-20u: sample the hit surface once per burst (renderer / terrain / averaged material).
+            bool look = DMCarveDebrisLook.TrySample(s, receiver, hitPoint ?? cutter.Center, n, out Color surface);
             for (int i = 0; i < count; i++)
             {
                 while (Live.Count > 0 && (Live.Peek() == null || Live.Count >= s.maxLiveDebris))
@@ -38,6 +40,7 @@ namespace Project.SurfaceCarve
                 GameObject go = Build(pos, size, rng.Next(1, int.MaxValue), material, layer, s);
                 if (go == null)
                     continue;
+                DMCarveDebrisLook.Apply(s, go.GetComponent<MeshRenderer>(), look, surface, rng);
 
                 Rigidbody rb = go.GetComponent<Rigidbody>();
                 Vector3 dir = (n + Random.insideUnitSphere * 0.6f).normalized;

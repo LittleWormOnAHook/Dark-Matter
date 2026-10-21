@@ -35,6 +35,11 @@ namespace Project.AI.Invector
         [SerializeField] private ItemData meleeWeaponItem;
         [Tooltip("Ranged weapon OVERRIDE. Leave empty to use the EnemyDefinition's ranged weapon.")]
         [SerializeField] private ItemData rangedWeaponItem;
+        // 2026-10-20a: per-instance mirror of EnemyDefinition.rangedAmmoType / rangedAmmoPool.
+        [Tooltip("Ammo types THIS instance picks from at random (re-rolled every reload; repeat an entry to weight it). Empty = EnemyDefinition.rangedAmmoType. Types the ranged weapon can't use are skipped.")]
+        [SerializeField] private DMEnemyRangedAmmoChoice[] rangedAmmoTypePool = Array.Empty<DMEnemyRangedAmmoChoice>();
+        [Tooltip("Shots before reload for THIS instance. 0 = EnemyDefinition.rangedAmmoPool (then DM_EnemyBrainProfile default).")]
+        [SerializeField] [Min(0)] private int rangedAmmoPoolOverride;
         [Tooltip("UseDefinition = follow EnemyDefinition.preferRangedWeapon.")]
         [SerializeField] private EnemyPreferRangedOverride preferRangedOverride = EnemyPreferRangedOverride.UseDefinition;
 
@@ -120,6 +125,48 @@ namespace Project.AI.Invector
                 o.overrideRangedAmmoType = overrideRangedAmmoType;
                 return o;
             }
+        }
+
+        /// <summary>Instance shot budget override (0 = definition / brain default).</summary>
+        public int RangedAmmoPoolOverride => rangedAmmoPoolOverride;
+        public int RangedAmmoTypePoolCount => rangedAmmoTypePool != null ? rangedAmmoTypePool.Length : 0;
+
+        private int _pooledAmmoRollKey = int.MinValue;
+        private ItemData _pooledAmmoWeapon;
+        private ItemData _pooledAmmoItem;
+        private static readonly System.Collections.Generic.List<ItemData> s_poolScratch = new System.Collections.Generic.List<ItemData>(8);
+
+        /// <summary>
+        /// Random pick from <see cref="rangedAmmoTypePool"/> (same DMEnemyRangedAmmoChoice + catalog path as the definition).
+        /// Re-rolled when <paramref name="rollKey"/> changes (reload count) or the weapon changes. False = pool empty / nothing compatible.
+        /// </summary>
+        public bool TryPickPooledAmmo(ItemData weapon, int rollKey, out ItemData ammo)
+        {
+            ammo = null;
+            if (weapon == null || rangedAmmoTypePool == null || rangedAmmoTypePool.Length == 0)
+                return false;
+            if (rollKey == _pooledAmmoRollKey && weapon == _pooledAmmoWeapon && _pooledAmmoItem != null)
+            {
+                ammo = _pooledAmmoItem;
+                return true;
+            }
+
+            s_poolScratch.Clear();
+            for (int i = 0; i < rangedAmmoTypePool.Length; i++)
+            {
+                ItemData item = DMEnemyRangedAmmoCatalog.ResolveItem(rangedAmmoTypePool[i]);
+                if (item != null && weapon.AcceptsAmmoType(item.ammoType))
+                    s_poolScratch.Add(item);
+            }
+
+            if (s_poolScratch.Count == 0)
+                return false;
+
+            _pooledAmmoRollKey = rollKey;
+            _pooledAmmoWeapon = weapon;
+            _pooledAmmoItem = s_poolScratch[UnityEngine.Random.Range(0, s_poolScratch.Count)];
+            ammo = _pooledAmmoItem;
+            return true;
         }
 
         /// <summary>Effective ranged ammo choice: instance (when override brain) else definition.</summary>

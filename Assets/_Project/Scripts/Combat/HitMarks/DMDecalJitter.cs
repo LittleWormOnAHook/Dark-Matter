@@ -31,7 +31,10 @@ namespace Project.Combat
         {
             if (!_hasBase) { _baseLocal = transform.localRotation; _hasBase = true; _decal = GetComponent<DecalProjector>(); }
             Quaternion baseWorld = (transform.parent != null ? transform.parent.rotation : Quaternion.identity) * _baseLocal;
-            transform.rotation = randomYaw ? Quaternion.AngleAxis(Random.Range(0f, 360f), Vector3.up) * baseWorld : baseWorld;
+            // 2026-10-20m: spin around the projector's own projection axis (local +Z), i.e. around the surface normal; reset per reuse from the cached base.
+            DM_EnemyHitMarkProfile hp = DM_EnemyHitMarkProfile.LiveOrDefault;
+            bool spin = randomYaw || (hp != null && hp.decalRandomSpin);
+            transform.rotation = spin ? Quaternion.AngleAxis(DM_EnemyHitMarkProfile.NextDecalSpin(), baseWorld * Vector3.forward) * baseWorld : baseWorld;
             _pendingScale = scale;
             _depth = depth;
             _groundOffset = groundOffset;
