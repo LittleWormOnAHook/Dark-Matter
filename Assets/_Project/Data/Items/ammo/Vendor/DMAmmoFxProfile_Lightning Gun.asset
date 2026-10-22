@@ -75,7 +75,7 @@ MonoBehaviour:
   grantRandomStartingAmmo: 0
   startingAmmoMin: 1
   startingAmmoMax: 12
-  projectilePrefab: {fileID: 0}
+  projectilePrefab: {fileID: 2663902508621910669, guid: 492f6da1fb35d5a4b969a320e8f163ae, type: 3}
   muzzleSocketName: Muzzle
   aimFovMultiplier: 0.78
   hipFireMaxDeviationDegrees: 15
@@ -98,13 +98,13 @@ MonoBehaviour:
     rifleAnimationWeight: 0.18
   isHitscanBeam: 1
   projectileGravityScale: 0
-  splashRadius: 0
+  splashRadius: 5
   splashDamageFalloff: 0.25
   fxProfile: {fileID: 11400000}
   muzzleFlashPrefab: {fileID: 0}
   tracerPrefab: {fileID: 0}
   impactVfxPrefab: {fileID: 0}
-  beamVfxPrefab: {fileID: 2663902508621910669, guid: 492f6da1fb35d5a4b969a320e8f163ae, type: 3}
+  beamVfxPrefab: {fileID: 100002, guid: e4cc063d5a4492e47854144a8fe4dc55, type: 3}
   isMiningTool: 0
   miningPassesRequired: 2
   miningDropMin: 1
@@ -115,7 +115,7 @@ MonoBehaviour:
   miningChargeDrainPerSecond: 4
   miningChargePerPlasmaFuel: 50
   fireSound: {fileID: 8300000, guid: dab4dfa00ed487b44bf0f2c9115a3da3, type: 3}
-  projectileTravelSound: {fileID: 0}
+  projectileTravelSound: {fileID: 8300000, guid: a2c90e3a8714e024297aa5fc6491893c, type: 3}
   isContinuousLaser: 0
   continuousLoopSound: {fileID: 0}
   continuousStartSound: {fileID: 0}
@@ -124,7 +124,7 @@ MonoBehaviour:
   miningScanSuccessSound: {fileID: 0}
   miningScanDeniedSound: {fileID: 0}
   statusEffectOverride: 3
-  statusEffectDamagePerTick: 0
+  statusEffectDamagePerTick: 5
   statusEffectTickInterval: 1
   statusEffectDuration: 3
   statusEffectVfxPrefab: {fileID: 0}
@@ -154,10 +154,29 @@ MonoBehaviour:
   requiredLevelToCraft: 1
   requiredLevelToUse: 1
   requiredLevelToPickup: 1
-  tooltipDescription: Vendor ammo (FORGE3D Sci-Fi Effects) - Lightning Gun. Electricity
-    compatible, hitscan beam.
+  tooltipDescription: Lightning in a bottle. A mix of Ion and Plasma to produce an
+    electrical compatible ammo  when tunes  wh, hitscan beam.
   unlocksInventoryStorageRow: 0
   delivery: 0
+  useF3DDespawn: 1
+  muzzleLifetime: 0.05
+  beamUsesAmmoPrefab: 1
+  beamDurationSeconds: 1.5
+  boltSpeed: 60
+  boltMaxLength: 4
+  boltTailRetractTime: 0.12
+  boltWidth: 0.12
+  beamDamagePerTick: 1
+  beamDamageTicksPerSecond: 5
+  beamTickDamageScale: 0.2
+  chainEnabled: 1
+  chainSkillUnlocked: 1
+  chainMaxTargets: 3
+  chainRange: 8
+  chainDamageFalloff: 0.85
+  chainRequiresLineOfSight: 1
+  chainDebugLog: 0
+  showSplashBubble: 0
   spawnLaserBurn: 0
   enemyBlood: 0
   enemyBurnMark: 0

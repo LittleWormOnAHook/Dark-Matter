@@ -52,14 +52,51 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2300000, guid: 3bb3c67062148f6408b59813c0d1e1da, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 9770673371d823f49b81b4e336dbee3f, type: 2}
+    - target: {fileID: 2300002, guid: 3bb3c67062148f6408b59813c0d1e1da, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 9770673371d823f49b81b4e336dbee3f, type: 2}
+    - target: {fileID: 10800000, guid: 3bb3c67062148f6408b59813c0d1e1da, type: 3}
+      propertyPath: m_Range
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 10800000, guid: 3bb3c67062148f6408b59813c0d1e1da, type: 3}
       propertyPath: m_Shadows.m_Type
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents:
-    - {fileID: 11400000, guid: 3bb3c67062148f6408b59813c0d1e1da, type: 3}
-    - {fileID: 11400002, guid: 3bb3c67062148f6408b59813c0d1e1da, type: 3}
+    m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 100004, guid: 3bb3c67062148f6408b59813c0d1e1da, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6854563778891251502}
   m_SourcePrefab: {fileID: 100100000, guid: 3bb3c67062148f6408b59813c0d1e1da, type: 3}
+--- !u!1 &7827190093298636032 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 100004, guid: 3bb3c67062148f6408b59813c0d1e1da, type: 3}
+  m_PrefabInstance: {fileID: 7827190093298537380}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &6854563778891251502
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7827190093298636032}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cd39039863a63e48ad1e9260ed01bc8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Invector.vDestroyGameObject
+  openCloseEvents: 0
+  openCloseWindow: 0
+  selectedToolbar: 0
+  delay: 0.05
+  onDestroy:
+    m_PersistentCalls:
+      m_Calls: []

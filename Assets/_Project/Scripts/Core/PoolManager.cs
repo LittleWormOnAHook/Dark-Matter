@@ -240,8 +240,11 @@ namespace Project.Core
                 if (instance.TryGetComponent(out PooledInstanceTag tag) && tag.LeaseId != leaseAtSchedule)
                     yield break;
 
-                yield return pollWait;
-                elapsed += pollInterval;
+                // 2026-10-21c: short lifetimes wait exactly (was always 0.25 s steps).
+                float step = Mathf.Min(pollInterval, maxLife - elapsed);
+                if (step >= pollInterval) yield return pollWait;
+                else yield return GetWait(Mathf.Max(0.01f, step));
+                elapsed += step;
 
                 if (elapsed < minVisibleSeconds || systems == null || systems.Length == 0)
                     continue;

@@ -97,3 +97,6 @@ Assets/LocalAgent_*.txt.meta
 # Agent backups and IDE state
 /_agent_backups/
 /.vs/
+
+# Agent edit backups (outside Assets)
+_AgentBackups/

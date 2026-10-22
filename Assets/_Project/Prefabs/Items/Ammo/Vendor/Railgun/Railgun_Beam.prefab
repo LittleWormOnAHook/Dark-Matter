@@ -52,9 +52,16 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 11400002, guid: a0db8af01a365124d8768d75a69336e3, type: 3}
+      propertyPath: DespawnDelay
+      value: 0.05
+      objectReference: {fileID: 0}
+    - target: {fileID: 12000000, guid: a0db8af01a365124d8768d75a69336e3, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: ce603e2bb82ecab429c1dce0e6f02ba2, type: 2}
     m_RemovedComponents:
     - {fileID: 11400000, guid: a0db8af01a365124d8768d75a69336e3, type: 3}
-    - {fileID: 11400002, guid: a0db8af01a365124d8768d75a69336e3, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []

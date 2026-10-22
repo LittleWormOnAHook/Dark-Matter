@@ -14,15 +14,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 7203ce282066b134eab0416f5a317043, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 62.76245
+      value: -783.4547
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 7203ce282066b134eab0416f5a317043, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 56.816925
+      value: 21.769
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 7203ce282066b134eab0416f5a317043, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 42.384224
+      value: -126.298
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 7203ce282066b134eab0416f5a317043, type: 3}
       propertyPath: m_LocalRotation.w
@@ -53,9 +53,35 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents:
-    - {fileID: 11400002, guid: 7203ce282066b134eab0416f5a317043, type: 3}
     - {fileID: 11400000, guid: 7203ce282066b134eab0416f5a317043, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 100000, guid: 7203ce282066b134eab0416f5a317043, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 430174622705863050}
   m_SourcePrefab: {fileID: 100100000, guid: 7203ce282066b134eab0416f5a317043, type: 3}
+--- !u!1 &6446962173550035581 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 100000, guid: 7203ce282066b134eab0416f5a317043, type: 3}
+  m_PrefabInstance: {fileID: 6446962173550068957}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &430174622705863050
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6446962173550035581}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cd39039863a63e48ad1e9260ed01bc8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Invector.vDestroyGameObject
+  openCloseEvents: 0
+  openCloseWindow: 0
+  selectedToolbar: 0
+  delay: 1
+  onDestroy:
+    m_PersistentCalls:
+      m_Calls: []

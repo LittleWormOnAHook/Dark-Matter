@@ -47,7 +47,10 @@ namespace Project.Features.Locomotion
             {
                 if (T == null || !Has) return;
                 Quaternion cur = T.localRotation;
-                if (Quaternion.Angle(cur, Written) <= 0.01f) { if (AnimHas) T.localRotation = Anim; }
+                // 2026-10-21a: restore the last pre-offset pose (animator + IK), NOT the raw animator pose. In Animator Fixed mode
+                // Invector IK / head track only run on physics-step frames; restoring the raw pose made every non-step frame drop
+                // the IK (armed idle: head track + weapon arm IK) -> per-frame upper-body jitter.
+                if (Quaternion.Angle(cur, Written) <= 0.01f) { if (AnimHas) T.localRotation = Base; }
                 else { Anim = cur; AnimHas = true; }
             }
 
@@ -238,11 +241,12 @@ namespace Project.Features.Locomotion
             if (_hipsHas && _hips != null)
             {
                 Vector3 hl = _hips.localPosition;
-                if ((hl - _hipsWritten).sqrMagnitude <= 1e-8f) { if (_hipsAnimHas) _hips.localPosition = _hipsAnim; }
+                if ((hl - _hipsWritten).sqrMagnitude <= 1e-8f) { if (_hipsAnimHas) _hips.localPosition = _hipsBase; } // 2026-10-21a
                 else { _hipsAnim = hl; _hipsAnimHas = true; }
             }
         }
         private Vector3 _hipsAnim; private bool _hipsAnimHas;
+        private Vector3 _heldAcc; private float _heldYaw, _sampleAge; // 2026-10-21a
         private float _aimFade = 1f, _aimHip = 1f;
         private bool _aimingNow;
 
@@ -325,9 +329,24 @@ namespace Project.Features.Locomotion
             Vector3 vel = SimActive ? Sim.Vel : (_rb != null ? _rb.linearVelocity : Vector3.zero);
             float yaw = transform.eulerAngles.y;
             if (!_hasVel) { _lastVel = vel; _lastYaw = yaw; _hasVel = true; }
-            Vector3 rawAcc = Vector3.ClampMagnitude((vel - _lastVel) / dt, 40f); rawAcc.y = 0f;
-            float rawYaw = Mathf.Clamp(Mathf.DeltaAngle(_lastYaw, yaw) / dt, -720f, 720f);
-            _lastVel = vel; _lastYaw = yaw;
+            // 2026-10-21a: the rigidbody (and root yaw) only change on physics steps; per-render-frame differencing gave 0 / spike / 0
+            // input. Difference over the time since the last real change, hold between steps, and deadzone idle noise.
+            bool noInput = SimActive ? Sim.Input.sqrMagnitude < 0.01f : (_motor == null || new Vector3(_motor.input.x, 0f, _motor.input.z).sqrMagnitude < 0.01f);
+            Vector3 vPlanar = new Vector3(vel.x, 0f, vel.z);
+            if (noInput && vPlanar.magnitude < p.bodyWeightIdleSpeedDeadzone) { vel.x = 0f; vel.z = 0f; }
+            _sampleAge += dt;
+            bool velChanged = (vel - _lastVel).sqrMagnitude > 1e-10f, yawChanged = Mathf.Abs(Mathf.DeltaAngle(_lastYaw, yaw)) > 1e-4f;
+            float sdt = SimActive ? dt : Mathf.Max(dt, _sampleAge);
+            if (velChanged || yawChanged || SimActive || _sampleAge > 0.05f)
+            {
+                _heldAcc = Vector3.ClampMagnitude((vel - _lastVel) / sdt, 40f); _heldAcc.y = 0f;
+                if (_heldAcc.magnitude < p.bodyWeightAccelDeadzone) _heldAcc = Vector3.zero;
+                _heldYaw = Mathf.Clamp(Mathf.DeltaAngle(_lastYaw, yaw) / sdt, -720f, 720f);
+                if (Mathf.Abs(_heldYaw) < p.bodyWeightYawRateDeadzone) _heldYaw = 0f;
+                _lastVel = vel; _lastYaw = yaw; _sampleAge = 0f;
+            }
+            Vector3 rawAcc = _heldAcc;
+            float rawYaw = _heldYaw;
             _accel = Vector3.SmoothDamp(_accel, rawAcc, ref _accelVel, p.bodyWeightAccelSmooth, Mathf.Infinity, dt);
             _yawRate = Mathf.SmoothDamp(_yawRate, rawYaw, ref _yawRateVel, p.bodyWeightAccelSmooth, Mathf.Infinity, dt);
             // 2026-10-20w (harness): smooth acceleration in the character frame. World-space smoothing lagged the heading during fast

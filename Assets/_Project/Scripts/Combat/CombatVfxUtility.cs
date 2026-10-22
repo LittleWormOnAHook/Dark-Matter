@@ -153,7 +153,8 @@ namespace Project.Combat
                 || typeName == "SFX_SimpleProjectile"
                 || typeName == "SFX_PhysicsMotion"
                 || typeName == "ProjectileMover"
-                || typeName == "ProjectileMover2D";
+                || typeName == "ProjectileMover2D"
+                || typeName == "F3DDespawn"; // 2026-10-21c: delay is read by DMCombatFx; its mouse-up despawn needs F3DPoolManager
         }
 
         public static void DisableVendorAutoReleaseBehaviours(GameObject root)

@@ -301,6 +301,12 @@ namespace Project.Features.Climb
         [Range(0f, 1f)] public float bodyWeightAimScale = 0.15f;
         [Tooltip("Smoothing (s) of the measured body acceleration / turn rate.")]
         [Range(0.01f, 0.5f)] public float bodyWeightAccelSmooth = 0.08f;
+        [Tooltip("2026-10-21a: planar speed (m/s) below which body velocity counts as zero when there is no move input (idle contact noise).")]
+        [Range(0f, 1f)] public float bodyWeightIdleSpeedDeadzone = 0.2f;
+        [Tooltip("2026-10-21a: turn rate (deg/s) below which yaw counts as zero (idle / tiny in-place turns).")]
+        [Range(0f, 90f)] public float bodyWeightYawRateDeadzone = 20f;
+        [Tooltip("2026-10-21a: acceleration (m/s^2) below which the lean / arm-trail input is zeroed.")]
+        [Range(0f, 10f)] public float bodyWeightAccelDeadzone = 1.5f;
         [Tooltip("Spine pitch (deg per m/s^2) leaning into forward acceleration.")]
         [Range(0f, 10f)] public float bodyWeightLeanAccel = 0.6f;
         [Tooltip("Spine pitch (deg per m/s^2) carried forward when braking / stopping.")]
@@ -565,10 +571,56 @@ namespace Project.Features.Climb
             return v;
         }
 
-        /// <summary>Writes the full value set of a preset into every body-weight field (Custom = no-op). Intensity/Exaggerate end at 1.</summary>
+        // ---- 2026-10-21b: last Custom values, kept in the asset while a preset is active ----
+        [SerializeField, HideInInspector] private System.Collections.Generic.List<string> bodyWeightCustomStashNames = new System.Collections.Generic.List<string>();
+        [SerializeField, HideInInspector] private System.Collections.Generic.List<string> bodyWeightCustomStashValues = new System.Collections.Generic.List<string>();
+        public bool HasBodyWeightCustomStash => bodyWeightCustomStashNames != null && bodyWeightCustomStashNames.Count > 0; // bodyWeightCustomStash
+
+        private void CaptureBodyWeightCustomStash()
+        {
+            bodyWeightCustomStashNames = new System.Collections.Generic.List<string>();
+            bodyWeightCustomStashValues = new System.Collections.Generic.List<string>();
+            var ci = System.Globalization.CultureInfo.InvariantCulture;
+            foreach (var f in BodyWeightFields)
+            {
+                object v = f.GetValue(this);
+                string s = v is float fv ? fv.ToString("R", ci) : v is System.IFormattable fm ? fm.ToString(null, ci) : v?.ToString();
+                if (s == null) continue;
+                bodyWeightCustomStashNames.Add(f.Name); bodyWeightCustomStashValues.Add(s);
+            }
+        }
+
+        private void RestoreBodyWeightCustomStash()
+        {
+            if (!HasBodyWeightCustomStash || bodyWeightCustomStashValues == null) return;
+            var ci = System.Globalization.CultureInfo.InvariantCulture;
+            for (int i = 0; i < bodyWeightCustomStashNames.Count && i < bodyWeightCustomStashValues.Count; i++)
+            {
+                var f = typeof(DM_ClimbDashProfile).GetField(bodyWeightCustomStashNames[i], System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                if (f == null || BodyWeightFields.IndexOf(f) < 0) continue;
+                string s = bodyWeightCustomStashValues[i];
+                try
+                {
+                    if (f.FieldType == typeof(float)) f.SetValue(this, float.Parse(s, ci));
+                    else if (f.FieldType == typeof(int)) f.SetValue(this, int.Parse(s, ci));
+                    else if (f.FieldType == typeof(bool)) f.SetValue(this, bool.Parse(s));
+                    else if (f.FieldType.IsEnum) f.SetValue(this, System.Enum.Parse(f.FieldType, s));
+                }
+                catch (System.Exception) { }
+            }
+        }
+
+        /// <summary>Writes the full value set of a preset into every body-weight field (Custom = restores the last Custom values). Intensity/Exaggerate end at 1.</summary>
         public void ApplyBodyWeightPreset(BodyWeightPreset preset)
         {
-            if (preset == BodyWeightPreset.Custom) { bodyWeightPreset = preset; bodyWeightAppliedPresetInternal = preset; return; }
+            if (preset == BodyWeightPreset.Custom)
+            {
+                // 2026-10-21b: coming back from a preset restores the last Custom values.
+                if (bodyWeightAppliedPresetInternal != BodyWeightPreset.Custom) RestoreBodyWeightCustomStash();
+                bodyWeightPreset = preset; bodyWeightAppliedPresetInternal = preset; return;
+            }
+            // 2026-10-21b: leaving Custom -> remember the Custom values first.
+            if (bodyWeightAppliedPresetInternal == BodyWeightPreset.Custom) CaptureBodyWeightCustomStash();
             var d = CreateInstance<DM_ClimbDashProfile>();
             try { foreach (var f in BodyWeightFields) f.SetValue(this, BodyWeightPresetValue(f, d, preset)); }
             finally { if (Application.isPlaying) Destroy(d); else DestroyImmediate(d); }

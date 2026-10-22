@@ -13,16 +13,20 @@ PrefabInstance:
       value: Laser Impulse_Tracer
       objectReference: {fileID: 0}
     - target: {fileID: 400004, guid: ce8878fe141a80b4eb08e44df421ba75, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 3.1413
+      objectReference: {fileID: 0}
+    - target: {fileID: 400004, guid: ce8878fe141a80b4eb08e44df421ba75, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: -783.1935
       objectReference: {fileID: 0}
     - target: {fileID: 400004, guid: ce8878fe141a80b4eb08e44df421ba75, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: 22.118
       objectReference: {fileID: 0}
     - target: {fileID: 400004, guid: ce8878fe141a80b4eb08e44df421ba75, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0
+      value: -126.24502
       objectReference: {fileID: 0}
     - target: {fileID: 400004, guid: ce8878fe141a80b4eb08e44df421ba75, type: 3}
       propertyPath: m_LocalRotation.w
@@ -52,10 +56,44 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2300002, guid: ce8878fe141a80b4eb08e44df421ba75, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: c02dd67ff73c5c0428b1e4e951e104ba, type: 2}
+    - target: {fileID: 23000012998755208, guid: ce8878fe141a80b4eb08e44df421ba75, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: c02dd67ff73c5c0428b1e4e951e104ba, type: 2}
     m_RemovedComponents:
     - {fileID: 11400000, guid: ce8878fe141a80b4eb08e44df421ba75, type: 3}
-    - {fileID: 11400002, guid: ce8878fe141a80b4eb08e44df421ba75, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 100004, guid: ce8878fe141a80b4eb08e44df421ba75, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3820288030366947979}
   m_SourcePrefab: {fileID: 100100000, guid: ce8878fe141a80b4eb08e44df421ba75, type: 3}
+--- !u!1 &2786771482053246083 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 100004, guid: ce8878fe141a80b4eb08e44df421ba75, type: 3}
+  m_PrefabInstance: {fileID: 2786771482053278247}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &3820288030366947979
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2786771482053246083}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cd39039863a63e48ad1e9260ed01bc8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Invector.vDestroyGameObject
+  openCloseEvents: 0
+  openCloseWindow: 0
+  selectedToolbar: 0
+  delay: 1.5
+  onDestroy:
+    m_PersistentCalls:
+      m_Calls: []

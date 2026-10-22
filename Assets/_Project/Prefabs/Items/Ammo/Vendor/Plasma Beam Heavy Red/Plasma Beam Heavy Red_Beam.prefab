@@ -56,9 +56,36 @@ PrefabInstance:
       propertyPath: m_Shadows.m_Type
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 11400004, guid: da1f04acce1d666429ebeab38358cec8, type: 3}
+      propertyPath: DespawnDelay
+      value: 0.05
+      objectReference: {fileID: 0}
+    - target: {fileID: 12000000, guid: da1f04acce1d666429ebeab38358cec8, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 0455fbc60338c3c4a8676be93d82ebd9, type: 2}
+    - target: {fileID: 19900000, guid: da1f04acce1d666429ebeab38358cec8, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 01251b14a4dc4c941a77c969d5e45406, type: 2}
+    - target: {fileID: 19900002, guid: da1f04acce1d666429ebeab38358cec8, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 2fc3710831363e346b911656484b11ee, type: 2}
+    - target: {fileID: 19900004, guid: da1f04acce1d666429ebeab38358cec8, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 2fc3710831363e346b911656484b11ee, type: 2}
+    - target: {fileID: 19900006, guid: da1f04acce1d666429ebeab38358cec8, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: f3c1496dec97d8647b0b1e50c1fc0aee, type: 2}
+    - target: {fileID: 19900008, guid: da1f04acce1d666429ebeab38358cec8, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 01251b14a4dc4c941a77c969d5e45406, type: 2}
     m_RemovedComponents:
     - {fileID: 11400000, guid: da1f04acce1d666429ebeab38358cec8, type: 3}
-    - {fileID: 11400004, guid: da1f04acce1d666429ebeab38358cec8, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []

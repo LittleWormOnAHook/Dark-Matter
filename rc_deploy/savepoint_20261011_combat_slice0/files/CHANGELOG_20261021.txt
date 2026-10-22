@@ -1,0 +1,81 @@
+=== 2026-10-21a  Armed-idle upper-body jitter (backups .pre20261021a) ===
+Cause: pass 2026-10-20y DMPlayerBodyWeightPreIK restored the RAW animator pose on frames where the Animator did not evaluate.
+  Player Animator runs Fixed (playerAnimatorPerFrameUpdate off) and Invector vShooterMeleeInput skips IK/head track on non-physics frames,
+  so every non-step frame dropped head track + weapon arm IK -> upper body alternated IK / no-IK per frame (armed idle; IK fades in locomotion).
+  Contributing: Rigidbody velocity / root yaw only change on physics steps; per-frame differencing gave 0/spike input to lean, arm trail, pelvis lead.
+Fix (Locomotion/Runtime/DMPlayerBodyWeight.cs):
+  - PreIK restores the last pre-offset pose (animator + IK) instead of the raw animator pose; hips likewise.
+  - Acceleration / yaw rate are differenced over time since the last real change (held between physics steps), with idle deadzones.
+Climb/Runtime/DM_ClimbDashProfile.cs (Studio Locomotion): + bodyWeightIdleSpeedDeadzone 0.2 m/s, bodyWeightYawRateDeadzone 20 deg/s, bodyWeightAccelDeadzone 1.5 m/s^2.
+
+=== 2026-10-21b  Body weight Custom restore + Custom stash (backups .pre20261021b) ===
+Resources/Climb/DM_ClimbDashProfile.asset: 12 bodyWeight* values restored from git HEAD 03fcdf1 (his Custom before Subtle):
+  LeanAccel 1, StopCarry 1.4, WristTrail 1.8, LandingRecovery 0.3, SwingAmount 0.55, SwingMaxDegrees 7.2, WeaponMelee 1.64,
+  WeaponHeavyMult 2.12, WeaponSwingGain 2.03, WeaponWindup 4.95, WeaponHipPull 0.459, WeaponDrawDip 5.9. Non-bodyWeight fields untouched.
+Climb/Runtime/DM_ClimbDashProfile.cs: leaving Custom for a preset stores all bodyWeight* values (hidden serialized stash);
+  picking Custom again restores them (previously Custom was a no-op).
+
+=== 2026-10-21c  Vendor muzzle lifetimes, F3D components, Lightning Gun beam + chain (backups .pre20261021c) ===
+Scripts/Combat/DMCombatFx.cs: muzzle lifetime = F3DDespawn.DespawnDelay (if present and ammo Use F3D Despawn) -> ammo Muzzle Lifetime -> global 2 s (ResolveMuzzleLifetime).
+Scripts/Core/PoolManager.cs: one-shot VFX release waits exactly for lifetimes < 0.25 s (was 0.25 s steps).
+Scripts/Combat/CombatVfxUtility.cs: F3DDespawn disabled on pooled instances (its mouse-up despawn needs F3DPoolManager); delay still read.
+Scripts/Combat/DMAmmoFxProfile.cs: + useF3DDespawn, muzzleLifetime (0 = global; vendor ammo set 0.05), beamUsesAmmoPrefab,
+  beamDurationSeconds 1.5, beamDamagePerTick, beamDamageTicksPerSecond 5, beamTickDamageScale 0.2,
+  chainEnabled, chainSkillUnlocked, chainMaxTargets 3, chainRange 8, chainDamageFalloff 0.85, chainRequiresLineOfSight.
+Scripts/Combat/CombatHitResolver.cs: Beam Uses Ammo Prefab skips the weapon laser-stack pulse.
+Scripts/Combat/CombatProjectileSpawner.cs: hitscan with Beam Uses Ammo Prefab -> DMLightningBeamSession.
+New Scripts/Combat/Vfx/DMLightningBeamVisual.cs (F3DLightning look without raycast/damage/F3DTime) and DMLightningBeamSession.cs
+  (beam muzzle->contact for duration, damage via DMCombatRangedResolver.ApplyHitOutcome once or per tick, chain lightning).
+New prefab Vendor/Lightning Gun/Lightning Gun_BeamF3D.prefab (copy of Vendor Source Lightning Gun Beam; F3DLightning -> DMLightningBeamVisual, F3DDespawn removed).
+Vendor ammo profiles (12): muzzleLifetime 0.05, useF3DDespawn on; Lightning Gun: beamVfxPrefab = Lightning Gun_BeamF3D, beamUsesAmmoPrefab on.
+Vendor variant prefabs (21): restored F3DDespawn (delay 0.05) / F3DRandomize from their Vendor Source bases; duplicate added copies removed.
+Skipped F3D scripts: F3DProjectile, F3DBeam, F3DLightning, F3DShotgun, F3DFlameThrower (self-move/raycast/F3D damage bridge, F3DPoolManager/F3DTime).
+
+=== 2026-10-21d  Lightning Gun: HDRP materials, thin bolt, travelling bolt (backups .pre20261021d) ===
+Cause of magenta bands: Lightning Gun_BeamF3D used FORGE3D/Additive (built-in shader) on both LineRenderers and all particles;
+  line width 0.5-1 m and particle sizes 28-48 m (vendor scale, Shape scaling).
+Lightning Gun_BeamF3D.prefab: 6 new HDRP/Unlit additive materials in Vendor/Lightning Gun/Materials (HDRP_lightning_gun_*), from the vendor textures;
+  particle sizes/speeds/shape radius x1/40 (flare ball ~1.2 m), point light range 250 -> 6. FORGE3D files untouched.
+Scripts/Combat/Vfx/DMLightningBeamSession.cs: rewritten as a travelling bolt (head travels at Bolt Speed, tail <= Bolt Max Length; on arrival hit via
+  ApplyHitOutcome; hold = Beam Duration with optional ticks; tail retracts over Tail Retract Time). Chain links travel/retract the same way,
+  each starting when the previous head arrives. Line width = Bolt Width. Pooled bolts released explicitly.
+Scripts/Combat/Vfx/DMLightningBeamVisual.cs: UV scale/scroll via the material's main texture (HDRP _UnlitColorMap) instead of _MainTex.
+Scripts/Combat/DMAmmoFxProfile.cs: + boltSpeed 120, boltMaxLength 12, boltTailRetractTime 0.12, boltWidth 0.12; Beam Duration now 0-6 (hold).
+
+== 21e (backups .pre20261021e) ==
+- Pink ring source: DMAoeTriggerBubble (RichFuchsia splash-radius ring) spawned by CombatHitResolver.ApplySplash because Lightning ammo has splashRadius 20. Added DMAmmoFxProfile.showSplashBubble (default true); ApplySplash skips the bubble when false and no Cluster/Persistent Hazard follow-up. Lightning asset: showSplashBubble=false. Splash damage itself unchanged.
+- Chain visual: enemy resolution used GetComponentInParent<EnemyHealth> on hit/overlap/LOS colliders (DMHitbox colliders resolve via DamageableUtility), so first-hit enemy was null / LOS blocked -> no links. Now EnemyOf() via DamageableUtility.GetDamageable fallback parent. Link endpoints = humanoid UpperChest/Chest/Spine bone (fallback root+1.2m) instead of collider bounds.
+- DMAmmoFxProfile.chainDebugLog: logs first hit, each jump (enemies, dist, dmg, bolt instance) and skipped jumps.
+- Files: DMAmmoFxProfile.cs, Vfx/DMLightningBeamSession.cs, CombatHitResolver.cs, DMAmmoFxProfile_Lightning Gun.asset. Console 0/0. No commit.
+
+== 21f vendor ammo VFX off FORGE3D shaders (backups .pre20261021f on 51 prefabs) ==
+- New shader Assets/_Project/Art/VFX/VendorHDRP/DMHDRPParticleUnlit.shader ("DarkMatter/HDRP Particle Unlit"): HDRP ForwardOnly unlit, particle vertex color + tint + Boost, Mode 0 Additive (FORGE3D Additive formula) / 1 Alpha Blended, exposure-aware. No soft-particle depth fade.
+- 70 materials (<source>_HDRP.mat, one per unique source material) in VendorHDRP; textures/tint/boost/tiling copied from FORGE3D mats (FORGE3D untouched).
+- Converted 180 FORGE3D/Additive, 18 Alpha Blended, 2 Billboard Additive renderer slots across 51 of 69 prefabs; Lightning Gun_BeamF3D 10 HDRP/Unlit slots moved to vertex-color versions.
+- 84 null materials = unused particle Trail material slot (Trails module off) -> left as-is.
+- Rescan: 0 FORGE3D slots left. Console 0/0 (FORGE3D/Burnout shader errors appeared on import; vendor file, not used here). No rescale. No commit.
+
+== 21g vendor light/particle rescale (backups .pre20261021g on 12 prefabs) ==
+- Point light range 250 -> 6 on: Flame Red_Beam, Flames Flame Red, Laser Impulse_Muzzle + Vendor Source, Seeker Bolt_Muzzle + VS, Solo Gun_Muzzle + VS, Vulcan_Muzzle + VS, Lightning Gun_Beam + VS.
+- Intensity 47.75 lm (=3.8 cd) -> 12.5 lm (~1 cd, matches lightning 0.99 cd) on Flame Red x2, Laser Impulse muzzle x2, Vulcan_Muzzle. Candela lights (0.99-1.29 cd) unchanged.
+- Old Lightning Gun_Beam + Vendor Source: 8 particle systems' startSize/startSpeed/gravity/shape radius copied from BeamF3D (the 1/40 rescale).
+- Console 0/0. No commit.
+
+== 21h brightness + lightning travel (backups now in A:\Dark Matter Genesis\_AgentBackups\<rel path>.pre20261021h) ==
+- Moved all 452 .pre2026* backup files (incl. 187 .meta) from Assets/ to _AgentBackups/ (same relative paths, untracked). Unity's orphan-meta warnings cleared. Future backups go there only.
+- Lights: Flame Red x2, Laser Impulse muzzle x2, Vulcan_Muzzle intensity restored 12.5 -> 47.75 lm; range kept 6 m.
+- Particle dimming cause: DarkMatter/HDRP Particle Unlit multiplied by camera exposure (_ExposureWeight 1), HDRP Unlit/vendor look does not. Default and all 70 VendorHDRP mats -> _ExposureWeight 0. Boost/vertex color untouched (same formula as FORGE3D).
+- Lightning: session is the active path (player -> PioneerInvectorProjectileBridge -> CombatProjectileSpawner.ResolveHitscanBeam -> DMLightningBeamSession; projectilePrefab unused for isHitscanBeam). Cause of 'stuck to gun': at 120 m/s with 12 m max length, the bolt reached the hit in ~0.1 s still attached to the muzzle, then held muzzle->hit for 1.5 s. Fix: after arrival the tail retracts into the contact point over boltTailRetractTime; a short stub (electric ball) stays for beamDurationSeconds while ticks apply. Lightning asset boltSpeed 120->60, boltMaxLength 12->4. Pooled bolt instances disable any HitscanBeamMuzzleFollow. chainDebugLog also logs the session fire.
+- Console 0/0. No commit.
+
+== 21i lightning = detached projectile (backups _AgentBackups\...\*.pre20261021i: DMLightningBeamSession.cs, DMAmmoFxProfile.cs) ==
+- Cause 'attached beam': main bolt re-read muzzle.position + live aim and re-raycast every LateUpdate. Fix: snapshot muzzle pos/dir and raycast ONCE at fire; bolt flies that fixed path, no follow.
+- Cause 'many marks near reticle': hold ticks (5/s x 1.5 s) called ApplyHitOutcome on the per-frame live-aim raycast -> mark/impact FX at each new aim point. Fix: one ApplyHitOutcome on arrival (one mark); ticks = CombatHitResolver.ApplyDirectHit(rangedHitMarks:false) at the snapshot contact / linked enemy, enemies only, no FX/marks, no re-aim. F3DRandomize only jitters visuals (not marks).
+- New Studio fields: streamSegments (1-4, default 3) + streamSegmentGap (0.045 s): stream burst along the same path; only the lead segment hits/keeps the contact ball, the rest are visual and finish after retract.
+- NOTE: refresh_unity was run while Play was active (q2 poll read play=True and the script did not stop). Compile 0/0; Play has since ended.
+- Console 0/0. No commit.
+
+== 21j chain link visuals (backup _AgentBackups\...\DMLightningBeamSession.cs.pre20261021j) ==
+- Cause: 21i hold rule 'keep = !StreamTail && HasHit' - chain links never set HasHit (only the muzzle bolt raycasts), so each link was released right after its 0.12 s retract (~0.25 s total incl. ~0.13 s travel at 60 m/s), no ball/hold - effectively invisible. Pool/instance reuse, muzzle snapshot and endpoints checked: not the cause (links use live chest->chest, own pooled instance, released only by their own Finish).
+- Fix: keep = !StreamTail && (HasHit || !FromMuzzle): links travel, hold the ball at the enemy for beamDurationSeconds (with damage-only ticks), then retract - same as the main bolt; next link still launches on arrival (sequential). chainDebugLog now also logs each link's lifetime/length on finish.
+- Refresh after isPlaying=false check. Console 0/0. No commit.

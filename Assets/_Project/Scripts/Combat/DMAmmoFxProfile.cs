@@ -25,6 +25,54 @@ namespace Project.Combat
         [Tooltip("Auto = infer from isHitscanBeam and projectile prefab. All nine ammo types resolve through DMCombatRangedResolver.")]
         public DMAmmoDeliveryMode delivery = DMAmmoDeliveryMode.Auto;
 
+        [Header("Muzzle flash / vendor FX (2026-10-21c)")]
+        [Tooltip("Use the muzzle prefab's FORGE3D F3DDespawn delay as its lifetime when the component is present (highest priority).")]
+        public bool useF3DDespawn = true;
+        [Tooltip("Muzzle flash lifetime (s) when no F3DDespawn delay applies. 0 = global default (2 s, or until particles finish). Vendor ammo: 0.05.")]
+        [Min(0f)] public float muzzleLifetime = 0f;
+        [Tooltip("Hitscan beam: always draw this ammo's Beam Vfx Prefab instead of pulsing the weapon's own laser stack (e.g. Lightning Gun).")]
+        public bool beamUsesAmmoPrefab = false;
+
+        [Header("Lightning beam (2026-10-21c; used when Beam Uses Ammo Prefab is on)")]
+        [Tooltip("Hold (s) after the bolt head reaches the contact point, before the tail retracts. 0 = retract immediately.")]
+        [Range(0f, 6f)] public float beamDurationSeconds = 1.5f;
+        [Tooltip("2026-10-21d: bolt head travel speed (m/s) from the barrel to the contact point (chain links too).")]
+        [Range(5f, 1000f)] public float boltSpeed = 120f;
+        [Tooltip("2026-10-21d: max visible bolt length (m) while travelling; the tail follows the head.")]
+        [Range(0.5f, 200f)] public float boltMaxLength = 12f;
+        [Tooltip("2026-10-21d: time (s) for the tail to retract from the shooter end into the target.")]
+        [Range(0.01f, 2f)] public float boltTailRetractTime = 0.12f;
+        [Tooltip("2026-10-21d: bolt line width (m).")]
+        [Range(0.01f, 2f)] public float boltWidth = 0.12f;
+        [Tooltip("On = damage every tick while the beam is active. Off = damage once on fire.")]
+        public bool beamDamagePerTick = true;
+        [Tooltip("Damage ticks per second while active (per-tick mode).")]
+        [Range(1f, 30f)] public float beamDamageTicksPerSecond = 5f;
+        [Tooltip("Each tick deals shot damage x this (per-tick mode). The fire frame always deals full shot damage.")]
+        [Range(0f, 2f)] public float beamTickDamageScale = 0.2f;
+
+        [Header("Chain lightning (2026-10-21c)")]
+        [Tooltip("Chain lightning on/off for this ammo.")]
+        public bool chainEnabled = true;
+        [Tooltip("Chain Lightning skill unlocked (temporary flag until the skill tree drives it).")]
+        public bool chainSkillUnlocked = true;
+        [Tooltip("Extra enemies the bolt jumps to after the first hit (1-5 normal; up to 20 for testing).")]
+        [Range(1, 20)] public int chainMaxTargets = 3;
+        [Tooltip("Max jump distance (m) from the current enemy to the next.")]
+        [Range(1f, 40f)] public float chainRange = 8f;
+        [Tooltip("Damage multiplier per jump (1 = no falloff, 0.85 = -15% per jump).")]
+        [Range(0.1f, 1f)] public float chainDamageFalloff = 0.85f;
+        [Tooltip("Jumps need a clear line between enemies.")]
+        public bool chainRequiresLineOfSight = true;
+        [Tooltip("2026-10-21e: log each chain link (spawn, endpoints, damage, why a jump was skipped) to the Console.")]
+        public bool chainDebugLog = false;
+        [Tooltip("2026-10-21i: Stream - fire the bolt as a short burst of segments along the same snapshot path (1 = single bolt). Only the lead segment hits.")]
+        [Range(1, 4)] public int streamSegments = 3;
+        [Tooltip("2026-10-21i: seconds between stream segments.")]
+        [Range(0.01f, 0.2f)] public float streamSegmentGap = 0.045f;
+        [Tooltip("2026-10-21e: show the magenta splash-radius bubble (DMAoeTriggerBubble) for this ammo's splash. Off for Lightning Gun.")]
+        public bool showSplashBubble = true;
+
         [Header("Hit VFX")]
         [Tooltip("Stamp the laser burn mark (pulse / continuous laser).")]
         public bool spawnLaserBurn;

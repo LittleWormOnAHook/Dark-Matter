@@ -52,9 +52,48 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 19900000, guid: b7d47e7dedfd41046960ed06492b46e2, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 95250da0e75b6a142b6ac19933a062cc, type: 2}
+    - target: {fileID: 19900004, guid: b7d47e7dedfd41046960ed06492b46e2, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 2336a17446ebd614f96fbe6876f707a2, type: 2}
     m_RemovedComponents:
     - {fileID: 11400000, guid: b7d47e7dedfd41046960ed06492b46e2, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 100000, guid: b7d47e7dedfd41046960ed06492b46e2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -6071136621294461001}
   m_SourcePrefab: {fileID: 100100000, guid: b7d47e7dedfd41046960ed06492b46e2, type: 3}
+--- !u!1 &2849956426998396036 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 100000, guid: b7d47e7dedfd41046960ed06492b46e2, type: 3}
+  m_PrefabInstance: {fileID: 2849956426998428196}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &-6071136621294461001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2849956426998396036}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71d84e8c92ffdf1438c9798f91d60981, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  fxType: 4
+  layerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  lifeTime: 5
+  despawnDelay: 1
+  velocity: 200
+  RaycastAdvance: 2
+  DelayDespawn: 1
+  delayedParticles:
+  - {fileID: 19800004, guid: b7d47e7dedfd41046960ed06492b46e2, type: 3}

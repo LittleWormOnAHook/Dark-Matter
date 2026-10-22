@@ -158,6 +158,19 @@ MonoBehaviour:
     compatible, projectile.
   unlocksInventoryStorageRow: 0
   delivery: 0
+  useF3DDespawn: 1
+  muzzleLifetime: 0.05
+  beamUsesAmmoPrefab: 0
+  beamDurationSeconds: 1.5
+  beamDamagePerTick: 1
+  beamDamageTicksPerSecond: 5
+  beamTickDamageScale: 0.2
+  chainEnabled: 1
+  chainSkillUnlocked: 1
+  chainMaxTargets: 3
+  chainRange: 8
+  chainDamageFalloff: 0.85
+  chainRequiresLineOfSight: 1
   spawnLaserBurn: 0
   enemyBlood: 0
   enemyBurnMark: 0

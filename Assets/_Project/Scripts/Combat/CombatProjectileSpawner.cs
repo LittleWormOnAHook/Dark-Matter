@@ -111,6 +111,14 @@ namespace Project.Combat
             Vector3? lockedSpawnPosition = null)
         {
             float range = DMRangedAmmoStats.ResolveRange(weapon, ammoItem);
+            // 2026-10-21c: lightning-style ammo (own beam prefab) -> persistent beam session with tick damage + chain.
+            DMAmmoFxProfile lightningProfile = DMCombatFx.ResolveProfile(ammoItem, weapon);
+            if (lightningProfile != null && lightningProfile.beamUsesAmmoPrefab && muzzle != null
+                && DMCombatFx.ResolveBeam(ammoItem, weapon) != null)
+            {
+                DMLightningBeamSession.Fire(owner, muzzle, weapon, ammoItem, lightningProfile, direction, damage, range);
+                return;
+            }
             Vector3 muzzlePos = lockedSpawnPosition ?? muzzle.position;
             Vector3 origin = muzzlePos + direction * RangedFireSolver.MuzzleRayStartSkin;
             float castRange = Mathf.Max(0.01f, range - RangedFireSolver.MuzzleRayStartSkin);

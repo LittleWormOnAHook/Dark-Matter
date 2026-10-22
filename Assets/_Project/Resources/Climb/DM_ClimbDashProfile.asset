@@ -87,6 +87,9 @@ MonoBehaviour:
   bodyWeightDebugReadout: 0
   bodyWeightAimScale: 0.15
   bodyWeightAccelSmooth: 0.08
+  bodyWeightIdleSpeedDeadzone: 0.2
+  bodyWeightYawRateDeadzone: 20
+  bodyWeightAccelDeadzone: 1.5
   bodyWeightLeanAccel: 1
   bodyWeightStopCarry: 1.4
   bodyWeightLeanTurn: 0.9
@@ -160,6 +163,11 @@ MonoBehaviour:
   bodyWeightBreathExertRise: 4
   bodyWeightBreathExertDecay: 5
   bodyWeightBreathAimScale: 0.25
+  bodyWeightAimUpperBodyScale: 0
+  bodyWeightAimFadeTime: 0.12
+  bodyWeightAimHipSwayScale: 0
+  bodyWeightAimRecoilScale: 0.6
+  bodyWeightAimRecoilSettle: 3
   bodyWeightEnemyEnabled: 1
   bodyWeightEnemyLean: 0.8
   bodyWeightEnemyStopCarry: 1.1

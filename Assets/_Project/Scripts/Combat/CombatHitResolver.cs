@@ -317,6 +317,11 @@ namespace Project.Combat
             if (!allowFollowUp)
                 return;
 
+            // 2026-10-21e: the bubble is only a visual unless Cluster / Persistent Hazard follow-ups need it.
+            DMAmmoFxProfile bubbleProfile = DMCombatFx.ResolveProfile(ammoItem, null);
+            if (bubbleProfile != null && !bubbleProfile.showSplashBubble && !cluster && !cloud)
+                return;
+
             DMAoeTriggerBubble.Spawn(
                 center,
                 radius,
@@ -585,7 +590,10 @@ namespace Project.Combat
             float followRange = Mathf.Max(1f, range > 0.01f ? range : length);
 
             // Prefer the drawn weapon's muzzle/Laser/laserSight stack (Sci-Fi Pistol, Survival Rifle, Mining Tool, etc.).
-            if (TryPulseWeaponLaserStack(muzzle, followRange, 0.35f))
+            // 2026-10-21c: ammo can force its own beam prefab (Lightning Gun) instead of the weapon laser stack.
+            DMAmmoFxProfile beamProfile = DMCombatFx.ResolveProfile(ammoItem, weapon);
+            bool forceAmmoBeam = beamProfile != null && beamProfile.beamUsesAmmoPrefab && DMCombatFx.ResolveBeam(ammoItem, weapon) != null;
+            if (!forceAmmoBeam && TryPulseWeaponLaserStack(muzzle, followRange, 0.35f))
                 return;
 
             GameObject beamPrefab = DMCombatFx.ResolveBeam(ammoItem, weapon);

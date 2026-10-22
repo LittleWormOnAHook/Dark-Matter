@@ -130,7 +130,22 @@ namespace Project.Combat
 
             // World-space spawn — parenting to the muzzle socket leaves (Clone) clutter on the weapon.
             GameObject instance = PoolManager.Spawn(prefab, muzzle.position, muzzle.rotation);
-            CombatVfxUtility.PreparePooledOneShotVfx(instance, MuzzleLifeSeconds);
+            CombatVfxUtility.PreparePooledOneShotVfx(instance, ResolveMuzzleLifetime(instance, ResolveProfile(ammoItem, weapon)));
+        }
+
+        /// <summary>2026-10-21c: F3DDespawn delay (if present + enabled on the ammo) -> ammo Muzzle Lifetime -> global default.
+        /// FORGE3D's own timer never runs under our pool (OnSpawned is only called by F3DPoolManager).</summary>
+        public static float ResolveMuzzleLifetime(GameObject instance, DMAmmoFxProfile profile)
+        {
+            if ((profile == null || profile.useF3DDespawn) && instance != null)
+            {
+                FORGE3D.F3DDespawn d = instance.GetComponentInChildren<FORGE3D.F3DDespawn>(true);
+                if (d != null && d.DespawnDelay > 0f)
+                    return d.DespawnDelay;
+            }
+            if (profile != null && profile.muzzleLifetime > 0f)
+                return profile.muzzleLifetime;
+            return MuzzleLifeSeconds;
         }
 
         public static void PlayWorldImpact(
