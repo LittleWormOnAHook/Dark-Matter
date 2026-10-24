@@ -60,6 +60,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -72,6 +73,9 @@ import com.expressmobileservice.inspection.AppointmentStore
 import com.expressmobileservice.inspection.CustomerRecord
 import com.expressmobileservice.inspection.distinctCustomerRecords
 import com.expressmobileservice.inspection.searchCustomers
+import android.widget.Toast
+import com.expressmobileservice.inspection.appointmentSendReadinessError
+import com.expressmobileservice.inspection.InspectionStore
 import com.expressmobileservice.inspection.VehicleCategory
 import com.expressmobileservice.inspection.autofillLabel
 import com.expressmobileservice.inspection.autofillSuggestions
@@ -103,12 +107,14 @@ private enum class PickerTarget {
 @Composable
 fun AppointmentEditorScreen(
     appointmentStore: AppointmentStore,
+    inspectionStore: InspectionStore,
     initial: Appointment?,
     defaultDate: LocalDate,
     prefilledJobNotes: String? = null,
     onDismiss: () -> Unit,
     onSave: (Appointment) -> Unit
 ) {
+    val context = LocalContext.current
     val isEditing = initial != null
     val defaultStart = initial?.startEpochMillis ?: defaultAppointmentStart(defaultDate)
     val defaultEnd = initial?.endEpochMillis ?: defaultAppointmentEnd(defaultStart)
@@ -142,6 +148,7 @@ fun AppointmentEditorScreen(
     var endMillis by remember { mutableStateOf(defaultEnd) }
     var showPicker by remember { mutableStateOf<PickerTarget?>(null) }
     var validationError by remember { mutableStateOf<String?>(null) }
+    var showThankYouSheet by remember { mutableStateOf(false) }
     val copyToClipboard = rememberCopyHandler()
 
     val customerRecords = remember(appointmentStore) {
@@ -261,6 +268,32 @@ fun AppointmentEditorScreen(
                 } else endMillis,
                 allDay = allDay
             )
+        )
+    }
+
+    fun draftAppointment() = Appointment(
+        id = initial?.id.orEmpty(),
+        inspectionId = initial?.inspectionId.orEmpty(),
+        customerName = customerName,
+        customerPhone = customerPhone,
+        jobNotes = jobNotes,
+        address = address,
+        vehicleCategory = vehicleCategory.name,
+        vehicleYear = vehicleYear,
+        vehicleMake = vehicleMake,
+        vehicleModel = vehicleModel,
+        engineSize = engineSize,
+        mileage = mileage,
+        startEpochMillis = startMillis,
+        endEpochMillis = endMillis,
+        allDay = allDay
+    )
+
+    if (showThankYouSheet) {
+        ThankYouNoteSheet(
+            appointment = draftAppointment(),
+            inspectionStore = inspectionStore,
+            onDismiss = { showThankYouSheet = false }
         )
     }
 
@@ -605,6 +638,48 @@ fun AppointmentEditorScreen(
                     onSelect = { applyCustomerRecord(it) },
                     onCopy = copyToClipboard
                 )
+            }
+
+            HorizontalDivider(
+                color = SamsungCalendarColors.divider,
+                modifier = Modifier.padding(vertical = 12.dp)
+            )
+
+            SectionHeader("Thank you note")
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                ThankYouStarButton(
+                    onClick = ExpressUiSounds.withImpact {
+                        val error = appointmentSendReadinessError(
+                            draftAppointment(),
+                            inspectionStore
+                        )
+                        if (error != null) {
+                            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                        } else {
+                            showThankYouSheet = true
+                        }
+                    }
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Send thank you note",
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White
+                    )
+                    Text(
+                        text = "Google Messages with review link, website, and our phone number.",
+                        fontSize = 12.sp,
+                        color = SamsungCalendarColors.muted,
+                        lineHeight = 16.sp
+                    )
+                }
             }
 
             EditorField(

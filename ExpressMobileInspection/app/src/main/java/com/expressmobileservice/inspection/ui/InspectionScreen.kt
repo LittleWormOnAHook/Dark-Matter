@@ -89,6 +89,8 @@ import com.expressmobileservice.inspection.InspectionFormState
 import com.expressmobileservice.inspection.InspectionItem
 import com.expressmobileservice.inspection.InspectionSection
 import com.expressmobileservice.inspection.InspectionStatus
+import com.expressmobileservice.inspection.Appointment
+import com.expressmobileservice.inspection.appointmentSendReadinessError
 import com.expressmobileservice.inspection.defaultInspectionSections
 import com.expressmobileservice.inspection.AppointmentStore
 import com.expressmobileservice.inspection.InspectionStore
@@ -131,6 +133,7 @@ fun InspectionScreen(
     var loadedInspectionId by remember { mutableStateOf<String?>(null) }
     var autoSaveHint by remember { mutableStateOf<String?>(null) }
     var showInspectionList by remember { mutableStateOf(false) }
+    var showThankYouSheet by remember { mutableStateOf(false) }
 
     fun applySavedInspection(saved: SavedInspection) {
         val form = saved.toFormState()
@@ -214,6 +217,37 @@ fun InspectionScreen(
         onInspectionSaved("Inspection saved")
     }
 
+    fun thankYouAppointment(): Appointment {
+        val saved = persistId?.let { inspectionStore.getById(it) }
+        val linked = saved?.appointmentId?.let { appointmentStore.getById(it) }
+        return linked?.copy(
+            customerName = customerName,
+            customerPhone = customerPhone,
+            mileage = mileage,
+            jobNotes = generalNotes.ifBlank { linked.jobNotes },
+            inspectionId = persistId ?: linked.inspectionId
+        ) ?: Appointment(
+            customerName = customerName,
+            customerPhone = customerPhone,
+            mileage = mileage,
+            jobNotes = generalNotes,
+            inspectionId = persistId.orEmpty()
+        )
+    }
+
+    fun beginSendThankYouPdf() {
+        val error = appointmentSendReadinessError(
+            thankYouAppointment(),
+            inspectionStore,
+            currentState()
+        )
+        if (error != null) {
+            onShareError(error)
+            return
+        }
+        showThankYouSheet = true
+    }
+
     fun share(type: ReportShareType) {
         if (customerName.isBlank()) {
             onShareError("Enter the customer name before sending the report.")
@@ -240,6 +274,15 @@ fun InspectionScreen(
             return
         }
         share(type)
+    }
+
+    if (showThankYouSheet) {
+        ThankYouNoteSheet(
+            appointment = thankYouAppointment(),
+            inspectionStore = inspectionStore,
+            formOverride = currentState(),
+            onDismiss = { showThankYouSheet = false }
+        )
     }
 
     if (showUncheckedWarning) {
@@ -399,7 +442,7 @@ fun InspectionScreen(
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
-                    onClick = ExpressUiSounds.withAnchor { beginComplete(ReportShareType.PDF) },
+                    onClick = ExpressUiSounds.withAnchor { beginSendThankYouPdf() },
                     enabled = !isGenerating,
                     modifier = Modifier.fillMaxWidth()
                 ) {

@@ -1,5 +1,6 @@
 package com.expressmobileservice.inspection.ui
 
+import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -34,6 +35,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -82,6 +84,7 @@ import com.expressmobileservice.inspection.formatMonthAbbrev
 import com.expressmobileservice.inspection.formatTimeRange
 import com.expressmobileservice.inspection.hasSavedInspection
 import com.expressmobileservice.inspection.daysInMonthGrid
+import com.expressmobileservice.inspection.appointmentSendReadinessError
 import com.expressmobileservice.inspection.openWaze
 import com.expressmobileservice.inspection.toClipboardText
 import com.expressmobileservice.inspection.weekDayColumnLabels
@@ -151,6 +154,7 @@ fun AppointmentsScreen(
     var quickAddText by remember { mutableStateOf("") }
     var editorQuickNotes by remember { mutableStateOf<String?>(null) }
     var agendaActionTarget by remember { mutableStateOf<Appointment?>(null) }
+    var thankYouTarget by remember { mutableStateOf<Appointment?>(null) }
     val copyToClipboard = rememberCopyHandler()
 
     fun refresh() {
@@ -171,6 +175,7 @@ fun AppointmentsScreen(
     if (showEditor) {
         AppointmentEditorScreen(
             appointmentStore = store,
+            inspectionStore = inspectionStore,
             initial = editingAppointment,
             defaultDate = selectedDate,
             prefilledJobNotes = editorQuickNotes,
@@ -220,6 +225,14 @@ fun AppointmentsScreen(
         )
     }
 
+    thankYouTarget?.let { apt ->
+        ThankYouNoteSheet(
+            appointment = apt,
+            inspectionStore = inspectionStore,
+            onDismiss = { thankYouTarget = null }
+        )
+    }
+
     agendaActionTarget?.let { apt ->
         AlertDialog(
             onDismissRequest = { agendaActionTarget = null },
@@ -228,21 +241,45 @@ fun AppointmentsScreen(
             confirmButton = {
                 TextButton(
                     onClick = ExpressUiSounds.withImpact {
-                        copyToClipboard(apt.toClipboardText(), "Appointment copied")
+                        val error = appointmentSendReadinessError(apt, inspectionStore)
+                        if (error != null) {
+                            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                        } else {
+                            thankYouTarget = apt
+                        }
                         agendaActionTarget = null
                     }
                 ) {
-                    Text("Copy text", color = SamsungCalendarColors.green)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.Star,
+                            contentDescription = null,
+                            tint = SamsungCalendarColors.green,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Thank you note", color = SamsungCalendarColors.green)
+                    }
                 }
             },
             dismissButton = {
-                TextButton(
-                    onClick = ExpressUiSounds.withImpact {
-                        agendaActionTarget = null
-                        appointmentToDelete = apt
+                Row {
+                    TextButton(
+                        onClick = ExpressUiSounds.withImpact {
+                            copyToClipboard(apt.toClipboardText(), "Appointment copied")
+                            agendaActionTarget = null
+                        }
+                    ) {
+                        Text("Copy text", color = SamsungCalendarColors.green)
                     }
-                ) {
-                    Text("Delete")
+                    TextButton(
+                        onClick = ExpressUiSounds.withImpact {
+                            agendaActionTarget = null
+                            appointmentToDelete = apt
+                        }
+                    ) {
+                        Text("Delete")
+                    }
                 }
             }
         )
@@ -410,6 +447,14 @@ fun AppointmentsScreen(
                         onAppointmentLongPress = { agendaActionTarget = it },
                         onDial = { dialPhone(context, it.customerPhone) },
                         onNavigate = { openWaze(context, it.address) },
+                        onThankYou = {
+                            val error = appointmentSendReadinessError(it, inspectionStore)
+                            if (error != null) {
+                                Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                            } else {
+                                thankYouTarget = it
+                            }
+                        },
                         inspectionStore = inspectionStore,
                         onOpenInspection = onOpenInspection,
                         modifier = Modifier.weight(1f)
@@ -442,6 +487,14 @@ fun AppointmentsScreen(
                         onAppointmentLongPress = { agendaActionTarget = it },
                         onDial = { dialPhone(context, it.customerPhone) },
                         onNavigate = { openWaze(context, it.address) },
+                        onThankYou = {
+                            val error = appointmentSendReadinessError(it, inspectionStore)
+                            if (error != null) {
+                                Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                            } else {
+                                thankYouTarget = it
+                            }
+                        },
                         inspectionStore = inspectionStore,
                         onOpenInspection = onOpenInspection,
                         modifier = Modifier.weight(1f)
@@ -473,6 +526,14 @@ fun AppointmentsScreen(
                         onAppointmentLongPress = { agendaActionTarget = it },
                         onDial = { dialPhone(context, it.customerPhone) },
                         onNavigate = { openWaze(context, it.address) },
+                        onThankYou = {
+                            val error = appointmentSendReadinessError(it, inspectionStore)
+                            if (error != null) {
+                                Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                            } else {
+                                thankYouTarget = it
+                            }
+                        },
                         inspectionStore = inspectionStore,
                         onOpenInspection = onOpenInspection,
                         modifier = Modifier.weight(1f)
@@ -830,6 +891,7 @@ private fun SamsungAgendaPanel(
     onAppointmentLongPress: (Appointment) -> Unit,
     onDial: (Appointment) -> Unit,
     onNavigate: (Appointment) -> Unit,
+    onThankYou: (Appointment) -> Unit,
     inspectionStore: InspectionStore,
     onOpenInspection: (String) -> Unit,
     modifier: Modifier = Modifier
@@ -879,6 +941,7 @@ private fun SamsungAgendaPanel(
                         onLongClick = { onAppointmentLongPress(apt) },
                         onDial = { onDial(apt) },
                         onNavigate = { onNavigate(apt) },
+                        onThankYou = { onThankYou(apt) },
                         onOpenInspection = { onOpenInspection(apt.inspectionId) }
                     )
                     Spacer(modifier = Modifier.height(12.dp))
@@ -925,6 +988,7 @@ private fun SamsungAgendaRow(
     onLongClick: () -> Unit,
     onDial: () -> Unit,
     onNavigate: () -> Unit,
+    onThankYou: () -> Unit,
     onOpenInspection: () -> Unit
 ) {
     val showInsp = appointment.hasSavedInspection(inspectionStore)
@@ -990,6 +1054,10 @@ private fun SamsungAgendaRow(
                 )
             }
         }
+        Spacer(modifier = Modifier.width(8.dp))
+        ThankYouStarButton(
+            onClick = ExpressUiSounds.withImpact(onThankYou)
+        )
         if (showInsp) {
             Spacer(modifier = Modifier.width(8.dp))
             InspBadgeButton(onClick = onOpenInspection)
