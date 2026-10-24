@@ -687,6 +687,27 @@ new DMStudioSubtab(
                             DMStudioPanelMode.SingletonAsset,
                             "Assets/_Project/Resources/GameAudioProfile.asset",
                             playModeSave: true)
+                    }),
+                new DMStudioCategory(
+                    "rendering",
+                    "Rendering",
+                    "\u25C8",
+                    "DM shaders (DM_ copies only; nothing is reassigned automatically).",
+                    FromHex("#6FA8DC"),
+                    new[]
+                    {
+                        new DMStudioSubtab(
+                            "rendering-dm-terrain",
+                            "DM Shaders: Terrain",
+                            "DM_TerrainParallax material: height blend, parallax offset / POM, distance + grazing fade, per-layer strength, anti-tiling.",
+                            DMStudioPanelMode.ExternalTool,
+                            externalMenuPath: DMStudioTerrainShaderWindow.MenuPath),
+                        new DMStudioSubtab(
+                            "rendering-dm-master",
+                            "DM Shaders: Master",
+                            "DM/Master (HDRP Lit copy + extras). Converter creates DM_ material copies only; dry run by default; CSV manifest.",
+                            DMStudioPanelMode.ExternalTool,
+                            externalMenuPath: DMStudioMasterShaderWindow.MenuPath)
                     })
             };
         }

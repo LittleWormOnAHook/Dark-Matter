@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Project.AI
 {
@@ -308,6 +308,9 @@ namespace Project.AI
                     continue;
                 if (!IsGroundCollider(col))
                     continue;
+                // 24ac: rock / prop mesh flanks are not ground (enemies snapped up the new rock LOD0 colliders and wedged).
+                if (!IsTerrainHit(col) && hit.normal.y < GroundMeshMinNormalY())
+                    continue;
 
                 ConsiderCandidate(hit.point.y, minAcceptedY, queryY, ref bestY, ref bestDelta);
             }
@@ -435,6 +438,12 @@ namespace Project.AI
                 return true;
             int terrainLayer = TerrainLayer();
             return terrainLayer >= 0 && col.gameObject.layer == terrainLayer;
+        }
+
+        private static float GroundMeshMinNormalY()
+        {
+            DM_EnemyBrainProfile p = DM_EnemyBrainProfile.Live;
+            return Mathf.Cos((p != null ? p.groundMeshMaxSlopeDeg : 50f) * Mathf.Deg2Rad);
         }
 
         private static int TerrainLayer()

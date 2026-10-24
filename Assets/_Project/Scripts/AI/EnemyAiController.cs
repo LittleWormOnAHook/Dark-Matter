@@ -269,8 +269,42 @@ namespace Project.AI
             }
         }
 
+        private float locomotionPausedSince = -1f;
+        private float animatorFrozenSince = -1f;
+        private Animator stallWatchAnimator;
+
+        /// <summary>24ae: releases a locomotion pause / animator hit-stop that never ended (enemy frozen in a pose, no tracking).</summary>
+        private void TickStallWatchdog()
+        {
+            DM_EnemyBrainProfile p = DM_EnemyBrainProfile.Live;
+            if (p == null || (health != null && health.IsDead))
+                return;
+            if (locomotionPaused && p.stallWatchdogPauseSeconds > 0f && locomotionPausedSince >= 0f &&
+                Time.time - locomotionPausedSince > p.stallWatchdogPauseSeconds)
+            {
+                if (p.stallWatchdogLog)
+                    Debug.Log("[EnemyStall] '" + name + "' locomotion pause held " + (Time.time - locomotionPausedSince).ToString("F1") + "s -> released", this);
+                SetLocomotionPaused(false);
+            }
+            if (stallWatchAnimator == null)
+                stallWatchAnimator = GetComponentInChildren<Animator>();
+            if (stallWatchAnimator == null || p.stallWatchdogAnimatorSeconds <= 0f)
+                return;
+            if (stallWatchAnimator.speed > 0.01f) { animatorFrozenSince = -1f; return; }
+            if (animatorFrozenSince < 0f) { animatorFrozenSince = Time.time; return; }
+            if (Time.time - animatorFrozenSince > p.stallWatchdogAnimatorSeconds)
+            {
+                if (p.stallWatchdogLog)
+                    Debug.Log("[EnemyStall] '" + name + "' animator speed 0 for " + (Time.time - animatorFrozenSince).ToString("F1") + "s -> restored 1", this);
+                stallWatchAnimator.speed = 1f;
+                animatorFrozenSince = -1f;
+            }
+        }
+
         public void SetLocomotionPaused(bool paused)
         {
+            if (paused && !locomotionPaused) locomotionPausedSince = Time.time;
+            if (!paused) locomotionPausedSince = -1f;
             locomotionPaused = paused;
             if (paused)
             {
@@ -612,6 +646,8 @@ namespace Project.AI
 
             if (health != null && health.IsDead)
                 return;
+
+            TickStallWatchdog(); // 24ae
 
             if (locomotionPaused)
                 return;

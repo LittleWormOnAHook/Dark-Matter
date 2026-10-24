@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering.HighDefinition;
@@ -135,6 +135,7 @@ namespace Project.Combat
                 Collider c = GroundHits[i].collider;
                 if (c == null || c is CharacterController) continue;
                 if (enemy != null && c.transform.IsChildOf(enemy.root)) continue;
+                if (GroundHits[i].point.y > point.y - 0.02f) continue; // 24t: hitbox / weapon / struck collider at hit height is not the floor
                 if (!(c is TerrainCollider) && c.GetComponentInParent<Animator>() != null) continue; // characters / ragdolls
                 if (GroundHits[i].distance < best) { best = GroundHits[i].distance; y = GroundHits[i].point.y; }
             }
@@ -199,8 +200,7 @@ namespace Project.Combat
             go.transform.SetPositionAndRotation(point, Quaternion.Euler(0f, angle + p.volumetricYawOffset, 0f));
             go.transform.localScale = Vector3.one * (Mathf.Clamp(p.volumetricAirborneScale, 0.2f, 1.5f) * NextScaleMul); NextScaleMul = 1f; // 2026-10-13 (f): smaller airborne splatter (HDRP decal size is scale-invariant)
 
-            if (!p.volumetricSpawnGroundDecals)
-                DisableGroundDecals(go);
+            SetGroundDecals(go, p.volumetricSpawnGroundDecals); // 24t: was disable-only; pooled instances stayed decal-less
 
             var settings = go.GetComponent<BFX_BloodSettings>();
             if (settings != null)
@@ -211,7 +211,16 @@ namespace Project.Combat
                 bool grounded = allowGroundSnap && TryGround(p, point, enemy, out gy);
                 settings.AutomaticGroundHeightDetection = playerHit ? !p.volumetricPlayerFluidGroundSnap : !grounded;
                 if (grounded) settings.GroundHeight = gy;
+                if (p.logVolumetricDecals)
+                {
+                    int nd = go.GetComponentsInChildren<BFX.BFX_DecalSettings>(true).Length;
+                    float hMax = 3.1f * go.transform.localScale.y, hMin = -0.1f * go.transform.localScale.y; // BFX_DecalSettings defaults
+                    float above = point.y - (grounded ? gy : point.y);
+                    string why = !p.volumetricSpawnGroundDecals ? "OFF(profile)" : nd == 0 ? "NONE(prefab has no decal)" : !grounded && !settings.AutomaticGroundHeightDetection ? "NOGROUND" : (grounded && (above >= hMax || above <= hMin)) ? "HIDDEN(height outside BFX window " + hMin.ToString("F2") + ".." + hMax.ToString("F2") + ")" : "OK";
+                    Debug.Log("[BloodDecal] " + why + " prefab=" + prefab.name + " grounded=" + grounded + " auto=" + settings.AutomaticGroundHeightDetection + " hitY=" + point.y.ToString("F2") + " groundY=" + (grounded ? gy.ToString("F2") : "-") + " above=" + above.ToString("F2") + " decals=" + nd + " player=" + playerHit);
+                }
             }
+            else if (p.logVolumetricDecals) Debug.Log("[BloodDecal] NO BFX_BloodSettings on " + prefab.name);
             go.SetActive(true);
             ApplyFluidColor(p, go, body);
             if (p.volumetricSpawnGroundDecals)
@@ -238,13 +247,12 @@ namespace Project.Combat
             st.Push(l.go);
         }
 
-        private static void DisableGroundDecals(GameObject go)
+        private static void SetGroundDecals(GameObject go, bool on)
         {
             foreach (BFX.BFX_DecalSettings d in go.GetComponentsInChildren<BFX.BFX_DecalSettings>(true))
             {
-                DecalProjector proj = d.GetComponent<DecalProjector>();
-                if (proj != null) proj.enabled = false;
-                d.enabled = false;
+                if (!on) { DecalProjector proj = d.GetComponent<DecalProjector>(); if (proj != null) proj.enabled = false; }
+                d.enabled = on; // BFX enables the projector itself when it lands
             }
         }
 

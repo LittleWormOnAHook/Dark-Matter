@@ -52,6 +52,13 @@ namespace Project.Combat
         private float deathTime;
         private bool isDead;
         private bool pendingReset;
+        // 2026-10-24m: hit kind hint (TakeDamage has no type). Callers set NextHitKind right before damaging; consumed once.
+        public enum HitKind { Auto = 0, Melee = 1, Ranged = 2, BeamTick = 3 }
+        public static HitKind NextHitKind = HitKind.Auto;
+        private Vector2 tilt, tiltVel;           // x = pitch, y = roll (deg, deg/s)
+        private float kickWindowStart = -10f, kickWindowUsed;
+        private Vector3 basePivotLocal;
+        private bool basePivotResolved;
         private Vector3 springOffset;
         private Vector3 springVelocity;
         private Vector3 springRotation;
@@ -114,7 +121,8 @@ namespace Project.Combat
 
             lastDamageTime = Time.time;
             currentHealth = Mathf.Max(0f, currentHealth - damage);
-            ApplyHitReaction(source);
+            HitKind kind = NextHitKind; NextHitKind = HitKind.Auto;
+            ApplyHitReaction(source, 1f, kind);
             NotifyHealthChanged();
             ShowDamageFeedback(damage, isCritical);
             engagedHudPresenter?.NotifyDamagedByPlayer(source);
@@ -381,10 +389,17 @@ namespace Project.Combat
                 Destroy(visual.gameObject);
         }
 
-        private void ApplyHitReaction(GameObject source, float impulseScale = 1f)
+        private void ApplyHitReaction(GameObject source, float impulseScale = 1f, HitKind kind = HitKind.Auto)
         {
             if (source == null)
                 return;
+
+            DM_CombatCoreProfile pivotProfile = DM_CombatCoreProfile.Live;
+            if (pivotProfile != null && pivotProfile.trainingDummyPivotBase)
+            {
+                ApplyPivotKick(pivotProfile, source, impulseScale, kind);
+                return;
+            }
 
             ResolveSpringTuning(
                 out _,
@@ -407,10 +422,78 @@ namespace Project.Combat
             springAngularVelocity += Vector3.Cross(Vector3.up, hitDirection) * (resolvedHitTorque * impulseScale);
         }
 
+        private void ApplyPivotKick(DM_CombatCoreProfile pp, GameObject source, float scale, HitKind kind)
+        {
+            Vector3 dir = transform.position - source.transform.position; dir.y = 0f;
+            if (kind == HitKind.Auto)
+                kind = dir.magnitude <= pp.trainingDummyMeleeDistance ? HitKind.Melee : HitKind.Ranged;
+            if (dir.sqrMagnitude < 1e-4f) dir = -transform.forward;
+            dir.Normalize();
+            float kick = (kind == HitKind.Melee ? pp.trainingDummyMeleeTiltKick : kind == HitKind.BeamTick ? pp.trainingDummyBeamTickTiltKick : pp.trainingDummyRangedTiltKick) * scale;
+            if (pp.trainingDummyKickWindowSeconds > 0f)
+            {
+                if (Time.time - kickWindowStart > pp.trainingDummyKickWindowSeconds) { kickWindowStart = Time.time; kickWindowUsed = 0f; }
+                kick = Mathf.Min(kick, Mathf.Max(0f, pp.trainingDummyKickWindowCap - kickWindowUsed));
+                kickWindowUsed += kick;
+            }
+            if (kick <= 0f) return;
+            // tilt away from the source, around the base: local axis = cross(up, dir)
+            Vector3 axisW = Vector3.Cross(Vector3.up, dir);
+            Vector3 axisL = transform.InverseTransformDirection(axisW);
+            tiltVel += new Vector2(axisL.x, axisL.z) * kick;
+        }
+
+        private void ResolveBasePivot()
+        {
+            basePivotResolved = true;
+            basePivotLocal = Vector3.zero;
+            if (visualRoot == null) return;
+            Quaternion r0 = visualRoot.localRotation; Vector3 p0 = visualRoot.localPosition;
+            visualRoot.localRotation = Quaternion.identity; visualRoot.localPosition = Vector3.zero;
+            bool has = false; Bounds b = default;
+            foreach (var r in visualRoot.GetComponentsInChildren<Renderer>(false))
+            {
+                if (r == null || r is ParticleSystemRenderer || r is LineRenderer || r is TrailRenderer) continue;
+                if (!has) { b = r.bounds; has = true; } else b.Encapsulate(r.bounds);
+            }
+            visualRoot.localRotation = r0; visualRoot.localPosition = p0;
+            if (has) { Vector3 w = new Vector3(b.center.x, b.min.y, b.center.z); basePivotLocal = transform.InverseTransformPoint(w); }
+        }
+
+        private void UpdatePivot(DM_CombatCoreProfile pp, float dt)
+        {
+            if (!basePivotResolved) ResolveBasePivot();
+            dt = Mathf.Min(dt, 0.05f);
+            float w = 2f * Mathf.PI * Mathf.Max(0.01f, pp.trainingDummyTiltFrequency);
+            float z = Mathf.Max(0f, pp.trainingDummyTiltDampingRatio);
+            // semi-implicit spring-damper: a = -w^2 x - 2 z w v
+            tiltVel += (-w * w * tilt - 2f * z * w * tiltVel) * dt;
+            tilt += tiltVel * dt;
+            float max = pp.trainingDummyMaxTiltDegrees;
+            if (tilt.magnitude > max)
+            {
+                tilt = max > 0f ? tilt.normalized * max : Vector2.zero;
+                Vector2 n = tilt.sqrMagnitude > 1e-6f ? tilt.normalized : Vector2.zero;
+                float outward = Vector2.Dot(tiltVel, n);
+                if (outward > 0f) tiltVel -= n * outward;
+            }
+            Quaternion q = Quaternion.Euler(tilt.x, 0f, tilt.y);
+            // rotate around the base pivot only: no translation of the base
+            visualRoot.localRotation = q;
+            visualRoot.localPosition = basePivotLocal - q * basePivotLocal;
+        }
+
         private void LateUpdate()
         {
             if (visualRoot == null)
                 return;
+
+            DM_CombatCoreProfile pivotProfile = DM_CombatCoreProfile.Live;
+            if (pivotProfile != null && pivotProfile.trainingDummyPivotBase)
+            {
+                UpdatePivot(pivotProfile, Time.deltaTime);
+                return;
+            }
 
             ResolveSpringTuning(
                 out float resolvedPositionSpring,
@@ -486,6 +569,7 @@ namespace Project.Combat
             springVelocity = Vector3.zero;
             springRotation = Vector3.zero;
             springAngularVelocity = Vector3.zero;
+            tilt = Vector2.zero; tiltVel = Vector2.zero; kickWindowUsed = 0f;
 
             if (visualRoot != null)
             {

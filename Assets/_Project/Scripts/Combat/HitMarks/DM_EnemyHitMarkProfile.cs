@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 
 namespace Project.Combat
@@ -305,7 +305,7 @@ namespace Project.Combat
         [Tooltip("Random landed-decal scale range per spawn (max).")]
         [Range(0.3f, 2f)] public float volumetricDecalScaleMax = 1.15f;
         [Tooltip("2026-10-13: overall landed-decal size multiplier on top of the random range (0.25 = 75% smaller). Rotation / random range / projection unchanged.")]
-        [Range(0.05f, 2f)] public float volumetricDecalSizeMultiplier = 0.25f;
+        [Range(0.05f, 4f)] public float volumetricDecalSizeMultiplier = 1f; // 24w: 1 = KriptoFX native size
         [Tooltip("Ground decal projection box depth (m). Thin = no blood on legs / boots; too thin can miss sloped terrain. 0 = vendor depth.")]
         [Range(0f, 2f)] public float volumetricDecalDepth = 0.25f;
         [Tooltip("How far the decal box reaches above the ground snap point (m). The box spans [ground + offset - depth, ground + offset].")]
@@ -314,6 +314,8 @@ namespace Project.Combat
         [Range(0f, 1f)] public float volumetricGroundTowardTarget = 0.55f;
         [Tooltip("When off, KriptoFX still spawns airborne fluid but skips floor HDRP decals (JitterDecal / BFX_DecalSettings).")]
         public bool volumetricSpawnGroundDecals = true;
+        [Tooltip("2026-10-24t debug: one line per spray: ground hit, height above ground, ground decals on/off and why (off by default).")]
+        public bool logVolumetricDecals = false;
         [Tooltip("When on, player-hit fluids snap BFX ground height (often hides airborne spray). Off = keep vendor airborne arc on the player.")]
         public bool volumetricPlayerFluidGroundSnap = false;
         [Tooltip("BFX_Blood is unlit: under HDRP physical exposure it renders black. On = its color is scaled by the sun intensity (lux / pi) at spawn.")]

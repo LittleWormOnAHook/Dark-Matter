@@ -1,4 +1,4 @@
-#if UNITY_EDITOR
+﻿#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -439,6 +439,7 @@ namespace GenesisPCG.RockCreation.Editor
         {
             public TerrainLayer layer;
             public Terrain terrain;
+            public int index; // 2026-10-24p: terrain layer index (DM terrain material per-layer colour)
             public Vector2 uvOffset;   // (tileOffset - terrain position) / tile size
             public float tiling;       // 1 / tile size
         }
@@ -484,6 +485,7 @@ namespace GenesisPCG.RockCreation.Editor
             {
                 layer = layer,
                 terrain = t,
+                index = best,
                 tiling = 1f / tile.x,
                 uvOffset = new Vector2((layer.tileOffset.x - tp.x) / tile.x, (layer.tileOffset.y - tp.z) / tile.y),
             };
@@ -551,6 +553,9 @@ namespace GenesisPCG.RockCreation.Editor
                 float terrSmooth = tl.layer.maskMapTexture != null ? Mathf.Lerp(tl.layer.maskMapRemapMin.w, tl.layer.maskMapRemapMax.w, 0.5f) : tl.layer.smoothness;
                 m.SetFloat("_GRB_TerrainSmoothness", terrSmooth);
                 Color tint = tl.layer.diffuseRemapMax; tint.a = 1f;
+                // 2026-10-24p: include DM/TerrainParallax per-layer Extra Tint * Brightness (read fresh from the terrain material on every bake).
+                PcgTerrainSplat.LayerColor(tl.terrain != null ? tl.terrain.materialTemplate : null, tl.index, out Color dmTint, out float _);
+                tint = new Color(tint.r * dmTint.r, tint.g * dmTint.g, tint.b * dmTint.b, 1f);
                 m.SetColor("_GRB_TerrainTint", tint);
                 // Wind-blown ground on the tops: the top layer takes the terrain layer's maps so deposits match the ground.
                 if (m.HasProperty("_GRB_TopFromTerrain") && m.GetFloat("_GRB_TopFromTerrain") > 0.5f)
@@ -686,7 +691,7 @@ namespace GenesisPCG.RockCreation.Editor
             {
                 if (c.IsBaked && c.OwnBlendMaterial != null && set.Contains(c.OwnBlendMaterial) && IsPerRock(c.OwnBlendMaterial) && c.BakeSettings.rebakeAfterEdit)
                     DmRockBakeScheduler.Request(c, 0.6f, false);
-                PcgTerrainSplat.Apply(c.gameObject);
+                PcgTerrainSplat.ApplyFresh(c.gameObject); // 24p
             }
         }
 
@@ -695,7 +700,7 @@ namespace GenesisPCG.RockCreation.Editor
         public static void RebindAllTerrain()
         {
             foreach (DmRockCombiner c in Object.FindObjectsByType<DmRockCombiner>(FindObjectsInactive.Exclude))
-                PcgTerrainSplat.Apply(c.gameObject);
+                PcgTerrainSplat.ApplyFresh(c.gameObject); // 24p
         }
 
         [InitializeOnLoadMethod]
@@ -727,7 +732,7 @@ namespace GenesisPCG.RockCreation.Editor
                 foreach (DmRockCombiner c in Object.FindObjectsByType<DmRockCombiner>(FindObjectsInactive.Exclude))
                 {
                     if (c.BlendMaterial != null) c.RefreshLiveMaterials();
-                    else PcgTerrainSplat.Apply(c.gameObject);
+                    else PcgTerrainSplat.ApplyFresh(c.gameObject); // 24p
                     if (!c.IsBaked) QueueBlendCheck(c);
                 }
             };

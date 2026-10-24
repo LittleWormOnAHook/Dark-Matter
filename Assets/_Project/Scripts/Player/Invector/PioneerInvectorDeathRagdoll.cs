@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 
 
@@ -232,9 +232,39 @@ namespace Project.Player.Invector
                 {
                     if (c == null || c == rootCapsule || c.isTrigger || c.attachedRigidbody == null) continue;
                     if (c.attachedRigidbody != rootBody && !c.attachedRigidbody.transform.IsChildOf(transform)) continue; // own body, or bone body (hand)
+                    if (c is MeshCollider cm && !cm.convex) { c.enabled = false; continue; } // 24u: concave mesh cannot be a trigger
                     c.isTrigger = true;
                 }
             }
+            EnsureLivingWorldCollision();
+        }
+
+        /// <summary>2026-10-24u: after revive the player ran through rocks. Force the living root back to solid:
+        /// capsule enabled + solid, root body detects collisions, Player layer, and no Player-vs-world layer ignore
+        /// (Default / Climbable). Logs what it had to fix ([ReviveCollision]) so the leftover source is visible.</summary>
+        private void EnsureLivingWorldCollision()
+        {
+            if (_controller != null && (_controller.isDead || _controller.ragdolled)) return;
+            string fixedWhat = "";
+            CapsuleCollider cap = GetComponent<CapsuleCollider>();
+            if (cap != null)
+            {
+                if (!cap.enabled) { cap.enabled = true; fixedWhat += " capsuleEnabled"; }
+                if (cap.isTrigger) { cap.isTrigger = false; fixedWhat += " capsuleTrigger"; }
+            }
+            Rigidbody rb = GetComponent<Rigidbody>();
+            if (rb != null && !rb.detectCollisions) { rb.detectCollisions = true; fixedWhat += " detectCollisions"; }
+            int playerLayer = LayerMask.NameToLayer("Player");
+            if (playerLayer >= 0 && gameObject.layer != playerLayer) { fixedWhat += " layer(" + LayerMask.LayerToName(gameObject.layer) + ")"; gameObject.layer = playerLayer; }
+            bool climbing = GetComponent<Project.Features.Climb.DMClimbController>() is var cc && cc != null && cc.IsClimbing;
+            foreach (string ln in new[] { "Default", "Climbable" })
+            {
+                int l = LayerMask.NameToLayer(ln);
+                if (l < 0 || gameObject.layer < 0 || (climbing && ln == "Climbable")) continue;
+                if (Physics.GetIgnoreLayerCollision(gameObject.layer, l)) { Physics.IgnoreLayerCollision(gameObject.layer, l, false); fixedWhat += " layerIgnore(" + ln + ")"; }
+            }
+            if (rb != null && rb.isKinematic && _controller != null && !_controller.lockMovement) fixedWhat += " (note: root body still kinematic)";
+            if (fixedWhat.Length > 0) Debug.Log("[ReviveCollision] fixed:" + fixedWhat);
         }
 
         private IEnumerator ReapplyLivingBodyAfterStandUp()
@@ -611,6 +641,7 @@ namespace Project.Player.Invector
             resetInput?.DisableOnAnimatorMove();
             GetComponent<PioneerShooterMeleeInput>()?.ResetMeleeAfterRevive();
             resetInput?.EnableOnAnimatorMove();
+            _lastReviveTime = Time.time; // 24y
             RestoreLivingBodyState(); // 2026-10-19 f
             GetComponent<PioneerInvectorBootstrap>()?.EnsureInvectorPhysicsReady();
             KillBodyMotion();
@@ -770,7 +801,7 @@ namespace Project.Player.Invector
                     if (boneCollider != null)
                     {
                         if (_ragdoll != null && _ragdoll.disableColliders) boneCollider.enabled = false;
-                        else boneCollider.isTrigger = true;
+                        else if (!(boneCollider is MeshCollider bm && !bm.convex)) boneCollider.isTrigger = true; // 24u: concave mesh triggers unsupported
                     }
                 }
             }
@@ -890,6 +921,51 @@ namespace Project.Player.Invector
         {
             if (_pinStandUp)
                 PinStandUpPose();
+            ProbeWorldPassThrough();
+        }
+
+        // 24y: rocks pass-through after death/revive. Every 0.25 s while alive: any solid world collider the capsule is sunk into
+        // gets checked; a per-pair Physics.IgnoreCollision left over (ragdoll/mining/etc.) is removed, and the full state is logged
+        // once per collider as [RockPassThrough] so the exact cause shows in the console.
+        private float _probeNext;
+        private readonly Collider[] _probeHits = new Collider[16];
+        private readonly System.Collections.Generic.Dictionary<int, float> _probeLogged = new System.Collections.Generic.Dictionary<int, float>();
+        private float _lastReviveTime = -1f;
+
+        private void ProbeWorldPassThrough()
+        {
+            if (Time.time < _probeNext) return;
+            _probeNext = Time.time + 0.25f;
+            if (_controller == null || _controller.isDead || _controller.ragdolled || _pinStandUp) return;
+            CapsuleCollider cap = GetComponent<CapsuleCollider>();
+            if (cap == null) return;
+            Rigidbody rb = GetComponent<Rigidbody>();
+            float r = cap.radius * Mathf.Max(Mathf.Abs(transform.lossyScale.x), Mathf.Abs(transform.lossyScale.z)) * 0.9f;
+            float h = Mathf.Max(cap.height * Mathf.Abs(transform.lossyScale.y), r * 2f);
+            Vector3 c = transform.TransformPoint(cap.center);
+            Vector3 up = transform.up * (h * 0.5f - r);
+            int n = Physics.OverlapCapsuleNonAlloc(c - up, c + up, r, _probeHits, ~0, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < n; i++)
+            {
+                Collider o = _probeHits[i];
+                if (o == null || o == cap || o.transform.IsChildOf(transform) || o.attachedRigidbody != null && !o.attachedRigidbody.isKinematic) continue;
+                bool pairIgnored = Physics.GetIgnoreCollision(cap, o);
+                if (!Physics.ComputePenetration(cap, cap.transform.position, cap.transform.rotation, o, o.transform.position, o.transform.rotation, out _, out float depth)) depth = -1f;
+                if (!pairIgnored && depth < 0.25f) continue;
+                if (pairIgnored) Physics.IgnoreCollision(cap, o, false);
+                int id = o.GetHashCode();
+                if (_probeLogged.TryGetValue(id, out float last) && Time.time - last < 10f) continue;
+                _probeLogged[id] = Time.time;
+                MeshCollider mc = o as MeshCollider;
+                Debug.Log("[RockPassThrough] '" + o.name + "' (" + o.GetType().Name + " layer " + LayerMask.LayerToName(o.gameObject.layer) +
+                          (mc != null ? " convex=" + mc.convex + " mesh=" + (mc.sharedMesh != null ? mc.sharedMesh.name : "NULL") : "") +
+                          ") depth=" + depth.ToString("F2") + " pairIgnored=" + pairIgnored + (pairIgnored ? "(fixed)" : "") +
+                          " layerIgnored=" + Physics.GetIgnoreLayerCollision(gameObject.layer, o.gameObject.layer) +
+                          " | player layer=" + LayerMask.LayerToName(gameObject.layer) + " cap en=" + cap.enabled + " trig=" + cap.isTrigger +
+                          " rb kin=" + (rb != null && rb.isKinematic) + " detect=" + (rb == null || rb.detectCollisions) + " vel=" + (rb != null && !rb.isKinematic ? rb.linearVelocity.ToString("F1") : "-") +
+                          " lockMove=" + _controller.lockMovement + " rootMotion=" + (ResolveAnimator() is Animator an && an.applyRootMotion) +
+                          " sinceRevive=" + (_lastReviveTime < 0f ? "never" : (Time.time - _lastReviveTime).ToString("F0") + "s"));
+            }
         }
 
         private void PinStandUpPose()

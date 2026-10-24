@@ -103,6 +103,7 @@ namespace Project.Combat
                 return;
 
             CombatVfxUtility.PrepareAttachedTracer(tracerInstance, transform.position, velocity);
+            DMVendorImpactAudio.SuppressVendorDriver(tracerInstance); // 24n
         }
 
         private void ReleaseTracerToPool()
@@ -441,6 +442,7 @@ namespace Project.Combat
         public void OnSpawnedFromPool()
         {
             hasHit = false;
+            DMVendorImpactAudio.SuppressVendorDriver(gameObject); // 24n
         }
 
         public void OnReturnedToPool()

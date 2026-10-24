@@ -98,7 +98,7 @@ MonoBehaviour:
     rifleAnimationWeight: 0.18
   isHitscanBeam: 1
   projectileGravityScale: 0
-  splashRadius: 5
+  splashRadius: 0
   splashDamageFalloff: 0.25
   fxProfile: {fileID: 11400000}
   muzzleFlashPrefab: {fileID: 0}
@@ -114,8 +114,8 @@ MonoBehaviour:
   miningChunkVfxPrefab: {fileID: 0}
   miningChargeDrainPerSecond: 4
   miningChargePerPlasmaFuel: 50
-  fireSound: {fileID: 8300000, guid: dab4dfa00ed487b44bf0f2c9115a3da3, type: 3}
-  projectileTravelSound: {fileID: 8300000, guid: a2c90e3a8714e024297aa5fc6491893c, type: 3}
+  fireSound: {fileID: 8300000, guid: 51f46968ed339684b975b62416e9bd8e, type: 3}
+  projectileTravelSound: {fileID: 8300000, guid: 206809617a9f6dc4e813dfc96abc1da3, type: 3}
   isContinuousLaser: 0
   continuousLoopSound: {fileID: 0}
   continuousStartSound: {fileID: 0}
@@ -162,7 +162,7 @@ MonoBehaviour:
   muzzleLifetime: 0.05
   beamUsesAmmoPrefab: 1
   beamDurationSeconds: 1.5
-  boltSpeed: 60
+  boltSpeed: 50
   boltMaxLength: 4
   boltTailRetractTime: 0.12
   boltWidth: 0.12
@@ -172,11 +172,20 @@ MonoBehaviour:
   chainEnabled: 1
   chainSkillUnlocked: 1
   chainMaxTargets: 3
-  chainRange: 8
+  chainRange: 7.9
   chainDamageFalloff: 0.85
   chainRequiresLineOfSight: 1
-  chainDebugLog: 0
-  showSplashBubble: 0
+  chainDebugLog: 1
+  chainJumpDelay: 0.59
+  chainWidthScale: 4.57
+  chainColor: {r: 1, g: 1, b: 1, a: 1}
+  chainSpeedScale: 1
+  chainUseCenterMass: 1
+  chainMode: 0
+  chainCenterMassHeightOffset: 0
+  streamSegments: 3
+  streamSegmentGap: 0.045
+  showSplashBubble: 1
   spawnLaserBurn: 0
   enemyBlood: 0
   enemyBurnMark: 0
@@ -275,7 +284,7 @@ MonoBehaviour:
         roughness: 1
         debrisCount: 1
         debrisScale: 0.35
-  fallBackToCatalog: 1
+  fallBackToCatalog: 0
   catalog: {fileID: 11400000, guid: b6c7d8e9f0a12b3c4d5e6f708192a356, type: 2}
   surfaceDamage:
     mode: 0
@@ -286,9 +295,9 @@ MonoBehaviour:
       roughness: 1
       debrisCount: 1
       debrisScale: 0.35
-  fireTrauma: 0.086
-  fireTraumaDurationSeconds: 0
-  impactTrauma: 0
+  fireTrauma: 0.199
+  fireTraumaDurationSeconds: 0.05
+  impactTrauma: 0.212
   impactTraumaDurationSeconds: 0
-  impactTraumaRadius: 0
+  impactTraumaRadius: 4.5
   impactTraumaMinDistance: 0

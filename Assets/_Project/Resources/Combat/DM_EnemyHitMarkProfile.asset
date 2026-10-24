@@ -73,6 +73,9 @@ MonoBehaviour:
   sparkHitSmallPrefab: {fileID: 1791922173031173756, guid: e162c7becdfc4814282f7c3bc678c9da, type: 3}
   sparkHitLargePrefab: {fileID: 275107855635536946, guid: bf41b2f14387ab44eb9597d2cb030f5b, type: 3}
   burnEmberPrefab: {fileID: 8868438038499838756, guid: 42618d34d92bf814c84d9822aa7e41ed, type: 3}
+  decalRandomSpin: 1
+  decalSpinRange: {x: 0, y: 360}
+  slashSpinJitter: 8
   slashSize: {x: 0.6, y: 0.1}
   slashProjectionDepth: 0.6
   meleeSlashMarkSizeMultiplier: 1.5
@@ -235,11 +238,12 @@ MonoBehaviour:
   volumetricDecalRandomRotation: 1
   volumetricDecalScaleMin: 0.85
   volumetricDecalScaleMax: 1.15
-  volumetricDecalSizeMultiplier: 0.25
+  volumetricDecalSizeMultiplier: 1
   volumetricDecalDepth: 0.25
   volumetricDecalGroundOffset: 0.08
   volumetricGroundTowardTarget: 0.55
   volumetricSpawnGroundDecals: 1
+  logVolumetricDecals: 1
   volumetricPlayerFluidGroundSnap: 0
   volumetricFluidExposureComp: 1
   volumetricFluidBrightness: 0.1

@@ -107,6 +107,36 @@ namespace GenesisPCG.RockCreation
 #endif
         }
 
+        /// <summary>2026-10-24p: DM/TerrainParallax extra per-layer colour (tint * brightness, saturation); identity for other terrain shaders.</summary>
+        public static void LayerColor(Material terrainMat, int i, out Color tintTimesBrightness, out float saturation)
+        {
+            tintTimesBrightness = Color.white; saturation = 1f;
+            if (terrainMat == null) return;
+            string ti = "_DMLayerTint" + i, sa = "_DMLayerSaturation" + i, br = "_DMLayerBrightness" + i;
+            float b = terrainMat.HasProperty(br) ? terrainMat.GetFloat(br) : 1f;
+            Color c = terrainMat.HasProperty(ti) ? terrainMat.GetColor(ti) : Color.white;
+            tintTimesBrightness = new Color(c.r * b, c.g * b, c.b * b, 1f);
+            if (terrainMat.HasProperty(sa)) saturation = terrainMat.GetFloat(sa);
+        }
+
+        /// <summary>2026-10-24p: full refresh: drop cached content hashes, re-Fill every Play runtime copy from the CURRENT terrain
+        /// (layers, textures, terrain material) and re-bind every rock. Called on bake, terrain/layer edits and the Rebind menu.</summary>
+        public static void RefreshAll()
+        {
+            s_hash.Clear();
+            foreach (var kv in new List<KeyValuePair<Material, Terrain>>(s_terrainOf))
+                if (kv.Key != null) Fill(kv.Key, kv.Value);
+            RebindAll();
+        }
+
+        private static bool s_forceFill;
+        /// <summary>2026-10-24p: like Apply, but Play Mode shared copies are re-filled from the current terrain (bake / rebind).</summary>
+        public static Terrain ApplyFresh(GameObject root)
+        {
+            s_forceFill = true;
+            try { return Apply(root); } finally { s_forceFill = false; }
+        }
+
         /// <summary>Re-binds every enabled rock (after toggling <see cref="SharedMaterialsInPlay"/> or editing a source material).</summary>
         public static void RebindAll()
         {
@@ -196,7 +226,7 @@ namespace GenesisPCG.RockCreation
             }
             if (!s_hash.TryGetValue(src, out string h)) s_hash[src] = h = ContentHash(src);
             string key = h + "#" + (t != null ? t.GetHashCode() : 0);
-            if (s_runtime.TryGetValue(key, out Material v) && v != null) return v;
+            if (s_runtime.TryGetValue(key, out Material v) && v != null) { if (s_forceFill) Fill(v, t); return v; }
             v = new Material(src) { name = src.name + " (Play shared)", hideFlags = HideFlags.DontSave };
             Fill(v, t);
             s_runtime[key] = v;
@@ -408,7 +438,11 @@ namespace GenesisPCG.RockCreation
                 }
                 Vector2 ts = new Vector2(Mathf.Max(0.01f, l.tileSize.x), Mathf.Max(0.01f, l.tileSize.y));
                 s_st[i] = new Vector4(sz.x / ts.x, sz.z / ts.y, l.tileOffset.x / ts.x, l.tileOffset.y / ts.y); // TerrainLit _SplatN_ST
-                s_diff[i] = l.diffuseRemapMax;                                                                // _DiffuseRemapScaleN
+                // 2026-10-24p: DM/TerrainParallax per-layer Extra Tint / Saturation / Brightness live on the terrain MATERIAL, not
+                // the TerrainLayer; without them a layer coloured only there (layer 0: red tint) showed its raw texture on rocks.
+                LayerColor(tm, i, out Color dmTint, out float dmSat);
+                Vector4 dr = l.diffuseRemapMax;
+                s_diff[i] = new Vector4(dr.x * dmTint.r, dr.y * dmTint.g, dr.z * dmTint.b, dmSat);          // rgb tint, w = saturation
                 s_mo[i] = l.maskMapRemapMin;                                                                  // _MaskMapRemapOffsetN
                 s_ms[i] = l.maskMapRemapMax - l.maskMapRemapMin;                                              // _MaskMapRemapScaleN
                 bool hasMask = l.maskMapTexture != null;

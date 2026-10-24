@@ -366,6 +366,7 @@ namespace Project.AI
             if (IsStationary)
                 return;
 
+            TickChaseStuckRecovery(target, arriveDistance);
             TrackWallRouteProgress(target);
             ApplyWallRouteEscape(ref target);
             if (wallEscapePoints.Count > 0) arriveDistance = Mathf.Min(arriveDistance, 0.2f);
@@ -471,6 +472,59 @@ namespace Project.AI
 
             if (toTarget.sqrMagnitude > 0.01f)
                 FaceTowards(flatTarget);
+        }
+
+        // 24ac: generic chase stall detector (rock wedge, slope push-back, wall-follow oscillation): position-based, not step-based.
+        private Vector3 chaseStuckSamplePos;
+        private float chaseStuckSampleTime = -1f;
+        private int chaseStuckSide = 1;
+        private int chaseStuckFails;
+
+        private void TickChaseStuckRecovery(Vector3 target, float arriveDistance)
+        {
+            DM_EnemyBrainProfile p = DM_EnemyBrainProfile.Live;
+            if (p == null || !p.enableChaseStuckRecovery || !UsesChaseWallSlideLocomotion() || Time.time < wallRetreatSidestepUntil)
+            {
+                chaseStuckSampleTime = -1f;
+                return;
+            }
+            Vector3 toGoal = target - transform.position; toGoal.y = 0f;
+            if (toGoal.magnitude <= arriveDistance + 1f) { chaseStuckSampleTime = -1f; return; }
+            if (chaseStuckSampleTime < 0f || Time.time - chaseStuckSampleTime > p.chaseStuckSeconds * 3f)
+            {
+                chaseStuckSamplePos = transform.position; chaseStuckSampleTime = Time.time; return;
+            }
+            if (Time.time - chaseStuckSampleTime < p.chaseStuckSeconds) return;
+            float moved = HorizontalDistance(transform.position, chaseStuckSamplePos);
+            chaseStuckSamplePos = transform.position; chaseStuckSampleTime = Time.time;
+            if (moved >= p.chaseStuckMinMove) { chaseStuckFails = 0; return; }
+            chaseStuckFails++;
+            if (p.chaseStuckHardAfter > 0 && chaseStuckFails > p.chaseStuckHardAfter)
+            {
+                string blockers = EnemyChaseWallSlide.DescribeOverlaps(transform, p);
+                if (EnemyChaseWallSlide.TryFindFreeSpot(transform, p, toGoal, p.chaseStuckHardMaxRadius,
+                        q => TrySampleGround(q, out float gy) ? (true, gy) : (false, 0f), out Vector3 free))
+                {
+                    if (p.chaseStuckLog)
+                        Debug.Log("[EnemyStuck] '" + name + "' HARD unstick after " + chaseStuckFails + " fails, moved " + HorizontalDistance(transform.position, free).ToString("F2") + "m; overlapping: " + blockers, this);
+                    transform.position = free;
+                    chaseStuckSamplePos = free;
+                    chaseStuckFails = 0;
+                    ResetWallRouteProgress();
+                    RecentWallBufferContact = false;
+                    return;
+                }
+                if (p.chaseStuckLog)
+                    Debug.Log("[EnemyStuck] '" + name + "' no free spot within " + p.chaseStuckHardMaxRadius + "m; overlapping: " + blockers, this);
+            }
+            Vector3 fwd = toGoal.normalized;
+            Vector3 side = Vector3.Cross(Vector3.up, fwd) * chaseStuckSide;
+            chaseStuckSide = -chaseStuckSide; // alternate if it stalls again
+            Vector3 nudge = side * p.chaseStuckSidestepMeters + fwd * 0.4f;
+            if (p.chaseStuckLog)
+                Debug.Log("[EnemyStuck] '" + name + "' state=" + state + " moved=" + moved.ToString("F2") + "m in " + p.chaseStuckSeconds.ToString("F1") + "s, goal " + toGoal.magnitude.ToString("F1") + "m -> sidestep " + (chaseStuckSide < 0 ? "right" : "left") + " (wallContact=" + RecentWallBufferContact + ") overlapping: " + EnemyChaseWallSlide.DescribeOverlaps(transform, p), this);
+            BeginWallRetreatSidestep(nudge);
+            wallRetreatCooldownUntil = Time.time + p.chaseStuckSeconds;
         }
 
         private void ApplyWallFollowFacing(Vector3 worldDirection, bool fastTurn)

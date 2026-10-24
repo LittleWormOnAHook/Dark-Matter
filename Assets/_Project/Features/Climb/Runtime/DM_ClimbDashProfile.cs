@@ -1,4 +1,4 @@
-using Project.Features.Locomotion;
+﻿using Project.Features.Locomotion;
 using Project.Survival;
 using UnityEngine;
 
@@ -289,7 +289,7 @@ namespace Project.Features.Climb
         [Header("Body weight (ground secondary motion, 2026-10-20l/n)")]
         [Tooltip("Master toggle: grounded spine/chest lag, lean, stop carry, arm trailing, landing hip drop (like the jetpack limb dangle). Visual only.")]
         public bool bodyWeightEnabled;
-        [Tooltip("Intensity preset. Custom = use Body Weight Intensity below. Subtle x1, Visible x2.5, Extreme x6.")]
+        [Tooltip("Intensity preset (2026-10-22b, all based on the fair Custom snapshot). Custom = your values. Subtle x0.65, Visible x1.2, Extreme x6 (stress test). Only magnitudes scale; timings, springs, deadzones and ratios stay.")]
         public BodyWeightPreset bodyWeightPreset = BodyWeightPreset.Custom;
         [Tooltip("Global multiplier on every body-weight offset (rotations, hip drop, CoM shift, swing). 1 = authored values. Only NaN/explosion guards clamp the result.")]
         [Range(0f, 10f)] public float bodyWeightIntensity = 1f;
@@ -443,6 +443,74 @@ namespace Project.Features.Climb
         [Range(0.01f, 1f)] public float bodyWeightFootPlantBlend = 0.1f;
         [Tooltip("Max hip lowering so an out-of-reach planted foot still lands (m).")]
         [Range(0f, 0.3f)] public float bodyWeightFootPlantHipLower = 0.03f;
+        [Tooltip("2026-10-24h: max frame time fed to the body-weight springs (s); longer hitches are clamped (springs are sub-stepped).")]
+        [Range(0.01f, 0.2f)] public float bodyWeightMaxDt = 0.05f;
+
+        [Header("Footsteps: trigger fit (2026-10-24h, runtime only, prefab untouched)")]
+        [Tooltip("Moves the Invector foot-step trigger spheres from the ankle down to the sole at runtime (Kade/mixamo ankles sit ~9-10 cm above the sole, so the 10 cm spheres barely touched the ground).")]
+        public bool bodyWeightFootstepTriggerFit = true;
+        [Tooltip("How far the trigger sphere reaches below the measured sole (m).")]
+        [Range(0f, 0.3f)] public float bodyWeightFootstepTriggerSoleReach = 0.03f;
+        [Tooltip("Trigger sphere radius after fit (m).")]
+        [Range(0.02f, 0.5f)] public float bodyWeightFootstepTriggerRadius = 0.08f;
+        [Tooltip("Extra sole height correction (m, + = sole is lower than the toe-bone estimate).")]
+        [Range(-0.2f, 0.2f)] public float bodyWeightFootstepSoleOffset = 0f;
+
+        [Header("Wall hand touch (2026-10-24o, runtime only, prefab untouched)")]
+        [Tooltip("Free wall-side hand touches flat, near-vertical walls while walking/jogging (not sprint/aim/attack/reload/dodge/jetpack/climb/actions).")]
+        public bool bodyWeightWallHandEnabled = true;
+        public bool bodyWeightWallHandLeft = true;
+        public bool bodyWeightWallHandRight = true;
+        [Tooltip("Max shoulder-to-wall distance (m).")]
+        [Range(0.2f, 1.5f)] public float bodyWeightWallHandReach = 0.7f;
+        [Tooltip("Hand height relative to the shoulder (m).")]
+        [Range(-0.6f, 0.6f)] public float bodyWeightWallHandHeight = 0f;
+        [Tooltip("How far ahead of the shoulder the hand lands, along the wall (m).")]
+        [Range(-0.3f, 0.9f)] public float bodyWeightWallHandForwardOffset = 0.25f;
+        [Tooltip("Blend in/out time (s).")]
+        [Range(0.05f, 1.5f)] public float bodyWeightWallHandBlendTime = 0.25f;
+        [Tooltip("Max wall angle away from straight sideways (deg). Small = only walls you walk parallel to.")]
+        [Range(5f, 85f)] public float bodyWeightWallHandMaxAngleDeg = 40f;
+        [Tooltip("Max wall tilt from vertical (deg).")]
+        [Range(0f, 45f)] public float bodyWeightWallHandMaxTiltDeg = 15f;
+        [Tooltip("Max normal disagreement between probe rays (deg). Lower = flatter walls only.")]
+        [Range(1f, 45f)] public float bodyWeightWallHandFlatnessDeg = 8f;
+        [Tooltip("Minimum wall width along the walk direction (m).")]
+        [Range(0.1f, 2f)] public float bodyWeightWallHandMinWidth = 0.5f;
+        [Tooltip("Wall layers the hand may touch (2026-10-24q default: Default + Climbable). A hit matching EITHER these layers OR the tag list is accepted.")]
+        public LayerMask bodyWeightWallHandLayers = (1 << 0) | (1 << 23); // Default + Climbable
+        [Tooltip("Wall tag allow-list (any layer). Hit accepted if its collider (or root) has one of these tags. Unknown/empty tags are ignored.")]
+        public string[] bodyWeightWallHandTags = { "Climbable" };
+        [Tooltip("24ab: extra clearance (m) kept between the body capsule and the wall while a hand touch is active, so the arm has room (0 = off).")]
+        [Range(0f, 0.6f)] public float bodyWeightWallHandStandoff = 0.15f;
+        [Tooltip("24ab: how fast the standoff blends in/out and pushes the body away (per second). Higher = firmer.")]
+        [Range(0.5f, 20f)] public float bodyWeightWallHandStandoffBlendSpeed = 5f;
+        [Tooltip("24ab: how strongly the elbow bends out away from the wall (0 = old elbow-out/down hint).")]
+        [Range(0f, 1.5f)] public float bodyWeightWallHandElbowAway = 0.6f;
+        public bool bodyWeightWallHandDebug = false;
+
+        /// <summary>0 = Subtle, 1 = Default, 2 = Extreme.</summary>
+        public void ApplyWallHandPreset(int preset)
+        {
+            bodyWeightWallHandEnabled = bodyWeightWallHandLeft = bodyWeightWallHandRight = true;
+            int baseMask = LayerMask.GetMask("Default", "Climbable");
+            if (preset == 2)
+            {
+                bodyWeightWallHandLayers = baseMask | LayerMask.GetMask("Building", "PW_Object_Large", "PW_Object_Medium");
+                bodyWeightWallHandTags = new[] { "Climbable", "Climb", "FreeClimb", "WallRun", "Building" };
+            }
+            else
+            {
+                bodyWeightWallHandLayers = baseMask;
+                bodyWeightWallHandTags = new[] { "Climbable" };
+            }
+            switch (preset)
+            {
+                case 0: bodyWeightWallHandReach = 0.55f; bodyWeightWallHandHeight = -0.05f; bodyWeightWallHandForwardOffset = 0.15f; bodyWeightWallHandBlendTime = 0.35f; bodyWeightWallHandMaxAngleDeg = 25f; bodyWeightWallHandMaxTiltDeg = 8f; bodyWeightWallHandFlatnessDeg = 5f; bodyWeightWallHandMinWidth = 0.8f; bodyWeightWallHandStandoff = 0.08f; bodyWeightWallHandStandoffBlendSpeed = 3f; bodyWeightWallHandElbowAway = 0.3f; break;
+                case 2: bodyWeightWallHandReach = 1.2f; bodyWeightWallHandHeight = 0.15f; bodyWeightWallHandForwardOffset = 0.45f; bodyWeightWallHandBlendTime = 0.12f; bodyWeightWallHandMaxAngleDeg = 70f; bodyWeightWallHandMaxTiltDeg = 35f; bodyWeightWallHandFlatnessDeg = 25f; bodyWeightWallHandMinWidth = 0.2f; bodyWeightWallHandStandoff = 0.3f; bodyWeightWallHandStandoffBlendSpeed = 8f; bodyWeightWallHandElbowAway = 1f; break;
+                default: bodyWeightWallHandReach = 0.7f; bodyWeightWallHandHeight = 0f; bodyWeightWallHandForwardOffset = 0.25f; bodyWeightWallHandBlendTime = 0.25f; bodyWeightWallHandMaxAngleDeg = 40f; bodyWeightWallHandMaxTiltDeg = 15f; bodyWeightWallHandFlatnessDeg = 8f; bodyWeightWallHandMinWidth = 0.5f; bodyWeightWallHandStandoff = 0.15f; bodyWeightWallHandStandoffBlendSpeed = 5f; bodyWeightWallHandElbowAway = 0.6f; break;
+            }
+        }
 
         [Header("Body weight: breathing / idle (2026-10-20w)")]
         public bool bodyWeightBreathEnabled = true;
@@ -520,8 +588,10 @@ namespace Project.Features.Climb
         };
 
         /// <summary>Subtle = code defaults (x1). Visible x2.5 and Extreme x6 match the old multiplier look; Extreme also wobbles more.</summary>
+        // 2026-10-22b: presets are rebased on Anthony's Custom values (BodyWeightCustomBase) and scaled uniformly:
+        // Subtle x0.65, Visible x1.2, Extreme x6 (stress test, angle caps / damping overrides below).
         public static float BodyWeightPresetFactor(BodyWeightPreset preset) =>
-            preset == BodyWeightPreset.Visible ? 2.5f : preset == BodyWeightPreset.Extreme ? 6f : 1f;
+            preset == BodyWeightPreset.Subtle ? 0.65f : preset == BodyWeightPreset.Visible ? 1.2f : preset == BodyWeightPreset.Extreme ? 6f : 1f;
 
         private static System.Collections.Generic.List<System.Reflection.FieldInfo> s_bwFields;
         private static System.Collections.Generic.List<System.Reflection.FieldInfo> BodyWeightFields
@@ -537,11 +607,23 @@ namespace Project.Features.Climb
             }
         }
 
-        // 2026-10-20w: Visible values tuned by the body-weight harness (fields not listed fall back to defaults x2.5).
-        private static readonly System.Collections.Generic.Dictionary<string, float> BodyWeightVisibleTuned = new System.Collections.Generic.Dictionary<string, float>
+        // 2026-10-22b: snapshot of the Custom body-weight values Anthony rated "fair" (2026-10-22). Preset base; fields not
+        // listed here (hit / foot plant / breathing / aim / enemy) equal the code defaults, which were his Custom values too.
+        private static readonly System.Collections.Generic.Dictionary<string, float> BodyWeightCustomBase = new System.Collections.Generic.Dictionary<string, float>
         {
-            { "bodyWeightLeanAccel", 1.1f }, { "bodyWeightStopCarry", 0.95f }, { "bodyWeightArmTrail", 2f }, { "bodyWeightWristTrail", 2.3f },
-            { "bodyWeightLandingRecovery", 0.55f }, { "bodyWeightMaxSpineDegrees", 30f }, { "bodyWeightYawLag", 8f }, { "bodyWeightPelvisLead", 6f },
+            { "bodyWeightAimScale", 0.15f }, { "bodyWeightAccelSmooth", 0.08f }, { "bodyWeightIdleSpeedDeadzone", 0.2f }, { "bodyWeightYawRateDeadzone", 20f },
+            { "bodyWeightAccelDeadzone", 1.5f }, { "bodyWeightLeanAccel", 1f }, { "bodyWeightStopCarry", 1.4f }, { "bodyWeightLeanTurn", 0.9f },
+            { "bodyWeightYawLag", 4f }, { "bodyWeightMaxSpineDegrees", 14f }, { "bodyWeightSpineSmooth", 0.2f }, { "bodyWeightSettleDamping", 0.4f },
+            { "bodyWeightChestLag", 0.12f }, { "bodyWeightArmTrail", 1.3f }, { "bodyWeightMaxArmDegrees", 18f }, { "bodyWeightArmSmooth", 0.15f },
+            { "bodyWeightElbowTrail", 1.5f }, { "bodyWeightWristTrail", 1.8f }, { "bodyWeightLandingDrop", 0.08f }, { "bodyWeightLandingRecovery", 0.3f },
+            { "bodyWeightDirChangeDrop", 0.03f }, { "bodyWeightDirChangeAccel", 8f }, { "bodyWeightHipSpring", 90f }, { "bodyWeightMaxHipDrop", 0.1f },
+            { "bodyWeightPelvisLead", 3f }, { "bodyWeightPelvisSmooth", 0.12f }, { "bodyWeightCounterRotation", 0.8f }, { "bodyWeightComShift", 0.012f },
+            { "bodyWeightMaxComShift", 0.05f }, { "bodyWeightAnticipation", 4f }, { "bodyWeightDecelCompression", 0.02f }, { "bodyWeightHeadStabilize", 0.5f },
+            { "bodyWeightHeadSmooth", 0.12f }, { "bodyWeightSwingAmount", 0.55f }, { "bodyWeightSwingStiffness", 60f }, { "bodyWeightSwingDamping", 0.5f },
+            { "bodyWeightSwingMaxDegrees", 7.2f }, { "bodyWeightWeaponUnarmed", 0.6f }, { "bodyWeightWeaponMelee", 1.64f }, { "bodyWeightWeaponHeavyMult", 2.12f },
+            { "bodyWeightWeaponRanged", 1f }, { "bodyWeightWeaponSwingGain", 2.03f }, { "bodyWeightWeaponWindup", 4.95f }, { "bodyWeightWeaponHipPull", 0.459f },
+            { "bodyWeightWeaponImpactJolt", 8f }, { "bodyWeightWeaponImpactHipDrop", 0.03f }, { "bodyWeightWeaponRecoilKick", 4f }, { "bodyWeightWeaponRecoilHipPush", 0.02f },
+            { "bodyWeightWeaponRecoilStiffness", 180f }, { "bodyWeightWeaponRecoilDamping", 0.45f }, { "bodyWeightWeaponDrawDip", 5.9f }, { "bodyWeightWeaponDrawHipDrop", 0.025f },
         };
 
         /// <summary>Preset table value for one field (from a fresh defaults instance).</summary>
@@ -550,7 +632,7 @@ namespace Project.Features.Climb
             object v = f.GetValue(defaults);
             if (f.Name == "bodyWeightIntensity") return 1f;
             if (f.Name == "bodyWeightDebugExaggerate") return 1f;
-            if (preset == BodyWeightPreset.Visible && BodyWeightVisibleTuned.TryGetValue(f.Name, out float tv)) return tv;
+            if (v is float && BodyWeightCustomBase.TryGetValue(f.Name, out float cb)) v = cb; // 2026-10-22b: Custom base, not code defaults
             if (preset == BodyWeightPreset.Extreme)
             {
                 if (f.Name == "bodyWeightSettleDamping") return 0.3f;
@@ -628,7 +710,7 @@ namespace Project.Features.Climb
             bodyWeightAppliedPresetInternal = preset;
         }
 
-        /// <summary>Every bodyWeight* field (incl. weapon weight) back to its code default = Subtle. Enabled / readout toggles kept.</summary>
+        /// <summary>Every bodyWeight* field (incl. weapon weight) back to the Subtle preset (Custom base x0.65). Enabled / readout toggles kept.</summary>
         public void ResetBodyWeightToDefault() => ApplyBodyWeightPreset(BodyWeightPreset.Subtle);
 
         public bool BodyWeightMatchesPreset(BodyWeightPreset preset)

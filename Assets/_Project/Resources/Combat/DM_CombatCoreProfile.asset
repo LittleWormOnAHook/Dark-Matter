@@ -25,15 +25,25 @@ MonoBehaviour:
   parryStaggerImpulseBonus: 1.75
   blockStaggerHitstopSeconds: 0.146
   parryStaggerHitstopSeconds: 0.12
-  trainingDummyPositionSpring: 20
-  trainingDummyPositionDamping: 2.73
+  trainingDummyPositionSpring: 3
+  trainingDummyPositionDamping: 19.7
   trainingDummyRotationSpring: 8.1
-  trainingDummyRotationDamping: 8
-  trainingDummyHitImpulse: 2.359
-  trainingDummyHitTorque: 106.1
+  trainingDummyRotationDamping: 20.6
+  trainingDummyHitImpulse: 0.4
+  trainingDummyHitTorque: 26.3
   trainingDummyMaxPositionOffset: 0.45
-  trainingDummyMaxRotationOffset: 52.6
-  trainingDummyPoiseStaggerImpulseScale: 3.019
+  trainingDummyMaxRotationOffset: 10.3
+  trainingDummyPoiseStaggerImpulseScale: 0.83
+  trainingDummyPivotBase: 1
+  trainingDummyTiltFrequency: 1
+  trainingDummyTiltDampingRatio: 0.79
+  trainingDummyMaxTiltDegrees: 55.8
+  trainingDummyMeleeTiltKick: 275
+  trainingDummyRangedTiltKick: 300
+  trainingDummyBeamTickTiltKick: 63
+  trainingDummyKickWindowSeconds: 0.3
+  trainingDummyKickWindowCap: 140
+  trainingDummyMeleeDistance: 3
   dodgeIFrameSeconds: 0.25
   chargedMaxHoldSeconds: 1
   meleeLightStaminaCost: 8
@@ -338,6 +348,41 @@ MonoBehaviour:
   knockdownReleasesAttackSlot: 1
   knockdownMaxSlopeDegrees: 20
   knockdownLedgeCheckMeters: 1
+  enemyAnimStallFailsafe: 1
+  enemyAnimStallSeconds: 0.6
+  enemyAnimStallMinSpeed: 0.3
+  enemyAnimStallLog: 1
+  downedComboEnabled: 1
+  downedComboReach: 2.6
+  downedComboConeDegrees: 75
+  downedComboDamageMultiplier: 1.25
+  downedComboBaseDamage: 20
+  downedComboStates: []
+  downedComboWeaponSets: []
+  downedComboBlendSeconds: 0.08
+  downedComboFallbackPitchDegrees: 28
+  downedComboPitchBlendSeconds: 0.1
+  downedComboLowStrike: 1
+  downedComboStrikeWindow: {x: 0.3, y: 0.55}
+  downedComboFaceTarget: 1
+  downedComboFaceMaxDegrees: 60
+  downedComboLog: 0
+  aimRatingEnabled: 1
+  aimRatingRequireHit: 1
+  aimRatingHitWindowSeconds: 0.6
+  aimRatingScopedOnly: 1
+  aimRatingPerfect: 0.1
+  aimRatingGood: 0.25
+  aimRatingOk: 0.5
+  aimRatingDuration: 0.9
+  aimRatingScale: 1
+  aimRatingPopScale: 1.45
+  aimRatingOffset: {x: 0, y: -72}
+  aimRatingFollowReticle: 1
+  aimRatingPerfectColor: {r: 1, g: 0.82, b: 0.2, a: 1}
+  aimRatingGoodColor: {r: 0.45, g: 1, b: 0.45, a: 1}
+  aimRatingOkColor: {r: 0.85, g: 0.9, b: 1, a: 1}
+  aimRatingFontSize: 30
   retireCritRagdollKnockdown: 1
   logHitReactionsInPlay: 0
   hitstopLightFrames: 2
@@ -348,8 +393,8 @@ MonoBehaviour:
   parryClashVfxLifetimeSeconds: 0.45
   enableCombatCameraSnap: 0
   combatCameraSnapSeconds: 0.35
-  enableGlobalCombatSeparation: 0
-  playerCombatBufferRadius: 0.104
+  enableGlobalCombatSeparation: 1
+  playerCombatBufferRadius: 0.142
   chargedHitShakeAmplitude: 0.242
   chargedHitShakeDurationSeconds: 0.1044
   parryShakeAmplitude: 0.25

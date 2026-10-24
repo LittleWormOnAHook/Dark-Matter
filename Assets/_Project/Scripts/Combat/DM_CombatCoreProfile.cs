@@ -74,6 +74,36 @@ namespace Project.Combat
         [Range(1f, 90f)] public float trainingDummyMaxRotationOffset = 24f;
         [Range(0.25f, 6f)] public float trainingDummyPoiseStaggerImpulseScale = 1f;
 
+        // 2026-10-24m: pivot-base dummy reaction (base anchored, tilt only around the base, critically-damped spring).
+        [Header("Dummy pivot reaction (2026-10-24m)")]
+        [Tooltip("On = base stays planted, the dummy only tilts around its base (no sliding). Off = Classic legacy spring above (slides + tilts).")]
+        public bool trainingDummyPivotBase = true;
+        [Tooltip("Return-to-upright speed (spring frequency, Hz). Higher = snappier.")]
+        [Range(0.5f, 30f)] public float trainingDummyTiltFrequency = 5f;
+        [Tooltip("Damping ratio. 1 = critically damped (no overshoot), <1 wobbles, >1 sluggish.")]
+        [Range(0.05f, 3f)] public float trainingDummyTiltDampingRatio = 0.8f;
+        [Tooltip("Hard cap on tilt angle (degrees).")]
+        [Range(0f, 80f)] public float trainingDummyMaxTiltDegrees = 8f;
+        [Tooltip("Tilt kick (deg/s) from a melee hit (source within Melee Distance).")]
+        [Range(0f, 2000f)] public float trainingDummyMeleeTiltKick = 110f;
+        [Tooltip("Tilt kick (deg/s) from a ranged hit / lightning bolt or chain arrival.")]
+        [Range(0f, 2000f)] public float trainingDummyRangedTiltKick = 60f;
+        [Tooltip("Tilt kick (deg/s) from each continuous beam / lightning damage tick.")]
+        [Range(0f, 500f)] public float trainingDummyBeamTickTiltKick = 8f;
+        [Tooltip("Window (s) over which hit kicks accumulate before the cap applies. 0 = no cap.")]
+        [Range(0f, 3f)] public float trainingDummyKickWindowSeconds = 0.3f;
+        [Tooltip("Max total kick (deg/s) per window, so fast ticks / chains cannot stack the dummy over.")]
+        [Range(0f, 5000f)] public float trainingDummyKickWindowCap = 140f;
+        [Tooltip("Hits whose source is within this distance count as melee (TakeDamage carries no hit type).")]
+        [Range(0.25f, 15f)] public float trainingDummyMeleeDistance = 3f;
+
+        [ContextMenu("Training Dummy: Snappy (default)")]
+        public void TrainingDummyPresetSnappy() { trainingDummyPivotBase = true; trainingDummyTiltFrequency = 5f; trainingDummyTiltDampingRatio = 0.8f; trainingDummyMaxTiltDegrees = 8f; trainingDummyMeleeTiltKick = 110f; trainingDummyRangedTiltKick = 60f; trainingDummyBeamTickTiltKick = 8f; trainingDummyKickWindowSeconds = 0.3f; trainingDummyKickWindowCap = 140f; trainingDummyMeleeDistance = 3f; }
+        [ContextMenu("Training Dummy: Classic (old)")]
+        public void TrainingDummyPresetClassic() { trainingDummyPivotBase = false; trainingDummyPositionSpring = 20f; trainingDummyPositionDamping = 7f; trainingDummyRotationSpring = 24f; trainingDummyRotationDamping = 8f; trainingDummyHitImpulse = 0.85f; trainingDummyHitTorque = 32f; trainingDummyMaxPositionOffset = 0.45f; trainingDummyMaxRotationOffset = 24f; }
+        [ContextMenu("Training Dummy: Extreme")]
+        public void TrainingDummyPresetExtreme() { trainingDummyPivotBase = true; trainingDummyTiltFrequency = 2.5f; trainingDummyTiltDampingRatio = 0.35f; trainingDummyMaxTiltDegrees = 35f; trainingDummyMeleeTiltKick = 400f; trainingDummyRangedTiltKick = 250f; trainingDummyBeamTickTiltKick = 40f; trainingDummyKickWindowSeconds = 0.2f; trainingDummyKickWindowCap = 600f; trainingDummyMeleeDistance = 3f; }
+
         [Header("I-Frames")]
         [Range(0.05f, 1f)] public float dodgeIFrameSeconds = 0.25f;
         [Tooltip("Max charged-attack hold (s), player and enemies, counted from the press / charged start. When reached the attack auto-releases and follows through. 0 = no cap.")]

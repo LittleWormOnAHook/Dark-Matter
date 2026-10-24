@@ -805,6 +805,13 @@ namespace Project.AI
             toAnchor.y = 0f;
             float anchorDistance = toAnchor.magnitude;
 
+            if (TickRetreatStuck(target, p, now, anchorDistance)) // 2026-10-24a
+            {
+                toAnchor = engagementState.Anchor - transform.position;
+                toAnchor.y = 0f;
+                anchorDistance = toAnchor.magnitude;
+            }
+
             if (holderAction != DMHolderAction.None && TickHolderAction(target, p, now, toAnchor, anchorDistance))
             {
                 FaceHolder(target, p);
@@ -818,14 +825,14 @@ namespace Project.AI
                 return;
             }
 
-            if (anchorDistance > 0.3f)
+            if (anchorDistance > HolderArriveRadius)
                 StepFlat(toAnchor, p.holderWalkSpeed, anchorDistance - 0.05f);
             else
                 ClearLocomotion();
 
             FaceHolder(target, p);
 
-            if (anchorDistance <= 0.6f)
+            if (anchorDistance <= HolderArriveRadius + 0.1f)
                 TickHolderIdle(target, p, now, distance);
         }
 
@@ -852,7 +859,7 @@ namespace Project.AI
 
             Vector3 toAnchor = engagementState.Anchor - transform.position;
             toAnchor.y = 0f;
-            bool atAnchor = toAnchor.magnitude <= 0.6f;
+            bool atAnchor = toAnchor.magnitude <= HolderArriveRadius + 0.1f;
 
             bool outsideBand = false;
             if (atAnchor && (distance < p.holdBandMin || distance > p.holdBandMax))
@@ -888,18 +895,24 @@ namespace Project.AI
 
             // Target ran well past the hold band: follow now instead of waiting out the re-anchor cooldown.
             bool farBehind = originDelta.magnitude > p.holdBandMax;
-            if (now < nextReanchorTime && !radiusChanged && !farBehind)
+            // 2026-10-24a: radiusChanged no longer bypasses the cooldown, and a minimum re-pick interval applies to every re-anchor.
+            if (now < nextReanchorTime && !farBehind)
+                return;
+            if (now - engagementState.AnchorTime < RetreatRepickInterval)
                 return;
 
             holderOutsideBandTimer = 0f;
             SetHoldAnchor(target, p, radius, now, countDrift: !playerMoved);
         }
 
-        private void SetHoldAnchor(Transform target, DM_EnemyEngagementProfile p, float radius, float now, bool countDrift)
+        private void SetHoldAnchor(Transform target, DM_EnemyEngagementProfile p, float radius, float now, bool countDrift, float bearingOffsetDeg = 0f)
         {
             Vector3 center = target.position;
             Vector3 fromTarget = transform.position - center;
             fromTarget.y = 0f;
+
+            if (bearingOffsetDeg != 0f)
+                fromTarget = Quaternion.AngleAxis(bearingOffsetDeg, Vector3.up) * fromTarget;
 
             Vector3 oldBearing = engagementState.HasAnchor ? engagementState.Anchor - center : Vector3.zero;
             oldBearing.y = 0f;

@@ -79,3 +79,196 @@ Scripts/Combat/DMAmmoFxProfile.cs: + boltSpeed 120, boltMaxLength 12, boltTailRe
 - Cause: 21i hold rule 'keep = !StreamTail && HasHit' - chain links never set HasHit (only the muzzle bolt raycasts), so each link was released right after its 0.12 s retract (~0.25 s total incl. ~0.13 s travel at 60 m/s), no ball/hold - effectively invisible. Pool/instance reuse, muzzle snapshot and endpoints checked: not the cause (links use live chest->chest, own pooled instance, released only by their own Finish).
 - Fix: keep = !StreamTail && (HasHit || !FromMuzzle): links travel, hold the ball at the enemy for beamDurationSeconds (with damage-only ticks), then retract - same as the main bolt; next link still launches on arrival (sequential). chainDebugLog now also logs each link's lifetime/length on finish.
 - Refresh after isPlaying=false check. Console 0/0. No commit.
+
+[2026-10-22a] Genesis Studio asset list (DMStudioAssetPanel.cs, shared by all folder tabs): draggable column splitter (EditorPrefs DM.GenesisStudio.AssetPanel.SidebarWidth, min 160 / default 260 / max 640); full-name tooltip per row; common '<prefix>_' trimmed under a header row. Backup: _AgentBackups\Assets\_Project\Editor\GenesisStudio\DMStudioAssetPanel.cs.pre20261022a
+
+[2026-10-22b] (1) DMAmmoFxProfile_Lightning Gun.asset splashRadius 5 -> 0 (HasSplashDamage false -> CombatHitResolver.ApplySplash early-outs). Chain is independent: DMLightningBeamSession OverlapSphere(chainRange 8, max 3, LOS) on the first enemy hit. Verified via reflection: splash=0 hasSplash=False chain=True/8.
+(2) DM_ClimbDashProfile.cs body-weight presets rebased on Anthony's fair Custom snapshot (BodyWeightCustomBase table): Subtle x0.65, Visible x1.2, Extreme x6 (keeps the angle caps / damping overrides). Same magnitude field list (BodyWeightScaled) for all presets; timings, springs, deadzones, thresholds and ratios are not scaled. BodyWeightVisibleTuned removed. Asset Custom values untouched (preset stays Custom).
+(3) Stage 3 (hit flinch, enemy body weight, foot plant, breathing) already in code since 2026-10-20w (commit 03fcdf1bb); reviewed only, no runtime change. Harness: Extreme PASS; chaos 20 runs 1 issue (hip drift 2.3 cm on random full-range values).
+Backups: _AgentBackups\...\DM_ClimbDashProfile.cs.pre20261022b, DMAmmoFxProfile_Lightning Gun.asset.pre20261022b. Console 0/0. No commit.
+
+[2026-10-23c] Player Prefab Creator: weapons survive mesh swap (Kade v2 onto Player_v7 Combat Variant)
+- NEW Editor/DMHumanoidCombatNodeCarryUtility.cs: before the old Visual is destroyed, lifts Drawn_/Holstered_/handler/holder/socket/hitBox nodes out (unpacking outer prefab layers only when base-owned nodes can't move), records parent bone by HumanBodyBones, re-seats them on the new bones with original local pose; rewires serialized refs (vMeleeManager members, handlers, bridges) by bone identity and pastes bone-hosted components (e.g. melee attack objects) onto the matching new bone.
+- DMHumanoidVisualAttachUtility: AttachVisualModel(carryCombatNodes, useSourceAsIs) — Player path carries nodes; wrapper prefab keeps root rotation/scale.
+- PlayerPrefabVisualSetupUtility: NormalizeTemplateSelection (Hierarchy object -> prefab asset, warns on unapplied overrides; errors instead of silent Player_Invector fallback); ShouldUseSourceAsIs (mesh wrapper prefab like Kade v2 used as-is incl. Rebreather (1) + root rotation).
+- PlayerPrefabCreatorPanel / Window: Template field accepts Hierarchy objects (mapped to their prefab asset with dialog warning).
+- EnemyInvectorWeaponHolderRebind: RebindOrphansUnderVisual (only holders not under any humanoid bone; placed holders untouched).
+- No bone renaming (request withdrawn). Test output: Prefabs/Players/Player_Kade_v2_AgentTest.prefab (19/19 nodes, 29/29 refs, avatar valid). Combat Variant and Kade v2.prefab unchanged. Backups .pre20261023c. Console 0/0. No commit.
+
+[2026-10-23d] Player Prefab Creator - Kade v2 rig-safe combat node carry (backups *.pre20261023d in _AgentBackups)
+- DMHumanoidVisualAttachUtility.cs: Visual always at identity local rot/pos/scale (wrapper extras kept, wrapper root transform dropped). Player target with valid humanoid avatar keeps the mesh's own avatar (e.g. rugged_male_character_3d_modelAvatar): no template bone rename, no rebuilt avatar, no stock-bone prefixing.
+- DMHumanoidCombatNodeCarryUtility.cs: both rigs posed to their avatar T-pose skeleton; carried nodes re-seated by player-frame offsets (same root-relative rotation, position = new bone + offset x limb-length ratio) instead of raw local copies. New ReapplyCarriedPoses + PoseToSkeleton.
+- PlayerPrefabVisualSetupUtility.cs: FinalizePlayerVisualRoot calls ReapplyCarriedPoses after FinalizeVisualCommon (undoes AfterRebind placement bake / RepairWeaponSlotVisuals offsets on carried nodes).
+- Moved broken Player_Kade_v2_AgentTest.prefab + _HumanoidAvatar.asset (+metas) to _AgentBackups (*.pre20261023d).
+- Generated Assets/_Project/Prefabs/Players/Player_Kade_v2_Test2.prefab. T-pose check vs Player_v7 Combat Variant: all 31 weapon/holster/handler nodes 0.0 deg, <=0.10 m. Avatar skeleton vs live bones: 0.00 deg. Console 0/0.
+
+[2026-10-23e] Jetpack limb dangle rig-independent (backup _AgentBackups\...\DMJetpackLimbDangle.cs.pre20261023e)
+- DMJetpackLimbDangle.cs: swing offsets now computed/applied in a per-limb character frame (Y = bone->child limb dir, X = -root.right orthogonalised, Z = X x Y) instead of bone-local axes. Matches Player_v7 bone axes (feel/tuning unchanged); fixes Kade mixamorig legs (bone X = -forward) where the constant gravity hang pitch became a sideways roll (legs swung right while jetpacking). Constants/Studio settings untouched. Console 0/0.
+
+[2026-10-23f] Jetpack flight smoothing. DMJetpackLimbDangle: accel sampled in FixedUpdate (was per-render-frame 0/spike), ground hysteresis, profile-driven accel clamp/smoothing/inertia/offset smoothing. DMJetpackAnimatorDriver: blend params smoothed per render frame (Update) instead of fixed step. DMJetpackController: IsJetpackAnimActive uses groundStateHysteresis to stop isGrounded flicker. DMJetpackProfile: new 'Flight Smoothing' header (groundStateHysteresis, dangleAccelSmoothTime, dangleMaxAccel, dangleInertiaStrength, dangleOffsetSmoothTime, animParamsPerFrame). Backups .pre20261023f. Console 0/0.
+
+[2026-10-23g] Character-vs-camera vibration while flying forward. Cause: DM_CombatCoreProfile.playerCameraFixedStepInterpolation=0 so vThirdPersonCamera moves only in FixedUpdate while player Rigidbody is Interpolate (per-frame); camera also read currentTarget.position (render-interpolated transform) inside FixedUpdate (vThirdPersonCamera.cs CameraMovement targetPos). Fix: vThirdPersonCamera.dmSampleTargetRigidbody + DMTargetPosition() (rb.position + child offset); DMCameraFixedStepInterpolator.ForceOn; DMJetpackController.Update drives both from new DMJetpackProfile.cameraFollowInterpolated (default on, Studio Jetpack > Flight Smoothing) and ensures interpolator on camera. Jetpack movement itself already all FixedUpdate (AddForce VelocityChange / linearVelocity), no kinematic/interp toggles, no root motion: unchanged. Backups .pre20261023g. Console 0/0.
+
+[2026-10-23h] Reverted 23g fully (restored .pre20261023g: vThirdPersonCamera.cs, DMCameraFixedStepInterpolator.cs, DMJetpackController.cs, DMJetpackProfile.cs; asset keeps an orphan cameraFollowInterpolated key, ignored). Flight vibration root cause: Invector vThirdPersonMotor.AirControl targetVelocity used transform.position (render-interpolated) against _rigidbody.position -> per-step planar velocity noise while airborne/moving. Now uses _rigidbody.position. Backup vThirdPersonMotor.cs.pre20261023h. 23f hysteresis untouched. Console 0/0.
+
+[2026-10-23i] Camera follows in LateUpdate (same loop as interpolated player body). vThirdPersonCamera: static dmLateUpdateFollow; FixedUpdate early-outs when on; new LateUpdate (DefaultExecutionOrder 100, after vThirdPersonInput camera input) runs CameraMovement/CameraFixed reading interpolated currentTarget.position; lerp factors k*fixedDt -> DMK(k)=1-(1-k*fixedDt)^(dt/fixedDt) (identical at 60 Hz), linear accumulators/SmoothDamp use frame dt; camera pose set via transform (+kinematic rb) instead of MovePosition/MoveRotation in late mode; target jump >3 m snaps (teleport/respawn). DMCameraFixedStepInterpolator bypassed when on (no double smoothing). DMJetpackProfile.cameraLateUpdateFollow (default on, Studio Jetpack > Flight Smoothing); DMJetpackController.Update drives the static, OnDisable clears it. vThirdPersonMotor restored from .pre20261023h (23h was dead code for Kade: jumpWithRigidbodyForce=1). Backups .pre20261023i. Console 0/0.
+
+[2026-10-23j revert] Reverted all 23e-23i jetpack/camera work to 770f82436 state (verified git-identical): DMJetpackLimbDangle (.pre20261023e), DMJetpackAnimatorDriver/DMJetpackController/DMJetpackProfile.cs (.pre20261023f), vThirdPersonCamera/DMCameraFixedStepInterpolator (.pre20261023g), vThirdPersonMotor (.pre20261023h). Pre-revert copies saved as .pre20261023j. DMJetpackProfile.asset left as-is (orphan keys ignored). 22a/22b/23c/23d untouched.
+
+[2026-10-23k] (1) Re-applied 23e only: DMJetpackLimbDangle.cs restored from .pre20261023f (character-frame SwingFrame leg sway; no 23f accel/profile fields). (2) DMPlayerBodyWeight.UpdateSwingSpring: melee swing offsets (pelvis/spine/chest/rUpperArm Extra) were character-frame values written as bone-local euler -> on Kade (mixamorig bones ~90 deg rotated) torso twist read as a lean to the right. Now converted per bone via new SetChar (AddChar character-root frame). Studio values unchanged. Backups .pre20261023k.
+
+[2026-10-24a] Enemy low-health retreat stability (no NavMesh). DM_EnemyBrainProfile new header 'Low-health retreat stability': conditionRecoverHysteresis 0.08, retreatCancelGuardSeconds 1, retreatStuckSeconds 1, retreatMinProgress 0.3, retreatStuckRepickDegrees 60, retreatRepickInterval 0.75, retreatAnchorObstacleCheck on, holderArriveRadius 0.5 (was hardcoded 0.3 stop / 0.6 arrived -> 0.5 / 0.6), rangedRetreatHysteresis 1. DMEnemyBrain: condition hysteresis, CancelRetreat guard (force overload). Director.ResolveHoldAnchor: rejects candidates via SphereCast/OverlapSphere at body radius + ground raycast (EnemyAiController.IsHoldAnchorClear). Engagement: retreat stuck -> one re-pick at +/-60 deg then cancel retreat and fight; radiusChanged no longer bypasses re-anchor cooldown + min re-pick interval; SetHoldAnchor bearing offset. States: ranged back-off hysteresis + stand-and-shoot when stuck (also standoff back-off). New file EnemyAiController.RetreatStability.cs. Existing values unchanged; no prefab/weapon edits. Backups .pre20261024a. Console 0/0.
+
+[2026-10-24b] DM_TerrainParallax (Phase A) - new DM_ shader/material only, nothing reassigned
+- New Assets/_Project/Rendering/DMShaders/: DM_TerrainParallax.shader ("DM/TerrainParallax"), DM_TerrainParallax_Template.hlsl, _Data.hlsl, _Splatmap.hlsl (copies of HDRP 17.4 TerrainLit; package untouched). Keeps instancing, per-pixel normal, holes, basemap distance, height blend (toggle), 8 layers (_TERRAIN_8_LAYERS).
+- Parallax mode Off/Offset/POM (height = mask B), per-layer strength 0-4, height 0-0.5 m, fade 0-300 m, grazing fade; POM 1-64 steps (12) on strongest 1-2 layers with own fade; optional anti-tiling.
+- DM_TerrainParallax.mat = copy of Gaia "Pipeline Terrain Material HD" values (original untouched/assigned). TerrainLayers/DM_*.asset = copies of the 10 Gaia DM Genesis layers (unused).
+- Studio: new category Rendering -> "DM Shaders: Terrain" (DMStudioTerrainShaderWindow, menu Tools/Dark Matter Genesis/Rendering/DM Shaders/Terrain). Backup DMStudioRegistry.cs.pre20261024b.
+- Variants compiled OK on D3D (Forward/GBuffer/Depth/Shadow). Console 0 errors (1 MCP websocket warning, tooling).
+
+[2026-10-24c] DM_TerrainParallax: terrain-layer UI, color tint, per-layer height maps (DM_ assets only, nothing assigned)
+- New Assets/_Project/Editor/Rendering/DMTerrainParallaxGUI.cs (ShaderGUI + ITerrainLayerCustomUI), set as CustomEditor of DM/TerrainParallax. Terrain > Paint Texture layer panel now shows Diffuse + Color Tint (diffuse remap, HDR), Opacity as Density (non-height-blend), Normal Map + Normal Scale 0-8, Mask + Channel Remapping (metal/AO/height amplitude+base/smoothness), tiling, plus DM height map block and DM per-layer foldout (parallax strength, extra tint, saturation 0-3, brightness 0-4).
+- Shader: per-layer extra tint/saturation/brightness after _DiffuseRemapScale; per-layer _DMHeightMap0..7 (R, shared sampler_Splat0), _DMUseHeightMap#, height scale 0-4 / offset -1..1 / contrast 0-8; fallback mask B; _DMHeightMapForBlend toggle feeds height blend. Parallax no longer requires a mask map when a DM height map is used. Fixed a div-by-zero shader warning.
+- Mask remaps / diffuse remap scale were already applied by the copied HDRP code (unchanged).
+- Backups *.pre20261024c (shader, splatmap, mat). Console: 0 errors after clear (FORGE3D/Burnout errors appear on background compile - pre-existing, not touched).
+
+[2026-10-24d] DM_TerrainParallax: anti-fuzz POM, parallax self-shadow, height AO (DM_ assets only)
+- POM: linear search + binary refinement (POM Refine 0-8), steps scale with view angle (POM Max Steps grazing / Min Steps top-down), slope fade (normal.y start/end, off when start<=end), height mip bias -2..4 for blurrier/stabler height sampling; distance + grazing fades kept.
+- Self-shadow (_DM_SELFSHADOW keyword): soft march toward main directional light (HDRP _DirectionalLightDatas, fallback vector), strongest layer only; strength 0-2, sharpness 0.1-64, steps 1-32, length 0-8, fade start/end 0-300 m. Darkens albedo + half into AO.
+- Height AO: crevice darkening from layer height (strength 0-2, crevice height), per-layer multiplier 0-4 in Terrain layer panel "DM Layer" foldout; multiplies material AO (feeds HDRP specular occlusion from AO).
+- Material inspector / Studio "DM Shaders: Terrain": Preset Recommended + Preset Extreme buttons.
+- Backups *.pre20261024d (shader, splatmap, mat, DMTerrainParallaxGUI.cs). Compile check: Forward/GBuffer/Depth/Shadow variants OK on D3D11; console 0/0.
+
+[2026-10-24e] DM_TerrainParallax: per-layer peak handling for clipped white height tops (DM_ assets only)
+- Per layer (material, by layer index): Peak Softness 0-1 (soft-knee shoulder, 0 = old behavior), Peak Knee 0.5-1 (default 0.9), Peak Detail 0-1 (procedural 2-octave noise relief in near-white region), Peak Detail Scale 0.1-20 (per layer UV). Applied in DM_LayerHeight after scale/offset/contrast, so it feeds POM, offset, self-shadow, height AO and (with "Height Blend Uses DM Maps") height blending, also for mask-B layers.
+- UI: Terrain layer panel > DM Layer foldout > "Peaks". Presets: Recommended 0.5/0.8/0.3/4, Extreme 0.8/0.7/0.6/8.
+- Backups *.pre20261024e (shader, splatmap, mat, DMTerrainParallaxGUI.cs).
+- VERIFICATION PENDING: refresh was triggered, but the Unity MCP bridge dropped during the domain reload (relay auto-shutdown), so console/compile check not yet confirmed.
+
+[2026-10-24f] DM_Master (Phase C) + 24e verification
+- 24e VERIFIED: console 0/0 (ignoring the existing FORGE3D/Burnout errors). Fixed "potentially uninitialized" warnings in DM_TerrainParallax_Splatmap.hlsl (DM_ApplyPeak, DM_MainLightDir: no early returns). DM_TerrainParallax: supported, 0 shader messages.
+- NEW shader "DM/Master" (Assets/_Project/Rendering/DMShaders/DM_Master.shader + DM_Master_Properties.hlsl + DM_Master_Data.hlsl): HDRP/Lit copy with identical property names and keywords. Extras are off by default (shader_feature_local_fragment):
+  _DM_MASTER_COLOR (tint, saturation 0-3, brightness 0-4), _DM_MASTER_HEIGHTAO (height crevice AO 0-2),
+  _DM_MASTER_PARALLAX (offset parallax 0-0.2 UV with distance fade 0-300 m). POM = Lit Pixel Displacement, triplanar = Lit UV mapping (both off by default).
+- Editor/Rendering/DMMasterGUI.cs: wraps HDRP LitGUI via reflection and adds a "DM Master Extras" section with Neutral/Recommended/Extreme presets.
+- Editor/GenesisStudio/DMStudioMasterShaderWindow.cs (Tools/Dark Matter Genesis/Rendering/DM Shaders/Master) plus Studio subtab "DM Shaders: Master":
+  converts HDRP/Lit materials from the selection or a folder into DM_ copies (next to the original or in a DM_Materials subfolder) with shader DM/Master.
+  Dry run is ON by default. Originals are never modified or reassigned, FORGE3D is skipped, materials only. CSV manifest goes to DMShaders/Manifests.
+- DM/Master variant compile: GBuffer/Forward/DepthOnly/ShadowCaster/MotionVectors all OK (all extras + height/POM combos).
+- Backups: DMStudioRegistry.cs.pre20261024f, DM_TerrainParallax_Splatmap.hlsl.pre20261024f.
+
+[2026-10-24g] DM/Master: DM Height Map + DM AO Map (always visible in DM Master Extras)
+- DM Height Map (R) with tiling/offset, scale 0-4, offset -1..1, contrast 0-8 and peak knee/softness (terrain peak logic, no noise). Drives DM offset parallax and Height AO.
+  Falls back to Lit _HeightMap when DM height is empty, or when "Use Lit Height Map instead" is on. Parallax/HeightAO no longer require Lit's _HEIGHTMAP keyword.
+  Lit POM: button "Drive Lit POM" copies the DM height (and tiling) into Lit _HeightMap and sets Displacement = Pixel. This is a one-shot copy, not a live link.
+- DM AO Map: R/G channel, strength 0-2, multiplies Mask Map AO (or replaces it via toggle). Feeds ambient + specular occlusion (spec occlusion is now also active without a Mask Map when DM AO/Height AO is on).
+- Keyword-gated (_DM_MASTER_HEIGHTMAP / _DM_MASTER_AOMAP) and set automatically when textures are assigned, so there's no cost when empty. Presets updated.
+- Compile: GBuffer/Forward/DepthOnly/ShadowCaster/MotionVectors OK across 4 keyword sets. Console 0/0.
+- Backups .pre20261024g: DM_Master.shader, DM_Master_Data.hlsl, DM_Master_Properties.hlsl, DMMasterGUI.cs.
+
+[2026-10-24h] Body weight jitter / feet above ground / no footsteps on Kade_v2
+- Jitter: Kade's Animator runs in Fixed (AnimatePhysics) mode, so the pose is only fresh on physics-step frames. DMPlayerBodyWeight decided "fresh vs stale" with a Quaternion.Angle<=0.01 deg test (Unity treats <~0.16 deg as equal) plus a hips 0.1 mm test. These misclassified frames, so offsets were stacked or dropped on alternate render frames, giving whole-body per-frame vibration even when idle or aiming.
+  Fix: deterministic. DMPlayerBodyWeightPreIK.FixedUpdate marks physics steps. PreIK (order -500, before Invector aim IK) restores the clean base on non-step frames, and Begin always takes the clean pose. Offsets are always applied once on top of the animated + IK pose (order 3320, after aim IK). The editor harness keeps the old path.
+- Springs: already semi-implicit and sub-stepped. dt clamp now comes from the Studio setting bodyWeightMaxDt (0.01-0.2, default 0.05).
+- Pelvis never raised: hip-drop spring overshoot was allowed up to +30% of max drop (lifted the body). Now clamped to <=0, and any upward hip offset is removed.
+- Footsteps: vFootStep triggers (r=0.1) sit at the mixamorig ankle origin, about 9-10 cm above the sole, so they barely or never entered the ground (worse with any hip lift).
+  New DMFootstepTriggerFit is added at runtime; prefab untouched. It measures ankle height while grounded and moves each sphere down to sole+reach.
+  Studio: bodyWeightFootstepTriggerFit / SoleReach (0.03) / Radius (0.08) / SoleOffset.
+- Backups .pre20261024h: DMPlayerBodyWeight.cs, DMPlayerBodyWeightPreIK.cs, DM_ClimbDashProfile.cs. Compile 0/0. Not play-tested.
+
+[2026-10-24i] Chain lightning: no bounce from the first-hit enemy (COMPILE VERIFICATION PENDING - Unity was in Play, no refresh)
+- Settings: DMAmmoFxProfile_Lightning Gun.asset (Assets/_Project/Data/Items/Ammo/Vendor/), header "Chain lightning": chainEnabled, chainSkillUnlocked, chainMaxTargets, chainRange, chainDamageFalloff, chainRequiresLineOfSight, chainDebugLog, + new chainJumpDelay, chainWidthScale, chainColor, chainSpeedScale. Bolt: beamDurationSeconds, boltSpeed, boltMaxLength, boltWidth, beamDamagePerTick...
+- Cause: DMLightningBeamSession.Chain found candidates with OverlapSphere(QueryTriggerInteraction.Ignore). Enemy hit volumes are mostly triggers or ragdoll colliders (disabled while alive), so often no enemy collider was found ("no valid enemy").
+  Line of sight used one Linecast that stopped at the first collider (enemy weapon, other enemy, player/companion capsule, physics prop) and rejected the jump.
+  Splash=0 was NOT involved. The chain only exists on the hitscan Lightning Gun path; the "Electricity" projectile ammo has no chain logic.
+- Fix: candidates come from the live EnemyHealth set by chest distance. LOS uses RaycastAll and only static world geometry blocks it. Link targets the enemy's main enabled collider. Links get delay/width/colour/speed styling.
+- Ranges: chainMaxTargets 0-50, chainRange 0.5-100, falloff 0-2. Asset context menu presets "Chain Lightning: Recommended / Extreme".
+- Backups .pre20261024i: DMAmmoFxProfile.cs, Vfx/DMLightningBeamSession.cs.
+
+[2026-10-24j] Chain lightning visible in Genesis Studio (Combat > Ammo FX)
+- 24i now compile-verified (refresh, console 0/0).
+- DMStudioProfileSectionFilter.CombatAmmoFields: added beam fields (beamUsesAmmoPrefab, beamDuration, bolt*, beam tick, stream*, showSplashBubble) and all chain* fields (enabled, skill unlocked, max targets, range, falloff, LOS, jump delay, width, color, speed, debug log). Studio whitelist was hiding them.
+- DMStudioAssetPanel: 'Chain lightning presets' row with Chain: Recommended / Chain: Extreme buttons (Undo + SetDirty) and an info box when ammo is not a hitscan prefab beam.
+- DMAmmoFxProfile: ChainPresetRecommended/Extreme made public (still ContextMenu).
+- Backups .pre20261024j. COMPILE VERIFICATION PENDING: Play mode was on, so no refresh was run.
+
+[2026-10-24j] UPDATE: compile-verified (refresh, console 0/0).
+[2026-10-24k] Chain lightning now bounces between TrainingDummies
+- Cause (from Anthony's chainDebugLog lines): 'first hit TrainingDummy -> enemy NONE (no chain)'. Chain only accepted EnemyHealth targets; TrainingDummy is IDamageable but not EnemyHealth, so the chain never started. Code was compiled; beam session path, flags and skill gate were all fine (chain=True).
+- DMLightningBeamSession: chain targets = EnemyHealth OR TrainingDummy (resolve, candidates, dead check, ticks). Log prefix [Chain], one outcome line per jump: 'hit X -> candidates N -> jumped to Y / skipped: reason'. Used FindObjectsByType<T>() (no obsolete sort-mode warnings).
+- Backup .pre20261024k. Refresh: console 0/0.
+
+[2026-10-24l] Chain lightning: center mass + fan-out mode
+- DMAmmoFxProfile: chainUseCenterMass (on), chainCenterMassHeightOffset (-1..1), chainMode (FanOutFromFirst default / SequentialNearest = previous behaviour); chainMaxTargets default 3 -> 8 (range 0-50, existing assets keep their serialized value). Presets set mode/center mass; Extreme max 30. Studio filter lists the new fields.
+- DMLightningBeamSession: center mass = humanoid Chest/Spine/UpperChest bone, else enabled non-trigger collider bounds center, else renderer bounds center, else pivot+1.2 m, + offset; chain arcs re-resolve both ends every frame (track moving targets). First (gun) segment unchanged (fixed snapshot to the hit point).
+- FanOut: every live enemy/TrainingDummy within chainRange of the first target's center mass, world-only LOS, nearest first, capped by chainMaxTargets, arc k delayed k*chainJumpDelay, damage base*falloff^k. Sequential falloff was already multiplicative per jump (base*falloff^k). Per-target [Chain] debug lines.
+- Backups .pre20261024l. Refresh: 0 errors (6 runtime [SnapProbe] warnings from a Play session, not compile).
+
+[2026-10-24m] Training dummy: pivot base, snappy capped reaction
+- Cause: TrainingDummy is code-driven (no Rigidbody/joint in prefab). Its spring moved the visual up to 0.45 m (slide) and tilted up to 24 deg around the model origin; every TakeDamage (incl. each beam tick and chain arc) added full impulse+torque with no cap.
+- TrainingDummy: new pivot mode (default on): no translation, tilt only around the base pivot (renderer bounds bottom-center), critically-damped-style spring (frequency + damping ratio), max tilt clamp, kick per hit kind (melee by source distance / ranged / beam tick via TrainingDummy.NextHitKind hint), per-window kick cap. Classic legacy path kept when off.
+- DM_CombatCoreProfile: trainingDummyPivotBase, TiltFrequency, TiltDampingRatio, MaxTiltDegrees, Melee/Ranged/BeamTick TiltKick, KickWindowSeconds, KickWindowCap, MeleeDistance; presets Snappy (default) / Classic (old) / Extreme (context menu + Studio buttons). Studio: Combat > Combat Core.
+- DMLightningBeamSession: beam damage ticks on dummies flagged BeamTick.
+- Prefab untouched. Backups .pre20261024m. Refresh 0/0.
+
+[2026-10-24n] Vendor impact explosion audio every hit.
+Cause: player tracers/projectiles carrying FORGE3D F3DProjectile are reused by our PoolManager, which never calls F3DProjectile.OnSpawned; isHit/isFXSpawned stay true after first life -> vendor impact+explosion audio only on each pooled instance's first shot (plus shared F3D timer_02 throttle).
+Affected: Vulcan, Solo Gun, Seeker, Plasma Gun, Laser Impulse vendor ammo (prefabs with F3DProjectile).
+Fix: new Scripts/Combat/DMVendorImpactAudio.cs; F3DProjectile disabled on our pooled instances (CombatProjectile spawn/tracer, CombatHitResolver tracer); DMCombatRangedResolver plays F3DAudioController hit clip per hit via GameAudioManager.PlayWorldSfx. DMAmmoFxProfile: vendorImpactAudio (Off/Auto/type), impactAudioMinInterval 0-0.5, impactAudioMaxVoices 1-32, impactAudioVolume 0-2; shown in Studio Combat > Ammo FX. FORGE3D untouched. Backups .pre20261024n.
+
+[2026-10-24n+] Impact audio presets: DMAmmoFxProfile.ImpactAudioPresetRecommended/Extreme + Studio buttons (Combat > Ammo FX).
+[2026-10-24o] DMWallHandTouch (Features/Locomotion/Runtime): auto-added to player by DMPlayerBodyWeight poller (no prefab edit). Free wall-side hand palm-flat on flat near-vertical walls while walking/jogging; gated off for sprint/aim/attack/reload/roll/jump/airborne/customAction(interact/carry)/climb/jetpack. Hands from EquipmentController.IsWeaponDrawn + ItemData.weaponGrip (existing field, no new flag): two-handed drawn blocks both, one-handed blocks right, holstered free. Detection: 5 shoulder-side rays (all must hit, tilt/angle/flatness/step checks, min width, layer mask, ignores self + dynamic rigidbodies) + target-on-wall recheck. Analytic two-bone IK in LateUpdate order 3340 (after aim IK + body weight 3320), elbow out/down hint, palm frame from finger/thumb bones, blend time; own pre-IK restore at order -600 so body weight PreIK never sees stacked pose. DM_ClimbDashProfile bodyWeightWallHand* fields (Studio Player/body) + ApplyWallHandPreset Subtle/Default/Extreme buttons. Backups .pre20261024o.
+
+[2026-10-24p] Genesis PCG Rock Blend: rocks now read DM_TerrainParallax per-layer tint/saturation/brightness (_DMLayerTint/Saturation/Brightness) - cause of missing layer-0 blend (red tint lived on terrain material, not TerrainLayer). PcgTerrainSplat: LayerColor, RefreshAll, ApplyFresh (forced refill of cached copies). GRB_TLAYER applies sat+tint. Bake uses ApplyFresh. New PcgTerrainBindWatcher (auto-rebind on terrain/layer/material/alphamap changes) + menu Tools/Genesis PCG Rock Creation/Rebind All Rocks to Terrain. Backups .pre20261024p.
+
+[2026-10-24p+] PcgTerrainBindWatcher hardened: armed only after first delayCall post-reload (no work at load), skipped while compiling/updating/entering Play, reentrancy guard (s_busy) so callbacks fired by the rebind are ignored, try/catch, no longer triggers on every .asset import. Fixed TerrainCallbacks namespace (UnityEngine.TerrainCallbacks).
+[2026-10-24q] DMWallHandTouch: wall accepted if layer in bodyWeightWallHandLayers (default Default+Climbable, layer 23) OR collider/root tag in new bodyWeightWallHandTags (default {Climbable}; string compare so unknown tags are ignored). Tag mode raycasts all layers except Player/Enemy/CompanionAI/Triggers/BodyPart/DMHitbox/HeadTrack/UI/IgnoreRaycast/VFX. Presets: Subtle/Default = Default+Climbable + {Climbable}; Extreme adds Building/PW_Object_Large/Medium layers + tags Climb/FreeClimb/WallRun/Building. Both editable in Studio Player body. Backups .pre20261024q.
+
+[2026-10-24r] DMPlayerBodyWeight anticipation: input now = motor.moveDirection (world) -> body frame instead of raw stick motor.input compared to body-local velocity; raw stick vs local velocity produced a brief lateral mismatch (right lean) on backward/forward starts while the body turns. Backup .pre20261024r. Not yet compiled (Play was on).
+
+[2026-10-24s] POM depth offset so decals/blood land on POM terrain (backups .pre20261024s)
+- Blood = KriptoFX BFX fluid meshes + HDRP DecalProjector ground decals (DMVolumetricBlood); hit marks = DecalProjector. All DBuffer -> follow depth.
+- DM_TerrainParallax: _DEPTHOFFSET_ON toggle (_DMDepthOffset), _DMDepthOffsetScale 0-4, _DMDepthOffsetMax 0.01-2 m. POM/offset depth accumulated per layer (Splatmap DM_ACCUM_DEPTH), applied via ApplyDepthOffsetPositionInput + GetBuiltinData in DepthOnly/GBuffer/Forward (not shadows). Template varyings enabled in depth pass when on.
+- DMTerrainParallaxGUI presets: Recommended on/1/0.3m, Extreme on/1.25/1m; keyword synced in ValidateMaterial.
+- DMMasterGUI: "POM Depth Offset" toggle (HDRP _DepthOffsetEnable, Pixel Displacement only); auto-on in Drive POM and Recommended/Extreme.
+- Note: SV_Depth disables early-Z on those materials (small GPU cost).
+
+[2026-10-24t] Blood ground decals missing (backups .pre20261024t)
+- Checked: profile flags fine (useVolumetricBlood 1, spawnGroundDecals 1, mask all, lifetime 8, Projector mode); prefabs keep BFX decal child; 24n/24s not involved (terrain mat has depth offset off). Decals live under DontDestroyOnLoad/DM_VolumetricBloodPool/<BloodN_Flesh(Clone)>.
+- DMVolumetricBlood.TryGround: ignores hits at/above the hit point (victim hitboxes/weapons without Animator parent made "ground" = hit height -> projector placed mid-air / outside BFX height window).
+- DisableGroundDecals -> SetGroundDecals(on/off): pooled instances are re-enabled when the toggle is on.
+- DM_EnemyHitMarkProfile.logVolumetricDecals (off): one [BloodDecal] line per spray with reason (OK / OFF / NONE / NOGROUND / HIDDEN height window).
+
+[2026-10-24u] Decal log + climb collision guard (backups .pre20261024u)
+- Console had no [BloodDecal] lines: logVolumetricDecals was never enabled (not in asset). Now set true in DM_EnemyHitMarkProfile.asset (debug; turn off later).
+- Rocks: all 13 active Rock Blend rocks have enabled non-trigger colliders in Edit Mode; 39 rock renderers on layer Climbable. DMClimbController calls global Physics.IgnoreLayerCollision(Player, Climbable, true) on climb start and only clears it on the normal exit -> interrupted climbs left Climbable rocks pass-through for the session. Fix: clear in OnEnable/OnDisable and every non-climbing Update (only when set).
+- PioneerInvectorDeathRagdoll.cs still on disk (not deleted); used by PlayerDeathHandler + auto-added by PioneerInvectorBootstrap. Not edited.
+
+[2026-10-24v] Revive collision guard + concave trigger guard (backup PioneerInvectorDeathRagdoll.cs.pre20261024u)
+- PioneerInvectorDeathRagdoll: concave MeshColliders no longer set isTrigger (bone path: skipped; root-compound path: disabled instead) -> no "Triggers on concave MeshColliders" spam.
+- New EnsureLivingWorldCollision() at the end of RestoreLivingBodyState (revive + every 0.5 s for 6 s after stand-up): capsule enabled/solid, rb.detectCollisions, Player layer, clears Player-vs-Default/Climbable layer ignore; logs [ReviveCollision] fixed:<what>.
+- Decals (live, Play): 24x [BloodDecal] OK, projectors active/enabled at ground+0.05, layer RenderingLayer1 = terrain rlm 1, HDRP decals + decal layers on, camera Decals on. Visual cause not yet confirmed.
+
+[2026-10-24w] DM_EnemyHitMarkProfile.volumetricDecalSizeMultiplier 0.25 -> 1 (asset + live); Range 0.05-2 -> 0.05-4, default 1 (code; compiles on next refresh after Play). Backups .pre20261024w.
+
+[24x 2026-10-24] Blood ground decals invisible on terrain: DM_TerrainParallax.mat was in render queue 2000. HDRP deferred only draws decal receivers (queue OpaqueDecal 2225) in the depth prepass that DBuffer decals project onto, so the terrain got no decals (cubes/Lit at 2225 did). Set the material to 2225; DMTerrainParallaxGUI.ValidateMaterial now forces 2225 when _SupportDecals is on (2000 if off). The BFX decal shader/material is fine (renders on HDRP Lit; Blood1 mask is a small splatter shape). Backups .pre20261024x (GUI .cs, .mat). Console 0/0.
+
+[24y 2026-10-24] Rock pass-through after revive: no [ReviveCollision] lines in console (layer matrix, capsule, rock MeshColliders all OK in edit; rocks Default/Climbable, all have solid colliders, meshes non-null). Added PioneerInvectorDeathRagdoll.ProbeWorldPassThrough (LateUpdate, 4 Hz, alive only): OverlapCapsule vs solid world colliders; removes any leftover per-pair Physics.IgnoreCollision(capsule, rock) and logs [RockPassThrough] with full state (pairIgnored, layerIgnored, depth, convex/mesh, cap trigger/enabled, rb kinematic/detect, lockMovement, rootMotion, seconds since revive). Backup .pre20261024y. NOT refreshed/verified: MCP bridge disconnected during task.
+
+[2026-10-24 24z] Rock colliders: DmRockCombiner MeshCollider lost its mesh (Mesh=None) because the live preview mesh is DontSave - the collider ref drops on reload/Play while TryAdoptLiveMesh only re-adopts the MeshFilter; uncookable builds also nulled it. Added public EnsureColliderMesh() (combined/baked mesh, non-convex, never nulls) called in OnEnable (baked + adopt paths), end of Start and after ApplySurfaceConform in Rebuild. New Editor/DmRockColliderRepair.cs menu Tools/Genesis PCG Rock Creation/Repair rock colliders (all) (edit mode, Undo, no save). PioneerInvectorDeathRagdoll probe: GetInstanceID->GetHashCode (CS0618). Backup DmRockCombiner.cs.pre20261024z.
+
+[2026-10-24 24aa] Rock colliders take 2: cause = creator added onto an existing LOD rock builds an EMPTY preview mesh (0 verts, uncookable), so every Rebuild (OnValidate delayCall/RebuildIfChanged, move-settle, OnEnable) did mc.sharedMesh = null on the creator - wiping manual assignments. DmRockCombiner: new FindLod0Source()/SyncLod0Collider(undo) - non-convex MeshCollider with the LOD0 child's own asset mesh (on the child, or DM_RockCollider proxy child at same pose if the source is inactive), creator's own MeshCollider disabled; called from EnsureColliderMesh (OnEnable/Start/Rebuild) and ApplyBakedPresentation. Editor Bake/Rebake buttons sync it (Undo) before+after baking. Repair menu now uses the LOD0 approach. Verified 9 Rock_11/Rock_02 creators: LOD0 MeshCollider enabled. Backups .pre20261024aa. Scene not saved.
+
+[2026-10-24 24ab] Wall hand standoff: DMWallHandTouch keeps the body capsule >= radius + bodyWeightWallHandStandoff from the touched wall plane while a hand touch is active (weight blended by bodyWeightWallHandStandoffBlendSpeed). Push is velocity-only in FixedUpdate (after Invector locomotion, order 3340): raises only the wall-normal velocity component (<=1.2 m/s, scaled by shortfall), no position snapping, capsule size unchanged. IK: elbow hint now bends away from the wall (bodyWeightWallHandElbowAway), re-tried up to 4x with stronger away bias if the elbow is <6 cm from the wall or spherecasts (r 4 cm) along upper arm/forearm hit the wall before the hand. New profile fields (Studio Player body section) + Subtle/Default/Extreme preset values (0.08/3/0.3, 0.15/5/0.6, 0.3/8/1.0). Backups .pre20261024ab. 0/0.
+
+[2026-10-24 24ac] Enemy stuck fixes (no NavMesh; transform chase + wall slide): (1) EnemyChaseWallSlide treated terrain with normal.y<=0.65 (>~49 deg) as a WALL in capsule casts and overlap extraction -> enemies pushed back off slopes and stalled; walkable terrain (< chaseTerrainMaxSlopeDeg, default 60) is now ignored as a wall. (2) EnemyGroundUtility accepted ANY MeshCollider hit as ground -> new 24aa rock LOD0 colliders' flanks became ground and enemies snapped up into rocks; mesh hits steeper than groundMeshMaxSlopeDeg (50) are now ignored. (3) New position-based chase stall detector in EnemyAiController.Movement (chase/investigate/search): moved < chaseStuckMinMove in chaseStuckSeconds while goal > arrive+1 m -> alternating-side sidestep via the existing wall-retreat waypoint, logs [EnemyStuck]. DM_EnemyBrainProfile fields + ApplyChaseStuckPreset, Studio chase-wall section + Unstick Subtle/Default/Extreme buttons. No NavMesh / prefab / scene changes. Backups .pre20261024ac. 0/0.
+
+[2026-10-24 24ad] Terrains audit (read-only): 16 Gaia tile scenes all active, TerrainCollider on, DM_TerrainParallax; 15 = Default/Untagged, Terrain_1_1 = Climbable(23)/Terrain (outlier: climb + wall-hand masks treat it as climbable wall). Recommend all Default + Untagged (no 'Terrain' layer exists). Enemy ground/wall-slide already type-based (TerrainCollider), no mask change needed. Idle enemy: logs show SwordMaster (2)/Axe_Droid moved=0.00 with wallContact through every sidestep = capsule starting INSIDE a concave rock MeshCollider (24aa colliders appeared around enemies standing in former no-collider rocks): zero-distance start-overlap hits blocked all directions and depenetration can't resolve concave insides. Fix: EnemyChaseWallSlide.TryCapsuleCast ignores start-inside hits on concave MeshColliders; stuck recovery escalates after chaseStuckHardAfter (2) failed sidesteps to a hard unstick to the nearest free grounded spot (<= chaseStuckHardMaxRadius 4 m, no overlap, no roof) and logs the overlapping colliders. Profile/Studio/presets updated. Backups .pre20261024ad. 0/0.
+
+2026-10-24ae  Terrain climbable + enemy slopes/avoidance/stall
+- Climb accepts tag "Climbable" (SurfaceCast ~0 + CompareTag). New menu Tools/Dark Matter/Climb/Tag all loaded terrains Climbable (Default layer): Undo, marks dirty, no save. Default layer kept because Climbable LAYER is collision-ignored vs Player during climbs.
+- EnemyChaseWallSlide: any TerrainCollider is ground, never a wall (capsule cast + overlap extract), any slope/tag/layer.
+- DM_EnemyBrainProfile: ApplyObstacleAvoidancePreset(0/1/2) enables predictive whisker fan (+ long-range fan); Studio Avoid: Subtle/Default/Extreme buttons.
+- Stall watchdog (stallWatchdogPauseSeconds 6, stallWatchdogAnimatorSeconds 1.5, stallWatchdogLog): releases stuck locomotion pause / animator speed 0, logs [EnemyStall]. Studio filter updated.
+- [EnemyStuck] soft log now lists overlapping colliders.
+- Backups *.pre20261024ae.

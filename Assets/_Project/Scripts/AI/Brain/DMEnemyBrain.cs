@@ -25,6 +25,7 @@ namespace Project.AI
         private float nextDecisionTime;
         private float nextDefendAllowed;
         private float retreatUntil;
+        private float retreatStartTime = -100f; // 2026-10-24a
         private float nextRetreatAllowed;
         private float missRecoveryUntil;
         private bool defendRequested;
@@ -176,7 +177,7 @@ namespace Project.AI
 
             float now = Time.time;
             if (health != null && health.MaxHealth > 0f)
-                condition = profile.ResolveCondition(Mathf.Clamp01(health.CurrentHealth / health.MaxHealth));
+                condition = profile.ResolveCondition(Mathf.Clamp01(health.CurrentHealth / health.MaxHealth), condition); // 2026-10-24a hysteresis
 
             if (now < nextDecisionTime)
                 return;
@@ -229,6 +230,7 @@ namespace Project.AI
             else if (pick == DMBrainAction.Retreat)
             {
                 retreatUntil = now + profile.retreatSeconds;
+                retreatStartTime = now;
                 nextRetreatAllowed = retreatUntil + profile.retreatCooldown;
             }
 
@@ -301,8 +303,14 @@ namespace Project.AI
             return true;
         }
 
-        public void CancelRetreat()
+        public void CancelRetreat() => CancelRetreat(false);
+
+        /// <summary>2026-10-24a: non-forced cancels (attack-slot award) are ignored during retreatCancelGuardSeconds.</summary>
+        public void CancelRetreat(bool force)
         {
+            DM_EnemyBrainProfile pr = Profile;
+            if (!force && pr != null && Time.time - retreatStartTime < pr.retreatCancelGuardSeconds)
+                return;
             retreatUntil = 0f;
         }
 

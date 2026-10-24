@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 using UnityEngine;
 
 namespace Project.AI
 {
     /// <summary>
-    /// Utility brain tuning (Combat Plan Â§5â€“Â§8, Â§12, Phase 3). Score per action =
-    /// archetype base Ã— personality multipliers Ã— condition multiplier + small randomness. Highest wins.
+    /// Utility brain tuning (Combat Plan Ã‚Â§5Ã¢â‚¬â€œÃ‚Â§8, Ã‚Â§12, Phase 3). Score per action =
+    /// archetype base Ãƒâ€” personality multipliers Ãƒâ€” condition multiplier + small randomness. Highest wins.
     /// Resources/Combat/DM_EnemyBrainProfile, read live so Genesis Studio edits apply in Play.
     /// </summary>
     [CreateAssetMenu(menuName = "Dark Matter/Combat/Enemy Brain Profile", fileName = "DM_EnemyBrainProfile")]
@@ -81,13 +81,13 @@ namespace Project.AI
         public bool debugLogDecisions = false;
         [Tooltip("Play mode: gold movement history on enemies with DMEnemyMovementPathDebug. Buffer reserved for future path analysis.")]
         public bool enableMovementPathDebug = false;
-        [Tooltip("When path debug is visible: dashed yellow virtual steer polyline (root → fan hint → move target). Memory only — no path objects.")]
+        [Tooltip("When path debug is visible: dashed yellow virtual steer polyline (root â†’ fan hint â†’ move target). Memory only â€” no path objects.")]
         public bool drawVirtualSteerPath = false;
 
         [Header("Decisions")]
         [Tooltip("The brain re-scores this often and holds its pick until the next decision.")]
         [Range(0.1f, 3f)] public float decisionInterval = 0.8f;
-        [Tooltip("Â± random added to every score (seeded per enemy).")]
+        [Tooltip("Ã‚Â± random added to every score (seeded per enemy).")]
         [Range(0f, 1f)] public float scoreRandomness = 0.25f;
         [Tooltip("Defend is only scored if the target hit this enemy within this many seconds, or is inside its attack range.")]
         [Range(0f, 5f)] public float defendThreatMemory = 1.2f;
@@ -203,6 +203,56 @@ namespace Project.AI
         [Range(0f, 80f)] public float rifleEngageRangeBase = 25f;
         [Range(0f, 80f)] public float rifleVisionFloor = 25f;
 
+        [Header("Chase stuck recovery (2026-10-24ac)")]
+        [Tooltip("Chase / investigate / search: if the enemy barely moves for chaseStuckSeconds while its goal is still far, sidestep around the blocker (alternating sides).")]
+        public bool enableChaseStuckRecovery = true;
+        [Range(0.5f, 5f)] public float chaseStuckSeconds = 1.5f;
+        [Tooltip("Less horizontal movement than this (m) over chaseStuckSeconds = stuck.")]
+        [Range(0.05f, 2f)] public float chaseStuckMinMove = 0.4f;
+        [Tooltip("Sideways distance of the recovery sidestep (m).")]
+        [Range(0.5f, 5f)] public float chaseStuckSidestepMeters = 2f;
+        [Tooltip("Terrain steeper than this (deg) blocks like a wall; gentler terrain is ground, never a wall (slope stalls).")]
+        [Range(30f, 89f)] public float chaseTerrainMaxSlopeDeg = 60f;
+        [Tooltip("Mesh colliders (rocks, props) count as ground only where their surface is flatter than this (deg): no snapping up rock flanks.")]
+        [Range(10f, 80f)] public float groundMeshMaxSlopeDeg = 50f;
+        [Tooltip("24ad: after this many failed sidesteps in a row (enemy wedged inside / against a rock mesh), move it to the nearest free grounded spot. 0 = never.")]
+        [Range(0, 6)] public int chaseStuckHardAfter = 2;
+        [Tooltip("24ad: max search radius (m) for the hard-unstick free spot.")]
+        [Range(1f, 8f)] public float chaseStuckHardMaxRadius = 4f;
+        public bool chaseStuckLog = true;
+
+        /// <summary>0 = Subtle, 1 = Default, 2 = Extreme.</summary>
+        public void ApplyChaseStuckPreset(int preset)
+        {
+            enableChaseStuckRecovery = true;
+            switch (preset)
+            {
+                case 0: chaseStuckSeconds = 2.5f; chaseStuckMinMove = 0.25f; chaseStuckSidestepMeters = 1.2f; chaseTerrainMaxSlopeDeg = 55f; groundMeshMaxSlopeDeg = 45f; chaseStuckHardAfter = 3; chaseStuckHardMaxRadius = 3f; break;
+                case 2: chaseStuckSeconds = 0.8f; chaseStuckMinMove = 0.6f; chaseStuckSidestepMeters = 3.5f; chaseTerrainMaxSlopeDeg = 70f; groundMeshMaxSlopeDeg = 40f; chaseStuckHardAfter = 1; chaseStuckHardMaxRadius = 6f; break;
+                default: chaseStuckSeconds = 1.5f; chaseStuckMinMove = 0.4f; chaseStuckSidestepMeters = 2f; chaseTerrainMaxSlopeDeg = 60f; groundMeshMaxSlopeDeg = 50f; chaseStuckHardAfter = 2; chaseStuckHardMaxRadius = 4f; break;
+            }
+        }
+
+        [Header("Stall watchdog (2026-10-24ae)")]
+        [Tooltip("Force-release AI locomotion pause if it is held longer than this (s) while alive (a hit reaction / stagger that never released). 0 = off.")]
+        [Range(0f, 15f)] public float stallWatchdogPauseSeconds = 6f;
+        [Tooltip("Restore animator speed to 1 if it stays at 0 longer than this (s) (hit-stop never ended = frozen pose). 0 = off.")]
+        [Range(0f, 5f)] public float stallWatchdogAnimatorSeconds = 1.5f;
+        public bool stallWatchdogLog = true;
+
+        /// <summary>24ae: obstacle avoidance (predictive whisker fan around rocks / props). 0 = Subtle, 1 = Default, 2 = Extreme.</summary>
+        public void ApplyObstacleAvoidancePreset(int preset)
+        {
+            enableChaseWallSlide = true;
+            enableChaseWallPredictiveFan = true;
+            switch (preset)
+            {
+                case 0: chaseWallFanRayCount = 5; chaseWallFanHalfAngleDegrees = 35f; chaseWallFanLookAheadScale = 1.2f; chaseWallFanLatchSeconds = 0.5f; chaseWallFanDirectionHysteresis = 0.1f; chaseWallFanMinRetargetSeconds = 0.4f; enableChaseWallLongRangeFan = false; break;
+                case 2: chaseWallFanRayCount = 11; chaseWallFanHalfAngleDegrees = 70f; chaseWallFanLookAheadScale = 2.4f; chaseWallFanLatchSeconds = 0.3f; chaseWallFanDirectionHysteresis = 0.05f; chaseWallFanMinRetargetSeconds = 0.2f; enableChaseWallLongRangeFan = true; chaseWallLongRangeFanDistance = 16f; chaseWallLongRangeFanRayCount = 5; chaseWallLongRangeFanBlend = 0.45f; break;
+                default: chaseWallFanRayCount = 9; chaseWallFanHalfAngleDegrees = 55f; chaseWallFanLookAheadScale = 1.8f; chaseWallFanLatchSeconds = 0.4f; chaseWallFanDirectionHysteresis = 0.08f; chaseWallFanMinRetargetSeconds = 0.3f; enableChaseWallLongRangeFan = true; chaseWallLongRangeFanDistance = 12f; chaseWallLongRangeFanRayCount = 3; chaseWallLongRangeFanBlend = 0.3f; break;
+            }
+        }
+
         [Header("Chase wall slide (no NavMesh)")]
         [Tooltip("Capsule-cast chase steps against Default / Building / Climbable / Resource / PW blockers and slide along walls.")]
         public bool enableChaseWallSlide = true;
@@ -263,16 +313,16 @@ namespace Project.AI
         [Range(0.02f, 0.15f)] public float chaseWallStandoffPushMinDeficit = 0.07f;
         [Tooltip("Only enter tangential wall-follow when a forward probe hits geometry (not buffer-only stalls).")]
         public bool chaseWallFollowRequiresHeadOnBlock = true;
-        [Tooltip("Blocked/stutter frames at a wall with no chase progress → start lost-sight investigate early.")]
+        [Tooltip("Blocked/stutter frames at a wall with no chase progress â†’ start lost-sight investigate early.")]
         [Range(4, 90)] public int chaseWallStuckFramesEarlyInvestigate = 24;
-        [Tooltip("Player this many metres above the enemy with no LOS → treat as unreachable direct chase (flatten / investigate).")]
+        [Tooltip("Player this many metres above the enemy with no LOS â†’ treat as unreachable direct chase (flatten / investigate).")]
         [Range(1f, 8f)] public float chaseUnreachableMinVerticalDelta = 2.25f;
         [Tooltip("Horizontal range for unreachable-roof rule (metres).")]
         [Range(2f, 20f)] public float chaseUnreachableMaxHorizontal = 12f;
         [Tooltip("Ranged attacks require EnemySenses line-of-sight (melee touch range still bypasses LOS).")]
         public bool requireClearLosForRangedFire = true;
 
-        [Header("Lost sight — investigate")]
+        [Header("Lost sight â€” investigate")]
         [Tooltip("When chase loses line-of-sight to the player, go to last known position then search instead of immediately giving up.")]
         public bool enableInvestigateOnLostSight = true;
         [Tooltip("Use the search duration / radius below instead of each enemy prefab's search fields.")]
@@ -376,6 +426,26 @@ namespace Project.AI
         [Range(0f, 20f)] public float retreatSeconds = 5f;
         [Range(0f, 60f)] public float retreatCooldown = 10f;
 
+        [Header("Low-health retreat stability (2026-10-24a)")]
+        [Tooltip("Health fraction a condition must recover past its threshold before it improves again (hysteresis; stops retreat toggling near a threshold). 0 = off.")]
+        [Range(0f, 0.5f)] public float conditionRecoverHysteresis = 0.08f;
+        [Tooltip("An attack-slot award cannot cancel a retreat during its first N seconds.")]
+        [Range(0f, 10f)] public float retreatCancelGuardSeconds = 1f;
+        [Tooltip("Seconds without progress toward the retreat point before one re-pick, then giving up and fighting again.")]
+        [Range(0.2f, 10f)] public float retreatStuckSeconds = 1f;
+        [Tooltip("Metres the enemy must close on its retreat point within the stuck window to count as progress.")]
+        [Range(0.01f, 3f)] public float retreatMinProgress = 0.3f;
+        [Tooltip("Bearing offset (deg) for the single stuck re-pick before giving up.")]
+        [Range(0f, 180f)] public float retreatStuckRepickDegrees = 60f;
+        [Tooltip("Minimum seconds between hold / retreat point re-picks (a ring-radius change no longer bypasses the re-anchor cooldown).")]
+        [Range(0f, 10f)] public float retreatRepickInterval = 0.75f;
+        [Tooltip("Reject hold / retreat point candidates whose body-radius path is blocked, that overlap a collider, or have no ground (collider checks only, no NavMesh).")]
+        public bool retreatAnchorObstacleCheck = true;
+        [Tooltip("Holder stops moving inside this distance of its point; counts as arrived at +0.1 m.")]
+        [Range(0.05f, 3f)] public float holderArriveRadius = 0.5f;
+        [Tooltip("Ranged back-off continues until the player is this far beyond the retreat distance (hysteresis).")]
+        [Range(0f, 10f)] public float rangedRetreatHysteresis = 1f;
+
         [Header("Condition thresholds (health fraction)")]
         [Range(0f, 1f)] public float injuredBelow = 0.75f;
         [Range(0f, 1f)] public float severelyInjuredBelow = 0.5f;
@@ -385,7 +455,7 @@ namespace Project.AI
         public Vector4 conditionDefend = new Vector4(1f, 1.15f, 1.3f, 1.5f);
         public Vector4 conditionRetreat = new Vector4(0f, 0f, 0.4f, 1.2f);
 
-        [Header("Archetypes (Â§6)")]
+        [Header("Archetypes (Ã‚Â§6)")]
         public ArchetypeRow[] archetypes =
         {
             new ArchetypeRow { archetype = DMEnemyArchetype.Duelist, press = 1f, defend = 0.35f, retreat = 0.6f, tokenBias = 0f, holderTaunt = 1f, holderFeint = 1f },
@@ -397,7 +467,7 @@ namespace Project.AI
             new ArchetypeRow { archetype = DMEnemyArchetype.Guardian, press = 0.8f, defend = 0.7f, retreat = 0.2f, tokenBias = -0.5f, holderTaunt = 1f, holderFeint = 0.5f },
         };
 
-        [Header("Personalities (Â§7) â€” adjust, never override")]
+        [Header("Personalities (Ã‚Â§7) Ã¢â‚¬â€ adjust, never override")]
         public PersonalityRow[] personalities =
         {
             new PersonalityRow { personality = DMEnemyPersonality.Aggressive, pressMul = 1.3f, defendMul = 0.8f, retreatMul = 0.6f, tokenBiasAdd = 0.75f, holderSidestepMul = 1f, holderTauntMul = 1.4f, holderFeintMul = 1.3f },
@@ -467,6 +537,16 @@ namespace Project.AI
             if (healthFraction < injuredBelow)
                 return DMEnemyCondition.Injured;
             return DMEnemyCondition.Healthy;
+        }
+
+        /// <summary>2026-10-24a: worsening applies at once; improving needs the fraction to clear the threshold by conditionRecoverHysteresis.</summary>
+        public DMEnemyCondition ResolveCondition(float healthFraction, DMEnemyCondition previous)
+        {
+            DMEnemyCondition c = ResolveCondition(healthFraction);
+            if ((int)c >= (int)previous || conditionRecoverHysteresis <= 0f)
+                return c;
+            DMEnemyCondition r = ResolveCondition(Mathf.Max(0f, healthFraction - conditionRecoverHysteresis));
+            return (int)r < (int)previous ? r : previous;
         }
 
         public static float Pick(Vector4 perCondition, DMEnemyCondition condition)

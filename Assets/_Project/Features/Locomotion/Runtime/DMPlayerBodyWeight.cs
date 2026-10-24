@@ -1,4 +1,4 @@
-using Invector.vCharacterController;
+﻿using Invector.vCharacterController;
 using Invector.vShooter;
 using Project.Features.Climb;
 using UnityEngine;
@@ -54,11 +54,17 @@ namespace Project.Features.Locomotion
                 else { Anim = cur; AnimHas = true; }
             }
 
-            public void Begin()
+            /// <summary>2026-10-24h: deterministic restore (no tolerance heuristic) on frames the Animator did not evaluate.</summary>
+            public void RestoreBase() { if (T != null && Has) T.localRotation = Base; }
+
+            public void Begin(bool trustFresh)
             {
                 if (T == null) return;
                 Quaternion cur = T.localRotation;
-                if (!Has || Quaternion.Angle(cur, Written) > 0.01f) Base = cur;
+                // 2026-10-24h: live play: PreIK guarantees the bone holds a clean (offset-free) pose -> always take it.
+                // Old heuristic (Quaternion.Angle <= 0.01 deg; Unity treats < ~0.16 deg as equal) mis-classified
+                // fresh vs stale poses on alternate frames under Animator Fixed mode -> whole-body per-frame vibration.
+                if (trustFresh || !Has || Quaternion.Angle(cur, Written) > 0.01f) Base = cur;
                 T.localRotation = Base;
                 Has = true;
             }
@@ -174,7 +180,7 @@ namespace Project.Features.Locomotion
             {
                 if (Time.unscaledTime < _next) return;
                 _next = Time.unscaledTime + 1f;
-                Ensure(Project.Core.PlayerLocator.FindPlayerObject());
+                var pl = Project.Core.PlayerLocator.FindPlayerObject(); Ensure(pl); DMFootstepTriggerFit.Ensure(pl); DMWallHandTouch.Ensure(pl); // 2026-10-24h, 24o
             }
         }
 
@@ -232,9 +238,25 @@ namespace Project.Features.Locomotion
         }
 
         // 2026-10-20y: called from DMPlayerBodyWeightPreIK (execution order -500, before Invector aim IK / vHeadTrack).
+        private bool _stepSeen, _livePre;
+        /// <summary>2026-10-24h: FixedUpdate seen since last LateUpdate (Animator Fixed mode evaluates only on physics steps).</summary>
+        internal void MarkStep() { _stepSeen = true; }
+
         internal void PreIK()
         {
             if (!_ready || SimActive) return;
+            // 2026-10-24h: deterministic: the Animator re-posed this frame iff it updates every frame or a physics step ran.
+            bool fresh = _anim == null || _anim.updateMode != AnimatorUpdateMode.Fixed || _stepSeen;
+            _stepSeen = false;
+            _livePre = true;
+            if (fresh) return;
+            if (!_spine.Has) return;
+            _pelvis.RestoreBase(); _neck.RestoreBase(); _head.RestoreBase(); _spine.RestoreBase(); _chest.RestoreBase();
+            _lUpperArm.RestoreBase(); _rUpperArm.RestoreBase(); _lLowerArm.RestoreBase(); _rLowerArm.RestoreBase(); _lHandB.RestoreBase(); _rHandB.RestoreBase();
+            _lShoulder.RestoreBase(); _rShoulder.RestoreBase(); _lThigh.RestoreBase(); _lKnee.RestoreBase(); _lFoot.RestoreBase(); _rThigh.RestoreBase(); _rKnee.RestoreBase(); _rFoot.RestoreBase();
+            if (_hipsHas && _hips != null) _hips.localPosition = _hipsBase;
+            return;
+#pragma warning disable CS0162
             _pelvis.PreIK(); _neck.PreIK(); _head.PreIK(); _spine.PreIK(); _chest.PreIK();
             _lUpperArm.PreIK(); _rUpperArm.PreIK(); _lLowerArm.PreIK(); _rLowerArm.PreIK(); _lHandB.PreIK(); _rHandB.PreIK();
             _lShoulder.PreIK(); _rShoulder.PreIK(); _lThigh.PreIK(); _lKnee.PreIK(); _lFoot.PreIK(); _rThigh.PreIK(); _rKnee.PreIK(); _rFoot.PreIK();
@@ -244,6 +266,7 @@ namespace Project.Features.Locomotion
                 if ((hl - _hipsWritten).sqrMagnitude <= 1e-8f) { if (_hipsAnimHas) _hips.localPosition = _hipsBase; } // 2026-10-21a
                 else { _hipsAnim = hl; _hipsAnimHas = true; }
             }
+#pragma warning restore CS0162
         }
         private Vector3 _hipsAnim; private bool _hipsAnimHas;
         private Vector3 _heldAcc; private float _heldYaw, _sampleAge; // 2026-10-21a
@@ -302,7 +325,7 @@ namespace Project.Features.Locomotion
             }
             if (!_ready) { Cache(); if (!_ready) { _gate = "bones missing"; return; } }
 
-            float dt = Mathf.Min(Dt, 0.05f);
+            float dt = Mathf.Min(Dt, Mathf.Max(0.005f, p.bodyWeightMaxDt)); // 2026-10-24h: dt spike clamp (springs are sub-stepped)
             float S = en ? p.BodyWeightScale : 0f;
             if (!SimActive) UpdateWeaponEvents(p);
             bool blocked = Blocked();
@@ -319,11 +342,12 @@ namespace Project.Features.Locomotion
             _aimHip = Mathf.MoveTowards(_aimHip, aiming ? p.bodyWeightAimHipSwayScale : 1f, aimFadeStep);
             _aimingNow = aiming;
 
-            _pelvis.Begin(); _neck.Begin(); _head.Begin();
-            _spine.Begin(); _chest.Begin(); _lUpperArm.Begin(); _rUpperArm.Begin(); _lLowerArm.Begin(); _rLowerArm.Begin(); _lHandB.Begin(); _rHandB.Begin();
-            _lShoulder.Begin(); _rShoulder.Begin(); _lThigh.Begin(); _lKnee.Begin(); _lFoot.Begin(); _rThigh.Begin(); _rKnee.Begin(); _rFoot.Begin();
+            bool tf = !SimActive && _livePre; _livePre = false;
+            _pelvis.Begin(tf); _neck.Begin(tf); _head.Begin(tf);
+            _spine.Begin(tf); _chest.Begin(tf); _lUpperArm.Begin(tf); _rUpperArm.Begin(tf); _lLowerArm.Begin(tf); _rLowerArm.Begin(tf); _lHandB.Begin(tf); _rHandB.Begin(tf);
+            _lShoulder.Begin(tf); _rShoulder.Begin(tf); _lThigh.Begin(tf); _lKnee.Begin(tf); _lFoot.Begin(tf); _rThigh.Begin(tf); _rKnee.Begin(tf); _rFoot.Begin(tf);
             Vector3 hl = _hips.localPosition;
-            if (!_hipsHas || (hl - _hipsWritten).sqrMagnitude > 1e-8f) _hipsBase = hl;
+            if (tf || !_hipsHas || (hl - _hipsWritten).sqrMagnitude > 1e-8f) _hipsBase = hl;
             _hipsHas = true;
 
             Vector3 vel = SimActive ? Sim.Vel : (_rb != null ? _rb.linearVelocity : Vector3.zero);
@@ -383,7 +407,12 @@ namespace Project.Features.Locomotion
             if (Mathf.Abs(lagD) > lagMax) { _lagYaw = yaw + Mathf.Sign(lagD) * lagMax; lagD = Mathf.Sign(lagD) * lagMax; } // drag: never stays wound up
             _lagOff = blocked ? 0f : lagD;
             float max = p.bodyWeightMaxSpineDegrees;
-            Vector3 inLocal = SimActive ? Sim.Input : new Vector3(_motor.input.x, 0f, _motor.input.z);
+            // 2026-10-24r: motor.input is the raw STICK (camera-relative intent), not character-local. Comparing it to the
+            // character-local velocity made a backward/diagonal start (free locomotion turns the body toward the move dir)
+            // read as a big lateral "input vs velocity" mismatch -> brief anticipation roll (right lean). Use the world
+            // moveDirection taken into the body frame instead.
+            Vector3 inLocal = SimActive ? Sim.Input : transform.InverseTransformDirection(new Vector3(_motor.moveDirection.x, 0f, _motor.moveDirection.z));
+            inLocal.y = 0f;
             Vector3 vLocal = transform.InverseTransformDirection(vel); vLocal.y = 0f;
             if (inLocal.sqrMagnitude > 0.01f && vLocal.sqrMagnitude > 0.04f)
             {
@@ -426,7 +455,8 @@ namespace Project.Features.Locomotion
             float k = p.bodyWeightHipSpring;
             if (_hipDrop < 0f && _hipDropVel > 0f) k *= p.bodyWeightLandingRecovery;
             SpringF(ref _hipDrop, ref _hipDropVel, 0f, k, 1f, dt);
-            _hipDrop = Mathf.Clamp(_hipDrop, -p.bodyWeightMaxHipDrop, p.bodyWeightMaxHipDrop * 0.3f);
+            _hipDrop = Mathf.Clamp(_hipDrop, -p.bodyWeightMaxHipDrop, 0f); // 2026-10-24h: pelvis never raised (overshoot lifted feet off the ground)
+            if (_hipDrop >= 0f && _hipDropVel > 0f) _hipDropVel = 0f;
             if (float.IsNaN(_hipDrop)) { _hipDrop = 0f; _hipDropVel = 0f; }
 
             float w = _weight * S;
@@ -454,6 +484,8 @@ namespace Project.Features.Locomotion
             Vector3 hipOff = Vector3.ClampMagnitude(hipsParentUp * (_hipDrop * hw) + hipsParentRight * (_comShift * w * _aimHip) + hipsParentFwd * (_recoilHip * hardW)
                 + (hipsParentRight * _shove.x + hipsParentFwd * _shove.z) * (S * _hardGate * _aimHip) - hipsParentUp * (_plantHipLower * _hardGate), MaxHipMeters);
             if (!Ok(hipOff)) hipOff = Vector3.zero;
+            float upC = Vector3.Dot(hipOff, hipsParentUp) / Mathf.Max(1e-6f, hipsParentUp.sqrMagnitude);
+            if (upC > 0f) hipOff -= hipsParentUp * upC; // 2026-10-24h: never lift the pelvis
             _hipsWritten = _hipsBase + hipOff;
             _hips.localPosition = _hipsWritten;
             FootPlant(p, dt, vel, blocked);
@@ -514,10 +546,12 @@ namespace Project.Features.Locomotion
             float w = Mathf.Max(_weight, _swingWeight * 0.5f) * S;
             Vector3 torso = new Vector3(_swing.x * 0.5f, _swing.y, _swing.z * 0.3f) * w;
             float pull = p.bodyWeightWeaponEnabled ? p.bodyWeightWeaponHipPull : 0.35f;
-            _pelvis.Extra = new Vector3(0f, _swing.y * pull * w, 0f); // swing pulls the hips round
-            _spine.Extra = torso * 0.35f;
-            _chest.Extra = torso * 0.65f;
-            _rUpperArm.Extra = new Vector3(_swing.x, _swing.y * 0.5f, _swing.z) * (0.4f * w);
+            // 2026-10-23k: swing offsets are character-frame (omega is root-local); convert per bone instead of writing
+            // bone-local euler directly (Kade mixamorig bones are rotated ~90 deg vs v7 -> twist read as a sideways lean).
+            SetChar(ref _pelvis, new Vector3(0f, _swing.y * pull * w, 0f)); // swing pulls the hips round
+            SetChar(ref _spine, torso * 0.35f);
+            SetChar(ref _chest, torso * 0.65f);
+            SetChar(ref _rUpperArm, new Vector3(_swing.x, _swing.y * 0.5f, _swing.z) * (0.4f * w));
         }
 
         private float WeaponWeight(DM_ClimbDashProfile p)
@@ -593,6 +627,8 @@ namespace Project.Features.Locomotion
         public void SimDraw(float weight) { var p = Prof; if (p != null && p.bodyWeightWeaponEnabled) DrawImpulse(p, weight); }
 
         // Character-space euler (x pitch about right, y yaw, z roll about forward) added to a bone's extra, in its local frame.
+        private void SetChar(ref Bone b, Vector3 e) { b.Extra = Vector3.zero; AddChar(ref b, e); }
+
         private void AddChar(ref Bone b, Vector3 e)
         {
             if (b.T == null || !Ok(e)) return;

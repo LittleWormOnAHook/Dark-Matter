@@ -262,6 +262,9 @@ namespace Project.AI
                 if (IsAnchorCrowded(agent, ring, candidate, p.holderMinSpacing))
                     continue;
 
+                if (!agent.IsHoldAnchorClear(candidate)) // 2026-10-24a: collider-only reachability
+                    continue;
+
                 best = candidate;
                 break;
             }

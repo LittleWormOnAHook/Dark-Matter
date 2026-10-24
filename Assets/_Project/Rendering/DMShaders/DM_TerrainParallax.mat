@@ -1,0 +1,234 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: DM_TerrainParallax
+  m_Shader: {fileID: 4800000, guid: b4b86e63bec259a4693927dcb3384898, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords:
+  - _DM_ANTITILE
+  - _DM_PARALLAX_POM
+  - _DM_SELFSHADOW
+  - _TERRAIN_BLEND_HEIGHT
+  - _TERRAIN_INSTANCED_PERPIXEL_NORMAL
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: 2225
+  stringTagMap: {}
+  disabledShaderPasses:
+  - MOTIONVECTORS
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _DMHeightMap0:
+        m_Texture: {fileID: 2800000, guid: 65e3f7fea0f95334db0c322a4e1d99ef, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DMHeightMap1:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DMHeightMap2:
+        m_Texture: {fileID: 2800000, guid: aac52fc7694798f4bb6dcc1a91c9c7cd, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DMHeightMap3:
+        m_Texture: {fileID: 2800000, guid: 4f2bdc9106a323f4e83dff76149e1f77, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DMHeightMap4:
+        m_Texture: {fileID: 2800000, guid: 18596c3946b692347a65b7513ea4d98f, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DMHeightMap5:
+        m_Texture: {fileID: 2800000, guid: d0e45f5ab2c4aa44394d9629ef119680, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DMHeightMap6:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DMHeightMap7:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TerrainHolesTexture:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _AddPrecomputedVelocity: 0
+    - _CullMode: 2
+    - _DMAntiTile: 1
+    - _DMAntiTileNoiseScale: 0.36
+    - _DMAntiTileScale: 1.12
+    - _DMAntiTileStrength: 1
+    - _DMDepthOffset: 0
+    - _DMDepthOffsetMax: 0.5
+    - _DMDepthOffsetScale: 1
+    - _DMGrazingCos: 0.34
+    - _DMHeightAOMid: 0.75
+    - _DMHeightAOStrength: 2
+    - _DMHeightCenter: 1
+    - _DMHeightContrast0: 2.2
+    - _DMHeightContrast1: 0
+    - _DMHeightContrast2: 1.16
+    - _DMHeightContrast3: 0.94
+    - _DMHeightContrast4: 7.8
+    - _DMHeightContrast5: 1.5
+    - _DMHeightContrast6: 1
+    - _DMHeightContrast7: 1
+    - _DMHeightMapForBlend: 1
+    - _DMHeightMipBias: 1.7
+    - _DMHeightOffset0: 0.54
+    - _DMHeightOffset1: 0
+    - _DMHeightOffset2: 0.65
+    - _DMHeightOffset3: 0.222
+    - _DMHeightOffset4: 0.84
+    - _DMHeightOffset5: 0.4
+    - _DMHeightOffset6: 0
+    - _DMHeightOffset7: 0
+    - _DMHeightScale0: 0.98
+    - _DMHeightScale1: 0.5
+    - _DMHeightScale2: 4
+    - _DMHeightScale3: 1.96
+    - _DMHeightScale4: 0.57
+    - _DMHeightScale5: 1.81
+    - _DMHeightScale6: 1
+    - _DMHeightScale7: 1
+    - _DMLayerBrightness0: 0.96
+    - _DMLayerBrightness1: 1
+    - _DMLayerBrightness2: 1.25
+    - _DMLayerBrightness3: 0.92
+    - _DMLayerBrightness4: 1
+    - _DMLayerBrightness5: 1.63
+    - _DMLayerBrightness6: 1
+    - _DMLayerBrightness7: 1
+    - _DMLayerHeightAO0: 2.07
+    - _DMLayerHeightAO1: 1
+    - _DMLayerHeightAO2: 2.24
+    - _DMLayerHeightAO3: 1
+    - _DMLayerHeightAO4: 1
+    - _DMLayerHeightAO5: 4
+    - _DMLayerHeightAO6: 1
+    - _DMLayerHeightAO7: 1
+    - _DMLayerParallax0: 1.38
+    - _DMLayerParallax1: 1.35
+    - _DMLayerParallax2: 1.42
+    - _DMLayerParallax3: 0
+    - _DMLayerParallax4: 4
+    - _DMLayerParallax5: 2.42
+    - _DMLayerParallax6: 0
+    - _DMLayerParallax7: 0
+    - _DMLayerSaturation0: 2.06
+    - _DMLayerSaturation1: 1
+    - _DMLayerSaturation2: 1
+    - _DMLayerSaturation3: 1.21
+    - _DMLayerSaturation4: 1.32
+    - _DMLayerSaturation5: 0.95
+    - _DMLayerSaturation6: 1
+    - _DMLayerSaturation7: 1
+    - _DMOffsetBias: 0.43
+    - _DMPOMFadeEnd: 94
+    - _DMPOMFadeStart: 0
+    - _DMPOMLayers: 2
+    - _DMPOMMinSteps: 23
+    - _DMPOMRefine: 2
+    - _DMPOMSteps: 64
+    - _DMParallaxFadeEnd: 62
+    - _DMParallaxFadeStart: 97
+    - _DMParallaxHeight: 0.12
+    - _DMPeakDetail0: 0
+    - _DMPeakDetail1: 0
+    - _DMPeakDetail2: 0.036
+    - _DMPeakDetail3: 0
+    - _DMPeakDetail4: 0
+    - _DMPeakDetail5: 0
+    - _DMPeakDetail6: 0
+    - _DMPeakDetail7: 0
+    - _DMPeakDetailScale0: 4
+    - _DMPeakDetailScale1: 4
+    - _DMPeakDetailScale2: 3.7
+    - _DMPeakDetailScale3: 4
+    - _DMPeakDetailScale4: 4
+    - _DMPeakDetailScale5: 4
+    - _DMPeakDetailScale6: 4
+    - _DMPeakDetailScale7: 4
+    - _DMPeakKnee0: 0.9
+    - _DMPeakKnee1: 0.9
+    - _DMPeakKnee2: 0.664
+    - _DMPeakKnee3: 0.9
+    - _DMPeakKnee4: 0.9
+    - _DMPeakKnee5: 0.9
+    - _DMPeakKnee6: 0.9
+    - _DMPeakKnee7: 0.9
+    - _DMPeakSoftness0: 0
+    - _DMPeakSoftness1: 0
+    - _DMPeakSoftness2: 0.128
+    - _DMPeakSoftness3: 0
+    - _DMPeakSoftness4: 0
+    - _DMPeakSoftness5: 0
+    - _DMPeakSoftness6: 0
+    - _DMPeakSoftness7: 0
+    - _DMSelfShadow: 1
+    - _DMShadowFadeEnd: 0
+    - _DMShadowFadeStart: 27
+    - _DMShadowLength: 2.34
+    - _DMShadowSharpness: 25.9
+    - _DMShadowSteps: 9
+    - _DMShadowStrength: 2
+    - _DMSlopeFadeEnd: 0.11
+    - _DMSlopeFadeStart: 0.27
+    - _DMUseHeightMap0: 1
+    - _DMUseHeightMap1: 1
+    - _DMUseHeightMap2: 1
+    - _DMUseHeightMap3: 1
+    - _DMUseHeightMap4: 1
+    - _DMUseHeightMap5: 1
+    - _DMUseHeightMap6: 0
+    - _DMUseHeightMap7: 0
+    - _DM_Parallax: 2
+    - _EnableHeightBlend: 1
+    - _EnableInstancedPerPixelNormal: 1
+    - _HeightTransition: 0.06
+    - _ReceivesSSR: 1
+    - _SpecularOcclusionMode: 1
+    - _StencilRef: 0
+    - _StencilRefDepth: 8
+    - _StencilRefGBuffer: 10
+    - _StencilWriteMask: 6
+    - _StencilWriteMaskDepth: 9
+    - _StencilWriteMaskGBuffer: 15
+    - _SupportDecals: 1
+    - _TransparentZWrite: 0
+    - _ZTestDepthEqualForOpaque: 3
+    - _ZTestGBuffer: 4
+    - _ZWrite: 1
+    m_Colors:
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _DMLayerTint0: {r: 1, g: 1, b: 1, a: 1}
+    - _DMLayerTint1: {r: 1, g: 1, b: 1, a: 1}
+    - _DMLayerTint2: {r: 1, g: 0.9697518, b: 0.8584906, a: 1}
+    - _DMLayerTint3: {r: 0.9547169, g: 0.75995743, b: 0, a: 1}
+    - _DMLayerTint4: {r: 0.97735846, g: 0.97735846, b: 0.97735846, a: 1}
+    - _DMLayerTint5: {r: 1, g: 1, b: 1, a: 1}
+    - _DMLayerTint6: {r: 1, g: 1, b: 1, a: 1}
+    - _DMLayerTint7: {r: 1, g: 1, b: 1, a: 1}
+    - _DMSunDirFallback: {r: 0.3, g: 0.8, b: 0.3, a: 0}
+    - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

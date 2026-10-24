@@ -57,15 +57,56 @@ namespace Project.Combat
         [Tooltip("Chain Lightning skill unlocked (temporary flag until the skill tree drives it).")]
         public bool chainSkillUnlocked = true;
         [Tooltip("Extra enemies the bolt jumps to after the first hit (1-5 normal; up to 20 for testing).")]
-        [Range(1, 20)] public int chainMaxTargets = 3;
+        [Range(0, 50)] public int chainMaxTargets = 8;
         [Tooltip("Max jump distance (m) from the current enemy to the next.")]
-        [Range(1f, 40f)] public float chainRange = 8f;
+        [Range(0.5f, 100f)] public float chainRange = 8f;
         [Tooltip("Damage multiplier per jump (1 = no falloff, 0.85 = -15% per jump).")]
-        [Range(0.1f, 1f)] public float chainDamageFalloff = 0.85f;
+        [Range(0f, 2f)] public float chainDamageFalloff = 0.85f;
         [Tooltip("Jumps need a clear line between enemies.")]
         public bool chainRequiresLineOfSight = true;
         [Tooltip("2026-10-21e: log each chain link (spawn, endpoints, damage, why a jump was skipped) to the Console.")]
         public bool chainDebugLog = false;
+        [Tooltip("2026-10-24i: delay (s) before each jump leaves the current enemy.")]
+        [Range(0f, 2f)] public float chainJumpDelay = 0.05f;
+        [Tooltip("2026-10-24i: chain arc width x the main bolt width.")]
+        [Range(0.05f, 10f)] public float chainWidthScale = 1f;
+        [Tooltip("2026-10-24i: chain arc tint (line vertex colour; white = prefab colours).")]
+        public Color chainColor = Color.white;
+        [Tooltip("2026-10-24i: chain arc travel speed x boltSpeed.")]
+        [Range(0.05f, 10f)] public float chainSpeedScale = 1f;
+        [Tooltip("2026-10-24l: chain arcs start/end at each target's center mass (humanoid chest bone, else body collider / renderer bounds center) and track it while held. Off = legacy (humanoid chest, else pivot + 1.2 m).")]
+        public bool chainUseCenterMass = true;
+        public enum ChainMode { FanOutFromFirst = 0, SequentialNearest = 1 }
+        [Tooltip("2026-10-24l: FanOutFromFirst = arcs from the first target to EVERY live target within chainRange (nearest first, capped by chainMaxTargets; target k gets falloff^k). SequentialNearest = hop to the nearest, then from there (legacy).")]
+        public ChainMode chainMode = ChainMode.FanOutFromFirst;
+        [Tooltip("2026-10-24l: vertical offset (m) added to the chain center-mass point.")]
+        [Range(-1f, 1f)] public float chainCenterMassHeightOffset = 0f;
+
+        // 2026-10-24n: vendor (FORGE3D) impact explosion audio on every hit.
+        public enum VendorImpactAudioMode { Off = 0, Auto = 1, Vulcan = 2, SoloGun = 3, Sniper = 4, ShotGun = 5, Seeker = 6, RailGun = 7, PlasmaGun = 8, LaserImpulse = 13 }
+        [Header("Vendor Impact Audio (24n)")]
+        [Tooltip("Auto = detect from the tracer/projectile prefab's FORGE3D projectile type. Off = no vendor explosion audio.")]
+        public VendorImpactAudioMode vendorImpactAudio = VendorImpactAudioMode.Auto;
+        [Tooltip("Anti-spam: min seconds between impact sounds for this ammo (0 = every hit).")]
+        [Range(0f, 0.5f)] public float impactAudioMinInterval = 0.05f;
+        [Tooltip("Anti-spam: max vendor impact sounds playing at once (all ammo).")]
+        [Range(1, 32)] public int impactAudioMaxVoices = 6;
+        [Range(0f, 2f)] public float impactAudioVolume = 1f;
+
+        [ContextMenu("Chain Lightning: Recommended")]
+        public void ChainPresetRecommended() { chainEnabled = true; chainSkillUnlocked = true; chainMode = ChainMode.FanOutFromFirst; chainUseCenterMass = true; chainCenterMassHeightOffset = 0f; chainMaxTargets = 8; chainRange = 8f; chainDamageFalloff = 0.85f; chainRequiresLineOfSight = true; chainJumpDelay = 0.05f; chainWidthScale = 1f; chainSpeedScale = 1f; chainColor = Color.white; MarkDirty(); }
+        [ContextMenu("Chain Lightning: Extreme")]
+        // 2026-10-24n: vendor impact audio presets.
+        public void ImpactAudioPresetRecommended() { vendorImpactAudio = VendorImpactAudioMode.Auto; impactAudioMinInterval = 0.05f; impactAudioMaxVoices = 6; impactAudioVolume = 1f; }
+        public void ImpactAudioPresetExtreme() { vendorImpactAudio = VendorImpactAudioMode.Auto; impactAudioMinInterval = 0f; impactAudioMaxVoices = 24; impactAudioVolume = 1.4f; }
+
+        public void ChainPresetExtreme() { chainEnabled = true; chainSkillUnlocked = true; chainMode = ChainMode.FanOutFromFirst; chainUseCenterMass = true; chainCenterMassHeightOffset = 0f; chainMaxTargets = 30; chainRange = 25f; chainDamageFalloff = 1f; chainRequiresLineOfSight = false; chainJumpDelay = 0.02f; chainWidthScale = 2.5f; chainSpeedScale = 2f; chainColor = new Color(0.6f, 0.85f, 1f, 1f); MarkDirty(); }
+        private void MarkDirty()
+        {
+#if UNITY_EDITOR
+            UnityEditor.EditorUtility.SetDirty(this);
+#endif
+        }
         [Tooltip("2026-10-21i: Stream - fire the bolt as a short burst of segments along the same snapshot path (1 = single bolt). Only the lead segment hits.")]
         [Range(1, 4)] public int streamSegments = 3;
         [Tooltip("2026-10-21i: seconds between stream segments.")]

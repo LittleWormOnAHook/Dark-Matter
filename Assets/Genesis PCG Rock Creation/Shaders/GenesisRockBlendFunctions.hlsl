@@ -170,7 +170,8 @@ float3 GRB_TriNormalGrad(TEXTURE2D_PARAM(tex, samp), float3 p, float2 tpm, float
         float2 gYx = dtx * st.xy, gYy = dty * st.xy;                                                                    \
         float2 tpm = st.xy * _GRB_TRect.zw;                                                                             \
         float4 a4 = GRB_SAMPLE_GRAD(_GRB_TAlb##i, uvY, gYx, gYy);                                                       \
-        alb[i] = GRB_TriSampleGradRGB(TEXTURE2D_ARGS(_GRB_TAlb##i, sampler_GRB_trilinear_repeat), pAbs, tpm, uvY, gYx, gYy, dpx, dpy, w) * _GRB_TDiff##i.rgb; \
+        alb[i] = GRB_TriSampleGradRGB(TEXTURE2D_ARGS(_GRB_TAlb##i, sampler_GRB_trilinear_repeat), pAbs, tpm, uvY, gYx, gYy, dpx, dpy, w);           \
+        alb[i] = max(0.0, lerp(dot(alb[i], float3(0.2126, 0.7152, 0.0722)).xxx, alb[i], _GRB_TDiff##i.w)) * _GRB_TDiff##i.rgb; /* 24p: DM layer saturation (w) */ \
         nrm[i] = GRB_TriNormalGrad(TEXTURE2D_ARGS(_GRB_TNrm##i, sampler_GRB_trilinear_repeat), pAbs, tpm, uvY, gYx, gYy, dpx, dpy, nGeo, w, _GRB_TLayer##i.w); \
         float4 dm = float4(_GRB_TLayer##i.y, _GRB_TMaskOff##i.y + _GRB_TMaskScale##i.y, _GRB_TMaskOff##i.z + 0.5 * _GRB_TMaskScale##i.z, a4.a * _GRB_TLayer##i.z); \
         float4 mm = GRB_SAMPLE_GRAD(_GRB_TMsk##i, uvY, gYx, gYy);                                                      \

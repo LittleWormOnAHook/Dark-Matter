@@ -296,10 +296,16 @@ namespace Project.Features.Climb
         {
             if (_climbing || _hopping || _motorOverridden)
                 ForceUnlock();
+            IgnorePlayerClimbCollision(false); // 24u: global layer-matrix change must never outlive the climb
         }
+
+        private void OnEnable() { IgnorePlayerClimbCollision(false); } // 24u: clear a stale ignore left by an interrupted climb
 
         private void Update()
         {
+            // 24u: Physics.IgnoreLayerCollision(Player, Climbable) is global; if a climb ended without the normal exit
+            // (death, teleport, load, interrupt) Climbable rocks stayed pass-through for the whole session.
+            if (!IsClimbing && !_motorOverridden) ClearStaleClimbIgnore();
             if (GameplayWorldSimulation.IsFrozen)
                 return;
 
@@ -5935,6 +5941,14 @@ namespace Project.Features.Climb
             }
         }
 
+
+        private void ClearStaleClimbIgnore()
+        {
+            int playerLayer = gameObject.layer;
+            int climbLayer = LayerMask.NameToLayer(profile != null ? profile.climbableLayerName : "Climbable");
+            if (playerLayer >= 0 && climbLayer >= 0 && Physics.GetIgnoreLayerCollision(playerLayer, climbLayer))
+                Physics.IgnoreLayerCollision(playerLayer, climbLayer, false);
+        }
 
         private void IgnorePlayerClimbCollision(bool ignore)
         {

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -293,13 +293,14 @@ namespace GenesisPCG.RockCreation
                 if (IsBakeCurrent)
                 {
                     ApplyBakedPresentation(false);
+                    EnsureColliderMesh(); // 24z
                     transform.hasChanged = false;
                     return;
                 }
                 InvalidateBake(bake.mesh == null ? UnbakeReason.MissingAsset : UnbakeReason.Edited, true);
             }
             PcgRenderUtil.DisallowGpuDriven(gameObject);
-            if (TryAdoptLiveMesh()) return; // domain reload / play-mode enter / exit: the existing preview mesh is still current
+            if (TryAdoptLiveMesh()) { EnsureColliderMesh(); return; } // domain reload / play-mode enter / exit: the existing preview mesh is still current (24z: collider ref is not kept for the DontSave mesh)
             Rebuild();
         }
 
@@ -425,6 +426,135 @@ namespace GenesisPCG.RockCreation
             // OnEnable can run before the Terrain of the same scene registers in Terrain.activeTerrains: bind again once all
             // objects of the scene are enabled (edit mode too, the component runs in edit mode).
             PcgTerrainSplat.Apply(gameObject);
+            EnsureColliderMesh(); // 24z
+        }
+
+        /// <summary>
+        /// 24z: the MeshCollider must never be left with Mesh = None (player walked through rocks). The live preview mesh is
+        /// DontSave, so the collider's reference is dropped on scene save / reload / play-mode enter while the adopted MeshFilter
+        /// keeps working; an uncookable build also left it null. Re-assigns the current rock mesh (non-convex) whenever it is missing.
+        /// </summary>
+        public bool EnsureColliderMesh()
+        {
+            if (this == null) return false;
+            bool want = Recipe == null || Recipe.addMeshCollider;
+            if (want && SyncLod0Collider(false) != null) return true; // 24aa: collision lives on the LOD0 source child
+            var mc = GetComponent<MeshCollider>();
+            if (!want && mc == null) return false;
+            if (mc != null && mc.sharedMesh != null && IsColliderCookable(mc.sharedMesh)) return false;
+            Mesh col = null;
+            if (IsBaked && bake != null) col = bake.colliderMesh != null ? bake.colliderMesh : bake.mesh;
+            if (!IsColliderCookable(col)) col = generatedMesh;
+            if (!IsColliderCookable(col)) { var mf = GetComponent<MeshFilter>(); col = mf != null ? mf.sharedMesh : null; }
+            if (!IsColliderCookable(col)) return false;
+            if (mc == null) mc = gameObject.AddComponent<MeshCollider>();
+            if (mc.convex) { mc.sharedMesh = null; mc.convex = false; }
+            mc.sharedMesh = col;
+            return true;
+        }
+
+        // ------------------------------------------------------------------------------------------------
+        // 24aa: LOD0 source-child collider. The creator's own mesh is a temporary (DontSave) preview that can be empty
+        // (creator added onto an existing LOD rock: 0 vertices -> uncookable -> every Rebuild set MeshCollider.sharedMesh = null).
+        // Collision uses the original LOD0 child's persistent model mesh instead; the creator's own collider is left disabled.
+        // ------------------------------------------------------------------------------------------------
+        public const string ColliderProxyName = "DM_RockCollider";
+
+        /// <summary>The original LOD0 source child (LODGroup LOD0, else a child named *_LOD0, else the first child model mesh).</summary>
+        public MeshFilter FindLod0Source()
+        {
+            Transform lodContainer = transform.Find(LodContainerName);
+            bool Ok(MeshFilter mf)
+            {
+                if (mf == null || mf.transform == transform || mf.sharedMesh == null || mf.sharedMesh.vertexCount < 3) return false;
+                if (lodContainer != null && mf.transform.IsChildOf(lodContainer)) return false;
+                if (mf.sharedMesh.name.StartsWith(GeneratedMeshName, StringComparison.Ordinal)) return false;
+#if UNITY_EDITOR
+                if (!UnityEditor.EditorUtility.IsPersistent(mf.sharedMesh)) return false;
+#endif
+                return IsColliderCookable(mf.sharedMesh);
+            }
+            foreach (LODGroup g in GetComponentsInChildren<LODGroup>(true))
+            {
+                if (lodContainer != null && g.transform.IsChildOf(lodContainer)) continue;
+                LOD[] lods = g.GetLODs();
+                if (lods.Length == 0 || lods[0].renderers == null) continue;
+                foreach (Renderer r in lods[0].renderers)
+                    if (r != null && Ok(r.GetComponent<MeshFilter>())) return r.GetComponent<MeshFilter>();
+            }
+            MeshFilter first = null;
+            foreach (MeshFilter mf in GetComponentsInChildren<MeshFilter>(true))
+            {
+                if (!Ok(mf)) continue;
+                if (mf.name.EndsWith("_LOD0", StringComparison.OrdinalIgnoreCase) || mf.name.EndsWith("LOD0", StringComparison.OrdinalIgnoreCase)) return mf;
+                if (first == null && mf.GetComponentInParent<IPcgSeeded>(true) == this as IPcgSeeded) first = mf;
+            }
+            return first;
+        }
+
+        /// <summary>
+        /// Adds / reuses a non-convex MeshCollider with the LOD0 child's own asset mesh (on that child if it is active,
+        /// else on a "DM_RockCollider" child of the creator at the same pose) and disables the creator's own collider.
+        /// Returns the collider, or null when there is no LOD0 source (the creator's own collider is then used).
+        /// </summary>
+        public MeshCollider SyncLod0Collider(bool undo)
+        {
+            if (this == null) return null;
+            MeshFilter src = FindLod0Source();
+            if (src == null) return null;
+            Mesh mesh = src.sharedMesh;
+            Transform host;
+            if (src.gameObject.activeInHierarchy || !gameObject.activeInHierarchy) host = src.transform;
+            else
+            {
+                host = transform.Find(ColliderProxyName);
+                if (host == null)
+                {
+                    if (Application.isPlaying) return null;
+                    var go = new GameObject(ColliderProxyName);
+                    go.layer = src.gameObject.layer;
+                    go.isStatic = src.gameObject.isStatic;
+#if UNITY_EDITOR
+                    if (undo) UnityEditor.Undo.RegisterCreatedObjectUndo(go, "Rock LOD0 collider");
+#endif
+                    go.transform.SetParent(transform, false);
+                    host = go.transform;
+                }
+                Matrix4x4 m = transform.worldToLocalMatrix * src.transform.localToWorldMatrix;
+                Vector3 p = m.GetColumn(3);
+                if (host.localPosition != p || host.localRotation != m.rotation || host.localScale != m.lossyScale)
+                {
+#if UNITY_EDITOR
+                    if (undo) UnityEditor.Undo.RecordObject(host, "Rock LOD0 collider");
+#endif
+                    host.localPosition = p; host.localRotation = m.rotation; host.localScale = m.lossyScale;
+                }
+            }
+            var mc = host.GetComponent<MeshCollider>();
+            if (mc == null)
+            {
+                if (Application.isPlaying && host.name == ColliderProxyName) return null;
+#if UNITY_EDITOR
+                mc = undo ? UnityEditor.Undo.AddComponent<MeshCollider>(host.gameObject) : host.gameObject.AddComponent<MeshCollider>();
+#else
+                mc = host.gameObject.AddComponent<MeshCollider>();
+#endif
+            }
+#if UNITY_EDITOR
+            if (undo) UnityEditor.Undo.RecordObject(mc, "Rock LOD0 collider");
+#endif
+            if (mc.convex) { mc.sharedMesh = null; mc.convex = false; }
+            if (mc.sharedMesh != mesh) mc.sharedMesh = mesh;
+            if (!mc.enabled) mc.enabled = true;
+            var own = GetComponent<MeshCollider>();
+            if (own != null && own.enabled)
+            {
+#if UNITY_EDITOR
+                if (undo) UnityEditor.Undo.RecordObject(own, "Rock LOD0 collider");
+#endif
+                own.enabled = false; // the preview / baked mesh no longer drives collision (no more None fight)
+            }
+            return mc;
         }
 
         private void OnDisable()
@@ -845,6 +975,7 @@ namespace GenesisPCG.RockCreation
             }
 
             ApplySurfaceConform(); // also rebakes the collider
+            EnsureColliderMesh(); // 24z: never leave Mesh = None
             PcgTerrainSplat.Apply(gameObject);
             UpdateNookSockets(result);
             transform.hasChanged = false;
@@ -1091,6 +1222,7 @@ namespace GenesisPCG.RockCreation
             PcgRenderUtil.AllowGpuDriven(gameObject, removeDisallowComponent);
             EnsureLodPresentation(mr);
             PcgTerrainSplat.Apply(gameObject); // per-pixel terrain under the rock (blend materials that want it)
+            if (wantCollider) SyncLod0Collider(false); // 24aa
         }
 
         private void EnsureLodPresentation(MeshRenderer root)

@@ -615,6 +615,7 @@ namespace Project.Combat
                 // Particle/trail tracers: place along the shot and scale to span muzzle→impact.
                 GameObject tracer = PoolManager.Spawn(tracerPrefab, origin, rotation);
                 CombatVfxUtility.PrepareAttachedTracer(tracer, origin, dir);
+                DMVendorImpactAudio.SuppressVendorDriver(tracer); // 24n
                 ApplyBeamLine(tracer, origin, endPoint);
                 StretchTracerAlongBeam(tracer, length);
                 AttachMuzzleFollow(tracer, muzzle, followRange);

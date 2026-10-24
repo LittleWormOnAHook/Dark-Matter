@@ -10,5 +10,6 @@ namespace Project.Features.Locomotion
     {
         [System.NonSerialized] public DMPlayerBodyWeight Owner;
         private void LateUpdate() { if (Owner != null) Owner.PreIK(); }
+        private void FixedUpdate() { if (Owner != null) Owner.MarkStep(); } // 2026-10-24h
     }
 }

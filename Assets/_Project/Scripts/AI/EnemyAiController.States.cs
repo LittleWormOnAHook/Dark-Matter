@@ -645,11 +645,21 @@ namespace Project.AI
             if (UsesRangedHold(target) && !combat.IsAttacking)
             {
                 float retreatBelow = ResolveRangedRetreatDistance();
-                if (distanceToTarget < retreatBelow)
+                // 2026-10-24a: hysteresis - back off past retreatBelow + rangedRetreatHysteresis; stand and shoot when stuck.
+                float retreatExit = retreatBelow + RangedRetreatHysteresis;
+                if (distanceToTarget < retreatBelow) rangedBackingOff = true;
+                else if (distanceToTarget >= retreatExit) rangedBackingOff = false;
+                if (rangedBackingOff)
                 {
                     Vector3 away = transform.position - target.position;
                     away.y = 0f;
-                    StepFlat(away, walkSpeed * combatBridge.RangedRetreatSpeedMultiplier, retreatBelow - distanceToTarget);
+                    if (RangedStandActive) ClearLocomotion();
+                    else
+                    {
+                        Vector3 rp0 = transform.position;
+                        StepFlat(away, walkSpeed * combatBridge.RangedRetreatSpeedMultiplier, retreatExit - distanceToTarget);
+                        TrackRangedStuck(rp0);
+                    }
                     FaceTowards(target.position);
                     // 2026-10-13 (f): keep shooting while backing off (was: no TryAttack inside the hold distance, so close targets were never shot).
                     if (inRangedEngagement && DM_EnemyBrainProfile.Live != null && DM_EnemyBrainProfile.Live.rangedFireWhileRetreating)
@@ -661,7 +671,13 @@ namespace Project.AI
             // Too close for a ranged shot — back off instead of clipping through the target.
             if (distanceToTarget < standoff * 0.88f)
             {
-                MoveTowardsCombatRing(target, walkSpeed * 0.75f, standoff);
+                if (RangedStandActive) ClearLocomotion(); // 2026-10-24a
+                else
+                {
+                    Vector3 rp1 = transform.position;
+                    MoveTowardsCombatRing(target, walkSpeed * 0.75f, standoff);
+                    TrackRangedStuck(rp1);
+                }
                 FaceTowards(target.position);
                 if (inRangedEngagement && DM_EnemyBrainProfile.Live != null && DM_EnemyBrainProfile.Live.rangedFireWhileRetreating)
                     combat.TryAttack(); // 2026-10-13 (f)

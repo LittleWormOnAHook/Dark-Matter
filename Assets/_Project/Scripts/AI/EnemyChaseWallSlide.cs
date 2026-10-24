@@ -553,6 +553,8 @@ namespace Project.AI
                 // Only lateral contacts can be resolved by this planar mover.
                 if (Mathf.Abs(dir.y) > 0.65f || distance <= deepest)
                     continue;
+                if (other is TerrainCollider) // 24ae: terrain is always ground, never a wall (any slope, tag or layer)
+                    continue;
 
                 deepest = distance;
                 bestDir = dir;
@@ -941,6 +943,12 @@ namespace Project.AI
                 if (Mathf.Abs(Hits[i].normal.y) > 0.65f ||
                     Vector3.Dot(direction, Hits[i].normal) >= -0.0001f)
                     continue;
+                if (c is TerrainCollider) // 24ae: terrain is always ground, never a wall (any slope, tag or layer)
+                    continue;
+                // 24ad: start-inside hit on a concave mesh (enemy already inside a rock's non-convex collider) has no usable
+                // normal and blocked EVERY direction (moved=0.00 forever). Ignore it so the enemy can walk out.
+                if (Hits[i].distance <= 0f && Hits[i].point == Vector3.zero && c is MeshCollider mcc && !mcc.convex)
+                    continue;
 
                 if (Hits[i].distance < nearest)
                 {
@@ -951,6 +959,69 @@ namespace Project.AI
             }
 
             return found;
+        }
+
+        /// <summary>24ac: terrain with normal.y above this is walkable ground, not a wall (DM_EnemyBrainProfile.chaseTerrainMaxSlopeDeg).</summary>
+        /// <summary>24ad: names of non-terrain world colliders overlapping the enemy capsule (stuck diagnostics).</summary>
+        internal static string DescribeOverlaps(Transform self, DM_EnemyBrainProfile profile)
+        {
+            ResolveCapsule(self, profile, out float radius, out _, out Vector3 bottom, out Vector3 top);
+            int n = Physics.OverlapCapsuleNonAlloc(bottom, top, radius + 0.05f, OverlapHits, ChaseObstructionMask, QueryTriggerInteraction.Ignore);
+            var sb = new System.Text.StringBuilder();
+            for (int i = 0; i < n; i++)
+            {
+                Collider c = OverlapHits[i];
+                if (c == null || IsSelfCollider(c, self)) continue;
+                if (sb.Length > 0) sb.Append(", ");
+                sb.Append(c.name).Append('(').Append(c.GetType().Name);
+                if (c is MeshCollider m) sb.Append(m.convex ? " convex" : " concave");
+                sb.Append(' ').Append(LayerMask.LayerToName(c.gameObject.layer)).Append(')');
+            }
+            return sb.Length > 0 ? sb.ToString() : "none";
+        }
+
+        /// <summary>24ad: nearest grounded spot (rings up to maxRadius) where the capsule overlaps no world blocker and is not under a mesh roof.</summary>
+        internal static bool TryFindFreeSpot(Transform self, DM_EnemyBrainProfile profile, Vector3 preferDir, float maxRadius, System.Func<Vector3, (bool ok, float y)> ground, out Vector3 spot)
+        {
+            spot = self.position;
+            ResolveCapsule(self, profile, out float radius, out _, out Vector3 bottom, out Vector3 top);
+            Vector3 b = bottom - self.position, t = top - self.position;
+            preferDir.y = 0f;
+            float baseAng = preferDir.sqrMagnitude > 0.001f ? Mathf.Atan2(preferDir.z, preferDir.x) : 0f;
+            for (float r = 0.75f; r <= maxRadius + 0.01f; r += 0.75f)
+            {
+                for (int k = 0; k < 12; k++)
+                {
+                    int step = (k + 1) / 2 * (k % 2 == 0 ? 1 : -1); // 0, +1, -1, +2 ... around the preferred direction
+                    float a = baseAng + step * Mathf.PI / 6f;
+                    Vector3 c = self.position + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * r;
+                    var g = ground(c);
+                    if (!g.ok || Mathf.Abs(g.y - self.position.y) > 1.5f) continue;
+                    c.y = g.y;
+                    bool blocked = false;
+                    int n = Physics.OverlapCapsuleNonAlloc(c + b + Vector3.up * 0.05f, c + t, radius, OverlapHits, ChaseObstructionMask, QueryTriggerInteraction.Ignore);
+                    for (int i = 0; i < n && !blocked; i++)
+                    {
+                        Collider o = OverlapHits[i];
+                        if (o == null || o is TerrainCollider || IsSelfCollider(o, self)) continue;
+                        Rigidbody rb = o.attachedRigidbody;
+                        if (rb != null && !rb.isKinematic) continue;
+                        blocked = true;
+                    }
+                    if (blocked) continue;
+                    if (Physics.Raycast(c + Vector3.up * 0.3f, Vector3.up, out RaycastHit roof, 6f, ChaseObstructionMask, QueryTriggerInteraction.Ignore) && !IsSelfCollider(roof.collider, self))
+                        continue; // under / inside a rock
+                    spot = c;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        internal static float TerrainWallMinNormalY()
+        {
+            DM_EnemyBrainProfile p = DM_EnemyBrainProfile.Live;
+            return Mathf.Cos((p != null ? p.chaseTerrainMaxSlopeDeg : 60f) * Mathf.Deg2Rad);
         }
 
         private static bool IsSelfCollider(Collider c, Transform self)

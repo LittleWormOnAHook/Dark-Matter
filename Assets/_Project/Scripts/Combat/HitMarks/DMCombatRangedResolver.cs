@@ -158,6 +158,8 @@ namespace Project.Combat
                 CombatHitResolver.ApplySplash(ammoItem, hitPoint, damage, owner, collider);
 
             DMCombatCameraShake.TryPlayAmmoImpact(owner, ammoItem, weapon, hitPoint);
+            if (playImpactAudio)
+                DMVendorImpactAudio.Play(ammoItem, weapon, hitPoint); // 24n: vendor explosion audio every hit
 
             GameObject receiver = collider.gameObject;
             if (DMPlayerHitboxRig.IsPlayerBodyHitbox(receiver) && !DMCarveExperimentCombatUtility.BypassesWorldImpactCharacterBlocks(ammoItem))

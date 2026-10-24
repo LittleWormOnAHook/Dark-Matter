@@ -1,4 +1,4 @@
-#if UNITY_EDITOR
+﻿#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -113,7 +113,11 @@ namespace GenesisPCG.RockCreation.Editor
             using (new EditorGUILayout.HorizontalScope())
             {
                 if (GUILayout.Button(new GUIContent("Bake", "Cull hidden triangles, merge into one sub-mesh (atlas, or the override material), generate LODs + collider and save into this rock's .asset.")))
+                {
+                    foreach (Object t in targets) ((DmRockCombiner)t).SyncLod0Collider(true); // 24aa: LOD0 child collider
                     BakeTargets(false);
+                    foreach (Object t in targets) if (t != null) ((DmRockCombiner)t).SyncLod0Collider(true);
+                }
                 if (GUILayout.Button(new GUIContent("Un-bake", "Back to the live seeded preview.")))
                     foreach (Object t in targets)
                     {
@@ -122,7 +126,11 @@ namespace GenesisPCG.RockCreation.Editor
                         c.Unbake();
                     }
                 if (GUILayout.Button(new GUIContent("Rebake", "Rebuild from the seed and bake again (overwrites this rock's asset).")))
+                {
+                    foreach (Object t in targets) ((DmRockCombiner)t).SyncLod0Collider(true); // 24aa: LOD0 child collider
                     BakeTargets(true);
+                    foreach (Object t in targets) if (t != null) ((DmRockCombiner)t).SyncLod0Collider(true);
+                }
             }
 
             EditorGUILayout.Space(6);

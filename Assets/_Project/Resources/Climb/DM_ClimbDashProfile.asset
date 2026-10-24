@@ -85,7 +85,7 @@ MonoBehaviour:
   bodyWeightIntensity: 1
   bodyWeightDebugExaggerate: 1
   bodyWeightDebugReadout: 0
-  bodyWeightAimScale: 0.15
+  bodyWeightAimScale: 0.165
   bodyWeightAccelSmooth: 0.08
   bodyWeightIdleSpeedDeadzone: 0.2
   bodyWeightYawRateDeadzone: 20
@@ -154,20 +154,42 @@ MonoBehaviour:
   bodyWeightFootPlantMaxCorrection: 0.1
   bodyWeightFootPlantBlend: 0.1
   bodyWeightFootPlantHipLower: 0.03
+  bodyWeightMaxDt: 0.05
+  bodyWeightFootstepTriggerFit: 1
+  bodyWeightFootstepTriggerSoleReach: 0.03
+  bodyWeightFootstepTriggerRadius: 0.08
+  bodyWeightFootstepSoleOffset: 0
+  bodyWeightWallHandEnabled: 1
+  bodyWeightWallHandLeft: 1
+  bodyWeightWallHandRight: 1
+  bodyWeightWallHandReach: 1.5
+  bodyWeightWallHandHeight: -0.066
+  bodyWeightWallHandForwardOffset: 0.175
+  bodyWeightWallHandBlendTime: 0.452
+  bodyWeightWallHandMaxAngleDeg: 40
+  bodyWeightWallHandMaxTiltDeg: 26.73
+  bodyWeightWallHandFlatnessDeg: 19.46
+  bodyWeightWallHandMinWidth: 0.174
+  bodyWeightWallHandLayers:
+    serializedVersion: 2
+    m_Bits: 8388609
+  bodyWeightWallHandTags:
+  - Climbable
+  bodyWeightWallHandDebug: 0
   bodyWeightBreathEnabled: 1
-  bodyWeightBreathRate: 0.25
-  bodyWeightBreathDepth: 0.8
-  bodyWeightBreathShoulder: 0.6
-  bodyWeightBreathExertRate: 0.45
-  bodyWeightBreathExertDepth: 1.8
-  bodyWeightBreathExertRise: 4
-  bodyWeightBreathExertDecay: 5
-  bodyWeightBreathAimScale: 0.25
-  bodyWeightAimUpperBodyScale: 0
-  bodyWeightAimFadeTime: 0.12
-  bodyWeightAimHipSwayScale: 0
-  bodyWeightAimRecoilScale: 0.6
-  bodyWeightAimRecoilSettle: 3
+  bodyWeightBreathRate: 0.329
+  bodyWeightBreathDepth: 1.14
+  bodyWeightBreathShoulder: 1.93
+  bodyWeightBreathExertRate: 0.66
+  bodyWeightBreathExertDepth: 7.27
+  bodyWeightBreathExertRise: 16.83
+  bodyWeightBreathExertDecay: 8.1
+  bodyWeightBreathAimScale: 0.222
+  bodyWeightAimUpperBodyScale: 0.375
+  bodyWeightAimFadeTime: 0.283
+  bodyWeightAimHipSwayScale: 0.406
+  bodyWeightAimRecoilScale: 1.44
+  bodyWeightAimRecoilSettle: 5.65
   bodyWeightEnemyEnabled: 1
   bodyWeightEnemyLean: 0.8
   bodyWeightEnemyStopCarry: 1.1
@@ -180,6 +202,8 @@ MonoBehaviour:
   bodyWeightEnemyCullDistance: 40
   bodyWeightEnemyTypeScales: Brute=1.4;Heavy=1.3;Drone=0;Turret=0
   bodyWeightAppliedPresetInternal: 0
+  bodyWeightCustomStashNames: []
+  bodyWeightCustomStashValues: []
   standingJumpHeight: 2
   walkJumpHeightMultiplier: 1
   jogJumpHeightMultiplier: 1.05

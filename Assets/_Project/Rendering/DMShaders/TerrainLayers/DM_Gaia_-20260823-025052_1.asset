@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1953259897 &8574412962073106934
+TerrainLayer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: DM_Gaia_-20260823-025052_1
+  m_DiffuseTexture: {fileID: 2800000, guid: 49c1e35034588224bb6f975e60e91bef, type: 3}
+  m_NormalMapTexture: {fileID: 2800000, guid: 47331e444a651ee428d0aa37e9d89e4b, type: 3}
+  m_MaskMapTexture: {fileID: 2800000, guid: 23bd2b1b313dd364b836ff820cbb923d, type: 3}
+  m_TileSize: {x: 15, y: 15}
+  m_TileOffset: {x: 0, y: 0}
+  m_Specular: {r: 0, g: 0, b: 0, a: 0}
+  m_Metallic: 0
+  m_Smoothness: 0
+  m_NormalScale: 0.92
+  m_DiffuseRemapMin: {x: 0, y: 0, z: 0, w: 0}
+  m_DiffuseRemapMax: {x: 0.01132071, y: 0, z: 0, w: 1}
+  m_MaskMapRemapMin: {x: 0, y: 0, z: -0, w: 0.08510642}
+  m_MaskMapRemapMax: {x: 1, y: 1, z: 1, w: 0.45074975}
+  m_SmoothnessSource: 1
