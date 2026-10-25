@@ -13,11 +13,9 @@ namespace Project.EditorTools
     public static class DMWorldAmmoPanelMenu
     {
         private const string MenuPathTools = "Tools/Dark Matter Genesis/UI/Create World Ammo Panel Settings";
-        private const string MenuPathRoot = "Dark Matter Genesis/UI/Create World Ammo Panel Settings";
         private const string PanelPath = DMWorldAmmoHud.PanelSettingsPath;
 
         [MenuItem(MenuPathTools, false, 2105)]
-        [MenuItem(MenuPathRoot, false, 2105)]
         public static void CreateWorldAmmoPanelSettings()
         {
             EnsureWorldAmmoPanelSettings(forceRefresh: true);

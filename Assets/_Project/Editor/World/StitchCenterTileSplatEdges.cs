@@ -17,7 +17,6 @@ namespace Project.EditorTools.World
         private const string DataSuffix = "-20260823 - 024958";
 
         [MenuItem(DarkMatterGenesisEditorMenus.Root + "World/Stitch Center Tile Splat Edges", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_World_Stitch_Center_Tile_Splat_Edges)]
-        [MenuItem("Dark Matter Genesis/World/Stitch Center Tile Splat Edges", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Dark_Matter_Genesis_World_Stitch_Center_Tile_Splat_Edges)]
         public static void Stitch()
         {
             EdgeJob[] jobs =

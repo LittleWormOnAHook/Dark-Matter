@@ -101,7 +101,7 @@ namespace GenesisPCG.RockCreation.Editor
         }
 
         /// <summary>Creates (or refreshes) the five template materials. Existing templates keep user edits unless <paramref name="reset"/>.</summary>
-        [MenuItem("Tools/Genesis PCG Rock Creation/Create Rock Blend Materials")]
+        [MenuItem("Tools/Dark Matter Genesis/PCG Rocks/Create Rock Blend Materials")]
         public static void CreateTemplatesMenu() => Debug.Log("Genesis PCG Rock Creation: " + CreateTemplates(false));
 
         /// <summary>Recommended tight ground fade: band ~0.005-0.135 m above the terrain (height 0.1, softness 0.6, noise 0.35 at 6/m).</summary>
@@ -696,7 +696,7 @@ namespace GenesisPCG.RockCreation.Editor
         }
 
         /// <summary>Re-binds the per-pixel terrain on every rock (scene open, terrain scenes loaded later, menu).</summary>
-        [MenuItem("Tools/Genesis PCG Rock Creation/Refresh Terrain Match (all rocks)")]
+        [MenuItem("Tools/Dark Matter Genesis/PCG Rocks/Refresh Terrain Match (all rocks)")]
         public static void RebindAllTerrain()
         {
             foreach (DmRockCombiner c in Object.FindObjectsByType<DmRockCombiner>(FindObjectsInactive.Exclude))

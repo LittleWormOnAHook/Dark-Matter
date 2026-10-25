@@ -17,7 +17,7 @@ namespace Project.EditorTools
         private const string TerrainScenesRoot =
             "Assets/Gaia User Data/Sessions/DM Genesis/Terrain Scenes";
 
-        [MenuItem("Dark Matter Genesis/World/Sync NavMesh Surfaces To Gaia Terrains")]
+        [MenuItem("Tools/Dark Matter Genesis/World/Sync NavMesh Surfaces To Gaia Terrains")]
         public static void SyncActiveSceneTerrains()
         {
             Terrain[] terrains = Object.FindObjectsByType<Terrain>(FindObjectsInactive.Include);

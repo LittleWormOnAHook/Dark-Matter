@@ -39,7 +39,7 @@ namespace GenesisPCG.RockCreation.Editor
             "Set06_Brimstone_Crystal", "Set07_Radial_Flow_Bands", "Set08_Radiation_Scorched", "Set09_Alien_Residue", "Set10_Anthropogenic_Trace",
         };
 
-        [MenuItem("Tools/Genesis PCG Rock Creation/Build Style + Preset Library")]
+        [MenuItem("Tools/Dark Matter Genesis/PCG Rocks/Build Style + Preset Library")]
         public static void BuildAllMenu()
         {
             string log = BuildAll(false);

@@ -49,13 +49,13 @@ namespace Project.EditorTools.Combat
             return map;
         }
 
-        [MenuItem("Tools/Dark Matter/Combat/Build Hit Reaction Layers")]
+        [MenuItem("Tools/Dark Matter Genesis/Combat/Build Hit Reaction Layers")]
         public static void BuildMenu()
         {
             Debug.Log(Build());
         }
 
-        [MenuItem("Tools/Dark Matter/Combat/Validate Hit Reaction Layers")]
+        [MenuItem("Tools/Dark Matter Genesis/Combat/Validate Hit Reaction Layers")]
         public static void ValidateMenu()
         {
             string report = Validate(out bool ok);
@@ -65,13 +65,13 @@ namespace Project.EditorTools.Combat
                 Debug.LogError(report);
         }
 
-        [MenuItem("Tools/Dark Matter/Combat/Build Player Hit Reaction Layers")]
+        [MenuItem("Tools/Dark Matter Genesis/Combat/Build Player Hit Reaction Layers")]
         public static void BuildPlayerMenu()
         {
             Debug.Log(Build(PlayerControllerPath));
         }
 
-        [MenuItem("Tools/Dark Matter/Combat/Validate Player Hit Reaction Layers")]
+        [MenuItem("Tools/Dark Matter Genesis/Combat/Validate Player Hit Reaction Layers")]
         public static void ValidatePlayerMenu()
         {
             string report = Validate(out bool ok, PlayerControllerPath);

@@ -15,7 +15,7 @@ namespace GenesisPCG.RockCreation.Editor
     {
         public const string PrefKey = "GenesisPCG.RockBlend.FadeNoTaaMode";
         public static readonly string[] ModeNames = { "Dither (as with TAA)", "Hard Edge", "Off (full rock)" };
-        private const string Menu = "Tools/Genesis PCG Rock Creation/Transparency Fade Without TAA (Scene View)/";
+        private const string Menu = "Tools/Dark Matter Genesis/PCG Rocks/Transparency Fade Without TAA (Scene View)/";
         private static readonly int P_Mode = Shader.PropertyToID("_GRB_FadeNoTaaMode");
 
         static GenesisRockBlendSceneFade()

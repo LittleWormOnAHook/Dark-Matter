@@ -27,7 +27,7 @@ namespace GenesisPCG.RockCreation.Editor
         private float m_tile = 112f;
         private string m_status = "";
 
-        [MenuItem("Tools/Genesis PCG Rock Creation/Rock Palette")]
+        [MenuItem("Tools/Dark Matter Genesis/PCG Rocks/Rock Palette")]
         public static void Open()
         {
             var w = GetWindow<DmRockPaletteWindow>();

@@ -328,7 +328,7 @@ namespace GenesisPCG.RockCreation.Editor
             return string.Join(", ", diff) + " changed";
         }
 
-        [MenuItem("Tools/Genesis PCG Rock Creation/Report Out-of-Date Bakes in Scene")]
+        [MenuItem("Tools/Dark Matter Genesis/PCG Rocks/Report Out-of-Date Bakes in Scene")]
         public static void ReportStaleMenu()
         {
             var sb = new System.Text.StringBuilder();
@@ -1091,7 +1091,7 @@ namespace GenesisPCG.RockCreation.Editor
         // ------------------------------------------------------------------------------------------------
         // Menus
 
-        [MenuItem("Tools/Genesis PCG Rock Creation/Bake All DM PCG Creators in Scene")]
+        [MenuItem("Tools/Dark Matter Genesis/PCG Rocks/Bake All DM PCG Creators in Scene")]
         public static void BakeAllMenu()
         {
             int ok = 0, fail = 0;
@@ -1120,7 +1120,7 @@ namespace GenesisPCG.RockCreation.Editor
             Debug.Log($"Genesis PCG Rock Creation: baked {ok} DM PCG Creator(s){(fail > 0 ? $", {fail} failed" : "")}.");
         }
 
-        [MenuItem("Tools/Genesis PCG Rock Creation/Clean Unused Baked Meshes")]
+        [MenuItem("Tools/Dark Matter Genesis/PCG Rocks/Clean Unused Baked Meshes")]
         public static void CleanMenu()
         {
             int n = CleanUnused(null);

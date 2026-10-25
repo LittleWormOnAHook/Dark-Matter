@@ -48,7 +48,7 @@ namespace Project.Features.Climb.Editor
         private Vector2 _scroll;
         private bool _draggingHandle;
 
-        [MenuItem("Dark Matter Genesis/Climb/Probe Baker")]
+        [MenuItem("Tools/Dark Matter Genesis/Climb/Probe Baker")]
         public static void Open()
         {
             var win = GetWindow<DMClimbProbeBakerWindow>("Climb Probe Baker");

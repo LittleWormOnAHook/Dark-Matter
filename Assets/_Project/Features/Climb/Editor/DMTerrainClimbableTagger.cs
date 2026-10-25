@@ -6,7 +6,7 @@ namespace Project.Climb.EditorTools
     /// <summary>24ae: tags every loaded Terrain "Climbable" and puts it on the Default layer (Climbable LAYER is collision-ignored vs Player while climbing). Undo-able, does not save.</summary>
     public static class DMTerrainClimbableTagger
     {
-        [MenuItem("Tools/Dark Matter/Climb/Tag all loaded terrains Climbable (Default layer)")]
+        [MenuItem("Tools/Dark Matter Genesis/Climb/Tag all loaded terrains Climbable (Default layer)")]
         public static void TagAll()
         {
             int n = 0;

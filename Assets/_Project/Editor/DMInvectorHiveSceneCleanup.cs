@@ -28,7 +28,7 @@ namespace Project.EditorTools
             "40e1590d7bdf576488cbbdb99660dd93"  // legacy hive environment pack
         };
 
-        [MenuItem("Dark Matter/Scene/Remove Invector Hive Instances")]
+        [MenuItem("Tools/Dark Matter Genesis/Scene/Remove Invector Hive Instances")]
         public static void RemoveHiveInstancesFromOpenScene()
         {
             int removed = RemoveHiveInstances(SceneManager.GetActiveScene());

@@ -7,7 +7,7 @@ namespace GenesisPCG.RockCreation.Editor
     /// <summary>24z: fixes rocks whose MeshCollider lost its mesh (Mesh = None -> player walks through). Edit mode only, Undo-registered, never saves.</summary>
     internal static class DmRockColliderRepair
     {
-        [MenuItem("Tools/Genesis PCG Rock Creation/Repair rock colliders (all)")]
+        [MenuItem("Tools/Dark Matter Genesis/PCG Rocks/Repair rock colliders (all)")]
         private static void RepairAll()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) { Debug.LogWarning("[RockColliderRepair] Exit Play mode first."); return; }

@@ -530,7 +530,7 @@ namespace GenesisPCG.RockCreation.Editor
             CreateRandom(parent != null ? parent.transform.parent : null, null);
         }
 
-        [MenuItem("Tools/Genesis PCG Rock Creation/Refresh Default Kit")]
+        [MenuItem("Tools/Dark Matter Genesis/PCG Rocks/Refresh Default Kit")]
         private static void RefreshKitMenu()
         {
             DmRockKit kit = EnsureKit(true);

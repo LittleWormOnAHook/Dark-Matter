@@ -146,7 +146,6 @@ namespace Project.EditorTools.World
         private const string ItemRegistryPath = "Assets/_Project/Resources/ItemRegistry.asset";
 
         [MenuItem(DarkMatterGenesisEditorMenus.Root + "World/Setup Walker Drill In Scene", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_World_Setup_Walker_Drill_In_Scene)]
-        [MenuItem("Dark Matter Genesis/World/Setup Walker Drill In Scene", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Dark_Matter_Genesis_World_Setup_Walker_Drill_In_Scene)]
         public static void SetupWalkerDrillInScene()
         {
             GameObject walkerDrill = FindOrCreateWalkerDrillRoot();
@@ -165,7 +164,6 @@ namespace Project.EditorTools.World
         }
 
         [MenuItem(DarkMatterGenesisEditorMenus.Root + "World/Build Walker Drill Animator Controller", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_World_Build_Walker_Drill_Animator_Controller)]
-        [MenuItem("Dark Matter Genesis/World/Build Walker Drill Animator Controller", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Dark_Matter_Genesis_World_Build_Walker_Drill_Animator_Controller)]
         public static void BuildAnimatorControllerOnly()
         {
             WalkerDrillAnimatorFactory.BuildOrUpdateController(out string message);
@@ -174,7 +172,6 @@ namespace Project.EditorTools.World
         }
 
         [MenuItem(DarkMatterGenesisEditorMenus.Root + "World/Save Walker Drill Prefab", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Tools_Dark_Matter_Genesis_World_Save_Walker_Drill_Prefab)]
-        [MenuItem("Dark Matter Genesis/World/Save Walker Drill Prefab", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Dark_Matter_Genesis_World_Save_Walker_Drill_Prefab)]
         public static void SaveWalkerDrillPrefab()
         {
             GameObject walkerDrill = GameObject.Find(WalkerDrillObjectName);

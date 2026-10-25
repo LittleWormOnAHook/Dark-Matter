@@ -26,7 +26,7 @@ namespace GenesisPCG.RockCreation.Editor
             EditorApplication.delayCall += () => s_ready = true;
         }
 
-        [MenuItem("Tools/Genesis PCG Rock Creation/Rebind All Rocks to Terrain")]
+        [MenuItem("Tools/Dark Matter Genesis/PCG Rocks/Rebind All Rocks to Terrain")]
         public static void RebindAllMenu()
         {
             Run();

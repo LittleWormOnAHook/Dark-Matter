@@ -8,7 +8,7 @@ namespace Project.EditorTools
     /// <summary>2026-10-20v: enables Read/Write on model imports of open-scene meshes that match Auto Carvable tags/names (asks first).</summary>
     public static class DMCarveReadWriteTool
     {
-        [MenuItem("Tools/Carve/Enable Read/Write For Auto-Carvable Tags")]
+        [MenuItem("Tools/Dark Matter Genesis/Carve/Enable Read/Write For Auto-Carvable Tags")]
         private static void Run()
         {
             DMCarveSettings s = DMCarveSettings.Active;

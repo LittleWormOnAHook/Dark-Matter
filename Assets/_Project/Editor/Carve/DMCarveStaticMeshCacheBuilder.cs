@@ -25,7 +25,7 @@ namespace Project.EditorTools.Carve
             };
         }
 
-        [MenuItem("Tools/Carve/Rebuild Static Mesh Cache")]
+        [MenuItem("Tools/Dark Matter Genesis/Carve/Rebuild Static Mesh Cache")]
         private static void MenuRebuild() => Rebuild(true);
 
         public static int Rebuild(bool log)

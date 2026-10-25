@@ -13,14 +13,12 @@ namespace Project.EditorTools
     public static class DMUiToolkitShellMenu
     {
         private const string MenuPathTools = "Tools/Dark Matter Genesis/UI/Create Toolkit Shell";
-        private const string MenuPathRoot = "Dark Matter Genesis/UI/Create Toolkit Shell";
         private const string ToolkitFolder = "Assets/UI Toolkit";
         private const string ResourcesFolder = ToolkitFolder + "/Resources";
         private const string ConfigAssetPath = ResourcesFolder + "/DMUiToolkitConfig.asset";
         private const string LoadingPanelSettingsPath = ToolkitFolder + "/LoadingPanelSettings.asset";
 
         [MenuItem(MenuPathTools, false, 2100)]
-        [MenuItem(MenuPathRoot, false, 2100)]
         public static void CreateToolkitShell()
         {
             Directory.CreateDirectory(ToFull(ToolkitFolder + "/Themes"));

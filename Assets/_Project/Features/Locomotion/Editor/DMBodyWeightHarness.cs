@@ -364,10 +364,10 @@ namespace Project.Features.Locomotion.EditorTools
         }
 
         // ------------------------------------------------------------ entry points
-        [MenuItem("Tools/Dark Matter/Body Weight Harness/Run Presets")]
+        [MenuItem("Tools/Dark Matter Genesis/Body Weight Harness/Run Presets")]
         private static void MenuRun() => Debug.Log(RunPresets(true));
 
-        [MenuItem("Tools/Dark Matter/Body Weight Harness/Chaos Pass")]
+        [MenuItem("Tools/Dark Matter Genesis/Body Weight Harness/Chaos Pass")]
         private static void MenuChaos() => Debug.Log(RunChaos(40, 1234));
 
         /// <summary>Evaluate Subtle / Visible / Extreme (and optionally the live profile). Returns a short summary; full text in report.txt.</summary>

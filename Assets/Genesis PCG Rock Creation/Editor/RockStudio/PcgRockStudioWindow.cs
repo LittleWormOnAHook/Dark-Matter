@@ -7,7 +7,7 @@ namespace GenesisPCG.RockCreation.Editor
     /// <summary>Standalone host for <see cref="PcgRockStudioPanel"/> (Tools/Genesis PCG Rock Creation/Rocks and Cliffs Studio).</summary>
     public sealed class PcgRockStudioWindow : EditorWindow
     {
-        public const string MenuPath = "Tools/Genesis PCG Rock Creation/Rocks and Cliffs Studio";
+        public const string MenuPath = "Tools/Dark Matter Genesis/PCG Rocks/Rocks and Cliffs Studio";
 
         public PcgRockStudioPanel Panel { get; private set; }
 

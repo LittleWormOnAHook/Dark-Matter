@@ -7,7 +7,7 @@ using UnityEngine.SceneManagement;
 
 public static class BindGaiaPlayerTerrainLoader
 {
-    [MenuItem("Dark Matter Genesis/World/Bind Player_v7 Terrain Loader", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Dark_Matter_Genesis_World_Bind_Player_v7_Terrain_Loader)]
+    [MenuItem("Tools/Dark Matter Genesis/World/Bind Player_v7 Terrain Loader", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Dark_Matter_Genesis_World_Bind_Player_v7_Terrain_Loader)]
     public static void Bind()
     {
         GameObject player = GameObject.Find("Player_v7");
@@ -27,7 +27,7 @@ public static class BindGaiaPlayerTerrainLoader
         Debug.Log("Player_v7 will load Gaia tiles within 1800m at play.");
     }
 
-    [MenuItem("Dark Matter Genesis/World/Set Pixel Error 25 On All Terrains", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Dark_Matter_Genesis_World_Set_Pixel_Error_25_On_All_Terrains)]
+    [MenuItem("Tools/Dark Matter Genesis/World/Set Pixel Error 25 On All Terrains", false, Project.EditorTools.DarkMatterGenesisMenuPriority.Dark_Matter_Genesis_World_Set_Pixel_Error_25_On_All_Terrains)]
     public static void SetPixelError25()
     {
         const float pixelError = 25f;

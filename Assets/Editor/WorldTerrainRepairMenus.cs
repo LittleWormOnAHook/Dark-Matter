@@ -33,7 +33,7 @@ public static class WorldTerrainRepairMenus
         { "Terrain_2_2", "Terrain_2_3" },
     };
 
-    [MenuItem("Dark Matter Genesis/World/Rebuild Terrain Basemaps", false, 50)]
+    [MenuItem("Tools/Dark Matter Genesis/World/Rebuild Terrain Basemaps", false, 50)]
     public static void RebuildTerrainBasemaps()
     {
         Terrain[] terrains = Selection.GetFiltered<Terrain>(SelectionMode.Deep);
@@ -78,7 +78,7 @@ public static class WorldTerrainRepairMenus
         Debug.Log("[DMG] Rebuilt basemaps on " + n + " terrain(s).");
     }
 
-    [MenuItem("Dark Matter Genesis/World/Restore Terrain Layer List (Keep Splat)", false, 52)]
+    [MenuItem("Tools/Dark Matter Genesis/World/Restore Terrain Layer List (Keep Splat)", false, 52)]
     public static void RestoreTerrainLayerListKeepSplat()
     {
         List<TerrainData> targets = CollectTargetTerrainData(out string how);
@@ -174,7 +174,7 @@ public static class WorldTerrainRepairMenus
         Debug.Log("[DMG] Restore Terrain Layer List finished. " + ok + " tile(s).");
     }
 
-    [MenuItem("Dark Matter Genesis/World/Restore Terrain Splatmaps On Selection", false, 51)]
+    [MenuItem("Tools/Dark Matter Genesis/World/Restore Terrain Splatmaps On Selection", false, 51)]
     public static void RestoreTerrainSplatmapsOnSelection()
     {
         EditorUtility.DisplayDialog(
