@@ -164,9 +164,9 @@ MonoBehaviour:
   holsterSwayAdvanced:
     stiffness: 60
     damping: 6
-    inertia: 4
-    gravity: 6
-    maxAngle: 14
+    inertia: 8.54
+    gravity: 24.7
+    maxAngle: 20
   statusMaxStacks: 3
   statusImmunityWindowSeconds: 2
   statusBossMultiplier: 0.5
@@ -215,7 +215,8 @@ MonoBehaviour:
   enableMeleeHitstop: 1
   hitstopCritBonusFrames: 2
   hitstopHoldSpeed: 0.3
-  playerRigidbodyInterpolation: 2
+  playerRigidbodyInterpolation: 1
+  cameraFollowInLateUpdate: 0
   playerSelfCollisionGuard: 1
   playerSelfCollisionGuardInterval: 0.25
   playerSelfCollisionForceRootTriggers: 1
@@ -233,7 +234,7 @@ MonoBehaviour:
   heavyHitShakeAmplitude: 0.131
   heavyHitShakeDurationSeconds: 0.1025
   useDamageNumberTiers: 1
-  damageNumberNormalColor: {r: 1, g: 0.96, b: 0.78, a: 1}
+  damageNumberNormalColor: {r: 0.028301716, g: 0.3843132, b: 1, a: 1}
   damageNumberCritColor: {r: 1, g: 0, b: 0.06236458, a: 1}
   damageNumberHeavyColor: {r: 1, g: 0.37210044, b: 0.05098039, a: 1}
   damageNumberCritScale: 1.495

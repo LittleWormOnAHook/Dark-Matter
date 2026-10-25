@@ -42,6 +42,9 @@ namespace Project.UI
         private Toggle minimapToggle;
         private Toggle toggleCrouchStickToggle;
         private Toggle toggleSprintStickToggle;
+        private Slider padLookSlider; // 2026-10-25b
+        private Label padLookValue;
+        private Toggle padInvertYToggle;
         private Toggle fullscreenToggle;
         private Toggle vsyncToggle;
         private Toggle rayTracingToggle;
@@ -177,6 +180,14 @@ namespace Project.UI
             {
                 GameSettings.SetToggleSprintStickClick(evt.newValue);
             });
+            padLookSlider = AddSliderRow(gameOptsGrid, "Right Stick Sensitivity", GameSettings.GamepadLookSensitivityMin, GameSettings.GamepadLookSensitivityMax, out padLookValue);
+            padLookSlider.RegisterValueChangedCallback(evt =>
+            {
+                GameSettings.SetGamepadLookSensitivity(evt.newValue);
+                if (padLookValue != null) padLookValue.text = evt.newValue.ToString("0.00") + "x";
+            });
+            padInvertYToggle = AddToggleRow(gameOptsGrid, "Invert Look Y (Gamepad)");
+            padInvertYToggle.RegisterValueChangedCallback(evt => GameSettings.SetGamepadInvertY(evt.newValue));
 
             masterSlider = AddSliderRow(audioGrid, "Master Volume", 0f, 1f, out masterValue);
             musicSlider = AddSliderRow(audioGrid, "Music Volume", 0f, 1f, out musicValue);
@@ -288,6 +299,9 @@ namespace Project.UI
             minimapToggle?.SetValueWithoutNotify(snap.MinimapEnabled);
             toggleCrouchStickToggle?.SetValueWithoutNotify(GameSettings.ToggleCrouchStickClick);
             toggleSprintStickToggle?.SetValueWithoutNotify(GameSettings.ToggleSprintStickClick);
+            padLookSlider?.SetValueWithoutNotify(GameSettings.GamepadLookSensitivity);
+            if (padLookValue != null) padLookValue.text = GameSettings.GamepadLookSensitivity.ToString("0.00") + "x";
+            padInvertYToggle?.SetValueWithoutNotify(GameSettings.GamepadInvertY);
             fullscreenToggle?.SetValueWithoutNotify(snap.Fullscreen);
             vsyncToggle?.SetValueWithoutNotify(snap.VSync);
             rayTracingToggle?.SetValueWithoutNotify(snap.RayTracingEnabled);

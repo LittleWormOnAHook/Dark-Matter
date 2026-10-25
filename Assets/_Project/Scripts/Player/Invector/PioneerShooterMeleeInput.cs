@@ -1,4 +1,4 @@
-using Invector.vCharacterController;
+﻿using Invector.vCharacterController;
 using InvInputDevice = Invector.vCharacterController.InputDevice;
 using Invector.vEventSystems;
 using Invector.vMelee;
@@ -623,6 +623,11 @@ namespace Project.Player.Invector
                 PlayerInvectorRuntimeSetup.EnsureThirdPersonCameraRigidbody(gameObject);
                 FindCamera();
             }
+
+            // 2026-10-25c: camera follows per frame -> read look every frame too (Invector gates CameraInput to
+            // frames that had a physics step; base runs it on those frames, we run it on the others).
+            if (global::Invector.vCamera.vThirdPersonCamera.DMFollowInLateUpdate && !updateIK)
+                CameraInput();
 
             base.LateUpdate();
 
@@ -2882,8 +2887,12 @@ namespace Project.Player.Invector
                 Vector2 stick = pad.rightStick.ReadValue();
                 if (stick.sqrMagnitude < GamepadStickDeadZone * GamepadStickDeadZone)
                     continue;
-                x = stick.x * GamepadStickLookScale;
-                y = stick.y * GamepadStickLookScale;
+                float padSens = GameSettings.GamepadLookSensitivity; // 2026-10-25b
+                // 2026-10-25c: per-frame look (camera LateUpdate follow) -> scale stick by frame time so speed matches the 60 Hz path.
+                if (global::Invector.vCamera.vThirdPersonCamera.DMFollowInLateUpdate && Time.fixedDeltaTime > 0f)
+                    padSens *= Time.deltaTime / Time.fixedDeltaTime;
+                x = stick.x * GamepadStickLookScale * padSens;
+                y = stick.y * GamepadStickLookScale * padSens * (GameSettings.GamepadInvertY ? -1f : 1f);
                 return;
             }
         }

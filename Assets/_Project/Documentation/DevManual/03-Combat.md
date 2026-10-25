@@ -257,6 +257,7 @@ Combat Core, melee animations, Combat Studio, ammo FX, enemy hit marks, AI / dir
 | Slice 1 feel pack: melee hit stop (A1) | `hitstopCritBonusFrames` | int | 2 | 0–6 | Extra freeze frames (60 fps) on a critical hit, added to the light/heavy frames. |
 | Slice 1 feel pack: melee hit stop (A1) | `hitstopHoldSpeed` | float | 0.3f | 0f–0.5f | Animator speed during the freeze (enemy and, with Hitstop Freezes Attacker, the player swing). 0 = fully frozen. Was 0.05 (near-frozen) which made the player judder when root motion / the motor stopped and restarted; 0.3 is a soft hold (shakefix). |
 | Slice 1 feel pack: melee hit stop (A1) | `playerRigidbodyInterpolation` | PlayerRigidbodyInterpolationMode | PlayerRigidbodyInterpolationMode.Interpolate |  | Rigidbody interpolation applied at runtime to the live player root (Player_v7 prefab untouched). The prefab ships with None: the motor moves in FixedUpdate (60 Hz) while rendering runs at the frame rate, which shows up as a small shake / judder. Interpolate smooths it. Keep = leave as the prefab has it. |
+| Slice 1 feel pack: melee hit stop (A1) | `cameraFollowInLateUpdate` | bool | true |  | ON = Invector's third-person camera follows in LateUpdate (every rendered frame) so it tracks the interpolated player Rigidbody, and look input is read every frame. Use with Player Rigidbody Interpolation = Interpolate. Camera Fixed Step Interpolation is ignored while ON. OFF = legacy Invector FixedUpdate camera. |
 | Slice 1 feel pack: melee hit stop (A1) | `playerSelfCollisionGuard` | bool | true |  | Keep the player's own child colliders (weapons, foot spheres, bones) from shoving the root capsule: IgnoreCollision re-applied every interval, solid colliders in the root rigidbody compound become triggers. Off = legacy. |
 | Slice 1 feel pack: melee hit stop (A1) | `playerSelfCollisionGuardInterval` | float | 0.25f | 0.05f–2f | Seconds between guard passes (Unity drops ignore pairs when a collider is re-enabled). |
 | Slice 1 feel pack: melee hit stop (A1) | `playerSelfCollisionForceRootTriggers` | bool | true |  | Solid colliders attached to the player ROOT rigidbody (e.g. a re-equipped weapon pickup collider) become triggers. |
@@ -452,7 +453,6 @@ Combat Core, melee animations, Combat Studio, ammo FX, enemy hit marks, AI / dir
 | Grenades | `grenadeLandingRingUsesSplashSkills` | bool | true |  | Landing projector ring diameter scales with splash radius skills. |
 | Grenades | `grenadeThrowArcLineColor` | Color | new Color(1f, 0f, 0f, 0.88f) |  | Tint for the throw arc LineRenderer while aiming. |
 | Grenades | `grenadeLandingRingColor` | Color | new Color(1f, 0f, 0f, 0.42f) |  | Tint for the landing target projector ring. |
-| Grenades | `grenadeLandingRingSizeMultiplier` | float | 10f | 1f–25f | Multiplies blast radius for the throw landing projector ring (ring diameter vs splash). |
 
 ## Melee Animations
 

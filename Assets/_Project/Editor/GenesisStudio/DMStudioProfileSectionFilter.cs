@@ -251,7 +251,7 @@ namespace Project.EditorTools.GenesisStudio
         private static readonly string[] CombatCoreFields =
         {
             "playerSelfCollisionGuard", "playerSelfCollisionGuardInterval", "playerSelfCollisionForceRootTriggers", "playerSelfCollisionGuardLog",
-            "playerCameraFixedStepInterpolation", "playerRotateViaRigidbody",
+            "cameraFollowInLateUpdate", "playerCameraFixedStepInterpolation", "playerRotateViaRigidbody",
             "playerAnimatorPerFrameUpdate", "turretPooledLightRescanLegacy", "playerSnapProbeLog", "playerSnapProbeLogEveryCorrection", "terrainRescueSkipWhenGrounded",
             "trainingDummyPoiseMax",
             "humanoidPoiseMax",

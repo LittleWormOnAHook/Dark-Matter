@@ -55,8 +55,31 @@ namespace Project.EditorTools.GenesisStudio
             }
             EditorGUILayout.EndHorizontal();
 
+            DrawGamepadLook();
+
             if (!string.IsNullOrEmpty(status))
                 EditorGUILayout.LabelField(status, EditorStyles.miniLabel);
+        }
+
+        // 2026-10-25b: gamepad look (PlayerPrefs via GameSettings; same values as in-game Settings > Game Options).
+        private static readonly (string name, float value)[] PadPresets = { ("Slow", 0.5f), ("Default", 1f), ("Fast", 2f), ("Very Fast", 3.5f), ("Max", 5f) };
+
+        private static void DrawGamepadLook()
+        {
+            EditorGUILayout.Space(8f);
+            EditorGUILayout.LabelField("Gamepad Look", EditorStyles.boldLabel);
+            Project.Core.GameSettings.ReloadGamepadLook();
+            float s = EditorGUILayout.Slider(new GUIContent("Right Stick Sensitivity", "Multiplier on right-stick look (0.1-5, default 1). Saved in PlayerPrefs."), Project.Core.GameSettings.GamepadLookSensitivity, Project.Core.GameSettings.GamepadLookSensitivityMin, Project.Core.GameSettings.GamepadLookSensitivityMax);
+            if (!Mathf.Approximately(s, Project.Core.GameSettings.GamepadLookSensitivity))
+                Project.Core.GameSettings.SetGamepadLookSensitivity(s);
+            EditorGUILayout.BeginHorizontal();
+            foreach (var p in PadPresets)
+                if (GUILayout.Button(p.name + " " + p.value.ToString("0.#") + "x", EditorStyles.miniButton))
+                    Project.Core.GameSettings.SetGamepadLookSensitivity(p.value);
+            EditorGUILayout.EndHorizontal();
+            bool inv = EditorGUILayout.Toggle("Invert Look Y (Gamepad)", Project.Core.GameSettings.GamepadInvertY);
+            if (inv != Project.Core.GameSettings.GamepadInvertY)
+                Project.Core.GameSettings.SetGamepadInvertY(inv);
         }
 
         private void EnsureAsset()

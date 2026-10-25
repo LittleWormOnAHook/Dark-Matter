@@ -33,6 +33,12 @@ namespace Project.Core
         private const string ToggleCrouchStickKey = "settings.game.toggleCrouchStick";
         private const string ToggleSprintStickKey = "settings.game.toggleSprintStick";
         private const string SaveExistsKey = "save.exists";
+        private const string GamepadLookSensitivityKey = "settings.game.gamepadLookSensitivity"; // 2026-10-25b
+        private const string GamepadInvertYKey = "settings.game.gamepadInvertY";
+        public const float GamepadLookSensitivityMin = 0.1f;
+        public const float GamepadLookSensitivityMax = 5f;
+        public static float GamepadLookSensitivity { get; private set; } = 1f;
+        public static bool GamepadInvertY { get; private set; }
 
         public const float UiScaleMin = 0.4f;
         public const float UiScaleMax = 1.25f;
@@ -103,6 +109,8 @@ namespace Project.Core
             MinimapEnabled = PlayerPrefs.GetInt(MinimapEnabledKey, 1) == 1;
             ToggleCrouchStickClick = PlayerPrefs.GetInt(ToggleCrouchStickKey, 1) == 1;
             ToggleSprintStickClick = PlayerPrefs.GetInt(ToggleSprintStickKey, 1) == 1;
+            GamepadLookSensitivity = Mathf.Clamp(PlayerPrefs.GetFloat(GamepadLookSensitivityKey, 1f), GamepadLookSensitivityMin, GamepadLookSensitivityMax);
+            GamepadInvertY = PlayerPrefs.GetInt(GamepadInvertYKey, 0) == 1;
             Fullscreen = PlayerPrefs.GetInt(FullscreenKey, Screen.fullScreen ? 1 : 0) == 1;
             VSync = PlayerPrefs.GetInt(VSyncKey, QualitySettings.vSyncCount > 0 ? 1 : 0) == 1;
             RayTracingEnabled = PlayerPrefs.GetInt(RayTracingKey, 0) == 1;
@@ -144,6 +152,8 @@ namespace Project.Core
             PlayerPrefs.SetInt(MinimapEnabledKey, MinimapEnabled ? 1 : 0);
             PlayerPrefs.SetInt(ToggleCrouchStickKey, ToggleCrouchStickClick ? 1 : 0);
             PlayerPrefs.SetInt(ToggleSprintStickKey, ToggleSprintStickClick ? 1 : 0);
+            PlayerPrefs.SetFloat(GamepadLookSensitivityKey, GamepadLookSensitivity);
+            PlayerPrefs.SetInt(GamepadInvertYKey, GamepadInvertY ? 1 : 0);
             PlayerPrefs.SetInt(FullscreenKey, Fullscreen ? 1 : 0);
             PlayerPrefs.SetInt(VSyncKey, VSync ? 1 : 0);
             PlayerPrefs.SetInt(RayTracingKey, RayTracingEnabled ? 1 : 0);
@@ -544,6 +554,28 @@ namespace Project.Core
         {
             ToggleSprintStickClick = enabled;
             PlayerPrefs.SetInt(ToggleSprintStickKey, enabled ? 1 : 0);
+            PlayerPrefs.Save();
+        }
+
+        /// <summary>Right-stick look multiplier (0.1-5, default 1). Applied in PioneerShooterMeleeInput gamepad look.</summary>
+        public static void SetGamepadLookSensitivity(float value)
+        {
+            GamepadLookSensitivity = Mathf.Clamp(value, GamepadLookSensitivityMin, GamepadLookSensitivityMax);
+            PlayerPrefs.SetFloat(GamepadLookSensitivityKey, GamepadLookSensitivity);
+            PlayerPrefs.Save();
+        }
+
+        /// <summary>Reads only the gamepad look prefs (cheap; used by Genesis Studio Controls).</summary>
+        public static void ReloadGamepadLook()
+        {
+            GamepadLookSensitivity = Mathf.Clamp(PlayerPrefs.GetFloat(GamepadLookSensitivityKey, 1f), GamepadLookSensitivityMin, GamepadLookSensitivityMax);
+            GamepadInvertY = PlayerPrefs.GetInt(GamepadInvertYKey, 0) == 1;
+        }
+
+        public static void SetGamepadInvertY(bool enabled)
+        {
+            GamepadInvertY = enabled;
+            PlayerPrefs.SetInt(GamepadInvertYKey, enabled ? 1 : 0);
             PlayerPrefs.Save();
         }
 

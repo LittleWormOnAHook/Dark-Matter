@@ -439,6 +439,7 @@ namespace Project.Combat
             ApplyPlayerRigidbodyInterpolation(player);
             DMPlayerSelfCollisionGuard.Ensure(player); // 2026-10-20d
             DMCameraFixedStepInterpolator.EnsureOnCamera(); // 2026-10-20e
+            DMCameraLateFollow.Sync(); // 2026-10-25c
             DMPlayerSnapProbe.Ensure(player); // 2026-10-20g
             DMPlayerAnimatorUpdateMode.Ensure(player); // 2026-10-20i
             Invector.vCharacterController.vThirdPersonMotor.DMRotateViaRigidbody =

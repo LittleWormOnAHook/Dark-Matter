@@ -425,6 +425,9 @@ namespace Project.Combat
         [Range(0f, 0.5f)] public float hitstopHoldSpeed = 0.3f;
         [Tooltip("Rigidbody interpolation applied at runtime to the live player root (Player_v7 prefab untouched). The prefab ships with None: the motor moves in FixedUpdate (60 Hz) while rendering runs at the frame rate, which shows up as a small shake / judder. Interpolate smooths it. Keep = leave as the prefab has it.")]
         public PlayerRigidbodyInterpolationMode playerRigidbodyInterpolation = PlayerRigidbodyInterpolationMode.Interpolate;
+        // 2026-10-25c: clean walk-jitter fix.
+        [Tooltip("ON = Invector's third-person camera follows in LateUpdate (every rendered frame) so it tracks the interpolated player Rigidbody, and look input is read every frame. Use with Player Rigidbody Interpolation = Interpolate. Camera Fixed Step Interpolation is ignored while ON. OFF = legacy Invector FixedUpdate camera.")]
+        public bool cameraFollowInLateUpdate = true;
         // 2026-10-20d: DMPlayerSelfCollisionGuard (melee jolt / armed jitter fix).
         [Tooltip("Keep the player's own child colliders (weapons, foot spheres, bones) from shoving the root capsule: IgnoreCollision re-applied every interval, solid colliders in the root rigidbody compound become triggers. Off = legacy.")]
         public bool playerSelfCollisionGuard = true;

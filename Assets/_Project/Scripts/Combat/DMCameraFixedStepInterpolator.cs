@@ -29,7 +29,7 @@ namespace Project.Combat
 
         private static bool On
         {
-            get { DM_CombatCoreProfile p = DM_CombatCoreProfile.Live; return p != null && p.playerCameraFixedStepInterpolation; }
+            get { DM_CombatCoreProfile p = DM_CombatCoreProfile.Live; return p != null && p.playerCameraFixedStepInterpolation && !p.cameraFollowInLateUpdate; } // 2026-10-25c: ignored when camera follows in LateUpdate
         }
 
         private void Awake() { _cam = GetComponent<vThirdPersonCamera>(); }

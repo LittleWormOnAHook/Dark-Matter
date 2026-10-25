@@ -273,7 +273,26 @@ namespace Invector.vCamera
             }
         }
 
+        // 2026-10-25c DM: camera follow in LateUpdate (tracks the interpolated player Rigidbody). Set from
+        // DM_CombatCoreProfile.cameraFollowInLateUpdate; driven by Project.Combat.DMCameraLateFollow (order 600).
+        public static bool DMFollowInLateUpdate;
+        protected static float DMCamDt => DMFollowInLateUpdate ? Time.deltaTime : Time.fixedDeltaTime;
+
+        public virtual void DMLateTick()
+        {
+            if (!DMFollowInLateUpdate || Time.deltaTime <= 0f)
+                return;
+            DMStep();
+        }
+
         public virtual void FixedUpdate()
+        {
+            if (DMFollowInLateUpdate)
+                return;
+            DMStep();
+        }
+
+        protected virtual void DMStep()
         {
 
             if (mainTarget == null || targetLookAt == null || currentState == null || lerpState == null || !isInit || isFreezed)
@@ -812,7 +831,7 @@ namespace Invector.vCamera
                     else if (LockCamera || !isAlignedWithTarget && autoBehindTarget)
                     {
                         if (autoBehindTarget)
-                            smoothCameraRotation = Mathf.Lerp(smoothCameraRotation, behindTargetSmoothRotation, 6f * Time.fixedDeltaTime);
+                            smoothCameraRotation = Mathf.Lerp(smoothCameraRotation, behindTargetSmoothRotation, 6f * DMCamDt);
 
                         if (LockCamera || Time.time > lastRotationTimer + behindTargetDelay)
                         {
@@ -832,8 +851,8 @@ namespace Invector.vCamera
                 // fixed rotation
                 var _x = lerpState.fixedAngle.x;
                 var _y = lerpState.fixedAngle.y;
-                mouseX = useSmooth ? Mathf.LerpAngle(mouseX, _x, smoothBetweenState * Time.fixedDeltaTime) : _x;
-                mouseY = useSmooth ? Mathf.LerpAngle(mouseY, _y, smoothBetweenState * Time.fixedDeltaTime) : _y;
+                mouseX = useSmooth ? Mathf.LerpAngle(mouseX, _x, smoothBetweenState * DMCamDt) : _x;
+                mouseY = useSmooth ? Mathf.LerpAngle(mouseY, _y, smoothBetweenState * DMCamDt) : _y;
             }
 
         }
@@ -883,7 +902,7 @@ namespace Invector.vCamera
 
             if (lockTargetWeight < 1f)
             {
-                lockTargetWeight += Time.fixedDeltaTime * lockTargetSpeed;
+                lockTargetWeight += DMCamDt * lockTargetSpeed;
             }
 
             mouseY = Mathf.LerpAngle(mouseY, vExtensions.ClampAngle(y, currentState.yMinLimit, currentState.yMaxLimit), lockTargetWeight);
@@ -897,10 +916,10 @@ namespace Invector.vCamera
                 return;
             }
 
-            transformWeight = Mathf.Clamp(transformWeight += Time.fixedDeltaTime * startSmoothFactor, 0f, 1f);
+            transformWeight = Mathf.Clamp(transformWeight += DMCamDt * startSmoothFactor, 0f, 1f);
             if (useSmooth)
             {
-                currentState.Slerp(lerpState, smoothBetweenState * Time.fixedDeltaTime);
+                currentState.Slerp(lerpState, smoothBetweenState * DMCamDt);
             }
             else
             {
@@ -910,16 +929,16 @@ namespace Invector.vCamera
             if (currentState.useZoom)
             {
                 currentZoom = Mathf.Clamp(currentZoom, currentState.minDistance, currentState.maxDistance);
-                distance = useSmooth ? Mathf.Lerp(distance, currentZoom, lerpState.smooth * Time.fixedDeltaTime) : currentZoom;
+                distance = useSmooth ? Mathf.Lerp(distance, currentZoom, lerpState.smooth * DMCamDt) : currentZoom;
             }
             else
             {
-                distance = useSmooth ? Mathf.Lerp(distance, currentState.defaultDistance, lerpState.smooth * Time.fixedDeltaTime) : currentState.defaultDistance;
+                distance = useSmooth ? Mathf.Lerp(distance, currentState.defaultDistance, lerpState.smooth * DMCamDt) : currentState.defaultDistance;
             }
 
             targetCamera.fieldOfView = currentState.fov;
-            cullingDistance = Mathf.Lerp(cullingDistance, currentZoom, smoothBetweenState * Time.fixedDeltaTime);
-            currentSwitchRight = Mathf.Lerp(currentSwitchRight, switchRight, smoothSwitchSide * Time.fixedDeltaTime);
+            cullingDistance = Mathf.Lerp(cullingDistance, currentZoom, smoothBetweenState * DMCamDt);
+            currentSwitchRight = Mathf.Lerp(currentSwitchRight, switchRight, smoothSwitchSide * DMCamDt);
             var camDir = (currentState.forward * targetLookAt.forward) + ((currentState.right * currentSwitchRight) * targetLookAt.right);
 
             camDir = camDir.normalized;
@@ -943,7 +962,7 @@ namespace Invector.vCamera
             }
             else
             {
-                cullingHeight = useSmooth ? Mathf.Lerp(cullingHeight, currentState.cullingHeight, smoothBetweenState * Time.fixedDeltaTime) : currentState.cullingHeight;
+                cullingHeight = useSmooth ? Mathf.Lerp(cullingHeight, currentState.cullingHeight, smoothBetweenState * DMCamDt) : currentState.cullingHeight;
             }
             //Check if desired target position is not blocked            
             if (CullingRayCast(desired_cPos, oldPoints, out hitInfo, currentZoom + 0.2f, cullingLayer, Color.blue))
@@ -960,7 +979,7 @@ namespace Invector.vCamera
             }
             else
             {
-                currentHeight = useSmooth ? Mathf.Lerp(currentHeight, currentState.height, smoothBetweenState * Time.fixedDeltaTime) : currentState.height;
+                currentHeight = useSmooth ? Mathf.Lerp(currentHeight, currentState.height, smoothBetweenState * DMCamDt) : currentState.height;
             }
 
             if (cullingDistance < distance)
@@ -981,7 +1000,7 @@ namespace Invector.vCamera
             float _mouseY = Mathf.LerpAngle(mouseYStart, mouseY, transformWeight);
             float _mouseX = Mathf.LerpAngle(mouseXStart, mouseX, transformWeight);
             Quaternion newRot = Quaternion.Euler(_mouseY + offsetMouse.y, _mouseX + offsetMouse.x, 0);
-            targetLookAt.rotation = useSmooth ? Quaternion.Lerp(targetLookAt.rotation, newRot, smoothCameraRotation * Time.fixedDeltaTime) : newRot;
+            targetLookAt.rotation = useSmooth ? Quaternion.Lerp(targetLookAt.rotation, newRot, smoothCameraRotation * DMCamDt) : newRot;
             selfRigidbody.MovePosition(Vector3.Lerp(startPosition, current_cPos + (camDir * (distance)), transformWeight));
             var rotation = Quaternion.LookRotation((lookPoint) - selfRigidbody.position);
 
@@ -1016,9 +1035,9 @@ namespace Invector.vCamera
             }
             else
             {
-                lookTargetAdjust.x = Mathf.LerpAngle(lookTargetAdjust.x, 0, currentState.smooth * Time.fixedDeltaTime);
-                lookTargetAdjust.y = Mathf.LerpAngle(lookTargetAdjust.y, 0, currentState.smooth * Time.fixedDeltaTime);
-                lookTargetAdjust.z = Mathf.LerpAngle(lookTargetAdjust.z, 0, currentState.smooth * Time.fixedDeltaTime);
+                lookTargetAdjust.x = Mathf.LerpAngle(lookTargetAdjust.x, 0, currentState.smooth * DMCamDt);
+                lookTargetAdjust.y = Mathf.LerpAngle(lookTargetAdjust.y, 0, currentState.smooth * DMCamDt);
+                lookTargetAdjust.z = Mathf.LerpAngle(lookTargetAdjust.z, 0, currentState.smooth * DMCamDt);
                 //lookTargetAdjust = Quaternion.LerpUnclamped(lookTargetAdjust, Quaternion.Euler(Vector3.zero), 1 * Time.deltaTime);
             }
             var _euler = rotation.eulerAngles + lookTargetAdjust;
@@ -1039,22 +1058,22 @@ namespace Invector.vCamera
                 currentState.CopyState(lerpState);
             }
 
-            transformWeight = Mathf.Clamp(transformWeight += Time.fixedDeltaTime, 0f, 1f);
+            transformWeight = Mathf.Clamp(transformWeight += DMCamDt, 0f, 1f);
             var targetPos = new Vector3(currentTarget.position.x, currentTarget.position.y + offSetPlayerPivot + currentState.height, currentTarget.position.z);
-            currentTargetPos = useSmooth ? Vector3.MoveTowards(currentTargetPos, targetPos, currentState.smooth * Time.fixedDeltaTime) : targetPos;
+            currentTargetPos = useSmooth ? Vector3.MoveTowards(currentTargetPos, targetPos, currentState.smooth * DMCamDt) : targetPos;
             current_cPos = currentTargetPos;
             var pos = isValidFixedPoint ? currentState.lookPoints[indexLookPoint].positionPoint : transform.position;
-            transform.position = Vector3.Lerp(startPosition, useSmooth ? Vector3.Lerp(transform.position, pos, currentState.smooth * Time.fixedDeltaTime) : pos, transformWeight);
+            transform.position = Vector3.Lerp(startPosition, useSmooth ? Vector3.Lerp(transform.position, pos, currentState.smooth * DMCamDt) : pos, transformWeight);
             targetLookAt.position = current_cPos;
             if (isValidFixedPoint && currentState.lookPoints[indexLookPoint].freeRotation)
             {
                 var rot = Quaternion.Euler(currentState.lookPoints[indexLookPoint].eulerAngle);
-                transform.rotation = Quaternion.Lerp(startRotation, useSmooth ? Quaternion.Slerp(transform.rotation, rot, (currentState.smooth * 0.5f) * Time.fixedDeltaTime) : rot, transformWeight);
+                transform.rotation = Quaternion.Lerp(startRotation, useSmooth ? Quaternion.Slerp(transform.rotation, rot, (currentState.smooth * 0.5f) * DMCamDt) : rot, transformWeight);
             }
             else if (isValidFixedPoint)
             {
                 var rot = Quaternion.LookRotation(currentTargetPos - transform.position);
-                transform.rotation = Quaternion.Lerp(startRotation, useSmooth ? Quaternion.Slerp(transform.rotation, rot, (currentState.smooth) * Time.fixedDeltaTime) : rot, transformWeight);
+                transform.rotation = Quaternion.Lerp(startRotation, useSmooth ? Quaternion.Slerp(transform.rotation, rot, (currentState.smooth) * DMCamDt) : rot, transformWeight);
             }
             targetCamera.fieldOfView = currentState.fov;
         }
