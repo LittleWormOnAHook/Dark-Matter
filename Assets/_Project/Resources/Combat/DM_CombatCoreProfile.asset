@@ -121,6 +121,10 @@ MonoBehaviour:
   meleeAssistMaxPerSwingDegrees: 70
   meleeAssistWindupFraction: 0.35
   meleeAssistSoftFadeDegrees: 22
+  meleeTargetSwitchEnabled: 1
+  meleeSwitchSnapTurnSpeed: 900
+  meleeSwitchSnapMaxDegrees: 120
+  meleeSwitchSnapSeconds: 0.18
   meleeTargetIgnoreDowned: 1
   lightComboForcesStrafe: 0
   logMeleeFacing: 0
@@ -151,14 +155,99 @@ MonoBehaviour:
   logHitchesInPlay: 0
   hitchThresholdMs: 120
   quickStepEnabled: 1
-  quickStepTapWindowSeconds: 0.5
-  sidestepDistance: 1.8
-  backstepDistance: 1.5
-  quickStepDurationSeconds: 0.2
-  quickStepCooldownSeconds: 0.4
+  quickStepTapWindowSeconds: 0.25
+  quickStepKbmTapCount: 2
+  quickStepOwnsKbmDoubleTap: 1
+  quickStepKbmBackstep: 1
+  quickStepPadHoldEnabled: 1
+  quickStepPadHoldSeconds: 0.2
+  quickStepPadDeflection: 0.75
+  quickStepPadBackstep: 1
+  quickStepPadTripleFlick: 0
+  sidestepDistance: 1.2
+  backstepDistance: 1
+  quickStepDurationSeconds: 0.18
+  quickStepCooldownSeconds: 0.6
   quickStepStickFlick: 0.8
   quickStepStickRelease: 0.3
   quickStepStaminaCost: 0
+  dashPadHoldEnabled: 1
+  dashPadHoldSeconds: 0.18
+  dashPadStickDeadzone: 0.4
+  jumpAttackEnabled: 1
+  jumpAttackRangeMin: 1.2
+  jumpAttackRangeMax: 8
+  jumpAttackConeHalfAngle: 60
+  jumpAttackStopDistance: 1.3
+  jumpAttackLeapSpeed: 8
+  jumpAttackArcHeight: 1.2
+  jumpAttackTurnSpeed: 1080
+  jumpAttackComboWindow: 0.4
+  jumpAttackMinRunSpeed: 2.5
+  jumpAttackAllowFromStandstill: 0
+  jumpAttackMinAirTime: 1
+  jumpAttackFallbackForward: 2
+  jumpAttack1HWindupEnd: 0.27
+  jumpAttack1HImpact: 0.5
+  jumpAttack1HHitStart: 0.38
+  jumpAttack1HHitEnd: 0.58
+  jumpAttack2HWindupEnd: 0.4
+  jumpAttack2HImpact: 0.6
+  jumpAttack2HHitStart: 0.5
+  jumpAttack2HHitEnd: 0.7
+  jumpAttackDamageMultiplier: 2
+  jumpAttackCooldownSeconds: 3
+  jumpAttackStaminaCost: 15
+  jumpAttackLog: 1
+  jumpAttackBlendIn: 0.1
+  jumpAttackMomentumCarry: 0.8
+  jumpAttackRiseEase: 2
+  jumpAttackApexHang: 0.3
+  jumpAttackDescentPower: 2.2
+  jumpAttackLandRecovery: 0.25
+  jumpAttackHitstopBonusFrames: 3
+  jumpAttackHitShakeScale: 0.5
+  jumpAttackLandShakeScale: 0.3
+  jumpAttack1HDownSwingSpeed: 1
+  jumpAttack2HDownSwingSpeed: 0.6
+  jumpAttack1HSwingBend: 24
+  jumpAttack2HSwingBend: 30
+  jumpAttackSwingHipDrop: 0.05
+  jumpAttackSwingBendRelease: 0.4
+  jumpAttack1HReferenceMode: 1
+  jumpAttack1HAscentSeconds: 0.38
+  jumpAttack1HSwingSeconds: 0.55
+  jumpAttack1HLeapDistance: 1.8
+  jumpAttack1HArcHeight: 0.5
+  jumpAttack1HAscentArch: 18
+  jumpAttack1HStrikeCrunch: 45
+  jumpAttack1HLandHipDrop: 0.3
+  jumpAttack1HSquatHold: 0.25
+  jumpAttack1HRiseSeconds: 1.4
+  jumpAttack1HRecoveryLockFraction: 0.6
+  jumpAttack1HLandShakeScale: 0.15
+  jumpAttack1HLandShakeSeconds: 0.12
+  jumpAttack1HDustScale: 0.8
+  jumpAttackMaxDescentTime: 1.1
+  jumpAttackHeavyReaction: 1
+  jumpAttackImpactVfx: {fileID: 0}
+  jumpAttackImpactVfxScale: 2
+  jumpAttackImpactSfx:
+  - {fileID: 8300000, guid: f39af7b262c25044fa63501d93ef51c0, type: 3}
+  - {fileID: 8300000, guid: 813f6ea4fce83de43a755ac330bd260d, type: 3}
+  - {fileID: 8300000, guid: 2dd156fd4007d0845af7d933539be205, type: 3}
+  jumpAttackImpactSfxVolume: 1
+  jumpAttackImpactSfxPitch: 0.8
+  jumpAttackAllowFromJetpackFall: 1
+  jumpAttackPlungeMaxHeight: 15
+  jumpAttackPlungeDescentSpeed: 14
+  jumpAttackPlungeArcHeight: 0.4
+  jumpAttackBodyWeightScale: 1
+  jumpAttackTakeoffCrouch: 0.06
+  jumpAttackTakeoffPitch: 6
+  jumpAttackWindupLean: 8
+  jumpAttackLandDrop: 0.12
+  jumpAttackLandPitch: 14
   holsterSwayAmount: 1
   holsterSwayPivot: 0.66
   holsterSwayAdvanced:

@@ -39,6 +39,12 @@ namespace Project.Combat
             if (source.GetComponentInParent<PioneerShooterMeleeInput>() == null)
                 return;
 
+            if (DMPlayerJumpAttack.IsStrikeActiveFor(source)) // 2026-10-25g
+            {
+                Play(profile.heavyHitShakeAmplitude * profile.jumpAttackHitShakeScale, profile.heavyHitShakeDurationSeconds * Mathf.Clamp(profile.jumpAttackHitShakeScale, 0.3f, 1.5f));
+                return;
+            }
+
             if (isCritical || poiseBreak)
                 Play(profile.heavyHitShakeAmplitude, profile.heavyHitShakeDurationSeconds);
             else

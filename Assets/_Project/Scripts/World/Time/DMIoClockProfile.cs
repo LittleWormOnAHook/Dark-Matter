@@ -34,6 +34,11 @@ namespace Project.World.Clock
         [Min(1f)] public float realSecondsPerGameHour = 120f;
         [Tooltip("How often clock labels repaint, in real seconds.")]
         [Min(1f)] public float uiPaintRealSeconds = 60f;
+        [Tooltip("25q: game-time speed while the sun is below the horizon (1 = same as day, 2 = nights pass twice as fast).")]
+        [Range(0.1f, 5f)] public float nightTimeScale = 1f;
+        [Tooltip("25q: sun elevation band (deg, +/-) over which the night scale blends in.")]
+        [Range(0.01f, 30f)] public float nightTransitionDeg = 4f;
+        public void ApplyNightScalePreset(int preset) { nightTimeScale = preset <= 0 ? 1.5f : preset == 1 ? 1f : 3f; nightTransitionDeg = preset <= 0 ? 6f : preset == 1 ? 4f : 2f; }
 
         [Header("New Game")]
         [Min(1)] public int startDay = 1;

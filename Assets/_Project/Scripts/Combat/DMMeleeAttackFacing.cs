@@ -46,6 +46,8 @@ namespace Project.Combat
         private float _yawVelocity;
         private bool _savedLockRotation;
         private float _lastYaw = float.NaN;
+        private float _snapUntil = float.NegativeInfinity;
+        private float _snapBudget;
 
         public EnemyHealth Target => _target;
 
@@ -122,7 +124,7 @@ namespace Project.Combat
                     }
                 }
             }
-            else if (stickMag >= p.meleeRetargetStickMagnitude && now - _lastSwitchTime >= p.meleeRetargetMinSeconds)
+            else if (p.meleeTargetSwitchEnabled && stickMag >= p.meleeRetargetStickMagnitude && now - _lastSwitchTime >= p.meleeRetargetMinSeconds)
             {
                 Vector3 toTarget = Flat(_target.transform.position - transform.position);
                 if (toTarget.sqrMagnitude > 0.0001f && Vector3.Angle(stick, toTarget) > p.meleeRetargetStickAngle)
@@ -135,6 +137,11 @@ namespace Project.Combat
                         _target = cand;
                         _lastSwitchTime = now;
                         StatSwitches++;
+                        // Slice 4: fast snap-turn to the new target; the next swing gets a fresh assist budget.
+                        _snapUntil = now + p.meleeSwitchSnapSeconds;
+                        _snapBudget = p.meleeSwitchSnapMaxDegrees;
+                        _swingBudget = p.meleeAssistMaxPerSwingDegrees;
+                        _yawVelocity = 0f;
                     }
                 }
             }
@@ -157,6 +164,12 @@ namespace Project.Combat
             // One rotation owner for the whole locked swing: Invector ControlRotation is skipped this step.
             _savedLockRotation = _cc.lockRotation;
             _cc.lockRotation = true;
+
+            if (now < _snapUntil && _snapBudget > 0.01f)
+            {
+                SnapTurn(p);
+                return true;
+            }
 
             bool windup = SwingWindup(p);
             if (windup && _swingBudget > 0.01f)
@@ -203,6 +216,26 @@ namespace Project.Combat
             if (Mathf.Abs(step) < 0.0001f)
                 return;
 
+            Vector3 e = transform.eulerAngles;
+            e.y = curYaw + step;
+            transform.rotation = Quaternion.Euler(e);
+        }
+
+        private void SnapTurn(DM_CombatCoreProfile p)
+        {
+            Vector3 toTarget = Flat(_target.transform.position - transform.position);
+            if (toTarget.sqrMagnitude < 0.0025f)
+                return;
+            float curYaw = transform.eulerAngles.y;
+            float targetYaw = Mathf.Atan2(toTarget.x, toTarget.z) * Mathf.Rad2Deg;
+            float step = Mathf.DeltaAngle(curYaw, Mathf.MoveTowardsAngle(curYaw, targetYaw, p.meleeSwitchSnapTurnSpeed * Time.fixedDeltaTime));
+            if (Mathf.Abs(step) > _snapBudget)
+                step = Mathf.Sign(step) * _snapBudget;
+            _snapBudget -= Mathf.Abs(step);
+            if (Mathf.Abs(Mathf.DeltaAngle(curYaw + step, targetYaw)) < 0.5f)
+                _snapBudget = 0f;
+            if (Mathf.Abs(step) < 0.0001f)
+                return;
             Vector3 e = transform.eulerAngles;
             e.y = curYaw + step;
             transform.rotation = Quaternion.Euler(e);

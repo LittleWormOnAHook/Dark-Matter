@@ -277,6 +277,15 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "Sidestep",
+                    "type": "Button",
+                    "id": "f1a2b3c4-d5e6-4789-abcd-25d000000001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "Dash",
                     "type": "Button",
                     "id": "f1a2b3c4-d5e6-4789-abcd-111111111202",
@@ -817,6 +826,39 @@
                 },
                 {
                     "name": "",
+                    "id": "bb25d000-0001-4000-8000-000000000001",
+                    "path": "<Keyboard>/a",
+                    "interactions": "MultiTap(tapCount=2)",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "Sidestep",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "bb25d000-0001-4000-8000-000000000002",
+                    "path": "<Keyboard>/d",
+                    "interactions": "MultiTap(tapCount=2)",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "Sidestep",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "bb25d000-0001-4000-8000-000000000003",
+                    "path": "<Gamepad>/buttonSouth",
+                    "interactions": "Hold(duration=0.15)",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "Sidestep",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "bb111111-0001-4000-8000-000000000001",
                     "path": "<Keyboard>/q",
                     "interactions": "",
@@ -834,17 +876,6 @@
                     "processors": "",
                     "groups": ";Gamepad",
                     "action": "Dodge",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "bb111111-0001-4000-8000-000000000003",
-                    "path": "<Gamepad>/buttonEast",
-                    "interactions": "MultiTap(tapCount=2),Hold",
-                    "processors": "",
-                    "groups": ";Gamepad",
-                    "action": "Dash",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },

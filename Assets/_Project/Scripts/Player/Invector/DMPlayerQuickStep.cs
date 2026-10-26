@@ -7,8 +7,10 @@ using UnityEngine.InputSystem;
 namespace Project.Player.Invector
 {
     /// <summary>
-    /// Triple-tap A / D = sidestep, triple-tap S = backstep (pad: triple left-stick flick). Camera-relative, wall-safe, no roll.
-    /// Added at runtime by PioneerPlayerInputBinder (no prefab edit). Settings: DM_CombatCoreProfile "Player quick step".
+    /// 2026-10-25d sidestep. KBM: double-tap A / D = sidestep, double-tap S = backstep (tap count in Studio).
+    /// Pad: hold left stick left / right (or back) + HOLD A past quickStepPadHoldSeconds = step; a quick tap of A still jumps
+    /// (the jump is deferred until release so it never fires first). Optional legacy triple stick flick.
+    /// Camera-relative, wall-safe, no roll. Added at runtime by PioneerPlayerInputBinder. Settings: DM_CombatCoreProfile "Player quick step".
     /// </summary>
     [DisallowMultipleComponent]
     public class DMPlayerQuickStep : MonoBehaviour
@@ -25,8 +27,13 @@ namespace Project.Player.Invector
         private Vector3 _stepDir;
         private float _stepDist, _stepDone, _stepStart, _stepDur;
         private bool _stepping;
+        private bool _padPending;
+        private float _padPressTime;
+        private bool _deferredJump;
+        private float _deferredJumpTime;
 
         public bool IsStepping => _stepping;
+        public bool IsPadHoldPending => _padPending;
 
         private void Awake()
         {
@@ -34,11 +41,56 @@ namespace Project.Player.Invector
             _rb = _cc != null ? _cc.GetComponent<Rigidbody>() : null;
         }
 
+        /// <summary>Called by JumpInput on the A (South) press. True = this press may become a step; the jump is held back until release.</summary>
+        public bool TryDeferPadJump()
+        {
+            DM_CombatCoreProfile p = DM_CombatCoreProfile.Live;
+            if (p == null || !p.quickStepEnabled || !p.quickStepPadHoldEnabled || _cc == null || _padPending)
+                return false;
+            Gamepad pad = Gamepad.current;
+            if (pad == null || !pad.buttonSouth.wasPressedThisFrame)
+                return false;
+            if (_stepping || Time.time < _nextAllowed || !_cc.isGrounded || _cc.customAction || _cc.isRolling || _cc.isJumping || _cc.isDead)
+                return false;
+            if (PadDir(pad, p) == Dir.None)
+                return false;
+            _padPending = true;
+            _padPressTime = Time.unscaledTime;
+            return true;
+        }
+
+        /// <summary>True once when a deferred A press turned out to be a tap (jump now).</summary>
+        public bool ConsumeDeferredJump()
+        {
+            if (!_deferredJump)
+                return false;
+            _deferredJump = false;
+            return Time.unscaledTime - _deferredJumpTime < 0.25f;
+        }
+
+        private static Dir PadDir(Gamepad pad, DM_CombatCoreProfile p)
+        {
+            Vector2 s = pad.leftStick.ReadValue();
+            float defl = p.quickStepPadDeflection;
+            if (Mathf.Abs(s.x) >= defl && Mathf.Abs(s.x) >= -s.y)
+                return s.x < 0f ? Dir.Left : Dir.Right;
+            if (p.quickStepPadBackstep && -s.y >= defl)
+                return Dir.Back;
+            return Dir.None;
+        }
+
         private void Update()
         {
             DM_CombatCoreProfile p = DM_CombatCoreProfile.Live;
             if (p == null || !p.quickStepEnabled || _cc == null)
+            {
+                _padPending = false;
                 return;
+            }
+
+            if (_padPending)
+                TickPadHold(p);
+
             if (GameplayKeyboardShortcuts.IsGameplayInputLockedByUi())
                 return;
 
@@ -47,11 +99,11 @@ namespace Project.Player.Invector
             {
                 if (kb.aKey.wasPressedThisFrame) Tap(Dir.Left, p);
                 if (kb.dKey.wasPressedThisFrame) Tap(Dir.Right, p);
-                if (kb.sKey.wasPressedThisFrame) Tap(Dir.Back, p);
+                if (p.quickStepKbmBackstep && kb.sKey.wasPressedThisFrame) Tap(Dir.Back, p);
             }
 
             Gamepad pad = Gamepad.current;
-            if (pad != null)
+            if (pad != null && p.quickStepPadTripleFlick)
             {
                 Vector2 s = pad.leftStick.ReadValue();
                 Flick(ref _stickArmedL, -s.x, Dir.Left, p);
@@ -60,13 +112,44 @@ namespace Project.Player.Invector
             }
         }
 
+        private void TickPadHold(DM_CombatCoreProfile p)
+        {
+            Gamepad pad = Gamepad.current;
+            if (pad == null)
+            {
+                _padPending = false;
+                return;
+            }
+            if (!pad.buttonSouth.isPressed)
+            {
+                // Released before the hold threshold: it was a tap, jump.
+                _padPending = false;
+                _deferredJump = true;
+                _deferredJumpTime = Time.unscaledTime;
+                return;
+            }
+            if (Time.unscaledTime - _padPressTime < p.quickStepPadHoldSeconds)
+                return;
+            _padPending = false;
+            Dir d = PadDir(pad, p);
+            if (d == Dir.None || !TryStep(d, p))
+            {
+                _deferredJump = true;
+                _deferredJumpTime = Time.unscaledTime;
+            }
+        }
+
         private void Flick(ref bool armed, float v, Dir d, DM_CombatCoreProfile p)
         {
-            if (armed && v >= p.quickStepStickFlick) { armed = false; Tap(d, p); }
+            if (armed && v >= p.quickStepStickFlick) { armed = false; FlickTap(d, p); }
             else if (!armed && v <= p.quickStepStickRelease) armed = true;
         }
 
-        private void Tap(Dir d, DM_CombatCoreProfile p)
+        private void FlickTap(Dir d, DM_CombatCoreProfile p) => Tap(d, p, 3);
+
+        private void Tap(Dir d, DM_CombatCoreProfile p) => Tap(d, p, Mathf.Clamp(p.quickStepKbmTapCount, 2, 3));
+
+        private void Tap(Dir d, DM_CombatCoreProfile p, int need)
         {
             float now = Time.time;
             if (d != _lastDir || now - _firstTapTime > p.quickStepTapWindowSeconds)
@@ -76,21 +159,21 @@ namespace Project.Player.Invector
                 _firstTapTime = now;
                 return;
             }
-            if (++_count < 3)
+            if (++_count < need)
                 return;
             _count = 0;
             _lastDir = Dir.None;
             TryStep(d, p);
         }
 
-        private void TryStep(Dir d, DM_CombatCoreProfile p)
+        private bool TryStep(Dir d, DM_CombatCoreProfile p)
         {
             if (_stepping || Time.time < _nextAllowed)
-                return;
+                return false;
             if (!_cc.isGrounded || _cc.customAction || _cc.isRolling || _cc.isJumping || _cc.isDead)
-                return;
+                return false;
             if (p.quickStepStaminaCost > 0f && _cc.currentStamina < p.quickStepStaminaCost)
-                return;
+                return false;
 
             Transform cam = Camera.main != null ? Camera.main.transform : _cc.transform;
             Vector3 fwd = Vector3.ProjectOnPlane(cam.forward, Vector3.up).normalized;
@@ -105,8 +188,9 @@ namespace Project.Player.Invector
             _nextAllowed = Time.time + _stepDur + p.quickStepCooldownSeconds;
             if (p.quickStepStaminaCost > 0f)
                 _cc.ReduceStamina(p.quickStepStaminaCost, false);
-            if (DM_CombatCoreProfile.Live.logInterruptsInPlay)
+            if (p.logInterruptsInPlay)
                 Debug.Log("[QuickStep] " + d + " dist=" + _stepDist.ToString("0.00"));
+            return true;
         }
 
         private void FixedUpdate()

@@ -410,8 +410,14 @@ namespace Project.UI
             if (Project.UI.DMUiToolkitGenerator.TryHandleBack())
                 return;
 
+            if (DMUiToolkitMenus.TryCancelPadMove())
+                return;
+
             if (DMUiToolkitMenus.TryHideInventoryContextMenu())
                 return;
+
+            if (Project.UI.DMUiJournalGamepadNav.TryBackToTabs())
+                return; // 25k: pad B content -> tabs
 
             if (DMUiToolkitContext.IsOpen)
             {
@@ -581,8 +587,14 @@ namespace Project.UI
             if (Project.UI.DMUiToolkitGenerator.TryHandleBack())
                 return;
 
+            if (DMUiToolkitMenus.TryCancelPadMove())
+                return;
+
             if (DMUiToolkitMenus.TryHideInventoryContextMenu())
                 return;
+
+            if (Project.UI.DMUiJournalGamepadNav.TryBackToTabs())
+                return; // 25k: pad B content -> tabs
 
             if (DMUiToolkitContext.IsOpen)
             {

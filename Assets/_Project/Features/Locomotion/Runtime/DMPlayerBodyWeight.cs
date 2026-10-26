@@ -454,8 +454,8 @@ namespace Project.Features.Locomotion
             // Hip drop spring: full stiffness while compressing, reduced while recovering (slow rise).
             float k = p.bodyWeightHipSpring;
             if (_hipDrop < 0f && _hipDropVel > 0f) k *= p.bodyWeightLandingRecovery;
-            SpringF(ref _hipDrop, ref _hipDropVel, 0f, k, 1f, dt);
-            _hipDrop = Mathf.Clamp(_hipDrop, -p.bodyWeightMaxHipDrop, 0f); // 2026-10-24h: pelvis never raised (overshoot lifted feet off the ground)
+            SpringF(ref _hipDrop, ref _hipDropVel, -JumpAttackHipDrop, k, 1f, dt); // 25h: jump attack swing hip drop target (0 normally)
+            _hipDrop = Mathf.Clamp(_hipDrop, -Mathf.Max(p.bodyWeightMaxHipDrop, JumpAttackHipDrop), 0f); // 25j: jump attack landing squat may exceed the normal cap // 2026-10-24h: pelvis never raised (overshoot lifted feet off the ground)
             if (_hipDrop >= 0f && _hipDropVel > 0f) _hipDropVel = 0f;
             if (float.IsNaN(_hipDrop)) { _hipDrop = 0f; _hipDropVel = 0f; }
 
@@ -620,6 +620,21 @@ namespace Project.Features.Locomotion
             float lo = Mathf.Min(p.bodyWeightHitMinScale, p.bodyWeightHitMaxScale);
             float s = Mathf.Clamp((Mathf.Max(0f, amount) + Mathf.Max(0f, poise) * p.bodyWeightHitPoiseWeight) / Mathf.Max(1f, p.bodyWeightHitDamageRef), lo, p.bodyWeightHitMaxScale);
             _hitPending = Vector3.ClampMagnitude(_hitPending + d * s, p.bodyWeightHitMaxScale * 1.5f); // same-frame hits add, capped
+        }
+
+        /// <summary>2026-10-25h: jump attack down swing bend (deg, + forward) and hip drop target (m), set every frame by DMPlayerJumpAttack.</summary>
+        [System.NonSerialized] public float JumpAttackBendDeg;
+        [System.NonSerialized] public float JumpAttackHipDrop;
+
+        /// <summary>2026-10-25g jump attack: spine pitch (deg, + = forward) and hip drop (m) impulse through the weapon recoil / hip springs.</summary>
+        public void AddJumpAttackImpulse(float spinePitchDeg, float hipDropMeters)
+        {
+            var p = Prof;
+            if (p == null || !p.bodyWeightEnabled) return;
+            if (!Ok(new Vector3(spinePitchDeg, hipDropMeters, 0f))) return;
+            float sq = Mathf.Sqrt(Mathf.Max(0.01f, p.bodyWeightWeaponRecoilStiffness));
+            _recoilVel.x += spinePitchDeg * sq;
+            _hipDropVel -= hipDropMeters * 10f;
         }
 
         /// <summary>Editor harness: a ranged shot / a draw-holster event.</summary>
@@ -829,6 +844,15 @@ namespace Project.Features.Locomotion
             SpringF(ref _recoilHip, ref _recoilHipVel, 0f, k, recDamp, dt);
             if (!Ok(_recoil) || _recoil.sqrMagnitude > GuardDeg * GuardDeg || float.IsNaN(_recoilHip) || Mathf.Abs(_recoilHip) > GuardMeters)
             { _recoil = Vector3.zero; _recoilVel = Vector3.zero; _recoilHip = 0f; _recoilHipVel = 0f; }
+            if (JumpAttackBendDeg != 0f && Ok(new Vector3(JumpAttackBendDeg, 0f, 0f)))
+            {
+                // 25h: jump attack down swing bend, layered on the clip (spine + chest forward pitch, pelvis slight).
+                float jb = Mathf.Clamp(JumpAttackBendDeg, -60f, 60f);
+                // 25n: pitch about the CHARACTER right axis converted per bone (bone-local x on Kade mixamorig bones read as a hard sideways lean).
+                if (_spine.T != null) _spine.Kick += _spine.T.InverseTransformDirection(transform.right) * (jb * 0.55f);
+                if (_chest.T != null) _chest.Kick += _chest.T.InverseTransformDirection(transform.right) * (jb * 0.45f);
+                if (_pelvis.T != null) _pelvis.Kick += _pelvis.T.InverseTransformDirection(transform.right) * (jb * 0.12f);
+            }
             if (!p.bodyWeightWeaponEnabled || S <= 0f) return;
             // Spine absorbs; chest counter-rotates ~85% so shoulder orientation (aim) is nearly preserved; head stays level.
             Vector3 r = _recoil * S;

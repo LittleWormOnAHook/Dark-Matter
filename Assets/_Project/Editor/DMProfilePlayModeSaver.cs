@@ -25,6 +25,9 @@ namespace Project.EditorTools
         private static readonly string[] ExtraTypes =
         {
             "t:DMJetpackProfile",
+            // 25o: sky + orbit + clock (Studio World > Sky & Orbit / Clock) keep their Play tweaks.
+            "t:DM_IoSkyProfile",
+            "t:DMIoClockProfile",
         };
 
         public static bool Enabled

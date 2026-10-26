@@ -40,6 +40,8 @@ namespace Project.Player.Invector
             _invectorInput = GetComponent<PioneerInvectorInputBridge>();
             if (GetComponent<DMPlayerQuickStep>() == null)
                 gameObject.AddComponent<DMPlayerQuickStep>(); // runtime only, no prefab edit
+            if (GetComponent<Project.Combat.DMPlayerJumpAttack>() == null)
+                gameObject.AddComponent<Project.Combat.DMPlayerJumpAttack>(); // 2026-10-25f runtime only
 
             if (_playerInput != null && _playerInput.notificationBehavior != PlayerNotifications.InvokeCSharpEvents)
                 _playerInput.notificationBehavior = PlayerNotifications.InvokeCSharpEvents;
@@ -226,7 +228,8 @@ namespace Project.Player.Invector
                     // Hold/tap owned by WeaponModeSwitchController (reads this action).
                     break;
                 case "Dodge":
-                    if (context.performed)
+                    // 2026-10-25e: pad B with the stick deflected waits: hold = directional dash, tap = dodge.
+                    if (context.performed && !(context.control != null && context.control.device is Gamepad && TryBeginPadDashHold()))
                         TryDodgeRollFromInput();
                     break;
                 case "Dash":
@@ -348,6 +351,48 @@ namespace Project.Player.Invector
             DM_CombatCoreProfile profile = DM_CombatCoreProfile.Live;
             float seconds = profile != null ? profile.dodgeIFrameSeconds : 0.25f;
             frames?.GrantInvulnerability(seconds);
+        }
+
+        private bool _padDashPending;
+        private float _padDashPressAt;
+
+        private bool TryBeginPadDashHold()
+        {
+            DM_CombatCoreProfile p = DM_CombatCoreProfile.Live;
+            Gamepad pad = Gamepad.current;
+            if (p == null || !p.dashPadHoldEnabled || pad == null || _padDashPending)
+                return false;
+            if (pad.leftStick.ReadValue().magnitude < p.dashPadStickDeadzone)
+                return false;
+            _padDashPending = true;
+            _padDashPressAt = Time.unscaledTime;
+            return true;
+        }
+
+        private void Update()
+        {
+            if (!_padDashPending)
+                return;
+            DM_CombatCoreProfile p = DM_CombatCoreProfile.Live;
+            Gamepad pad = Gamepad.current;
+            if (p == null || pad == null)
+            {
+                _padDashPending = false;
+                return;
+            }
+            if (!pad.buttonEast.isPressed)
+            {
+                _padDashPending = false;
+                TryDodgeRollFromInput();
+                return;
+            }
+            if (Time.unscaledTime - _padDashPressAt < p.dashPadHoldSeconds)
+                return;
+            _padDashPending = false;
+            if (pad.leftStick.ReadValue().magnitude >= p.dashPadStickDeadzone)
+                TryDashFromInput();
+            else
+                TryDodgeRollFromInput();
         }
 
         private void TryDashFromInput()

@@ -12,6 +12,7 @@ Combat Core, melee animations, Combat Studio, ammo FX, enemy hit marks, AI / dir
 - **Hit reactions**: `Combat/Build|Validate (Player) Hit Reaction Layers` (`Editor/Combat/DMHitReactionLayerBuilder.cs`).
 - **Weapon placement**: `Combat/Weapon Placement/*` (bake window, apply profile, bake all enemy prefabs).
 - **Audits** (Play only): `Combat/Enemy Obstacle Jitter|Rock Mesh|Thin Wall Endpoint Audit (Play)`; Audit Hub at `Tools/Dark Matter Genesis/Audit/Audit Hub`.
+- **Movement input (2026-10-25e)**: double-tap A / D = sidestep, double-tap S = backstep (pad: stick + hold A). Dash = hold WASD (diagonals) + Left Alt, no direction = forward; pad = hold B + left stick, tap B = dodge / roll. Double-tap W dash and pad B double-press+hold dash removed. Tune in Studio Combat Core > Player quick step / Directional dash input (presets).
 - Design roadmap: `Assets/_Project/Documentation/Design/Combat/DMG_Combat_Plan_v2.md` (v2.4). The engineering doc is `Assets/_Project/Features/Combat/Documentation/Dark_Matter_Combat_System.md`.
 
 **Gotchas:** never edit FORGE3D (turrets are only *registered*, via `Buildings/Register ... turrets in Equipment`). Enemy/player prefabs are not saved by agents, and "Bake all enemy prefabs" touches many prefabs, so it needs Anthony's OK.
@@ -1462,3 +1463,26 @@ Combat Core, melee animations, Combat Studio, ammo FX, enemy hit marks, AI / dir
 - Studio: `Genesis Studio / Combat / Encounters & difficulty` (panel mode `CombatPlanPlaceholder`)
 - Asset: `Assets/_Project/Documentation/Design/Combat/DMG_Combat_Plan_v2.md`
 
+
+## Jump attack (2026-10-25f)
+Light attack while airborne with a drawn melee weapon. Target = melee lock, else nearest enemy in the front cone, within range min/max: scripted arc leap (kinematic MovePosition, motor locked like the dash) landing *stop distance* in front of the enemy as the down swing starts; clip speed auto-scaled (0.6-2x) to sync. No target = down strike in place. 1H = 1HandSmallWeaponJumpAttack, 2H grip = JumpAttack2HandMelee. FullBody/Attacks states JumpAttack1H/2H (vMeleeAttackControl damageType "JumpAttack", normal hitbox path) built by Tools/Dark Matter Genesis/Combat/Build Jump Attack States. Settings: Studio > Combat Core > Jump attack (+ presets, rebuild button). Code: Scripts/Combat/DMPlayerJumpAttack.cs.
+
+
+### Jump attack flow (2026-10-25g)
+Run at the enemy and press Jump + light attack together (either order, within *Combo window*, default 0.25 s). The leap starts on the press (the normal jump is consumed, or taken over if Jump came first): the wind-up plays on the way up (arc apex = *Wind-up end*), the strike comes down on the way down, and the *Impact* frame is timed to touchdown at stop distance from the target. Needs *Min run speed* unless *Allow from standstill*. No target = leap *Fallback forward* m ahead. Blocked while jetpacking; the jetpack double-tap is suppressed during the leap. A late light attack in a normal jump does what it did before 25f (nothing). Studio phase fields per 1H/2H: Wind-up end, Impact, Hit start/end.
+
+
+**Jetpack plunge (25g):** falling after a boost (not thrusting) + light attack + target in range = plunge from the current height (max height / descent speed caps, toggle *Allow from jetpack fall*). **Feel (25g):** blend-in, run momentum carry, rise ease, apex hang, accelerating descent; strike = heavy hit stop + bonus frames, bigger shake, heavy enemy reaction; landing = shake, pooled dust ring (footstep dust if no VFX set), impact SFX (assign clips), short recovery. **Body weight (standing rule: every combat change tunes DMPlayerBodyWeight):** take-off crouch/pitch, wind-up lean back, landing hip drop + spine pitch, via DMPlayerBodyWeight.AddJumpAttackImpulse; all in Studio > Combat Core > Jump attack with presets.
+
+
+**25h:** *Down swing speed* (1H/2H, default 0.6) slows the strike part (wind-up end -> impact) relative to the wind-up; the descent stretches to keep impact on touchdown (capped by *Max descent time*, past it the swing speeds up). *Swing upper-body bend* (1H 24 / 2H 30 deg) ramps spine/chest forward pitch + *Swing hip drop* through the strike, peak at impact, released over *Bend release* (via DMPlayerBodyWeight.JumpAttackBendDeg/HipDrop, layered on the clip). Impact camera shake now slight by default (hit 0.5 / land 0.3 x heavy shake). Landing SFX defaults: Malbers Heavy Stomp, Malbers Steps/Rock Hit, Audio/Others/Stone Impact (random, pitch 0.8 +/-5%).
+
+
+### Jump attack 1H reference mode (2026-10-25j)
+`jumpAttack1HReferenceMode` (default on, 1H ground leap only; 2H and the jetpack plunge are unchanged):
+- Leap: about 1 body length (`jumpAttack1HLeapDistance` 1.8 m, or the target's landing spot if further) at knee height (`jumpAttack1HArcHeight` 0.5 m).
+- Timing: the clip wind-up is fitted into the ascent (`jumpAttack1HAscentSeconds` 0.32 s). There's no apex hang, so the strike starts AT the apex and runs for `jumpAttack1HSwingSeconds` / 1H Down swing speed (0.5 s at the default of 1.0). The impact frame lands on touchdown.
+- Body weight: the spine arches back through the ascent (`AscentArch` 18 deg), then crunches forward through the strike (`StrikeCrunch` 45 deg, peak at touchdown). On landing the hips drop into a deep squat (`LandHipDrop` 0.30 m; DMPlayerBodyWeight lets this exceed `bodyWeightMaxHipDrop`) with the torso still hunched. That's held for `SquatHold` 0.25 s, then a smooth rise to neutral over `RiseSeconds` 1.3 s.
+- Movement: locked for the hold plus `RecoveryLockFraction` x the rise.
+- Impact: small dust burst (`DustScale` 0.8) and a very brief subtle shake (`LandShakeScale` 0.15, `LandShakeSeconds` 0.12).
+- Studio: Combat > Jump attack. The Subtle/Default/Extreme presets include these fields.

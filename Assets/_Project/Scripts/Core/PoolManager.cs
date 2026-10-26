@@ -35,6 +35,24 @@ namespace Project.Core
             appQuitting = false;
             Application.quitting -= MarkQuitting;
             Application.quitting += MarkQuitting;
+            UnityEngine.SceneManagement.SceneManager.sceneUnloaded -= HandleSceneUnloaded;
+            UnityEngine.SceneManagement.SceneManager.sceneUnloaded += HandleSceneUnloaded;
+        }
+
+        /// <summary>2026-10-25d: scene teardown. Active pooled clones left in DontDestroyOnLoad (outside the pool root) go back to their pools.</summary>
+        private static void HandleSceneUnloaded(UnityEngine.SceneManagement.Scene scene)
+        {
+            if (appQuitting || !Application.isPlaying || poolRoot == null)
+                return;
+            UnityEngine.SceneManagement.Scene ddol = poolRoot.gameObject.scene;
+            PooledInstanceTag[] tags = Object.FindObjectsByType<PooledInstanceTag>(FindObjectsInactive.Exclude);
+            for (int i = 0; i < tags.Length; i++)
+            {
+                PooledInstanceTag tag = tags[i];
+                if (tag == null || tag.SourcePool == null || tag.gameObject.scene != ddol || tag.transform.IsChildOf(poolRoot))
+                    continue;
+                tag.SourcePool.Release(tag.gameObject);
+            }
         }
 
         private static void MarkQuitting()
@@ -102,6 +120,49 @@ namespace Project.Core
             }
 
             Object.Destroy(instance);
+        }
+
+        /// <summary>2026-10-24af: returns every pooled descendant (PooledInstanceTag with a source pool) of root to its pool, so destroying / hiding root does not destroy pooled VFX.</summary>
+        public static int ReleasePooledChildren(Transform root)
+        {
+            if (root == null || appQuitting || !Application.isPlaying)
+                return 0;
+            PooledInstanceTag[] tags = root.GetComponentsInChildren<PooledInstanceTag>(true);
+            int n = 0;
+            for (int i = 0; i < tags.Length; i++)
+            {
+                PooledInstanceTag t = tags[i];
+                if (t == null || t.transform == root || t.SourcePool == null)
+                    continue;
+                Release(t.gameObject);
+                n++;
+            }
+            return n;
+        }
+
+        /// <summary>2026-10-24af: Destroy(root, delay) that first hands pooled children back to their pools (runs on the pool runner).</summary>
+        public static void DestroyAfterReleasingPooledChildren(GameObject root, float delay)
+        {
+            if (root == null)
+                return;
+            if (delay <= 0f || appQuitting || !Application.isPlaying)
+            {
+                ReleasePooledChildren(root.transform);
+                Object.Destroy(root);
+                return;
+            }
+            EnsureRoot();
+            if (runner == null) { Object.Destroy(root, delay); return; }
+            runner.StartCoroutine(DestroyAfterDelayRoutine(root, delay));
+        }
+
+        private static IEnumerator DestroyAfterDelayRoutine(GameObject root, float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            if (root == null)
+                yield break;
+            ReleasePooledChildren(root.transform);
+            Object.Destroy(root);
         }
 
         public static void ReleaseDelayed(GameObject instance, float delay)

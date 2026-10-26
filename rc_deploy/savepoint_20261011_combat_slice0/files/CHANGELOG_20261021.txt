@@ -272,3 +272,225 @@ Fix: new Scripts/Combat/DMVendorImpactAudio.cs; F3DProjectile disabled on our po
 - Stall watchdog (stallWatchdogPauseSeconds 6, stallWatchdogAnimatorSeconds 1.5, stallWatchdogLog): releases stuck locomotion pause / animator speed 0, logs [EnemyStall]. Studio filter updated.
 - [EnemyStuck] soft log now lists overlapping colliders.
 - Backups *.pre20261024ae.
+
+2026-10-24af  Enemy death cleanup + melee slash + ground decal cap
+- PoolManager: ReleasePooledChildren(root), DestroyAfterReleasingPooledChildren(root, delay). Used by EnemyHealth destroyOnDeath (both sites), EnemyDeathRuntimeCleanup.DestroyDeadEnemyAndOrphans, EnemyDisintegrationEffect end of presentation.
+- PooledOneShotVfx.OnDisable: parent-deactivated pooled VFX released next frame via pool runner.
+- EnemyDisintegrationEffect.NotifyDeathPresentationComplete: DMEnemyHitMarks.ClearAll (Died/Respawned clears already existed).
+- DMVolumetricBlood: global ground decal cap (DM_EnemyHitMarkProfile.volumetricGroundDecalCap 1-200, default 24, logGroundDecalCap); Studio Hit Marks presets Subtle 12 / Default 24 / Extreme 60.
+- DMHitMarkStyle.Cut: physical (Gunpowder) melee always stamps a neutral cut (cutSlashMaterial, fallback bulletBurnMaterial, no glow); elemental keeps burn. Toggle meleePhysicalAlwaysCut.
+- Killing blow stamps slash (slashOnKillingBlow, default on).
+- Backups: _AgentBackups\...\*.pre20261024af. Console 0/0. Not committed, not played.
+- 24af carve add-on: DMCarveSettings.colliderFollowsCarvedMesh (Play carves re-cook MeshCollider from carved mesh, overrides keepDedicatedColliderInPlay, primitive colliders on the same object swapped for MeshCollider); carveAmmoSkipsHitMarks (Carve Lab ammo: no mark/burn/molten spot, plain impact VFX only); new DMCarveHeat.cs (cut-face glow via MPB _EmissiveColor + AnimationCurve; pooled capped molten drips DMCarveDrips). Studio Surface Damage: Heat Subtle/Default/Extreme presets. Backups: DMCarvable, DMCarveSettings, DMCombatFx .pre20261024af. Console 0/0.
+
+2026-10-24ag  Carve through-holes + falling chunks (Anthony pt1549u)
+- DMCarveCutter: tunnel cutter (radius + half-length, straight walls, no roughness).
+- DMCarvable: in Play, if the carve ray exits the object within throughHoleMaxThickness, cut a clean tunnel (no rim, no jitter); after each carve, DMCarveChunks.SplitIslands.
+- NEW DMCarveChunks.cs: separated pieces near the cut become pooled Rigidbody chunks (convex MeshCollider, box fallback), hot glow, lifetime + cap (oldest recycled); pieces < chunkMinSize deleted.
+- DMCarveSettings: Through-Holes + Falling Chunks headers, logChunkSplit, ApplyCarveChunkPreset; carveDripIntensity default 2.5 (Heat preset Default 2.5).
+- DMStudioAssetPanel: Chunks Subtle/Default/Extreme row.
+- DMCarveSettings.asset: carveDripIntensity 1747 -> 2.5.
+- Backups: _AgentBackups\...\*.pre20261024ag. Console 0/0.
+
+2026-10-24ah  Remove hot glow on carved faces + chunks, keep molten drips (Anthony pt1551u)
+- DMCarveSettings: carveSurfaceGlowEnabled (default OFF) under "Hot Cut Glow".
+- DMCarveHeat / DMCarveChunks: when off, no _EmissiveColor / MaterialPropertyBlock is applied to carved meshes or chunks; drips unchanged (still use carveGlowColor * carveDripIntensity).
+- Backups *.pre20261024ah. Console 0/0.
+
+2026-10-24ai  Io weather/planetary SLICE 1: sky + orbit (Anthony-approved plan)
+- NEW Scripts/World/Sky/DM_IoSkyProfile.cs (+ Resources/World/DM_IoSkyProfile.asset): sun, eclipse (default 10 h stylized, realistic 1.6 h preset, fade, sun remaining, ambient multiplier, sun parks behind Jupiter), Jupiter az 200 / el 32 / 19.5 deg / sky distance / spin 7 h, Jupiter-shine, small-moon periods, Europa/Ganymede/Callisto (period ratio 2/4/9.43, km radius + diameter, size mult, phase, procedural look). Presets Subtle/Default/Extreme + Realistic eclipse.
+- NEW DMIoSkyController.cs: auto-spawned in Play (scenes with Jupiter). Drives Day DirectionalLight as the sun on the 30 h clock (noon 15:00 eclipse), disables other directional lights (BOTD sun), disables Jupiter vendor Rotate/PlanetRotate, moves Jupiter body to fixed sky distance at true apparent size, small moons orbit on the Io clock, creates Europa/Ganymede/Callisto, Jupiter-shine light, eclipse ambient Volume (IndirectLightingController). Runtime only, restored on exit, nothing saved.
+- NEW DM_IoSkyBody.shader (DM/IoSkyBody): HDRP ForwardOnly sky-body shader, sun-lit phases day or night, procedural moons, limb darkening, eclipse rim.
+- NEW Editor/DMIoSkyEditorMenu.cs: Tools/Dark Matter Genesis/World/Io Sky/Ensure Sky Profile, Add Sky Controller To Open Scene (optional, he saves).
+- DMIoClock: HourOfDayContinuous, DayFraction, TotalHoursContinuous, HoursPerDayValue.
+- Studio: World > Sky & Orbit subtab + preset row (DMStudioRegistry, DMStudioAssetPanel).
+- Backups *.pre20261024ai. Console 0/0.
+
+2026-10-24aj  Realtime indirect light (SSGI, no baking) - fixes black shaded sides
+- HDRP: no asset change needed. All 5 quality assets (Performance/Balanced*/Quality/High/Ultra) already supportSSGI; default camera Frame Settings already SSGI+SSAO on (Deferred). PlanetCamera (inactive) has custom FS with SSGI off - untouched.
+- New Resources/World/DM_RealtimeIndirect.asset (VolumeProfile): SSGI on/RayMarching/Medium, VisualEnvironment ambient Dynamic, IndirectLightingController diffuse 1.5 refl 1, Exposure AutoHistogram (inactive by default).
+- New Scripts/World/Sky/DMRealtimeIndirect.cs: auto-spawns in Play (DDOL) a global Volume (runtime clone; priority 90 > BOTD 0) and removes it on exit. Overrides BOTD Environment ILC 0.5.
+  Owns indirect diffuse/reflection = multiplier x lerp(1, eclipseAmbientMultiplier, EclipseFactor); DMIoSkyController mutes its eclipse ambient volume while DMRealtimeIndirect.IsDriving (no fighting).
+- DM_IoSkyProfile: "Realtime Indirect Light" settings (enable, priority, SSGI on/quality, diffuse/reflection multipliers, ambient Dynamic, exposure override/histogram/limits/compensation) + ApplyIndirectPreset. Studio World > Sky & Orbit: Indirect Subtle/Default/Extreme buttons.
+- New Editor/DMRealtimeIndirectEditorMenu.cs: Tools/Dark Matter Genesis/World/Lighting/Ensure Realtime Indirect Profile, Add Realtime Indirect Volume To Open Scene (marks dirty, no save).
+- Backups: _AgentBackups\*.pre20261024aj. Console 0/0.
+
+2026-10-24ak  Io post processing (BOTD copy) + realtime indirect fixes
+- Root cause (no bounce in Play): DMRealtimeIndirect gated on GameObject.Find("Jupiter"); Jupiter is inactive in v1.6.6 at load, so the volume weight stayed 0 (cached per scene). Gate removed.
+  Also BOTD crushes indirect: BOTD Post Processing ILC diffuse 0.34, BOTD Environment ILC 0.5 (both prio 0). 24aj also forced SSGI quality Medium, below BOTD Custom (full res, 32 steps).
+  Some DMTurretPlayerCamera instances have Volume Layer Mask 0 (no volumes at all) - runtime now adds the volume layer, restored on exit.
+- New Resources/World/DM_IoPostProcessing.asset = copy of Gaia BOTD Post Processing (original untouched): ILC diffuse 1.5 / refl 1.2, SSGI Custom 64 steps full-res denoised, ambient Dynamic, SSAO 0.9 / direct 0.15, + Shadows/Midtones/Highlights warm shadow lift 0.06. Tonemapping/LUT/exposure/bloom/WB/curves kept.
+- DMRealtimeIndirect: uses the Io profile (runtime clone, priority 90); live knobs: SSGI steps/full-res/denoise/half-res denoiser/radius/thickness, shadow floor lift+tint, PBS ground bounce tint (only groundTint overridden), SSAO, camera mask fix; logs its state once.
+- DM_IoSkyProfile: new fields + Indirect Subtle/Default/Extreme rebalanced (Default applied). Menu renamed: World/Lighting/Ensure Io Post Processing Profile (BOTD copy). DM_RealtimeIndirect.asset (24aj) now unused.
+- Backups .pre20261024ak. Console 0/0 (one unrelated pre-existing immutable-package warning about HDRP Outdoors RayTracing Profile cleared).
+
+2026-10-24al  Io dynamic range: tame sun-facing blow-out + lift black shade
+- Root causes: (1) exposure was effectively fixed ~EV 6.6 (BOTD UsePhysicalCamera ISO200 1/200 f16 + comp 8.01) while the sun is ~9400 lux -> sun-facing slopes blow out; (2) shaded sides facing the camera when looking toward the sun get no bounce (SSGI cannot see sun-lit ground behind the camera; ambient probe alone is weak); (3) ground tint very saturated + ILC 1.5 + bloom threshold 0 amplified lit ground; low sun had no horizon dimming.
+- DM_IoPostProcessing (copy only; BOTD untouched): Exposure Automatic Histogram EV 6.4-9, comp 0, histogram 40-90%, center-weighted, adapt 2/1.5; Bloom 0.3 thr 0.5; ILC 1.2/1.0. Tonemapping External LUT (ACES fallback) + WB kept.
+- DMIoSkyController: low-sun horizon dimming (20 deg band, min 0.5), sun colour desaturation near horizon, lux cap 8000; original colour restored on exit. New "DM Io Shade Fill": shadowless, no-specular, no-volumetric directional from the anti-sun side (-10 deg, 700 lux warm), scaled by sun elevation + eclipse.
+- DM_IoSkyProfile knobs: sunHorizonDimDegrees/MinFactor/Desaturate, sunMaxLux, shadeFill enabled/lux/elevation/colour, exposure histogram %/adapt speeds, bloom intensity/threshold; ground tint desaturated (0.45,0.36,0.24); shadow lift 0.08. Indirect Subtle/Default/Extreme presets updated, Default applied.
+- Character: body uses DM/Master (HDRP Lit GBuffer passes, receives ambient/SSGI normally); dark back = same missing bounce, fixed by fill.
+- Backups .pre20261024al. Console 0/0.
+
+[24an] Subtle AAA polish (Io, DM copies only): SSAO radius 0.25->0.5, maxPx 16->24, intensity 0.9->1.05, direct 0.15->0.22; contact shadows length 0->0.12 + sun contact shadows on; MicroShadowing new 0.5; cascade split0 0.076->0.06 (max dist 150 kept); fog MFP 2000->1700 (runtime override only); ColorAdjustments contrast new 5; SplitToning new 0.15 cool/warm; vignette 0.201->0.22. New AAA Polish section in DM_IoSkyProfile + Studio Polish Subtle/Default/Extreme buttons. Runtime via DMRealtimeIndirect.ApplyPolish. Backups .pre20261024an. 24am partial edits reverted.
+
+[24ao] Start Hour: DM_IoSkyProfile.startHour (0-30 Io h, default 6 = existing DM_IoClockProfile start 06:00). DMIoSkyController.OnEnable -> DMIoClock.ApplyStartHourOnce (once per Play; skipped if ApplySave restored time; also used by ResetToNewGame). Debug Hour Override >=0 still wins. Studio Sky & Orbit buttons: Dawn 6, Morning 7.5, Noon 15, Dusk 24, Eclipse/Night 15.5. Live edit-mode preview not added (sky controller is Play-only). Backups .pre20261024ao.
+
+[24ap] Sky asset reverted to Indirect/Polish Default (runtime edits: ssao 1.408->1.05, direct 0.252->0.22, ILC diffuse 1.73->1.2, refl 1.535->1.0, bloom 0.329->0.3, vignette 0.28->0.22, split-tone shadows blue->default); startHour kept 10.2. Fog MFP 1700->3000 (presets 3600/3000/2200). New Eclipse Readability Floor (minAmbient 0.35, fill 40 lux, exposure limitMin 5.2 at full eclipse; presets 0.25/25/5.8, 0.35/40/5.2, 0.55/100/4.2) + Studio buttons. eclipseFadeHours 1.5->2.5. Backups .pre20261024ap.
+
+[24aq] Eclipse fix: sun occluded by Jupiter by angular separation (r=diam/2, soft 0.6 deg) -> direct sun & sun flare x visibility; sun warp keeps sun 1.5 deg inside limb (was limb+0.6). Jupiter rim ring biased to sun side (_RimSunBias), grows near limb; ring light (jupiterShine + ringLightLux*ring); ring flare. Non-sun directional lens flares disabled (BOTD clone flare, occlusion off). SSGI off when eclipse>0.6 (temporal trails). Eclipse exposure floor EV 5.2->2 (presets 3/2/1). Studio Ring Subtle/Default/Extreme. Backups .pre20261024aq.
+
+[24ar] Eclipse trails: sun lux floored at 0.01 (never exactly 0); main camera Stop NaNs on while Io sky runs (restored on release); sun flare x horizon fade, ring flare only within 15% of limb (was drawn at sun pos = Jupiter centre). HUD 12:00 AM = Io hour 12 (AM/PM split at 15) = mid-eclipse; Start Hour worked. Root cause of persistent trails not confirmed (needs Play check). Backup .pre20261024ar.
+
+[24as] Ghosting (also Edit-mode Scene view): prime suspect BOTD Environment VolumetricClouds (enabled, temporalAccumulation 0.811, shadows on) - only temporal effect drawn over sky pixels. New Editor/World/DMIoAntiGhostVolume.cs: hidden HideAndDontSave global volume pri 95 with VolumetricClouds.enable=false (Edit+Play, no scene/BOTD edit). Toggle DM_IoSkyProfile.disableVolumetricClouds (default on). Backup .pre20261024as.
+
+2026-10-24au: DM_IoNightSky + Io aurora. New DM_IoNightSky.shader (DM/IoNightSky: additive transparent dome, ZWrite Off, no motion vectors/temporal) + DMIoNightSky.cs (runtime DontSave dome, Play only, fades by sun elevation/EclipseFactor, stars rotate with DMIoClock). DM_IoSkyProfile: Night Sky + Aurora fields, ApplyNightSkyPreset/ApplyAuroraPreset. Studio Sky & Orbit: Night sky / Aurora Subtle/Default/Extreme rows. No code touches PBS includeSunInBaking (verified). Backups .pre20261024au.
+
+2026-10-24av: Eclipse shadows. HDRP draws one directional shadow; in eclipse (e>0.5, sun hidden) DMIoSkyController moves it from the sun (0.01 lux = invisible shadow) to DM Jupiter Shine (Soft, 512 res, dimmer eclipseShadowStrength 0.6, angular eclipseShadowSoftnessDeg 6). Sun shadow mode restored on exit/release. Profile: eclipseShadowsEnabled (default on) + Studio toggle. Backups .pre20261024av.
+
+2026-10-24aw: Jupiter Height (jupiterElevationDeg, -10..90, default 32) + Sky Rotation (jupiterAzimuthDeg, 0..360, default 200) relabeled/extended (no duplicates) + Studio sliders. Everything derives per-frame from J (sun path/eclipse, moons, chunks under Jupiter, ring/shine light + eclipse shadows, rim glow). Night sky stars + aurora dome yaw follow Sky Rotation (offset from 200). Elevation clamped 89.5 internally. Backups .pre20261024aw.
+
+2026-10-24ax: Rock Blend Lit (+Forward Only) 'Suppress AO at base blend' (_GRB_BaseAOSuppress default 1, band x3 blend height, strength 1): material AO + specular occlusion -> 1 in the base band (overrides Contact AO Keep 0.3 on 186 mats), forward variant also cancels SSAO there. New props so the 288 mats pick up defaults. Backups .pre20261024ax.
+
+2026-10-24ay: Clouds. DMIoAntiGhostVolume (prio 95) was forcing Volumetric Clouds off; disableVolumetricClouds now default/asset OFF (ghosting was a planet/space material). Volume also cleans up orphan hidden copies (3 had leaked over domain reloads). Cloud Layer: no CloudLayer override in any profile and BOTD Environment VisualEnvironment cloudType=CloudLayer has override unticked -> not applied (Anthony's asset, not edited). Backups .pre20261024ay.
+
+2026-10-24az: GenesisRockBlendGUI: new 'Base AO Suppression' group (after Contact AO) draws the 24ax props (custom GUI only drew listed groups). Backup .pre20261024az.
+
+2026-10-24ba: Rock Blend (both variants) _GRB_FadeNoTaaSmooth (default 1): on cameras without TAA (game uses FXAA) Fade Clip no longer clips (dither/hard edge = jagged depth -> SSAO crease); base stays opaque with the terrain-colour fade. Without-TAA mode setting untouched. Backups .pre20261024ba.
+
+2026-10-24bc: Reverted 24bb (band split) shader edits from .pre20261024bb backups; kept 24ba _GRB_FadeNoTaaSmooth but default 0 (clip + dither restored). Shadow-pass Fade Shadow Lift block untouched by 24ax/az/ba.
+
+2026-10-24bd: Rock base line: shader Fade Shadow Lift path unchanged since Oct 3 (diffed). Turned DM_IoSkyProfile.sunContactShadows OFF (24an had forced sun contact shadows on; screen-space contact shadows ignore the shadow-pass lift and darken the dithered base). Backup .pre20261024bd.
+
+2026-10-25a: Menu roots normalised to Tools/Dark Matter Genesis/ (50 MenuItems in 34 files: Dark Matter Genesis/* and Tools/Dark Matter/* moved under Tools/Dark Matter Genesis/; Tools/Genesis PCG Rock Creation/* -> .../PCG Rocks/; Tools/Carve/* -> .../Carve/; Dark Matter/Scene/* -> .../Scene/). CreateAssetMenu/AddComponentMenu/GameObject menus unchanged. Backups .pre20261025a. Dev Manual added: Assets/_Project/Documentation/DevManual/ (generator Tools/DevManual/gen_devmanual.py, notes Tools/DevManual/notes/). CONVENTION: every CHANGELOG entry ends with 'Docs: <DevManual page(s)>' or 'Docs: none'.
+  Docs: 00-Index.md, 15-Menu-Index.md, all section pages
+
+2026-10-25b: Gamepad Right Stick Sensitivity (0.1-5, default 1; PlayerPrefs settings.game.gamepadLookSensitivity) + Invert Look Y (Gamepad) (settings.game.gamepadInvertY). GameSettings (Set/ReloadGamepadLook), applied in PioneerShooterMeleeInput right-stick look, UITK Settings > GAME OPTIONS slider (0.00x) + toggle, Genesis Studio Controls 'Gamepad Look' slider + presets Slow 0.5 / Default 1 / Fast 2 / Very Fast 3.5 / Max 5. Backups .pre20261025b. Player walk jitter: read-only analysis, no fix applied.
+  Docs: 09-Controls.md (regen pending)
+
+2026-10-25c  Camera follow in LateUpdate (clean walk-jitter fix)
+- vThirdPersonCamera (Invector): static DMFollowInLateUpdate; FixedUpdate skips movement when ON, DMLateTick() runs the same step per frame; smoothing uses Time.deltaTime when ON (fixedDeltaTime when OFF; SmoothDamp smoothTime unchanged).
+- New DMCameraLateFollow (order 600, after input 500, before collision overlay 10000) added to the camera by the DMPlayerHitboxRig poll, which also syncs the flag live.
+- DM_CombatCoreProfile.cameraFollowInLateUpdate (default ON); Studio Combat Core lists it before Camera Fixed Step Interpolation, which is ignored while ON.
+- PioneerShooterMeleeInput: look input read every frame when ON (no dropped mouse deltas); right stick scaled by deltaTime/fixedDeltaTime to keep 60 Hz speed.
+- Profile interpolation value not changed. Backups .pre20261025c.
+Docs: Dev Manual 03-Combat / 09-Controls (regenerate later with Tools/DevManual/gen_devmanual.py).
+
+2026-10-25d (pt1612u) Sidestep + impact cleanup + Slice 4 target switch (no Play, no commit)
+- Sidestep: DMPlayerQuickStep now double-tap A/D = sidestep, double-tap S = backstep (quickStepKbmTapCount 2). Pad: stick left/right/back + HOLD A past quickStepPadHoldSeconds (0.15) with deflection >= quickStepPadDeflection (0.6). Tap A still jumps (deferred to release only while stick is deflected; jump never fires first). Jetpack gesture untouched. Legacy triple flick behind quickStepPadTripleFlick (off).
+- DMDashController skips double-tap A/D/S while quickStepOwnsKbmDoubleTap is on (dash keeps double-tap W, B, Dash action).
+- PioneerShooterMeleeInput.JumpInput: deferral hook before the jetpack check.
+- InputSystem_Actions: doc-only "Sidestep" action (A/D MultiTap 2, pad South Hold 0.15); code polls devices.
+- Cleanup: PooledInstanceTag.SpawnFrame; DMEnemyHitMarks death releases all pooled descendants except same-frame killing-blow FX; PoolManager sceneUnloaded releases active pooled clones left in DDOL outside the pool root.
+- Slice 4: DMMeleeAttackFacing stick retarget gated by meleeTargetSwitchEnabled; on switch a snap-turn (meleeSwitchSnapTurnSpeed 900, MaxDegrees 120, Seconds 0.18) bypasses the wind-up gate and resets the swing budget.
+- Docs: Studio > Combat Core: Player quick step fields + Sidestep presets; target switch fields + Target switch presets. Studio > Controls: Sidestep/backstep help box.
+- Docs: Backups _AgentBackups\<rel>.pre20261025d (12 files).
+
+2026-10-25e (pt1614u) Directional dash input (no Play, no commit)
+- KBM dash = hold WASD (diagonals) + Left Alt (existing Dash action, no direction = forward). Double-tap W/S/A/D dash removed from DMDashController (double-taps = sidestep/backstep).
+- Pad: PioneerPlayerInputBinder Dodge(B) with left stick >= dashPadStickDeadzone (0.4) waits dashPadHoldSeconds (0.18): held = directional dash (stick dir), released = dodge/roll. Stick centred = instant dodge as before. Pad B MultiTap+Hold Dash binding removed from InputSystem_Actions.
+- DM_CombatCoreProfile: dashPadHoldEnabled / dashPadHoldSeconds / dashPadStickDeadzone + ApplyDashInputPreset.
+- Docs: Studio Combat Core > Directional dash input (+ presets); Studio Controls help updated; Dev Manual 09-Controls movement table, 03-Combat movement note. Backups .pre20261025e (9 files).
+- 25e fix: PoolManager sceneUnloaded sweep uses the non-obsolete FindObjectsByType overload (cleared 2 CS0618 warnings from 25d). Console 0/0.
+
+=== 2026-10-25f  Jump melee attack ===
+- NEW Scripts/Combat/DMPlayerJumpAttack.cs: airborne light attack + drawn melee = leap to target (lock / nearest in front cone, range min..max), arc via kinematic MovePosition, land stopDistance in front, snap-face; clip speed synced so down swing hits on landing; no target = strike in place. Cooldown + stamina. Added at runtime by PioneerPlayerInputBinder.
+- PioneerShooterMeleeInput.UpdateDrawnMeleeCharge: jump-attack hook (owns light-attack input while active).
+- NEW Editor/Combat/DMJumpAttackAnimatorSetup.cs (menu Tools/Dark Matter Genesis/Combat/Build Jump Attack States); ran once: player controller FullBody/Attacks + JumpAttack1H (1HandSmallWeaponJumpAttack) / JumpAttack2H (JumpAttack2HandMelee), vMeleeAttackControl dt=JumpAttack MeleeWeapon rec=2, speed param DMJumpAttackSpeed, EXIT@0.9. Controller backed up.
+- DM_CombatCoreProfile: jumpAttack* fields + ApplyJumpAttackPreset; Studio filter + Subtle/Default/Extreme + rebuild button.
+- Docs: DevManual 03-Combat.md "Jump attack" section.
+
+=== 2026-10-25g  Jump attack flow rework (run + Jump & Attack) ===
+- DMPlayerJumpAttack: start needs Jump + light attack within jumpAttackComboWindow (either order), grounded or in that jump's take-off, run speed >= jumpAttackMinRunSpeed (or allow-standstill), not jetpacking. Leap starts at the press; asymmetric arc with apex at clip wind-up end; clip speed puts the impact frame on touchdown; speed reset to 1 after landing. No target = leap jumpAttackFallbackForward ahead. Late air attack = pre-25f behaviour.
+- PioneerShooterMeleeInput.JumpInput: InterceptJump before the jetpack/normal jump (consumes the press, swallows jumps during the leap).
+- DMJetpackInputBridge: SuppressGestureFor() so the jump attack never feeds the double-tap.
+- DM_CombatCoreProfile: jumpAttackComboWindow, MinRunSpeed, AllowFromStandstill, MinAirTime, FallbackForward, 1H/2H WindupEnd + Impact; hit-window defaults 1H 0.38-0.58, 2H 0.5-0.7; presets updated; Studio filter.
+- Docs: DevManual 03-Combat.md "Jump attack flow (2026-10-25g)".
+- 25g additions: jetpack-fall plunge (jumpAttackAllowFromJetpackFall, PlungeMaxHeight/DescentSpeed/ArcHeight); feel = blend-in, momentum carry (Hermite), rise ease, apex hang, descent power, land recovery; DMMeleeHitStop heavy + jumpAttackHitstopBonusFrames; DMCombatCameraShake hit/land scale; DMEnemyHitReaction heavy path (jumpAttackHeavyReaction); pooled landing dust (jumpAttackImpactVfx, fallback footstep dust) + jumpAttackImpactSfx; DMPlayerBodyWeight.AddJumpAttackImpulse (take-off crouch, wind-up lean, landing drop/pitch). All in Studio + presets.
+- Docs: DevManual 03-Combat.md jetpack plunge / feel / body weight note.
+
+=== 2026-10-25h  Jump attack: down swing speed, swing bend, landing SFX, slight shake ===
+- DMPlayerJumpAttack: two-phase clip speed (wind-up / down swing x jumpAttack1H/2HDownSwingSpeed, default 0.6), descent stretched to keep impact on touchdown, capped by jumpAttackMaxDescentTime; swing bend curve (wind-up end -> impact, peak at impact, released after touchdown).
+- DMPlayerBodyWeight: JumpAttackBendDeg (spine/chest/pelvis forward pitch layered on the clip) + JumpAttackHipDrop (hip spring target).
+- DM_CombatCoreProfile: DownSwingSpeed 1H/2H, MaxDescentTime, SwingBend 1H/2H, SwingHipDrop, SwingBendRelease; shake defaults hit 0.5 / land 0.3 (durations clamp 0.3-1.5x); presets updated; Studio filter.
+- Profile asset: jumpAttackImpactSfx = Malbers Heavy Stomp, Malbers Steps/Rock Hit, Audio/Others/Stone Impact (no project SFX mixer group exists; played via GameAudioManager.PlayWorldSfxPitched).
+- Docs: DevManual 03-Combat.md 25h note.
+
+=== 2026-10-25i  Journal controller schema (pt1626u, t1627u, t1628u) ===
+- Pad: tabs focus by D-pad/stick, A opens (toggle tabsRequireA). Hotbar slots in the Journal are now pad-focusable.
+- Inventory: A tap unchanged; HOLD A = ghost pick-up, D-pad/stick moves across inventory + hotbar, release A/X drops with snap rule (under ghost, else nearest empty within snapRadiusSlots, else returns); target highlight; B cancels.
+- X tap = Use (feedback click if not usable); HOLD X = item context menu, pad nav confined to the menu, focus returns to slot on close.
+- Context menu: new "Move" button -> ghost move mode (pad: A/X drops; mouse: follows cursor, LMB drops, RMB/Esc cancels).
+- New DMJournalPadProfile (Resources/UI/Controls) + Studio Controls > Journal Controller with Subtle/Default/Extreme presets.
+- Files: DMUiJournalGamepadNav.cs, DMUiToolkitMenus.PadMove.cs (new), DMJournalPadProfile.cs (new), DMUiToolkitMenus.cs/.InventoryDrag.cs/.InventoryContext.cs, GameplayKeyboardShortcuts.cs, DMStudioRegistry.cs, DMStudioAssetPanel.cs. InputSystem_Actions unchanged (raw Gamepad reads, journal-only).
+- Docs: DevManual 09-Controls.md "Journal controller schema (2026-10-25i)"; Studio subtab help text.
+
+=== 2026-10-25j  1H jump attack retune to reference (Anthony) ===
+- New jumpAttack1HReferenceMode (default on): 1H ground leap. Ascent = wind-up with back arch, strike starts AT the apex (no hang), ~0.5 s overhead swing, impact on touchdown. Leap ~1 body length (1.8 m, or the target's spot), arc at knee height (0.5 m).
+- Body weight: ascent back arch 18 deg, then forward crunch 45 deg through the strike. Landing squat hip drop 0.30 m (the BodyWeight hip clamp now allows the jump attack's value) with the torso hunched, held 0.25 s, then a smooth 1.3 s rise. Movement locked for the hold + 60% of the rise.
+- Impact: small dust (0.8) and a brief subtle shake (0.15 x, 0.12 s) for 1H.
+- 1H Down swing speed kept: in reference mode swing = 0.5 s / speed, default 1.0 (profile asset set to 1.0). The legacy 25h windup lean kick is skipped in reference mode. 2H and the jetpack plunge are unchanged. Clip kept (Medievil JumpAttack1H), fitted by speed.
+- New fields in Studio Jump attack + Subtle/Default/Extreme presets.
+- Files: DMPlayerJumpAttack.cs, DM_CombatCoreProfile.cs (+ .asset 1H down swing speed), DMPlayerBodyWeight.cs (hip clamp), DMStudioProfileSectionFilter.cs.
+- Docs: DevManual 03-Combat.md "Jump attack 1H reference mode (2026-10-25j)".
+
+=== 2026-10-25k  Journal pad: A opens tabs, content nav, focus highlight (pt1632u-pt1635u) ===
+- Cause: pad activation sent a synthetic ClickEvent inside a using-block, which disposed the event (and returned it to the pool) before UITK could dispatch it, so OnTabClicked never ran. The tab-step auto-open used the same path, which is why the tabs never switched. Submit also read only Gamepad.current.
+- Fix: tabs and sub-tabs open directly (PadActivateTabOrSubtab -> OpenTab, refactored out of OnTabClicked). Other synthetic clicks are no longer disposed early. Face buttons are read from the active pad.
+- Navigation: Pet slots and Companion rows are now pad-focusable. Scroll views follow focus. Pad B in the content returns to the open tab (GameplayKeyboardShortcuts back path).
+- Highlight: inline cyan border plus 1.05 scale on the focused element. New DMJournalPadProfile fields focusColor/focusBorderWidth/focusScale, also in the presets.
+- Files: DMUiJournalGamepadNav.cs, DMUiToolkitMenus.cs, DMJournalPadProfile.cs, GameplayKeyboardShortcuts.cs.
+- Docs: DevManual 09-Controls.md "Journal pad fixes (2026-10-25k)".
+
+2026-10-25l  1H jump attack not firing / exit slide (Grok Bot)
+- Root cause: combo window only stamped the jump press inside InterceptJump, after quick-step pad deferral; and the jetpack tap from the same press set UsedJetpackThisAir, so TryStart rejected silently -> normal hop + normal horizontal combo slash. Exit: 0.15 s exit crossfade + motor input/velocity released after landing -> slide then snap.
+- Fix: DMPlayerJumpAttack.NoteJumpPress (raw press, before deferral/jetpack); jetpack only blocks when boosting outside the window; nested-state hash fallback; leap cancels isJumping; recovery zeroes input + horizontal velocity every frame; JumpAttack1H/2H exit 0.82/0.4 s, ->Idle 0.9/0.3 s (controller + DMJumpAttackAnimatorSetup). TryStart logs rejection reasons; jumpAttackLog turned ON in DM_CombatCoreProfile for diagnosis.
+- Files: DMPlayerJumpAttack.cs, PioneerShooterMeleeInput.cs, DMJumpAttackAnimatorSetup.cs, Invector@ShooterMelee_Jetpack.controller, DM_CombatCoreProfile.asset (log flag). Backups .pre20261025l.
+- Docs: 03-Combat.md unchanged (behaviour per 25j spec); see this entry.
+
+2026-10-25m  Journal pad input never reached nav (Grok Bot)
+- Root cause: DMUiToolkitInputHost.Update returned early whenever a menu was open and only called DMUiJournalGamepadNav.Tick for Loot/Crate, so with the Journal open no pad nav / A / B / highlight code ran at all (25k code was compiled but never executed).
+- Fix: Tick runs every frame while menus are open (Tick self-resolves root; returns on loading overlay). New DMJournalPadProfile.padDebugLog (default ON): logs [JournalPad] input A/B/nav + pad, scheme, root, focus, and [JournalPad] focus -> element.
+- Files: DMUiToolkitInputHost.cs, DMUiJournalGamepadNav.cs, DMJournalPadProfile.cs. Backups .pre20261025m.
+- Docs: 09-Controls.md unchanged; padDebugLog shows in the Journal Controller Studio tab (profile field). Turn off after verifying.
+
+2026-10-25n  Journal pad feel + 1H jump attack physicality (Grok Bot)
+- Journal: skipping = our own D-pad/left-stick poll stepping on top of the native UI Navigate (InputSystemUIInputModule). Now native Navigate (right stick + D-pad) is the single source; left stick masked on UI Navigate. DMJournalPadProfile: navUseLeftStick (off), navDirectPoll (off), navStickDeadzone 0.6, navStickRearm 0.3 (return-to-center), navInitialDelay 0.5, navRepeatRate 0.25 (applied to the UI module), Subtle/Default/Extreme presets. Ghost move clamped to slots whatever moves focus.
+- Jump attack: asset 1H windupEnd was 0.95 (> impact 0.5) -> clip ran at 3.7x (~0.6 s move); set 0.27 + code sanity clamp. Clip root motion was live during the scripted leap (lockAnimMovement=false) -> 3-4 body-length head-high leap; now locked during leap + recovery (no landing slide). Post-impact clip slowed so it spans squat hold + rise (no snap upright). Body-weight jump bend applied about the character right axis per bone (was bone-local -> hard right lean on Kade mixamorig). Defaults ascent 0.38, swing 0.55, rise 1.4 (asset + Default preset).
+- Files: DMUiJournalGamepadNav.cs, DMJournalPadProfile.cs, DMPlayerJumpAttack.cs, DM_CombatCoreProfile.cs/.asset, DMPlayerBodyWeight.cs. Backups .pre20261025n.
+- Docs: 09-Controls.md / 03-Combat.md not updated; this entry is the record.
+
+2026-10-25o  Stars behind Jupiter/moons + live, persistent sky settings (Grok Bot)
+- Cause: DM/IoSkyBody (Jupiter, moons) is a ForwardOnly opaque with no depth-prepass pass, so the additive night dome (DM/IoNightSky, Transparent, ZTest LEqual) was not reliably occluded by it; the dome also sat at 0.9 x far = exactly the far-side moon distance (1.2 x 0.75 far) -> z-fight.
+- Fix: analytic occlusion - DMIoSkyController pushes Jupiter + Galilean moon discs (_DMSkyOcc dir + angular radius) every camera; the night shader masks stars + Milky Way inside them (aurora unaffected). Dome moved to 0.98 x far. New DM_IoSkyProfile fields: starsBehindSkyBodies, starOcclusionMarginDeg, starOcclusionSoftDeg, nightDomeFarFraction (in Night sky presets).
+- Live/persistent: sky controller rebuilds when structural fields change (Jupiter name, body shader, moon list, other-moon material); DMProfilePlayModeSaver now snapshots DM_IoSkyProfile + DMIoClockProfile on Play exit and writes them back + SaveAssets.
+- Also: DMUiJournalGamepadNav FindFirstObjectByType -> FindAnyObjectByType.
+- Files: DM_IoSkyProfile.cs, DM_IoNightSky.shader, DMIoNightSky.cs, DMIoSkyController.cs, DMProfilePlayModeSaver.cs, DMUiJournalGamepadNav.cs. Backups .pre20261025o.
+- Docs: this entry.
+
+[25o addendum] Edit-mode live sky preview
+- DMIoSkyController + DMIoNightSky now [ExecuteAlways]; in edit mode they run as a scene-safe preview: HideAndDontSave sky root, Jupiter is a DontSave clone (scene Jupiter hidden via non-serialized forceRenderingOff), scene sun/RenderSettings/lights/camera untouched; Destroy->Kill (DestroyImmediate in edit).
+- New Editor/World/DMSkyEditPreview.cs: spawns a hidden preview host when the scene has no controller; tears down before scene save, scene close, Play and assembly reload; auto-saves dirty DM_IoSkyProfile/DMIoClockProfile.
+- DM_IoSkyProfile: editPreviewEnabled (true), editPreviewHour (15.5, -1 = clock). Orbit time advances only in Play.
+- Studio World > Sky & Orbit: Edit-mode Preview toggle, Preview Hour slider + Dawn/Eclipse/Night buttons (Undo + SetDirty + save).
+- Docs: CHANGELOG only. Backups .pre20261025o.
+- [25o dome] Star dome stays camera-centred and now grows past the farthest corner of all active terrain tiles + margin (cached 1 s), capped at 0.995 x far clip (Studio shows radius / world diagonal / CAPPED). Profile: nightDomeCoverTerrain, nightDomeTerrainMargin (500 m), nightDomeMinRadius. Studio Sky & Orbit: Star Dome sliders + Subtle/Default/Extreme. Preview lights cast no shadows (fixed HDRP cascade-atlas spam in edit preview).
+
+[25p] Aurora variable height coverage
+- DM_IoNightSky.shader: aurora band now min/max elevation (deg) with Fbm-varied top/bottom edges along azimuth, azimuth span + centre heading (soft edges), top/bottom softness, slow height drift/bob; colour gradient follows the varied band. Aurora now also masked by the sky-body occlusion (behind Jupiter/moons), like the stars.
+- DM_IoSkyProfile: auroraMinElevDeg, auroraMaxElevDeg, auroraHeightVariationDeg, auroraHeightNoiseScale, auroraBottomSoftDeg, auroraTopSoftDeg, auroraAzimuthSpanDeg, auroraAzimuthCenterDeg, auroraAzimuthEdgeSoftDeg, auroraHeightDriftSpeed, auroraHeightBobDeg; included in Aurora Subtle/Default/Extreme. (auroraHeight now unused, kept for compatibility.)
+- DMIoNightSky pushes them per frame (Play + edit preview). Studio World > Sky & Orbit > Aurora: "Aurora Height Coverage" sliders (Undo + SetDirty + auto-save).
+- Docs: CHANGELOG only. Backups .pre20261025p.
+- [25p sun] Cause: 25o edit preview deliberately skipped the scene sun (sun=null), so Preview Hour/debug override moved sky/bodies but not the light. Now the preview drives the scene directional sun with cached rotation/intensity/colour/shadows restored on Release (before save/close/Play/reload), no Undo/SetDirty. Precedence fixed: debug hour override > Preview Hour > clock (Preview Hour previously overrode the debug override). Studio Sky & Orbit: preview status line (active, hour + source, sun driven yes/no).
+- [25p flare] Cause: the new edit-preview sun drive (and its early return) never picked up the sun's LensFlareComponentSRP, so the flare stayed at full scene intensity with whatever occlusion the asset had, streaking through terrain at night/eclipse. Now (Play + preview): flare intensity x elevation fade (0 below min elevation, smooth over fade deg) x eclipse fade x horizon fade; ring flare during eclipse optional (default 0); depth occlusion forced from profile (useOcclusion, occlusionRadius, sampleCount), originals cached/restored on Release; preview copies have flares disabled. Profile: flareEnabled, flareUseOcclusion, flareOcclusionSamples, flareIntensityScale, flareMinElevationDeg, flareElevationFadeDeg, flareEclipseFade, flareRingDuringEclipse, flareOcclusionRadius + ApplyFlarePreset. Studio Sky & Orbit: Sun Flare section + Subtle/Default/Extreme.
+
+[25q] Day/night fraction + night time scale
+- DM_IoSkyProfile.dayFraction (0.2-0.9, default 0.5 = identity) + static RemapDayHour: piecewise-linear clock->sun-path hour about noon (hpd/2) so the above-horizon half spans dayFraction of the day. DMIoSkyController.WarpSunHour applies it before the eclipse warp and scales the eclipse half-length by the noon slope so the eclipse keeps its clock-hour length and stays centred; EclipseFactor still from clock hours. Everything keyed on sun elevation (stars, aurora, flare, night lighting, Jupiter-shine) follows automatically; moons/stars rotation stay on the clock.
+- DMIoClockProfile.nightTimeScale (0.1-5, default 1 -> exact identity) + nightTransitionDeg (4); DMIoClock.NightFactor set by the sky controller from sun elevation, Tick multiplies deltaTime by Lerp(1, scale, NightFactor).
+- Studio: new DMStudioDayNight block in World > Sky & Orbit and Io Clock: Day Fraction (+ Short 0.35 / Subtle 0.55 / Default 0.5 / Long Days 0.65 / Extreme 0.8), Real Seconds per Game Hour, Night Time Scale + transition (+ Subtle/Default/Extreme), computed sunrise/sunset and real day/night lengths. Undo + SetDirty, auto-saved in edit, PlayMode saver in Play.
+- Docs: CHANGELOG only. Backups .pre20261025q.
+
+[25r] Journal pad: tab row <-> tab body
+- Cause: since 25n native UITK Navigate is the only pad nav source (navDirectPoll off), so our spatial MoveFocusNearest (which already had tab->content logic) never ran; UITK's default NavigationMoveEvent handling moves along the focus ring, not spatially into the body.
+- Fix (DMUiJournalGamepadNav): TrickleDown NavigationMoveEvent callback on each nav root routes Up/Down/Left/Right through MoveFocusNearest, then focusController.IgnoreEvent + StopPropagation (single step; native repeat 0.5/0.25 + right stick/D-pad kept). Down from a tab -> first body focusable (Inventory: first dmg-inv-slot); Up from the body's top row -> active tab. Keyboard direct-poll gated by navDirectPoll (native already sends arrows/WASD; avoids double steps). Focusables unchanged (Button/Toggle/Slider/Dropdown/Foldout + slot/row classes get focusable + tabIndex 0). Log: [JournalPad] navmove <dir> from -> to.
+- Docs: CHANGELOG only. Backups .pre20261025r.

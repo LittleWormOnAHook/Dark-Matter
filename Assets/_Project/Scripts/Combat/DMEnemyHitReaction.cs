@@ -93,6 +93,8 @@ namespace Project.Combat
             float now = Time.time;
 
             bool heavy = AttackInterruptEvaluator.IsPlayerChargedHit(source, out int step);
+            if (!heavy && p.jumpAttackHeavyReaction && DMPlayerJumpAttack.IsStrikeActiveFor(source))
+                heavy = true; // 2026-10-25g jump attack = heavy stagger / knockback
 
             // Hit chain bookkeeping (own counter + window, independent of the interrupt evaluator's chain).
             CombatPoise poise = enemy.GetComponent<CombatPoise>();

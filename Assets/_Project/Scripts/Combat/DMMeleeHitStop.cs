@@ -50,8 +50,11 @@ namespace Project.Combat
             if (melee == null)
                 return;
 
-            bool heavy = melee.IsStrongMeleeDamageActive || melee.IsChargedStrongSwingActive;
+            bool jumpStrike = DMPlayerJumpAttack.IsStrikeActiveFor(source); // 2026-10-25g
+            bool heavy = melee.IsStrongMeleeDamageActive || melee.IsChargedStrongSwingActive || jumpStrike;
             int frames = heavy ? p.hitstopHeavyFrames : p.hitstopLightFrames;
+            if (jumpStrike)
+                frames += p.jumpAttackHitstopBonusFrames;
             if (isCritical)
                 frames += p.hitstopCritBonusFrames;
             // Slice 2b: heavier hits (damage / heavy attack weight) earn a few extra freeze frames for impact punch.

@@ -139,10 +139,8 @@ namespace Project.Features.Dash
             if (!CanDash())
                 return;
 
-            TryDoubleTap(Key.W, Vector3.forward);
-            TryDoubleTap(Key.S, Vector3.back);
-            TryDoubleTap(Key.A, Vector3.left);
-            TryDoubleTap(Key.D, Vector3.right);
+            // 2026-10-25e: double-tap WASD dash removed (double-taps = sidestep / backstep).
+            // Dash = Dash action: KBM WASD (incl. diagonals) + Left Alt, pad hold B + left stick (PioneerPlayerInputBinder).
         }
 
         private static float SkillMul(SkillModifierType type)
@@ -266,7 +264,7 @@ namespace Project.Features.Dash
 
         
         /// <summary>
-        /// Gamepad B double-press+hold / optional KBM Dash action — dash in move or camera forward.
+        /// 2026-10-25e: KBM Left Alt (WASD direction, none = forward) / pad hold B + stick. Was: Gamepad B double-press+hold / optional KBM Dash action — dash in move or camera forward.
         /// stamp: controller-b-dodge-dash 0920
         /// </summary>
         public bool TryStartDashFromInput()

@@ -1,0 +1,221 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 254a2a5bcc1c7fa41bbc7ee039daf49d, type: 3}
+  m_Name: DM_IoSkyProfile
+  m_EditorClassIdentifier: Assembly-CSharp::Project.World.Sky.DM_IoSkyProfile
+  skyEnabled: 1
+  autoSpawnController: 1
+  onlyInScenesWithJupiter: 1
+  skyBodyShader: {fileID: 4800000, guid: a32e9106cf6171c48a524cba2fe54c0b, type: 3}
+  debugHourOverride: 15.4
+  startHour: 11.6
+  sunLightName: Day DirectionalLight
+  disableOtherDirectionalLights: 1
+  sunIntensityMultiplier: 0.36
+  horizonFadeDegrees: 11.78
+  sunHorizonDimDegrees: 18.9
+  sunHorizonMinFactor: 0.509
+  sunHorizonDesaturate: 0.35
+  sunMaxLux: 26788
+  shadeFillEnabled: 1
+  shadeFillLux: 2494
+  shadeFillElevationDeg: -5.4
+  shadeFillColor: {r: 1, g: 0.8, b: 0.6, a: 1}
+  orbitPoleTiltDeg: 10
+  reverseSkyMotion: 0
+  eclipseEnabled: 1
+  eclipseDurationHours: 4
+  eclipseFadeHours: 1.33
+  eclipseSunRemaining: 0.641
+  eclipseAmbientMultiplier: 0.601
+  sunHidesBehindJupiter: 1
+  ambientVolumePriority: 103
+  jupiterObjectName: Jupiter
+  jupiterAzimuthDeg: 44
+  jupiterElevationDeg: 35.4
+  jupiterAngularDiameterDeg: 26.3
+  skyDistance: 7641
+  jupiterSpinHours: 10.9
+  jupiterTiltEuler: {x: 4.61, y: 0, z: 0}
+  jupiterBrightness: 2.52
+  jupiterLimbDarkening: 0.752
+  jupiterRimColor: {r: 0.2528302, g: 0.24617067, b: 0.15217516, a: 1}
+  jupiterEclipseRimLux: 3333
+  jupiterShineColor: {r: 0.7619722, g: 0.88317174, b: 0.9547169, a: 1}
+  jupiterShineLux: 327
+  eclipseJupiterShineLux: 500
+  otherMoonPeriodsHours:
+  - 8.22
+  - 10.23
+  otherMoonsUseSkyMaterial: 1
+  otherMoonColor: {r: 0.10160911, g: 0.5171215, b: 0.7584905, a: 1}
+  europa:
+    name: Europa
+    enabled: 1
+    periodRatio: 2.73
+    orbitRadiusKm: 671083.94
+    diameterKm: 10925
+    sizeMultiplier: 10
+    startPhaseDeg: 150
+    colorA: {r: 0.29071552, g: 0.39257458, b: 0.5018867, a: 1}
+    colorB: {r: 0.7056604, g: 0.7056604, b: 0.7056604, a: 1}
+    noiseScale: 12.27
+    lineae: 0.4
+    craterSpots: 1
+    brightness: 1.03
+  ganymede:
+    name: Ganymede
+    enabled: 1
+    periodRatio: 4
+    orbitRadiusKm: 1070400
+    diameterKm: 6103
+    sizeMultiplier: 7.34
+    startPhaseDeg: 91
+    colorA: {r: 0.16226411, g: 0.048679214, b: 0.057294063, a: 1}
+    colorB: {r: 0.3962264, g: 0.29044142, b: 0.18465644, a: 1}
+    noiseScale: 2.5
+    lineae: 0.25
+    craterSpots: 0.3
+    brightness: 2.25
+  callisto:
+    name: Callisto
+    enabled: 1
+    periodRatio: 9.43
+    orbitRadiusKm: 1882700
+    diameterKm: 5730
+    sizeMultiplier: 8.3
+    startPhaseDeg: 233
+    colorA: {r: 0.011764699, g: 0.073835656, b: 0.9529412, a: 1}
+    colorB: {r: 0.9019608, g: 0.19607843, b: 0.2264577, a: 1}
+    noiseScale: 10.3
+    lineae: 0
+    craterSpots: 0.832
+    brightness: 1.53
+  realtimeIndirectEnabled: 1
+  indirectVolumeProfile: {fileID: 11400000, guid: eb32452bbec419a4498804a40b1e3569, type: 2}
+  indirectVolumePriority: 90
+  ssgiEnabled: 1
+  ssgiQuality: 3
+  ssgiMaxRaySteps: 64
+  ssgiFullResolution: 1
+  ssgiDenoise: 1
+  ssgiHalfResDenoiser: 1
+  ssgiDenoiserRadius: 0.598
+  ssgiDepthThickness: 0.11
+  shadowFloorLift: 0.08
+  shadowFloorTint: {r: 0.7132075, g: 0.36467773, b: 0.575552, a: 1}
+  overrideGroundTint: 1
+  groundBounceTint: {r: 0.690566, g: 0.47801548, b: 0.19153433, a: 1}
+  ssaoIntensity: 1.54
+  ssaoDirectLightingStrength: 0.22
+  fixCameraVolumeMask: 1
+  indirectDiffuseMultiplier: 1.2
+  indirectReflectionMultiplier: 1
+  ambientModeDynamic: 1
+  exposureOverride: 1
+  exposureHistogram: 1
+  exposureLimitMin: 2
+  exposureLimitMax: 11.6
+  exposureHistogramLow: 40
+  exposureHistogramHigh: 90
+  exposureAdaptDarkToLight: 2.07
+  exposureAdaptLightToDark: 1.3
+  bloomIntensity: 0.873
+  bloomThreshold: 0.62
+  exposureCompensation: -0.01
+  polishEnabled: 1
+  ssaoRadius: 1.137
+  ssaoMaxRadiusPixels: 31
+  contactShadowLength: 0.232
+  sunContactShadows: 1
+  microShadowOpacity: 0.476
+  shadowMaxDistance: 150
+  shadowCascadeSplit0: 0.0994
+  fogMeanFreePath: 1069
+  gradeContrast: -13.78
+  splitToneStrength: 0.291
+  splitToneShadows: {r: 0.42, g: 0.52, b: 0.66, a: 1}
+  splitToneHighlights: {r: 0.66, g: 0.55, b: 0.42, a: 1}
+  vignetteIntensity: 0.288
+  eclipseFloorEnabled: 1
+  eclipseMinAmbient: 0.755
+  eclipseFillLux: 165
+  eclipseExposureLimitMin: 2
+  nightSkyEnabled: 1
+  nightSkyShader: {fileID: 0}
+  starDensity: 75
+  starBrightness: 3
+  starSize: 0.36
+  starTwinkle: 0.644
+  starColorVariation: 1
+  milkyWayIntensity: 0.59
+  milkyWayWidth: 0.232
+  milkyWayDust: 1
+  milkyWayCoreColor: {r: 1, g: 0.85, b: 0.7, a: 1}
+  milkyWayEdgeColor: {r: 0.55, g: 0.65, b: 1, a: 1}
+  milkyWayTiltDeg: -34.7
+  milkyWayYawDeg: 32
+  starRotationDeg: 0
+  starsRotateWithClock: 1
+  nightFadeStartDeg: -1.2
+  nightFadeEndDeg: 18.6
+  nightSkyDayVisibility: 0.752
+  starsBehindSkyBodies: 1
+  editPreviewEnabled: 1
+  editPreviewHour: 19.8
+  starOcclusionMarginDeg: -0.52
+  starOcclusionSoftDeg: 2
+  nightDomeFarFraction: 0.98
+  nightDomeCoverTerrain: 1
+  nightDomeTerrainMargin: 500
+  nightDomeMinRadius: 0
+  auroraEnabled: 1
+  auroraIntensity: 6.01
+  auroraColorLow: {r: 0.114575684, g: 1, b: 0, a: 1}
+  auroraColorHigh: {r: 0.8980392, g: 0.22878446, b: 0.19999997, a: 1}
+  auroraSpeed: 0.144
+  auroraHeight: 0.601
+  auroraCoverage: 0.69
+  auroraDayVisibility: 1
+  auroraMinElevDeg: -10
+  auroraMaxElevDeg: 21.1
+  auroraHeightVariationDeg: 13.1
+  auroraHeightNoiseScale: 3.63
+  auroraBottomSoftDeg: 19.3
+  auroraTopSoftDeg: 8
+  auroraAzimuthSpanDeg: 360
+  auroraAzimuthCenterDeg: 0
+  auroraAzimuthEdgeSoftDeg: 152.4
+  auroraHeightDriftSpeed: 0.078
+  auroraHeightBobDeg: 5.69
+  disableVolumetricClouds: 0
+  eclipseShadowsEnabled: 1
+  eclipseShadowStrength: 0.837
+  eclipseShadowSoftnessDeg: 9.44
+  sunOcclusionSoftDeg: 1.329
+  ringSunBias: 2.25
+  ringEdgeGrowDeg: 14.83
+  ringMinFactor: 0.169
+  ringLightLux: 173
+  ringFlareIntensity: 0.559
+  dayFraction: 0.5
+  flareEnabled: 1
+  flareUseOcclusion: 1
+  flareOcclusionSamples: 16
+  flareIntensityScale: 1
+  flareMinElevationDeg: 1
+  flareElevationFadeDeg: 4
+  flareEclipseFade: 1
+  flareRingDuringEclipse: 0.265
+  flareOcclusionRadius: 0.1
+  eclipseDisableSsgi: 1
+  disableOtherSunFlares: 1

@@ -74,8 +74,8 @@ namespace Project.UI
                 }
 
                 // Loot window and storage crate (loot plan 8.5, D15) lock gameplay input, so drive their pad navigation here.
-                if (DMUiToolkitLoot.IsOpen || DMUiToolkitCrate.IsOpen)
-                    DMUiJournalGamepadNav.Tick();
+                // 25m: Journal / pause / main menu / sub-panels too (was Loot+Crate only, so the journal never got pad nav).
+                DMUiJournalGamepadNav.Tick();
 
                 return;
             }

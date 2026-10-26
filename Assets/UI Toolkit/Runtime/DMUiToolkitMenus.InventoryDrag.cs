@@ -169,6 +169,7 @@ namespace Project.UI
 
         private void OnInvContextClick(ContextClickEvent evt)
         {
+            if (ShouldSwallowInvPointer()) { evt.StopPropagation(); return; }
             if (evt.currentTarget is not VisualElement slot || slot.userData is not int index)
                 return;
 
@@ -179,6 +180,7 @@ namespace Project.UI
 
         private void OnInvPointerDown(PointerDownEvent evt)
         {
+            if (ShouldSwallowInvPointer()) { evt.StopPropagation(); return; } // 2026-10-25i: context Move ghost owns clicks
             if (evt.currentTarget is not VisualElement slot || slot.userData is not int index)
                 return;
 

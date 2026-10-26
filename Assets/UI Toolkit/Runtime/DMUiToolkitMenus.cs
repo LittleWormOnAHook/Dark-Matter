@@ -269,6 +269,7 @@ namespace Project.UI
             if (menusVisible || pendingShowWindow.HasValue || navOpen || (Time.frameCount & 15) == 0)
                 SyncFromNavigator();
             TickInventoryContextDismiss();
+            TickPadMoveMouse();
         }
 
         internal void BindTree()
@@ -737,6 +738,34 @@ namespace Project.UI
             DMUiToolkitOverlayDocument.SetShown(gameLogsPanel, journalSection == JournalSection.GameLogs);
         }
 
+        /// <summary>25k: pad A on a Journal tab / sub-tab, called directly (no synthetic ClickEvent).</summary>
+        public static bool PadActivateTabOrSubtab(VisualElement element)
+        {
+            if (instance == null || element is not Button button)
+                return false;
+            if (button.userData is JournalWindowId id && instance.tabs.TryGetValue(id, out Button tabButton) && tabButton == button)
+            {
+                GameAudioManager.Instance?.PlayButtonClick();
+                instance.OpenTab(id);
+                return true;
+            }
+            if (button.userData is JournalSection section && button.name != null && button.name.StartsWith("subtab-", System.StringComparison.Ordinal))
+            {
+                GameAudioManager.Instance?.PlayUiHoverTick();
+                instance.journalSection = section;
+                instance.ApplyJournalSectionVisibility();
+                instance.RefreshJournalContent();
+                return true;
+            }
+            return false;
+        }
+
+        public static bool TryGetActiveTabButton(out Button button)
+        {
+            button = null;
+            return instance != null && instance.paintedWindow.HasValue && instance.tabs.TryGetValue(instance.paintedWindow.Value, out button);
+        }
+
         private void OnTabClicked(ClickEvent evt)
         {
             if (evt.currentTarget is not Button button || button.userData is not JournalWindowId id)
@@ -744,6 +773,11 @@ namespace Project.UI
 
             evt.StopPropagation();
             GameAudioManager.Instance?.PlayButtonClick();
+            OpenTab(id);
+        }
+
+        private void OpenTab(JournalWindowId id)
+        {
 
             JournalPanelUI journal = Object.FindAnyObjectByType<JournalPanelUI>(FindObjectsInactive.Include);
             if (journal == null)

@@ -918,6 +918,8 @@ namespace Project.Player.Invector
                 cc.Sprint(Keyboard.current.leftShiftKey.isPressed);
         }
 
+        private DMPlayerQuickStep _quickStep;
+
         public override void JumpInput()
         {
             // jumpInput GenericInput is muted on Gamepad scheme â€” still poll Space/A / Jump action.
@@ -930,10 +932,28 @@ namespace Project.Player.Invector
             if (_climb != null && _climb.TryHandleJumpPress())
                 return;
 
-            if (_jetpackInputBridge != null && _jetpackInputBridge.TryHandleJumpPress())
-                return;
+            // 2026-10-25d: pad stick + HOLD A = sidestep; the A press is held back until it is known to be a tap.
+            if (_quickStep == null)
+                _quickStep = GetComponentInParent<DMPlayerQuickStep>() ?? GetComponentInChildren<DMPlayerQuickStep>();
+            bool deferredJump = _quickStep != null && _quickStep.ConsumeDeferredJump();
+            if (!deferredJump && IsDrawnMeleeWeaponActive() && ReadJumpPressedThisFrame())
+                Project.Combat.DMPlayerJumpAttack.NoteJumpPress(this); // 25l
+            if (!deferredJump)
+            {
+                if (_quickStep != null && (_quickStep.IsPadHoldPending || _quickStep.TryDeferPadJump()))
+                    return;
 
-            if (!ReadJumpPressedThisFrame())
+                // 2026-10-25g: Jump + light attack combo = jump attack (consumes the press; no normal jump / jetpack tap).
+                if (IsDrawnMeleeWeaponActive() && Project.Combat.DMPlayerJumpAttack.InterceptJump(this, ReadJumpPressedThisFrame()))
+                    return;
+
+                if (_jetpackInputBridge != null && _jetpackInputBridge.TryHandleJumpPress())
+                    return;
+
+                if (!ReadJumpPressedThisFrame())
+                    return;
+            }
+            else if (IsDrawnMeleeWeaponActive() && Project.Combat.DMPlayerJumpAttack.InterceptJump(this, true))
                 return;
 
             if (_landingDirector == null)
@@ -1116,6 +1136,23 @@ namespace Project.Player.Invector
         {
             TickUpperInteractRestore();
             TickStrongDamageWindow();
+
+            // 2026-10-25f: airborne light attack = jump attack (leap + down swing). Owns the input while active.
+            if (IsDrawnMeleeWeaponActive())
+            {
+                bool jaHeld = ReadLightAttackHeld();
+                bool jaPressed = ReadLightAttackPressedThisFrame() || (jaHeld && !_lightAttackHeldLast);
+                if (Project.Combat.DMPlayerJumpAttack.TryHandle(this, jaPressed))
+                {
+                    _lightAttackHeldLast = jaHeld;
+                    _chargeAutoReleased = jaHeld;
+                    if (_strongChargeArmed || _strongChargePoseActive)
+                        CancelChargePose();
+                    _strongChargeArmed = false;
+                    _strongChargePoseActive = false;
+                    return;
+                }
+            }
 
             if (!CanTrackDrawnMeleeCharge())
             {

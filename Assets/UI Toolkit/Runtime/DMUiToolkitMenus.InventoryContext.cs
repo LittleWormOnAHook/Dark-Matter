@@ -182,6 +182,9 @@ namespace Project.UI
                 () => ExecuteContextAction(boundItemActions.TryRefillMiningTool(slot)));
             TryAddContextBtn("Deploy", boundItemActions.CanDeploy(slot),
                 () => ExecuteContextAction(boundItemActions.TryDeploy(slot)));
+            // 2026-10-25i: Move enters the ghost move mode (mouse follows pointer, pad follows focus).
+            TryAddContextBtn("Move", boundInventory != null && boundInventory.GetItemAt(slot) != null,
+                () => StartMoveFromContext(slot));
             TryAddContextBtn("Split", boundItemActions.CanSplit(slot),
                 () => ExecuteContextAction(boundItemActions.TrySplit(slot)));
             TryAddContextBtn("Drop", boundItemActions.CanDrop(slot),

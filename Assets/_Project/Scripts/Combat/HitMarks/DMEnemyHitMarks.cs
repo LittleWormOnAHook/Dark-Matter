@@ -286,8 +286,11 @@ namespace Project.Combat
             animatingCount = 0;
         }
 
+        private int diedFrame = -1;
+
         private void HandleDied()
         {
+            diedFrame = Time.frameCount; // 2026-10-24af: killing-blow slash allowed this frame
             ClearAll();
             ReleaseStuckPooledVfx();
         }
@@ -486,11 +489,20 @@ namespace Project.Combat
                 SpawnSplatter(profile, hitPoint, normal, swing, damage, allowsBlood);
 
             bool alive = health == null || !health.IsDead;
-            if (!alive || !allowsBurn)
+            bool killingBlow = !alive && profile.slashOnKillingBlow && Time.frameCount - diedFrame <= 1; // 2026-10-24af
+            if (!alive && !killingBlow)
+                return;
+
+            // 2026-10-24af: physical blades always stamp a neutral Cut; elemental weapons keep burn.
+            bool physical = element == AmmoType.Gunpowder;
+            bool cut = profile.meleePhysicalAlwaysCut && physical;
+            if (!cut && !allowsBurn)
                 return;
 
             DMEnemyBodyHitResponse response = profile.GetResponse(bodyType);
-            DMHitMarkStyle style = element == AmmoType.Laser && profile.laserAlwaysGlowBurn
+            DMHitMarkStyle style = cut
+                ? DMHitMarkStyle.Cut
+                : element == AmmoType.Laser && profile.laserAlwaysGlowBurn
                 ? DMHitMarkStyle.GlowBurn
                 : response.burnStyle;
             Transform bone = hitbox != null ? hitbox.Bone : attach;
@@ -531,7 +543,9 @@ namespace Project.Combat
             Vector3 swingDirection,
             DMHitMarkStyle style)
         {
-            Material baseMaterial = style == DMHitMarkStyle.BloodChar ? profile.bulletBurnMaterial : profile.glowBurnMaterial;
+            Material baseMaterial = style == DMHitMarkStyle.Cut
+                ? (profile.cutSlashMaterial != null ? profile.cutSlashMaterial : profile.bulletBurnMaterial)
+                : style == DMHitMarkStyle.BloodChar ? profile.bulletBurnMaterial : profile.glowBurnMaterial;
             if (baseMaterial == null)
                 return false;
 
@@ -1095,6 +1109,18 @@ namespace Project.Combat
                     if (child != null && child.GetComponent<PooledInstanceTag>() != null)
                         ReleaseBuffer.Add(child);
                 }
+            }
+
+            // 2026-10-25d: also any deeper pooled impact FX / decals on the body (not hitbox-direct), except ones spawned this frame (killing blow).
+            PooledInstanceTag[] deep = GetComponentsInChildren<PooledInstanceTag>(true);
+            for (int i = 0; i < deep.Length; i++)
+            {
+                PooledInstanceTag tag = deep[i];
+                if (tag == null || tag.gameObject == gameObject || tag.SourcePool == null || tag.SpawnFrame == Time.frameCount)
+                    continue;
+                Transform tr = tag.transform;
+                if (!ReleaseBuffer.Contains(tr))
+                    ReleaseBuffer.Add(tr);
             }
 
             for (int i = 0; i < ReleaseBuffer.Count; i++)

@@ -288,6 +288,13 @@ new DMStudioSubtab(
                             "Assets/_Project/Resources/World/DM_IoClockProfile.asset",
                             playModeSave: true),
                         new DMStudioSubtab(
+                            "sky-orbit",
+                            "Sky & Orbit",
+                            "Io sky on the 30 h clock: sun path, noon eclipse (length/fade/ambient), Jupiter placement + size, Jupiter-shine, Europa/Ganymede/Callisto.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/World/DM_IoSkyProfile.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
                             "loot-chest-timers",
                             "Loot Chests - Timers",
                             "World Reloot window, emptied dissolve, Single Loot removal, and full-inventory hold.",
@@ -575,7 +582,14 @@ new DMStudioSubtab(
                             "Bindings",
                             "Opens a pointer to InputSystem_Actions only — Studio does not write binds.",
                             DMStudioPanelMode.ControlsInputEditor,
-                            "Assets/_Project/Settings/Input/InputSystem_Actions.inputactions")
+                            "Assets/_Project/Settings/Input/InputSystem_Actions.inputactions"),
+                        // 2026-10-25i: controller Journal schema tuning.
+                        new DMStudioSubtab(
+                            "journal-pad",
+                            "Journal Controller",
+                            "Gamepad Journal: D-pad/stick focus, A opens tabs. Inventory: A tap = select/use, HOLD A = pick up ghost, move with D-pad/stick (incl. hotbar), release A to drop (snaps to slot under ghost or nearest empty within Snap Radius, else returns). X tap = Use, HOLD X = item menu (Move = ghost mode; A/X drops). B cancels.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/UI/Controls/DMJournalPadProfile.asset")
                     }),
                 new DMStudioCategory(
                     "ui",

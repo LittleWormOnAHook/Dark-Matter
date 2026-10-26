@@ -239,6 +239,26 @@ namespace Project.Combat
         [Range(0.05f, 1f)] public float meleeAssistWindupFraction = 0.35f;
         [Tooltip("Turn speed fades in over this error (no hard deadband edge).")]
         [Range(1f, 90f)] public float meleeAssistSoftFadeDegrees = 22f;
+        [Tooltip("Slice 4 (2026-10-25d): steering the stick / movement toward another enemy mid-combo switches target. Off = keep the first target all combo.")]
+        public bool meleeTargetSwitchEnabled = true;
+        [Tooltip("Snap-turn speed toward the new target after a switch (deg/s), ignores the wind-up gate.")]
+        [Range(90f, 3000f)] public float meleeSwitchSnapTurnSpeed = 900f;
+        [Tooltip("Max degrees the snap-turn may rotate per switch.")]
+        [Range(0f, 180f)] public float meleeSwitchSnapMaxDegrees = 120f;
+        [Tooltip("Seconds the snap-turn window stays open after a switch.")]
+        [Range(0.02f, 1f)] public float meleeSwitchSnapSeconds = 0.18f;
+
+        /// <summary>2026-10-25d Slice 4: 0 Subtle, 1 Default, 2 Extreme.</summary>
+        public void ApplyTargetSwitchPreset(int level)
+        {
+            meleeTargetSwitchEnabled = true;
+            switch (level)
+            {
+                case 0: meleeSwitchSnapTurnSpeed = 450f; meleeSwitchSnapMaxDegrees = 60f; meleeSwitchSnapSeconds = 0.25f; meleeRetargetStickAngle = 60f; meleeRetargetMinSeconds = 0.5f; break;
+                case 2: meleeSwitchSnapTurnSpeed = 2000f; meleeSwitchSnapMaxDegrees = 180f; meleeSwitchSnapSeconds = 0.12f; meleeRetargetStickAngle = 30f; meleeRetargetMinSeconds = 0.2f; break;
+                default: meleeSwitchSnapTurnSpeed = 900f; meleeSwitchSnapMaxDegrees = 120f; meleeSwitchSnapSeconds = 0.18f; meleeRetargetStickAngle = 45f; meleeRetargetMinSeconds = 0.4f; break;
+            }
+        }
         public bool meleeTargetIgnoreDowned = true;
         [Tooltip("Legacy: light combo attack-move forces strafe on (caused feet pivot). Default off.")]
         public bool lightComboForcesStrafe = false;
@@ -286,11 +306,27 @@ namespace Project.Combat
         public bool logHitchesInPlay = false;
         [Range(30f, 1000f)] public float hitchThresholdMs = 120f;
 
-        [Header("Player quick step (triple-tap A / D = sidestep, triple-tap S = backstep; pad: triple stick flick)")]
-        [Tooltip("Master switch. Dash (B) and jetpack (Space double-tap) are separate and unchanged. No roll fallback.")]
+        [Header("Player quick step (2026-10-25d: double-tap A / D = sidestep, double-tap S = backstep; pad: stick left / right / back + HOLD A)")]
+        [Tooltip("Master switch. Dash (B / Dash action / double-tap W) and jetpack (Space / A double-press + hold) are unchanged. No roll fallback.")]
         public bool quickStepEnabled = true;
-        [Tooltip("All three taps must land within this many seconds.")]
-        [Range(0.2f, 1.2f)] public float quickStepTapWindowSeconds = 0.5f;
+        [Tooltip("KBM double-tap window: all taps must land within this many seconds.")]
+        [Range(0.1f, 1.2f)] public float quickStepTapWindowSeconds = 0.5f;
+        [Tooltip("KBM taps needed (2 = double-tap, 3 = legacy triple-tap).")]
+        [Range(2, 3)] public int quickStepKbmTapCount = 2;
+        [Tooltip("On = double-tap A / D / S belong to the sidestep / backstep, so dash skips them (dash stays on double-tap W, pad B and the Dash action).")]
+        public bool quickStepOwnsKbmDoubleTap = true;
+        [Tooltip("KBM: double-tap S = backstep.")]
+        public bool quickStepKbmBackstep = true;
+        [Tooltip("Pad: hold the left stick left / right (or back) and HOLD A (South) = step. A quick tap of A still jumps.")]
+        public bool quickStepPadHoldEnabled = true;
+        [Tooltip("Pad: A must be held this long to become a step. Released sooner = normal jump (fires on release).")]
+        [Range(0.05f, 0.6f)] public float quickStepPadHoldSeconds = 0.15f;
+        [Tooltip("Pad: stick deflection needed to arm the step (0..1).")]
+        [Range(0.2f, 1f)] public float quickStepPadDeflection = 0.6f;
+        [Tooltip("Pad: stick back + hold A = backstep.")]
+        public bool quickStepPadBackstep = true;
+        [Tooltip("Pad: legacy triple stick flick also steps (off by default).")]
+        public bool quickStepPadTripleFlick = false;
         [Range(0.3f, 5f)] public float sidestepDistance = 1.8f;
         [Range(0.3f, 5f)] public float backstepDistance = 1.5f;
         [Tooltip("Seconds the step takes (eased).")]
@@ -301,6 +337,196 @@ namespace Project.Combat
         [Range(0f, 0.6f)] public float quickStepStickRelease = 0.3f;
         [Tooltip("Stamina cost per step (0 = free).")]
         [Range(0f, 100f)] public float quickStepStaminaCost = 0f;
+
+        [Header("Directional dash input (2026-10-25e: KBM WASD + Left Alt; pad hold B + left stick)")]
+        [Tooltip("Pad: hold B (East) with the left stick deflected = dash in the stick direction. Quick tap B = dodge / roll. Off = B always dodges.")]
+        public bool dashPadHoldEnabled = true;
+        [Tooltip("Pad: B must be held this long (with the stick deflected) to dash. Released sooner = dodge / roll (fires on release).")]
+        [Range(0.05f, 0.6f)] public float dashPadHoldSeconds = 0.18f;
+        [Tooltip("Pad: left stick deflection needed for the hold-B dash (below = B is a plain dodge).")]
+        [Range(0.1f, 0.95f)] public float dashPadStickDeadzone = 0.4f;
+
+        [Header("Jump attack (2026-10-25f: light attack while airborne = leap + down swing)")]
+        [Tooltip("Light attack pressed in the air with a drawn melee weapon = jump attack. 1H weapons: 1HandSmallWeaponJumpAttack, 2H grip: JumpAttack2HandMelee. Off = old behaviour.")]
+        public bool jumpAttackEnabled = true;
+        [Tooltip("Enemies closer than this (flat metres) are not leapt at (strike in place / pick another).")]
+        [Range(0f, 10f)] public float jumpAttackRangeMin = 1.2f;
+        [Tooltip("Max flat distance to the enemy for the leap. Beyond = down strike in place.")]
+        [Range(1f, 30f)] public float jumpAttackRangeMax = 8f;
+        [Tooltip("Nearest-enemy pick: half angle of the front cone (lock target ignores this).")]
+        [Range(10f, 180f)] public float jumpAttackConeHalfAngle = 60f;
+        [Tooltip("Land this far in front of the enemy so the blade connects on the down swing.")]
+        [Range(0.3f, 4f)] public float jumpAttackStopDistance = 1.3f;
+        [Tooltip("Leap travel speed (m/s). Leap time = distance / speed (0.25..1.5 s); the clip is sped/slowed (0.6..2x) so the down swing starts on landing.")]
+        [Range(2f, 40f)] public float jumpAttackLeapSpeed = 10f;
+        [Tooltip("Extra height of the leap arc at mid point (metres).")]
+        [Range(0f, 6f)] public float jumpAttackArcHeight = 1.2f;
+        [Tooltip("Turn speed (deg/s) toward the target during the leap (snaps on start).")]
+        [Range(90f, 3600f)] public float jumpAttackTurnSpeed = 1080f;
+        [Tooltip("25g: Jump and light attack must both be pressed within this window (either order) to start the jump attack.")]
+        [Range(0.05f, 1f)] public float jumpAttackComboWindow = 0.25f;
+        [Tooltip("25g: minimum flat run speed (m/s) to allow the jump attack (stick held forward also counts).")]
+        [Range(0f, 10f)] public float jumpAttackMinRunSpeed = 2.5f;
+        [Tooltip("25g: allow the jump attack from a standstill.")]
+        public bool jumpAttackAllowFromStandstill = false;
+        [Tooltip("25g: minimum leap air time (s) - short leaps / no target still get a full wind-up + strike.")]
+        [Range(0.2f, 1.5f)] public float jumpAttackMinAirTime = 0.6f;
+        [Tooltip("25g: no target = leap this far straight ahead (0 = straight up and down).")]
+        [Range(0f, 8f)] public float jumpAttackFallbackForward = 2f;
+        [Tooltip("1H clip phase: wind-up end (normalized) = top of the leap arc.")]
+        [Range(0.05f, 0.95f)] public float jumpAttack1HWindupEnd = 0.27f;
+        [Tooltip("1H clip phase: impact frame (normalized) = touchdown.")]
+        [Range(0.05f, 1f)] public float jumpAttack1HImpact = 0.5f;
+        [Tooltip("1H clip: blade damage window (normalized). Covers descent to just after landing.")]
+        [Range(0f, 1f)] public float jumpAttack1HHitStart = 0.38f;
+        [Range(0f, 1f)] public float jumpAttack1HHitEnd = 0.58f;
+        [Tooltip("2H clip phase: wind-up end (normalized) = top of the leap arc.")]
+        [Range(0.05f, 0.95f)] public float jumpAttack2HWindupEnd = 0.4f;
+        [Tooltip("2H clip phase: impact frame (normalized) = touchdown.")]
+        [Range(0.05f, 1f)] public float jumpAttack2HImpact = 0.6f;
+        [Tooltip("2H clip: blade damage window (normalized). Covers descent to just after landing.")]
+        [Range(0f, 1f)] public float jumpAttack2HHitStart = 0.5f;
+        [Range(0f, 1f)] public float jumpAttack2HHitEnd = 0.7f;
+        [Tooltip("Damage multiplier on the weapon hit (Invector rounds to whole numbers; 1 = normal).")]
+        [Range(1f, 6f)] public float jumpAttackDamageMultiplier = 2f;
+        [Range(0f, 10f)] public float jumpAttackCooldownSeconds = 1f;
+        [Range(0f, 100f)] public float jumpAttackStaminaCost = 15f;
+        public bool jumpAttackLog = false;
+        [Header("Jump attack feel (2026-10-25g)")]
+        [Tooltip("Crossfade from run / air into the jump attack clip (s).")]
+        [Range(0f, 0.4f)] public float jumpAttackBlendIn = 0.1f;
+        [Tooltip("Share of the run velocity carried into the leap arc (0 = straight path to the landing point).")]
+        [Range(0f, 1.5f)] public float jumpAttackMomentumCarry = 0.6f;
+        [Tooltip("Rise easing exponent (higher = faster launch, softer arrival at the apex).")]
+        [Range(1f, 4f)] public float jumpAttackRiseEase = 2f;
+        [Tooltip("Apex hang: share of the leap time held at the top.")]
+        [Range(0f, 0.4f)] public float jumpAttackApexHang = 0.1f;
+        [Tooltip("Descent acceleration exponent (higher = slower start, faster slam).")]
+        [Range(1f, 4f)] public float jumpAttackDescentPower = 2.2f;
+        [Tooltip("Movement locked this long after touchdown (landing recovery).")]
+        [Range(0f, 1.5f)] public float jumpAttackLandRecovery = 0.25f;
+        [Tooltip("Extra hit stop frames on a jump attack hit (on top of heavy frames).")]
+        [Range(0, 20)] public int jumpAttackHitstopBonusFrames = 3;
+        [Tooltip("Camera shake on a jump attack hit, x heavy hit shake.")]
+        [Range(0f, 5f)] public float jumpAttackHitShakeScale = 0.5f;
+        [Tooltip("Camera shake on the landing, x heavy hit shake.")]
+        [Range(0f, 5f)] public float jumpAttackLandShakeScale = 0.3f;
+        [Tooltip("25h: down swing speed (strike part = wind-up end -> impact) relative to the wind-up. <1 = slower, heavier strike and a longer descent (impact stays on touchdown).")]
+        [Range(0.3f, 1.5f)] public float jumpAttack1HDownSwingSpeed = 1f; // 25j: 1H reference mode = swing seconds / this (1 = ~0.5 s)
+        [Range(0.3f, 1.5f)] public float jumpAttack2HDownSwingSpeed = 0.6f;
+        [Tooltip("25h: upper-body forward bend (deg) ramping through the down swing, peak at impact, layered on the clip.")]
+        [Range(0f, 60f)] public float jumpAttack1HSwingBend = 24f;
+        [Range(0f, 60f)] public float jumpAttack2HSwingBend = 30f;
+        [Tooltip("25h: hip drop (m) ramping with the swing bend.")]
+        [Range(0f, 0.3f)] public float jumpAttackSwingHipDrop = 0.05f;
+        [Tooltip("25h: time (s) the bend takes to release after touchdown.")]
+        [Range(0.05f, 1.5f)] public float jumpAttackSwingBendRelease = 0.4f;
+        [Header("Jump attack 1H reference (25j)")]
+        [Tooltip("25j: 1H uses the reference timing: wind-up = ascent (back arch), strike starts AT the apex, impact on touchdown, deep squat then slow rise. Off = 25h timing.")]
+        public bool jumpAttack1HReferenceMode = true;
+        [Tooltip("25j: take-off -> apex time (s); the clip wind-up is fitted into it.")]
+        [Range(0.15f, 0.8f)] public float jumpAttack1HAscentSeconds = 0.38f;
+        [Tooltip("25j: apex -> touchdown down swing time (s) at Down swing speed 1 (actual = this / 1H Down swing speed).")]
+        [Range(0.2f, 1.2f)] public float jumpAttack1HSwingSeconds = 0.55f;
+        [Tooltip("25j: leap length (m) with no target (~1 body length). A target further away still sets the landing spot.")]
+        [Range(0.5f, 5f)] public float jumpAttack1HLeapDistance = 1.8f;
+        [Tooltip("25j: arc height (m), ~knee height.")]
+        [Range(0.1f, 2f)] public float jumpAttack1HArcHeight = 0.5f;
+        [Tooltip("25j: spine back arch (deg) built through the ascent as the weapon goes up.")]
+        [Range(0f, 45f)] public float jumpAttack1HAscentArch = 18f;
+        [Tooltip("25j: forward crunch (deg) at touchdown, from the arch through the strike.")]
+        [Range(0f, 60f)] public float jumpAttack1HStrikeCrunch = 45f;
+        [Tooltip("25j: landing squat hip drop (m); hips ~knee level at 0.3.")]
+        [Range(0f, 0.5f)] public float jumpAttack1HLandHipDrop = 0.3f;
+        [Tooltip("25j: squat + hunch hold after touchdown (s).")]
+        [Range(0f, 1f)] public float jumpAttack1HSquatHold = 0.25f;
+        [Tooltip("25j: smooth rise from the squat to neutral (s).")]
+        [Range(0.3f, 3f)] public float jumpAttack1HRiseSeconds = 1.4f;
+        [Tooltip("25j: movement locked for the hold + this fraction of the rise.")]
+        [Range(0f, 1f)] public float jumpAttack1HRecoveryLockFraction = 0.6f;
+        [Tooltip("25j: landing shake x heavy hit shake (small).")]
+        [Range(0f, 2f)] public float jumpAttack1HLandShakeScale = 0.15f;
+        [Tooltip("25j: landing shake duration (s), very brief.")]
+        [Range(0.03f, 0.6f)] public float jumpAttack1HLandShakeSeconds = 0.12f;
+        [Tooltip("25j: landing dust scale (small burst).")]
+        [Range(0f, 4f)] public float jumpAttack1HDustScale = 0.8f;
+
+        [Tooltip("25h: descent time cap (s); past it the down swing is sped up so the impact still lands on touchdown.")]
+        [Range(0.3f, 2.5f)] public float jumpAttackMaxDescentTime = 1.1f;
+        [Tooltip("Enemy hit by the jump attack uses the heavy (charged) reaction path: big stagger / knockback.")]
+        public bool jumpAttackHeavyReaction = true;
+        [Tooltip("Ground impact VFX (pooled). Empty = footstep dust prefab, scaled.")]
+        public GameObject jumpAttackImpactVfx;
+        [Range(0f, 6f)] public float jumpAttackImpactVfxScale = 2f;
+        [Tooltip("Landing impact SFX (random pick). Empty = none.")]
+        public AudioClip[] jumpAttackImpactSfx;
+        [Range(0f, 1f)] public float jumpAttackImpactSfxVolume = 1f;
+        [Range(0.4f, 1.5f)] public float jumpAttackImpactSfxPitch = 0.8f;
+        [Header("Jump attack from a jetpack fall (2026-10-25g)")]
+        [Tooltip("Falling after a jetpack boost (not thrusting) + light attack + target in range = plunge attack.")]
+        public bool jumpAttackAllowFromJetpackFall = true;
+        [Tooltip("Plunge refused when higher than this above the landing point (m).")]
+        [Range(2f, 60f)] public float jumpAttackPlungeMaxHeight = 15f;
+        [Tooltip("Plunge max descent speed (m/s) - sets the plunge time for big drops.")]
+        [Range(3f, 60f)] public float jumpAttackPlungeDescentSpeed = 14f;
+        [Tooltip("Small extra lift at the start of the plunge (m).")]
+        [Range(0f, 3f)] public float jumpAttackPlungeArcHeight = 0.4f;
+        [Header("Jump attack body weight (2026-10-25g, Io suits = ~1 g feel)")]
+        [Tooltip("Master scale for the jump attack body-weight reactions (0 = off).")]
+        [Range(0f, 3f)] public float jumpAttackBodyWeightScale = 1f;
+        [Tooltip("Take-off: hips load / crouch (m).")]
+        [Range(0f, 0.4f)] public float jumpAttackTakeoffCrouch = 0.06f;
+        [Tooltip("Take-off: spine pitch forward (deg).")]
+        [Range(0f, 30f)] public float jumpAttackTakeoffPitch = 6f;
+        [Tooltip("Wind-up: spine weight shift back as the weapon rises (deg).")]
+        [Range(0f, 30f)] public float jumpAttackWindupLean = 8f;
+        [Tooltip("Landing impact: hips drop / compression (m).")]
+        [Range(0f, 0.5f)] public float jumpAttackLandDrop = 0.12f;
+        [Tooltip("Landing impact: spine pitch forward into the strike (deg).")]
+        [Range(0f, 40f)] public float jumpAttackLandPitch = 14f;
+
+        /// <summary>2026-10-25f: 0 Subtle, 1 Default, 2 Extreme.</summary>
+        public void ApplyJumpAttackPreset(int level)
+        {
+            jumpAttackEnabled = true;
+            jumpAttack1HReferenceMode = true;
+            switch (level)
+            {
+                case 0: jumpAttackBlendIn = 0.14f; jumpAttackMomentumCarry = 0.3f; jumpAttackApexHang = 0.05f; jumpAttackDescentPower = 1.7f; jumpAttackLandRecovery = 0.15f; jumpAttackHitstopBonusFrames = 1; jumpAttackHitShakeScale = 0.25f; jumpAttackLandShakeScale = 0.15f; jumpAttack1HDownSwingSpeed = 0.8f; jumpAttack2HDownSwingSpeed = 0.8f; jumpAttack1HSwingBend = 14f; jumpAttack2HSwingBend = 18f; jumpAttackSwingHipDrop = 0.03f; jumpAttackSwingBendRelease = 0.3f; jumpAttackMaxDescentTime = 0.9f; jumpAttackImpactVfxScale = 1.2f; jumpAttackBodyWeightScale = 0.5f; jumpAttackTakeoffCrouch = 0.04f; jumpAttackTakeoffPitch = 4f; jumpAttackWindupLean = 5f; jumpAttackLandDrop = 0.07f; jumpAttackLandPitch = 8f;
+                    jumpAttackComboWindow = 0.18f; jumpAttackMinRunSpeed = 3.5f; jumpAttackRangeMin = 1.5f; jumpAttackRangeMax = 5f; jumpAttackConeHalfAngle = 40f; jumpAttackStopDistance = 1.4f; jumpAttackLeapSpeed = 7f; jumpAttackArcHeight = 0.6f; jumpAttackDamageMultiplier = 1f; jumpAttackCooldownSeconds = 1.8f; jumpAttackStaminaCost = 25f;
+                    jumpAttack1HDownSwingSpeed = 1f; jumpAttack1HAscentSeconds = 0.36f; jumpAttack1HSwingSeconds = 0.55f; jumpAttack1HLeapDistance = 1.4f; jumpAttack1HArcHeight = 0.35f; jumpAttack1HAscentArch = 10f; jumpAttack1HStrikeCrunch = 28f; jumpAttack1HLandHipDrop = 0.18f; jumpAttack1HSquatHold = 0.15f; jumpAttack1HRiseSeconds = 0.9f; jumpAttack1HRecoveryLockFraction = 0.4f; jumpAttack1HLandShakeScale = 0.08f; jumpAttack1HLandShakeSeconds = 0.08f; jumpAttack1HDustScale = 0.5f; break;
+                case 2: jumpAttackBlendIn = 0.06f; jumpAttackMomentumCarry = 1f; jumpAttackApexHang = 0.18f; jumpAttackDescentPower = 3f; jumpAttackLandRecovery = 0.4f; jumpAttackHitstopBonusFrames = 6; jumpAttackHitShakeScale = 2f; jumpAttackLandShakeScale = 1.5f; jumpAttack1HDownSwingSpeed = 0.4f; jumpAttack2HDownSwingSpeed = 0.4f; jumpAttack1HSwingBend = 40f; jumpAttack2HSwingBend = 48f; jumpAttackSwingHipDrop = 0.1f; jumpAttackSwingBendRelease = 0.6f; jumpAttackMaxDescentTime = 1.5f; jumpAttackImpactVfxScale = 3.5f; jumpAttackBodyWeightScale = 1.6f; jumpAttackTakeoffCrouch = 0.1f; jumpAttackTakeoffPitch = 10f; jumpAttackWindupLean = 12f; jumpAttackLandDrop = 0.2f; jumpAttackLandPitch = 22f;
+                    jumpAttackComboWindow = 0.4f; jumpAttackMinRunSpeed = 1f; jumpAttackRangeMin = 0.8f; jumpAttackRangeMax = 16f; jumpAttackConeHalfAngle = 90f; jumpAttackStopDistance = 1.1f; jumpAttackLeapSpeed = 20f; jumpAttackArcHeight = 2.5f; jumpAttackDamageMultiplier = 3f; jumpAttackCooldownSeconds = 0.4f; jumpAttackStaminaCost = 8f;
+                    jumpAttack1HDownSwingSpeed = 1f; jumpAttack1HAscentSeconds = 0.4f; jumpAttack1HSwingSeconds = 0.45f; jumpAttack1HLeapDistance = 3f; jumpAttack1HArcHeight = 1f; jumpAttack1HAscentArch = 30f; jumpAttack1HStrikeCrunch = 60f; jumpAttack1HLandHipDrop = 0.42f; jumpAttack1HSquatHold = 0.45f; jumpAttack1HRiseSeconds = 1.8f; jumpAttack1HRecoveryLockFraction = 0.8f; jumpAttack1HLandShakeScale = 0.35f; jumpAttack1HLandShakeSeconds = 0.2f; jumpAttack1HDustScale = 1.6f; break;
+                default: jumpAttackBlendIn = 0.1f; jumpAttackMomentumCarry = 0.6f; jumpAttackApexHang = 0.1f; jumpAttackDescentPower = 2.2f; jumpAttackLandRecovery = 0.25f; jumpAttackHitstopBonusFrames = 3; jumpAttackHitShakeScale = 0.5f; jumpAttackLandShakeScale = 0.3f; jumpAttack1HDownSwingSpeed = 0.6f; jumpAttack2HDownSwingSpeed = 0.6f; jumpAttack1HSwingBend = 24f; jumpAttack2HSwingBend = 30f; jumpAttackSwingHipDrop = 0.05f; jumpAttackSwingBendRelease = 0.4f; jumpAttackMaxDescentTime = 1.1f; jumpAttackImpactVfxScale = 2f; jumpAttackBodyWeightScale = 1f; jumpAttackTakeoffCrouch = 0.06f; jumpAttackTakeoffPitch = 6f; jumpAttackWindupLean = 8f; jumpAttackLandDrop = 0.12f; jumpAttackLandPitch = 14f;
+                    jumpAttackComboWindow = 0.25f; jumpAttackMinRunSpeed = 2.5f; jumpAttackRangeMin = 1.2f; jumpAttackRangeMax = 8f; jumpAttackConeHalfAngle = 60f; jumpAttackStopDistance = 1.3f; jumpAttackLeapSpeed = 10f; jumpAttackArcHeight = 1.2f; jumpAttackDamageMultiplier = 2f; jumpAttackCooldownSeconds = 1f; jumpAttackStaminaCost = 15f;
+                    jumpAttack1HDownSwingSpeed = 1f; jumpAttack1HAscentSeconds = 0.38f; jumpAttack1HSwingSeconds = 0.55f; jumpAttack1HLeapDistance = 1.8f; jumpAttack1HArcHeight = 0.5f; jumpAttack1HAscentArch = 18f; jumpAttack1HStrikeCrunch = 45f; jumpAttack1HLandHipDrop = 0.3f; jumpAttack1HSquatHold = 0.25f; jumpAttack1HRiseSeconds = 1.4f; jumpAttack1HRecoveryLockFraction = 0.6f; jumpAttack1HLandShakeScale = 0.15f; jumpAttack1HLandShakeSeconds = 0.12f; jumpAttack1HDustScale = 0.8f; break;
+            }
+        }
+
+        /// <summary>2026-10-25e: 0 Subtle, 1 Default, 2 Extreme.</summary>
+        public void ApplyDashInputPreset(int level)
+        {
+            dashPadHoldEnabled = true;
+            switch (level)
+            {
+                case 0: dashPadHoldSeconds = 0.25f; dashPadStickDeadzone = 0.6f; break;
+                case 2: dashPadHoldSeconds = 0.1f; dashPadStickDeadzone = 0.25f; break;
+                default: dashPadHoldSeconds = 0.18f; dashPadStickDeadzone = 0.4f; break;
+            }
+        }
+
+        /// <summary>2026-10-25d: 0 Subtle, 1 Default, 2 Extreme.</summary>
+        public void ApplyQuickStepPreset(int level)
+        {
+            quickStepEnabled = true;
+            switch (level)
+            {
+                case 0: quickStepTapWindowSeconds = 0.25f; sidestepDistance = 1.2f; backstepDistance = 1f; quickStepDurationSeconds = 0.18f; quickStepCooldownSeconds = 0.6f; quickStepPadHoldSeconds = 0.2f; quickStepPadDeflection = 0.75f; break;
+                case 2: quickStepTapWindowSeconds = 0.5f; sidestepDistance = 3f; backstepDistance = 2.5f; quickStepDurationSeconds = 0.25f; quickStepCooldownSeconds = 0.15f; quickStepPadHoldSeconds = 0.1f; quickStepPadDeflection = 0.45f; break;
+                default: quickStepTapWindowSeconds = 0.35f; sidestepDistance = 1.8f; backstepDistance = 1.5f; quickStepDurationSeconds = 0.2f; quickStepCooldownSeconds = 0.4f; quickStepPadHoldSeconds = 0.15f; quickStepPadDeflection = 0.6f; break;
+            }
+        }
 
         [Header("Holstered weapon sway (player + enemies, runtime only)")]
         [Tooltip("Holstered_ weapons swing on a spring when walking / running / fighting. Rest pose = the hand-set placement; nothing is saved. 0 = off.")]

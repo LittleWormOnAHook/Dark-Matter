@@ -67,6 +67,12 @@ namespace Project.EditorTools.GenesisStudio
         private static void DrawGamepadLook()
         {
             EditorGUILayout.Space(8f);
+            EditorGUILayout.LabelField("Sidestep / backstep (2026-10-25d)", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                "KBM: double-tap A / D = sidestep, double-tap S = backstep. Dash = hold WASD (diagonals ok) + Left Alt (no direction = forward). No double-tap dash.\n" +
+                "Gamepad dash: hold B with the left stick deflected = dash that way; quick tap B = dodge / roll.\n" +
+                "Gamepad: left stick left / right (or back) + HOLD A past the hold time = step. Tap A = jump (fires on release while the stick is deflected); jetpack double-press unchanged.\n" +
+                "Tune: Combat Core > Player quick step + Directional dash input (hold time, stick deadzone, presets).", MessageType.None);
             EditorGUILayout.LabelField("Gamepad Look", EditorStyles.boldLabel);
             Project.Core.GameSettings.ReloadGamepadLook();
             float s = EditorGUILayout.Slider(new GUIContent("Right Stick Sensitivity", "Multiplier on right-stick look (0.1-5, default 1). Saved in PlayerPrefs."), Project.Core.GameSettings.GamepadLookSensitivity, Project.Core.GameSettings.GamepadLookSensitivityMin, Project.Core.GameSettings.GamepadLookSensitivityMax);

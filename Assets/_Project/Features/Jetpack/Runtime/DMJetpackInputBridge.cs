@@ -72,11 +72,26 @@ namespace Project.Features.Jetpack
             return false;
         }
 
+        private float _gestureSuppressedUntil;
+
+        /// <summary>2026-10-25g: jump attack - ignore jump presses for the jetpack double-tap for a while.</summary>
+        public void SuppressGestureFor(float seconds)
+        {
+            _gestureSuppressedUntil = Mathf.Max(_gestureSuppressedUntil, Time.unscaledTime + seconds);
+            ResetGesture(true);
+        }
+
         private void TickJetpackGesture()
         {
             if (jetpack == null)
             {
                 boostHeld = false;
+                return;
+            }
+
+            if (Time.unscaledTime < _gestureSuppressedUntil)
+            {
+                ResetGesture(true);
                 return;
             }
 

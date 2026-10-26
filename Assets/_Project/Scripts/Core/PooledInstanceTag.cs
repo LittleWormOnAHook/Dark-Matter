@@ -10,6 +10,8 @@ namespace Project.Core
     {
         public GameObjectPool SourcePool { get; set; }
         public int LeaseId { get; private set; }
+        /// <summary>2026-10-25d: Time.frameCount of the last Spawn (death cleanup keeps same-frame killing-blow FX).</summary>
+        public int SpawnFrame { get; private set; }
 
         public int BumpLease()
         {
@@ -17,6 +19,7 @@ namespace Project.Core
             {
                 LeaseId++;
             }
+            SpawnFrame = Time.frameCount;
 
             return LeaseId;
         }
