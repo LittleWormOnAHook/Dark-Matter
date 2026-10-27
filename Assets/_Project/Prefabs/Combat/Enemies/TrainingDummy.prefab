@@ -82,15 +82,15 @@ MonoBehaviour:
   enableHealthRegen: 0
   healthRegenPerSecond: 15
   healthRegenDelayAfterDamage: 3
-  positionSpring: 20
-  positionDamping: 7
-  rotationSpring: 24
-  rotationDamping: 8
+  positionSpring: 0.5
+  positionDamping: 1
+  rotationSpring: 0.5
+  rotationDamping: 1
   hitImpulse: 0.85
-  hitTorque: 32
-  maxPositionOffset: 0.45
-  maxRotationOffset: 24
-  poiseStaggerImpulseScale: 1
+  hitTorque: 1
+  maxPositionOffset: 0.1
+  maxRotationOffset: 2
+  poiseStaggerImpulseScale: 0.1
 --- !u!114 &3494430680233957371
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -244,8 +244,38 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1493484833918569187, guid: 42832da890f68a743bb17b0830ce988d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8757316044959666513}
   m_SourcePrefab: {fileID: 100100000, guid: 42832da890f68a743bb17b0830ce988d, type: 3}
+--- !u!1 &6563321961369762573 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1493484833918569187, guid: 42832da890f68a743bb17b0830ce988d, type: 3}
+  m_PrefabInstance: {fileID: 5741093401434042862}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &8757316044959666513
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6563321961369762573}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bfc357f430e1fe94ea6162f29d1844ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.SurfaceCarve.DMCarvable
+  sourceMesh: {fileID: -3334933058281800568, guid: 5f08f8092cf6b244ba9ebd7c5fede40f, type: 3}
+  carvedMesh: {fileID: 0}
+  sourceSubmeshCount: 0
+  submeshSource: 00000000000000000000000000000000
+  fractureSubmesh: 0000000000000000
+  rimSubmesh: 0000000000000000
+  updateCollider: 1
+  allowDebris: 1
+  fractureMaterialOverride: {fileID: 0}
+  rimMaterialOverride: {fileID: 0}
 --- !u!4 &7502118874433279635 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2859952174631872381, guid: 42832da890f68a743bb17b0830ce988d, type: 3}

@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d393cf9f2a75055449313e2700dc4300, type: 3}
+  m_Name: Player_rugged_male_character_3d_model
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Data.PlayerVisualDefinition
+  displayName: Player Custom
+  prefabFileName: Player_rugged_male_character_3d_model
+  templatePrefab: {fileID: 5583354298447300292, guid: b148c9893696f054a9741eac6e45380e, type: 3}
+  playerPrefab: {fileID: 5583354298447300292, guid: b7c548bf024576d4e9dd6cbedac2343e, type: 3}
+  visualChildName: Visual
+  lastModelSource: {fileID: 919132149155446097, guid: 5f1e4acc09494f74fa2d721220af5983, type: 3}
+  notes: "Clones from Player_Invector (template). Create Prefab writes a new file
+    \u2014 never overwrites the template."

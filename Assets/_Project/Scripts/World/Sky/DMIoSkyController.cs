@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Project.World.Clock;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -40,6 +40,12 @@ namespace Project.World.Sky
 
         public float HourOfDay { get; private set; }
         public float EclipseFactor { get; private set; }
+        /// <summary>2026-10-26f: 1 at full night (sun elev &lt;= nightFadeStartDeg), 0 at day (elev &gt;= nightFadeEndDeg).</summary>
+        public float NightLightFactor { get; private set; }
+        /// <summary>2026-10-26j: true when Jupiter-shine (not the sun) owns the single HDRP directional shadow.</summary>
+        public bool NightShadowOwnsDirectional { get; private set; }
+        /// <summary>Active max shadow distance while night/eclipse owns the directional (else -1 = use polish day distance).</summary>
+        public float NightShadowMaxDistanceOverride { get; private set; } = -1f;
         public Vector3 SunDirection { get; private set; }
         public Vector3 JupiterDirection { get; private set; }
         public float SunElevationDeg { get; private set; }
@@ -76,6 +82,7 @@ namespace Project.World.Sky
         private Quaternion sunOriginalRot;
         private Light previousRenderSun;
         private Light jupiterShine;
+        private Light nightLightSky, nightLightMid, nightLightGround; // 2026-10-26f trilight night ambient
         private LightShadows sunOriginalShadows = LightShadows.Soft; // 24av
         private Light shadeFill; // 24al
         private Transform jupiterBody;
@@ -223,6 +230,7 @@ namespace Project.World.Sky
             AcquireJupiter(p, jupiterRoot);
             CreateJupiterShine(p);
             CreateShadeFill();
+            CreateNightLights();
             CreateAmbientVolume(p);
             CreateMoons(p);
             if (Preview)
@@ -438,10 +446,79 @@ namespace Project.World.Sky
             go.transform.SetParent(skyRoot, false);
             jupiterShine = go.AddComponent<Light>();
             jupiterShine.type = LightType.Directional;
-            if (!go.TryGetComponent(out HDAdditionalLightData _)) go.AddComponent<HDAdditionalLightData>();
+            HDAdditionalLightData hd = go.GetComponent<HDAdditionalLightData>();
+            if (hd == null) hd = go.AddComponent<HDAdditionalLightData>();
+            // Never a celestial disc — softness uses angularDiameter with interactsWithSky off (26h/26j).
+            hd.interactsWithSky = false;
+            hd.angularDiameter = 0f;
+            hd.flareSize = 0f;
+            hd.flareMultiplier = 0f;
+            hd.surfaceTexture = null;
+            if (go.TryGetComponent(out LensFlareComponentSRP flare)) Kill(flare);
             jupiterShine.shadows = LightShadows.None;
             jupiterShine.color = p.jupiterShineColor;
             jupiterShine.intensity = 0f;
+        }
+
+        // 2026-10-26f: three shadowless specular-free fills (sky / mid / ground) that fade in with nightFade*.
+        private void CreateNightLights()
+        {
+            nightLightSky = MakeNightFill("DM Night Light Sky");
+            nightLightMid = MakeNightFill("DM Night Light Mid");
+            nightLightGround = MakeNightFill("DM Night Light Ground");
+        }
+
+        private Light MakeNightFill(string name)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(skyRoot, false);
+            Light l = go.AddComponent<Light>();
+            l.type = LightType.Directional;
+            HDAdditionalLightData hd = go.GetComponent<HDAdditionalLightData>();
+            if (hd == null) hd = go.AddComponent<HDAdditionalLightData>();
+            hd.affectsVolumetric = false;
+            hd.affectSpecular = false;
+            // 2026-10-26h: HDRP defaults (interactsWithSky=true, angularDiameter=0.5) drew the sky fill as a bright sun disc.
+            hd.interactsWithSky = false;
+            hd.angularDiameter = 0f;
+            hd.flareSize = 0f;
+            hd.flareMultiplier = 0f;
+            hd.surfaceTexture = null;
+            if (go.TryGetComponent(out LensFlareComponentSRP flare)) Kill(flare);
+            l.shadows = LightShadows.None;
+            l.intensity = 0f;
+            return l;
+        }
+
+        private void ApplyNightLights(DM_IoSkyProfile p, Vector3 N, Vector3 J, Vector3 V)
+        {
+            float n = p.enableNightLight ? NightLightFactor : 0f;
+            float amt = Mathf.Max(0f, p.nightLightAmount) * n;
+            if (nightLightSky != null)
+            {
+                nightLightSky.enabled = amt > 0.001f;
+                nightLightSky.color = p.nightLightSkyColor;
+                nightLightSky.intensity = amt * 0.5f;
+                nightLightSky.transform.rotation = Quaternion.LookRotation(-N, V.sqrMagnitude > 1e-4f ? V : Vector3.forward);
+            }
+            if (nightLightMid != null)
+            {
+                Vector3 midDir = Vector3.ProjectOnPlane(J, N);
+                if (midDir.sqrMagnitude < 1e-4f) midDir = Vector3.ProjectOnPlane(V, N);
+                if (midDir.sqrMagnitude < 1e-4f) midDir = Vector3.right;
+                midDir.Normalize();
+                nightLightMid.enabled = amt > 0.001f;
+                nightLightMid.color = p.nightLightMidColor;
+                nightLightMid.intensity = amt * 0.35f;
+                nightLightMid.transform.rotation = Quaternion.LookRotation(-midDir, N);
+            }
+            if (nightLightGround != null)
+            {
+                nightLightGround.enabled = amt > 0.001f;
+                nightLightGround.color = p.nightLightGroundColor;
+                nightLightGround.intensity = amt * 0.25f;
+                nightLightGround.transform.rotation = Quaternion.LookRotation(N, V.sqrMagnitude > 1e-4f ? V : Vector3.forward);
+            }
         }
 
         private void CreateAmbientVolume(DM_IoSkyProfile p)
@@ -545,6 +622,7 @@ namespace Project.World.Sky
             if (skyRoot != null) Kill(skyRoot.gameObject);
             skyRoot = null;
             jupiterShine = null;
+            nightLightSky = nightLightMid = nightLightGround = null;
             ambientVolume = null;
             ambientCtl = null;
             if (ambientProfile != null) Kill(ambientProfile);
@@ -669,24 +747,81 @@ namespace Project.World.Sky
                 shadeFill.intensity = (p.shadeFillEnabled ? p.shadeFillLux * sunUp * Mathf.Lerp(1f, p.eclipseSunRemaining, e) : 0f) + floorLux;
             }
 
+            // 2026-10-26f: night light factor (shared fade with stars / eclipse night sky).
+            {
+                float a = p.nightFadeStartDeg, b = p.nightFadeEndDeg;
+                if (b < a) { float t = a; a = b; b = t; }
+                NightLightFactor = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(a, b, SunElevationDeg));
+            }
+            ApplyNightLights(p, N, J, V);
+
             if (jupiterShine != null)
             {
                 float lit = Mathf.Clamp01((1f - Vector3.Dot(S, J)) * 0.5f);
-                jupiterShine.transform.rotation = Quaternion.LookRotation(-J, N);
+                // Direction: follow Jupiter (default) or custom yaw/pitch when Night Shadow Direction mode = Custom.
+                if (p.enableNightShadow && p.nightShadowDirectionMode == 1 && NightLightFactor > 0.05f)
+                {
+                    Vector3 customFwd = Quaternion.Euler(-p.nightShadowCustomPitchDeg, p.nightShadowCustomYawDeg, 0f) * Vector3.forward;
+                    jupiterShine.transform.rotation = Quaternion.LookRotation(-customFwd, Vector3.up);
+                }
+                else
+                    jupiterShine.transform.rotation = Quaternion.LookRotation(-J, N);
                 jupiterShine.color = p.jupiterShineColor;
                 jupiterShine.intensity = p.jupiterShineLux * lit + p.eclipseJupiterShineLux * e + p.ringLightLux * ring;
-                // 24av: HDRP renders only ONE directional shadow. In the eclipse the sun is ~0 lux, so its shadow is
-                // invisible; hand the shadow to the Jupiter/ring light (soft, low res, dimmed). Day: sun keeps it.
+
+                // 24av + 2026-10-26j: HDRP has ONE directional shadow cascade atlas.
+                // Day -> sun. Eclipse / night -> Jupiter-shine. Edit preview -> never (scene sun keeps the slot).
                 bool eclShadow = p.eclipseShadowsEnabled && e > 0.5f && vis < 0.5f;
-                if (sun != null) sun.shadows = eclShadow ? LightShadows.None : sunOriginalShadows;
-                jupiterShine.shadows = eclShadow && !Preview ? LightShadows.Soft : LightShadows.None; // 25o: scene sun owns the cascade slot in edit preview
-                if (eclShadow && jupiterShine.TryGetComponent(out HDAdditionalLightData jhd))
+                // Hand off when night factor is past mid-fade and sun is at/below the nightFade end elevation.
+                bool nightShadow = p.enableNightShadow && NightLightFactor > 0.5f
+                    && SunElevationDeg <= Mathf.Max(p.nightFadeEndDeg, p.nightFadeStartDeg);
+                bool jupiterOwns = !Preview && (eclShadow || nightShadow);
+                NightShadowOwnsDirectional = jupiterOwns;
+                NightShadowMaxDistanceOverride = jupiterOwns
+                    ? (nightShadow ? Mathf.Max(20f, p.nightShadowMaxDistance) : -1f)
+                    : -1f;
+
+                if (sun != null) sun.shadows = jupiterOwns ? LightShadows.None : sunOriginalShadows;
+                jupiterShine.shadows = jupiterOwns ? LightShadows.Soft : LightShadows.None;
+
+                if (jupiterShine.TryGetComponent(out HDAdditionalLightData jhd))
                 {
-                    jhd.shadowResolution.useOverride = true;
-                    jhd.shadowResolution.@override = 512;
-                    jhd.shadowDimmer = p.eclipseShadowStrength;
-                    jhd.angularDiameter = p.eclipseShadowSoftnessDeg;
+                    jhd.interactsWithSky = false; // never a sky disc, even when angularDiameter > 0 for soft penumbra
+                    jhd.flareSize = 0f;
+                    jhd.flareMultiplier = 0f;
+                    jhd.surfaceTexture = null;
+                    if (jupiterOwns)
+                    {
+                        int tier = nightShadow ? Mathf.Clamp(p.nightShadowResolutionTier, 0, 3) : 1;
+                        int[] res = { 256, 512, 1024, 2048 };
+                        jhd.shadowResolution.useOverride = true;
+                        jhd.shadowResolution.@override = res[tier];
+                        float dim = 0f;
+                        float soft = 4f;
+                        if (eclShadow)
+                        {
+                            dim = Mathf.Max(dim, p.eclipseShadowStrength);
+                            soft = p.eclipseShadowSoftnessDeg;
+                        }
+                        if (nightShadow)
+                        {
+                            dim = Mathf.Max(dim, p.nightShadowStrength * NightLightFactor);
+                            soft = p.nightShadowSoftnessDeg;
+                        }
+                        jhd.shadowDimmer = Mathf.Clamp01(dim);
+                        jhd.angularDiameter = Mathf.Max(0.1f, soft);
+                    }
+                    else
+                    {
+                        jhd.shadowDimmer = 1f;
+                        jhd.angularDiameter = 0f;
+                    }
                 }
+            }
+            else
+            {
+                NightShadowOwnsDirectional = false;
+                NightShadowMaxDistanceOverride = -1f;
             }
             if (sunFlare != null)
             {
@@ -780,7 +915,8 @@ namespace Project.World.Sky
             int n = 0;
             if (p != null && p.starsBehindSkyBodies && acquired && !idle)
             {
-                float marg = p.starOcclusionMarginDeg * Mathf.Deg2Rad;
+                // 2026-10-26n: keep cutout tight to the true disc (margin clamped).
+                float marg = Mathf.Clamp(p.starOcclusionMarginDeg, -0.25f, 0.5f) * Mathf.Deg2Rad;
                 if (jupiterBody != null && jupiterBody.gameObject.activeInHierarchy)
                 {
                     Vector3 d = JupiterDirection.normalized;
@@ -796,7 +932,8 @@ namespace Project.World.Sky
             }
             Shader.SetGlobalVectorArray(OccId, occ);
             Shader.SetGlobalFloat(OccCountId, n);
-            Shader.SetGlobalFloat(OccSoftId, p != null ? Mathf.Max(1e-4f, p.starOcclusionSoftDeg * Mathf.Deg2Rad) : 0.002f);
+            // 2026-10-26n: clamp soft so a huge Studio value cannot reopen a dark halo ring.
+            Shader.SetGlobalFloat(OccSoftId, p != null ? Mathf.Max(1e-4f, Mathf.Min(1f, p.starOcclusionSoftDeg) * Mathf.Deg2Rad) : 0.0014f);
         }
 
         private void OnBeginCamera(ScriptableRenderContext ctx, Camera cam)

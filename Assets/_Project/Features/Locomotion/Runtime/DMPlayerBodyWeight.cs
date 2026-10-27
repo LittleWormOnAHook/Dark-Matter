@@ -508,7 +508,7 @@ namespace Project.Features.Locomotion
             bool attacking = !blocked && (SimActive ? Sim.Attacking : (_shooter != null && _shooter.isAttacking));
             _swingWeight = Mathf.MoveTowards(_swingWeight, attacking ? 1f : 0f, dt / 0.12f);
             bool ww = p.bodyWeightWeaponEnabled;
-            float gain = ww ? p.bodyWeightWeaponSwingGain * _ww : 1f;
+            float gain = ww ? p.bodyWeightWeaponSwingGain * _ww * Project.Combat.DMSlice6Runtime.OtherMeleeBodySwingMult : 1f;
             float m = p.bodyWeightSwingMaxDegrees * Mathf.Max(1f, gain); // explosion guard, not a look clamp
             // Hit-stop: the hand freezes, so omega -> 0 used to yank the torso back to neutral at the exact moment of
             // contact (round-1 reason the swing read as "nothing"). Hold the pre-contact target, and jolt on contact.

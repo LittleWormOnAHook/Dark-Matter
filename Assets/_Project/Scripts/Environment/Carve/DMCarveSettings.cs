@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 
 namespace Project.SurfaceCarve
@@ -107,6 +107,85 @@ namespace Project.SurfaceCarve
         [Range(0f, 1f)] public float runtimeColliderRefresh = 0.12f;
         [Tooltip("Play Mode: a carved object whose MeshCollider uses its own (simplified) mesh keeps that collider instead of switching to the full-detail carved render mesh. Colliders that already share the render mesh still update.")]
         public bool keepDedicatedColliderInPlay = true;
+        [Tooltip("2026-10-24af: Play Mode carves also cut the collider exactly like the visible mesh (overrides Keep Dedicated Collider; box / sphere / capsule colliders on the carved object are swapped for a MeshCollider of the carved mesh). Player, enemies and projectiles pass through carved holes. Costs a collider re-cook per carve.")]
+        public bool colliderFollowsCarvedMesh = true;
+        [Tooltip("2026-10-24af: Carve Lab experiment ammo leaves no hit mark / laser burn / molten spot (crater + glow only).")]
+        public bool carveAmmoSkipsHitMarks = true;
+
+        [Header("Hot Cut Glow (2026-10-24af)")]
+        [Tooltip("Cut faces glow like hot metal / rock right after a Play Mode carve, then cool (MaterialPropertyBlock _EmissiveColor; materials untouched).")]
+        public bool carveGlowEnabled = true;
+        [Tooltip("2026-10-24ah: glow on carved cut faces and falling chunks. OFF = no emission / property block on carved meshes or chunks (molten drips still glow).")]
+        public bool carveSurfaceGlowEnabled = false;
+        [ColorUsage(false, true)] public Color carveGlowColor = new Color(1f, 0.38f, 0.08f, 1f);
+        [Tooltip("Emission strength at curve value 1 (HDRP units; wide range for exposure).")]
+        [Range(0f, 5000f)] public float carveGlowIntensity = 60f;
+        [Tooltip("Seconds from carve to fully cooled.")]
+        [Range(0.1f, 60f)] public float carveGlowCoolSeconds = 4f;
+        [Tooltip("Glow over normalised cool time (0..1). 1 = full hot.")]
+        public AnimationCurve carveGlowCurve = new AnimationCurve(new Keyframe(0f, 1f), new Keyframe(0.25f, 0.6f), new Keyframe(1f, 0f));
+
+        [Header("Molten Drips (2026-10-24af)")]
+        public bool carveDripsEnabled = true;
+        [Tooltip("Drips per second per hot carved object.")]
+        [Range(0f, 200f)] public float carveDripRate = 8f;
+        [Tooltip("Drip size (m).")]
+        [Range(0.002f, 0.5f)] public float carveDripSize = 0.025f;
+        [Tooltip("Seconds a drip lives (glow follows the glow curve over this time).")]
+        [Range(0.1f, 30f)] public float carveDripLifetime = 2.5f;
+        [Tooltip("Fraction of the cool time during which the rim keeps dripping.")]
+        [Range(0f, 1f)] public float carveDripWindow = 0.6f;
+        [Tooltip("Global cap on live drips (oldest recycled).")]
+        [Range(0, 1000)] public int carveDripMaxLive = 80;
+        [Range(0f, 3f)] public float carveDripGravity = 1f;
+        [Range(0f, 5000f)] public float carveDripIntensity = 2.5f; // 24ag: Anthony default 2.5
+        [Tooltip("Colour of a fully cooled drip.")]
+        public Color carveDripCooledColor = new Color(0.08f, 0.07f, 0.065f, 1f);
+
+        [Header("Through-Holes (2026-10-24ag)")]
+        [Tooltip("When a carve hit goes through a wall / prop thinner than Max Thickness, cut one clean straight tunnel (closed inner wall, no ragged rim) instead of a noisy crater.")]
+        public bool throughHoleEnabled = true;
+        [Tooltip("Max object thickness (m) along the hit normal that gets a clean through-hole.")]
+        [Range(0.02f, 10f)] public float throughHoleMaxThickness = 0.8f;
+        [Tooltip("Through-hole radius = carve radius x this.")]
+        [Range(0.2f, 4f)] public float throughHoleRadiusScale = 1f;
+        [Tooltip("Dark rim band width on through-holes (cutter-radius units). 0 = none.")]
+        [Range(0f, 0.3f)] public float throughHoleRimWidth = 0.02f;
+        [Tooltip("Tunnel wall smoothness (icosphere subdivisions of the tunnel cutter).")]
+        [Range(2, 5)] public int throughHoleSubdivisions = 4;
+
+        [Header("Falling Chunks (2026-10-24ag)")]
+        [Tooltip("A carve that fully separates a piece turns it into its own falling object (convex collider + Rigidbody), with the hot glow.")]
+        public bool chunkSplitEnabled = true;
+        [Tooltip("Chunk density (kg/m3 of bounds volume x 0.5).")]
+        [Range(10f, 10000f)] public float chunkDensity = 2400f;
+        [Range(0.1f, 2000f)] public float chunkMaxMass = 400f;
+        [Tooltip("Separated pieces smaller than this (m, largest side) are deleted instead of dropped (no slivers).")]
+        [Range(0.001f, 1f)] public float chunkMinSize = 0.04f;
+        [Tooltip("Only pieces within this many cutter radii of the cut are split off (keeps separate parts of a model attached).")]
+        [Range(1f, 10f)] public float chunkSearchRadii = 3f;
+        [Tooltip("Seconds before a chunk despawns.")]
+        [Range(1f, 600f)] public float chunkLifetime = 20f;
+        [Tooltip("Max live chunks (oldest despawns).")]
+        [Range(0, 200)] public int chunkMaxLive = 24;
+        [Tooltip("Log one line per carve that splits off / deletes pieces.")]
+        public bool logChunkSplit = false;
+
+        /// <summary>0 Subtle, 1 Default, 2 Extreme.</summary>
+        public void ApplyCarveChunkPreset(int preset)
+        {
+            if (preset <= 0) { throughHoleMaxThickness = 0.4f; chunkMinSize = 0.08f; chunkLifetime = 8f; chunkMaxLive = 8; chunkDensity = 2400f; }
+            else if (preset == 1) { throughHoleMaxThickness = 0.8f; chunkMinSize = 0.04f; chunkLifetime = 20f; chunkMaxLive = 24; chunkDensity = 2400f; }
+            else { throughHoleMaxThickness = 3f; chunkMinSize = 0.015f; chunkLifetime = 90f; chunkMaxLive = 100; chunkDensity = 2400f; }
+        }
+
+        /// <summary>0 Subtle, 1 Default, 2 Extreme.</summary>
+        public void ApplyCarveHeatPreset(int preset)
+        {
+            if (preset <= 0) { carveGlowIntensity = 20f; carveGlowCoolSeconds = 2f; carveDripRate = 3f; carveDripSize = 0.015f; carveDripLifetime = 1.5f; carveDripMaxLive = 30; carveDripIntensity = 1f; }
+            else if (preset == 1) { carveGlowIntensity = 60f; carveGlowCoolSeconds = 4f; carveDripRate = 8f; carveDripSize = 0.025f; carveDripLifetime = 2.5f; carveDripMaxLive = 80; carveDripIntensity = 2.5f; }
+            else { carveGlowIntensity = 400f; carveGlowCoolSeconds = 10f; carveDripRate = 40f; carveDripSize = 0.05f; carveDripLifetime = 5f; carveDripMaxLive = 300; carveDripIntensity = 25f; }
+        }
 
         [NonSerialized] private static DMCarveSettings cached;
 

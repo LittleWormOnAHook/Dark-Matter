@@ -216,8 +216,17 @@ namespace Project.EditorTools
                 "Template Prefab",
                 templatePrefab,
                 typeof(GameObject),
-                false);
-            if (EditorGUI.EndChangeCheck() && workingDefinition != null)
+                true);
+            bool templateChanged = EditorGUI.EndChangeCheck();
+            if (templateChanged && templatePrefab != null && !EditorUtility.IsPersistent(templatePrefab))
+            {
+                // Hierarchy drop: use the prefab asset behind it (scene-only overrides are not included).
+                templatePrefab = PlayerPrefabVisualSetupUtility.NormalizeTemplateSelection(templatePrefab, out string templateWarning);
+                if (!string.IsNullOrEmpty(templateWarning))
+                    EditorUtility.DisplayDialog("Player Prefab Creator", templateWarning, "OK");
+            }
+
+            if (templateChanged && workingDefinition != null)
                 workingDefinition.templatePrefab = templatePrefab;
 
             DMCharacterCreatorSharedUi.DrawResponsiveButtonRow(

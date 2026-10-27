@@ -79,7 +79,7 @@ MonoBehaviour:
   doorInteractRangeMeters: 5
   gateSwingDegrees: 90
   gateSwingSeconds: 1.4
-  turretInteractRangeMeters: 3.5
+  turretInteractRangeMeters: 10
   turretPlayerCameraBackMeters: 1.8
   turretPlayerCameraUpMeters: 0.55
   turretPlayerCameraFov: 60

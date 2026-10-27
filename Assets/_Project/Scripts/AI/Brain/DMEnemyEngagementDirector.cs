@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Project.Combat;
 using Project.Core;
 using Project.Player;
 using UnityEngine;
@@ -29,6 +30,11 @@ namespace Project.AI
         public Vector3 AnchorOrigin;
         public float AnchorTime = -999f;
 
+        /// <summary>2026-10-25s Phase 4 flank role (side / back hold point).</summary>
+        public bool Flanker;
+        public float FlankSince = -999f;
+        public float FlankSide = 1f;
+
         public void ClearAnchor()
         {
             HasAnchor = false;
@@ -58,6 +64,13 @@ namespace Project.AI
             public float HolderSince;
             public float LastHandoffTime = -999f;
             public EnemyAiController Challenger;
+            // 2026-10-25s Phase 4: flank + group morale.
+            public readonly List<EnemyAiController> Flankers = new List<EnemyAiController>(2);
+            public readonly HashSet<EnemyAiController> Casualties = new HashSet<EnemyAiController>();
+            public float Morale = 1f;
+            public bool MoraleBroken;
+            public float LastMoraleTime = -1f;
+            public float NextFlankTime;
             public float ChallengerSince;
             // Phase 4: secondary attackers (the token Holder is not in this list).
             public readonly List<EnemyAiController> Slots = new List<EnemyAiController>(4);
@@ -90,6 +103,14 @@ namespace Project.AI
                 HolderActionsEnd = -999f;
                 LastSampleTime = -1f;
                 TargetSpeed = 0f;
+                for (int f = 0; f < Flankers.Count; f++)
+                    if (Flankers[f] != null) Flankers[f].EngagementState.Flanker = false;
+                Flankers.Clear();
+                Casualties.Clear();
+                Morale = 1f;
+                MoraleBroken = false;
+                LastMoraleTime = -1f;
+                NextFlankTime = 0f;
             }
         }
 
@@ -105,6 +126,165 @@ namespace Project.AI
             RingPool.Clear();
             nextTickTime = 0f;
             lastTickFrame = -1;
+            GruesomeKills.Clear();
+            StatFlankAssigns = StatFlankReleases = StatMoraleDrops = StatMoraleBreaks = StatMoraleRecovers = 0;
+            CombatEvents.HitApplied -= OnHitForMorale;
+            CombatEvents.HitApplied += OnHitForMorale;
+        }
+
+        // ------------------------------------------------ 2026-10-25s Phase 4: flank + morale
+        public static int StatFlankAssigns, StatFlankReleases, StatMoraleDrops, StatMoraleBreaks, StatMoraleRecovers;
+        private static readonly List<EnemyAiController> GruesomeKills = new List<EnemyAiController>(); // 2026-10-26a reference list (survives Destroy)
+
+        public static void ResetPhase4Stats() { StatFlankAssigns = StatFlankReleases = StatMoraleDrops = StatMoraleBreaks = StatMoraleRecovers = 0; }
+
+        /// <summary>Audit / debug: the ring's leader (first member) for <paramref name="target"/>.</summary>
+        public static EnemyAiController GetRingLeader(Transform target)
+        {
+            for (int i = 0; i < Rings.Count; i++)
+                if (Rings[i].Target == target && Rings[i].Members.Count > 0) return Rings[i].Members[0];
+            return null;
+        }
+
+        public static bool IsFlanker(EnemyAiController agent) => agent != null && agent.EngagementState.Flanker;
+
+        public static bool IsMoraleBroken(EnemyAiController agent)
+        {
+            Ring r = agent != null ? agent.EngagementState.Ring : null;
+            DM_CombatDirectorProfile d = DM_CombatDirectorProfile.Live;
+            return r != null && r.MoraleBroken && d != null && d.moraleBrokenOuterRing;
+        }
+
+        /// <summary>Audit / debug: group state for <paramref name="target"/>.</summary>
+        public static bool TryGetGroupDebug(Transform target, out float morale, out bool broken, out int flankers, out int members, out int totalSlots)
+        {
+            for (int i = 0; i < Rings.Count; i++)
+            {
+                Ring r = Rings[i];
+                if (r.Target != target) continue;
+                morale = r.Morale; broken = r.MoraleBroken; flankers = r.Flankers.Count; members = r.Members.Count; totalSlots = r.TotalSlots;
+                return true;
+            }
+            morale = 1f; broken = false; flankers = 0; members = 0; totalSlots = 0;
+            return false;
+        }
+
+        private static void OnHitForMorale(DamageInfo info, GameObject target)
+        {
+            if (target == null || !(info.IsCritical || info.IsChargedHit))
+                return;
+            EnemyHealth h = target.GetComponentInParent<EnemyHealth>();
+            if (h != null && h.IsDead)
+            { var gai = h.GetComponent<EnemyAiController>(); if (gai != null && !GruesomeKills.Contains(gai)) GruesomeKills.Add(gai); }
+        }
+
+        private static void NoteCasualty(Ring ring, EnemyAiController agent)
+        {
+            DM_CombatDirectorProfile d = DM_CombatDirectorProfile.Live;
+            // 2026-10-26a: destroyed members (destroyOnDeath) still count as casualties.
+            if (ring == null || ReferenceEquals(agent, null) || d == null || !d.enableMorale)
+                return;
+            bool destroyed = agent == null;
+            EnemyHealth h = destroyed ? null : agent.GetComponent<EnemyHealth>();
+            bool dead = destroyed || (h != null && (h.IsDead || h.CurrentHealth <= 0f));
+            if (!dead || !ring.Casualties.Add(agent))
+                return;
+            float drop = d.casualtyMoraleDrop;
+            bool leader = ring.Members.Count > 0 && ReferenceEquals(ring.Members[0], agent);
+            if (leader) drop += d.leaderDeathMoraleDrop;
+            bool gruesome = false;
+            for (int gi = GruesomeKills.Count - 1; gi >= 0; gi--) if (ReferenceEquals(GruesomeKills[gi], agent)) { GruesomeKills.RemoveAt(gi); gruesome = true; }
+            if (gruesome) drop += d.gruesomeKillMoraleDrop;
+            ring.Morale = Mathf.Clamp01(ring.Morale - drop);
+            StatMoraleDrops++;
+            if (d.debugLogFlankMorale)
+                Debug.Log($"[DMCombatDirector] morale -{drop:0.00} ({(destroyed ? "destroyed" : agent.name)} died{(leader ? ", leader" : "")}{(gruesome ? ", gruesome" : "")}) -> {ring.Morale:0.00}");
+        }
+
+        private static void TickMorale(Ring ring, float now)
+        {
+            DM_CombatDirectorProfile d = DM_CombatDirectorProfile.Live;
+            float dt = ring.LastMoraleTime < 0f ? 0f : now - ring.LastMoraleTime;
+            ring.LastMoraleTime = now;
+            if (d == null || !d.enableMorale)
+            {
+                ring.MoraleBroken = false;
+                return;
+            }
+            ring.Morale = Mathf.Min(1f, ring.Morale + d.moraleRecoverPerSecond * dt);
+            if (!ring.MoraleBroken && ring.Morale < d.retreatMoraleThreshold)
+            {
+                ring.MoraleBroken = true;
+                StatMoraleBreaks++;
+                for (int i = 0; i < ring.Members.Count; i++)
+                    if (ring.Members[i] != null) ring.Members[i].EngagementState.ClearAnchor(); // re-anchor on the outer ring
+                if (d.debugLogFlankMorale)
+                    Debug.Log($"[DMCombatDirector] morale BROKEN ({ring.Morale:0.00}) target={(ring.Target != null ? ring.Target.name : "-")}");
+            }
+            else if (ring.MoraleBroken && ring.Morale >= d.retreatMoraleThreshold + d.moraleRecoverHysteresis)
+            {
+                ring.MoraleBroken = false;
+                StatMoraleRecovers++;
+                if (d.debugLogFlankMorale)
+                    Debug.Log($"[DMCombatDirector] morale recovered ({ring.Morale:0.00})");
+            }
+        }
+
+        private static void ReleaseFlank(Ring ring, int index, float now, string why)
+        {
+            EnemyAiController f = ring.Flankers[index];
+            ring.Flankers.RemoveAt(index);
+            DM_CombatDirectorProfile d = DM_CombatDirectorProfile.Live;
+            ring.NextFlankTime = now + (d != null ? d.flankCooldownSeconds : 2f);
+            StatFlankReleases++;
+            if (f == null) return;
+            f.EngagementState.Flanker = false;
+            f.EngagementState.ClearAnchor();
+            if (d != null && d.debugLogFlankMorale)
+                Debug.Log($"[DMCombatDirector] flank release {f.name} ({why})");
+        }
+
+        private static void TickFlank(Ring ring, float now)
+        {
+            DM_CombatDirectorProfile d = DM_CombatDirectorProfile.Live;
+            bool on = d != null && d.enableCombatDirector && d.enableFlank && ring.Target != null && !ring.MoraleBroken
+                      && ring.Members.Count >= Mathf.Max(2, d.flankMinEnemies);
+            for (int i = ring.Flankers.Count - 1; i >= 0; i--)
+            {
+                EnemyAiController f = ring.Flankers[i];
+                bool valid = f != null && f.isActiveAndEnabled && f.EngagementState.Ring == ring && f.EngagementState.Role == DMEngagementRole.Holder;
+                float held = f != null ? now - f.EngagementState.FlankSince : 0f;
+                if (!valid) ReleaseFlank(ring, i, now, "role");
+                else if (!on && held >= (d != null ? d.flankMinHoldSeconds : 0f)) ReleaseFlank(ring, i, now, "off");
+                else if (d != null && held >= Mathf.Max(d.flankMinHoldSeconds, d.flankMaxHoldSeconds)) ReleaseFlank(ring, i, now, "rotate");
+            }
+            if (!on || now < ring.NextFlankTime || ring.Flankers.Count >= d.flankMaxConcurrent)
+                return;
+
+            Vector3 fwd = ring.Target.forward; fwd.y = 0f;
+            if (fwd.sqrMagnitude < 0.0001f) return;
+            fwd.Normalize();
+            EnemyAiController best = null; float bestScore = -1f; float bestSide = 1f;
+            for (int i = 0; i < ring.Members.Count; i++)
+            {
+                EnemyAiController m = ring.Members[i];
+                if (m == null || m == ring.Holder || m.EngagementState.Flanker || m.EngagementState.Role != DMEngagementRole.Holder || ring.Slots.Contains(m))
+                    continue;
+                Vector3 to = m.transform.position - ring.Target.position; to.y = 0f;
+                if (to.sqrMagnitude < 0.01f) continue;
+                float signed = Vector3.SignedAngle(fwd, to, Vector3.up);
+                float score = Mathf.Abs(signed); // already off-axis = shortest walk to the flank
+                if (score > bestScore) { bestScore = score; best = m; bestSide = signed >= 0f ? 1f : -1f; }
+            }
+            if (best == null) return;
+            best.EngagementState.Flanker = true;
+            best.EngagementState.FlankSince = now;
+            best.EngagementState.FlankSide = bestSide;
+            best.EngagementState.ClearAnchor();
+            ring.Flankers.Add(best);
+            StatFlankAssigns++;
+            if (d.debugLogFlankMorale)
+                Debug.Log($"[DMCombatDirector] flank assign {best.name} side={(bestSide > 0 ? "R" : "L")}");
         }
 
         private static DM_EnemyEngagementProfile Profile => DM_EnemyEngagementProfile.Live;
@@ -157,9 +337,12 @@ namespace Project.AI
             state.Role = DMEngagementRole.None;
             state.AttackSlot = false;
             state.ClearAnchor();
+            state.Flanker = false;
             if (ring == null)
                 return;
 
+            NoteCasualty(ring, agent);
+            ring.Flankers.Remove(agent);
             ring.Members.Remove(agent);
             ring.Slots.Remove(agent);
             if (ring.Challenger == agent)
@@ -235,6 +418,14 @@ namespace Project.AI
             if (preferredFromTarget.sqrMagnitude < 0.0001f)
                 preferredFromTarget = -target.forward;
             preferredFromTarget.Normalize();
+            // 2026-10-25s Phase 4 flank: aim the hold point at the target's side / back.
+            DM_CombatDirectorProfile fd = DM_CombatDirectorProfile.Live;
+            if (agent.EngagementState.Flanker && fd != null)
+            {
+                Vector3 tf = target.forward; tf.y = 0f;
+                if (tf.sqrMagnitude > 0.0001f)
+                    preferredFromTarget = Quaternion.AngleAxis(agent.EngagementState.FlankSide * fd.flankAngleDegrees, Vector3.up) * tf.normalized;
+            }
 
             Ring ring = agent.EngagementState.Ring;
             Vector3 engagerDir = Vector3.zero;
@@ -333,6 +524,7 @@ namespace Project.AI
             ring.Focus = target.GetComponent<CombatFocusController>();
             ring.LastTargetPosition = target.position;
             ring.LastSampleTime = Time.time;
+            ring.Morale = DM_CombatDirectorProfile.Live != null ? DM_CombatDirectorProfile.Live.startingMorale : 1f;
             Rings.Add(ring);
             return ring;
         }
@@ -377,7 +569,9 @@ namespace Project.AI
         private static void TickRing(Ring ring, DM_EnemyEngagementProfile p, float now)
         {
             TickMeleeToken(ring, p, now);
+            TickMorale(ring, now);
             TickAttackSlots(ring, p, now);
+            TickFlank(ring, now);
         }
 
         /// <summary>Phase 3: prune members, award / hand off the single melee token (D1).</summary>
@@ -389,6 +583,8 @@ namespace Project.AI
                 EnemyAiController m = ring.Members[i];
                 if (m == null || !m.isActiveAndEnabled || m.EngagementState.Ring != ring)
                 {
+                    NoteCasualty(ring, m);
+                    if (m != null) { ring.Flankers.Remove(m); m.EngagementState.Flanker = false; }
                     if (m != null && m.EngagementState.Ring == ring)
                     {
                         m.EngagementState.Ring = null;
@@ -651,6 +847,8 @@ namespace Project.AI
                 }
                 total = Mathf.Min(total + ring.ExtraAttackers, count);
             }
+            if (ring.MoraleBroken && d.moraleBrokenNoExtraSlots)
+                total = 1; // 2026-10-25s: broken group - only the token holder commits
             ring.TotalSlots = total;
             int wanted = Mathf.Max(0, total - 1);
 

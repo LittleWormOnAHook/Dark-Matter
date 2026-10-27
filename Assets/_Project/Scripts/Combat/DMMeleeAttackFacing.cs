@@ -30,6 +30,8 @@ namespace Project.Combat
         public static int StatSnapFrames;   // frames with a body yaw change > 45 deg during a combo
         public static float StatMaxFrameYawDelta;
         public static int StatComboFrames;
+        public static int StatCameraFollowFrames; // 2026-10-25s slice 4: frames the camera eased toward a switched target
+        public static float StatLastSwitchTime = -1f;
 
         private static readonly List<EnemyHealth> s_buffer = new List<EnemyHealth>(32);
 
@@ -48,6 +50,7 @@ namespace Project.Combat
         private float _lastYaw = float.NaN;
         private float _snapUntil = float.NegativeInfinity;
         private float _snapBudget;
+        private float _camFollowUntil = float.NegativeInfinity;
 
         public EnemyHealth Target => _target;
 
@@ -66,6 +69,8 @@ namespace Project.Combat
             StatMaxFrameYawDelta = 0f;
             StatComboFrames = 0;
             StatBlockFrames = 0;
+            StatCameraFollowFrames = 0;
+            StatLastSwitchTime = -1f;
         }
 
         public static DMMeleeAttackFacing Ensure(PioneerShooterMeleeInput input)
@@ -124,7 +129,7 @@ namespace Project.Combat
                     }
                 }
             }
-            else if (p.meleeTargetSwitchEnabled && stickMag >= p.meleeRetargetStickMagnitude && now - _lastSwitchTime >= p.meleeRetargetMinSeconds)
+            else if (p.meleeTargetSwitchEnabled && stickMag >= p.meleeRetargetStickMagnitude && now - _lastSwitchTime >= p.meleeRetargetMinSeconds && now >= _camFollowUntil)
             {
                 Vector3 toTarget = Flat(_target.transform.position - transform.position);
                 if (toTarget.sqrMagnitude > 0.0001f && Vector3.Angle(stick, toTarget) > p.meleeRetargetStickAngle)
@@ -142,6 +147,10 @@ namespace Project.Combat
                         _snapBudget = p.meleeSwitchSnapMaxDegrees;
                         _swingBudget = p.meleeAssistMaxPerSwingDegrees;
                         _yawVelocity = 0f;
+                        StatLastSwitchTime = now;
+                        // 2026-10-25s: camera follows the switch (rate-limited, only the excess past keep-in-view).
+                        if (p.meleeSwitchCameraFollow)
+                            _camFollowUntil = now + p.meleeSwitchCameraFollowSeconds;
                     }
                 }
             }
@@ -221,6 +230,27 @@ namespace Project.Combat
             transform.rotation = Quaternion.Euler(e);
         }
 
+        private void CameraFollowSwitch()
+        {
+            if (Time.time >= _camFollowUntil || _target == null)
+                return;
+            DM_CombatCoreProfile p = DM_CombatCoreProfile.Live;
+            Invector.vCamera.vThirdPersonCamera cam = Invector.vCamera.vThirdPersonCamera.instance;
+            if (p == null || cam == null || !p.meleeSwitchCameraFollow)
+                return;
+            Vector3 to = Flat(_target.transform.position - transform.position);
+            if (to.sqrMagnitude < 0.01f)
+                return;
+            float targetYaw = Mathf.Atan2(to.x, to.z) * Mathf.Rad2Deg;
+            float err = Mathf.DeltaAngle(cam.mouseX, targetYaw);
+            float excess = Mathf.Abs(err) - p.meleeSwitchCameraKeepInViewDeg;
+            if (excess <= 0.05f)
+                return;
+            float step = Mathf.Min(excess, p.meleeSwitchCameraMaxDegPerSec * Time.deltaTime);
+            cam.mouseX += Mathf.Sign(err) * step;
+            StatCameraFollowFrames++;
+        }
+
         private void SnapTurn(DM_CombatCoreProfile p)
         {
             Vector3 toTarget = Flat(_target.transform.position - transform.position);
@@ -228,7 +258,12 @@ namespace Project.Combat
                 return;
             float curYaw = transform.eulerAngles.y;
             float targetYaw = Mathf.Atan2(toTarget.x, toTarget.z) * Mathf.Rad2Deg;
-            float step = Mathf.DeltaAngle(curYaw, Mathf.MoveTowardsAngle(curYaw, targetYaw, p.meleeSwitchSnapTurnSpeed * Time.fixedDeltaTime));
+            // 2026-10-25s body weight: decelerate over the last meleeSwitchSnapEaseDegrees instead of a hard stop.
+            float snapErr = Mathf.Abs(Mathf.DeltaAngle(curYaw, targetYaw));
+            float snapSpeed = p.meleeSwitchSnapTurnSpeed;
+            if (p.meleeSwitchSnapEaseDegrees > 0.5f)
+                snapSpeed *= Mathf.Lerp(p.meleeSwitchSnapEaseMinSpeedFraction, 1f, Mathf.Clamp01(snapErr / p.meleeSwitchSnapEaseDegrees));
+            float step = Mathf.DeltaAngle(curYaw, Mathf.MoveTowardsAngle(curYaw, targetYaw, snapSpeed * Time.fixedDeltaTime));
             if (Mathf.Abs(step) > _snapBudget)
                 step = Mathf.Sign(step) * _snapBudget;
             _snapBudget -= Mathf.Abs(step);
@@ -353,6 +388,7 @@ namespace Project.Combat
 
         private void LateUpdate()
         {
+            CameraFollowSwitch(); // 2026-10-25s slice 4
             // Per-frame body yaw delta while a combo is alive (audit / log only).
             float yaw = transform.eulerAngles.y;
             DM_CombatCoreProfile p = DM_CombatCoreProfile.Live;

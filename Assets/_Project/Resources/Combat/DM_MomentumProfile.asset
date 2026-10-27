@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c58c2b8a5933b6040a9b4f8da5110a06, type: 3}
+  m_Name: DM_MomentumProfile
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.DM_MomentumProfile
+  enableMomentum: 1
+  maxMomentum: 100
+  gainLightHit: 8
+  gainHeavyHit: 15
+  gainCritBonus: 5
+  gainKill: 12
+  chainWindowSeconds: 1.6
+  chainStepMultiplier: 0.15
+  chainMaxSteps: 5
+  decayDelaySeconds: 3
+  decayPerSecond: 6
+  lossOnPlayerHitFraction: 0.25
+  rangedHitsGain: 0
+  enableSpin: 1
+  spinCost: 100
+  spinStaminaCost: 0
+  spinWindupDegrees: 14
+  spinWindupSeconds: 0.12
+  spinSeconds: 0.55
+  spinRecoverySeconds: 0.18
+  spinTurns: 1
+  spinClockwise: 1
+  spinRadius: 2.6
+  spinHeightTolerance: 1.8
+  spinDamage: 28
+  spinPoiseMultiplier: 1.5
+  spinCountsAsChargedHit: 1
+  spinShakeAmplitude: 0.35
+  spinShakeSeconds: 0.18
+  spinAutoOnChargedRelease: 1
+  spinOnHoldAttack: 1
+  spinHoldSeconds: 0.7
+  debugLog: 0

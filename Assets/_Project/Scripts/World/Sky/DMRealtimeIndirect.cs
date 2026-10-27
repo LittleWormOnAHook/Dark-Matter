@@ -160,12 +160,19 @@ namespace Project.World.Sky
             env.skyAmbientMode.Override(p.ambientModeDynamic ? SkyAmbientMode.Dynamic : SkyAmbientMode.Static);
 
             float eclipseScale = 1f;
+            float nightAmb = 0f;
             DMIoSkyController sky = DMIoSkyController.Instance;
             if (sky != null && sky.isActiveAndEnabled)
-                { float amb = p.eclipseFloorEnabled ? Mathf.Max(p.eclipseAmbientMultiplier, p.eclipseMinAmbient) : p.eclipseAmbientMultiplier; eclipseScale = Mathf.Lerp(1f, amb, Mathf.Clamp01(sky.EclipseFactor)); }
+            {
+                float amb = p.eclipseFloorEnabled ? Mathf.Max(p.eclipseAmbientMultiplier, p.eclipseMinAmbient) : p.eclipseAmbientMultiplier;
+                eclipseScale = Mathf.Lerp(1f, amb, Mathf.Clamp01(sky.EclipseFactor));
+                // 2026-10-26g: Night Ambient boost (lifts Indirect Diffuse with Ground/Mid/Sky night lighting)
+                if (p.enableNightLight)
+                    nightAmb = Mathf.Max(0f, p.nightAmbientBoost) * Mathf.Clamp01(sky.NightLightFactor);
+            }
             ilc.active = true;
-            ilc.indirectDiffuseLightingMultiplier.Override(p.indirectDiffuseMultiplier * eclipseScale);
-            ilc.reflectionLightingMultiplier.Override(p.indirectReflectionMultiplier * eclipseScale);
+            ilc.indirectDiffuseLightingMultiplier.Override(p.indirectDiffuseMultiplier * eclipseScale + nightAmb);
+            ilc.reflectionLightingMultiplier.Override(p.indirectReflectionMultiplier * eclipseScale + nightAmb * 0.5f);
 
             ssao.intensity.Override(p.ssaoIntensity);
             ssao.directLightingStrength.Override(p.ssaoDirectLightingStrength);
@@ -190,8 +197,15 @@ namespace Project.World.Sky
                 exposure.mode.Override(p.exposureHistogram ? ExposureMode.AutomaticHistogram : ExposureMode.Automatic);
                 float expMin = p.exposureLimitMin;
                 DMIoSkyController skyE = DMIoSkyController.Instance;
-                if (p.eclipseFloorEnabled && skyE != null && skyE.isActiveAndEnabled)
-                    expMin = Mathf.Lerp(expMin, Mathf.Min(expMin, p.eclipseExposureLimitMin), Mathf.Clamp01(skyE.EclipseFactor));
+                if (skyE != null && skyE.isActiveAndEnabled)
+                {
+                    // 24ap: eclipse floor
+                    if (p.eclipseFloorEnabled)
+                        expMin = Mathf.Lerp(expMin, Mathf.Min(expMin, p.eclipseExposureLimitMin), Mathf.Clamp01(skyE.EclipseFactor));
+                    // 2026-10-26g: night light floor (same nightFade* factor) so auto-exposure does not eat the fills
+                    if (p.enableNightLight)
+                        expMin = Mathf.Lerp(expMin, Mathf.Min(expMin, p.nightExposureLimitMin), Mathf.Clamp01(skyE.NightLightFactor));
+                }
                 exposure.limitMin.Override(Mathf.Min(expMin, p.exposureLimitMax));
                 exposure.limitMax.Override(Mathf.Max(p.exposureLimitMin, p.exposureLimitMax));
                 exposure.compensation.Override(p.exposureCompensation);
@@ -234,7 +248,12 @@ namespace Project.World.Sky
             micro.opacity.Override(p.microShadowOpacity);
             if (shadowSettings != null && on)
             {
-                shadowSettings.maxShadowDistance.Override(p.shadowMaxDistance);
+                // 2026-10-26j: while night/eclipse owns the directional, use Night Shadow max distance.
+                float dist = p.shadowMaxDistance;
+                var sky = DMIoSkyController.Instance;
+                if (sky != null && sky.isActiveAndEnabled && sky.NightShadowMaxDistanceOverride > 0f)
+                    dist = sky.NightShadowMaxDistanceOverride;
+                shadowSettings.maxShadowDistance.Override(dist);
                 shadowSettings.cascadeShadowSplit0.Override(p.shadowCascadeSplit0);
             }
             fog.active = on && p.fogMeanFreePath > 0f;

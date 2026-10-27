@@ -26,6 +26,7 @@ namespace Project.UI
         private Camera worldCamera;
         private bool userVisible = true;
         private bool uitkHidden;
+        private bool floatingCueWasOn;
 
         public EnemyHealth EnemyTarget => enemyTarget;
 
@@ -182,6 +183,27 @@ namespace Project.UI
 
             SetBarVisible(1f);
             rectTransform.position = screenPoint + (Vector3)screenOffset;
+            TickFinisherCueFill();
+        }
+
+        private void TickFinisherCueFill()
+        {
+            if (fillImage == null || uitkHidden) return;
+            bool on = enemyTarget != null && Project.Combat.DMSlice6Runtime.IsCueTarget(enemyTarget);
+            if (on)
+            {
+                Color c = Project.Combat.DMSlice6Runtime.EvaluateCueFill(fillColor);
+                c.a = fillImage.color.a;
+                fillImage.color = c;
+                floatingCueWasOn = true;
+            }
+            else if (floatingCueWasOn)
+            {
+                Color c = fillColor;
+                c.a = fillImage.color.a;
+                fillImage.color = c;
+                floatingCueWasOn = false;
+            }
         }
 
         private void SetBarVisible(float alpha)

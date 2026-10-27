@@ -405,8 +405,13 @@ namespace Project.AI.Invector
             return w != null && w.IsRangedWeapon;
         }
 
+        private EnemyAiController _meleeLockAi;
+
         public bool IsArmedRangedPreferred()
         {
+            // 2026-10-26b: melee lock (DM_MeleeLockProfile) - fight in melee while the player is in melee.
+            if (_meleeLockAi == null) _meleeLockAi = GetComponent<EnemyAiController>();
+            if (_meleeLockAi != null && _meleeLockAi.MeleeLockActive && _loadoutBridge != null && _loadoutBridge.MeleeWeaponItem != null) return false;
             // A gun-only enemy (no melee weapon) is always a ranged fighter, even without preferRanged.
             return HasRangedWeaponEquipped()
                 && _loadoutBridge != null

@@ -12,66 +12,67 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 254a2a5bcc1c7fa41bbc7ee039daf49d, type: 3}
   m_Name: DM_IoSkyProfile
   m_EditorClassIdentifier: Assembly-CSharp::Project.World.Sky.DM_IoSkyProfile
+  skyLookPreset: 0
   skyEnabled: 1
   autoSpawnController: 1
   onlyInScenesWithJupiter: 1
   skyBodyShader: {fileID: 4800000, guid: a32e9106cf6171c48a524cba2fe54c0b, type: 3}
-  debugHourOverride: 15.4
+  debugHourOverride: 13.2
   startHour: 11.6
   sunLightName: Day DirectionalLight
   disableOtherDirectionalLights: 1
-  sunIntensityMultiplier: 0.36
+  sunIntensityMultiplier: 0.2
   horizonFadeDegrees: 11.78
-  sunHorizonDimDegrees: 18.9
-  sunHorizonMinFactor: 0.509
+  sunHorizonDimDegrees: 2.1
+  sunHorizonMinFactor: 0.009
   sunHorizonDesaturate: 0.35
   sunMaxLux: 26788
   shadeFillEnabled: 1
   shadeFillLux: 2494
-  shadeFillElevationDeg: -5.4
-  shadeFillColor: {r: 1, g: 0.8, b: 0.6, a: 1}
-  orbitPoleTiltDeg: 10
+  shadeFillElevationDeg: 6
+  shadeFillColor: {r: 0.3509434, g: 0.17149875, b: 0.24757197, a: 1}
+  orbitPoleTiltDeg: -0.8
   reverseSkyMotion: 0
   eclipseEnabled: 1
   eclipseDurationHours: 4
   eclipseFadeHours: 1.33
-  eclipseSunRemaining: 0.641
-  eclipseAmbientMultiplier: 0.601
+  eclipseSunRemaining: 0.858
+  eclipseAmbientMultiplier: 0.605
   sunHidesBehindJupiter: 1
-  ambientVolumePriority: 103
+  ambientVolumePriority: 90
   jupiterObjectName: Jupiter
-  jupiterAzimuthDeg: 44
-  jupiterElevationDeg: 35.4
-  jupiterAngularDiameterDeg: 26.3
-  skyDistance: 7641
+  jupiterAzimuthDeg: 188
+  jupiterElevationDeg: 42.8
+  jupiterAngularDiameterDeg: 37.5
+  skyDistance: 6998
   jupiterSpinHours: 10.9
-  jupiterTiltEuler: {x: 4.61, y: 0, z: 0}
-  jupiterBrightness: 2.52
+  jupiterTiltEuler: {x: 8, y: 0, z: 0}
+  jupiterBrightness: 0.69
   jupiterLimbDarkening: 0.752
-  jupiterRimColor: {r: 0.2528302, g: 0.24617067, b: 0.15217516, a: 1}
-  jupiterEclipseRimLux: 3333
-  jupiterShineColor: {r: 0.7619722, g: 0.88317174, b: 0.9547169, a: 1}
-  jupiterShineLux: 327
-  eclipseJupiterShineLux: 500
+  jupiterRimColor: {r: 0.90188676, g: 0.89215314, b: 0.6585475, a: 1}
+  jupiterEclipseRimLux: 3412
+  jupiterShineColor: {r: 0.9529412, g: 0.87429816, b: 0.7607843, a: 1}
+  jupiterShineLux: 103
+  eclipseJupiterShineLux: 129
   otherMoonPeriodsHours:
   - 8.22
   - 10.23
   otherMoonsUseSkyMaterial: 1
-  otherMoonColor: {r: 0.10160911, g: 0.5171215, b: 0.7584905, a: 1}
+  otherMoonColor: {r: 0.24301174, g: 0.31151927, b: 0.3509434, a: 1}
   europa:
     name: Europa
     enabled: 1
     periodRatio: 2.73
     orbitRadiusKm: 671083.94
-    diameterKm: 10925
-    sizeMultiplier: 10
-    startPhaseDeg: 150
+    diameterKm: 8000
+    sizeMultiplier: 6.86
+    startPhaseDeg: 155
     colorA: {r: 0.29071552, g: 0.39257458, b: 0.5018867, a: 1}
     colorB: {r: 0.7056604, g: 0.7056604, b: 0.7056604, a: 1}
-    noiseScale: 12.27
+    noiseScale: 4.7
     lineae: 0.4
-    craterSpots: 1
-    brightness: 1.03
+    craterSpots: 0.017
+    brightness: 2.19
   ganymede:
     name: Ganymede
     enabled: 1
@@ -91,14 +92,14 @@ MonoBehaviour:
     enabled: 1
     periodRatio: 9.43
     orbitRadiusKm: 1882700
-    diameterKm: 5730
+    diameterKm: 6099
     sizeMultiplier: 8.3
     startPhaseDeg: 233
-    colorA: {r: 0.011764699, g: 0.073835656, b: 0.9529412, a: 1}
+    colorA: {r: 0.4339267, g: 0.46914923, b: 0.9622642, a: 1}
     colorB: {r: 0.9019608, g: 0.19607843, b: 0.2264577, a: 1}
-    noiseScale: 10.3
-    lineae: 0
-    craterSpots: 0.832
+    noiseScale: 4.5
+    lineae: 0.914
+    craterSpots: 0.391
     brightness: 1.53
   realtimeIndirectEnabled: 1
   indirectVolumeProfile: {fileID: 11400000, guid: eb32452bbec419a4498804a40b1e3569, type: 2}
@@ -123,10 +124,10 @@ MonoBehaviour:
   ambientModeDynamic: 1
   exposureOverride: 1
   exposureHistogram: 1
-  exposureLimitMin: 2
-  exposureLimitMax: 11.6
+  exposureLimitMin: 1.1
+  exposureLimitMax: 15.9
   exposureHistogramLow: 40
-  exposureHistogramHigh: 90
+  exposureHistogramHigh: 88
   exposureAdaptDarkToLight: 2.07
   exposureAdaptLightToDark: 1.3
   bloomIntensity: 0.873
@@ -147,8 +148,8 @@ MonoBehaviour:
   splitToneHighlights: {r: 0.66, g: 0.55, b: 0.42, a: 1}
   vignetteIntensity: 0.288
   eclipseFloorEnabled: 1
-  eclipseMinAmbient: 0.755
-  eclipseFillLux: 165
+  eclipseMinAmbient: 0.893
+  eclipseFillLux: 373
   eclipseExposureLimitMin: 2
   nightSkyEnabled: 1
   nightSkyShader: {fileID: 0}
@@ -157,8 +158,8 @@ MonoBehaviour:
   starSize: 0.36
   starTwinkle: 0.644
   starColorVariation: 1
-  milkyWayIntensity: 0.59
-  milkyWayWidth: 0.232
+  milkyWayIntensity: 0.035
+  milkyWayWidth: 0.177
   milkyWayDust: 1
   milkyWayCoreColor: {r: 1, g: 0.85, b: 0.7, a: 1}
   milkyWayEdgeColor: {r: 0.55, g: 0.65, b: 1, a: 1}
@@ -168,54 +169,243 @@ MonoBehaviour:
   starsRotateWithClock: 1
   nightFadeStartDeg: -1.2
   nightFadeEndDeg: 18.6
-  nightSkyDayVisibility: 0.752
+  enableNightLight: 1
+  nightLightGroundColor: {r: 0.58472764, g: 0.82641506, b: 0.63728845, a: 1}
+  nightLightMidColor: {r: 0.934017, g: 0.4901961, b: 1, a: 1}
+  nightLightSkyColor: {r: 0.5469348, g: 0.6291979, b: 0.93207544, a: 1}
+  nightLightAmount: 1128
+  nightExposureLimitMin: 0.5
+  nightAmbientBoost: 2.66
+  enableNightShadow: 1
+  nightShadowStrength: 0.55
+  nightShadowSoftnessDeg: 4
+  nightShadowDirectionMode: 0
+  nightShadowCustomYawDeg: 200
+  nightShadowCustomPitchDeg: 35
+  nightShadowResolutionTier: 1
+  nightShadowMaxDistance: 120
+  nightSkyDayVisibility: 0.094
+  milkyWayDayVisibility: 0
+  milkyWaySmoothness: 0.55
+  nightSkyDitherEnabled: 0
+  nightSkyDitherAmount: 0.55
+  nightSkySoftExpPower: 0.28
   starsBehindSkyBodies: 1
+  auroraOverSkyBodies: 1
+  starOcclusionMarginDeg: 0
+  starOcclusionSoftDeg: 0.08
   editPreviewEnabled: 1
   editPreviewHour: 19.8
-  starOcclusionMarginDeg: -0.52
-  starOcclusionSoftDeg: 2
   nightDomeFarFraction: 0.98
   nightDomeCoverTerrain: 1
   nightDomeTerrainMargin: 500
   nightDomeMinRadius: 0
   auroraEnabled: 1
-  auroraIntensity: 6.01
+  auroraIntensity: 0.035
   auroraColorLow: {r: 0.114575684, g: 1, b: 0, a: 1}
   auroraColorHigh: {r: 0.8980392, g: 0.22878446, b: 0.19999997, a: 1}
-  auroraSpeed: 0.144
-  auroraHeight: 0.601
-  auroraCoverage: 0.69
-  auroraDayVisibility: 1
-  auroraMinElevDeg: -10
+  auroraSpeed: 0.077
+  auroraHeight: 0.723
+  auroraCoverage: 0.614
+  auroraDayVisibility: 0
+  auroraSmoothness: 0.313
+  auroraMinElevDeg: -7.3
   auroraMaxElevDeg: 21.1
   auroraHeightVariationDeg: 13.1
   auroraHeightNoiseScale: 3.63
-  auroraBottomSoftDeg: 19.3
-  auroraTopSoftDeg: 8
+  auroraBottomSoftDeg: 21.1
+  auroraTopSoftDeg: 5.1
   auroraAzimuthSpanDeg: 360
   auroraAzimuthCenterDeg: 0
-  auroraAzimuthEdgeSoftDeg: 152.4
+  auroraAzimuthEdgeSoftDeg: 112.8
   auroraHeightDriftSpeed: 0.078
   auroraHeightBobDeg: 5.69
   disableVolumetricClouds: 0
   eclipseShadowsEnabled: 1
-  eclipseShadowStrength: 0.837
+  eclipseShadowStrength: 0.944
   eclipseShadowSoftnessDeg: 9.44
-  sunOcclusionSoftDeg: 1.329
-  ringSunBias: 2.25
-  ringEdgeGrowDeg: 14.83
-  ringMinFactor: 0.169
-  ringLightLux: 173
-  ringFlareIntensity: 0.559
-  dayFraction: 0.5
+  sunOcclusionSoftDeg: 0.73
+  ringSunBias: 3.85
+  ringEdgeGrowDeg: 27.8
+  ringMinFactor: 0.052
+  ringLightLux: 107
+  ringFlareIntensity: 0.378
+  dayFraction: 0.783
   flareEnabled: 1
   flareUseOcclusion: 1
   flareOcclusionSamples: 16
   flareIntensityScale: 1
   flareMinElevationDeg: 1
-  flareElevationFadeDeg: 4
+  flareElevationFadeDeg: 16
   flareEclipseFade: 1
-  flareRingDuringEclipse: 0.265
-  flareOcclusionRadius: 0.1
+  flareRingDuringEclipse: 0.605
+  flareOcclusionRadius: 0.28
   eclipseDisableSsgi: 1
   disableOtherSunFlares: 1
+  skyLookAppliedPresetInternal: 0
+  skyLookCustomStashNames:
+  - nightSkyEnabled
+  - starDensity
+  - starBrightness
+  - starSize
+  - starTwinkle
+  - starColorVariation
+  - milkyWayIntensity
+  - milkyWayWidth
+  - milkyWayDust
+  - milkyWayCoreColor
+  - milkyWayEdgeColor
+  - milkyWayTiltDeg
+  - milkyWayYawDeg
+  - starRotationDeg
+  - starsRotateWithClock
+  - nightFadeStartDeg
+  - nightFadeEndDeg
+  - nightSkyDayVisibility
+  - milkyWayDayVisibility
+  - milkyWaySmoothness
+  - starsBehindSkyBodies
+  - auroraOverSkyBodies
+  - starOcclusionMarginDeg
+  - starOcclusionSoftDeg
+  - nightDomeFarFraction
+  - nightDomeCoverTerrain
+  - nightDomeTerrainMargin
+  - nightDomeMinRadius
+  - auroraEnabled
+  - auroraIntensity
+  - auroraColorLow
+  - auroraColorHigh
+  - auroraSpeed
+  - auroraHeight
+  - auroraCoverage
+  - auroraDayVisibility
+  - auroraSmoothness
+  - auroraMinElevDeg
+  - auroraMaxElevDeg
+  - auroraHeightVariationDeg
+  - auroraHeightNoiseScale
+  - auroraBottomSoftDeg
+  - auroraTopSoftDeg
+  - auroraAzimuthSpanDeg
+  - auroraAzimuthCenterDeg
+  - auroraAzimuthEdgeSoftDeg
+  - auroraHeightDriftSpeed
+  - auroraHeightBobDeg
+  - enableNightLight
+  - nightLightGroundColor
+  - nightLightMidColor
+  - nightLightSkyColor
+  - nightLightAmount
+  - nightExposureLimitMin
+  - nightAmbientBoost
+  - enableNightShadow
+  - nightShadowStrength
+  - nightShadowSoftnessDeg
+  - nightShadowDirectionMode
+  - nightShadowCustomYawDeg
+  - nightShadowCustomPitchDeg
+  - nightShadowResolutionTier
+  - nightShadowMaxDistance
+  - eclipseSunRemaining
+  - eclipseAmbientMultiplier
+  - jupiterShineColor
+  - jupiterShineLux
+  - eclipseJupiterShineLux
+  - jupiterEclipseRimLux
+  - jupiterBrightness
+  - jupiterLimbDarkening
+  - jupiterRimColor
+  - eclipseFloorEnabled
+  - eclipseMinAmbient
+  - eclipseFillLux
+  - eclipseExposureLimitMin
+  - eclipseShadowsEnabled
+  - eclipseShadowStrength
+  - eclipseShadowSoftnessDeg
+  - nightSkyDitherEnabled
+  - nightSkyDitherAmount
+  - nightSkySoftExpPower
+  skyLookCustomStashValues:
+  - 1
+  - 75
+  - 3
+  - 0.36
+  - 0.644
+  - 1
+  - 0.15
+  - 0.232
+  - 1
+  - 1,0.85,0.7,1
+  - 0.55,0.65,1,1
+  - -34.7
+  - 32
+  - 0
+  - 1
+  - -1.2
+  - 18.6
+  - 0.094
+  - 0
+  - 0.55
+  - 1
+  - 1
+  - 0
+  - 0.08
+  - 0.98
+  - 1
+  - 500
+  - 0
+  - 1
+  - 0.1
+  - 0.114575684,1,0,1
+  - 0.8980392,0.228784457,0.199999973,1
+  - 0.12
+  - 0.723
+  - 0.614
+  - 0
+  - 0
+  - -7.3
+  - 21.1
+  - 13.1
+  - 3.63
+  - 21.1
+  - 5.1
+  - 360
+  - 0
+  - 112.8
+  - 0.078
+  - 5.69
+  - 1
+  - 0.584727645,0.826415062,0.637288451,1
+  - 0.934017,0.4901961,1,1
+  - 0.5469348,0.6291979,0.932075441,1
+  - 1128
+  - 0.5
+  - 2.66
+  - 1
+  - 0.55
+  - 4
+  - 0
+  - 200
+  - 35
+  - 1
+  - 120
+  - 0.858
+  - 0.605
+  - 0.9529412,0.874298155,0.7607843,1
+  - 103
+  - 129
+  - 3412
+  - 0.69
+  - 0.752
+  - 0.901886761,0.892153144,0.6585475,1
+  - 1
+  - 0.893
+  - 373
+  - 2
+  - 1
+  - 0.944
+  - 9.44
+  - 0
+  - 0.55
+  - 0.28

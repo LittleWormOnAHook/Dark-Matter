@@ -870,6 +870,10 @@ namespace Project.Player
             if (!context.started && !context.performed)
                 return;
 
+            // 2026-10-26l: do not fire tap-Use interact while the finisher combo owns Use+Attack.
+            if (Project.Combat.DMSlice6Runtime.BlocksWorldUse)
+                return;
+
             if (!GameSession.HasStarted || _gameplayPaused)
                 return;
 

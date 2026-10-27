@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 
 namespace Project.World.Sky
@@ -50,6 +50,12 @@ namespace Project.World.Sky
                 return live;
             }
         }
+
+        public enum SkyLookPreset { Custom = 0, Subtle = 1, Normal = 2, Extreme = 3 }
+
+        [Header("Sky Look Preset (2026-10-26m)")]
+        [Tooltip("Custom = your saved look (current settings snapshotted first). Subtle / Normal / Extreme = authored full look snapshots (sky, MW, aurora, stars, night light/shadow, eclipse brightness, dither). Orbit/time never touched. Edit any look field on a preset -> flips to Custom and keeps the edit.")]
+        public SkyLookPreset skyLookPreset = SkyLookPreset.Custom;
 
         [Header("Controller")]
         public bool skyEnabled = true;
@@ -277,19 +283,65 @@ namespace Project.World.Sky
         [Tooltip("Sun elevation (deg) where stars start to fade out / are fully gone.")]
         [Range(-30f, 30f)] public float nightFadeStartDeg = -6f;
         [Range(-30f, 45f)] public float nightFadeEndDeg = 8f;
-        [Tooltip("Star/Milky Way visibility left in full daylight (exposure dims them further).")]
+
+        [Header("Night Light (2026-10-26f, trilight-style ambient fill)")]
+        [Tooltip("On = additive Ground / Mid / Sky fills fade in with nightFadeStartDeg/EndDeg. Blends with Jupiter-shine; does not replace day lighting. No aurora light.")]
+        public bool enableNightLight = true;
+        [Tooltip("Ambient from below (Io ground bounce).")]
+        public Color nightLightGroundColor = new Color(0.38f, 0.24f, 0.14f, 1f);
+        [Tooltip("Ambient from the horizon band (equator / mid).")]
+        public Color nightLightMidColor = new Color(0.55f, 0.48f, 0.62f, 1f);
+        [Tooltip("Ambient from the sky dome.")]
+        public Color nightLightSkyColor = new Color(0.32f, 0.42f, 0.78f, 1f);
+        [Tooltip("Master lux for the three fills combined. Default is brighter than prior night but still night-readable.")]
+        [Range(0f, 1200f)] public float nightLightAmount = 55f;
+        [Tooltip("2026-10-26g: Exposure Limit Min (EV) at full night. Lower = auto-exposure may brighten more so Night Light is visible (day uses exposureLimitMin). Fades with nightFade*. Same idea as eclipseExposureLimitMin.")]
+        [Range(-6f, 20f)] public float nightExposureLimitMin = 3.5f;
+        [Tooltip("2026-10-26g: added to Indirect Diffuse at full night (Ground/Mid/Sky ambient lift). 0 = fills only.")]
+        [Range(0f, 4f)] public float nightAmbientBoost = 0.75f;
+
+        [Header("Night Shadow (2026-10-26j)")]
+        [Tooltip("On = at night the Jupiter-shine directional takes the single HDRP directional shadow from the sun (fades with NightLightFactor). Edit preview never casts (scene sun keeps the cascade slot).")]
+        public bool enableNightShadow = true;
+        [Tooltip("Shadow dimmer on the night key light (0 = invisible shadows, 1 = full). Scaled by NightLightFactor.")]
+        [Range(0f, 1f)] public float nightShadowStrength = 0.55f;
+        [Tooltip("Penumbra softness as angular diameter (deg). interactsWithSky stays false so this never draws a sky disc.")]
+        [Range(0.1f, 30f)] public float nightShadowSoftnessDeg = 4f;
+        [Tooltip("0 = follow Jupiter direction (default key). 1 = custom yaw/pitch.")]
+        [Range(0, 1)] public int nightShadowDirectionMode = 0;
+        [Range(0f, 360f)] public float nightShadowCustomYawDeg = 200f;
+        [Range(-89f, 89f)] public float nightShadowCustomPitchDeg = 35f;
+        [Tooltip("0 Low 256, 1 Medium 512, 2 High 1024, 3 Ultra 2048. HDRP has one directional cascade atlas — keep Medium unless needed.")]
+        [Range(0, 3)] public int nightShadowResolutionTier = 1;
+        [Tooltip("Max directional shadow distance (m) while night owns the shadow. Day uses Polish shadowMaxDistance.")]
+        [Range(20f, 800f)] public float nightShadowMaxDistance = 120f;
+        [Tooltip("Star visibility left in full daylight (Milky Way has its own Day Visibility). Fades with nightFadeStart/End.")]
         [Range(0f, 1f)] public float nightSkyDayVisibility = 0f;
+        [Header("Milky Way (2026-10-26i)")]
+        [Tooltip("Milky Way visibility in full daylight. 0 = gone by day (uses nightFadeStart/End). Was sharing nightSkyDayVisibility and looked like blotchy daytime fog.")]
+        [Range(0f, 1f)] public float milkyWayDayVisibility = 0f;
+        [Tooltip("Softens MW dust / band noise (higher = smoother, less blotchy banding). 0 = prior look.")]
+        [Range(0f, 1f)] public float milkyWaySmoothness = 0.55f;
+        [Header("Night Sky Banding (2026-10-26m)")]
+        [Tooltip("Triangular / interleaved-gradient dither after exposure before the colour write (helps HDRP R11G11B10 banding). Live + persistent.")]
+        public bool nightSkyDitherEnabled = false;
+        [Range(0f, 2f)] public float nightSkyDitherAmount = 0.55f;
+        [Tooltip("Power on exposure for MW/aurora (stars stay linear). Below 0.5 (old sqrt) reduces AE band amplification. Default 0.28.")]
+        [Range(0.1f, 1f)] public float nightSkySoftExpPower = 0.28f;
         [Tooltip("25o: stars + Milky Way are hidden inside the discs of Jupiter and the moons (always behind sky bodies).")]
         public bool starsBehindSkyBodies = true;
+        [Tooltip("2026-10-26n: aurora draws additively over Jupiter/moons (atmospheric). Off = aurora also cut out inside discs (old look).")]
+        public bool auroraOverSkyBodies = true;
+        [Tooltip("2026-10-26n: extra angular radius (deg) on the star/MW cutout. 0 = fit disc. Keep small to avoid a dark halo.")]
+        [Range(-0.5f, 1f)] public float starOcclusionMarginDeg = 0f;
+        [Tooltip("2026-10-26n: soft edge (deg) straddling the limb for star/MW cutout. Small = no dark ring.")]
+        [Range(0.01f, 1f)] public float starOcclusionSoftDeg = 0.08f;
 
         [Header("Edit-mode preview (25o)")]
         [Tooltip("Sky, Jupiter, moons and stars preview live in the Scene/Game view without Play (DontSave clones, scene never dirtied).")]
         public bool editPreviewEnabled = true;
         [Tooltip("Io hour shown in edit mode (0-30; -1 = clock's current hour). Orbit time only advances in Play.")]
         [Range(-1f, 30f)] public float editPreviewHour = 15.5f;
-        [Tooltip("25o: extra angular margin (deg) around each disc, and edge softness (deg).")]
-        [Range(-1f, 3f)] public float starOcclusionMarginDeg = 0.15f;
-        [Range(0.01f, 2f)] public float starOcclusionSoftDeg = 0.1f;
         [Tooltip("25o: night dome radius as a fraction of the camera far plane (kept behind Jupiter/moons, max 0.75 / 0.9 far).")]
         [Range(0.92f, 0.995f)] public float nightDomeFarFraction = 0.98f;
         [Tooltip("25o: grow the camera-centred star dome past the farthest corner of all terrain tiles (+ margin), so no tile edge/horizon gap. Capped at 0.995 x camera far clip.")]
@@ -309,7 +361,10 @@ namespace Project.World.Sky
         [Tooltip("Height of the curtains above the horizon (fraction of the sky dome).")]
         [Range(0.05f, 0.8f)] public float auroraHeight = 0.3f;
         [Range(0f, 1f)] public float auroraCoverage = 0.55f;
-        [Range(0f, 1f)] public float auroraDayVisibility = 0.1f;
+        [Tooltip("Aurora visibility in full daylight. 0 = night/eclipse only (nightFade*).")]
+        [Range(0f, 1f)] public float auroraDayVisibility = 0f;
+        [Tooltip("Softens aurora curtain / ray noise (higher = less choppy banding).")]
+        [Range(0f, 1f)] public float auroraSmoothness = 0.55f;
         [Header("Aurora height coverage (25p)")]
         [Tooltip("25p: elevation band, noise-varied edges along azimuth, azimuth span around a centre heading (0 = dome +Z, follows Sky Rotation), soft top/bottom, slow height drift.")]
         [Range(-10f, 80f)] public float auroraMinElevDeg = 0.5f;
@@ -329,16 +384,25 @@ namespace Project.World.Sky
             nightSkyEnabled = true;
             starsBehindSkyBodies = true;
             if (preset <= 0) { starOcclusionMarginDeg = 0.05f; starOcclusionSoftDeg = 0.05f; starDensity = 140f; starBrightness = 2.5f; starSize = 0.9f; starTwinkle = 0.15f; milkyWayIntensity = 0.8f; milkyWayDust = 0.6f; nightFadeStartDeg = -8f; nightFadeEndDeg = 4f; }
-            else if (preset == 1) { starOcclusionMarginDeg = 0.15f; starOcclusionSoftDeg = 0.1f; starDensity = 180f; starBrightness = 4f; starSize = 1f; starTwinkle = 0.3f; milkyWayIntensity = 1.5f; milkyWayDust = 0.7f; nightFadeStartDeg = -6f; nightFadeEndDeg = 8f; }
+            else if (preset == 1) { starsBehindSkyBodies = true; auroraOverSkyBodies = true; starOcclusionMarginDeg = 0f; starOcclusionSoftDeg = 0.08f; starDensity = 180f; starBrightness = 4f; starSize = 1f; starTwinkle = 0.3f; milkyWayIntensity = 1.5f; milkyWayDust = 0.7f; nightFadeStartDeg = -6f; nightFadeEndDeg = 8f; }
             else { starOcclusionMarginDeg = 0.6f; starOcclusionSoftDeg = 0.5f; starDensity = 280f; starBrightness = 8f; starSize = 1.3f; starTwinkle = 0.5f; milkyWayIntensity = 3.5f; milkyWayDust = 0.85f; nightFadeStartDeg = -3f; nightFadeEndDeg = 15f; }
         }
 
         public void ApplyAuroraPreset(int preset)
         {
             auroraEnabled = true;
-            if (preset <= 0) { auroraIntensity = 0.7f; auroraSpeed = 0.02f; auroraHeight = 0.2f; auroraCoverage = 0.4f; auroraDayVisibility = 0.05f; auroraMinElevDeg = 1f; auroraMaxElevDeg = 10f; auroraHeightVariationDeg = 3f; auroraHeightNoiseScale = 2f; auroraBottomSoftDeg = 1.5f; auroraTopSoftDeg = 5f; auroraAzimuthSpanDeg = 360f; auroraAzimuthCenterDeg = 0f; auroraAzimuthEdgeSoftDeg = 30f; auroraHeightDriftSpeed = 0.01f; auroraHeightBobDeg = 1f; }
-            else if (preset == 1) { auroraIntensity = 1.5f; auroraSpeed = 0.03f; auroraHeight = 0.3f; auroraCoverage = 0.55f; auroraDayVisibility = 0.1f; auroraMinElevDeg = 0.5f; auroraMaxElevDeg = 18f; auroraHeightVariationDeg = 6f; auroraHeightNoiseScale = 3f; auroraBottomSoftDeg = 2f; auroraTopSoftDeg = 8f; auroraAzimuthSpanDeg = 360f; auroraAzimuthCenterDeg = 0f; auroraAzimuthEdgeSoftDeg = 30f; auroraHeightDriftSpeed = 0.02f; auroraHeightBobDeg = 2f; }
-            else { auroraIntensity = 4f; auroraSpeed = 0.06f; auroraHeight = 0.5f; auroraCoverage = 0.8f; auroraDayVisibility = 0.2f; auroraMinElevDeg = 0f; auroraMaxElevDeg = 40f; auroraHeightVariationDeg = 18f; auroraHeightNoiseScale = 5f; auroraBottomSoftDeg = 4f; auroraTopSoftDeg = 14f; auroraAzimuthSpanDeg = 360f; auroraAzimuthCenterDeg = 0f; auroraAzimuthEdgeSoftDeg = 30f; auroraHeightDriftSpeed = 0.06f; auroraHeightBobDeg = 6f; }
+            if (preset <= 0) { auroraIntensity = 0.7f; auroraSpeed = 0.02f; auroraHeight = 0.2f; auroraCoverage = 0.4f; auroraDayVisibility = 0f; auroraSmoothness = 0.7f; auroraMinElevDeg = 1f; auroraMaxElevDeg = 10f; auroraHeightVariationDeg = 3f; auroraHeightNoiseScale = 2f; auroraBottomSoftDeg = 1.5f; auroraTopSoftDeg = 5f; auroraAzimuthSpanDeg = 360f; auroraAzimuthCenterDeg = 0f; auroraAzimuthEdgeSoftDeg = 30f; auroraHeightDriftSpeed = 0.01f; auroraHeightBobDeg = 1f; }
+            else if (preset == 1) { auroraIntensity = 1.5f; auroraSpeed = 0.03f; auroraHeight = 0.3f; auroraCoverage = 0.55f; auroraDayVisibility = 0f; auroraSmoothness = 0.55f; auroraMinElevDeg = 0.5f; auroraMaxElevDeg = 18f; auroraHeightVariationDeg = 6f; auroraHeightNoiseScale = 3f; auroraBottomSoftDeg = 2f; auroraTopSoftDeg = 8f; auroraAzimuthSpanDeg = 360f; auroraAzimuthCenterDeg = 0f; auroraAzimuthEdgeSoftDeg = 30f; auroraHeightDriftSpeed = 0.02f; auroraHeightBobDeg = 2f; }
+            else { auroraIntensity = 4f; auroraSpeed = 0.06f; auroraHeight = 0.5f; auroraCoverage = 0.8f; auroraDayVisibility = 0.05f; auroraSmoothness = 0.35f; auroraMinElevDeg = 0f; auroraMaxElevDeg = 40f; auroraHeightVariationDeg = 18f; auroraHeightNoiseScale = 5f; auroraBottomSoftDeg = 4f; auroraTopSoftDeg = 14f; auroraAzimuthSpanDeg = 360f; auroraAzimuthCenterDeg = 0f; auroraAzimuthEdgeSoftDeg = 30f; auroraHeightDriftSpeed = 0.06f; auroraHeightBobDeg = 6f; }
+        }
+
+        /// <summary>2026-10-26i: Milky Way day fade + smoothness. 0 Subtle, 1 Default, 2 Extreme.</summary>
+        public void ApplyMilkyWayPreset(int preset)
+        {
+            nightSkyEnabled = true;
+            if (preset <= 0) { milkyWayIntensity = 0.8f; milkyWayDust = 0.45f; milkyWayWidth = 0.14f; milkyWayDayVisibility = 0f; milkyWaySmoothness = 0.75f; }
+            else if (preset == 1) { milkyWayIntensity = 1.5f; milkyWayDust = 0.7f; milkyWayWidth = 0.18f; milkyWayDayVisibility = 0f; milkyWaySmoothness = 0.55f; }
+            else { milkyWayIntensity = 3.5f; milkyWayDust = 0.85f; milkyWayWidth = 0.28f; milkyWayDayVisibility = 0.05f; milkyWaySmoothness = 0.3f; }
         }
 
         [Header("Anti-ghosting (24as)")]
@@ -466,6 +530,375 @@ namespace Project.World.Sky
             eclipseDurationHours = RealisticEclipseHours;
             eclipseFadeHours = 0.25f;
         }
+
+        /// <summary>0 Subtle, 1 Default, 2 Extreme. Default is noticeably brighter than pre-26f night, still night.</summary>
+        public void ApplyNightLightPreset(int preset)
+        {
+            enableNightLight = true;
+            if (preset <= 0)
+            {
+                nightLightGroundColor = new Color(0.28f, 0.18f, 0.12f, 1f);
+                nightLightMidColor = new Color(0.4f, 0.38f, 0.48f, 1f);
+                nightLightSkyColor = new Color(0.22f, 0.28f, 0.5f, 1f);
+                nightLightAmount = 40f;
+                nightExposureLimitMin = 4.5f;
+                nightAmbientBoost = 0.35f;
+            }
+            else if (preset == 1)
+            {
+                nightLightGroundColor = new Color(0.38f, 0.24f, 0.14f, 1f);
+                nightLightMidColor = new Color(0.55f, 0.48f, 0.62f, 1f);
+                nightLightSkyColor = new Color(0.32f, 0.42f, 0.78f, 1f);
+                nightLightAmount = 120f;
+                nightExposureLimitMin = 3.5f;
+                nightAmbientBoost = 0.75f;
+            }
+            else
+            {
+                nightLightGroundColor = new Color(0.55f, 0.32f, 0.18f, 1f);
+                nightLightMidColor = new Color(0.7f, 0.58f, 0.85f, 1f);
+                nightLightSkyColor = new Color(0.45f, 0.6f, 1f, 1f);
+                nightLightAmount = 420f;
+                nightExposureLimitMin = 2f;
+                nightAmbientBoost = 1.6f;
+            }
+            ApplyNightShadowPreset(preset);
+        }
+
+        /// <summary>2026-10-26j: night directional shadow (Jupiter-shine). 0 Subtle, 1 Default, 2 Extreme.</summary>
+        public void ApplyNightShadowPreset(int preset)
+        {
+            enableNightShadow = true;
+            nightShadowDirectionMode = 0;
+            if (preset <= 0)
+            {
+                nightShadowStrength = 0.3f;
+                nightShadowSoftnessDeg = 8f;
+                nightShadowResolutionTier = 0;
+                nightShadowMaxDistance = 80f;
+            }
+            else if (preset == 1)
+            {
+                nightShadowStrength = 0.55f;
+                nightShadowSoftnessDeg = 4f;
+                nightShadowResolutionTier = 1;
+                nightShadowMaxDistance = 120f;
+            }
+            else
+            {
+                nightShadowStrength = 0.9f;
+                nightShadowSoftnessDeg = 1.5f;
+                nightShadowResolutionTier = 2;
+                nightShadowMaxDistance = 220f;
+            }
+        }
+
+﻿        // ---- 2026-10-26m Sky Look Preset (Custom / Subtle / Normal / Extreme), body-weight style snapshots ----
+
+        [SerializeField, HideInInspector] private SkyLookPreset skyLookAppliedPresetInternal = SkyLookPreset.Custom;
+        [SerializeField, HideInInspector] private System.Collections.Generic.List<string> skyLookCustomStashNames = new System.Collections.Generic.List<string>();
+        [SerializeField, HideInInspector] private System.Collections.Generic.List<string> skyLookCustomStashValues = new System.Collections.Generic.List<string>();
+        public bool HasSkyLookCustomStash => skyLookCustomStashNames != null && skyLookCustomStashNames.Count > 0;
+
+        // Look fields only: sky / MW / aurora / stars / night light+shadow / eclipse brightness / dither. Orbit & time excluded.
+        private static readonly string[] SkyLookFieldNames =
+        {
+            "nightSkyEnabled", "starDensity", "starBrightness", "starSize", "starTwinkle", "starColorVariation",
+            "milkyWayIntensity", "milkyWayWidth", "milkyWayDust", "milkyWayCoreColor", "milkyWayEdgeColor",
+            "milkyWayTiltDeg", "milkyWayYawDeg", "starRotationDeg", "starsRotateWithClock",
+            "nightFadeStartDeg", "nightFadeEndDeg", "nightSkyDayVisibility", "milkyWayDayVisibility", "milkyWaySmoothness",
+            "starsBehindSkyBodies", "auroraOverSkyBodies", "starOcclusionMarginDeg", "starOcclusionSoftDeg",
+            "nightDomeFarFraction", "nightDomeCoverTerrain", "nightDomeTerrainMargin", "nightDomeMinRadius",
+            "auroraEnabled", "auroraIntensity", "auroraColorLow", "auroraColorHigh", "auroraSpeed", "auroraHeight",
+            "auroraCoverage", "auroraDayVisibility", "auroraSmoothness",
+            "auroraMinElevDeg", "auroraMaxElevDeg", "auroraHeightVariationDeg", "auroraHeightNoiseScale",
+            "auroraBottomSoftDeg", "auroraTopSoftDeg", "auroraAzimuthSpanDeg", "auroraAzimuthCenterDeg",
+            "auroraAzimuthEdgeSoftDeg", "auroraHeightDriftSpeed", "auroraHeightBobDeg",
+            "enableNightLight", "nightLightGroundColor", "nightLightMidColor", "nightLightSkyColor",
+            "nightLightAmount", "nightExposureLimitMin", "nightAmbientBoost",
+            "enableNightShadow", "nightShadowStrength", "nightShadowSoftnessDeg", "nightShadowDirectionMode",
+            "nightShadowCustomYawDeg", "nightShadowCustomPitchDeg", "nightShadowResolutionTier", "nightShadowMaxDistance",
+            "eclipseSunRemaining", "eclipseAmbientMultiplier", "jupiterShineColor", "jupiterShineLux",
+            "eclipseJupiterShineLux", "jupiterEclipseRimLux", "jupiterBrightness", "jupiterLimbDarkening", "jupiterRimColor",
+            "eclipseFloorEnabled", "eclipseMinAmbient", "eclipseFillLux", "eclipseExposureLimitMin",
+            "eclipseShadowsEnabled", "eclipseShadowStrength", "eclipseShadowSoftnessDeg",
+            "nightSkyDitherEnabled", "nightSkyDitherAmount", "nightSkySoftExpPower"
+        };
+
+        private static System.Collections.Generic.List<System.Reflection.FieldInfo> s_skyLookFields;
+        private static System.Collections.Generic.List<System.Reflection.FieldInfo> SkyLookFields
+        {
+            get
+            {
+                if (s_skyLookFields != null) return s_skyLookFields;
+                s_skyLookFields = new System.Collections.Generic.List<System.Reflection.FieldInfo>();
+                var t = typeof(DM_IoSkyProfile);
+                foreach (var name in SkyLookFieldNames)
+                {
+                    var f = t.GetField(name, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                    if (f != null) s_skyLookFields.Add(f);
+                }
+                return s_skyLookFields;
+            }
+        }
+
+        private static string SkyLookSerialize(object v)
+        {
+            var ci = System.Globalization.CultureInfo.InvariantCulture;
+            if (v is float fv) return fv.ToString("R", ci);
+            if (v is int iv) return iv.ToString(ci);
+            if (v is bool bv) return bv ? "1" : "0";
+            if (v is Color c) return string.Format(ci, "{0:R},{1:R},{2:R},{3:R}", c.r, c.g, c.b, c.a);
+            if (v is System.Enum) return v.ToString();
+            return v?.ToString();
+        }
+
+        private static bool SkyLookTryParse(System.Reflection.FieldInfo f, string s, out object v)
+        {
+            v = null;
+            var ci = System.Globalization.CultureInfo.InvariantCulture;
+            try
+            {
+                if (f.FieldType == typeof(float)) { v = float.Parse(s, ci); return true; }
+                if (f.FieldType == typeof(int)) { v = int.Parse(s, ci); return true; }
+                if (f.FieldType == typeof(bool)) { v = s == "1" || s.Equals("true", System.StringComparison.OrdinalIgnoreCase); return true; }
+                if (f.FieldType == typeof(Color))
+                {
+                    var p = s.Split(',');
+                    if (p.Length < 3) return false;
+                    v = new Color(float.Parse(p[0], ci), float.Parse(p[1], ci), float.Parse(p[2], ci), p.Length > 3 ? float.Parse(p[3], ci) : 1f);
+                    return true;
+                }
+                if (f.FieldType.IsEnum) { v = System.Enum.Parse(f.FieldType, s); return true; }
+            }
+            catch (System.Exception) { return false; }
+            return false;
+        }
+
+        private void CaptureSkyLookCustomStash()
+        {
+            skyLookCustomStashNames = new System.Collections.Generic.List<string>();
+            skyLookCustomStashValues = new System.Collections.Generic.List<string>();
+            foreach (var f in SkyLookFields)
+            {
+                string s = SkyLookSerialize(f.GetValue(this));
+                if (s == null) continue;
+                skyLookCustomStashNames.Add(f.Name);
+                skyLookCustomStashValues.Add(s);
+            }
+        }
+
+        private void RestoreSkyLookCustomStash()
+        {
+            if (!HasSkyLookCustomStash || skyLookCustomStashValues == null) return;
+            for (int i = 0; i < skyLookCustomStashNames.Count && i < skyLookCustomStashValues.Count; i++)
+            {
+                var f = typeof(DM_IoSkyProfile).GetField(skyLookCustomStashNames[i], System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                if (f == null || SkyLookFields.IndexOf(f) < 0) continue;
+                if (SkyLookTryParse(f, skyLookCustomStashValues[i], out object v)) f.SetValue(this, v);
+            }
+        }
+
+        private static bool SkyLookValuesEqual(object a, object b)
+        {
+            if (a is float fa && b is float fb) return Mathf.Abs(fa - fb) <= 1e-3f;
+            if (a is Color ca && b is Color cb) return Mathf.Abs(ca.r - cb.r) + Mathf.Abs(ca.g - cb.g) + Mathf.Abs(ca.b - cb.b) + Mathf.Abs(ca.a - cb.a) <= 0.004f;
+            return Equals(a, b);
+        }
+
+        /// <summary>Writes Subtle/Normal/Extreme look snapshots. Custom restores the last Custom stash. Orbit/time untouched.</summary>
+        public void ApplySkyLookPreset(SkyLookPreset preset)
+        {
+            if (preset == SkyLookPreset.Custom)
+            {
+                if (skyLookAppliedPresetInternal != SkyLookPreset.Custom) RestoreSkyLookCustomStash();
+                skyLookPreset = preset;
+                skyLookAppliedPresetInternal = preset;
+                return;
+            }
+            if (skyLookAppliedPresetInternal == SkyLookPreset.Custom) CaptureSkyLookCustomStash();
+            ApplySkyLookAuthored(preset);
+            skyLookPreset = preset;
+            skyLookAppliedPresetInternal = preset;
+        }
+
+        public bool SkyLookMatchesPreset(SkyLookPreset preset)
+        {
+            if (preset == SkyLookPreset.Custom) return true;
+            var probe = CreateInstance<DM_IoSkyProfile>();
+            try
+            {
+                probe.ApplySkyLookAuthored(preset);
+                foreach (var f in SkyLookFields)
+                {
+                    if (!SkyLookValuesEqual(f.GetValue(probe), f.GetValue(this))) return false;
+                }
+                return true;
+            }
+            finally
+            {
+                if (Application.isPlaying) Destroy(probe); else DestroyImmediate(probe);
+            }
+        }
+
+        private void ApplySkyLookAuthored(SkyLookPreset preset)
+        {
+            // Shared enables
+            nightSkyEnabled = true;
+            auroraEnabled = true;
+            starsBehindSkyBodies = true;
+            auroraOverSkyBodies = true;
+            starsRotateWithClock = true;
+            enableNightLight = true;
+            enableNightShadow = true;
+            eclipseFloorEnabled = true;
+            eclipseShadowsEnabled = true;
+            nightSkyDitherEnabled = false;
+            nightDomeCoverTerrain = true;
+            nightDomeFarFraction = 0.98f;
+            nightDomeTerrainMargin = 500f;
+            nightDomeMinRadius = 0f;
+            milkyWayDayVisibility = 0f;
+            auroraDayVisibility = 0f;
+            starRotationDeg = 0f;
+            nightShadowDirectionMode = 0;
+            nightShadowCustomYawDeg = 200f;
+            nightShadowCustomPitchDeg = 35f;
+
+            if (preset == SkyLookPreset.Subtle)
+            {
+                // Quieter than Normal; MW/aurora at or below Anthony's lowered Custom (0.15 / 0.1).
+                starDensity = 110f; starBrightness = 1.6f; starSize = 0.55f; starTwinkle = 0.2f; starColorVariation = 0.45f;
+                milkyWayIntensity = 0.07f; milkyWayWidth = 0.16f; milkyWayDust = 0.55f;
+                milkyWayCoreColor = new Color(1f, 0.85f, 0.7f, 1f); milkyWayEdgeColor = new Color(0.55f, 0.65f, 1f, 1f);
+                milkyWayTiltDeg = 62f; milkyWayYawDeg = 35f; milkyWaySmoothness = 0.75f;
+                nightFadeStartDeg = -8f; nightFadeEndDeg = 4f; nightSkyDayVisibility = 0f;
+                starsBehindSkyBodies = true; auroraOverSkyBodies = true; starOcclusionMarginDeg = 0f; starOcclusionSoftDeg = 0.06f;
+                auroraIntensity = 0.05f; auroraSpeed = 0.02f; auroraHeight = 0.25f; auroraCoverage = 0.4f; auroraSmoothness = 0.7f;
+                auroraColorLow = new Color(0.2f, 0.85f, 0.7f, 1f); auroraColorHigh = new Color(0.75f, 0.25f, 0.5f, 1f);
+                auroraMinElevDeg = 1f; auroraMaxElevDeg = 12f; auroraHeightVariationDeg = 4f; auroraHeightNoiseScale = 2.5f;
+                auroraBottomSoftDeg = 2f; auroraTopSoftDeg = 6f; auroraAzimuthSpanDeg = 360f; auroraAzimuthCenterDeg = 0f;
+                auroraAzimuthEdgeSoftDeg = 40f; auroraHeightDriftSpeed = 0.01f; auroraHeightBobDeg = 1f;
+                nightLightGroundColor = new Color(0.28f, 0.18f, 0.12f, 1f);
+                nightLightMidColor = new Color(0.4f, 0.38f, 0.48f, 1f);
+                nightLightSkyColor = new Color(0.22f, 0.28f, 0.5f, 1f);
+                nightLightAmount = 35f; nightExposureLimitMin = 4.5f; nightAmbientBoost = 0.3f;
+                nightShadowStrength = 0.3f; nightShadowSoftnessDeg = 8f; nightShadowResolutionTier = 0; nightShadowMaxDistance = 80f;
+                eclipseSunRemaining = 0.12f; eclipseAmbientMultiplier = 0.45f;
+                jupiterShineColor = new Color(1f, 0.86f, 0.68f, 1f); jupiterShineLux = 15f; eclipseJupiterShineLux = 8f;
+                jupiterEclipseRimLux = 200f; jupiterBrightness = 0.85f; jupiterLimbDarkening = 0.55f;
+                jupiterRimColor = new Color(1f, 0.9f, 0.7f, 1f);
+                eclipseMinAmbient = 0.4f; eclipseFillLux = 30f; eclipseExposureLimitMin = 3f;
+                eclipseShadowStrength = 0.4f; eclipseShadowSoftnessDeg = 8f;
+                nightSkyDitherAmount = 0.4f; nightSkySoftExpPower = 0.3f;
+            }
+            else if (preset == SkyLookPreset.Extreme)
+            {
+                // Brighter / more vibrant; MW+aurora above Custom but dither + smoother FBM keep bands in check.
+                starDensity = 220f; starBrightness = 5f; starSize = 0.85f; starTwinkle = 0.45f; starColorVariation = 0.85f;
+                milkyWayIntensity = 0.35f; milkyWayWidth = 0.26f; milkyWayDust = 0.9f;
+                milkyWayCoreColor = new Color(1f, 0.88f, 0.72f, 1f); milkyWayEdgeColor = new Color(0.5f, 0.7f, 1f, 1f);
+                milkyWayTiltDeg = -34.7f; milkyWayYawDeg = 32f; milkyWaySmoothness = 0.5f;
+                nightFadeStartDeg = -2f; nightFadeEndDeg = 16f; nightSkyDayVisibility = 0.05f;
+                starsBehindSkyBodies = true; auroraOverSkyBodies = true; starOcclusionMarginDeg = 0.02f; starOcclusionSoftDeg = 0.1f;
+                auroraIntensity = 0.3f; auroraSpeed = 0.1f; auroraHeight = 0.65f; auroraCoverage = 0.7f; auroraSmoothness = 0.35f;
+                auroraColorLow = new Color(0.15f, 1f, 0.35f, 1f); auroraColorHigh = new Color(1f, 0.25f, 0.35f, 1f);
+                auroraMinElevDeg = -4f; auroraMaxElevDeg = 24f; auroraHeightVariationDeg = 10f; auroraHeightNoiseScale = 3.2f;
+                auroraBottomSoftDeg = 8f; auroraTopSoftDeg = 6f; auroraAzimuthSpanDeg = 360f; auroraAzimuthCenterDeg = 0f;
+                auroraAzimuthEdgeSoftDeg = 50f; auroraHeightDriftSpeed = 0.05f; auroraHeightBobDeg = 3f;
+                nightLightGroundColor = new Color(0.55f, 0.75f, 0.55f, 1f);
+                nightLightMidColor = new Color(0.9f, 0.5f, 1f, 1f);
+                nightLightSkyColor = new Color(0.5f, 0.6f, 0.95f, 1f);
+                nightLightAmount = 320f; nightExposureLimitMin = 1.5f; nightAmbientBoost = 1.4f;
+                nightShadowStrength = 0.75f; nightShadowSoftnessDeg = 2.5f; nightShadowResolutionTier = 2; nightShadowMaxDistance = 180f;
+                eclipseSunRemaining = 0.5f; eclipseAmbientMultiplier = 0.55f;
+                jupiterShineColor = new Color(1f, 0.9f, 0.75f, 1f); jupiterShineLux = 80f; eclipseJupiterShineLux = 90f;
+                jupiterEclipseRimLux = 2000f; jupiterBrightness = 0.75f; jupiterLimbDarkening = 0.65f;
+                jupiterRimColor = new Color(1f, 0.92f, 0.7f, 1f);
+                eclipseMinAmbient = 0.7f; eclipseFillLux = 200f; eclipseExposureLimitMin = 1.5f;
+                eclipseShadowStrength = 0.85f; eclipseShadowSoftnessDeg = 5f;
+                nightSkyDitherAmount = 0.85f; nightSkySoftExpPower = 0.28f;
+            }
+            else // Normal = true-to-life Io; MW/aurora at or below Custom (0.15 / 0.1).
+            {
+                starDensity = 160f; starBrightness = 2.4f; starSize = 0.7f; starTwinkle = 0.25f; starColorVariation = 0.55f;
+                milkyWayIntensity = 0.12f; milkyWayWidth = 0.18f; milkyWayDust = 0.65f;
+                milkyWayCoreColor = new Color(1f, 0.85f, 0.7f, 1f); milkyWayEdgeColor = new Color(0.55f, 0.65f, 1f, 1f);
+                milkyWayTiltDeg = 62f; milkyWayYawDeg = 35f; milkyWaySmoothness = 0.65f;
+                nightFadeStartDeg = -6f; nightFadeEndDeg = 8f; nightSkyDayVisibility = 0f;
+                starsBehindSkyBodies = true; auroraOverSkyBodies = true; starOcclusionMarginDeg = 0f; starOcclusionSoftDeg = 0.08f;
+                auroraIntensity = 0.08f; auroraSpeed = 0.03f; auroraHeight = 0.3f; auroraCoverage = 0.5f; auroraSmoothness = 0.6f;
+                auroraColorLow = new Color(0.2f, 0.9f, 0.75f, 1f); auroraColorHigh = new Color(0.85f, 0.2f, 0.55f, 1f);
+                auroraMinElevDeg = 0.5f; auroraMaxElevDeg = 16f; auroraHeightVariationDeg = 5f; auroraHeightNoiseScale = 3f;
+                auroraBottomSoftDeg = 2.5f; auroraTopSoftDeg = 7f; auroraAzimuthSpanDeg = 360f; auroraAzimuthCenterDeg = 0f;
+                auroraAzimuthEdgeSoftDeg = 35f; auroraHeightDriftSpeed = 0.02f; auroraHeightBobDeg = 1.5f;
+                nightLightGroundColor = new Color(0.38f, 0.24f, 0.14f, 1f);
+                nightLightMidColor = new Color(0.55f, 0.48f, 0.62f, 1f);
+                nightLightSkyColor = new Color(0.32f, 0.42f, 0.78f, 1f);
+                nightLightAmount = 55f; nightExposureLimitMin = 3.5f; nightAmbientBoost = 0.55f;
+                nightShadowStrength = 0.5f; nightShadowSoftnessDeg = 5f; nightShadowResolutionTier = 1; nightShadowMaxDistance = 120f;
+                eclipseSunRemaining = 0.05f; eclipseAmbientMultiplier = 0.3f;
+                jupiterShineColor = new Color(1f, 0.86f, 0.68f, 1f); jupiterShineLux = 25f; eclipseJupiterShineLux = 15f;
+                jupiterEclipseRimLux = 400f; jupiterBrightness = 1f; jupiterLimbDarkening = 0.45f;
+                jupiterRimColor = new Color(1f, 0.92f, 0.75f, 1f);
+                eclipseMinAmbient = 0.35f; eclipseFillLux = 40f; eclipseExposureLimitMin = 2.5f;
+                eclipseShadowStrength = 0.55f; eclipseShadowSoftnessDeg = 6f;
+                nightSkyDitherAmount = 0.55f; nightSkySoftExpPower = 0.28f;
+            }
+        }
+
+#if UNITY_EDITOR
+        private bool _skyLookValidateQueued;
+
+        private void OnEnable()
+        {
+            // Seed Custom stash from whatever is on the asset (Anthony's current look, incl. lowered MW/aurora).
+            if (!HasSkyLookCustomStash && skyLookPreset == SkyLookPreset.Custom)
+                CaptureSkyLookCustomStash();
+        }
+
+        private void OnValidate()
+        {
+            if (_skyLookValidateQueued) return;
+            if (skyLookPreset == SkyLookPreset.Custom && skyLookAppliedPresetInternal == SkyLookPreset.Custom)
+                return; // Live fields are Custom; stash is captured when leaving Custom.
+            _skyLookValidateQueued = true;
+            UnityEditor.EditorApplication.delayCall += () =>
+            {
+                if (this == null) return;
+                _skyLookValidateQueued = false;
+                ValidateSkyLookPreset();
+            };
+        }
+
+        private void ValidateSkyLookPreset()
+        {
+            if (skyLookPreset != skyLookAppliedPresetInternal)
+            {
+                UnityEditor.Undo.RecordObject(this, "Apply Sky Look Preset");
+                ApplySkyLookPreset(skyLookPreset);
+                SaveSkyLookSoon();
+            }
+            else if (skyLookPreset != SkyLookPreset.Custom && !SkyLookMatchesPreset(skyLookPreset))
+            {
+                UnityEditor.Undo.RecordObject(this, "Sky Look -> Custom");
+                skyLookPreset = SkyLookPreset.Custom;
+                skyLookAppliedPresetInternal = SkyLookPreset.Custom;
+                CaptureSkyLookCustomStash();
+                SaveSkyLookSoon();
+            }
+        }
+
+        private void SaveSkyLookSoon()
+        {
+            UnityEditor.EditorApplication.delayCall += () =>
+            {
+                if (this == null) return;
+                UnityEditor.EditorUtility.SetDirty(this);
+                UnityEditor.AssetDatabase.SaveAssetIfDirty(this);
+            };
+        }
+#endif
 
         private void SetMoonSize(float s)
         {

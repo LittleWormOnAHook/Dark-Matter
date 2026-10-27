@@ -101,16 +101,16 @@ namespace Project.Features.Jetpack
             if (animator == null || !animator.isHuman)
                 return;
 
-            _limbs[0] = Limb.Create(animator, HumanBodyBones.LeftUpperLeg, 20f, 0.95f);
-            _limbs[1] = Limb.Create(animator, HumanBodyBones.RightUpperLeg, 20f, 0.95f);
-            _limbs[2] = Limb.Create(animator, HumanBodyBones.LeftLowerLeg, 28f, 1.25f);
-            _limbs[3] = Limb.Create(animator, HumanBodyBones.RightLowerLeg, 28f, 1.25f);
-            _limbs[4] = Limb.Create(animator, HumanBodyBones.LeftFoot, 18f, 1.4f);
-            _limbs[5] = Limb.Create(animator, HumanBodyBones.RightFoot, 18f, 1.4f);
-            _limbs[6] = Limb.Create(animator, HumanBodyBones.LeftUpperArm, 28f, 1.1f);
-            _limbs[7] = Limb.Create(animator, HumanBodyBones.RightUpperArm, 28f, 1.1f);
-            _limbs[8] = Limb.Create(animator, HumanBodyBones.LeftLowerArm, 36f, 1.45f);
-            _limbs[9] = Limb.Create(animator, HumanBodyBones.RightLowerArm, 36f, 1.45f);
+            _limbs[0] = Limb.Create(animator, HumanBodyBones.LeftUpperLeg, HumanBodyBones.LeftLowerLeg, 20f, 0.95f);
+            _limbs[1] = Limb.Create(animator, HumanBodyBones.RightUpperLeg, HumanBodyBones.RightLowerLeg, 20f, 0.95f);
+            _limbs[2] = Limb.Create(animator, HumanBodyBones.LeftLowerLeg, HumanBodyBones.LeftFoot, 28f, 1.25f);
+            _limbs[3] = Limb.Create(animator, HumanBodyBones.RightLowerLeg, HumanBodyBones.RightFoot, 28f, 1.25f);
+            _limbs[4] = Limb.Create(animator, HumanBodyBones.LeftFoot, HumanBodyBones.LeftToes, 18f, 1.4f);
+            _limbs[5] = Limb.Create(animator, HumanBodyBones.RightFoot, HumanBodyBones.RightToes, 18f, 1.4f);
+            _limbs[6] = Limb.Create(animator, HumanBodyBones.LeftUpperArm, HumanBodyBones.LeftLowerArm, 28f, 1.1f);
+            _limbs[7] = Limb.Create(animator, HumanBodyBones.RightUpperArm, HumanBodyBones.RightLowerArm, 28f, 1.1f);
+            _limbs[8] = Limb.Create(animator, HumanBodyBones.LeftLowerArm, HumanBodyBones.LeftHand, 36f, 1.45f);
+            _limbs[9] = Limb.Create(animator, HumanBodyBones.RightLowerArm, HumanBodyBones.RightHand, 36f, 1.45f);
             _bonesReady = true;
             for (int i = 0; i < _limbs.Length; i++)
             {
@@ -217,22 +217,24 @@ namespace Project.Features.Jetpack
         {
             Vector3 inertia = (-_smoothAccel * InertiaStrength) + (Vector3.down * HangStrength);
             for (int i = 0; i < _limbs.Length; i++)
-                _limbs[i].Apply(inertia, _weight, dt);
+                _limbs[i].Apply(inertia, transform, _weight, dt);
         }
 
         private struct Limb
         {
             public Transform Bone;
+            public Transform Child;
             public float MaxDegrees;
             public float Whip;
             private Vector3 _offset;
             private Vector3 _offsetVelocity;
 
-            public static Limb Create(Animator animator, HumanBodyBones id, float maxDegrees, float whip)
+            public static Limb Create(Animator animator, HumanBodyBones id, HumanBodyBones child, float maxDegrees, float whip)
             {
                 return new Limb
                 {
                     Bone = animator.GetBoneTransform(id),
+                    Child = animator.GetBoneTransform(child),
                     MaxDegrees = maxDegrees,
                     Whip = whip
                 };
@@ -244,12 +246,17 @@ namespace Project.Features.Jetpack
                 _offsetVelocity = Vector3.zero;
             }
 
-            public void Apply(Vector3 worldInertia, float weight, float dt)
+            public void Apply(Vector3 worldInertia, Transform root, float weight, float dt)
             {
                 if (Bone == null)
                     return;
 
-                Vector3 local = Bone.InverseTransformDirection(worldInertia);
+                // 2026-10-23e: rig-independent swing frame. Y = limb direction (bone -> child), X = character left
+                // (-root.right) orthogonalised, Z = X x Y. On Player_v7 this equals the bone's own axes (tuned feel kept);
+                // on rigs whose bones are twisted about the limb (Kade mixamorig: leg X = -forward) the old bone-local
+                // math turned the constant gravity "hang" pitch into a sideways roll (legs swung right).
+                Quaternion frame = SwingFrame(root);
+                Vector3 local = Quaternion.Inverse(frame) * worldInertia;
                 Vector3 target = new Vector3(
                     Mathf.Clamp(-local.y * Whip, -MaxDegrees, MaxDegrees),
                     Mathf.Clamp(local.x * Whip * 0.45f, -MaxDegrees * 0.45f, MaxDegrees * 0.45f),
@@ -259,7 +266,20 @@ namespace Project.Features.Jetpack
                 if (_offset.sqrMagnitude < 0.0001f)
                     return;
 
-                Bone.localRotation *= Quaternion.Euler(_offset * weight);
+                Bone.rotation = frame * Quaternion.Euler(_offset * weight) * Quaternion.Inverse(frame) * Bone.rotation;
+            }
+
+            private Quaternion SwingFrame(Transform root)
+            {
+                Vector3 y = Child != null ? Child.position - Bone.position : Vector3.zero;
+                y = y.sqrMagnitude > 1e-6f ? y.normalized : Bone.up;
+                Vector3 left = root != null ? -root.right : -Vector3.right;
+                Vector3 x = Vector3.ProjectOnPlane(left, y);
+                if (x.sqrMagnitude < 1e-4f)
+                    x = Vector3.ProjectOnPlane(root != null ? root.forward : Vector3.forward, y);
+                x.Normalize();
+                Vector3 z = Vector3.Cross(x, y);
+                return Quaternion.LookRotation(z, y);
             }
         }
     }

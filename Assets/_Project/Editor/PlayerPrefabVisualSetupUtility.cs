@@ -24,10 +24,42 @@ namespace Project.EditorTools
             return AssetDatabase.LoadAssetAtPath<GameObject>(DefaultPlayerPrefabPath);
         }
 
+        /// <summary>
+        /// Maps a template picked from the scene Hierarchy to its prefab asset. Unapplied scene overrides are
+        /// not part of the asset, so <paramref name="warning"/> says so (Apply them to the prefab first).
+        /// </summary>
+        public static GameObject NormalizeTemplateSelection(GameObject picked, out string warning)
+        {
+            warning = null;
+            if (picked == null || EditorUtility.IsPersistent(picked))
+                return picked;
+
+            GameObject instanceRoot = PrefabUtility.GetNearestPrefabInstanceRoot(picked);
+            GameObject asset = instanceRoot != null
+                ? PrefabUtility.GetCorrespondingObjectFromSource(instanceRoot)
+                : null;
+            if (asset == null)
+            {
+                warning = $"'{picked.name}' is a scene object that is not a prefab instance. " +
+                          "Save it as a prefab asset and assign that asset as the template.";
+                return null;
+            }
+
+            asset = asset.transform.root.gameObject;
+            if (PrefabUtility.HasPrefabInstanceAnyOverrides(instanceRoot, false))
+            {
+                warning = $"Scene object '{instanceRoot.name}' has unapplied overrides — the creator uses the asset " +
+                          $"'{AssetDatabase.GetAssetPath(asset)}' without them. Overrides > Apply first if you need them.";
+            }
+
+            return asset;
+        }
+
         public static string ResolveTemplatePath(GameObject templateOverride)
         {
             if (templateOverride != null)
             {
+                templateOverride = NormalizeTemplateSelection(templateOverride, out _) ?? templateOverride;
                 string path = AssetDatabase.GetAssetPath(templateOverride);
                 if (!string.IsNullOrEmpty(path) && File.Exists(path))
                     return path;
@@ -106,6 +138,22 @@ namespace Project.EditorTools
                 return null;
             }
 
+            if (templateOverride != null)
+            {
+                GameObject normalized = NormalizeTemplateSelection(templateOverride, out string templateWarning);
+                if (!string.IsNullOrEmpty(templateWarning))
+                    Debug.LogWarning($"[PlayerPrefabVisualSetup] {templateWarning}", templateOverride);
+                if (normalized == null || string.IsNullOrEmpty(AssetDatabase.GetAssetPath(normalized)))
+                {
+                    Debug.LogError(
+                        $"[PlayerPrefabVisualSetup] Template '{templateOverride.name}' has no prefab asset; refusing to " +
+                        "silently fall back to Player_Invector.", templateOverride);
+                    return null;
+                }
+
+                templateOverride = normalized;
+            }
+
             string templatePath = ResolveTemplatePath(templateOverride);
             if (!File.Exists(templatePath))
             {
@@ -130,6 +178,7 @@ namespace Project.EditorTools
             }
 
             GameObject resolvedModel = modelSource;
+            bool useSourceAsIs = ShouldUseSourceAsIs(modelSource);
             if (modelSource != null)
             {
                 resolvedModel = EnemyModelAvatarUtility.ResolvePreferredVisualModel(modelSource);
@@ -159,10 +208,11 @@ namespace Project.EditorTools
                     GameObject templateAsset = AssetDatabase.LoadAssetAtPath<GameObject>(templatePath);
                     AttachVisualModel(
                         root,
-                        resolvedModel,
+                        useSourceAsIs ? modelSource : resolvedModel,
                         visualChildName,
                         templateAsset,
-                        DMHumanoidBoneRenameUtility.ResolveAvatarAssetPath(outputPath));
+                        DMHumanoidBoneRenameUtility.ResolveAvatarAssetPath(outputPath),
+                        useSourceAsIs);
                 }
 
                 // Always finalize so template-only creates also save edit-mode bind/T-pose
@@ -214,7 +264,8 @@ namespace Project.EditorTools
                         modelSource,
                         visualChildName,
                         templateAsset,
-                        DMHumanoidBoneRenameUtility.ResolveAvatarAssetPath(prefabPath));
+                        DMHumanoidBoneRenameUtility.ResolveAvatarAssetPath(prefabPath),
+                        ShouldUseSourceAsIs(modelSource));
                 }
 
                 FinalizePlayerVisualRoot(root);
@@ -271,6 +322,8 @@ namespace Project.EditorTools
                 return;
 
             DMHumanoidVisualFinalizeUtility.FinalizeVisualCommon(root);
+            // Undo template-rig offsets that the placement bake / slot repair re-applied over carried nodes.
+            DMHumanoidCombatNodeCarryUtility.ReapplyCarriedPoses(root);
             PlayerInvectorRuntimeSetupEditor.WireRuntimeReferences(root);
         }
 
@@ -279,7 +332,8 @@ namespace Project.EditorTools
             GameObject visualSource,
             string visualChildName,
             GameObject templateForBoneNames = null,
-            string avatarPersistPath = null)
+            string avatarPersistPath = null,
+            bool useSourceAsIs = false)
         {
             DMHumanoidVisualAttachUtility.AttachVisualModel(
                 root,
@@ -287,7 +341,26 @@ namespace Project.EditorTools
                 visualChildName,
                 DMHumanoidVisualTarget.Player,
                 templateForBoneNames,
-                avatarPersistPath);
+                avatarPersistPath,
+                carryCombatNodes: true,
+                useSourceAsIs: useSourceAsIs);
+        }
+
+        /// <summary>
+        /// A mesh wrapper prefab (FBX instance + props such as a rebreather, authored root rotation) is used
+        /// as-is instead of being swapped for its raw FBX. Invector character prefabs never qualify.
+        /// </summary>
+        public static bool ShouldUseSourceAsIs(GameObject modelSource)
+        {
+            if (modelSource == null)
+                return false;
+            string path = AssetDatabase.GetAssetPath(modelSource);
+            if (string.IsNullOrEmpty(path) || !path.EndsWith(".prefab", System.StringComparison.OrdinalIgnoreCase))
+                return false;
+            if (EnemyModelAvatarUtility.LooksLikeInvectorCharacterPrefab(modelSource))
+                return false;
+            Animator animator = modelSource.GetComponentInChildren<Animator>(true);
+            return animator != null && animator.avatar != null && animator.avatar.isHuman && animator.avatar.isValid;
         }
 
         public static void RepairEditModeAnimator(GameObject root)

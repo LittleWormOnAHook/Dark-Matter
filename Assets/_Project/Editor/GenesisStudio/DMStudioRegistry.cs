@@ -290,7 +290,7 @@ new DMStudioSubtab(
                         new DMStudioSubtab(
                             "sky-orbit",
                             "Sky & Orbit",
-                            "Io sky on the 30 h clock: sun path, noon eclipse (length/fade/ambient), Jupiter placement + size, Jupiter-shine, Europa/Ganymede/Callisto.",
+                            "Io sky (2026-10-26n): Sky Look Presets; night dither/FBM; aurora over moons (no dark halo cutout); Night Light/Shadow; sun path, eclipse, Jupiter + moons.",
                             DMStudioPanelMode.SingletonAsset,
                             "Assets/_Project/Resources/World/DM_IoSkyProfile.asset",
                             playModeSave: true),
@@ -481,16 +481,31 @@ new DMStudioSubtab(
                         new DMStudioSubtab(
                             "combat-director-slots",
                             "Combat Director",
-                            "Phase 4 start (§31 #4) — DM_CombatDirectorProfile (Resources/Combat): enable / rollback (off = Phase 3 one-attacker only), attack slots by enemy count (1v1 = 1, 2–4 = 1–2, 5–8 = 2–3, larger scales), intensity dial, hard max, slot rotation. Flank and morale are stub fields. Live in Play.",
+                            "Phase 4 start (§31 #4) — DM_CombatDirectorProfile (Resources/Combat): enable / rollback (off = Phase 3 one-attacker only), attack slots by enemy count (1v1 = 1, 2–4 = 1–2, 5–8 = 2–3, larger scales), intensity dial, hard max, slot rotation. Flank (side/back hold points) + group morale live (2026-10-25s), presets below. Live in Play.",
                             DMStudioPanelMode.SingletonAsset,
                             "Assets/_Project/Resources/Combat/DM_CombatDirectorProfile.asset",
                             playModeSave: true),
                         new DMStudioSubtab(
                             "combat-momentum-finishers",
-                            "Momentum & finishers",
-                            "§31 #6 — Momentum meter, finisher selection, first finishers on the migrated enemy. Info only; no profile asset yet.",
-                            DMStudioPanelMode.CombatPlanPlaceholder,
-                            assetPath: "Assets/_Project/Documentation/Design/Combat/DMG_Combat_Plan_v2.md"),
+                            "Momentum & spin",
+                            "Slice 5 E3 (2026-10-25s/26a) - DM_MomentumProfile (Resources/Combat): momentum meter gains / chain / decay / loss on hit, Spin AoE (wind-up, eased 360, radius, damage, poise). SPIN INPUT: hold Attack (KBM Left Mouse / pad Right Trigger) with a full meter for Spin Hold Seconds, or a charged release with a full meter. Presets + Play-mode Fill / Test Spin.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Combat/DM_MomentumProfile.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "combat-finishers-taunts",
+                            "Finishers, taunts & camera",
+                            "Slice 6 (2026-10-26l) - Finisher: hold Use+Attack (E/LMB or West/RT); damage = MaxHP * percent * mult (no forced kill); other melee faster when available; jetpack Rad/Heat/Cold/Mix blink; HP cue; taunts; camera. Feel + Lights presets.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Combat/DM_FinisherTauntProfile.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "combat-melee-lock",
+                            "Melee lock (stay close)",
+                            "2026-10-26b - DM_MeleeLockProfile (Resources/AI): gun enemies with a melee weapon (Humadroid by default) stop ranged backing-off while you fight them with a drawn melee weapon, and hold Hold Distance so your swings land. Presets Subtle / Default / Extreme.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/AI/DM_MeleeLockProfile.asset",
+                            playModeSave: true),
                         new DMStudioSubtab(
                             "combat-sick-stick-specials",
                             "Sick Stick & specials",
@@ -589,7 +604,14 @@ new DMStudioSubtab(
                             "Journal Controller",
                             "Gamepad Journal: D-pad/stick focus, A opens tabs. Inventory: A tap = select/use, HOLD A = pick up ghost, move with D-pad/stick (incl. hotbar), release A to drop (snaps to slot under ghost or nearest empty within Snap Radius, else returns). X tap = Use, HOLD X = item menu (Move = ghost mode; A/X drops). B cancels.",
                             DMStudioPanelMode.SingletonAsset,
-                            "Assets/_Project/Resources/UI/Controls/DMJournalPadProfile.asset")
+                            "Assets/_Project/Resources/UI/Controls/DMJournalPadProfile.asset"),
+                        // 2026-10-26a: momentum spin binding (Attack action; no new input action).
+                        new DMStudioSubtab(
+                            "spin-binding",
+                            "Momentum Spin",
+                            "Spin (Slice 5): HOLD Attack with a full momentum meter - KBM: hold Left Mouse; Gamepad: hold Right Trigger (InputSystem_Actions Player/Attack, unchanged). Also fires on a charged release with a full meter. Hold time / toggles: Spin Hold Seconds, Spin On Hold Attack, Spin Auto On Charged Release.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Combat/DM_MomentumProfile.asset")
                     }),
                 new DMStudioCategory(
                     "ui",

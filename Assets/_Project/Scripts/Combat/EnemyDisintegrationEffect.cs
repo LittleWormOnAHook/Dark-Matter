@@ -640,6 +640,12 @@ namespace Project.Combat
 
         private void NotifyDeathPresentationComplete()
         {
+            // 2026-10-24af: end of death presentation: drop body marks + return pooled VFX parented under the body.
+            DMEnemyHitMarks marks = GetComponentInParent<DMEnemyHitMarks>();
+            if (marks == null) marks = GetComponentInChildren<DMEnemyHitMarks>(true);
+            if (marks != null) marks.ClearAll();
+            EnemyHealth bodyHealth = GetComponentInParent<EnemyHealth>();
+            Project.Core.PoolManager.ReleasePooledChildren(bodyHealth != null ? bodyHealth.transform : transform);
             EnemyLootable lootable = GetComponent<EnemyLootable>();
             if (lootable != null && lootable.IsLootPending)
                 lootable.TrySpawnLootBag(deathPosition);

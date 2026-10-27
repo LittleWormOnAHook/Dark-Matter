@@ -35,14 +35,22 @@ MonoBehaviour:
   slotEntryGrace: {x: 0.3, y: 0.6}
   minSecondsBetweenSlotChanges: 0.4
   slotReawardCooldown: 1
-  enableFlank: 0
+  enableFlank: 1
   flankMaxConcurrent: 1
   flankMinHoldSeconds: 2
+  flankMaxHoldSeconds: 7
+  flankCooldownSeconds: 2.5
+  flankAngleDegrees: 115
+  flankMinEnemies: 3
   flankPersonalityBonus: 0.25
-  enableMorale: 0
+  enableMorale: 1
   startingMorale: 1
   retreatMoraleThreshold: 0.35
   leaderDeathMoraleDrop: 0.4
   casualtyMoraleDrop: 0.1
   gruesomeKillMoraleDrop: 0.15
   moraleRecoverPerSecond: 0.02
+  moraleRecoverHysteresis: 0.1
+  moraleBrokenOuterRing: 1
+  moraleBrokenNoExtraSlots: 1
+  debugLogFlankMorale: 0

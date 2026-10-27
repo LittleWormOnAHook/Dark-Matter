@@ -33,16 +33,19 @@ namespace Project.EditorTools
             string visualChildName,
             DMHumanoidVisualTarget target,
             GameObject templateForBoneNames = null,
-            string avatarPersistPath = null)
+            string avatarPersistPath = null,
+            bool carryCombatNodes = false,
+            bool useSourceAsIs = false)
         {
             AttachResult result = default;
             if (root == null || visualSource == null)
                 return result;
 
             string childName = string.IsNullOrWhiteSpace(visualChildName) ? "Visual" : visualChildName;
-            ClearPreviousCustomVisual(root, childName);
 
-            GameObject instantiateSource = EnemyModelAvatarUtility.ResolvePreferredVisualModel(visualSource);
+            GameObject instantiateSource = useSourceAsIs
+                ? visualSource
+                : EnemyModelAvatarUtility.ResolvePreferredVisualModel(visualSource);
             if (instantiateSource == null)
                 instantiateSource = visualSource;
             if (EnemyModelAvatarUtility.LooksLikeInvectorCharacterPrefab(instantiateSource) &&
@@ -55,17 +58,35 @@ namespace Project.EditorTools
                 return result;
             }
 
-            Dictionary<HumanBodyBones, string> templateNames =
-                DMHumanoidBoneRenameUtility.SnapshotTemplateBoneNames(root, target, templateForBoneNames);
-            DMHumanoidBoneRenameUtility.PrefixStockTemplateBones(root, templateNames);
+            // Weapons / holsters / handlers parented under the old Visual bones would die with it: lift them out
+            // first and re-seat them on the new bones by HumanBodyBones identity after the avatar swap.
+            DMHumanoidCombatNodeCarryUtility.CarryState carry = carryCombatNodes
+                ? DMHumanoidCombatNodeCarryUtility.Capture(root, childName)
+                : null;
+            ClearPreviousCustomVisual(root, childName);
+
+            // Player meshes with their own valid humanoid avatar are driven by that avatar as imported: no rename to
+            // template bone names, no rebuilt avatar (rebuilding from a re-oriented hierarchy twisted limbs).
+            bool keepSourceAvatar = target == DMHumanoidVisualTarget.Player;
+            Dictionary<HumanBodyBones, string> templateNames = null;
+            if (!keepSourceAvatar)
+            {
+                templateNames = DMHumanoidBoneRenameUtility.SnapshotTemplateBoneNames(root, target, templateForBoneNames);
+                DMHumanoidBoneRenameUtility.PrefixStockTemplateBones(root, templateNames);
+            }
 
             GameObject visualInstance = InstantiateVisualSource(instantiateSource);
             if (visualInstance == null)
+            {
+                DMHumanoidCombatNodeCarryUtility.Restore(root, carry, childName);
                 return result;
+            }
 
             visualInstance.name = childName;
             visualInstance.transform.SetParent(root.transform, false);
             visualInstance.transform.localPosition = Vector3.zero;
+            // Wrapper prefabs bring their extras (e.g. Rebreather) but never their root rotation / position:
+            // that is scene placement and would yaw the whole skeleton inside the player.
             visualInstance.transform.localRotation = Quaternion.identity;
             visualInstance.transform.localScale = Vector3.one;
 
@@ -79,6 +100,21 @@ namespace Project.EditorTools
             if (result.Inspection.IsHumanoidAvatar && result.Inspection.IsAvatarValid &&
                 result.Inspection.Avatar != null)
             {
+                if (keepSourceAvatar)
+                {
+                    IntegrateHumanoidVisual(root, visualInstance, driveAvatar, target);
+                    result.AppliedHumanoidAvatar = true;
+                    Animator keepAnimator = root.GetComponent<Animator>();
+                    result.HipsBound = keepAnimator != null && keepAnimator.GetBoneTransform(HumanBodyBones.Hips) != null;
+                    Debug.Log(
+                        $"[PlayerPrefabVisualSetup] Humanoid visual '{visualSource.name}' bound with its own avatar " +
+                        $"'{(driveAvatar != null ? driveAvatar.name : "null")}' (no bone rename, {result.Inspection.Summary}).",
+                        root);
+                    DMHumanoidCombatNodeCarryUtility.Restore(root, carry, childName);
+                    EnableVisualBodyRenderers(visualInstance, true);
+                    return result;
+                }
+
                 Dictionary<HumanBodyBones, Transform> sourceBones =
                     DMHumanoidBoneRenameUtility.SnapshotHumanoidBonesUnder(visualInstance, result.Inspection.Avatar);
                 var renamed = new List<DMHumanoidBoneRenameUtility.RenameEntry>(sourceBones.Count);
@@ -126,6 +162,8 @@ namespace Project.EditorTools
                     result.Inspection.Recommendation,
                     root);
             }
+
+            DMHumanoidCombatNodeCarryUtility.Restore(root, carry, childName);
 
             EnableVisualBodyRenderers(visualInstance, target == DMHumanoidVisualTarget.Player);
             if (target == DMHumanoidVisualTarget.Enemy)

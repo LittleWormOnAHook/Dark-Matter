@@ -205,8 +205,38 @@ namespace Project.UI
             return health != null && boundHealth == health;
         }
 
+        public IEngagedHealthHudTarget BoundTarget => boundHealth;
+
+        private void TickFinisherCueFill()
+        {
+            if (fillImage == null) return;
+            if (!engagedFillBaseCaptured)
+            {
+                engagedFillBase = fillImage.color;
+                engagedFillBaseCaptured = true;
+            }
+            bool on = boundHealth != null
+                && Project.Combat.DMSlice6Runtime.IsCueTarget(boundHealth as Project.AI.EnemyHealth);
+            if (on)
+            {
+                fillImage.color = Project.Combat.DMSlice6Runtime.EvaluateCueFill(engagedFillBase);
+                engagedCueWasOn = true;
+            }
+            else if (engagedCueWasOn)
+            {
+                fillImage.color = engagedFillBase;
+                engagedCueWasOn = false;
+            }
+        }
+
+        private Color engagedFillBase = Color.clear;
+        private bool engagedFillBaseCaptured;
+        private bool engagedCueWasOn;
+
         private void Update()
         {
+            TickFinisherCueFill();
+
             if (boundHealth == null || Time.time < nextFocusCheckTime)
                 return;
 

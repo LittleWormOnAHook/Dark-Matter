@@ -74,6 +74,7 @@ Quick map — full lists in **§2.1–§2.19**.
 - **Related — melee & animation:** `Design/Combat/DM_Melee_Locomotion_Layer_Policy.md` (canon); `Design/Combat/DM_Melee_Animation_Library_Plan.md` (shopping plan, no imports); `Design/Combat/DMG_Combat_Animation_Tag_Sheet.md` (clip counts); `Wiki/Combat-Moving-Melee-Layer-Policy.md` (wiki mirror of melee layer policy)
 - **Related — hit reactions:** `Design/Combat/DM_Directional_Melee_Hit_Reactions_Plan.md` (enemy Slice 2b, Rev 3); `Design/Combat/DM_Player_Hit_Reactions_Plan.md` (player, Rev 1 plan, Oct 19 2026)
 - **Related — wiki mirrors (GitHub sync):** `Wiki/README.md` (map + push steps); `Wiki/Documentation-Index.md`; `Wiki/Cursor-Rules-Index.md`; `Wiki/Combat-System.md`; `Wiki/Archive-Policy.md`; `Wiki/Economy-UEA-and-The-Overseer.md`
+- **Related — FORGE3D turrets (Oct 2026):** wrap lives in `Scripts/Combat/Turrets/` (`DMTurretProfile`, `DMTurretRuntime`, `DMTurretHealth`); Combat Studio **Turrets** tab + Genesis Combat → Turrets (`playModeSave`); placed Equipment `si_turret`; per-prefab faction, vendor VFX, barrel; playable menu Auto/Enter. Disk note in `../Features/Combat/Documentation/Dark_Matter_Combat_System.md` §4.
 
 ### 2.4 Building (stone mode)
 
@@ -166,7 +167,7 @@ Quick map — full lists in **§2.1–§2.19**.
 
 **Shipped** (code on disk): combat weapon base stats, PPT Phase 1, World Engine spine (GameState/WorldState/Directors/Validation), loading screen, companion rebuild track, engagement director Part A (uncommitted/untested).
 **Plans (not shipped):** loot chest rework, enemy spacing Part A refinement, melee animation library (shopping only), Möller–Trumbore carve kernel, terrain subtile split (explicitly deferred), underground map (later content), comms audio/data runtime, AI 3D pipeline.
-**Process docs (not game systems):** `Engineering/Unity_Git_Disk_Truth.md` (disk-is-truth policy) + `Engineering/Cloud_Agent_Unity_Safeguards.md` (checklist) + `Engineering/Vendor_Assets_And_Git_Policy.md` + `Engineering/Vendor_Install_Manifest.md` + `Engineering/Unity_Compile_Iteration_Audit.md` (Oct 5) + `Engineering/Grok_Commit_Push_Handoff.md` (Oct 6 handoff) + `Architecture/Unity_Safe_Mode_Recovery.md` + `System_Requirements.md` (aligned Oct 8, 2026 — PC and Mac first, consoles later, per GDD 5.0).
+**Process docs (not game systems):** `Engineering/Unity_Git_Disk_Truth.md` (disk-is-truth policy) + `Engineering/Cloud_Agent_Unity_Safeguards.md` (checklist) + `Engineering/Vendor_Assets_And_Git_Policy.md` + `Engineering/Vendor_Install_Manifest.md` + `Engineering/Unity_Compile_Iteration_Audit.md` (Oct 5) + `Engineering/Grok_Commit_Push_Handoff.md` (Oct 6 handoff) + `Engineering/Grok_Session_Handoff_2026-10-18_Turrets.md` (Oct 18 turrets/Alarm/FPS) + `Architecture/Unity_Safe_Mode_Recovery.md` + `System_Requirements.md` (aligned Oct 8, 2026 — PC and Mac first, consoles later, per GDD 5.0).
 
 ## 4. Features modules (all module docs)
 

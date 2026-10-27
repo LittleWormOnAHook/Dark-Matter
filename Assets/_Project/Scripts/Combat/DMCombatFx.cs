@@ -182,7 +182,18 @@ namespace Project.Combat
             bool skipDecal = ShouldSkipImpactDecal(receiver);
             // Carve first so hit marks / burns land on the crater floor instead of the surface that was just removed.
             if (!skipDecal && Project.SurfaceCarve.DMCarveImpacts.TryCarveFromAmmo(ammoItem, profile, point, normal, receiver, out Vector3 carvedPoint))
+            {
                 point = carvedPoint;
+                // 2026-10-24af: Carve Lab ammo leaves the crater (glow + drips) only, no hit mark / burn / molten spot.
+                if (Project.SurfaceCarve.DMCarveSettings.Active.carveAmmoSkipsHitMarks
+                    && DMCarveExperimentCombatUtility.TryGetProfile(ammoItem, out _))
+                {
+                    GameObject plainImpact = impactVfxOverride != null ? impactVfxOverride : ResolveDefaultImpact(ammoItem, weapon);
+                    if (plainImpact != null)
+                        SpawnPooled(plainImpact, point, LookAlongNormal(normal), CombatVfxUtility.ResolveImpactAttachTransform(receiver), HitEffectLifeSeconds);
+                    return;
+                }
+            }
             if (!skipDecal)
                 DMMoltenImpacts.Play(ammoItem, profile, point, normal, receiver);
             bool spawnedMark = false;

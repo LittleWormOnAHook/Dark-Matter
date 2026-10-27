@@ -60,6 +60,10 @@ namespace Project.EditorTools.Audit
         public bool obstaclesOnly = false; // targeted wall/corner movement audit, bypass broad combat/weapon suite
         public bool thinWallsOnly = false; // endpoint-focused variant of obstaclesOnly
         public bool rockMeshesOnly = false; // real scene-rock MeshCollider movement cases
+        public bool keepTerrain = false; // 2026-10-25s: leave Gaia terrain streaming ON (slicesOnly implies it)
+        public string sliceFilter = ""; // 2026-10-26b: "humaMelee" = Humadroid melee-lock damage + spin only
+        public bool slicesOnly = false; // 2026-10-25s: Combat Slice 4 / Phase 4 director / Slice 5 momentum+spin targeted audit
+        public bool useActiveScene = false; // 2026-10-25s: audit the open scene instead of opening MainScene
     }
 
     /// <summary>
@@ -118,7 +122,7 @@ namespace Project.EditorTools.Audit
                 JsonUtility.FromJsonOverwrite(optionsJson, opts);
             SessionState.SetString(KeyOptions, JsonUtility.ToJson(opts));
 
-            EnsureMainScene();
+            if (!opts.useActiveScene) EnsureMainScene();
             SessionState.SetBool(KeyPending, true);
             SetStatus("launching");
             if (EditorApplication.isPlaying)

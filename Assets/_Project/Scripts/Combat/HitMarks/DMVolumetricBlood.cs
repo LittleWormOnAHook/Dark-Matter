@@ -48,13 +48,14 @@ namespace Project.Combat
     /// </summary>
     public static class DMVolumetricBlood
     {
-        private struct Live { public GameObject go; public GameObject prefab; public float until; }
+        private struct Live { public GameObject go; public GameObject prefab; public float until; public bool decals; }
         private static readonly Dictionary<GameObject, Stack<GameObject>> Pool = new Dictionary<GameObject, Stack<GameObject>>();
         private static readonly List<Live> Active = new List<Live>();
+        private static readonly HashSet<Renderer> CapStripped = new HashSet<Renderer>();
         private static Transform _root;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics() { Pool.Clear(); Active.Clear(); _root = null; _prewarmQueue = null; _prewarmShown = null; }
+        private static void ResetStatics() { Pool.Clear(); Active.Clear(); CapStripped.Clear(); _root = null; _prewarmQueue = null; _prewarmShown = null; }
 
         private static Queue<GameObject> _prewarmQueue;
         private static GameObject _prewarmShown, _prewarmShownPrefab;
@@ -226,7 +227,8 @@ namespace Project.Combat
             if (p.volumetricSpawnGroundDecals)
                 JitterDecals(p, go, victimRoot);
             _lastSpawnTime = Time.time; _lastSpawnPoint = point;
-            Active.Add(new Live { go = go, prefab = prefab, until = Time.time + Mathf.Max(1f, p.volumetricLifetime) });
+            Active.Add(new Live { go = go, prefab = prefab, until = Time.time + Mathf.Max(1f, p.volumetricLifetime), decals = p.volumetricSpawnGroundDecals });
+            if (p.volumetricSpawnGroundDecals) EnforceGroundDecalCap(p);
             if (p.logVolumetricSide)
                 Debug.Log("[BloodSide] target=" + (enemy != null ? enemy.name : "?") + " side=" + (side < 0 ? "Left" : side > 0 ? "Right" : "Straight") + (forcedSide ? " (random)" : "") + " prefab=" + prefab.name);
             if (DM_CombatCoreProfile.Live != null && DM_CombatCoreProfile.Live.logInterruptsInPlay)
@@ -247,11 +249,35 @@ namespace Project.Combat
             st.Push(l.go);
         }
 
+        // 2026-10-24af: global cap on sprays that keep floor decals; strips the oldest first.
+        private static void EnforceGroundDecalCap(DM_EnemyHitMarkProfile p)
+        {
+            int cap = Mathf.Clamp(p.volumetricGroundDecalCap, 1, 200);
+            int count = 0;
+            for (int i = 0; i < Active.Count; i++) if (Active[i].decals && Active[i].go != null) count++;
+            while (count > cap)
+            {
+                int oldest = -1; float t = float.MaxValue;
+                for (int i = 0; i < Active.Count; i++) if (Active[i].decals && Active[i].go != null && Active[i].until < t) { t = Active[i].until; oldest = i; }
+                if (oldest < 0) break;
+                Live l = Active[oldest];
+                SetGroundDecals(l.go, false);
+                l.decals = false; Active[oldest] = l; count--;
+                if (p.logGroundDecalCap) Debug.Log("[BloodDecalCap] stripped floor decal from " + l.go.name + " (cap " + cap + ")");
+            }
+        }
+
         private static void SetGroundDecals(GameObject go, bool on)
         {
             foreach (BFX.BFX_DecalSettings d in go.GetComponentsInChildren<BFX.BFX_DecalSettings>(true))
             {
                 if (!on) { DecalProjector proj = d.GetComponent<DecalProjector>(); if (proj != null) proj.enabled = false; }
+                Renderer planeRenderer = d.GetComponent<Renderer>(); // 24af: plane-mode decals stripped by the cap
+                if (planeRenderer != null)
+                {
+                    if (!on && planeRenderer.enabled) { planeRenderer.enabled = false; CapStripped.Add(planeRenderer); }
+                    else if (on && CapStripped.Remove(planeRenderer)) planeRenderer.enabled = true;
+                }
                 d.enabled = on; // BFX enables the projector itself when it lands
             }
         }

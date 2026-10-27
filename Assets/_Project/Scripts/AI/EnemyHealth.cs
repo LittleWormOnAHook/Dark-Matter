@@ -137,7 +137,7 @@ namespace Project.AI
                 return;
 
             if (destroyOnDeath)
-                Destroy(gameObject, destroyDelay);
+                Project.Core.PoolManager.DestroyAfterReleasingPooledChildren(gameObject, destroyDelay); // 2026-10-24af: pooled VFX children go back to pool
         }
 
         public void SetRespawnExternallyManaged(bool external)
@@ -184,7 +184,7 @@ namespace Project.AI
             }
 
             if (destroyOnDeath)
-                Destroy(gameObject, destroyDelay);
+                Project.Core.PoolManager.DestroyAfterReleasingPooledChildren(gameObject, destroyDelay); // 2026-10-24af: pooled VFX children go back to pool
         }
 
         /// <summary>

@@ -84,6 +84,69 @@ namespace Project.AI.Invector
 
                 ReparentOrphanWeaponSlots(searchRoot, meshyRightHand, meshyRightUpperLeg, meshyChest);
             }
+
+            RebindOrphansUnderVisual(root.transform, animator, meshyRightHand, meshyLeftHand, meshyRightUpperLeg, meshyChest);
+        }
+
+        /// <summary>
+        /// Holders left directly under the Visual (not under any live humanoid bone, e.g. after a mesh swap) are
+        /// moved onto the matching bone. Holders already on a humanoid bone are never touched, so hand-tuned
+        /// placements survive.
+        /// </summary>
+        private static void RebindOrphansUnderVisual(
+            Transform root,
+            Animator animator,
+            Transform rightHand,
+            Transform leftHand,
+            Transform rightUpperLeg,
+            Transform chest)
+        {
+            Transform visual = root.Find("Visual");
+            if (visual == null)
+                return;
+
+            var bones = new System.Collections.Generic.HashSet<Transform>();
+            for (int i = 0; i < (int)HumanBodyBones.LastBone; i++)
+            {
+                Transform b = animator.GetBoneTransform((HumanBodyBones)i);
+                if (b != null)
+                    bones.Add(b);
+            }
+
+            Transform[] all = visual.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < all.Length; i++)
+            {
+                Transform node = all[i];
+                if (node == null || bones.Contains(node) || HasAncestorIn(node, bones, visual))
+                    continue;
+
+                string name = node.name;
+                Transform destination = null;
+                if (System.Array.IndexOf(RightHandHolderNames, name) >= 0 || name.StartsWith("Drawn_", System.StringComparison.Ordinal))
+                    destination = rightHand;
+                else if (System.Array.IndexOf(LeftHandHolderNames, name) >= 0)
+                    destination = leftHand;
+                else if (System.Array.IndexOf(HipHolderNames, name) >= 0 || name.StartsWith("Holstered_", System.StringComparison.Ordinal))
+                    destination = rightUpperLeg != null ? rightUpperLeg : chest;
+                else if (System.Array.IndexOf(TorsoHolderNames, name) >= 0)
+                    destination = chest;
+
+                if (destination != null && !destination.IsChildOf(node))
+                    node.SetParent(destination, true);
+            }
+        }
+
+        private static bool HasAncestorIn(Transform node, System.Collections.Generic.HashSet<Transform> set, Transform stop)
+        {
+            Transform cur = node.parent;
+            while (cur != null && cur != stop)
+            {
+                if (set.Contains(cur))
+                    return true;
+                cur = cur.parent;
+            }
+
+            return false;
         }
 
         private static Transform[] CollectHolderSearchRoots(Transform root)

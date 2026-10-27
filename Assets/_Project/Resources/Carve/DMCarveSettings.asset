@@ -32,6 +32,7 @@ MonoBehaviour:
   - outcrop
   - terrain
   - wall
+  carveUnbatchesStatic: 1
   maxTrianglesPerObject: 300000
   ammoDeformsMeshes: 0
   debrisWithoutDeform: 1
@@ -53,6 +54,9 @@ MonoBehaviour:
   debrisImpulse: 2.5
   maxLiveDebris: 40
   debrisSizeScale: 3
+  explosionRing: 0
+  impactVfxHdrpFix: 1
+  impactDebrisSurfaceColor: 1
   debrisLookEnabled: 1
   debrisColorSource: 0
   debrisTintStrength: 0.85
@@ -65,3 +69,51 @@ MonoBehaviour:
   dragStampSpacing: 0.35
   runtimeColliderRefresh: 0.12
   keepDedicatedColliderInPlay: 1
+  colliderFollowsCarvedMesh: 1
+  carveAmmoSkipsHitMarks: 1
+  carveGlowEnabled: 1
+  carveGlowColor: {r: 1, g: 0.38, b: 0.08, a: 1}
+  carveGlowIntensity: 60
+  carveGlowCoolSeconds: 4
+  carveGlowCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.25
+      value: 0.6
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  carveDripsEnabled: 1
+  carveDripRate: 8
+  carveDripSize: 0.025
+  carveDripLifetime: 2.5
+  carveDripWindow: 0.6
+  carveDripMaxLive: 80
+  carveDripGravity: 1
+  carveDripIntensity: 2.5
+  carveDripCooledColor: {r: 0.08, g: 0.07, b: 0.065, a: 1}

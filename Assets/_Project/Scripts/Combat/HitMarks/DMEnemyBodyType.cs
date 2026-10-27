@@ -25,6 +25,8 @@ namespace Project.Combat
         /// <summary>Humanoid bullet hit: bright red blood spot inside a circular char ring (no glow).</summary>
         BloodChar = 0,
         /// <summary>Android / Robot (and Laser on anything): the Laser burn look with a cooling glow.</summary>
-        GlowBurn = 1
+        GlowBurn = 1,
+        /// <summary>2026-10-24af: neutral physical blade cut (no glow, no char ring); falls back to the bullet burn material.</summary>
+        Cut = 2
     }
 }

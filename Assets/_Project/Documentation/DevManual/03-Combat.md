@@ -1486,3 +1486,58 @@ Run at the enemy and press Jump + light attack together (either order, within *C
 - Movement: locked for the hold plus `RecoveryLockFraction` x the rise.
 - Impact: small dust burst (`DustScale` 0.8) and a very brief subtle shake (`LandShakeScale` 0.15, `LandShakeSeconds` 0.12).
 - Studio: Combat > Jump attack. The Subtle/Default/Extreme presets include these fields.
+
+## 2026-10-25s: Slice 4 finish, Flank/Morale, Momentum spin, slices audit
+
+**Slice 4 target switch.** `DMMeleeAttackFacing.CameraFollowSwitch()` (called from LateUpdate) turns the Invector camera so a newly switched target stays within `meleeSwitchCameraKeepInViewDeg`, capped at `meleeSwitchCameraMaxDegPerSec`, for `meleeSwitchCameraFollowSeconds`. SnapTurn eases over the last `meleeSwitchSnapEaseDegrees`. Studio: Combat Core > target switch presets.
+
+**Phase 4 flank + morale.** `DMEnemyEngagementDirector` assigns up to `flankMaxConcurrent` holders as flankers (most off-axis first); `ResolveHoldAnchor` biases them to the player's side/back at `flankAngleDegrees`. Ring morale drops on casualties (more for the leader and gruesome crit/charged kills), recovers over time, and breaking leaves 1 attack slot and pushes holders to the outer ring. Studio: Combat Director (Flank/Morale presets, live stats). `flankPersonalityBonus` is reserved.
+
+**Slice 5 momentum + spin.** `DMPlayerMomentum` (static meter) gains from player melee hits (via `PioneerInvectorDamageReceiver` and `CombatEvents.HitApplied`), decays, and is lost on damage. `DMMomentumSpin.TrySpin(player)` spends `spinCost` for a procedural 360 AoE that hits each enemy once. Studio: Momentum & spin. No input binding yet.
+
+**Audit.** Launch with `{"slicesOnly":true,"useActiveScene":true}` to run only the Slice 4 / Phase 4 / Slice 5 scenarios with terrain on (each waits for ground under the player and the enemies).
+
+## 2026-10-26a
+
+=== 2026-10-26a Spin input, Slice 6 (finishers/taunts/camera), morale fix, Humadroid melee diagnosis ===
+- Momentum Spin trigger: BOTH hold Attack (KBM Left Mouse / Pad Right Trigger) with full meter for spinHoldSeconds (0.7 s default; Subtle 0.9 / Extreme 0.5) AND auto on charged release (spinAutoOnChargedRelease=ON). No new input action. Studio: Controls > Momentum Spin.
+- Slice 6: DMSlice6Runtime + DM_FinisherTauntProfile (Resources/Combat). Finishers on low-HP (<=20%) or staggered (1.2 s window) enemies, press Attack in range 2.4 m / 70 deg; paired SwordFinisher_Player/_Enemy clips. Taunts for Director ring holders (PROTOFACTOR TauntA/B 2HandMelee, Taunt1, Taunt3), max 1 concurrent. Camera pull-back up to 1.6 m when 3-6+ enemies/slot threat, smooth return. Studio: Combat > Finishers, taunts & camera (Subtle/Default/Extreme). Existing project clips only; nothing imported.
+- Morale fix (DMEnemyEngagementDirector): destroyed (destroyOnDeath) members were Unity-null so NoteCasualty returned early; now counted as casualties. GruesomeKills uses reference list.
+- Humadroid melee: diagnostic s5.hitdiag/s5.hitprobe added. Runtime DMHitbox rig builds 18 live hitboxes covering the mesh (hit Y 0.1-1.7 vs mesh -0.1-1.9); no damage was caused by spacing (weapon trigger passing 0.4-0.6 m from chest), not hitbox size/layer. Humadroid prefab NOT modified (body hitboxes are runtime-generated, not authored in prefab); weapons untouched.
+- Blood decals unchanged (~8 s fade).
+- Audit: 71 PASS / 0 FAIL / 11 WARN, 0 console errors (terrain ON).
+
+## 2026-10-26b Melee lock
+
+=== 2026-10-26b Humadroid melee lock (stay in melee range vs a melee player) ===
+- New DM_MeleeLockProfile (Scripts/AI/Brain, asset Resources/AI/DM_MeleeLockProfile.asset). Studio: Combat > Melee lock (stay close), presets Subtle / Default / Extreme (engage 5/8/14 m, hold 1.3/1.0/0.75 m, release 0.8/1.5/3 s). Fields: enableMeleeLock, enemyTypes ("Humadroid"; "*" = all gun+melee enemies), requireEnemyMeleeWeapon, engageDistance 1-30, holdDistance 0.4-3, releaseSeconds 0-8.
+- EnemyAiController.CombatPositioning: IsMeleeLocked/MeleeLockActive; while the player has a melee weapon drawn within engageDistance, ranged hold/retreat is skipped and min separation + standoff are capped to holdDistance.
+- EnemyInvectorCombatBridge.IsArmedRangedPreferred returns false while melee-locked (enemy has a melee weapon) so it closes, swaps to melee and stops standing off to shoot.
+- PioneerShooterMeleeInput: public IsDrawnMeleeActive (read-only).
+- Body weight: DM_ClimbDashProfile bodyWeightEnemyTypeScales adds Humadroid=0.8 (stiffer robot sway at close range).
+- No prefab, weapon placement, NavMesh or scene changes. Backups *.pre20261026b(_b/_c/_d).
+- Audit: sliceFilter "humaMelee" scenario (Humadroid only). 2 runs: lock PASS, closes to 1.0-1.5 m, spin hits (200->172), swings kill it (3-4 hits/10), 0 console errors.
+Docs: Assets/_Project/Documentation/DevManual/03-Combat.md (2026-10-26b section).
+
+## 2026-10-26e Finisher-available cue
+
+=== 2026-10-26e Finisher-available cue (brighten + pulse eligible enemy HP fill) ===
+- DM_FinisherTauntProfile: enableFinisherCue, finisherCueBrightColor, finisherCueBrightnessBoost (0-2), finisherCuePulseSpeed (0.2-10 Hz), finisherCuePulseDepth (0-1), finisherCueProbeHz (1-30), finisherCueSound (off, unused). Studio > Combat > Finishers, taunts & camera; Subtle/Default/Extreme presets include cue.
+- DMSlice6Runtime: throttled ProbeFinisher (nearest eligible only) exposes CueTarget / IsCueTarget / EvaluateCueFill.
+- Applied on EngagedEnemyHealthHud (uGUI), UITK enemy-focus fill (DMUiToolkitHud.XpAmmoEnemy), FloatingTargetHealthBar, and UITK world chrome bars. Restores normal colour when not eligible. No sound. No prefab/scene/weapon changes. Backups *.pre20261026e.
+Docs: Assets/_Project/Documentation/DevManual/03-Combat.md (2026-10-26e section).
+## 2026-10-26i Solo overhead finisher
+=== 2026-10-26i Solo overhead finisher (no paired grab) ===
+- Removed SwordFinisher_Player/Enemy paired grab-throw from use (finisherEnemyClip cleared).
+- New player clip: Standing Melee Attack Downward (Mixamo). Trigger: Attack press, melee drawn, enemy HP <= finisherLowHpFraction (default 20%). enableFinisherOnStagger default off (window setting kept). Enemy dies via normal damage/hit reaction (no pin, no victim clip). Body-weight pitch/hip (finisherBodyPitchDeg/HipDrop). Cue unchanged. Charged attack unchanged.
+Docs: Assets/_Project/Documentation/DevManual/03-Combat.md (2026-10-26i).
+## 2026-10-26k Finisher feel + jetpack lights
+=== 2026-10-26k Finisher feel + jetpack lights ===
+- FinisherAvailable drives OtherMeleeSpeedMult / OtherMeleeBodySwingMult (PioneerMeleeDamageWindowTracker animator.speed; DMPlayerBodyWeight swing gain). Finisher damage uses finisherDamageMultiplier only.
+- Player jetpack indicators are ExposureHazardIndicator GOs named Rad (1), Heat (1), Cold (1), Mix (1) under the jetpack mesh (Anthony: Red -> Heat -> Cold -> Mix). Sequence + intensities from DM_FinisherTauntProfile; environmental uses of the same indicator type are not driven.
+Docs: Assets/_Project/Documentation/DevManual/03-Combat.md (2026-10-26k).
+## 2026-10-26l Finisher damage + Use+Attack combo
+=== 2026-10-26l Finisher damage + Use+Attack combo ===
+- Damage: MaxHealth * finisherDamageMaxHealthPercent * finisherDamageMultiplier (Feel presets update percent+mult). KillFinisherTarget applies normal DamageInfo (no IsChargedHit overkill).
+- Input: Player/Finisher action; FinisherComboPressedThisFrame (Finisher action or Use+Attack edge). BlocksWorldUse gates interact. Pad: West + RT.
+Docs: Assets/_Project/Documentation/DevManual/03-Combat.md (2026-10-26l).

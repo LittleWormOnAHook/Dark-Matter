@@ -7,6 +7,7 @@ namespace Project.Survival.Exposure
     /// Drives the assigned material's albedo + emission to the zone color while inside
     /// a matching volume, blinking faster toward the center. Off = dark grey / black.
     /// Uses a MaterialPropertyBlock so authored materials are not permanently mutated.
+    /// 2026-10-26k: SetExternalDrive lets the finisher jetpack blink own intensity without touching shared mats or env instances.
     /// </summary>
     [DisallowMultipleComponent]
     public class ExposureHazardIndicator : MonoBehaviour
@@ -43,6 +44,9 @@ namespace Project.Survival.Exposure
         private ExposureReceiver receiver;
         private MaterialPropertyBlock propertyBlock;
         private bool keywordArmed;
+        // 2026-10-26k: finisher jetpack sequence owns look while active (env volumes ignored).
+        private bool externalDrive;
+        private float externalEmissionScale;
 
         private void Awake()
         {
@@ -70,6 +74,18 @@ namespace Project.Survival.Exposure
 
         private void LateUpdate()
         {
+            if (externalDrive)
+            {
+                if (externalEmissionScale <= 0.0001f)
+                    ApplyOff();
+                else
+                {
+                    Color extAlbedo = Color.Lerp(offColor, emissionColor, 1f);
+                    ApplyLook(extAlbedo, emissionColor * externalEmissionScale);
+                }
+                return;
+            }
+
             float spatial = SampleSpatial();
             if (spatial <= 0.0001f)
             {
@@ -84,6 +100,17 @@ namespace Project.Survival.Exposure
             Color albedo = Color.Lerp(offColor, emissionColor, blink);
             ApplyLook(albedo, emissionColor * intensity);
         }
+
+        /// <summary>2026-10-26k: when active, LateUpdate ignores zone sampling and applies emissionScale (0 = off look).</summary>
+        public void SetExternalDrive(bool active, float emissionScale = 0f)
+        {
+            externalDrive = active;
+            externalEmissionScale = Mathf.Max(0f, emissionScale);
+            if (!active)
+                ApplyOff();
+        }
+
+        public bool IsExternalDriveActive => externalDrive;
 
         private float SampleSpatial()
         {

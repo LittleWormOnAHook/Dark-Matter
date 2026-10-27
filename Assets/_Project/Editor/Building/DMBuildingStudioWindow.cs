@@ -377,7 +377,7 @@ namespace Project.EditorTools.Building
                 "Combat numbers (scan/track/fire, faction, hull) live on DM_TurretProfile in Combat Studio → Turrets.",
                 MessageType.Info);
             profile.turretInteractRangeMeters = EditorGUILayout.FloatField(
-                new GUIContent("Turret E range (m)", "Press E interact range for a placed turret."),
+                new GUIContent("Turret E range (m)", "Radius of each turret's InteractZone trigger (sole interact authority). Player inside = can press E; aimed turret wins, else nearest."),
                 profile.turretInteractRangeMeters);
             profile.turretPlayerCameraBackMeters = EditorGUILayout.FloatField(
                 new GUIContent("Seat camera back (m)", "Player-control camera distance behind the barrel."),

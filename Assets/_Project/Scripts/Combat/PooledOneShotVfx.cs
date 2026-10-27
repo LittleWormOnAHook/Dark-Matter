@@ -16,6 +16,14 @@ namespace Project.Combat
 
         private void OnDisable()
         {
+            // 2026-10-24af: parent (enemy body / dissolve root) was deactivated while this stays activeSelf:
+            // reparenting is illegal inside the deactivation, so hand it back next frame via the pool runner.
+            if (gameObject.activeSelf && !gameObject.activeInHierarchy && gameObject.scene.isLoaded
+                && TryGetComponent(out PooledInstanceTag tag) && tag.SourcePool != null)
+            {
+                PoolManager.ReleaseDelayed(gameObject, 0f);
+                return;
+            }
             PoolManager.TryReturnOrphanedPooledInstance(gameObject);
         }
     }

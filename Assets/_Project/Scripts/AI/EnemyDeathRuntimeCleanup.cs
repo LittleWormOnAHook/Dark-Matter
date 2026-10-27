@@ -62,6 +62,7 @@ namespace Project.AI
         {
             if (enemyRoot != null)
             {
+                Project.Core.PoolManager.ReleasePooledChildren(enemyRoot.transform); // 2026-10-24af
                 if (destroyImmediately)
                     Object.DestroyImmediate(enemyRoot);
                 else

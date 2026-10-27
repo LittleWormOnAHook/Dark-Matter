@@ -247,6 +247,17 @@ namespace Project.Combat
         [Range(0f, 180f)] public float meleeSwitchSnapMaxDegrees = 120f;
         [Tooltip("Seconds the snap-turn window stays open after a switch.")]
         [Range(0.02f, 1f)] public float meleeSwitchSnapSeconds = 0.18f;
+        [Tooltip("2026-10-25s body weight: the snap decelerates over the last N degrees (0 = hard stop).")]
+        [Range(0f, 90f)] public float meleeSwitchSnapEaseDegrees = 25f;
+        [Tooltip("Snap speed fraction kept at the very end of the ease (lower = heavier settle).")]
+        [Range(0.05f, 1f)] public float meleeSwitchSnapEaseMinSpeedFraction = 0.3f;
+        [Tooltip("2026-10-25s: camera eases toward the new target after a stick switch so it stays in view.")]
+        public bool meleeSwitchCameraFollow = true;
+        [Range(30f, 1440f)] public float meleeSwitchCameraMaxDegPerSec = 360f;
+        [Tooltip("Camera only turns for the part of the target bearing beyond this angle from camera forward.")]
+        [Range(0f, 180f)] public float meleeSwitchCameraKeepInViewDeg = 40f;
+        [Tooltip("Camera follow window after a switch; stick retarget is paused meanwhile (no camera/stick feedback loop).")]
+        [Range(0.05f, 2f)] public float meleeSwitchCameraFollowSeconds = 0.5f;
 
         /// <summary>2026-10-25d Slice 4: 0 Subtle, 1 Default, 2 Extreme.</summary>
         public void ApplyTargetSwitchPreset(int level)
@@ -254,9 +265,9 @@ namespace Project.Combat
             meleeTargetSwitchEnabled = true;
             switch (level)
             {
-                case 0: meleeSwitchSnapTurnSpeed = 450f; meleeSwitchSnapMaxDegrees = 60f; meleeSwitchSnapSeconds = 0.25f; meleeRetargetStickAngle = 60f; meleeRetargetMinSeconds = 0.5f; break;
-                case 2: meleeSwitchSnapTurnSpeed = 2000f; meleeSwitchSnapMaxDegrees = 180f; meleeSwitchSnapSeconds = 0.12f; meleeRetargetStickAngle = 30f; meleeRetargetMinSeconds = 0.2f; break;
-                default: meleeSwitchSnapTurnSpeed = 900f; meleeSwitchSnapMaxDegrees = 120f; meleeSwitchSnapSeconds = 0.18f; meleeRetargetStickAngle = 45f; meleeRetargetMinSeconds = 0.4f; break;
+                case 0: meleeSwitchSnapTurnSpeed = 450f; meleeSwitchSnapMaxDegrees = 60f; meleeSwitchSnapSeconds = 0.25f; meleeRetargetStickAngle = 60f; meleeRetargetMinSeconds = 0.5f; meleeSwitchSnapEaseDegrees = 35f; meleeSwitchSnapEaseMinSpeedFraction = 0.25f; meleeSwitchCameraFollow = true; meleeSwitchCameraMaxDegPerSec = 200f; meleeSwitchCameraKeepInViewDeg = 55f; meleeSwitchCameraFollowSeconds = 0.6f; break;
+                case 2: meleeSwitchSnapTurnSpeed = 2000f; meleeSwitchSnapMaxDegrees = 180f; meleeSwitchSnapSeconds = 0.12f; meleeRetargetStickAngle = 30f; meleeRetargetMinSeconds = 0.2f; meleeSwitchSnapEaseDegrees = 10f; meleeSwitchSnapEaseMinSpeedFraction = 0.5f; meleeSwitchCameraFollow = true; meleeSwitchCameraMaxDegPerSec = 900f; meleeSwitchCameraKeepInViewDeg = 20f; meleeSwitchCameraFollowSeconds = 0.35f; break;
+                default: meleeSwitchSnapTurnSpeed = 900f; meleeSwitchSnapMaxDegrees = 120f; meleeSwitchSnapSeconds = 0.18f; meleeRetargetStickAngle = 45f; meleeRetargetMinSeconds = 0.4f; meleeSwitchSnapEaseDegrees = 25f; meleeSwitchSnapEaseMinSpeedFraction = 0.3f; meleeSwitchCameraFollow = true; meleeSwitchCameraMaxDegPerSec = 360f; meleeSwitchCameraKeepInViewDeg = 40f; meleeSwitchCameraFollowSeconds = 0.5f; break;
             }
         }
         public bool meleeTargetIgnoreDowned = true;

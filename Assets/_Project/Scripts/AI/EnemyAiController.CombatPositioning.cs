@@ -22,7 +22,42 @@ namespace Project.AI
         /// </summary>
         internal bool UsesRangedHold(Transform target)
         {
-            return combatBridge != null && target != null && IsCombatTargetPlayer(target) && combatBridge.IsArmedRangedPreferred();
+            return combatBridge != null && target != null && IsCombatTargetPlayer(target) && !IsMeleeLocked(target) && combatBridge.IsArmedRangedPreferred();
+        }
+
+        // 2026-10-26b: melee lock (DM_MeleeLockProfile) - stop ranged backing-off vs a melee-armed player.
+        private float meleeLockUntil = -1f, meleeLockCheckedAt = -1f;
+        private bool meleeLockApplies, meleeLockAppliesKnown;
+        private Transform meleeLockInputOwner;
+        private Project.Player.Invector.PioneerShooterMeleeInput meleeLockInput;
+
+        public bool MeleeLockActive
+        {
+            get
+            {
+                if (meleeLockCheckedAt != Time.time && combat != null && combat.CurrentTarget != null) IsMeleeLocked(combat.CurrentTarget);
+                return Time.time < meleeLockUntil;
+            }
+        }
+
+        internal bool IsMeleeLocked(Transform target)
+        {
+            DM_MeleeLockProfile p = DM_MeleeLockProfile.Live;
+            if (p == null || !p.enableMeleeLock || target == null || !IsCombatTargetPlayer(target)) return false;
+            if (!meleeLockAppliesKnown || !Application.isPlaying) { meleeLockApplies = p.AppliesTo(AppliedDefinition, gameObject.name); meleeLockAppliesKnown = true; }
+            if (!meleeLockApplies) return false;
+            if (meleeLockCheckedAt == Time.time) return Time.time < meleeLockUntil;
+            meleeLockCheckedAt = Time.time;
+            if (meleeLockInputOwner != target)
+            {
+                meleeLockInputOwner = target;
+                meleeLockInput = target.GetComponentInParent<Project.Player.Invector.PioneerShooterMeleeInput>();
+                if (meleeLockInput == null) meleeLockInput = target.GetComponentInChildren<Project.Player.Invector.PioneerShooterMeleeInput>();
+            }
+            Vector3 d = target.position - transform.position; d.y = 0f;
+            if (meleeLockInput != null && meleeLockInput.IsDrawnMeleeActive && d.sqrMagnitude <= p.engageDistance * p.engageDistance)
+                meleeLockUntil = Time.time + p.releaseSeconds;
+            return Time.time < meleeLockUntil;
         }
 
         /// <summary>Distance below which a ranged-holding enemy retreats from the player.</summary>
@@ -63,7 +98,9 @@ namespace Project.AI
                 : minSep;
             if (UsesRangedHold(target))
                 result = Mathf.Max(result, ResolveRangedRetreatDistance());
-            return result * CrowdingVariationFactor();
+            result *= CrowdingVariationFactor();
+            if (IsMeleeLocked(target)) result = Mathf.Min(result, DM_MeleeLockProfile.Live.holdDistance);
+            return result;
         }
 
         internal float ResolveCombatStandoffFor(Transform target)
@@ -88,6 +125,7 @@ namespace Project.AI
             // still connect; never orbit farther than we can strike.
             float orbitFactor = profile != null ? profile.enemyMeleeMaxOrbitFactor : 0.86f;
             float maxOrbit = Mathf.Max(minSep, effectiveRange * orbitFactor);
+            if (IsMeleeLocked(target)) return Mathf.Min(Mathf.Min(standoff, maxOrbit), Mathf.Max(minSep, DM_MeleeLockProfile.Live.holdDistance));
             return Mathf.Min(standoff, maxOrbit);
         }
 

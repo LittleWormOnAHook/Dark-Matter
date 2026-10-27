@@ -790,6 +790,10 @@ namespace Project.Combat
 
             if (TryResolveMeleeAnimSpeedMultiplier(out float multiplier))
             {
+                // 2026-10-26k: other melee faster while a finisher is available (finisher overlay uses its own playable speed).
+                if (!Project.Combat.DMSlice6Runtime.FinisherActive)
+                    multiplier *= Project.Combat.DMSlice6Runtime.OtherMeleeSpeedMult;
+                multiplier = Mathf.Clamp(multiplier, 0.75f, 2f);
                 if (!_meleeAnimSpeedOverrideApplied)
                 {
                     _savedAnimatorSpeed = _animator.speed > 0.01f ? _animator.speed : 1f;

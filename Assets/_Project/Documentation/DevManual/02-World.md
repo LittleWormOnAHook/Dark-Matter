@@ -422,3 +422,39 @@ Map calibration, fog-of-war, the Io clock, and loot chests.
 |  | `items` | ItemData[] |  |  | Every pickup this vendor will buy. Not shop inventory — that is the catalog. |
 |  | `Count` | int | > items != null ? items.Length : 0 |  |  |
 
+
+## 2026-10-26f Night Light
+=== 2026-10-26f Night Light (trilight ambient fill on DM_IoSkyProfile) ===
+- Studio World > Sky & Orbit: Night Light section - Enable, Ground / Mid / Sky colours, Light Amount (0-400 lux). Fades in with existing nightFadeStartDeg/nightFadeEndDeg (shared with stars). Blends additively with Jupiter-shine / eclipse fill; day lighting unchanged. No aurora-driven light.
+- Runtime: DMIoSkyController creates three shadowless specular-free directional fills (sky/mid/ground), NightLightFactor exposed. Live in Play and edit-mode preview (skyRoot DontSave lights).
+- Presets Subtle (22 lux) / Default (55 lux, noticeably brighter than prior night) / Extreme (140 lux). ApplyNightLightPreset. Backups *.pre20261026f. No scene saves, no commit.
+Docs: Assets/_Project/Documentation/DevManual/02-World.md (2026-10-26f Night Light).
+
+## 2026-10-26g Night Light strength
+=== 2026-10-26g Night Light strength (exposure was eating the fills) ===
+- Cause: auto-exposure Exposure Limit Min stayed at ~6.4 EV at night (only lowered in eclipse), so added Night Light fills were adapted away. Ambient/indirect was also unchanged by the colours.
+- Fix: Light Amount max 400->1200 lux; Extreme preset ~420 lux. New Night Exposure Limit Min (EV, fades with nightFade*/NightLightFactor like eclipse floor) and Night Ambient Boost (adds to Indirect Diffuse + half to reflections at night). Studio Night Light section updated. Presets Subtle 40/4.5/0.35, Default 120/3.5/0.75, Extreme 420/2/1.6. Backups *.pre20261026g.
+Docs: Assets/_Project/Documentation/DevManual/02-World.md (2026-10-26g).
+## 2026-10-26h Night Light sky disc
+=== 2026-10-26h Night Light sky disc removed (fills must not render as celestial bodies) ===
+- Cause: HDRP HDAdditionalLightData defaults (interactsWithSky=true, angularDiameter=0.5 deg) made the night sky fill draw as a bright white sun-like disc/glow at zenith when Light Amount was high. Mid/ground fills could contribute flare/glow the same way.
+- Fix (DMIoSkyController.MakeNightFill): interactsWithSky=false, angularDiameter=0, flareSize=0, flareMultiplier=0, surfaceTexture=null; kill any LensFlareComponentSRP on the fill. Ground lighting unchanged (ApplyNightLights intensities/colours/directions same). Real sun, Jupiter shine, and moons untouched.
+- Backups *.pre20261026h. No scene/prefab saves, no commit.
+Docs: Assets/_Project/Documentation/DevManual/02-World.md (2026-10-26h).
+## 2026-10-26i Milky Way day fade
+=== 2026-10-26i Milky Way day fade + smoothness ===
+- Cause: MW (and stars) used nightSkyDayVisibility; Anthony's asset had it ~0.95 so the MW dust/band noise showed as blotchy daytime fog/clouds, amplified by exposure.
+- Fix: milkyWayDayVisibility (default 0) + milkyWaySmoothness; fades with nightFadeStart/End via DMIoNightSky. Shader: separate _MWVis, smoother FBM/dust, AE-tempered MW/aurora. Aurora Day Visibility default 0 + Smoothness. Studio Night Sky > Milky Way presets. Clouds/fog untouched.
+Docs: Assets/_Project/Documentation/DevManual/02-World.md (2026-10-26i).
+## 2026-10-26j Night Shadow
+=== 2026-10-26j Night Shadow (Jupiter-shine directional at night) ===
+- One night key casts shadows: Jupiter-shine (not the Night Light fills). Hands off the single HDRP directional cascade from the sun when NightLightFactor > 0.5 and sun elev is in/below the nightFade band (also keeps eclipse shadow handoff). Edit preview: no cast.
+- Settings on DM_IoSkyProfile under Night Light: enableNightShadow, nightShadowStrength, nightShadowSoftnessDeg, nightShadowDirectionMode + custom yaw/pitch, nightShadowResolutionTier, nightShadowMaxDistance. Presets Subtle/Default/Extreme.
+Docs: Assets/_Project/Documentation/DevManual/02-World.md (2026-10-26j).
+
+## 2026-10-26m Night sky dither / noise + Sky Look presets
+- **Banding:** `DM_IoNightSky.shader` adds triangular/IGN dither (`_DitherEnabled` / `_DitherAmount`) after exposure; softExp uses `_SoftExpPower` (profile `nightSkySoftExpPower`, default 0.28). MW/aurora use 6-octave rotated FBM + `FbmWarp`. Driven live from `DMIoNightSky` / `DM_IoSkyProfile`.
+- **Sky Look Preset:** Top of Studio World > Sky & Orbit — Custom / Subtle / Normal / Extreme (body-weight style stash). Custom seeds from current asset (MW 0.15, aurora 0.1). Subtle/Normal MW+aurora <= Custom; Extreme brighter with dither. Excludes orbit/time. Edit flips to Custom.
+
+## 2026-10-26n Moon halo + aurora over bodies
+- `_DMSkyOcc` star/MW cutout: tight disc + small soft (`starOcclusionMarginDeg` / `starOcclusionSoftDeg`); soft straddles the limb. Aurora uses `_AuroraOverBodies` / `auroraOverSkyBodies` (default on) and is not cut out — additive over moons/Jupiter. `DM_IoSkyBody` limb floor avoids black rims. In Sky Look presets.

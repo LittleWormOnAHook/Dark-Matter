@@ -12,7 +12,7 @@ namespace Project.AI
     /// <b>Rollback:</b> <see cref="enableCombatDirector"/> = false puts the director back to Phase 3 behaviour
     /// (exactly one melee Engager per target; everyone else Holds on the ring).
     /// </para>
-    /// Flank and morale are stubbed fields only for now; attack slots are the live feature.
+    /// 2026-10-25s: flank (side/back hold points) and group morale are live too.
     /// </summary>
     [CreateAssetMenu(menuName = "Dark Matter/Combat/Combat Director Profile", fileName = "DM_CombatDirectorProfile")]
     public sealed class DM_CombatDirectorProfile : ScriptableObject
@@ -98,20 +98,53 @@ namespace Project.AI
         [Tooltip("A yielding attacker can't be re-slotted for this long (ignored when nobody else is eligible).")]
         [Range(0f, 10f)] public float slotReawardCooldown = 1.5f;
 
-        [Header("Flanking (stub — not wired yet)")]
-        public bool enableFlank = false;
-        [Range(0, 4)] public int flankMaxConcurrent = 1;
-        [Range(0f, 10f)] public float flankMinHoldSeconds = 2f;
+        [Header("Flanking (Phase 4 / Slice 5 E1, 2026-10-25s)")]
+        [Tooltip("Director sends a holder to the target's side / back hold point (no NavMesh, hold-ring anchors). Off = plain ring.")]
+        public bool enableFlank = true;
+        [Range(0, 6)] public int flankMaxConcurrent = 1;
+        [Tooltip("A flanker keeps the role at least this long before rotation.")]
+        [Range(0f, 20f)] public float flankMinHoldSeconds = 2f;
+        [Tooltip("Flanker rotates out after this long (gives the role to someone else).")]
+        [Range(1f, 60f)] public float flankMaxHoldSeconds = 7f;
+        [Range(0f, 30f)] public float flankCooldownSeconds = 2.5f;
+        [Tooltip("Bearing of the flank hold point from the target's facing (90 = side, 180 = straight behind).")]
+        [Range(45f, 180f)] public float flankAngleDegrees = 115f;
+        [Tooltip("Minimum enemies on the target before anyone flanks (1v1 / 1v2 never flank).")]
+        [Range(2, 12)] public int flankMinEnemies = 3;
+        [Tooltip("Reserved (personality weighting, not read yet).")]
         [Range(0f, 1f)] public float flankPersonalityBonus = 0.25f;
 
-        [Header("Group morale (stub — not wired yet)")]
-        public bool enableMorale = false;
+        [Header("Group morale (Phase 4, 2026-10-25s)")]
+        [Tooltip("Per-target group morale: casualties / leader death / gruesome kills lower it; below the threshold the group breaks (outer ring, no extra attackers).")]
+        public bool enableMorale = true;
         [Range(0f, 1f)] public float startingMorale = 1f;
         [Range(0f, 1f)] public float retreatMoraleThreshold = 0.35f;
+        [Tooltip("Extra drop when the group's first member (leader) dies.")]
         [Range(0f, 1f)] public float leaderDeathMoraleDrop = 0.4f;
         [Range(0f, 1f)] public float casualtyMoraleDrop = 0.1f;
+        [Tooltip("Extra drop when the kill was a critical or charged hit.")]
         [Range(0f, 1f)] public float gruesomeKillMoraleDrop = 0.15f;
         [Range(0f, 0.5f)] public float moraleRecoverPerSecond = 0.02f;
+        [Tooltip("Morale must climb back above threshold + this before the group re-commits.")]
+        [Range(0f, 0.5f)] public float moraleRecoverHysteresis = 0.1f;
+        public bool moraleBrokenOuterRing = true;
+        public bool moraleBrokenNoExtraSlots = true;
+        public bool debugLogFlankMorale = false;
+
+        /// <summary>2026-10-25s: 0 Subtle, 1 Default, 2 Extreme (flank + morale).</summary>
+        public void ApplyFlankMoralePreset(int level)
+        {
+            enableFlank = true; enableMorale = true;
+            switch (level)
+            {
+                case 0: flankMaxConcurrent = 1; flankMinHoldSeconds = 3f; flankMaxHoldSeconds = 5f; flankCooldownSeconds = 6f; flankAngleDegrees = 90f; flankMinEnemies = 4;
+                    leaderDeathMoraleDrop = 0.25f; casualtyMoraleDrop = 0.06f; gruesomeKillMoraleDrop = 0.08f; retreatMoraleThreshold = 0.25f; moraleRecoverPerSecond = 0.04f; break;
+                case 2: flankMaxConcurrent = 3; flankMinHoldSeconds = 1.5f; flankMaxHoldSeconds = 12f; flankCooldownSeconds = 1f; flankAngleDegrees = 160f; flankMinEnemies = 2;
+                    leaderDeathMoraleDrop = 0.6f; casualtyMoraleDrop = 0.18f; gruesomeKillMoraleDrop = 0.3f; retreatMoraleThreshold = 0.5f; moraleRecoverPerSecond = 0.01f; break;
+                default: flankMaxConcurrent = 1; flankMinHoldSeconds = 2f; flankMaxHoldSeconds = 7f; flankCooldownSeconds = 2.5f; flankAngleDegrees = 115f; flankMinEnemies = 3;
+                    leaderDeathMoraleDrop = 0.4f; casualtyMoraleDrop = 0.1f; gruesomeKillMoraleDrop = 0.15f; retreatMoraleThreshold = 0.35f; moraleRecoverPerSecond = 0.02f; break;
+            }
+        }
 
         /// <summary>
         /// Total simultaneous melee attackers (token holder included) for a fight with

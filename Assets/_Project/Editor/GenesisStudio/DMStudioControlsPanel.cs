@@ -43,6 +43,13 @@ namespace Project.EditorTools.GenesisStudio
                 "Do not use Apply/Save/Listen here — wrong KBM rows were confusing the real Input System asset.",
                 MessageType.Warning);
 
+            EditorGUILayout.HelpBox(
+                "Finisher (2026-10-26l) - Player/Finisher action (rebind in the Input Actions asset above).\n" +
+                "KBM: hold Use (E) + Attack (LMB).\n" +
+                "Gamepad: hold Use (West/X) + Attack (RT).\n" +
+                "Plain Attack on a low-HP enemy is a normal sped-up swing; Use alone still interacts when not in the combo.",
+                MessageType.Info);
+
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("Authority asset", GUILayout.Width(100f));
             EditorGUILayout.ObjectField(asset, typeof(InputActionAsset), false);

@@ -1,4 +1,4 @@
-﻿using Invector.vCharacterController;
+using Invector.vCharacterController;
 using Project.Core;
 using UnityEngine;
 
@@ -185,6 +185,7 @@ namespace Project.Features.Climb
             float step = Mathf.Min(remaining, p.stepLiftSpeed * dt);
             pos += Vector3.up * step + liftDir * (p.stepLiftForwardPush * dt);
             body.position = pos;
+            Project.Combat.DMPlayerPositionCorrections.Note("DMStepSlopeAssist.ContinueLift");
 
             Vector3 v = body.linearVelocity;
             if (v.y < 0f)

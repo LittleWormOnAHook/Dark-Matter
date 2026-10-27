@@ -1,0 +1,77 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 50d3bb3eb77033945981831da1e3bf2b, type: 3}
+  m_Name: DM_FinisherTauntProfile
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.DM_FinisherTauntProfile
+  enableFinishers: 1
+  finisherPlayerClip: {fileID: 7400000, guid: 29be3cdf815a9e944b90ac99f99d0ed5, type: 3}
+  finisherEnemyClip: {fileID: 0}
+  finisherLowHpFraction: 0.2
+  enableFinisherOnStagger: 0
+  finisherStaggerWindow: 1.2
+  finisherBodyPitchDeg: 14
+  finisherBodyHipDrop: 0.06
+  finisherRange: 2.4
+  finisherMaxAngle: 70
+  finisherPairDistance: 1.1
+  finisherAlignSeconds: 0.15
+  finisherKillNormalizedTime: 0.6
+  finisherMaxSeconds: 3.2
+  finisherPlaySpeed: 1.15
+  finisherBlendIn: 0.15
+  finisherBlendOut: 0.25
+  finisherCooldown: 2
+  finisherAllowNonHumanoid: 1
+  finisherCountsAsGruesome: 1
+  finisherShakeAmplitude: 0.4
+  enableTaunts: 1
+  tauntClips:
+  - {fileID: 7400000, guid: e999677fa75a89f4798e9601844332bc, type: 3}
+  - {fileID: 7400000, guid: 6c58e7ab92870af46857718c50491ca1, type: 3}
+  - {fileID: 7400000, guid: 325e4846c24b95845a6538714128210d, type: 3}
+  - {fileID: 7400000, guid: 23712ca73fb25c048a998e28f3356211, type: 3}
+  tauntChancePerSecond: 0.12
+  tauntMaxConcurrent: 1
+  tauntPerEnemyCooldown: 9
+  tauntGroupCooldown: 3
+  tauntMinDistance: 3
+  tauntMaxDistance: 12
+  tauntMaxMoveSpeed: 0.8
+  tauntMaxSeconds: 2.6
+  tauntBlendIn: 0.2
+  tauntBlendOut: 0.3
+  tauntCancelOnAttackSlot: 1
+  enableCameraPullback: 1
+  pullbackMinEnemies: 3
+  pullbackFullEnemies: 6
+  pullbackSlotThreatWeight: 0.5
+  pullbackMaxExtraDistance: 1.6
+  pullbackOutSeconds: 0.8
+  pullbackReturnSeconds: 1.6
+  pullbackReturnDelay: 1.2
+  debugLog: 0
+  enableFinisherCue: 1
+  finisherCueBrightColor: {r: 1, g: 0.55, b: 0.42, a: 1}
+  finisherCueBrightnessBoost: 0.962
+  finisherCuePulseSpeed: 2.5
+  finisherCuePulseDepth: 0.35
+  finisherCueProbeHz: 8
+  finisherCueSound: 0
+  finisherAvailableOtherMeleeSpeed: 1.15
+  finisherDamageMaxHealthPercent: 0.1
+  finisherDamageMultiplier: 1.1
+  finisherAvailableBodySwingMult: 1.12
+  jetpackLightMode: 1
+  jetpackLightStepTime: 0.22
+  jetpackLightOnIntensity: 7.38
+  jetpackLightOffIntensity: 0.05
+  jetpackLightLoopGap: 0.25

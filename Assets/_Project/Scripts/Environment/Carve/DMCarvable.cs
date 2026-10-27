@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -157,7 +157,8 @@ namespace Project.SurfaceCarve
                 return false;
 
             float r = Mathf.Max(0.01f, damage.radius * radiusScale);
-            DMCarveCutter cutter = MakeSurfaceCutter(point, normal, r, damage.depth, damage.style, damage.roughness, seed);
+            DMCarveCutter cutter = (Application.isPlaying ? TryMakeThroughCutter(point, normal, r) : null)
+                ?? MakeSurfaceCutter(point, normal, r, damage.depth, damage.style, damage.roughness, seed);
             if (!Carve(cutter))
                 return false;
 
@@ -166,7 +167,35 @@ namespace Project.SurfaceCarve
 
             if (spawnDebris && allowDebris && Application.isPlaying && damage.debrisCount > 0)
                 DMCarveDebris.Spawn(cutter, normal, damage, lastFractureMaterial, gameObject.layer, gameObject, point);
+            if (Application.isPlaying)
+                DMCarveHeat.Ignite(this, point, normal, r); // 2026-10-24af: hot glow + molten drips
             return true;
+        }
+
+        /// <summary>2026-10-24ag: thin enough along -normal -> one clean tunnel through the whole object.</summary>
+        private DMCarveCutter TryMakeThroughCutter(Vector3 point, Vector3 normal, float r)
+        {
+            DMCarveSettings s = DMCarveSettings.Active;
+            if (!s.throughHoleEnabled || normal.sqrMagnitude < 1e-8f)
+                return null;
+            FlushCollider();
+            Collider col = GetComponent<Collider>();
+            if (col == null || !col.enabled)
+                return null;
+            Vector3 n = normal.normalized;
+            float maxT = s.throughHoleMaxThickness;
+            // From beyond the far side, back toward the entry: first hit = exit surface.
+            Vector3 farOrigin = point - n * (maxT + 0.02f);
+            if (!col.Raycast(new Ray(farOrigin, n), out RaycastHit exit, maxT + 0.02f))
+                return null;
+            float thickness = Vector3.Distance(point, exit.point);
+            if (thickness < 0.005f)
+                return null;
+            float rad = r * s.throughHoleRadiusScale;
+            Vector3 mid = (point + exit.point) * 0.5f;
+            float half = thickness * 0.5f + rad * 0.6f + 0.02f; // poke out both faces
+            Vector3 up = Mathf.Abs(Vector3.Dot(n, Vector3.up)) > 0.95f ? Vector3.forward : Vector3.up;
+            return new DMCarveCutter(mid, Quaternion.LookRotation(-n, up), rad, half);
         }
 
         public static DMCarveCutter MakeSurfaceCutter(Vector3 point, Vector3 normal, float radius, float depth, DMCarveStyle style, float roughness, int seed)
@@ -197,9 +226,18 @@ namespace Project.SurfaceCarve
             }
 
             DMCarveParams prm = DMCarveParams.FromSettings(settings, cutter.Radius);
+            if (cutter.IsTunnel)
+            {
+                prm.CutterSubdivisions = settings.throughHoleSubdivisions;
+                prm.RimWidth = settings.throughHoleRimWidth;
+                prm.RimJitter = 0f;
+            }
             DMCarveResult res = DMCarveOps.Carve(data, transform.localToWorldMatrix, cutter, prm, ResolveCapTarget);
             if (!res.Changed)
                 return false;
+
+            if (Application.isPlaying && settings.chunkSplitEnabled)
+                DMCarveChunks.SplitIslands(data, cutter, settings, GetFractureAndRimSubmeshes(), this);
 
             int used = data.CountUsedVertices();
             if (data.VertexCount > 2000 && used < data.VertexCount * 0.7f)
@@ -223,11 +261,50 @@ namespace Project.SurfaceCarve
 
         private Mesh WorkingMesh => Application.isPlaying ? runtimeMesh : carvedMesh;
 
+        private HashSet<int> GetFractureAndRimSubmeshes()
+        {
+            var set = new HashSet<int>();
+            for (int i = 0; i < fractureSubmesh.Length; i++) if (fractureSubmesh[i] >= 0) set.Add(fractureSubmesh[i]);
+            for (int i = 0; i < rimSubmesh.Length; i++) if (rimSubmesh[i] >= 0) set.Add(rimSubmesh[i]);
+            return set;
+        }
+
+        /// <summary>2026-10-24af: cut-face submesh indices (for the hot glow).</summary>
+        public void GetFractureSubmeshes(List<int> result)
+        {
+            result.Clear();
+            if (fractureSubmesh == null) return;
+            for (int i = 0; i < fractureSubmesh.Length; i++)
+                if (fractureSubmesh[i] >= 0) result.Add(fractureSubmesh[i]);
+        }
+
         public void RefreshCollider()
         {
             colliderDirty = false;
             MeshCollider mc = GetComponent<MeshCollider>();
             MeshFilter mf = GetComponent<MeshFilter>();
+            bool follow = Application.isPlaying && DMCarveSettings.Active.colliderFollowsCarvedMesh;
+            if (follow && mf != null && mf.sharedMesh != null)
+            {
+                // 2026-10-24af: collider is cut like the visible mesh.
+                if (mc == null)
+                {
+                    bool hadPrimitive = false;
+                    foreach (Collider c in GetComponents<Collider>())
+                        if (!(c is MeshCollider) && !c.isTrigger && c.enabled) { c.enabled = false; hadPrimitive = true; }
+                    if (!hadPrimitive) return; // collider lives elsewhere (parent / LOD root): left as is
+                    mc = gameObject.AddComponent<MeshCollider>();
+                }
+                if (mc.convex)
+                {
+                    Rigidbody rb = GetComponentInParent<Rigidbody>();
+                    if (rb != null && !rb.isKinematic) return;
+                    mc.convex = false;
+                }
+                mc.sharedMesh = null;
+                mc.sharedMesh = mf.sharedMesh;
+                return;
+            }
             if (mc == null || mf == null || mf.sharedMesh == null)
                 return;
             if (mc.convex)

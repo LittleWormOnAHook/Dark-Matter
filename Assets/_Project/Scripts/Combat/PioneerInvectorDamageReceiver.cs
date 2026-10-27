@@ -223,6 +223,8 @@ namespace Project.Combat
             Vector3? hitPoint,
             vDamage damageSnapshot)
         {
+            if (enemyHealth != null && source != null && source.GetComponentInParent<PioneerShooterMeleeInput>() != null)
+                Project.Combat.DMPlayerMomentum.NotifyPlayerMeleeHit(enemyHealth, source, isCritical); // 2026-10-25s slice 5 momentum
             if (enemyHealth == null || enemyHealth.IsDead || source == null)
                 return;
 

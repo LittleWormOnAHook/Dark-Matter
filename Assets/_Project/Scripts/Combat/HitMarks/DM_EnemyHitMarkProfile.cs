@@ -316,6 +316,23 @@ namespace Project.Combat
         public bool volumetricSpawnGroundDecals = true;
         [Tooltip("2026-10-24t debug: one line per spray: ground hit, height above ground, ground decals on/off and why (off by default).")]
         public bool logVolumetricDecals = false;
+        [Tooltip("2026-10-24af: max KriptoFX sprays that keep ground blood decals at once (all enemies + player). Oldest spray loses its floor decal first. Effective max is also bounded by Volumetric Budget.")]
+        [Range(1, 200)] public int volumetricGroundDecalCap = 24;
+        [Tooltip("2026-10-24af: log when the ground decal cap strips decals from an older spray.")]
+        public bool logGroundDecalCap = false;
+        [Header("Melee slash style (2026-10-24af)")]
+        [Tooltip("Physical blades (Gunpowder / no element) always stamp a neutral Cut slash; elemental weapons keep the burn style.")]
+        public bool meleePhysicalAlwaysCut = true;
+        [Tooltip("Material for the Cut slash. Empty = Bullet Burn Material.")]
+        public Material cutSlashMaterial;
+        [Tooltip("The killing blow also stamps a slash (stays on the corpse until it is removed).")]
+        public bool slashOnKillingBlow = true;
+
+        /// <summary>0 Subtle, 1 Default, 2 Extreme.</summary>
+        public void ApplyGroundDecalCapPreset(int preset)
+        {
+            volumetricGroundDecalCap = preset <= 0 ? 12 : preset == 1 ? 24 : 60;
+        }
         [Tooltip("When on, player-hit fluids snap BFX ground height (often hides airborne spray). Off = keep vendor airborne arc on the player.")]
         public bool volumetricPlayerFluidGroundSnap = false;
         [Tooltip("BFX_Blood is unlit: under HDRP physical exposure it renders black. On = its color is scaled by the sun intensity (lux / pi) at spawn.")]
@@ -438,6 +455,7 @@ namespace Project.Combat
         private void OnValidate()
         {
             maxBurnMarksPerEnemy = Mathf.Clamp(maxBurnMarksPerEnemy, 1, MaxMarksPerEnemy);
+            volumetricGroundDecalCap = Mathf.Clamp(volumetricGroundDecalCap, 1, 200);
             burnSize.x = Mathf.Max(0.005f, burnSize.x);
             burnSize.y = Mathf.Max(burnSize.x, burnSize.y);
             markSurfaceNormalOffset = Mathf.Clamp(markSurfaceNormalOffset, 0f, 0.05f);

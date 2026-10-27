@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Features.Jetpack.DMJetpackProfile
   maxBoostSeconds: 8
   fullThrustEndSeconds: 8
-  releaseRegenBonusSeconds: 1
+  releaseRegenBonusSeconds: 0
   regenSecondsPerSecond: 0.35
   energyDrainPerSecond: 0.5
   upwardThrustForce: 5
@@ -26,7 +26,7 @@ MonoBehaviour:
   boostDescendGravityScale: 0.7
   fadeFallGravityScale: 0.18
   freeFallGravityScale: 1
-  coastFallGravityScale: 0.65
+  coastFallGravityScale: 0.3
   releaseUpwardBleed: 6
   jetpackAirSpeed: 4.25
   jetpackPlanarResponse: 26
@@ -42,6 +42,13 @@ MonoBehaviour:
   flyAnimSpeed: 0.95
   animStrafeThreshold: 0.5
   landCrossFadeSeconds: 0.15
+  groundStateHysteresis: 0.1033
+  dangleAccelSmoothTime: 0.1402
+  dangleMaxAccel: 22
+  dangleInertiaStrength: 0.666
+  dangleOffsetSmoothTime: 0.14
+  animParamsPerFrame: 1
+  cameraLateUpdateFollow: 0
   thrusterAlphaMin: 0.1
   thrusterAlphaMax: 1
   thrusterPowerSmoothTime: 0.25

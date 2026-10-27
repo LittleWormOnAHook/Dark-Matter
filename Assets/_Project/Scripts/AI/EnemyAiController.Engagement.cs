@@ -840,7 +840,7 @@ namespace Project.AI
         {
             float min = Mathf.Min(p.holdRingRadiusMin, p.holdRingRadiusMax);
             float max = Mathf.Max(p.holdRingRadiusMin, p.holdRingRadiusMax);
-            float radius = brain != null && brain.IsRetreating ? max : p.holdRingRadius;
+            float radius = (brain != null && brain.IsRetreating) || DMEnemyEngagementDirector.IsMoraleBroken(this) ? max : p.holdRingRadius; // 2026-10-25s morale
             return Mathf.Clamp(radius, min, max);
         }
 

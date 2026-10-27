@@ -328,6 +328,76 @@ namespace Project.EditorTools.GenesisStudio
                 if (GUILayout.Button("Switch: Extreme")) { Undo.RecordObject(tsProfile, "Target switch preset"); tsProfile.ApplyTargetSwitchPreset(2); EditorUtility.SetDirty(tsProfile); }
                 EditorGUILayout.EndHorizontal();
             }
+            // 2026-10-25s: Phase 4 flank + morale presets.
+            if (asset is Project.AI.DM_CombatDirectorProfile fmProfile)
+            {
+                EditorGUILayout.Space(6f);
+                EditorGUILayout.LabelField("Flank + morale presets", EditorStyles.boldLabel);
+                EditorGUILayout.BeginHorizontal();
+                if (GUILayout.Button("Flank/Morale: Subtle")) { Undo.RecordObject(fmProfile, "Flank morale preset"); fmProfile.ApplyFlankMoralePreset(0); EditorUtility.SetDirty(fmProfile); }
+                if (GUILayout.Button("Flank/Morale: Default")) { Undo.RecordObject(fmProfile, "Flank morale preset"); fmProfile.ApplyFlankMoralePreset(1); EditorUtility.SetDirty(fmProfile); }
+                if (GUILayout.Button("Flank/Morale: Extreme")) { Undo.RecordObject(fmProfile, "Flank morale preset"); fmProfile.ApplyFlankMoralePreset(2); EditorUtility.SetDirty(fmProfile); }
+                EditorGUILayout.EndHorizontal();
+                if (Application.isPlaying)
+                    EditorGUILayout.HelpBox($"Flank assigns {Project.AI.DMEnemyEngagementDirector.StatFlankAssigns}, morale drops {Project.AI.DMEnemyEngagementDirector.StatMoraleDrops}, breaks {Project.AI.DMEnemyEngagementDirector.StatMoraleBreaks}", MessageType.None);
+            }
+            // 2026-10-25s: Slice 5 momentum + spin presets / test.
+            if (asset is Project.Combat.DM_MomentumProfile mmProfile)
+            {
+                EditorGUILayout.Space(6f);
+                EditorGUILayout.LabelField("Momentum + spin presets", EditorStyles.boldLabel);
+                EditorGUILayout.BeginHorizontal();
+                if (GUILayout.Button("Momentum: Subtle")) { Undo.RecordObject(mmProfile, "Momentum preset"); mmProfile.ApplyPreset(0); EditorUtility.SetDirty(mmProfile); }
+                if (GUILayout.Button("Momentum: Default")) { Undo.RecordObject(mmProfile, "Momentum preset"); mmProfile.ApplyPreset(1); EditorUtility.SetDirty(mmProfile); }
+                if (GUILayout.Button("Momentum: Extreme")) { Undo.RecordObject(mmProfile, "Momentum preset"); mmProfile.ApplyPreset(2); EditorUtility.SetDirty(mmProfile); }
+                EditorGUILayout.EndHorizontal();
+                if (Application.isPlaying)
+                {
+                    EditorGUILayout.LabelField($"Meter: {Project.Combat.DMPlayerMomentum.Value:0}/{Project.Combat.DMPlayerMomentum.Max:0}  spins {Project.Combat.DMMomentumSpin.StatSpins}  hits {Project.Combat.DMMomentumSpin.StatSpinHits}  last reject '{Project.Combat.DMMomentumSpin.LastReject}'");
+                    EditorGUILayout.BeginHorizontal();
+                    if (GUILayout.Button("Fill meter")) Project.Combat.DMPlayerMomentum.DevFill();
+                    if (GUILayout.Button("Test Spin")) Project.Combat.DMMomentumSpin.TrySpin(Project.Core.PlayerLocator.FindPlayerObject());
+                    EditorGUILayout.EndHorizontal();
+                }
+                EditorGUILayout.HelpBox("Spin input: hold Attack (KBM Left Mouse / pad Right Trigger) with a full meter, or charged release with a full meter.", MessageType.None);
+            }
+            // 2026-10-26a: Slice 6 finishers / taunts / camera pull-back presets.
+            if (asset is Project.Combat.DM_FinisherTauntProfile ftProfile)
+            {
+                EditorGUILayout.Space(6f);
+                EditorGUILayout.LabelField("Finishers / taunts / camera presets", EditorStyles.boldLabel);
+                EditorGUILayout.BeginHorizontal();
+                if (GUILayout.Button("Slice 6: Subtle")) { Undo.RecordObject(ftProfile, "Slice 6 preset"); ftProfile.ApplyPreset(0); EditorUtility.SetDirty(ftProfile); }
+                if (GUILayout.Button("Slice 6: Default")) { Undo.RecordObject(ftProfile, "Slice 6 preset"); ftProfile.ApplyPreset(1); EditorUtility.SetDirty(ftProfile); }
+                if (GUILayout.Button("Slice 6: Extreme")) { Undo.RecordObject(ftProfile, "Slice 6 preset"); ftProfile.ApplyPreset(2); EditorUtility.SetDirty(ftProfile); }
+                EditorGUILayout.EndHorizontal();
+                EditorGUILayout.LabelField("Finisher-available feel (26k)", EditorStyles.boldLabel);
+                EditorGUILayout.BeginHorizontal();
+                if (GUILayout.Button("Feel: Subtle")) { Undo.RecordObject(ftProfile, "Finisher feel"); ftProfile.ApplyFinisherFeelPreset(0); EditorUtility.SetDirty(ftProfile); }
+                if (GUILayout.Button("Feel: Default")) { Undo.RecordObject(ftProfile, "Finisher feel"); ftProfile.ApplyFinisherFeelPreset(1); EditorUtility.SetDirty(ftProfile); }
+                if (GUILayout.Button("Feel: Extreme")) { Undo.RecordObject(ftProfile, "Finisher feel"); ftProfile.ApplyFinisherFeelPreset(2); EditorUtility.SetDirty(ftProfile); }
+                EditorGUILayout.EndHorizontal();
+                EditorGUILayout.LabelField("Jetpack lights Rad/Heat/Cold/Mix (26k)", EditorStyles.boldLabel);
+                EditorGUILayout.BeginHorizontal();
+                if (GUILayout.Button("Lights: Subtle")) { Undo.RecordObject(ftProfile, "Jetpack lights"); ftProfile.ApplyJetpackLightPreset(0); EditorUtility.SetDirty(ftProfile); }
+                if (GUILayout.Button("Lights: Default")) { Undo.RecordObject(ftProfile, "Jetpack lights"); ftProfile.ApplyJetpackLightPreset(1); EditorUtility.SetDirty(ftProfile); }
+                if (GUILayout.Button("Lights: Extreme")) { Undo.RecordObject(ftProfile, "Jetpack lights"); ftProfile.ApplyJetpackLightPreset(2); EditorUtility.SetDirty(ftProfile); }
+                EditorGUILayout.EndHorizontal();
+                if (Application.isPlaying)
+                    EditorGUILayout.LabelField($"Finishers {Project.Combat.DMSlice6Runtime.StatFinishers} (kills {Project.Combat.DMSlice6Runtime.StatFinisherKills})  taunts {Project.Combat.DMSlice6Runtime.StatTaunts}  pull-back {Project.Combat.DMSlice6Runtime.CameraPullback:0.00} m  avail={Project.Combat.DMSlice6Runtime.FinisherAvailable} speed x{Project.Combat.DMSlice6Runtime.OtherMeleeSpeedMult:0.00}");
+            }
+
+            // 2026-10-26b: melee lock presets.
+            if (asset is Project.AI.DM_MeleeLockProfile mlProfile)
+            {
+                EditorGUILayout.Space(6f);
+                EditorGUILayout.LabelField("Melee lock presets", EditorStyles.boldLabel);
+                EditorGUILayout.BeginHorizontal();
+                if (GUILayout.Button("Melee Lock: Subtle")) { Undo.RecordObject(mlProfile, "Melee lock preset"); mlProfile.ApplyPreset(0); EditorUtility.SetDirty(mlProfile); }
+                if (GUILayout.Button("Melee Lock: Default")) { Undo.RecordObject(mlProfile, "Melee lock preset"); mlProfile.ApplyPreset(1); EditorUtility.SetDirty(mlProfile); }
+                if (GUILayout.Button("Melee Lock: Extreme")) { Undo.RecordObject(mlProfile, "Melee lock preset"); mlProfile.ApplyPreset(2); EditorUtility.SetDirty(mlProfile); }
+                EditorGUILayout.EndHorizontal();
+            }
 
             // 2026-10-24o: wall hand touch presets.
             if (asset is Project.Features.Climb.DM_ClimbDashProfile wallProfile && DMStudioProfileSections.IncludesField("bodyWeightWallHandEnabled", section))
@@ -423,7 +493,54 @@ namespace Project.EditorTools.GenesisStudio
                 if (GUILayout.Button("Night sky: Default")) { Undo.RecordObject(skyProfile, "Night sky preset"); skyProfile.ApplyNightSkyPreset(1); EditorUtility.SetDirty(skyProfile); }
                 if (GUILayout.Button("Night sky: Extreme")) { Undo.RecordObject(skyProfile, "Night sky preset"); skyProfile.ApplyNightSkyPreset(2); EditorUtility.SetDirty(skyProfile); }
                 EditorGUILayout.EndHorizontal();
+                // 2026-10-26i: Milky Way day fade + smoothness (was sharing star day vis -> blotchy daytime fog look).
+                EditorGUILayout.LabelField("Milky Way", EditorStyles.miniBoldLabel);
+                { float v = EditorGUILayout.Slider("Day Visibility", skyProfile.milkyWayDayVisibility, 0f, 1f); if (!Mathf.Approximately(v, skyProfile.milkyWayDayVisibility)) { Undo.RecordObject(skyProfile, "MW Day Visibility"); skyProfile.milkyWayDayVisibility = v; EditorUtility.SetDirty(skyProfile); } }
+                { float v = EditorGUILayout.Slider("Smoothness", skyProfile.milkyWaySmoothness, 0f, 1f); if (!Mathf.Approximately(v, skyProfile.milkyWaySmoothness)) { Undo.RecordObject(skyProfile, "MW Smoothness"); skyProfile.milkyWaySmoothness = v; EditorUtility.SetDirty(skyProfile); } }
+                EditorGUILayout.BeginHorizontal();
+                if (GUILayout.Button("Milky Way: Subtle")) { Undo.RecordObject(skyProfile, "Milky Way preset"); skyProfile.ApplyMilkyWayPreset(0); EditorUtility.SetDirty(skyProfile); }
+                if (GUILayout.Button("Milky Way: Default")) { Undo.RecordObject(skyProfile, "Milky Way preset"); skyProfile.ApplyMilkyWayPreset(1); EditorUtility.SetDirty(skyProfile); }
+                if (GUILayout.Button("Milky Way: Extreme")) { Undo.RecordObject(skyProfile, "Milky Way preset"); skyProfile.ApplyMilkyWayPreset(2); EditorUtility.SetDirty(skyProfile); }
+                EditorGUILayout.EndHorizontal();
+                // 2026-10-26f: Night Light (trilight ambient fill).
+                EditorGUILayout.Space(6f);
+                EditorGUILayout.LabelField("Night Light (Ground / Mid / Sky ambient, fades with nightFade*)", EditorStyles.boldLabel);
+                { bool b = EditorGUILayout.Toggle("Enable Night Light", skyProfile.enableNightLight); if (b != skyProfile.enableNightLight) { Undo.RecordObject(skyProfile, "Night Light"); skyProfile.enableNightLight = b; EditorUtility.SetDirty(skyProfile); } }
+                { Color c = EditorGUILayout.ColorField("Ground Colour", skyProfile.nightLightGroundColor); if (c != skyProfile.nightLightGroundColor) { Undo.RecordObject(skyProfile, "Night Light Ground"); skyProfile.nightLightGroundColor = c; EditorUtility.SetDirty(skyProfile); } }
+                { Color c = EditorGUILayout.ColorField("Mid Colour", skyProfile.nightLightMidColor); if (c != skyProfile.nightLightMidColor) { Undo.RecordObject(skyProfile, "Night Light Mid"); skyProfile.nightLightMidColor = c; EditorUtility.SetDirty(skyProfile); } }
+                { Color c = EditorGUILayout.ColorField("Sky Colour", skyProfile.nightLightSkyColor); if (c != skyProfile.nightLightSkyColor) { Undo.RecordObject(skyProfile, "Night Light Sky"); skyProfile.nightLightSkyColor = c; EditorUtility.SetDirty(skyProfile); } }
+                { float v = EditorGUILayout.Slider("Light Amount (lux)", skyProfile.nightLightAmount, 0f, 1200f); if (!Mathf.Approximately(v, skyProfile.nightLightAmount)) { Undo.RecordObject(skyProfile, "Night Light Amount"); skyProfile.nightLightAmount = v; EditorUtility.SetDirty(skyProfile); } }
+                { float v = EditorGUILayout.Slider("Night Exposure Limit Min (EV)", skyProfile.nightExposureLimitMin, -6f, 20f); if (!Mathf.Approximately(v, skyProfile.nightExposureLimitMin)) { Undo.RecordObject(skyProfile, "Night Exposure Limit Min"); skyProfile.nightExposureLimitMin = v; EditorUtility.SetDirty(skyProfile); } }
+                { float v = EditorGUILayout.Slider("Night Ambient Boost", skyProfile.nightAmbientBoost, 0f, 4f); if (!Mathf.Approximately(v, skyProfile.nightAmbientBoost)) { Undo.RecordObject(skyProfile, "Night Ambient Boost"); skyProfile.nightAmbientBoost = v; EditorUtility.SetDirty(skyProfile); } }
+                { var sk = Project.World.Sky.DMIoSkyController.Instance; string nf = (sk != null && sk.isActiveAndEnabled) ? sk.NightLightFactor.ToString("0.00") : "-"; EditorGUILayout.LabelField("Night factor now: " + nf, EditorStyles.miniLabel); }
+                EditorGUILayout.BeginHorizontal();
+                if (GUILayout.Button("Night Light: Subtle")) { Undo.RecordObject(skyProfile, "Night Light preset"); skyProfile.ApplyNightLightPreset(0); EditorUtility.SetDirty(skyProfile); }
+                if (GUILayout.Button("Night Light: Default")) { Undo.RecordObject(skyProfile, "Night Light preset"); skyProfile.ApplyNightLightPreset(1); EditorUtility.SetDirty(skyProfile); }
+                if (GUILayout.Button("Night Light: Extreme")) { Undo.RecordObject(skyProfile, "Night Light preset"); skyProfile.ApplyNightLightPreset(2); EditorUtility.SetDirty(skyProfile); }
+                EditorGUILayout.EndHorizontal();
+                // 2026-10-26j: Night Shadow (Jupiter-shine takes the single HDRP directional shadow at night).
+                EditorGUILayout.Space(4f);
+                EditorGUILayout.LabelField("Night Shadow (Jupiter-shine key; one directional cascade)", EditorStyles.miniBoldLabel);
+                { bool b = EditorGUILayout.Toggle("Enable Night Shadow", skyProfile.enableNightShadow); if (b != skyProfile.enableNightShadow) { Undo.RecordObject(skyProfile, "Night Shadow"); skyProfile.enableNightShadow = b; EditorUtility.SetDirty(skyProfile); } }
+                { float v = EditorGUILayout.Slider("Shadow Strength", skyProfile.nightShadowStrength, 0f, 1f); if (!Mathf.Approximately(v, skyProfile.nightShadowStrength)) { Undo.RecordObject(skyProfile, "Night Shadow Strength"); skyProfile.nightShadowStrength = v; EditorUtility.SetDirty(skyProfile); } }
+                { float v = EditorGUILayout.Slider("Softness (deg)", skyProfile.nightShadowSoftnessDeg, 0.1f, 30f); if (!Mathf.Approximately(v, skyProfile.nightShadowSoftnessDeg)) { Undo.RecordObject(skyProfile, "Night Shadow Softness"); skyProfile.nightShadowSoftnessDeg = v; EditorUtility.SetDirty(skyProfile); } }
+                { int v = EditorGUILayout.IntPopup("Direction", skyProfile.nightShadowDirectionMode, new[] { "Follow Jupiter", "Custom yaw/pitch" }, new[] { 0, 1 }); if (v != skyProfile.nightShadowDirectionMode) { Undo.RecordObject(skyProfile, "Night Shadow Direction"); skyProfile.nightShadowDirectionMode = v; EditorUtility.SetDirty(skyProfile); } }
+                if (skyProfile.nightShadowDirectionMode == 1)
+                {
+                    { float v = EditorGUILayout.Slider("Custom Yaw (deg)", skyProfile.nightShadowCustomYawDeg, 0f, 360f); if (!Mathf.Approximately(v, skyProfile.nightShadowCustomYawDeg)) { Undo.RecordObject(skyProfile, "Night Shadow Yaw"); skyProfile.nightShadowCustomYawDeg = v; EditorUtility.SetDirty(skyProfile); } }
+                    { float v = EditorGUILayout.Slider("Custom Pitch (deg)", skyProfile.nightShadowCustomPitchDeg, -89f, 89f); if (!Mathf.Approximately(v, skyProfile.nightShadowCustomPitchDeg)) { Undo.RecordObject(skyProfile, "Night Shadow Pitch"); skyProfile.nightShadowCustomPitchDeg = v; EditorUtility.SetDirty(skyProfile); } }
+                }
+                { int v = EditorGUILayout.IntPopup("Shadow Resolution", skyProfile.nightShadowResolutionTier, new[] { "Low 256", "Medium 512", "High 1024", "Ultra 2048" }, new[] { 0, 1, 2, 3 }); if (v != skyProfile.nightShadowResolutionTier) { Undo.RecordObject(skyProfile, "Night Shadow Res"); skyProfile.nightShadowResolutionTier = v; EditorUtility.SetDirty(skyProfile); } }
+                { float v = EditorGUILayout.Slider("Max Distance (m)", skyProfile.nightShadowMaxDistance, 20f, 800f); if (!Mathf.Approximately(v, skyProfile.nightShadowMaxDistance)) { Undo.RecordObject(skyProfile, "Night Shadow Max Dist"); skyProfile.nightShadowMaxDistance = v; EditorUtility.SetDirty(skyProfile); } }
+                { var sk = Project.World.Sky.DMIoSkyController.Instance; string own = (sk != null && sk.isActiveAndEnabled) ? (sk.NightShadowOwnsDirectional ? "Jupiter-shine" : "Sun") : "-"; EditorGUILayout.LabelField("Shadow owner now: " + own + " (edit preview never casts)", EditorStyles.miniLabel); }
+                EditorGUILayout.BeginHorizontal();
+                if (GUILayout.Button("Night Shadow: Subtle")) { Undo.RecordObject(skyProfile, "Night Shadow preset"); skyProfile.ApplyNightShadowPreset(0); EditorUtility.SetDirty(skyProfile); }
+                if (GUILayout.Button("Night Shadow: Default")) { Undo.RecordObject(skyProfile, "Night Shadow preset"); skyProfile.ApplyNightShadowPreset(1); EditorUtility.SetDirty(skyProfile); }
+                if (GUILayout.Button("Night Shadow: Extreme")) { Undo.RecordObject(skyProfile, "Night Shadow preset"); skyProfile.ApplyNightShadowPreset(2); EditorUtility.SetDirty(skyProfile); }
+                EditorGUILayout.EndHorizontal();
                 EditorGUILayout.LabelField("Aurora (Io: Na/S blue-green low, O red/violet high)", EditorStyles.boldLabel);
+                { float v = EditorGUILayout.Slider("Day Visibility", skyProfile.auroraDayVisibility, 0f, 1f); if (!Mathf.Approximately(v, skyProfile.auroraDayVisibility)) { Undo.RecordObject(skyProfile, "Aurora Day Visibility"); skyProfile.auroraDayVisibility = v; EditorUtility.SetDirty(skyProfile); } }
+                { float v = EditorGUILayout.Slider("Smoothness", skyProfile.auroraSmoothness, 0f, 1f); if (!Mathf.Approximately(v, skyProfile.auroraSmoothness)) { Undo.RecordObject(skyProfile, "Aurora Smoothness"); skyProfile.auroraSmoothness = v; EditorUtility.SetDirty(skyProfile); } }
                 EditorGUILayout.BeginHorizontal();
                 if (GUILayout.Button("Aurora: Subtle")) { Undo.RecordObject(skyProfile, "Aurora preset"); skyProfile.ApplyAuroraPreset(0); EditorUtility.SetDirty(skyProfile); }
                 if (GUILayout.Button("Aurora: Default")) { Undo.RecordObject(skyProfile, "Aurora preset"); skyProfile.ApplyAuroraPreset(1); EditorUtility.SetDirty(skyProfile); }

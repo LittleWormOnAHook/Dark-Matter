@@ -1,4 +1,4 @@
-﻿// 2026-10-24ai: Jupiter + moons in the Io sky. Lit only by the sun direction/lux set by DMIoSkyController
+// 2026-10-24ai: Jupiter + moons in the Io sky. Lit only by the sun direction/lux set by DMIoSkyController
 // (_DMSkySunDirWS), so phases are correct day or night. Optional procedural surface for the moons.
 Shader "DM/IoSkyBody"
 {
@@ -132,7 +132,8 @@ Shader "DM/IoSkyBody"
                 float ndl = saturate(dot(n, L));
                 float3 V = GetWorldSpaceNormalizeViewDir(i.positionRWS);
                 float ndv = saturate(dot(n, V));
-                float limb = lerp(1.0, ndv, _LimbDarkening);
+                // 2026-10-26n: floor limb so the rim never goes fully black (was reading as a dark halo on moons).
+                float limb = lerp(1.0, max(ndv, 0.28), _LimbDarkening);
 
                 float3 lit = albedo * (ndl * _DMSkySunDirWS.w * _Brightness * limb + _AmbientLux) / PI;
                 float rim = pow(1.0 - ndv, 4.0) * saturate(dot(-V, L) * 0.5 + 0.5) * pow(saturate(dot(n, L) * 0.5 + 0.5), _RimSunBias); // 24aq: brightest on the limb nearest the sun

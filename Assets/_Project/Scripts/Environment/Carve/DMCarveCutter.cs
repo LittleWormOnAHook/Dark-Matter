@@ -23,7 +23,25 @@ namespace Project.SurfaceCarve
         private Vector3[] planeNormals;
         private float[] planeDistances;
 
-        public float MaxRadius => Radius * MaxRadiusFactor;
+        /// <summary>2026-10-24ag: clean straight tunnel (cylinder along local +Z, half length HalfLength) for through-holes.</summary>
+        public readonly bool IsTunnel;
+        public readonly float HalfLength;
+
+        public float MaxRadius => IsTunnel ? Mathf.Sqrt(Radius * Radius + HalfLength * HalfLength) * 1.02f : Radius * MaxRadiusFactor;
+
+        public DMCarveCutter(Vector3 center, Quaternion rotation, float radius, float halfLength)
+        {
+            Center = center;
+            Rotation = rotation;
+            Radius = Mathf.Max(0.005f, radius);
+            Style = DMCarveStyle.Erosion;
+            Roughness = 0f;
+            Seed = 0;
+            inverse = Quaternion.Inverse(rotation);
+            offset = Vector3.zero;
+            IsTunnel = true;
+            HalfLength = Mathf.Max(Radius * 0.25f, halfLength);
+        }
 
         public DMCarveCutter(Vector3 center, Quaternion rotation, float radius, DMCarveStyle style, float roughness, int seed)
         {
@@ -67,6 +85,14 @@ namespace Project.SurfaceCarve
         /// <summary>Radius in meters along a unit direction given in cutter local space.</summary>
         public float RadialLocal(Vector3 d)
         {
+            if (IsTunnel)
+            {
+                float rho = Mathf.Sqrt(d.x * d.x + d.y * d.y);
+                float az = Mathf.Abs(d.z);
+                float side = rho > 1e-5f ? Radius / rho : float.MaxValue;
+                float end = az > 1e-5f ? HalfLength / az : float.MaxValue;
+                return Mathf.Min(side, end);
+            }
             float r;
             switch (Style)
             {

@@ -97,6 +97,8 @@ namespace Project.Player.Invector
         // 2026-10-19 e: block auto-face owner + slow-mo input.
         public bool WantsMeleeBlockFacing => !IsGameplayInputDeferred() && cc != null && !cc.isDead && !cc.customAction && !cc.ragdolled
             && ReadBlockHeld() && (IsDrawnMeleeWeaponActive() || isBlocking);
+        /// <summary>2026-10-26b: true while a melee weapon is drawn (read by DM_MeleeLockProfile enemy AI).</summary>
+        public bool IsDrawnMeleeActive => IsDrawnMeleeWeaponActive();
         public bool IsBlockInputHeld => !IsGameplayInputDeferred() && ReadBlockHeld();
         private const float BlockGuardPoseSeconds = 0.12f;
         private const float StrongAttackBlockSuppressSeconds = 0.2f;
@@ -1170,6 +1172,26 @@ namespace Project.Player.Invector
             bool released = !held && _lightAttackHeldLast;
             float chargeSeconds = ResolveStrongChargeSeconds();
 
+            // 2026-10-26a Slice 6: finisher owns the input while it plays.
+            // 2026-10-26l: dedicated combo only (hold Use/E/X + Attack/LMB/RT). Plain Attack is a normal (sped-up) swing.
+            if (Project.Combat.DMSlice6Runtime.FinisherActive)
+            {
+                _lightAttackHeldLast = held;
+                _chargeAutoReleased = held;
+                return;
+            }
+            if (Project.Combat.DMSlice6Runtime.FinisherComboPressedThisFrame()
+                && Project.Combat.DMSlice6Runtime.TryStartFinisher(gameObject))
+            {
+                if (_strongChargeArmed || _strongChargePoseActive)
+                    CancelChargePose();
+                _strongChargeArmed = false;
+                _strongChargePoseActive = false;
+                _chargeAutoReleased = held;
+                _lightAttackHeldLast = held;
+                return;
+            }
+
             // A click that goes down and up inside one frame never shows a held sample.
             if (pressed && !held)
             {
@@ -1197,6 +1219,18 @@ namespace Project.Player.Invector
             if (held && !released)
                 ResetDrawnMeleeAttackTriggers();
 
+            // 2026-10-26a Slice 5: hold Attack with a full momentum meter -> spin (once per hold).
+            if (held && Project.Combat.DMMomentumSpin.TryHoldSpin(gameObject, Time.time - _lightAttackHoldStart))
+            {
+                if (_strongChargeArmed || _strongChargePoseActive)
+                    CancelChargePose();
+                _strongChargeArmed = false;
+                _strongChargePoseActive = false;
+                _chargeAutoReleased = true;
+                _lightAttackHeldLast = held;
+                return;
+            }
+
             if (held && Time.time - _lightAttackHoldStart >= chargeSeconds)
             {
                 if (!_strongChargeArmed)
@@ -1211,7 +1245,8 @@ namespace Project.Player.Invector
                 float maxHold = holdProfile != null ? holdProfile.chargedMaxHoldSeconds : 1f;
                 if (maxHold > 0f && Time.time - _lightAttackHoldStart >= maxHold)
                 {
-                    TryReleaseStrongMelee();
+                    if (Project.Combat.DMMomentumSpin.TryChargedReleaseSpin(gameObject)) CancelChargePose(); // 2026-10-26a
+                    else TryReleaseStrongMelee();
                     _strongChargeArmed = false;
                     _chargeAutoReleased = true;
                     _lightAttackHeldLast = held;
@@ -1222,7 +1257,10 @@ namespace Project.Player.Invector
             if (released)
             {
                 if (_strongChargeArmed)
-                    TryReleaseStrongMelee();
+                {
+                    if (Project.Combat.DMMomentumSpin.TryChargedReleaseSpin(gameObject)) CancelChargePose(); // 2026-10-26a
+                    else TryReleaseStrongMelee();
+                }
                 else
                     TryReleaseLightMelee();
                 _strongChargeArmed = false;

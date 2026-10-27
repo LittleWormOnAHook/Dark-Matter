@@ -263,6 +263,7 @@ namespace Project.EditorTools.Audit
             ComputeStamps();
             _run.environment.Add($"Unit store: {_store.entries.Count} stored unit(s); stamps audit {_auditStamp.Substring(0, 6)} game {_gameStamp.Substring(0, 6)} gear {_gearStamp.Substring(0, 6)}; skip-unchanged is {(FullMode ? "OFF (Full mode)" : "ON (Quick mode)")}");
             int i = 0;
+            if (_opts.slicesOnly) { yield return SlicesMain(); yield break; } // 2026-10-25s
             if (_opts.obstaclesOnly)
             {
                 if (prefabs.Count == 0) { Finish("aborted", "No enemy prefab matched obstacle audit filter"); yield break; }

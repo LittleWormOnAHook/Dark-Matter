@@ -20,6 +20,7 @@ namespace Project.EditorTools.Audit
         private static void EnforceTestTerrain(bool first)
         {
             if (first) { _floorRescues = 0; _terrainReenables = 0; _testFloor = null; _auditTarget = null; _auditTargetSwitches = 0; _auditTargetFirst = -1f; _auditAimYaw = float.NaN; }
+            if (_opts != null && (_opts.keepTerrain || _opts.slicesOnly)) return; // 2026-10-25s: terrain stays on
             int off = 0;
             foreach (Terrain t in Object.FindObjectsByType<Terrain>(FindObjectsInactive.Include))
             {

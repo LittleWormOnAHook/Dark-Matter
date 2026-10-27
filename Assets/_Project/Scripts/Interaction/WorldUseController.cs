@@ -1188,6 +1188,10 @@ namespace Project.Interaction
 
         private bool CanUseNow()
         {
+            // 2026-10-26l: finisher combo (Use+Attack) / active finisher must not start pickup or hold-harvest.
+            if (Project.Combat.DMSlice6Runtime.BlocksWorldUse)
+                return false;
+
             if (!GameSession.HasStarted)
                 return false;
 

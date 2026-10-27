@@ -1,4 +1,4 @@
-﻿// 2026-10-24au: DM_IoNightSky runtime. Spawns (Play only, not saved) a camera-centred dome with DM/IoNightSky:
+// 2026-10-24au: DM_IoNightSky runtime. Spawns (Play only, not saved) a camera-centred dome with DM/IoNightSky:
 // stars + Milky Way + Io aurora. Fades by sun elevation / eclipse depth. Settings: DM_IoSkyProfile (Studio Sky & Orbit).
 using Project.World.Clock;
 using UnityEngine;
@@ -76,10 +76,15 @@ namespace Project.World.Sky
             float night = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(p.nightFadeStartDeg, p.nightFadeEndDeg, elev));
             float dark = Mathf.Max(night, ecl);
             float nightVis = p.nightSkyEnabled ? Mathf.Lerp(p.nightSkyDayVisibility, 1f, dark) : 0f;
+            // 2026-10-26i: MW has its own day floor (was sharing nightVis and showed as blotchy daytime fog when nightSkyDayVisibility was high).
+            float mwVis = p.nightSkyEnabled ? Mathf.Lerp(p.milkyWayDayVisibility, 1f, dark) : 0f;
             float auroraVis = p.auroraEnabled ? Mathf.Lerp(p.auroraDayVisibility, 1f, dark) : 0f;
 
             mat.SetFloat("_NightVis", nightVis);
+            mat.SetFloat("_MWVis", mwVis);
+            mat.SetFloat("_MWSmoothness", p.milkyWaySmoothness);
             mat.SetFloat("_AuroraVis", auroraVis);
+            mat.SetFloat("_AuroraSmoothness", p.auroraSmoothness);
             mat.SetFloat("_StarDensity", p.starDensity);
             mat.SetFloat("_StarBrightness", p.starBrightness);
             mat.SetFloat("_StarSize", p.starSize);
@@ -107,6 +112,11 @@ namespace Project.World.Sky
             mat.SetFloat("_AuroraAzimuthEdgeSoftDeg", p.auroraAzimuthEdgeSoftDeg);
             mat.SetFloat("_AuroraHeightDriftSpeed", p.auroraHeightDriftSpeed);
             mat.SetFloat("_AuroraHeightBobDeg", p.auroraHeightBobDeg);
+            // 2026-10-26m: dither + tempered softExp (banding on R11G11B10).
+            mat.SetFloat("_DitherEnabled", p.nightSkyDitherEnabled ? 1f : 0f);
+            mat.SetFloat("_DitherAmount", p.nightSkyDitherAmount);
+            mat.SetFloat("_SoftExpPower", p.nightSkySoftExpPower);
+            mat.SetFloat("_AuroraOverBodies", p.auroraOverSkyBodies ? 1f : 0f);
 
             float hpd = Mathf.Max(1f, DMIoClock.HoursPerDayValue);
             float spin = p.starsRotateWithClock ? 360f * (float)(DMIoClock.TotalHoursContinuous / hpd % 1.0) : 0f;
