@@ -123,11 +123,11 @@ MonoBehaviour:
   miningScanLoopSound: {fileID: 0}
   miningScanSuccessSound: {fileID: 0}
   miningScanDeniedSound: {fileID: 0}
-  statusEffectOverride: 0
-  statusEffectDamagePerTick: 0
-  statusEffectTickInterval: 1
-  statusEffectDuration: 0
-  statusEffectVfxPrefab: {fileID: 0}
+  statusEffectOverride: 1
+  statusEffectDamagePerTick: 12
+  statusEffectTickInterval: 2
+  statusEffectDuration: 10
+  statusEffectVfxPrefab: {fileID: 1861144586869530046, guid: a57d9fef59721b948a31ef1472f82b80, type: 3}
   componentCategory: 0
   toolType: 0
   toolRange: 8
@@ -162,11 +162,11 @@ MonoBehaviour:
   spawnLaserBurn: 0
   enemyBlood: 0
   enemyBurnMark: 0
-  useHitMarks: 1
+  useHitMarks: 0
   defaultDecals: []
   defaultHitEffects: []
   surfaces: []
-  fallBackToCatalog: 1
+  fallBackToCatalog: 0
   catalog: {fileID: 11400000, guid: b6c7d8e9f0a12b3c4d5e6f708192a356, type: 2}
   surfaceDamage:
     mode: 1
@@ -179,9 +179,9 @@ MonoBehaviour:
       debrisScale: 0.05
   fireTrauma: 0.102
   fireTraumaDurationSeconds: 0
-  impactTrauma: 0
-  impactTraumaDurationSeconds: 0
-  impactTraumaRadius: 0
+  impactTrauma: 0.14
+  impactTraumaDurationSeconds: 0.011
+  impactTraumaRadius: 6.5
   impactTraumaMinDistance: 0
   useAllPhysicsLayers: 1
   forceMeshDeformation: 1

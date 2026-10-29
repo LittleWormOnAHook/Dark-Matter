@@ -159,6 +159,27 @@ MonoBehaviour:
     rifles that accept Gunpowder ammo."
   unlocksInventoryStorageRow: 0
   delivery: 0
+  useF3DDespawn: 1
+  muzzleLifetime: 0
+  beamUsesAmmoPrefab: 0
+  beamDurationSeconds: 1.5
+  boltSpeed: 120
+  boltMaxLength: 12
+  boltTailRetractTime: 0.12
+  boltWidth: 0.12
+  beamDamagePerTick: 1
+  beamDamageTicksPerSecond: 5
+  beamTickDamageScale: 0.2
+  chainEnabled: 1
+  chainSkillUnlocked: 1
+  chainMaxTargets: 3
+  chainRange: 8
+  chainDamageFalloff: 0.85
+  chainRequiresLineOfSight: 1
+  chainDebugLog: 0
+  streamSegments: 3
+  streamSegmentGap: 0.045
+  showSplashBubble: 1
   spawnLaserBurn: 0
   enemyBlood: 0
   enemyBurnMark: 0
@@ -257,7 +278,7 @@ MonoBehaviour:
         roughness: 1
         debrisCount: 1
         debrisScale: 0.35
-  fallBackToCatalog: 1
+  fallBackToCatalog: 0
   catalog: {fileID: 11400000, guid: b6c7d8e9f0a12b3c4d5e6f708192a356, type: 2}
   surfaceDamage:
     mode: 0
@@ -268,7 +289,7 @@ MonoBehaviour:
       roughness: 1
       debrisCount: 1
       debrisScale: 0.35
-  fireTrauma: 0.086
+  fireTrauma: 0.18
   fireTraumaDurationSeconds: 0
   impactTrauma: 0
   impactTraumaDurationSeconds: 0

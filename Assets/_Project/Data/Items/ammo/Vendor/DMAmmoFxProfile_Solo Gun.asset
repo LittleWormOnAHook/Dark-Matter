@@ -162,6 +162,10 @@ MonoBehaviour:
   muzzleLifetime: 0.05
   beamUsesAmmoPrefab: 0
   beamDurationSeconds: 1.5
+  boltSpeed: 120
+  boltMaxLength: 12
+  boltTailRetractTime: 0.12
+  boltWidth: 0.12
   beamDamagePerTick: 1
   beamDamageTicksPerSecond: 5
   beamTickDamageScale: 0.2
@@ -171,6 +175,21 @@ MonoBehaviour:
   chainRange: 8
   chainDamageFalloff: 0.85
   chainRequiresLineOfSight: 1
+  chainDebugLog: 0
+  chainJumpDelay: 0.05
+  chainWidthScale: 1
+  chainColor: {r: 1, g: 1, b: 1, a: 1}
+  chainSpeedScale: 1
+  chainUseCenterMass: 1
+  chainMode: 0
+  chainCenterMassHeightOffset: 0
+  vendorImpactAudio: 3
+  impactAudioMinInterval: 0.05
+  impactAudioMaxVoices: 6
+  impactAudioVolume: 2
+  streamSegments: 3
+  streamSegmentGap: 0.045
+  showSplashBubble: 1
   spawnLaserBurn: 0
   enemyBlood: 0
   enemyBurnMark: 0
@@ -269,7 +288,7 @@ MonoBehaviour:
         roughness: 1
         debrisCount: 1
         debrisScale: 0.35
-  fallBackToCatalog: 1
+  fallBackToCatalog: 0
   catalog: {fileID: 11400000, guid: b6c7d8e9f0a12b3c4d5e6f708192a356, type: 2}
   surfaceDamage:
     mode: 0
@@ -280,9 +299,9 @@ MonoBehaviour:
       roughness: 1
       debrisCount: 1
       debrisScale: 0.35
-  fireTrauma: 0.06
-  fireTraumaDurationSeconds: 0
-  impactTrauma: 0
-  impactTraumaDurationSeconds: 0
-  impactTraumaRadius: 0
+  fireTrauma: 0.151
+  fireTraumaDurationSeconds: 0.095
+  impactTrauma: 0.229
+  impactTraumaDurationSeconds: 0.054
+  impactTraumaRadius: 9.9
   impactTraumaMinDistance: 0

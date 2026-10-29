@@ -19,7 +19,7 @@ Material:
   m_CustomRenderQueue: 3000
   stringTagMap: {}
   disabledShaderPasses: []
-  m_LockedProperties: 
+  m_LockedProperties: _Mode
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -29,7 +29,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Boost: 1
+    - _Boost: 2
     - _DstBlend: 1
     - _ExposureWeight: 0
     - _Mode: 0

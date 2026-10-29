@@ -159,6 +159,27 @@ MonoBehaviour:
     for denser Io fauna and armored androids.
   unlocksInventoryStorageRow: 0
   delivery: 0
+  useF3DDespawn: 1
+  muzzleLifetime: 0
+  beamUsesAmmoPrefab: 0
+  beamDurationSeconds: 1.5
+  boltSpeed: 120
+  boltMaxLength: 12
+  boltTailRetractTime: 0.12
+  boltWidth: 0.12
+  beamDamagePerTick: 1
+  beamDamageTicksPerSecond: 5
+  beamTickDamageScale: 0.2
+  chainEnabled: 1
+  chainSkillUnlocked: 1
+  chainMaxTargets: 3
+  chainRange: 8
+  chainDamageFalloff: 0.85
+  chainRequiresLineOfSight: 1
+  chainDebugLog: 0
+  streamSegments: 3
+  streamSegmentGap: 0.045
+  showSplashBubble: 1
   spawnLaserBurn: 0
   enemyBlood: 0
   enemyBurnMark: 0
@@ -177,9 +198,9 @@ MonoBehaviour:
       roughness: 1
       debrisCount: 3
       debrisScale: 0.05
-  fireTrauma: 0.055
-  fireTraumaDurationSeconds: 0.0194
-  impactTrauma: 0.126
-  impactTraumaDurationSeconds: 0.032
-  impactTraumaRadius: 25.8
-  impactTraumaMinDistance: 0.11
+  fireTrauma: 0.215
+  fireTraumaDurationSeconds: 0.076
+  impactTrauma: 0.228
+  impactTraumaDurationSeconds: 0.093
+  impactTraumaRadius: 7.3
+  impactTraumaMinDistance: 0

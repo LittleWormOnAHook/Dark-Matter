@@ -162,6 +162,10 @@ MonoBehaviour:
   muzzleLifetime: 0.05
   beamUsesAmmoPrefab: 0
   beamDurationSeconds: 1.5
+  boltSpeed: 120
+  boltMaxLength: 12
+  boltTailRetractTime: 0.12
+  boltWidth: 0.12
   beamDamagePerTick: 1
   beamDamageTicksPerSecond: 5
   beamTickDamageScale: 0.2
@@ -171,6 +175,10 @@ MonoBehaviour:
   chainRange: 8
   chainDamageFalloff: 0.85
   chainRequiresLineOfSight: 1
+  chainDebugLog: 0
+  streamSegments: 3
+  streamSegmentGap: 0.045
+  showSplashBubble: 1
   spawnLaserBurn: 0
   enemyBlood: 0
   enemyBurnMark: 0
@@ -189,9 +197,9 @@ MonoBehaviour:
       roughness: 1
       debrisCount: 3
       debrisScale: 0.05
-  fireTrauma: 0.055
-  fireTraumaDurationSeconds: 0.0194
-  impactTrauma: 0.126
-  impactTraumaDurationSeconds: 0.032
-  impactTraumaRadius: 25.8
-  impactTraumaMinDistance: 0.11
+  fireTrauma: 0.164
+  fireTraumaDurationSeconds: 0.049
+  impactTrauma: 0.236
+  impactTraumaDurationSeconds: 0.045
+  impactTraumaRadius: 13.4
+  impactTraumaMinDistance: 0

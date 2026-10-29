@@ -24,7 +24,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: DM Jetpack Sub_02 - Default_BaseColor_sRGB.1001
-  m_Shader: {fileID: 4800000, guid: 6e4ae4064600d784cac1e41a9e6f2e59, type: 3}
+  m_Shader: {fileID: 4800000, guid: 30246065c7e64064eb5c00b115bd8413, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
@@ -66,6 +66,14 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _CoatMaskMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DMAOMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DMHeightMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
@@ -167,6 +175,26 @@ Material:
     - _CullMode: 2
     - _CullModeForward: 2
     - _Cutoff: 0.5
+    - _DMAOChannel: 0
+    - _DMAOReplace: 0
+    - _DMAOStrength: 1
+    - _DMBrightness: 1
+    - _DMColor: 0
+    - _DMHeightAO: 0
+    - _DMHeightAOMid: 0.4
+    - _DMHeightAOStrength: 0.5
+    - _DMHeightContrast: 1
+    - _DMHeightOffset: 0
+    - _DMHeightPeakKnee: 1
+    - _DMHeightPeakSoft: 0
+    - _DMHeightScale: 1
+    - _DMParallax: 0
+    - _DMParallaxAmount: 0.02
+    - _DMParallaxCenter: 0.5
+    - _DMParallaxFadeEnd: 50
+    - _DMParallaxFadeStart: 20
+    - _DMSaturation: 1
+    - _DMUseLitHeight: 0
     - _DepthOffsetEnable: 0
     - _DetailAlbedoScale: 1
     - _DetailNormalScale: 1
@@ -205,7 +233,7 @@ Material:
     - _LinkDetailsWithBase: 1
     - _MaterialID: 1
     - _Metallic: 0
-    - _MetallicRemapMax: 0.75925916
+    - _MetallicRemapMax: 0.12465185
     - _MetallicRemapMin: 0.12465185
     - _NormalMapSpace: 0
     - _NormalScale: 4.06
@@ -223,7 +251,7 @@ Material:
     - _ReceivesSSRTransparent: 0
     - _RefractionModel: 0
     - _Smoothness: 0.5
-    - _SmoothnessRemapMax: 0.726852
+    - _SmoothnessRemapMax: 0.57369894
     - _SmoothnessRemapMin: 0
     - _SpecularAAScreenSpaceVariance: 0.1
     - _SpecularAAThreshold: 0.2
@@ -264,6 +292,7 @@ Material:
     m_Colors:
     - _BaseColor: {r: 0.7132075, g: 0.7132075, b: 0.7132075, a: 1}
     - _Color: {r: 0.7132074, g: 0.7132074, b: 0.7132074, a: 1}
+    - _DMTint: {r: 1, g: 1, b: 1, a: 1}
     - _DiffusionProfileAsset: {r: 0, g: 0, b: 0, a: 0}
     - _DoubleSidedConstants: {r: 1, g: 1, b: -1, a: 0}
     - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}

@@ -41,7 +41,7 @@ Material:
     m_Ints: []
     m_Floats:
     - _MetallicRemapMax: 1
-    - _Smoothness: 0.5
+    - _Smoothness: 1
     - _StencilRefDepth: 8
     - _StencilRefGBuffer: 10
     - _StencilRefMV: 40

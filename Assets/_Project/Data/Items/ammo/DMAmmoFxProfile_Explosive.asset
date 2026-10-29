@@ -18,6 +18,7 @@ MonoBehaviour:
   maxStack: 999
   stableItemId: 77b9efdc746f74540b6485194729334a
   itemType: 4
+  functionalTag: 0
   deployedPrefab: {fileID: 0}
   weaponGrip: 0
   heldPrefab: {fileID: 0}
@@ -41,6 +42,7 @@ MonoBehaviour:
   criticalChance: 0.1
   criticalDamageMultiplier: 2
   meleeRange: 2.2
+  meleeBladeLength: -1
   meleeCooldown: 0.65
   attackAnimationSpeed: 0
   meleeStaminaCost: 0
@@ -59,6 +61,8 @@ MonoBehaviour:
   recoilHorizontal: 0.75
   recoilFireRateScale: 0
   fireRate: 1
+  rifleScopedFireInterval: 0
+  pistolScopedFireInterval: 0
   rifleScopedFireIntervalPercentModifier: 0
   pistolScopedFireIntervalPercentModifier: 0
   shotsPerBurst: 1
@@ -111,7 +115,7 @@ MonoBehaviour:
   miningChargeDrainPerSecond: 4
   miningChargePerPlasmaFuel: 50
   fireSound: {fileID: 8300000, guid: dab4dfa00ed487b44bf0f2c9115a3da3, type: 3}
-  projectileTravelSound: {fileID: 0}
+  projectileTravelSound: {fileID: 8300000, guid: f9e81ade8e42302438413bcc0a5951bc, type: 3}
   isContinuousLaser: 0
   continuousLoopSound: {fileID: 0}
   continuousStartSound: {fileID: 0}
@@ -269,12 +273,6 @@ MonoBehaviour:
       debrisCount: 1
       debrisScale: 0.123
   fireTrauma: 1.103
-  fireTraumaDurationSeconds: 0.06
-  impactTrauma: 0.42
-  impactTraumaDurationSeconds: 0.18
-  impactTraumaRadius: 28
-  impactTraumaMinDistance: 1.2
-  fireTrauma: 0.12
   fireTraumaDurationSeconds: 0.06
   impactTrauma: 0.42
   impactTraumaDurationSeconds: 0.18

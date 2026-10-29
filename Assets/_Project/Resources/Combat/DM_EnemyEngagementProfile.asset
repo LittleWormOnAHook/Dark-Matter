@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.AI.DM_EnemyEngagementProfile
   enableEngagementDirector: 1
   legacyRingSlotRotation: 0
-  debugLogHandoffs: 1
+  debugLogHandoffs: 0
   directorTickHz: 5
   agentRoleTickHz: 10
   tokenMinHoldSeconds: 1.8
