@@ -347,3 +347,9 @@ MonoBehaviour:
     alpha: 1
     emissionColor: {r: 1, g: 1, b: 1, a: 1}
     emission: 0
+  - item: {fileID: 11400000, guid: 2716da877aeb5e94eb141c23bdfc914b, type: 2}
+    icon: {fileID: 21300000, guid: 33fdf10fdd7bafc4fb43cf732e438f85, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    alpha: 1
+    emissionColor: {r: 1, g: 1, b: 1, a: 1}
+    emission: 0

@@ -173,6 +173,10 @@ namespace Project.Combat
             if (muzzle == null)
                 return Vector3.forward;
 
+            // 2026-10-28e: DM Ranged per-form muzzles aim along their own +Z (not the slot's rifle AimReference).
+            if (muzzle == Project.Combat.DMRanged.DMRangedMorphRuntime.ActiveMuzzle)
+                return muzzle.forward.sqrMagnitude > 0.0001f ? muzzle.forward.normalized : Vector3.forward;
+
             vShooterWeapon shooter = muzzle.GetComponentInParent<vShooterWeapon>();
             if (shooter != null &&
                 shooter.muzzle == muzzle &&
@@ -477,6 +481,8 @@ namespace Project.Combat
             float spread = ammo != null && ammo.projectileSpreadDegrees > 0f
                 ? ammo.projectileSpreadDegrees
                 : weapon.projectileSpreadDegrees;
+            if (Project.Combat.DMRanged.DMRangedMorphRuntime.TryGetActiveForm(weapon, out var dmrForm))
+                spread = Project.Combat.DMRanged.DM_RangedMorphSettings.Instance.Spread(dmrForm); // 20261028a DM Ranged per-form spread
 
             float accuracy = weapon.ResolveBaseAccuracy(ammo);
             if (applyPlayerSkillBonus)

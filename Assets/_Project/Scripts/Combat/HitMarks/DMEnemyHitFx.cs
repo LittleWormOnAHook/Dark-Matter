@@ -43,6 +43,9 @@ namespace Project.Combat
                 return AmmoType.Gunpowder;
             if (weapon.itemType == ItemType.Ammo)
                 return weapon.ammoType;
+            // 2026-10-28m: MorphBlade uses the active blade form element (asset untouched).
+            if (Project.Prototypes.Weapons.DMWeaponMorphRuntime.TryGetBladeElement(weapon, out AmmoType bladeElement))
+                return bladeElement;
             return weapon.defaultAmmoType;
         }
 

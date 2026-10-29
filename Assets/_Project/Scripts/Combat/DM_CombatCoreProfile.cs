@@ -1056,6 +1056,15 @@ namespace Project.Combat
         [Tooltip("Hold G / LB this long (seconds) on Hot Cross lower-right to load a grenade to the right hand. Tap still cycles stacks.")]
         [Range(0.25f, 2.5f)] public float hotCrossGrenadeLoadHoldSeconds = 1f;
 
+        [Header("Holster all (2026-10-28p)")]
+        [Tooltip("Hold Tab (KBM) / Y (gamepad) this long (seconds) = holster ALL drawn weapons (melee/MorphBlade, DM Ranged -> Pistol 1, tools). Tap still cycles focus. Nothing drawn -> hold arms the focused weapon. D-pad Down hold always arms.")]
+        [Range(0.15f, 3f)] public float weaponHolsterAllHoldSeconds = 0.5f;
+        [Tooltip("Off = hold Tab/Y always arms the focused weapon (pre-28p behaviour).")]
+        public bool holdHolstersAllWhenDrawn = true;
+
+        public static float WeaponHolsterAllHoldSeconds => Live != null ? Mathf.Clamp(Live.weaponHolsterAllHoldSeconds, 0.15f, 3f) : 0.5f;
+        public static bool HoldHolstersAllWhenDrawn => Live == null || Live.holdHolstersAllWhenDrawn;
+
         [Header("Grenades — splash & detonation")]
         [Tooltip("AOE splash radius (world units). Also drives Invector vExplosive max radius for force/VFX sync.")]
         [Range(0.5f, 25f)] public float grenadeExplosionRadius = 10f;

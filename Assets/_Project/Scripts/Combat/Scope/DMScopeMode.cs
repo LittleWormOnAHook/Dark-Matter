@@ -1,6 +1,7 @@
 using Invector.vShooter;
 using Project.Core;
 using Project.Data;
+using Project.Prototypes.Weapons;
 using Project.Inventory;
 using Project.Progression;
 using Project.Player;
@@ -111,7 +112,14 @@ namespace Project.Combat
         }
 
         // 2026-10-13 (i): ItemData.IsTwoHanded is melee-only, so every ranged weapon read as "pistol" and both types shared the pistol toggle.
-        public static bool IsRifle(ItemData w) => w != null && w.IsRangedWeapon && w.weaponGrip == WeaponGrip.TwoHanded && !w.isMiningTool;
+        public static bool IsRifle(ItemData w)
+        {
+            if (w == null || !w.IsRangedWeapon || w.isMiningTool)
+                return false;
+            if (DMWeaponMorphRuntime.TryGetEffectiveWeaponGrip(w, out WeaponGrip morphGrip))
+                return morphGrip == WeaponGrip.TwoHanded;
+            return w.weaponGrip == WeaponGrip.TwoHanded;
+        }
 
         private ItemData ActiveWeapon()
         {
@@ -211,6 +219,7 @@ namespace Project.Combat
 
         private void EnterScope(bool rifle)
         {
+            if (Project.Prototypes.Weapons.DMWeaponMorphRuntime.IsMorphing) return; // 20261028a no scope mid-morph
             _scoped = true;
             _scopedRifle = rifle;
             DMUiToolkitOpticsOverlay.EnsureAttached();

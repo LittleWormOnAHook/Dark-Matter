@@ -15,4 +15,4 @@ MonoBehaviour:
   schemeTitle: Keyboard and Mouse
   pages:
   - image: {fileID: 21300000, guid: 95258060ac1f2bc4280ce7cc92bd80a1, type: 3}
-    caption:
+    caption: 'Weapons: Tab tap = next hotbar weapon, hold = arm. 1 = DM Ranged form.'

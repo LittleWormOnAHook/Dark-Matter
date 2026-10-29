@@ -290,7 +290,7 @@ new DMStudioSubtab(
                         new DMStudioSubtab(
                             "sky-orbit",
                             "Sky & Orbit",
-                            "Io sky (2026-10-26n): Sky Look Presets; night dither/FBM; aurora over moons (no dark halo cutout); Night Light/Shadow; sun path, eclipse, Jupiter + moons.",
+                            "Io sky (2026-10-26o): smooth Jupiter/moon limbs (hi-res sphere + analytic rim/edge soft); Sky Look; dither off by default; aurora over moons; Night Light/Shadow.",
                             DMStudioPanelMode.SingletonAsset,
                             "Assets/_Project/Resources/World/DM_IoSkyProfile.asset",
                             playModeSave: true),
@@ -410,7 +410,23 @@ new DMStudioSubtab(
                             typeFilter: "t:DMAmmoFxProfile",
                             playModeSave: true,
                             sectionFilter: DMStudioProfileSectionFilter.CombatAmmoOnly),
-                        new DMStudioSubtab(
+                                                new DMStudioSubtab(
+                            "weapon-morph",
+                            "Weapon Morph Prototypes",
+                            "DM_WeaponMorphStudioSettings + per-form DM_WeaponMorphProfile (Morph Blade Metal/Light/Plasma/Ion/Laser/Cryo). Subtle/Default/Extreme presets. 28m: per-blade damage element + icons on each form, per-blade body weight (0.1-5) with its own Subtle/Default/Extreme preset on the settings. Build via Combat/Build Morph Weapon Prototypes.",
+                            DMStudioPanelMode.AssetFolder,
+                            searchFolder: "Assets/_Project/Resources/Combat/Morph",
+                            typeFilter: "t:DM_WeaponMorphStudioSettings t:DM_WeaponMorphProfile",
+                            playModeSave: true),
+new DMStudioSubtab(
+                            "dm-ranged",
+                            "DM Ranged (Morph)",
+                            "DM_RangedMorphSettings: step seconds (0.15), holster frame 40, five forms (Rifle/SMR/Pistol 3/Pistol 2/Pistol 1; Rifle id stays sniper, x1.0 damage, not the hold-R Scope mode; 28j Rifle magazine = loaded ammo magazineSize like the old Survival rifle, fallback 50) with name, HUD label, fire rate, damage x, range, spread, recoil x, mag, reload, pitch, weight, shot clip. Subtle/Default/Extreme presets scale differences from Pistol 1 (context menu or Preset field). 2026-10-28e: Create / Find Muzzle Points button (edit-mode DMR_Muzzle_<form> children, used as-is per form).",
+                            DMStudioPanelMode.AssetFolder,
+                            searchFolder: "Assets/_Project/Resources/Combat/Morph/DMRanged",
+                            typeFilter: "t:DM_RangedMorphSettings",
+                            playModeSave: true),
+new DMStudioSubtab(
                             "scope-overlay",
                             "Scope Overlay",
                             "UITK scoped ADS art — reticle, ring, outer mil-dot, center mask (DM_ScopeProfile). Live in Play; skills still gate sway/zoom/cadence/accuracy/damage.",

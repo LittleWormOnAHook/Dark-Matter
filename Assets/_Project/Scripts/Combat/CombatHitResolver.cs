@@ -713,13 +713,27 @@ namespace Project.Combat
                 clip = weapon.fireSound;
             }
 
+            float dmrPitch = 1f;
+            if (Project.Combat.DMRanged.DMRangedMorphRuntime.TryGetActiveForm(weapon, out var dmrForm))
+            {
+                if (dmrForm.shotClip != null)
+                    clip = dmrForm.shotClip;
+                dmrPitch = Project.Combat.DMRanged.DM_RangedMorphSettings.Instance.Pitch(dmrForm); // 20261028a per-form sound
+            }
+
             if (clip == null || muzzle == null)
                 return;
 
             // 2026-10-13 (h): scoped player shots are louder / lower (DM_ScopeProfile).
             if (DMScopeMode.IsScoped && muzzle.root == DMScopeMode.Instance.transform.root)
             {
-                GameAudioManager.PlayWorldSfxPitched(clip, muzzle.position, DMScopeMode.ShotVolume, DMScopeMode.ShotPitch);
+                GameAudioManager.PlayWorldSfxPitched(clip, muzzle.position, DMScopeMode.ShotVolume, DMScopeMode.ShotPitch * dmrPitch);
+                return;
+            }
+
+            if (!Mathf.Approximately(dmrPitch, 1f))
+            {
+                GameAudioManager.PlayWorldSfxPitched(clip, muzzle.position, 1f, dmrPitch);
                 return;
             }
 

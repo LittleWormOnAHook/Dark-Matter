@@ -205,6 +205,18 @@ namespace Project.UI
                     DMUiToolkitStyle.TrySetSpriteBackground(image, page.Image, ScaleMode.ScaleToFit);
                     schemeBody.Add(image);
                 }
+                // 20261028d: optional caption under the map (binding notes newer than the baked image).
+                if (!string.IsNullOrWhiteSpace(page.Caption))
+                {
+                    Label caption = new Label(page.Caption) { pickingMode = PickingMode.Ignore };
+                    caption.style.whiteSpace = WhiteSpace.Normal;
+                    caption.style.unityTextAlign = TextAnchor.MiddleCenter;
+                    caption.style.color = new Color(0.85f, 0.92f, 1f, 1f);
+                    caption.style.fontSize = 18;
+                    caption.style.marginTop = 8;
+                    caption.style.flexShrink = 0;
+                    schemeBody.Add(caption);
+                }
             }
         }
 

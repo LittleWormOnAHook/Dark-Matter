@@ -52,6 +52,7 @@ namespace Project.Managers
 
             if (grantStartingItems)
             {
+                Project.Combat.DMRanged.DMRangedMorphRuntime.MarkFirstDraw(); // 2026-10-28g: new game -> DM Ranged first draw in Pistol 1
                 ScannerDiscoveryRegistry.Clear();
                 ResourceIdentificationRegistry.Clear();
                 InitializePlayer();
@@ -96,7 +97,7 @@ namespace Project.Managers
             {
                 for (int i = 0; i < startingItems.Length; i++)
                 {
-                    if (startingItems[i] != null)
+                    if (startingItems[i] != null && !Project.Combat.DMRanged.DMRangedMorphRuntime.IsPlayerDisabledWeapon(startingItems[i])) // 2026-10-28g
                     {
                         int amount = (startingAmounts != null && startingAmounts.Length > i) ? startingAmounts[i] : 5;
                         // Starting kit goes to inventory/reserve only — magazines stay empty until load or pickup.

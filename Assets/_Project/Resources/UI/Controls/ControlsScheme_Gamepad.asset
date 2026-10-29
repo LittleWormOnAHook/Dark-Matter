@@ -15,4 +15,4 @@ MonoBehaviour:
   schemeTitle: Controller
   pages:
   - image: {fileID: 21300000, guid: c66f1c9f4fa2e524a9646ca0aa90f999, type: 3}
-    caption:
+    caption: 'Weapons: D-pad Down tap = next hotbar weapon, hold = arm. Y tap = DM Ranged form (while drawn), hold Y = arm.'

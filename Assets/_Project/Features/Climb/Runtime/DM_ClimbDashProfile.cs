@@ -1,4 +1,4 @@
-﻿using Project.Features.Locomotion;
+using Project.Features.Locomotion;
 using Project.Survival;
 using UnityEngine;
 
@@ -514,6 +514,8 @@ namespace Project.Features.Climb
 
         [Header("Body weight: breathing / idle (2026-10-20w)")]
         public bool bodyWeightBreathEnabled = true;
+        [Tooltip("2026-10-28f: keep the weapon support (left) hand pinned to its Invector hand IK target after breathing / arm trail / spine offsets (they run after Invector IK and made the hand float off leftHandIK).")]
+        public bool bodyWeightLockSupportHand = true;
         [Tooltip("Resting breaths per second.")]
         [Range(0.05f, 2f)] public float bodyWeightBreathRate = 0.25f;
         [Tooltip("Resting chest rise (deg).")]

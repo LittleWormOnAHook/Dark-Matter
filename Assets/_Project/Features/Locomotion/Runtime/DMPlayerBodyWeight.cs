@@ -1,7 +1,8 @@
-﻿using Invector.vCharacterController;
+using Invector.vCharacterController;
 using Invector.vShooter;
 using Project.Features.Climb;
 using UnityEngine;
+using Project.Prototypes.Weapons;
 
 namespace Project.Features.Locomotion
 {
@@ -327,6 +328,7 @@ namespace Project.Features.Locomotion
 
             float dt = Mathf.Min(Dt, Mathf.Max(0.005f, p.bodyWeightMaxDt)); // 2026-10-24h: dt spike clamp (springs are sub-stepped)
             float S = en ? p.BodyWeightScale : 0f;
+            CaptureSupportHand(p); // 2026-10-28f: hand pose as Invector support IK left it (before our offsets)
             if (!SimActive) UpdateWeaponEvents(p);
             bool blocked = Blocked();
             bool aiming = SimActive ? Sim.Aiming : (_shooter != null && _shooter.IsAiming);
@@ -489,6 +491,32 @@ namespace Project.Features.Locomotion
             _hipsWritten = _hipsBase + hipOff;
             _hips.localPosition = _hipsWritten;
             FootPlant(p, dt, vel, blocked);
+            RestoreSupportHand();
+        }
+
+        // 2026-10-28f: Invector solves the support hand onto CurrentActiveWeapon.handIKTargetOffset in its LateUpdate (order 500).
+        // Breathing (shoulder/chest), arm trail and spine offsets here (order 3320) moved the arm afterwards -> left hand floated
+        // off the weapon leftHandIK (most visible in the scoped DM Ranged rifle form). Record the hand relative to the target
+        // before our offsets and re-solve the left arm back onto it after. The target itself is never moved.
+        private bool _shLock; private Transform _shT; private Vector3 _shPos; private Quaternion _shRot;
+        private void CaptureSupportHand(DM_ClimbDashProfile p)
+        {
+            _shLock = false;
+            if (SimActive || p == null || !p.bodyWeightLockSupportHand || _shooter == null || !_shooter.IsSupportHandIKEnabled || _shooter.supportIKWeight <= 0.001f) return;
+            if (_lUpperArm.T == null || _lLowerArm.T == null || _lHandB.T == null) return;
+            vShooterWeapon wp = _shooter.CurrentActiveWeapon;
+            if (wp == null || wp.isLeftWeapon || wp.handIKTarget == null) return;
+            Transform t = wp.handIKTargetOffset;
+            if (t == null) return;
+            _shT = t; _shPos = t.InverseTransformPoint(_lHandB.T.position); _shRot = Quaternion.Inverse(t.rotation) * _lHandB.T.rotation; _shLock = true;
+        }
+        private void RestoreSupportHand()
+        {
+            if (!_shLock || _shT == null) return;
+            Vector3 goal = _shT.TransformPoint(_shPos);
+            if (!Ok(goal)) return;
+            SolveTwoBone(_lUpperArm.T, _lLowerArm.T, _lHandB.T, goal, -transform.right);
+            _lHandB.T.rotation = _shT.rotation * _shRot;
         }
 
         private void UpdateSwingSpring(DM_ClimbDashProfile p, float dt, bool blocked, float S)
@@ -558,11 +586,12 @@ namespace Project.Features.Locomotion
         {
             if (_shooter == null) return p.bodyWeightWeaponUnarmed;
             if (_shooter.shooterManager != null && _shooter.shooterManager.rWeapon != null && _shooter.shooterManager.rWeapon.gameObject.activeInHierarchy)
-                return p.bodyWeightWeaponRanged;
+                return p.bodyWeightWeaponRanged * DMWeaponMorphRuntime.ActiveBodyWeightScale;
             bool armed = _melee != null && _melee.rightWeapon != null;
             float w = armed ? p.bodyWeightWeaponMelee : p.bodyWeightWeaponUnarmed;
             var pio = _shooter as Project.Player.Invector.PioneerShooterMeleeInput;
             if (pio != null && (pio.IsStrongMeleeDamageActive || pio.IsChargedStrongSwingActive)) w *= p.bodyWeightWeaponHeavyMult;
+            w *= DMWeaponMorphRuntime.ActiveBodyWeightScale;
             return w;
         }
 

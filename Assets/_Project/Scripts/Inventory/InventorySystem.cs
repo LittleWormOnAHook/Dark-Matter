@@ -207,6 +207,9 @@ namespace Project.Inventory
         public int AddItem(ItemData item, int amount = 1, bool autoCreditAmmoToWeapons = true)
         {
             if (item == null || amount <= 0) return 0;
+            // 2026-10-28g: picking up DM Ranged (first copy on the player) -> its first draw starts in Pistol 1.
+            if (Project.Combat.DMRanged.DMRangedMorphRuntime.IsDMRanged(item) && CountItem(item) <= 0 && GetComponent<EquipmentController>() != null)
+                Project.Combat.DMRanged.DMRangedMorphRuntime.MarkFirstDraw();
 
             if (autoCreditAmmoToWeapons && EquipmentController.IsAmmoItem(item))
             {

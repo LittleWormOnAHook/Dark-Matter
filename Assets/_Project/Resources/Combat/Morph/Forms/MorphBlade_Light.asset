@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3744cbd31b85dc44989590dc0bfa984, type: 3}
+  m_Name: MorphBlade_Light
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Prototypes.Weapons.DM_WeaponMorphProfile
+  displayName: Light
+  kind: 1
+  gunForm: 0
+  bladeType: 1
+  statsSource: {fileID: 0}
+  rangedDamage: 14
+  rangedDamageRandomRange: 4
+  rangedRange: 32
+  fireRate: 2.5
+  projectileSpreadDegrees: 1.8
+  weaponAccuracy: 70
+  magazineSize: 10
+  reloadTimeSeconds: 1.6
+  aimFovMultiplier: 0.84
+  weaponGrip: 0
+  enableScopeAsRifle: 0
+  meleeDamage: 17
+  meleeDamageRandomRange: 4
+  meleeRange: 2.3675
+  meleeBladeLength: 1.05
+  meleeCooldown: 0.55
+  criticalChance: 0.12
+  criticalDamageMultiplier: 2
+  meleeStaminaCost: 8
+  damageElement: 3
+  icon: {fileID: 21300000, guid: bef0141aa586429386625feba637f1d7, type: 3}
+  hotCrossIcon: {fileID: 21300000, guid: 18106a8de34e4e2b833084e3fcf25999, type: 3}
+  bladeMaterial: {fileID: 2100000, guid: 3c4fd9d1c42fe0440a0d503c60080a42, type: 2}
+  bladeVfx: {fileID: 0}
+  bladeColor: {r: 0.85, g: 0.95, b: 1, a: 0.85}
+  bladeEmission: 3
+  bladeLengthScale: 1
+  accentColor: {r: 0.35, g: 0.4, b: 0.45, a: 1}
+  bodyWeightScale: 1.05
+  partPoses: []

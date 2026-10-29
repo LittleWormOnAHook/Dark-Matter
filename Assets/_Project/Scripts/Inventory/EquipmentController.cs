@@ -3,6 +3,7 @@ using Project.Data;
 using Project.Interaction;
 using Project.Progression;
 using UnityEngine;
+using Project.Prototypes.Weapons;
 
 namespace Project.Inventory
 {
@@ -495,7 +496,15 @@ namespace Project.Inventory
             ClearToolbarSelection();
 
             if (activeWeaponSlot == weaponSlotIndex && selectedHotbarSlot == hotbarIndex)
+            {
+                // Morph prototypes: re-tap same slot cycles forms instead of holstering while drawn.
+                if (IsWeaponDrawn && DMWeaponMorphRuntime.TryCycleDrawnForm(this))
+                {
+                    NotifySelectionChanged();
+                    return;
+                }
                 IsWeaponDrawn = !IsWeaponDrawn;
+            }
             else
             {
                 activeWeaponSlot = weaponSlotIndex;
@@ -665,6 +674,9 @@ namespace Project.Inventory
                 return false;
 
             if (item.itemType == ItemType.Tool)
+                return false;
+
+            if (Project.Combat.DMRanged.DMRangedMorphRuntime.IsPlayerDisabledWeapon(item)) // 20261028a sci_fi_pistol retired for the player
                 return false;
 
             if (IsWeaponHotbarSlot(hotbarSlot))
@@ -1039,6 +1051,8 @@ namespace Project.Inventory
 
             int hotbarSlot = IsWeaponHotbarSlot(selectedHotbarSlot) ? selectedHotbarSlot : ActiveWeaponHotbarSlot;
             if (!IsWeaponHotbarSlot(hotbarSlot) || !HasEquippableInHotbarSlot(hotbarSlot))
+                return false;
+            if (Project.Combat.DMRanged.DMRangedMorphRuntime.IsPlayerDisabledWeapon(GetHotbarItem(hotbarSlot)))
                 return false;
 
             ClearToolbarSelection();

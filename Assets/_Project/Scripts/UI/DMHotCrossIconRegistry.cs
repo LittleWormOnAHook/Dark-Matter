@@ -77,11 +77,21 @@ namespace Project.UI
                     tint.a = entry.alpha;
                     emissionColor = entry.emissionColor;
                     emission = entry.emission;
+                    sprite = DMRangedFormIcon(item, sprite);
                     return sprite != null;
                 }
             }
 
+            sprite = DMRangedFormIcon(item, sprite);
             return sprite != null;
+        }
+
+        // 2026-10-28b: DM Ranged shows its active form's icon (P1 Pistol, RIFLE Survival_Rifle, P2/P3/SMR new icons).
+        static Sprite DMRangedFormIcon(ItemData item, Sprite fallback)
+        {
+            Sprite s = Project.Combat.DMRanged.DMRangedMorphRuntime.FormHotCrossIcon(item);
+            if (s == null) s = Project.Prototypes.Weapons.DMWeaponMorphRuntime.BladeFormHotCrossIcon(item); // 2026-10-28m MorphBlade
+            return s != null ? s : fallback;
         }
 
         public static Sprite FindCutout(ItemData item)

@@ -1,4 +1,5 @@
 using Project.Data;
+using Project.Prototypes.Weapons;
 using UnityEngine;
 
 namespace Project.Combat
@@ -17,6 +18,7 @@ namespace Project.Combat
 
         public static float ResolveFireRate(ItemData weapon, ItemData ammo)
         {
+            if (Project.Combat.DMRanged.DMRangedMorphRuntime.TryGetActiveForm(weapon, out var dmf)) return Project.Combat.DMRanged.DM_RangedMorphSettings.Instance.FireRate(dmf); // 20261028a DM Ranged form wins
             if (ammo != null && ammo.fireRate > 0.01f)
                 return ammo.fireRate;
             if (weapon != null && weapon.fireRate > 0.01f)
@@ -119,6 +121,7 @@ namespace Project.Combat
 
         public static int ResolveMagazineSize(ItemData weapon, ItemData ammo)
         {
+            if (Project.Combat.DMRanged.DMRangedMorphRuntime.TryGetActiveForm(weapon, out var dmf)) return Project.Combat.DMRanged.DM_RangedMorphSettings.Instance.Magazine(dmf, ammo); // 28j: Rifle magazine by ammo
             if (ammo != null && ammo.magazineSize > 0)
                 return ammo.magazineSize;
             if (weapon != null && weapon.magazineSize > 0)
@@ -128,6 +131,7 @@ namespace Project.Combat
 
         public static float ResolveReloadSeconds(ItemData weapon, ItemData ammo)
         {
+            if (Project.Combat.DMRanged.DMRangedMorphRuntime.TryGetActiveForm(weapon, out var dmf)) return Project.Combat.DMRanged.DM_RangedMorphSettings.Instance.Reload(dmf);
             if (ammo != null && ammo.reloadTimeSeconds > 0.01f)
                 return ammo.reloadTimeSeconds;
             if (weapon != null && weapon.reloadTimeSeconds > 0.01f)
@@ -137,8 +141,13 @@ namespace Project.Combat
 
         public static float ResolveRange(ItemData weapon, ItemData ammo)
         {
+            if (Project.Combat.DMRanged.DMRangedMorphRuntime.TryGetActiveForm(weapon, out var dmf)) return Project.Combat.DMRanged.DM_RangedMorphSettings.Instance.Range(dmf);
             if (ammo != null && ammo.rangedRange > 0.01f)
                 return ammo.rangedRange;
+            if (weapon != null
+                && DMWeaponMorphRuntime.TryApplyRangedOverrides(weapon, out _, out _, out float morphRange, out _, out _, out _, out _, out _, out _)
+                && morphRange > 0.01f)
+                return morphRange;
             if (weapon != null && weapon.rangedRange > 0.01f)
                 return weapon.rangedRange;
             return DefaultRange;
@@ -153,16 +162,29 @@ namespace Project.Combat
             return DefaultProjectileSpeed;
         }
 
-        public static float ResolveShotDamage(ItemData weapon, ItemData ammo)
+        public static float ResolveShotDamage(ItemData weapon, ItemData ammo) => ResolveShotDamageCore(weapon, ammo) * DMRangedDamageMul(weapon);
+
+        static float DMRangedDamageMul(ItemData weapon) => Project.Combat.DMRanged.DMRangedMorphRuntime.TryGetActiveForm(weapon, out var dmf) ? Project.Combat.DMRanged.DM_RangedMorphSettings.Instance.DamageMul(dmf) : 1f;
+        static float DMRangedRecoilMul(ItemData weapon) => Project.Combat.DMRanged.DMRangedMorphRuntime.TryGetActiveForm(weapon, out var dmf) ? Project.Combat.DMRanged.DM_RangedMorphSettings.Instance.RecoilMul(dmf) : 1f;
+
+        private static float ResolveShotDamageCore(ItemData weapon, ItemData ammo)
         {
             if (ammo != null && ammo.rangedDamage > 0.01f)
                 return ammo.RollRangedDamage();
+            if (weapon != null
+                && DMWeaponMorphRuntime.TryApplyRangedOverrides(weapon, out float dmg, out float dmgRand, out _, out _, out _, out _, out _, out _, out _))
+            {
+                float min = Mathf.Max(1f, dmg);
+                return dmgRand <= 0f ? min : Random.Range(min, Mathf.Max(min, dmg + dmgRand));
+            }
             if (weapon != null)
                 return weapon.RollRangedDamage();
             return 1f;
         }
 
-        public static float ResolveAverageDamage(ItemData weapon, ItemData ammo)
+        public static float ResolveAverageDamage(ItemData weapon, ItemData ammo) => ResolveAverageDamageCore(weapon, ammo) * DMRangedDamageMul(weapon);
+
+        private static float ResolveAverageDamageCore(ItemData weapon, ItemData ammo)
         {
             if (ammo != null && ammo.rangedDamage > 0.01f)
                 return ammo.GetAverageRangedDamage();
@@ -171,7 +193,9 @@ namespace Project.Combat
             return 1f;
         }
 
-        public static float ResolveMinDamage(ItemData weapon, ItemData ammo)
+        public static float ResolveMinDamage(ItemData weapon, ItemData ammo) => ResolveMinDamageCore(weapon, ammo) * DMRangedDamageMul(weapon);
+
+        private static float ResolveMinDamageCore(ItemData weapon, ItemData ammo)
         {
             ItemData source = ammo != null && ammo.rangedDamage > 0.01f ? ammo : weapon;
             if (source == null)
@@ -191,6 +215,14 @@ namespace Project.Combat
         /// then the weapon, then grip defaults.
         /// </summary>
         public static void ResolveRecoilKick(ItemData weapon, ItemData ammo, bool isRifle, out float vertical, out float horizontal)
+        {
+            ResolveRecoilKickCore(weapon, ammo, isRifle, out vertical, out horizontal);
+            float m = DMRangedRecoilMul(weapon);
+            vertical *= m;
+            horizontal *= m;
+        }
+
+        private static void ResolveRecoilKickCore(ItemData weapon, ItemData ammo, bool isRifle, out float vertical, out float horizontal)
         {
             if (TryResolveRifleProfileKick(ammo, isRifle, out vertical, out horizontal))
                 return;

@@ -35,15 +35,31 @@ namespace Project.Combat
         [Range(0.02f, 2f)] public float scopeInSeconds = 0.3f;
         [Range(0.02f, 2f)] public float scopeOutSeconds = 0.15f;
 
+        public enum ScopedCadencePreset { Custom, Subtle, Default, Extreme }
         [Header("Fire interval (seconds per scoped single shot)")]
+        [Tooltip("2026-10-28h: scoped cadence preset (interval + post-shot wait, total 1-3 s rule). Subtle = 3 s rifle / 2.5 s pistol, Default = 2.33 s / 1.5 s, Extreme = 1 s / 1 s. Picking one writes the fields below; editing them by hand is fine (Custom).")]
+        public ScopedCadencePreset scopedCadencePreset = ScopedCadencePreset.Default;
+        [SerializeField, HideInInspector] ScopedCadencePreset lastScopedCadencePreset = ScopedCadencePreset.Default;
         [Tooltip("Minimum seconds between scoped shots (burst is disabled while ADS). Skills and min interval apply after ammo ±10%.")]
-        [Range(0.2f, 5f)] public float rifleScopedFireInterval = 2.5f;
-        [Range(0.2f, 5f)] public float pistolScopedFireInterval = 2f;
+        [Range(0.05f, 10f)] public float rifleScopedFireInterval = 2.5f; // 28h: wide range
+        [Range(0.05f, 10f)] public float pistolScopedFireInterval = 2f;
         [Tooltip("Scoped Cadence skill never goes below this.")]
-        [Range(0.1f, 5f)] public float minScopedFireInterval = 1f;
+        [Range(0.05f, 10f)] public float minScopedFireInterval = 1f;
         [Tooltip("Extra wait after each scoped shot, added to the fire interval above (0 = interval alone).")]
-        [Range(0f, 5f)] public float rifleScopedPostShotWaitSeconds;
-        [Range(0f, 5f)] public float pistolScopedPostShotWaitSeconds;
+        [Range(0f, 10f)] public float rifleScopedPostShotWaitSeconds;
+        [Range(0f, 10f)] public float pistolScopedPostShotWaitSeconds;
+
+        void OnValidate()
+        {
+            if (scopedCadencePreset == lastScopedCadencePreset) return;
+            lastScopedCadencePreset = scopedCadencePreset;
+            switch (scopedCadencePreset)
+            {
+                case ScopedCadencePreset.Subtle: rifleScopedFireInterval = 2.5f; rifleScopedPostShotWaitSeconds = 0.5f; pistolScopedFireInterval = 2f; pistolScopedPostShotWaitSeconds = 0.5f; minScopedFireInterval = 1f; break;
+                case ScopedCadencePreset.Default: rifleScopedFireInterval = 1.331f; rifleScopedPostShotWaitSeconds = 1f; pistolScopedFireInterval = 0.96f; pistolScopedPostShotWaitSeconds = 0.5f; minScopedFireInterval = 1f; break;
+                case ScopedCadencePreset.Extreme: rifleScopedFireInterval = 1f; rifleScopedPostShotWaitSeconds = 0f; pistolScopedFireInterval = 1f; pistolScopedPostShotWaitSeconds = 0f; minScopedFireInterval = 1f; break;
+            }
+        }
 
         [Header("Damage (scoped hits on enemies; base damage comes from the ammo profile)")]
         [Range(1f, 5f)] public float scopedHeadMultiplier = 2f;

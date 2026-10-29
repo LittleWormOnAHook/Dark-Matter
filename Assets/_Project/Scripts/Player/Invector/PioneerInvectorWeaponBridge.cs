@@ -9,6 +9,7 @@ using Invector.vShooter;
 using Project.Combat;
 using Project.Core;
 using Project.Data;
+using Project.Prototypes.Weapons;
 using Project.Interaction;
 using Project.Inventory;
 using UnityEngine;
@@ -717,6 +718,8 @@ namespace Project.Player.Invector
                 ItemData item = k < 0 ? equipped : _equipment.GetHotbarItem(_equipment.GetWeaponHotbarSlot(k));
                 if (item == null || !seen.Add(item) || item == drawn)
                     continue;
+                if (Project.Combat.DMRanged.DMRangedMorphRuntime.IsPlayerDisabledWeapon(item)) // 2026-10-28g retired for the player
+                    continue;
 
                 if (item.itemType == ItemType.MeleeWeapon)
                 {
@@ -731,6 +734,8 @@ namespace Project.Player.Invector
                 else if (item.IsRangedWeapon)
                 {
                     if (!TryGetRangedSlot(item, out RangedWeaponSlot rs) || rs.holsteredInstance == null)
+                        continue;
+                    if (SharesActiveDrawnSlot(rs)) // 2026-10-28g: never hide the drawn weapon's holder via another item mapped to it
                         continue;
                     HolsterLocation loc = ResolveHolsterLocation(rs.holsteredInstance, item);
                     bool show = !p.holsterOneRangedPerLocation || loc == HolsterLocation.Other || usedRanged.Add(loc);
@@ -894,6 +899,8 @@ namespace Project.Player.Invector
             slot = null;
             if (item == null)
                 return false;
+            if (Project.Combat.DMRanged.DMRangedMorphRuntime.IsPlayerDisabledWeapon(item)) // 2026-10-28n: retired melee gets no player slot
+                return false;
 
             if (!_meleeSlotLookup.TryGetValue(item, out slot) || slot == null)
             {
@@ -936,10 +943,20 @@ namespace Project.Player.Invector
             return null;
         }
 
+        // 2026-10-28g: true when this slot reuses the drawn/holster holder of the currently active (drawn) item.
+        private bool SharesActiveDrawnSlot(RangedWeaponSlot rs)
+        {
+            if (rs == null || _activeItem == null || rs.item == _activeItem) return false;
+            if (!_rangedSlotLookup.TryGetValue(_activeItem, out RangedWeaponSlot a) || a == null || a == rs) return false;
+            return (rs.drawnInstance != null && rs.drawnInstance == a.drawnInstance) || (rs.holsteredInstance != null && rs.holsteredInstance == a.holsteredInstance);
+        }
+
         private bool TryGetRangedSlot(ItemData item, out RangedWeaponSlot slot)
         {
             slot = null;
             if (item == null)
+                return false;
+            if (Project.Combat.DMRanged.DMRangedMorphRuntime.IsPlayerDisabledWeapon(item)) // 2026-10-28g: retired items get no player slot (DM Ranged owns the holders)
                 return false;
 
             if (!_rangedSlotLookup.TryGetValue(item, out slot) || slot == null)
@@ -960,6 +977,9 @@ namespace Project.Player.Invector
             if (slot.holsteredInstance == null)
                 slot.holsteredInstance = FindNamedSlotInstance(this, transform, "Holstered_", item);
 
+            if (Project.Combat.DMRanged.DMRangedMorphRuntime.IsDMRanged(item))
+                BindDMRangedSlot(slot);
+
             if (slot.drawnInstance == null && slot.holsteredInstance == null)
             {
                 slot = null;
@@ -975,6 +995,36 @@ namespace Project.Player.Invector
         /// Prefers the authored Pioneer <c>Muzzle</c> on the visible mesh — never the hidden
         /// Invector <c>muzzle</c> that sits slightly below the barrel.
         /// </summary>
+        /// <summary>20261028a: DM Ranged lives inside Anthony's placed slots (any Drawn_/Holstered_ ancestor).
+        /// Only adds the driver component; never moves or re-parents the placed instance.</summary>
+        private void BindDMRangedSlot(RangedWeaponSlot slot)
+        {
+            if (slot == null || !Application.isPlaying)
+                return;
+            Animation[] anims = GetComponentsInChildren<Animation>(true);
+            for (int i = 0; i < anims.Length; i++)
+            {
+                Transform t = anims[i] != null ? anims[i].transform : null;
+                if (!Project.Combat.DMRanged.DMRangedMorphRuntime.IsDMRangedVisual(t))
+                    continue;
+                if (t.GetComponent<Project.Combat.DMRanged.DMRangedMorphDriver>() == null)
+                    t.gameObject.AddComponent<Project.Combat.DMRanged.DMRangedMorphDriver>();
+                for (Transform p = t.parent; p != null && p != transform; p = p.parent)
+                {
+                    if (p.name.StartsWith("Drawn_", StringComparison.Ordinal))
+                    {
+                        if (slot.drawnInstance == null) { slot.drawnInstance = p.gameObject; slot.cachedMuzzle = null; }
+                        break;
+                    }
+                    if (p.name.StartsWith("Holstered_", StringComparison.Ordinal))
+                    {
+                        if (slot.holsteredInstance == null) slot.holsteredInstance = p.gameObject;
+                        break;
+                    }
+                }
+            }
+        }
+
         public bool TryGetActiveDrawnMuzzle(ItemData item, out Transform muzzle)
         {
             muzzle = null;
@@ -983,6 +1033,13 @@ namespace Project.Player.Invector
 
             if (!slot.drawnInstance.activeInHierarchy)
                 return false;
+
+            if (Project.Combat.DMRanged.DMRangedMorphRuntime.IsDMRanged(item) && Project.Combat.DMRanged.DMRangedMorphRuntime.ActiveMuzzle != null)
+            {
+                muzzle = Project.Combat.DMRanged.DMRangedMorphRuntime.ActiveMuzzle; // per-form anchor following the animated barrel
+                slot.cachedMuzzle = muzzle;
+                return true;
+            }
 
             if (TryPickPreferredDrawnMuzzle(slot.drawnInstance.transform, out muzzle))
             {
@@ -1650,6 +1707,10 @@ namespace Project.Player.Invector
             GameObject visualPrefab = item.heldPrefab != null ? item.heldPrefab : item.worldPrefab;
             if (visualPrefab == null || holstered == null)
                 return;
+            if (Project.Combat.DMRanged.DMRangedMorphRuntime.ContainsDMRangedVisual(holstered))
+                return; // 20261028a never strip Anthony's placed DM Ranged
+            if (holstered.GetComponentInChildren<Project.Prototypes.Weapons.DMWeaponMorphController>(true) != null)
+                return; // 2026-10-28l never strip the authored MorphBlade holder
 
             if (HolsterMeshesMatchReference(holstered, visualPrefab))
                 return;
@@ -2859,6 +2920,20 @@ namespace Project.Player.Invector
                         slot.holsteredInstance.SetActive(false);
                 }
             }
+
+            // 2026-10-28n: dynamic (non-serialized) slots such as MorphBlade were never hidden, so Drawn_MorphBlade stayed in hand under DM Ranged.
+            foreach (KeyValuePair<ItemData, MeleeWeaponSlot> pair in _meleeSlotLookup)
+            {
+                if (pair.Value == null) continue;
+                if (pair.Value.drawnInstance != null) pair.Value.drawnInstance.SetActive(false);
+                if (pair.Value.holsteredInstance != null) pair.Value.holsteredInstance.SetActive(false);
+            }
+            foreach (KeyValuePair<ItemData, RangedWeaponSlot> pair in _rangedSlotLookup)
+            {
+                if (pair.Value == null) continue;
+                if (pair.Value.drawnInstance != null) pair.Value.drawnInstance.SetActive(false);
+                if (pair.Value.holsteredInstance != null) pair.Value.holsteredInstance.SetActive(false);
+            }
         }
 
         private void HideRuntimeGeneratedWeaponsForItem(ItemData item)
@@ -2908,6 +2983,16 @@ namespace Project.Player.Invector
                     ammoItem = ammoState.GetLoadedAmmoItem(equipment.ActiveWeaponHotbarSlot);
 
                 PioneerInvectorRecoilUtility.ApplyRangedTiming(shooterWeapon, item, ammoItem);
+                if (DMWeaponMorphRuntime.TryApplyRangedOverrides(item, out _, out _, out _,
+                        out float fireRate, out _, out _, out int mag, out float reload, out _))
+                {
+                    if (fireRate > 0.01f)
+                        shooterWeapon.shootFrequency = 1f / fireRate;
+                    if (mag > 0)
+                        shooterWeapon.clipSize = mag;
+                    if (reload > 0.01f)
+                        shooterWeapon.reloadTime = reload;
+                }
             }
 
             vMeleeWeapon meleeWeapon = instance.GetComponentInChildren<vMeleeWeapon>(true);
@@ -2916,7 +3001,10 @@ namespace Project.Player.Invector
                 if (meleeWeapon.damage == null)
                     meleeWeapon.damage = new vDamage();
 
-                meleeWeapon.damage.damageValue = Mathf.RoundToInt(item.GetAverageMeleeDamage());
+                float meleeDmg = item.GetAverageMeleeDamage();
+                if (DMWeaponMorphRuntime.TryApplyMeleeOverrides(item, out float md, out _, out _, out _, out _))
+                    meleeDmg = md;
+                meleeWeapon.damage.damageValue = Mathf.RoundToInt(meleeDmg);
             }
         }
     }

@@ -17,7 +17,7 @@ MonoBehaviour:
   autoSpawnController: 1
   onlyInScenesWithJupiter: 1
   skyBodyShader: {fileID: 4800000, guid: a32e9106cf6171c48a524cba2fe54c0b, type: 3}
-  debugHourOverride: 13.2
+  debugHourOverride: 7.04
   startHour: 11.6
   sunLightName: Day DirectionalLight
   disableOtherDirectionalLights: 1
@@ -28,7 +28,7 @@ MonoBehaviour:
   sunHorizonDesaturate: 0.35
   sunMaxLux: 26788
   shadeFillEnabled: 1
-  shadeFillLux: 2494
+  shadeFillLux: 2078
   shadeFillElevationDeg: 6
   shadeFillColor: {r: 0.3509434, g: 0.17149875, b: 0.24757197, a: 1}
   orbitPoleTiltDeg: -0.8
@@ -47,11 +47,14 @@ MonoBehaviour:
   skyDistance: 6998
   jupiterSpinHours: 10.9
   jupiterTiltEuler: {x: 8, y: 0, z: 0}
-  jupiterBrightness: 0.69
-  jupiterLimbDarkening: 0.752
-  jupiterRimColor: {r: 0.90188676, g: 0.89215314, b: 0.6585475, a: 1}
+  jupiterBrightness: 1.48
+  jupiterLimbDarkening: 0.131
+  jupiterRimColor: {r: 0.97853035, g: 1, b: 0.91886795, a: 1}
   jupiterEclipseRimLux: 3412
-  jupiterShineColor: {r: 0.9529412, g: 0.87429816, b: 0.7607843, a: 1}
+  jupiterRimSoftness: 4
+  skyBodyEdgeSoft: 0.035
+  skyBodySphereSegments: 64
+  jupiterShineColor: {r: 0.7853827, g: 0.87747157, b: 0.93962264, a: 1}
   jupiterShineLux: 103
   eclipseJupiterShineLux: 129
   otherMoonPeriodsHours:
@@ -82,7 +85,7 @@ MonoBehaviour:
     sizeMultiplier: 7.34
     startPhaseDeg: 91
     colorA: {r: 0.16226411, g: 0.048679214, b: 0.057294063, a: 1}
-    colorB: {r: 0.3962264, g: 0.29044142, b: 0.18465644, a: 1}
+    colorB: {r: 0.7660377, g: 0.53261304, b: 0.2991883, a: 1}
     noiseScale: 2.5
     lineae: 0.25
     craterSpots: 0.3
@@ -136,7 +139,7 @@ MonoBehaviour:
   polishEnabled: 1
   ssaoRadius: 1.137
   ssaoMaxRadiusPixels: 31
-  contactShadowLength: 0.232
+  contactShadowLength: 0.489
   sunContactShadows: 1
   microShadowOpacity: 0.476
   shadowMaxDistance: 150
@@ -146,7 +149,7 @@ MonoBehaviour:
   splitToneStrength: 0.291
   splitToneShadows: {r: 0.42, g: 0.52, b: 0.66, a: 1}
   splitToneHighlights: {r: 0.66, g: 0.55, b: 0.42, a: 1}
-  vignetteIntensity: 0.288
+  vignetteIntensity: 0.406
   eclipseFloorEnabled: 1
   eclipseMinAmbient: 0.893
   eclipseFillLux: 373
@@ -201,10 +204,10 @@ MonoBehaviour:
   nightDomeTerrainMargin: 500
   nightDomeMinRadius: 0
   auroraEnabled: 1
-  auroraIntensity: 0.035
+  auroraIntensity: 0.4
   auroraColorLow: {r: 0.114575684, g: 1, b: 0, a: 1}
   auroraColorHigh: {r: 0.8980392, g: 0.22878446, b: 0.19999997, a: 1}
-  auroraSpeed: 0.077
+  auroraSpeed: 0.047
   auroraHeight: 0.723
   auroraCoverage: 0.614
   auroraDayVisibility: 0
@@ -214,7 +217,7 @@ MonoBehaviour:
   auroraHeightVariationDeg: 13.1
   auroraHeightNoiseScale: 3.63
   auroraBottomSoftDeg: 21.1
-  auroraTopSoftDeg: 5.1
+  auroraTopSoftDeg: 15.2
   auroraAzimuthSpanDeg: 360
   auroraAzimuthCenterDeg: 0
   auroraAzimuthEdgeSoftDeg: 112.8

@@ -7,6 +7,7 @@ using Invector;
 using Project.Combat;
 using Invector.IK;
 using Project.Building;
+using Project.Prototypes.Weapons;
 using Project.Core;
 using Project.Data;
 using Project.Features.Jetpack;
@@ -444,7 +445,7 @@ namespace Project.Player.Invector
 
         public override void AimInput()
         {
-            if (cc == null || cc.ragdolled)
+            if (cc == null || cc.ragdolled || DMWeaponMorphRuntime.IsMorphing) // 20261028a: no aim mid-morph
             {
                 isAimingByInput = false;
                 return;
@@ -712,7 +713,7 @@ namespace Project.Player.Invector
 
         public override void ReloadInput()
         {
-            if (cc == null || cc.customAction || cc.ragdolled)
+            if (cc == null || cc.customAction || cc.ragdolled || DMWeaponMorphRuntime.IsMorphing) // 20261028a
                 return;
 
             if (_inputBridge != null && _inputBridge.ShouldLockGameplayInput())
@@ -1049,7 +1050,7 @@ namespace Project.Player.Invector
         /// </summary>
         public override void MeleeWeakAttackInput()
         {
-            if (DMBuildingMode.BlocksWeaponFireInput)
+            if (DMBuildingMode.BlocksWeaponFireInput || DMWeaponMorphRuntime.BlocksWeaponFire)
                 return;
 
             if (IsDrawnMeleeWeaponActive())
@@ -1063,7 +1064,7 @@ namespace Project.Player.Invector
         /// </summary>
         public override void MeleeStrongAttackInput()
         {
-            if (DMBuildingMode.BlocksWeaponFireInput)
+            if (DMBuildingMode.BlocksWeaponFireInput || DMWeaponMorphRuntime.BlocksWeaponFire)
                 return;
 
             if (IsDrawnMeleeWeaponActive())
@@ -3328,7 +3329,7 @@ namespace Project.Player.Invector
 
         public override void ShotInput()
         {
-            if (DMBuildingMode.BlocksWeaponFireInput)
+            if (DMBuildingMode.BlocksWeaponFireInput || DMWeaponMorphRuntime.BlocksWeaponFire)
             {
                 shootCountA = 0;
                 return;

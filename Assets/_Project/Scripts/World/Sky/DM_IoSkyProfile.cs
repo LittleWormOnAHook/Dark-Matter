@@ -27,7 +27,7 @@ namespace Project.World.Sky
     }
 
     /// <summary>
-    /// 2026-10-24ai: Io sky + orbit (Slice 1). Sun, eclipse, Jupiter and the Galilean moons all follow the 30 h Io clock.
+    /// 2026-10-24ai: Io sky + orbit (Slice 1). // 2026-10-26o nudge Sun, eclipse, Jupiter and the Galilean moons all follow the 30 h Io clock.
     /// Studio: World > Sky &amp; Orbit.
     /// </summary>
     [CreateAssetMenu(fileName = "DM_IoSkyProfile", menuName = "Dark Matter/World/Io Sky Profile")]
@@ -133,6 +133,12 @@ namespace Project.World.Sky
         [ColorUsage(false, true)] public Color jupiterRimColor = new Color(1f, 0.72f, 0.45f, 1f);
         [Tooltip("Backlit atmosphere rim during eclipse (nits-ish).")]
         [Range(0f, 5000f)] public float jupiterEclipseRimLux = 400f;
+        [Tooltip("2026-10-26o: rim glow falloff power (higher = tighter band). Analytic limb; Studio softens jagged rim.")]
+        [Range(0.5f, 16f)] public float jupiterRimSoftness = 4f;
+        [Tooltip("2026-10-26o: soft alpha at the silhouette (ndv). Hides sphere faceting; 0 = hard edge.")]
+        [Range(0f, 0.25f)] public float skyBodyEdgeSoft = 0.035f;
+        [Tooltip("2026-10-26o: longitude segments for procedural UV sphere (Jupiter + moons). Higher = smoother silhouette. Unity default ~24.")]
+        [Range(24, 96)] public int skyBodySphereSegments = 64;
 
         [Header("Jupiter-lit sky")]
         public Color jupiterShineColor = new Color(1f, 0.86f, 0.68f, 1f);
@@ -619,7 +625,7 @@ namespace Project.World.Sky
             "enableNightShadow", "nightShadowStrength", "nightShadowSoftnessDeg", "nightShadowDirectionMode",
             "nightShadowCustomYawDeg", "nightShadowCustomPitchDeg", "nightShadowResolutionTier", "nightShadowMaxDistance",
             "eclipseSunRemaining", "eclipseAmbientMultiplier", "jupiterShineColor", "jupiterShineLux",
-            "eclipseJupiterShineLux", "jupiterEclipseRimLux", "jupiterBrightness", "jupiterLimbDarkening", "jupiterRimColor",
+            "eclipseJupiterShineLux", "jupiterEclipseRimLux", "jupiterBrightness", "jupiterLimbDarkening", "jupiterRimColor", "jupiterRimSoftness", "skyBodyEdgeSoft",
             "eclipseFloorEnabled", "eclipseMinAmbient", "eclipseFillLux", "eclipseExposureLimitMin",
             "eclipseShadowsEnabled", "eclipseShadowStrength", "eclipseShadowSoftnessDeg",
             "nightSkyDitherEnabled", "nightSkyDitherAmount", "nightSkySoftExpPower"

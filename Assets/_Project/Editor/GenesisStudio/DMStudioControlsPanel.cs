@@ -50,6 +50,12 @@ namespace Project.EditorTools.GenesisStudio
                 "Plain Attack on a low-HP enemy is a normal sped-up swing; Use alone still interacts when not in the combo.",
                 MessageType.Info);
 
+            EditorGUILayout.HelpBox(
+                "Weapon swap / DM Ranged forms (2026-10-28d)\n" +
+                "KBM: Tab (or Shift+Tab) tap = next hotbar weapon (melee, mining tool, DM Ranged...), hold 0.5 s = arm focused. 1 = DM Ranged form step.\n" +
+                "Gamepad: D-pad Down tap = next hotbar weapon, hold 0.5 s = arm (not in Building mode, where D-pad Down cancels move). Y tap = DM Ranged form step while DM Ranged is drawn (no swap). Hold Y 0.5 s = arm focused weapon.",
+                MessageType.Info);
+
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("Authority asset", GUILayout.Width(100f));
             EditorGUILayout.ObjectField(asset, typeof(InputActionAsset), false);
@@ -62,10 +68,49 @@ namespace Project.EditorTools.GenesisStudio
             }
             EditorGUILayout.EndHorizontal();
 
+            DrawHolsterAll();
             DrawGamepadLook();
 
             if (!string.IsNullOrEmpty(status))
                 EditorGUILayout.LabelField(status, EditorStyles.miniLabel);
+        }
+
+        // 2026-10-28p: hold Tab / Y = holster all (threshold on DM_CombatCoreProfile).
+        private static readonly (string name, float value)[] HolsterPresets = { ("Snappy", 0.3f), ("Default", 0.5f), ("Relaxed", 0.8f), ("Deliberate", 1.2f), ("Very Long", 2f) };
+
+        private static void DrawHolsterAll()
+        {
+            EditorGUILayout.Space(8f);
+            EditorGUILayout.LabelField("Holster all (2026-10-28p)", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                "HOLD Tab (KBM) / HOLD Y (gamepad) with any weapon drawn = holster ALL (MorphBlade keeps its blade, DM Ranged morphs to Pistol 1 and remembers its form, tools).\n" +
+                "Nothing drawn: hold arms the focused weapon (as before). Tap still cycles focus (Y tap = DM Ranged form step while drawn). D-pad Down hold always arms.\n" +
+                "Input action: Player/HolsterAll (Tab, Y) in InputSystem_Actions; threshold below is the authority.", MessageType.None);
+            Project.Combat.DM_CombatCoreProfile prof = Project.Combat.DM_CombatCoreProfile.Live;
+            if (prof == null)
+            {
+                EditorGUILayout.HelpBox("DM_CombatCoreProfile not found in Resources.", MessageType.Warning);
+                return;
+            }
+            EditorGUI.BeginChangeCheck();
+            bool on = EditorGUILayout.Toggle(new GUIContent("Hold = holster all", "Off = hold Tab/Y always arms (pre-28p)."), prof.holdHolstersAllWhenDrawn);
+            float sec = EditorGUILayout.Slider(new GUIContent("Hold threshold (s)", "Tab / Y hold time (0.15-3 s). Also the arm-on-hold time."), prof.weaponHolsterAllHoldSeconds, 0.15f, 3f);
+            if (EditorGUI.EndChangeCheck())
+            {
+                Undo.RecordObject(prof, "Holster all");
+                prof.holdHolstersAllWhenDrawn = on;
+                prof.weaponHolsterAllHoldSeconds = sec;
+                EditorUtility.SetDirty(prof);
+            }
+            EditorGUILayout.BeginHorizontal();
+            foreach (var p in HolsterPresets)
+                if (GUILayout.Button(p.name + " " + p.value.ToString("0.0#") + "s", EditorStyles.miniButton))
+                {
+                    Undo.RecordObject(prof, "Holster all preset");
+                    prof.weaponHolsterAllHoldSeconds = p.value;
+                    EditorUtility.SetDirty(prof);
+                }
+            EditorGUILayout.EndHorizontal();
         }
 
         // 2026-10-25b: gamepad look (PlayerPrefs via GameSettings; same values as in-game Settings > Game Options).

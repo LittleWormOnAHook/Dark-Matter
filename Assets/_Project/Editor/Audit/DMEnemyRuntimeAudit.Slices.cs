@@ -397,12 +397,12 @@ namespace Project.EditorTools.Audit
         }
 
         // ------------------------------------------------------------ 2026-10-26a melee contact diagnostics
-        private static int _dFrames, _dCanApply, _dOverlapHitbox, _dOverlapAny, _dTriggers, _dDamaged;
+        private static int _dFrames, _dCanApply, _dOverlapHitbox, _dOverlapAny, _dTriggers; // 28k: removed unused _dDamaged (CS0414)
         private static float _dMinDist = 99f;
         private static readonly HashSet<string> _dLayers = new HashSet<string>();
         private static readonly Collider[] _dBuf = new Collider[48];
 
-        private static void DiagReset() { _dFrames = _dCanApply = _dOverlapHitbox = _dOverlapAny = _dTriggers = _dDamaged = 0; _dMinDist = 99f; _dLayers.Clear(); }
+        private static void DiagReset() { _dFrames = _dCanApply = _dOverlapHitbox = _dOverlapAny = _dTriggers = 0; _dMinDist = 99f; _dLayers.Clear(); }
 
         private static void DiagSample(EnemyHealth eh)
         {

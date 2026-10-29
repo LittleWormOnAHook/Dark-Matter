@@ -2,6 +2,7 @@ using Project.Combat;
 using Project.Core;
 using Project.Data;
 using Project.Inventory;
+using Project.Prototypes.Weapons;
 using Project.Player;
 using Project.Player.Invector;
 using Project.UI;
@@ -49,6 +50,9 @@ namespace Project.Interaction
             // Keyboard/gamepad Tab must not be blocked by UITK EventSystem.IsPointerOverGameObject
             // (fullscreen/transparent HUD panels often report "pointer over UI" permanently).
             if (playerController != null && playerController.BlocksCombatInput)
+                return;
+
+            if (DMWeaponMorphRuntime.TryCycleDrawnForm(equipment))
                 return;
 
             equipment.SwitchActiveWeapon();

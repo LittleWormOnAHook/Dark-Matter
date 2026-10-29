@@ -22,6 +22,14 @@ namespace Project.UI
             if (item == null)
                 return null;
 
+            // 2026-10-28b: DM Ranged shows its active form's icon (not cached; item.icon untouched).
+            Sprite formIcon = Project.Combat.DMRanged.DMRangedMorphRuntime.FormIcon(item);
+            if (formIcon != null)
+                return formIcon;
+            formIcon = Project.Prototypes.Weapons.DMWeaponMorphRuntime.BladeFormIcon(item); // 2026-10-28m MorphBlade form
+            if (formIcon != null)
+                return formIcon;
+
             EntityId id = item.GetEntityId();
             if (iconByItemId.TryGetValue(id, out Sprite cached) && cached != null)
                 return cached;

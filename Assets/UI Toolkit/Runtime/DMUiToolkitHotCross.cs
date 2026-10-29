@@ -527,6 +527,10 @@ namespace Project.UI
                 ammoState.OnAmmoChanged -= HandleAmmoChanged;
                 ammoState.OnAmmoChanged += HandleAmmoChanged;
             }
+
+            // 2026-10-28c: DM Ranged form change (key 1 / Tab / Y) refreshes the weapon icon immediately.
+            Project.Combat.DMRanged.DMRangedMorphRuntime.FormChanged -= MarkVisualsDirty;
+            Project.Combat.DMRanged.DMRangedMorphRuntime.FormChanged += MarkVisualsDirty;
         }
 
         private void UnbindInventoryEvents()
@@ -541,6 +545,7 @@ namespace Project.UI
 
             if (ammoState != null)
                 ammoState.OnAmmoChanged -= HandleAmmoChanged;
+            Project.Combat.DMRanged.DMRangedMorphRuntime.FormChanged -= MarkVisualsDirty;
         }
 
         private void HandleInventoryChanged()

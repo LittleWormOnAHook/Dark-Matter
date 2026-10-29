@@ -1,5 +1,6 @@
 // 2026-10-24ai: Jupiter + moons in the Io sky. Lit only by the sun direction/lux set by DMIoSkyController
 // (_DMSkySunDirWS), so phases are correct day or night. Optional procedural surface for the moons.
+// 2026-10-26o: analytic sphere normals + soft limb edge (AA) + Studio rim softness; soft alpha at silhouette.
 Shader "DM/IoSkyBody"
 {
     Properties
@@ -17,11 +18,13 @@ Shader "DM/IoSkyBody"
         _RimLux("Rim Lux", Float) = 0
         _RimSunBias("Rim Sun Bias", Float) = 3
         _LimbDarkening("Limb Darkening", Range(0,1)) = 0.35
+        _RimSoftness("Rim Softness", Range(0.5,16)) = 4
+        _EdgeSoft("Edge Soft", Range(0,0.25)) = 0.035
     }
 
     SubShader
     {
-        Tags { "RenderPipeline" = "HDRenderPipeline" "RenderType" = "Opaque" "Queue" = "Geometry" }
+        Tags { "RenderPipeline" = "HDRenderPipeline" "RenderType" = "Transparent" "Queue" = "Transparent" }
 
         Pass
         {
@@ -30,6 +33,7 @@ Shader "DM/IoSkyBody"
             Cull Back
             ZWrite On
             ZTest LEqual
+            Blend SrcAlpha OneMinusSrcAlpha
 
             HLSLPROGRAM
             #pragma target 4.5
@@ -57,6 +61,8 @@ Shader "DM/IoSkyBody"
                 float _RimLux;
                 float _RimSunBias;
                 float _LimbDarkening;
+                float _RimSoftness;
+                float _EdgeSoft;
             CBUFFER_END
 
             float4 _DMSkySunDirWS; // xyz = toward sun, w = sun lux
@@ -116,8 +122,10 @@ Shader "DM/IoSkyBody"
 
             float4 Frag(Varyings i) : SV_Target
             {
-                float3 n = normalize(i.normalWS);
+                // 2026-10-26o: analytic unit-sphere normal from OS position (smooth limb even on coarse meshes).
                 float3 d = normalize(i.positionOS);
+                float3 nA = normalize(TransformObjectToWorldDir(d));
+                float3 n = normalize(lerp(normalize(i.normalWS), nA, 0.92));
 
                 float3 tex = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv).rgb;
                 float f = DMFbm(d * _NoiseScale);
@@ -132,13 +140,22 @@ Shader "DM/IoSkyBody"
                 float ndl = saturate(dot(n, L));
                 float3 V = GetWorldSpaceNormalizeViewDir(i.positionRWS);
                 float ndv = saturate(dot(n, V));
+                float ndvA = saturate(dot(nA, V));
                 // 2026-10-26n: floor limb so the rim never goes fully black (was reading as a dark halo on moons).
                 float limb = lerp(1.0, max(ndv, 0.28), _LimbDarkening);
 
                 float3 lit = albedo * (ndl * _DMSkySunDirWS.w * _Brightness * limb + _AmbientLux) / PI;
-                float rim = pow(1.0 - ndv, 4.0) * saturate(dot(-V, L) * 0.5 + 0.5) * pow(saturate(dot(n, L) * 0.5 + 0.5), _RimSunBias); // 24aq: brightest on the limb nearest the sun
+                // Smooth analytic rim; softness = power (higher = tighter/harder glow band).
+                float rimPow = max(0.5, _RimSoftness);
+                float rim = pow(saturate(1.0 - ndvA), rimPow) * saturate(dot(-V, L) * 0.5 + 0.5) * pow(saturate(dot(nA, L) * 0.5 + 0.5), _RimSunBias);
                 lit += _RimColor.rgb * _RimLux * rim;
-                return float4(lit * GetCurrentExposureMultiplier(), 1.0);
+
+                // Screen-aware soft silhouette (hides mesh faceting at the limb).
+                float edgeW = fwidth(ndvA);
+                float edgeSoft = max(_EdgeSoft, edgeW * 1.5);
+                float alpha = smoothstep(0.0, edgeSoft, ndvA);
+
+                return float4(lit * GetCurrentExposureMultiplier(), alpha);
             }
             ENDHLSL
         }

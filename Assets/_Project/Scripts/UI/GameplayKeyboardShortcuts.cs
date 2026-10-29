@@ -4,6 +4,7 @@ using Project.Core;
 using Project.Data;
 using Project.Interaction;
 using Project.Inventory;
+using Project.Prototypes.Weapons;
 using Project.Player;
 using Project.Player.Invector;
 using UnityEngine;
@@ -98,7 +99,13 @@ namespace Project.UI
 
             int hotbarStartSlot = inventory.inventorySize;
 
-            if (keyboard.digit1Key.wasPressedThisFrame)
+            if (keyboard.digit1Key.wasPressedThisFrame
+                && (Project.Combat.DMRanged.DMRangedMorphRuntime.TryCycle(equipment, 1)
+                    || DMWeaponMorphRuntime.TryCycleDrawnBlade(equipment))) // 2026-10-28m MorphBlade
+            {
+                // 2026-10-28b/d: with DM Ranged drawn, key 1 cycles its forms (pad Y too; Tab cycles hotbar weapons).
+            }
+            else if (keyboard.digit1Key.wasPressedThisFrame)
             {
                 DMUiToolkitHotCross.NotifyWeaponLocalIndex(equipment.PrimaryWeaponHotbarSlot);
                 TrySelectHotbarSlot(hotbarStartSlot + equipment.PrimaryWeaponHotbarSlot, inventory, equipment, itemActions);
@@ -690,6 +697,11 @@ namespace Project.UI
             if (!TryResolveInventory(out InventorySystem inventory, out EquipmentController equipment, out InventoryItemActions itemActions))
                 return false;
 
+            if (keyCode == KeyCode.Alpha1 && Project.Combat.DMRanged.DMRangedMorphRuntime.TryCycle(equipment, 1))
+                return true; // 2026-10-28b: key 1 cycles DM Ranged forms while it is drawn.
+            if (keyCode == KeyCode.Alpha1 && DMWeaponMorphRuntime.TryCycleDrawnBlade(equipment))
+                return true; // 2026-10-28m: key 1 cycles MorphBlade blade forms while it is drawn.
+
             int hotbarStartSlot = inventory.inventorySize;
             int slotOffset = keyCode switch
             {
@@ -966,11 +978,14 @@ namespace Project.UI
                 Project.Building.DMBuildingMode.ToggleMaterials();
 
             bool wpnPressed = (!buildPanel && tabPressed)
-                || (pad != null && pad.buttonNorth.wasPressedThisFrame);
+                || (pad != null && pad.buttonNorth.wasPressedThisFrame)
+                || (!buildPanel && pad != null && pad.dpad.down.wasPressedThisFrame); // 20261028d: D-pad Down = pad hotbar weapon swap (mirror of Tab)
             bool wpnReleased = (!buildPanel && keyboard != null && keyboard.tabKey.wasReleasedThisFrame)
-                || (pad != null && pad.buttonNorth.wasReleasedThisFrame);
+                || (pad != null && pad.buttonNorth.wasReleasedThisFrame)
+                || (!buildPanel && pad != null && pad.dpad.down.wasReleasedThisFrame);
             bool wpnDown = (!buildPanel && keyboard != null && keyboard.tabKey.isPressed)
-                || (pad != null && pad.buttonNorth.isPressed);
+                || (pad != null && pad.buttonNorth.isPressed)
+                || (!buildPanel && pad != null && pad.dpad.down.isPressed);
             UpdateHotCrossWeaponCycleArm(wpnPressed, wpnReleased, wpnDown);
 
             if (keyboard != null)
@@ -1015,9 +1030,23 @@ namespace Project.UI
 
         
         /// <summary>Tab / Y North: tap cycles to next weapon and arms/draws it; hold ~0.5s arms focused weapon without cycling.</summary>
+        private static bool hotCrossWeaponFromPad;
+        private static bool hotCrossWeaponFromDpad;
+
+        /// <summary>28p: holsters every drawn weapon (MorphBlade keeps its blade; DM Ranged morphs to Pistol 1 and remembers its form via the normal holster path). False when nothing was drawn.</summary>
+        public static bool TryHolsterAllWeapons()
+        {
+            if (!TryResolveInventory(out _, out EquipmentController equipment, out _))
+                return false;
+            if (equipment == null || !equipment.IsWeaponDrawn)
+                return false;
+            equipment.HolsterWeapon();
+            return true;
+        }
+
         private static void UpdateHotCrossWeaponCycleArm(bool pressed, bool released, bool down)
         {
-            const float holdSeconds = 0.5f;
+            float holdSeconds = DM_CombatCoreProfile.WeaponHolsterAllHoldSeconds; // 28p: Studio-editable (Controls tab)
 
             if (UiInputGuard.BlocksGameplayEquipmentInput)
             {
@@ -1029,6 +1058,13 @@ namespace Project.UI
 
             if (pressed)
             {
+                // 20261028d: Tab / Shift+Tab no longer cycle DM Ranged forms (key 1 does). Only pad Y (North) does.
+                hotCrossWeaponFromPad = Gamepad.current != null && Gamepad.current.buttonNorth.wasPressedThisFrame
+                    && !(Keyboard.current != null && Keyboard.current.tabKey.wasPressedThisFrame)
+                    && !Gamepad.current.dpad.down.wasPressedThisFrame;
+                hotCrossWeaponFromDpad = Gamepad.current != null && Gamepad.current.dpad.down.wasPressedThisFrame
+                    && !Gamepad.current.buttonNorth.wasPressedThisFrame
+                    && !(Keyboard.current != null && Keyboard.current.tabKey.wasPressedThisFrame);
                 hotCrossWeaponKeyHeld = true;
                 hotCrossWeaponHoldUsed = false;
                 hotCrossWeaponKeyDownTime = Time.unscaledTime;
@@ -1039,6 +1075,9 @@ namespace Project.UI
                 && (Time.unscaledTime - hotCrossWeaponKeyDownTime) >= holdSeconds)
             {
                 hotCrossWeaponHoldUsed = true;
+                // 28p: hold Tab / Y with a weapon drawn = holster all; nothing drawn = arm focused (kept).
+                if (!hotCrossWeaponFromDpad && DM_CombatCoreProfile.HoldHolstersAllWhenDrawn && TryHolsterAllWeapons())
+                    return;
                 TryArmFocusedHotCrossWeaponNow();
             }
 
@@ -1127,6 +1166,14 @@ namespace Project.UI
                 return;
 
             hotCrossTabHandledFrame = Time.frameCount;
+            // Morph weapons: pad Y tap cycles forms while a morph weapon is drawn. Tab always cycles hotbar weapons
+            // (DM Ranged included as one hotbar weapon), as before DM Ranged (20261028d).
+            // 20261028d: Y tap = DM Ranged form step only (no weapon swap; D-pad Down / Tab swap). Hold Y still arms.
+            if (hotCrossWeaponFromPad)
+            {
+                DMWeaponMorphRuntime.TryCycleDrawnForm(equipment, 1);
+                return;
+            }
             int current = DMUiToolkitHotCross.WeaponLocalIndex;
             if (!equipment.TryGetNextOccupiedWeaponHotbarLocal(current, out int next))
                 return;
@@ -1601,7 +1648,7 @@ namespace Project.UI
         {
             ItemData weapon = equipment.GetHotbarItem(weaponHotbarSlot);
             string weaponName = weapon != null && !string.IsNullOrWhiteSpace(weapon.itemName)
-                ? weapon.itemName
+                ? Project.Combat.DMRanged.DMRangedMorphRuntime.DisplayName(weapon)
                 : "this weapon";
 
             WeaponAmmoState ammoState = equipment.GetComponent<WeaponAmmoState>();

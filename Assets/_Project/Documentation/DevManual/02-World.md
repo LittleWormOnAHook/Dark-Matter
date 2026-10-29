@@ -222,6 +222,9 @@ Map calibration, fog-of-war, the Io clock, and loot chests.
 | Jupiter | `jupiterLimbDarkening` | float | 0.35f | 0f–1f |  |
 | Jupiter | `jupiterRimColor` | Color | new Color(1f, 0.72f, 0.45f, 1f) |  |  |
 | Jupiter | `jupiterEclipseRimLux` | float | 400f | 0f–5000f | Backlit atmosphere rim during eclipse (nits-ish). |
+| Jupiter | jupiterRimSoftness | float | 4f | 0.5f-16f | 2026-10-26o: rim glow falloff power (higher = tighter). Analytic limb. |
+| Jupiter | skyBodyEdgeSoft | float | 0.035f | 0f-0.25f | Soft alpha at silhouette (hides sphere faceting). |
+| Jupiter | skyBodySphereSegments | int | 64 | 24-96 | Longitude segments for procedural UV sphere (Jupiter + moons). |
 | Jupiter-lit sky | `jupiterShineColor` | Color | new Color(1f, 0.86f, 0.68f, 1f) |  |  |
 | Jupiter-lit sky | `jupiterShineLux` | float | 25f | 0f–500f | Jupiter-shine at full Jupiter (midnight). Realistic ~25 lux. |
 | Jupiter-lit sky | `eclipseJupiterShineLux` | float | 15f | 0f–500f | Extra stylized Jupiter-shine during eclipse so the sky stays readable. |

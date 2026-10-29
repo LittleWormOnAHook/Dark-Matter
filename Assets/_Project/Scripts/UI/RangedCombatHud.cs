@@ -127,7 +127,7 @@ namespace Project.UI
                 return;
             }
 
-            string ammoLabelName = ResolveAmmoLabelName(weaponHotbarSlot);
+            string ammoLabelName = Project.Combat.DMRanged.DMRangedMorphRuntime.HudPrefix(weapon) + ResolveAmmoLabelName(weaponHotbarSlot); // 20261028a form label
             if (infiniteReserve)
             {
                 ammoLabel.text = $"{ammoLabelName} {loaded}/{magazineSize}  (∞)";

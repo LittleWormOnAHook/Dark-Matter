@@ -1,3 +1,150 @@
+2026-10-28p - Hold Tab / Y = holster all weapons
+- HOLD Tab (KBM) / HOLD Y (gamepad) with any weapon drawn holsters all (melee incl. MorphBlade keeps its blade; DM Ranged morphs to Pistol 1 and remembers its form via the normal holster path; tools). Tap still cycles focus (Y tap = DM Ranged form step while drawn).
+- Decision: nothing drawn -> hold still arms the focused weapon. D-pad Down hold always arms (unchanged).
+- DM_CombatCoreProfile: weaponHolsterAllHoldSeconds (0.15-3 s, default 0.5, replaces hardcoded 0.5) + holdHolstersAllWhenDrawn toggle.
+- Genesis Studio > Controls: "Holster all" toggle, threshold slider, presets Snappy 0.3 / Default 0.5 / Relaxed 0.8 / Deliberate 1.2 / Very Long 2.
+- InputSystem_Actions: Player/HolsterAll (Tab, Gamepad Y, Hold interaction) declared; runtime poll in GameplayKeyboardShortcuts owns timing.
+- Files: GameplayKeyboardShortcuts.cs, DM_CombatCoreProfile.cs, DMStudioControlsPanel.cs, InputSystem_Actions.inputactions. Console 0 errors / 0 warnings. Not play-tested.
+Docs: DevManual/03-Combat.md "Hold to holster all (28p)"
+2026-10-28o - EAU MorphBlade (Animator swap, 7 blade materials, VFX, Lightning, swap audio)
+- MorphBlade.fbx (EAU model, Take 001 30fps 0.667s, Animator EAU_MorphBlade.controller) replaces the legacy primitive MorphBlade children (Hilt/Handle/Blade_*) in Player_Kade_v2.prefab Drawn_/Holstered_MorphBlade/MB_Grip/MorphBlade_Held and MorphBlade_Pickup.prefab. Holder transforms untouched; only MB_Hilt/MB_BladeTip refit (grip->tip 1.05). Pickup BoxCollider resized; pickup got MB_Hilt/MB_BladeTip markers.
+- DMWeaponMorphController: morphAnimator/swapRenderer/bladeBase/bladeTip; key 1 = Animator frame 0->20, swap 'Blade' material, 20->0 (input locked); frame 0 on enable; per-form VFX along base->tip (play only, Steel none, holstered off unless vfxWhenHolstered); swap one-shot audio.
+- New blade type Lightning (Electricity, weight 0.95, icons MorphBlade_Lightning in Game Icons + HotCrossIcons); profile MorphBlade_Lightning.asset.
+- Materials/MorphBlade/{Steel,Light,Plasma,Ion,Laser,Cryo,Lightning}.mat; Prefabs/VFX/MorphBlade/MorphBladeVFX_*.prefab; Audio/SFX/MorphBlade_Swap.wav (procedural metal slice + electric hum).
+- DM_WeaponMorphProfile: bladeMaterial, bladeVfx. DM_WeaponMorphStudioSettings: swap state/frame/fps/halfSeconds, per-blade materials + VFX, vfxWhenHolstered, vfxIntensity, swap clip/volume/pitch; Lightning colour/length/weight; presets drive vfxIntensity + swapVolume.
+- Docs: DevManual 03-Combat.md "EAU MorphBlade (28o)".
+2026-10-28n - MorphBlade draw/holster visibility + MorphBlade-only player melee
+- Cause: MorphBlade has no serialized bridge slot (dynamic _meleeSlotLookup slot), and HideAllSpawnedWeapons only hid serialized slots, so Drawn_MorphBlade stayed in hand when DM Ranged was drawn.
+- Fix: PioneerInvectorWeaponBridge.HideAllSpawnedWeapons now also hides all _meleeSlotLookup/_rangedSlotLookup drawn+holstered instances; TryGetMeleeSlot refuses player-disabled items.
+- New DM_RangedMorphSettings.morphBladeOnlyPlayerMelee (default on) + keptPlayerMelee: every other player melee weapon is retired (no hotbar/Hot Cross, draw, holster visual, slot, starting item) via IsPlayerDisabledWeapon. Enemies, assets, placements unchanged; DM_Mining_Tool unaffected.
+- Docs: DevManual 03-Combat.md "MorphBlade draw/holster visibility (28n)".
+2026-10-28m - MorphBlade works like DM Ranged (functionality only)
+- Key 1 and pad Y tap with MorphBlade drawn cycle blade forms Metal > Light > Plasma > Ion > Laser > Cryo (only the Blade_* children swap). Key 1 with DM Ranged drawn unchanged.
+- Shared form: DMWeaponMorphRuntime.SharedBladeFormIndex (PlayerPrefs DMMorphBlade.Form). Drawn_ and Holstered_ copies mirror it (BladeFormChanged), so holster/draw keep the current blade.
+- Damage element per blade: DM_WeaponMorphProfile.damageElement (Metal Gunpowder, Light Electricity, Plasma Plasma, Ion Ion, Laser Laser, Cryo Ice). DMEnemyHitFx.ResolveMeleeElement returns it (MorphBlade.asset untouched).
+- Icons: 6 new hotbar icons Resources/UI/Game Icons/MorphBlade_<Form>.png + 6 alpha Resources/UI/HotCrossIcons/MorphBlade_<Form>.png (1024, DM_Ranged import settings), set on each form profile; DMGameIconRegistry + DMHotCrossIconRegistry show the active form; form change raises DMRangedMorphRuntime.FormChanged.
+- Body weight per blade: DM_WeaponMorphStudioSettings metal/light/plasma/ion/laser/cryoWeight (0.1-5) + bladeWeightPreset Subtle/Default/Extreme; profile bodyWeightScale range 0.1-5 (multiplier). Holstered blade adds no weight.
+- Pickup: new Assets/_Project/Prefabs/Weapons/MorphBlade_Pickup.prefab from the scene MorphBlade_Pickup (copy; hitbox removed, trigger BoxCollider + ItemPickup like DMRanged_Pickup). MorphBlade.asset worldPrefab points at it. Scene not touched/saved.
+- Backups .pre20261028m.
+Docs: DevManual 03-Combat.md "MorphBlade forms, icons, pickup (28m)".2026-10-28l - MorphBlade: persistent Drawn_/Holstered_ holders on Player_Kade_v2
+- Added Drawn_MorphBlade (meleeHandler, copy of Drawn_Blade_of_Chaos pose + Invector melee components, its visual removed) and Holstered_MorphBlade (RightUpLeg, Blade of Chaos holster pos/rot) to Player_Kade_v2.prefab, each with MB_Grip > MorphBlade_Held + MB_Hilt + MB_BladeTip. Prefab diff vs backup: additions only.
+- New Editor/DMMorphBladeHoldersTool.cs (Create / Find MorphBlade Holders button on DM_WeaponMorphStudioSettings in Studio + Combat menu).
+- DMWeaponMorphRuntime prefers the Drawn_ holder controller; PioneerInvectorWeaponBridge holster-mesh check skips MorphBlade holders.
+- Backups .pre20261028l (runtime, bridge, prefab + meta).
+Docs: DevManual 03-Combat.md "MorphBlade holders on the player (28l)".
+2026-10-28k - Console warnings cleared
+- CS0618 GetInstanceID obsolete: DMIoSkyController.cs settings hash now uses Shader.GetHashCode (same per-object identity).
+- CS0618 FindObjectsSortMode obsolete (x2): DMRangedMuzzlePointsTool.cs uses FindObjectsByType<Animation>(FindObjectsInactive.Include).
+- CS0414 unused field: removed DMEnemyRuntimeAudit._dDamaged (Slices.cs).
+- Backups .pre20261028k.
+Docs: none needed (no behaviour change; warning hygiene only).
+2026-10-28j - DM Ranged: Rifle magazine = old Survival rifle magazine
+- Rifle form (was 5 rounds) now resolves magazine exactly like the old Survival rifle: loaded ammo magazineSize, else 50 (survival_rifle.asset). New DMRangedForm.magazineByAmmo (on for Rifle), DM_RangedMorphSettings.rifleFallbackMagazine (50, Studio) and Magazine(form, ammo); DMRangedAmmoStats.ResolveMagazineSize passes the ammo. Only magazine capacity changed.
+- Also fixed a 28i compile error in DMStudioRegistry.cs (quotes in the Studio description string).
+- Files: DM_RangedMorphSettings.cs/.asset, DMRangedAmmoStats.cs, DMStudioRegistry.cs (backups .pre20261028j / .pre20261028i).
+Docs: DevManual 03-Combat.md "DM Ranged Rifle magazine (28j)".
+2026-10-28i - DM Ranged: frame-0 form renamed "Rifle", normal damage
+- Display "DM Sniper"/HUD "SNIPER" -> "DM Rifle"/"RIFLE" (asset + defaults, Studio text, comments). id "sniper", muzzle names and icon files unchanged.
+- damageMultiplier 2.2 -> 1.0 (ammo/profiles define damage). Hold-R Scope mode bonus damage unchanged and separate. Rifle pose kept; body weight 1.2 unchanged.
+- Files: DM_RangedMorphSettings.cs/.asset, DMRangedMorphDriver.cs, DMStudioRegistry.cs, DMHotCrossIconRegistry.cs, DMRangedMuzzlePointsTool.cs (backups .pre20261028i).
+Docs: DevManual 03-Combat.md "DM Ranged Rifle form rename (28i)" + form table updated.
+2026-10-28h - DM Ranged: Scoped Rifle + SMR use old Survival rifle fire speed/modes; adjustable scoped cadence
+- DMRangedForm.automatic added. Scoped Rifle (frame 0) and SMR (frame 10) now fire at 5.5 shots/s (survival_rifle.asset fireRate) and are automatic (old Drawn_Survival_Rifle automaticWeapon=True: tap = semi, hold = full auto). Damage, range and magazine per form are unchanged.
+- Body weight retuned: Scoped Rifle 1.25 -> 1.2, SMR 1.0 -> 1.05.
+- DMRangedMorphDriver.UpdateFireMode sets the shooter automaticWeapon from the form while drawn; it is forced off while scoped (single shot); the pistol snapshot restores it on holster.
+- DM_ScopeProfile: scoped interval/min/post-shot ranges widened to 0.05-10 s; scopedCadencePreset Subtle (3 s rifle / 2.5 s pistol) / Default (current 2.33 / 1.5) / Extreme (1 / 1) shown in Studio's Scope profile.
+- Files: DM_RangedMorphSettings.cs/.asset, DMRangedMorphDriver.cs, DM_ScopeProfile.cs (backups .pre20261028h).
+Docs: DevManual 03-Combat.md "DM Ranged fire modes & scoped cadence (28h)".
+=== 2026-10-28g  Survival (Sci-fi) rifle retired for the player; DM Ranged first draw in Pistol 1 (backups .pre20261028g) ===
+Cause (empty-hand first draw): survival_rifle and dm_ranged both map to Drawn_/Holstered_Survival_Rifle. With the rifle in the hotbar, the holster-visual pass
+  showed the rifle's holstered slot, which SetActive(false)'d the shared Drawn_Survival_Rifle while DM Ranged was drawn -> arms off, no mesh.
+Fix:
+  - DMRangedMorphRuntime.IsPlayerDisabledWeapon also covers survival_rifle (DM_RangedMorphSettings.disableSurvivalRifleForPlayer, default on; optional disabledPlayerRifle).
+    Effect for the player: cannot be put in hotbar (so not in Hot Cross), cannot be drawn, no holster visual, no player bridge slot (TryGetRangedSlot), not granted as a starting item (SimpleGameManager).
+    Scene bridge slot entry, holders, leftHandIK and rifle hold settings are untouched (DM Ranged uses them). Enemies/companions/vendors unaffected. No assets deleted, icons untouched.
+  - PioneerInvectorWeaponBridge.SharesActiveDrawnSlot: the holster pass never shows/hides a slot whose Drawn_/Holstered_ holder belongs to the drawn item (guards any future shared-holder conflict).
+  - DM Ranged form: first draw after pickup (InventorySystem.AddItem, first copy) or a new game starts in Pistol 1 (frame 40, no morph). Holster still morphs to frame 40;
+    the form at holster is remembered and the next draw morphs 40 -> that form. Setting drawStartsInPistol1 (default on). Persisted in PlayerPrefs DMRanged.FirstDrawPending / DMRanged.LastForm.
+Files: DM_RangedMorphSettings.cs, DMRangedMorphRuntime.cs, DMRangedMorphDriver.cs, PioneerInvectorWeaponBridge.cs, SimpleGameManager.cs, InventorySystem.cs.
+Docs: DevManual 03-Combat.md "DM Ranged: retired Survival rifle / draw form (2026-10-28g)".
+
+=== 2026-10-28f  Left hand floats off leftHandIK with breathing (scoped rifle) (backups .pre20261028f) ===
+Cause: Invector vShooterMeleeInput solves the support hand onto CurrentActiveWeapon.handIKTargetOffset in LateUpdate (order 500); DMPlayerBodyWeight (order 3320)
+  then adds breathing (chest/spine pitch + opposite L/R shoulder lift), arm trail and spine offsets on top, so the left arm moved off the weapon IK target.
+Fix (Locomotion/Runtime/DMPlayerBodyWeight.cs): before its offsets it records the left hand pose relative to handIKTargetOffset (only while support IK is active, right-hand weapon),
+  and after them it re-solves the left arm (two-bone) and hand rotation back onto it. All weapons/forms; DM Ranged instance and leftHandIK are never moved.
+Setting: DM_ClimbDashProfile.bodyWeightLockSupportHand (default on), Studio: Body weight: breathing / idle section.
+Docs: DevManual 03-Combat.md "DM Ranged support hand lock (2026-10-28f)".
+
+2026-10-28e - DM Ranged per-form muzzle points + robust key 1
+- Cause: driver built its 5 muzzles at runtime from renderer bounds along the mesh's longest axis (same tip for every form, near the old rifle muzzle), and the drawn-DM lookup is hierarchy/name based ("DM Ranged" + Animation under a Drawn_ slot, Holstered_ ancestor = holster); after hierarchy edits key 1 found no live driver and fell through to the hotbar weapon select.
+- DMRangedMuzzlePointsTool.cs (new) + DM_RangedMorphSettings custom inspector (Studio > DM Ranged): 'Create / Find Muzzle Points' adds missing edit-mode children DMR_Muzzle_<form id> (sniper: Barrel 002 Z+, smp: Barrel 1 Z+, pistol_3: Weapon.033_Low002 Y-, pistol_2/1: Slide 2 Y-); never overwrites existing ones. Created on the drawn DM Ranged in the open scene (unsaved).
+- DMRangedMorphDriver.cs: uses authored muzzles as-is (runtime fallback only for missing, named *_runtime); sets vShooterWeapon.muzzle per form as the form changes and restores the slot's own muzzle on holster.
+- DMRangedMorphRuntime.cs: TryCycle re-resolves (or attaches) the drawn driver if Active is stale; with DM Ranged drawn key 1 / Y never fall through to a weapon swap. IsDMRangedVisual also accepts a renamed instance carrying the driver.
+- RangedFireSolver.cs: DM Ranged muzzles aim along their own +Z (not the rifle slot AimReference).
+- Left-hand IK (Drawn_Survival_Rifle leftHandIK) and DM Ranged mesh pose are not written at runtime; edit them in Edit mode and save.
+- DMStudioRegistry.cs: DM Ranged subtab note.
+Docs: 03-Combat.md (DM Ranged muzzle points).
+
+2026-10-28d (pad) - D-pad Down = pad weapon swap, Y = DM Ranged forms
+- GameplayKeyboardShortcuts.cs: D-pad Down (was unused in gameplay; Up=Journal, Right=Ammo, Left=Survival) now mirrors Tab: tap = next hotbar weapon, hold 0.5 s = arm. Skipped in Building mode (D-pad Down cancels move there).
+- Y tap = DM Ranged form step only while drawn (no weapon swap); hold Y 0.5 s still arms focused weapon.
+- Studio Controls tab help box; main-menu Controls maps show a caption under the image (DMUiToolkitControls.cs + ControlsScheme_Gamepad/KeyboardMouse captions).
+Docs: 03-Combat.md (Weapon cycle controls).
+
+2026-10-28d - Tab restored to hotbar weapon cycle
+- GameplayKeyboardShortcuts.cs: removed Tab / Shift+Tab DM Ranged form cycling. Tab (and Shift+Tab) cycles hotbar weapons again (melee, mining tool, DM Ranged, etc.); hold 0.5 s arms focused weapon. Key 1 alone cycles DM Ranged forms.
+- Pad Y unchanged: tap cycles DM Ranged forms while DM Ranged drawn, otherwise cycles hotbar weapons; hold arms.
+Docs: 03-Combat.md (Controls).
+=== 2026-10-28c  DM Ranged: rifle hold/aim for Scoped Rifle, instant Hot Cross icon on form change (backups .pre20261028c) ===
+Scoped Rifle (frame 0, useRifleScope) holds/aims like the Survival Rifle; the 4 other forms keep the Sci-fi pistol pose.
+  DMRangedMorphDriver switches the drawn slot's vShooterWeapon weaponCategory + upperBodyID between Pistol/1 (copied from Sci-fi pistol) and the
+  slot's own Rifle/2 (Drawn_Survival_Rifle), then calls vShooterManager.UpdateWeaponIK(). Switch at the START of a morph toward the rifle form and at the END
+  of a morph away from it, so the pose change is hidden under the morph; Invector's UpperBody animator transitions do the blend.
+  Left-hand IK: the slot's existing leftHandIK (rifle grip) sits ~4 cm from the DM Ranged frame-0 mesh, so no extra anchor was added. handIKTarget untouched.
+Hot Cross: DMRangedMorphRuntime.FormChanged event (raised on cycle and whenever the shown form changes); DMUiToolkitHotCross marks visuals dirty on it,
+  so key 1 / Tab / Y update the weapon icon immediately (before, only an unrelated refresh such as aiming redrew it).
+Docs: Assets/_Project/Documentation/DevManual/03-Combat.md
+=== 2026-10-28b  DM Ranged: E pickup fix, key 1 form cycle, per-form icons, step sound (backups .pre20261028b) ===
+E pickup fix: InputSystem_Actions.inputactions Finisher action id "f1a2b3c4-d5e6-4789-abcd-26l000000001" was not a valid GUID ("l"), so the whole
+  input asset failed to import and every action (Use/E included) was dead. Id -> "...abcd-26a000000001". Plain E = Use (pickups, chests, world use);
+  only E held with LMB (pad West + RT) is the finisher. Gate code (PlayerController.OnUse, WorldUseController.CanUseNow, DMSlice6Runtime.BlocksWorldUse) unchanged.
+Key 1: while DM Ranged is drawn, KBM 1 cycles its forms (GameplayKeyboardShortcuts digit1 + UITK Alpha1 path; once-per-frame guard in DMRangedMorphRuntime.TryCycle).
+  Otherwise 1 still selects/draws the primary weapon slot as before. Tab / Shift+Tab / pad Y kept.
+Form rename: frame 10 "DM Sub-Machine Pistol"/SMP -> "DM Sub-Machine Rifle"/SMR.
+Icons: 5 new DM Ranged icons, one style (Resources/UI/Game Icons/DM_Ranged_{Scoped_Rifle,SubMachine_Rifle,Pistol_3,Pistol_2,Pistol_1}.png, frames 0/10/20/30/40)
+  + alpha Hot Cross cutouts with the same names in Resources/UI/HotCrossIcons/. DMRangedForm.icon / .hotCrossIcon; DMGameIconRegistry.FindIcon (HUD/inventory)
+  and DMHotCrossIconRegistry.TryResolve show the active form. dm_ranged item.icon -> DM_Ranged_Pistol_1. Old Pistol/Survival_Rifle files untouched.
+Step sound: DM_RangedMorphSettings stepClip / stepVolume (0-2) / stepPitchJitter, set by Subtle/Default/Extreme presets (0.6/0.03, 1/0.06, 1.4/0.10).
+  Clip: Laser Weapons Sound Pack/Free/reloading_003.wav (0.72 s). Played per form step on a dedicated AudioSource added to the weapon (routing copied from its source).
+Docs: Assets/_Project/Documentation/DevManual/03-Combat.md
+=== 2026-10-28a  DM Ranged morphing weapon; MorphGun removed (backups .pre20261028a) ===
+DM Ranged (dm_ranged ItemData, clone of sci_fi_pistol: same vHandgun Invector prefab, pistol animation, all ammo types) in the one Hot Cross ranged slot.
+One mesh/clip (Materials/DM Ranged 1.fbx "Take 001", legacy, scrubbed at speed 0). Five forms, each its own weapon (name, HUD label, stats, pitch, optional shot clip):
+  frame 0 DM Sniper (rifle scope, 50 m) / 10 DM Sub-Machine Pistol / 20 DM Pistol 3 / 30 DM Pistol 2 / 40 DM Pistol 1.
+  0.15 s per form step through intermediates; holstered always frame 40; draw morphs 40 -> last form (persisted, PlayerPrefs); holster morphs back to 40.
+  Tab / pad Y cycle forward, Shift+Tab back; re-press mid-morph retargets from the current time. Fire, aim, reload and scope blocked while morphing.
+  Per-form muzzle anchors (DMR_Muzzle_*) built at runtime on the front-most animated part. Weight via DMPlayerBodyWeight.
+New: Scripts/Combat/DMRanged/ DM_RangedMorphSettings, DMRangedMorphRuntime, DMRangedMorphDriver; Editor/DMRangedBuilder (Combat/Build DM Ranged).
+Assets: Data/Items/Ranged/dm_ranged.asset, Prefabs/Weapons/DMRanged_Pickup.prefab (frame 40, ItemPickup -> dm_ranged; not placed in any scene),
+  Resources/Combat/Morph/DMRanged/DM_RangedMorphSettings.asset; ItemRegistry + DMHotCrossIconRegistry entries.
+Driver is added at runtime by PioneerInvectorWeaponBridge to Anthony's placed "DM Ranged*" instances; their transforms are never changed. No scene save.
+Hooks: DMWeaponMorphRuntime, DMRangedAmmoStats (fire rate/mag/reload/range absolute, damage/recoil x), RangedFireSolver (spread), CombatHitResolver (sound/pitch),
+  PioneerShooterMeleeInput (aim/reload guard), DMScopeMode (EnterScope guard), GameplayKeyboardShortcuts (Shift+Tab, form name), RangedCombatHud (form label),
+  EquipmentController + bridge (sci_fi_pistol can't be hotbarred/drawn by the player; asset kept for enemies/companions/vendors).
+Studio Combat: "DM Ranged (Morph)" - wide ranges, Subtle/Default/Extreme presets (difference from Pistol 1 x0.5/1/1.5).
+Removed: MorphGun prefabs/materials/item/forms (moved to _Backups/MorphGun_pre20261028a), MorphGun builder/audit/side-shot code, bridge 20261027b runtime fallback. MorphBlade kept.
+Docs: Assets/_Project/Documentation/DevManual/03-Combat.md
+
+=== 2026-10-27a  Morph weapon prototypes (backups .pre20261027a) ===
+Prototype Morph Gun (Pistol/Rifle/Sniper) + Morph Blade (Metal/Light/Plasma/Ion/Laser/Cryo) as world pickups under Prefabs/Weapons/Prototypes.
+Existing weapons untouched; player/enemy/FORGE3D prefabs not edited. Y cycles forms while the morph weapon is drawn (other weapons keep Hot Cross Y).
+Scripts/Prototypes/Weapons: DM_WeaponMorphProfile, DM_WeaponMorphStudioSettings (Subtle/Default/Extreme), DMWeaponMorphController, DMWeaponMorphRuntime.
+Editor: Combat/Build Morph Weapon Prototypes. Studio Combat tab: Weapon Morph Prototypes.
+Hooks: GameplayKeyboardShortcuts / EquipmentController / MeleeCombatController (Y cycle), PioneerShooterMeleeInput (block fire while morphing), DMScopeMode (Sniper as rifle grip), DMRangedAmmoStats + ApplyItemStats (form stats), DMPlayerBodyWeight (form bodyWeightScale).
+Docs: DevManual/03-Combat.md.
+Docs: Assets/_Project/Documentation/DevManual/03-Combat.md
+
 === 2026-10-21a  Armed-idle upper-body jitter (backups .pre20261021a) ===
 Cause: pass 2026-10-20y DMPlayerBodyWeightPreIK restored the RAW animator pose on frames where the Animator did not evaluate.
   Player Animator runs Fixed (playerAnimatorPerFrameUpdate off) and Invector vShooterMeleeInput skips IK/head track on non-physics frames,
@@ -579,3 +726,13 @@ Docs: Assets/_Project/Documentation/DevManual/02-World.md (2026-10-26m).
 - Star/MW disc cutout fits the true angular radius (margin default 0, soft ~0.08 deg) with soft edge straddling the limb (no dark halo ring). Aurora no longer cut out inside discs when auroraOverSkyBodies (default on) — draws additively over Jupiter/moons so the body shows through.
 - DM_IoSkyBody limb darkening floored (ndv max 0.28) so moon rims do not go black. Studio: auroraOverSkyBodies, starOcclusionMarginDeg, starOcclusionSoftDeg; included in Sky Look presets. Backups *.pre20261026n. No scene saves, no commit yet.
 Docs: Assets/_Project/Documentation/DevManual/02-World.md (2026-10-26n).
+
+=== 2026-10-26o Jupiter/moon rim AA ===
+- Jagged limb/rim glow on large Jupiter (and moons): low-poly sphere silhouette + mesh-normal fresnel.
+- Fix: procedural UV sphere (skyBodySphereSegments, default 64) for Jupiter + Galilean moons; DM/IoSkyBody uses analytic sphere normals for lighting/rim; soft alpha silhouette (skyBodyEdgeSoft + fwidth AA); Studio jupiterRimSoftness (rim power).
+- Toggle/fields on DM_IoSkyProfile (World > Sky & Orbit). Dither still default OFF. Backups *.pre20261026o. No scene/prefab saves, no commit.
+Docs: Assets/_Project/Documentation/DevManual/02-World.md (2026-10-26o).
+
+=== 2026-10-27b  MorphGun runtime draw without preloaded Drawn_ slot (backup .pre20261027b) ===
+PioneerInvectorWeaponBridge: ranged items missing a collector Drawn_ slot (MorphGun prototype) now GetOrCreateInstance + MountAuthoredWeaponVisual instead of warning-and-bail.
+Visual audit: Dark Matter/Audit/Morph Weapon Visual Audit — 9 form screenshots under Assets/_Project/Art/Debug/MorphShots (Gun Pistol/Rifle/Sniper + Blade Metal..Cryo). No combat.

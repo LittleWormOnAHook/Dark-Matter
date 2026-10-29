@@ -45,7 +45,7 @@
                 {
                     "name": "Finisher",
                     "type": "Button",
-                    "id": "f1a2b3c4-d5e6-4789-abcd-26l000000001",
+                    "id": "f1a2b3c4-d5e6-4789-abcd-26a000000001",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
@@ -184,6 +184,15 @@
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "HolsterAll",
+                    "type": "Button",
+                    "id": "7d2c4e61-28af-4b9e-9c11-202610280001",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "Hold(duration=0.5)",
                     "initialStateCheck": false
                 },
                 {
@@ -775,6 +784,28 @@
                     "processors": "",
                     "groups": "Keyboard&Mouse",
                     "action": "Previous",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "7d2c4e61-28af-4b9e-9c11-202610280002",
+                    "path": "<Keyboard>/tab",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "HolsterAll",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "7d2c4e61-28af-4b9e-9c11-202610280003",
+                    "path": "<Gamepad>/buttonNorth",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "HolsterAll",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },

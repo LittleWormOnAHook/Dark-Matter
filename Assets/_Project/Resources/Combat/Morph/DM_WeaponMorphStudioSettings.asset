@@ -1,0 +1,115 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3a5f884c88d47c49a6878a3fca32596, type: 3}
+  m_Name: DM_WeaponMorphStudioSettings
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Prototypes.Weapons.DM_WeaponMorphStudioSettings
+  preset: 1
+  morphDurationSeconds: 0.3
+  morphCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  bladeExtendSeconds: 0.22
+  bladeExtendCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  gunMorphDurationMin: 0.1
+  gunMorphDurationMax: 1.2
+  metalColor: {r: 0.72, g: 0.74, b: 0.78, a: 1}
+  lightColor: {r: 0.85, g: 0.95, b: 1, a: 0.85}
+  plasmaColor: {r: 0.35, g: 1, b: 0.55, a: 0.9}
+  ionColor: {r: 0.55, g: 0.35, b: 1, a: 0.9}
+  laserColor: {r: 1, g: 0.25, b: 0.3, a: 0.95}
+  cryoColor: {r: 0.45, g: 0.85, b: 1, a: 0.9}
+  lightningColor: {r: 0.75, g: 0.85, b: 1, a: 0.95}
+  metalLength: 0.85
+  lightLength: 1.05
+  plasmaLength: 1.15
+  ionLength: 1
+  laserLength: 1.25
+  cryoLength: 0.95
+  lightningLength: 1.05
+  bladeWeightPreset: 2
+  _lastBladeWeightPreset: 2
+  metalWeight: 1.15
+  lightWeight: 0.9
+  plasmaWeight: 1.05
+  ionWeight: 1
+  laserWeight: 0.85
+  cryoWeight: 1.2
+  lightningWeight: 0.95
+  swapAnimatorState: Take 001
+  swapFrame: 20
+  swapClipFps: 30
+  swapHalfSeconds: 0.667
+  metalMaterial: {fileID: 2100000, guid: e29a0ca92e18ff54caa0b26d89892e98, type: 2}
+  lightMaterial: {fileID: 2100000, guid: 3c4fd9d1c42fe0440a0d503c60080a42, type: 2}
+  plasmaMaterial: {fileID: 2100000, guid: 6ec24222221ad6b49a71c2ff9990c58f, type: 2}
+  ionMaterial: {fileID: 2100000, guid: 610db65c626afe04388f9d6b4b04e0e8, type: 2}
+  laserMaterial: {fileID: 2100000, guid: a667d6c0e1119b1449360256d2dd6481, type: 2}
+  cryoMaterial: {fileID: 2100000, guid: ddb8ac350d8dd164ea5f91cb0829600c, type: 2}
+  lightningMaterial: {fileID: 2100000, guid: 1847fe72ea9bcca4480eccd3b53d7efe, type: 2}
+  lightVfx: {fileID: 9028283067055944590, guid: aebb441d99341284aaa72129059466e7, type: 3}
+  plasmaVfx: {fileID: 5711824948529488833, guid: fd29ac957168abb458ac0c9e97e2bfac, type: 3}
+  ionVfx: {fileID: 4366220690007481689, guid: 8eed1537da4a96d4db671e0a7075507f, type: 3}
+  laserVfx: {fileID: 67758163225087935, guid: 636a97f785a358148a71d43851f0bc96, type: 3}
+  cryoVfx: {fileID: 8732994759974362346, guid: 8d87a8e359f7ea947a783c86cf5e6289, type: 3}
+  lightningVfx: {fileID: 4282850122121031280, guid: 57382098739eaa3448225c15fd384e0d, type: 3}
+  vfxWhenHolstered: 0
+  vfxIntensity: 1
+  swapClip: {fileID: 8300000, guid: f5e8b1259bfbbe341ab07fd7f8c059ae, type: 3}
+  swapVolume: 0.8
+  swapPitch: 1
+  swapPitchRandom: 0.05
+  _stashDuration: 0.3
+  _stashBladeExtend: 0.22

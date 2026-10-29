@@ -88,6 +88,10 @@ namespace Project.World.Sky
         private Transform jupiterBody;
         private Renderer jupiterRenderer;
         private float jupiterMeshRadius = 1f;
+        private MeshFilter jupiterMeshFilter;
+        private Mesh jupiterMeshOriginal;
+        private static Mesh s_skyBodySphere;
+        private static int s_skyBodySphereSeg;
         private Material jupiterMat;
         private Material otherMoonMat;
         private Restore bodyRestore;
@@ -126,10 +130,11 @@ namespace Project.World.Sky
             {
                 int h = 17;
                 h = h * 31 + (p.jupiterObjectName ?? "").GetHashCode();
-                h = h * 31 + (p.skyBodyShader != null ? p.skyBodyShader.GetInstanceID() : 0);
+                h = h * 31 + (p.skyBodyShader != null ? p.skyBodyShader.GetHashCode() : 0) /* 28k: was obsolete GetInstanceID */;
                 h = h * 31 + (p.otherMoonsUseSkyMaterial ? 1 : 0);
                 h = h * 31 + (p.onlyInScenesWithJupiter ? 1 : 0);
                 h = h * 31 + (p.Moons != null ? p.Moons.Length : 0);
+                h = h * 31 + Mathf.Clamp(p.skyBodySphereSegments, 24, 96);
                 return h;
             }
         }
@@ -352,7 +357,17 @@ namespace Project.World.Sky
             };
             DisableVendorSpin(jupiterBody);
             MeshFilter mf = best.GetComponent<MeshFilter>();
-            if (mf != null && mf.sharedMesh != null)
+            jupiterMeshFilter = mf;
+            jupiterMeshOriginal = mf != null ? mf.sharedMesh : null;
+            // 2026-10-26o: swap low-poly scene sphere for a high-res UV sphere (smooth silhouette at ~20-40 deg).
+            int segs = Mathf.Clamp(p.skyBodySphereSegments, 24, 96);
+            Mesh hi = GetSkyBodySphere(segs);
+            if (mf != null && hi != null)
+            {
+                mf.sharedMesh = hi;
+                jupiterMeshRadius = 0.5f; // Unity-style unit-diameter sphere
+            }
+            else if (mf != null && mf.sharedMesh != null)
             {
                 Vector3 e = mf.sharedMesh.bounds.extents;
                 jupiterMeshRadius = Mathf.Max(0.0001f, Mathf.Max(e.x, Mathf.Max(e.y, e.z)));
@@ -402,6 +417,8 @@ namespace Project.World.Sky
                     otherMoonMat.SetColor("_ColorB", p.otherMoonColor * 0.6f);
                     otherMoonMat.SetFloat("_NoiseScale", 4f);
                     otherMoonMat.SetFloat("_Spots", 0.4f);
+                    otherMoonMat.SetFloat("_RimSoftness", p.jupiterRimSoftness);
+                    otherMoonMat.SetFloat("_EdgeSoft", p.skyBodyEdgeSoft);
                     for (int i = 0; i < anchors.Count; i++)
                         foreach (Renderer r in anchors[i].GetComponentsInChildren<Renderer>(true))
                             SwapMaterial(r, otherMoonMat);
@@ -546,6 +563,8 @@ namespace Project.World.Sky
                 go.name = "DM Moon " + s.name;
                 Collider c = go.GetComponent<Collider>();
                 if (c != null) Kill(c);
+                MeshFilter mmf = go.GetComponent<MeshFilter>();
+                if (mmf != null) mmf.sharedMesh = GetSkyBodySphere(Mathf.Clamp(p.skyBodySphereSegments, 24, 96));
                 go.transform.SetParent(skyRoot, false);
                 Renderer r = go.GetComponent<Renderer>();
                 r.shadowCastingMode = ShadowCastingMode.Off;
@@ -580,6 +599,11 @@ namespace Project.World.Sky
                 if (anchors[i] != null) anchors[i].localRotation = anchorRestore[i];
             anchors.Clear();
             anchorRestore.Clear();
+
+            if (jupiterMeshFilter != null && jupiterMeshOriginal != null)
+                jupiterMeshFilter.sharedMesh = jupiterMeshOriginal;
+            jupiterMeshFilter = null;
+            jupiterMeshOriginal = null;
 
             if (bodyRestore.tr != null)
             {
@@ -868,6 +892,8 @@ namespace Project.World.Sky
                 jupiterMat.SetColor("_RimColor", p.jupiterRimColor);
                 jupiterMat.SetFloat("_RimLux", p.jupiterEclipseRimLux * Mathf.Max(e, ring) * ring);
                 jupiterMat.SetFloat("_RimSunBias", p.ringSunBias);
+                jupiterMat.SetFloat("_RimSoftness", p.jupiterRimSoftness);
+                jupiterMat.SetFloat("_EdgeSoft", p.skyBodyEdgeSoft);
             }
 
             // Galilean moons: positions relative to Io in Io's co-rotating frame.
@@ -900,7 +926,63 @@ namespace Project.World.Sky
                 m.mat.SetFloat("_Spots", s.craterSpots);
                 m.mat.SetFloat("_Brightness", s.brightness);
                 m.mat.SetFloat("_LimbDarkening", 0.1f);
+                m.mat.SetFloat("_RimSoftness", p.jupiterRimSoftness);
+                m.mat.SetFloat("_EdgeSoft", p.skyBodyEdgeSoft);
             }
+        }
+
+        /// <summary>2026-10-26o: lat-long UV sphere (diameter 1) for smooth sky-body silhouettes.</summary>
+        private static Mesh GetSkyBodySphere(int lonSegments)
+        {
+            lonSegments = Mathf.Clamp(lonSegments, 24, 96);
+            int latSegments = Mathf.Max(12, lonSegments / 2);
+            if (s_skyBodySphere != null && s_skyBodySphereSeg == lonSegments) return s_skyBodySphere;
+
+            int vCount = (latSegments + 1) * (lonSegments + 1);
+            var verts = new Vector3[vCount];
+            var norms = new Vector3[vCount];
+            var uvs = new Vector2[vCount];
+            int vi = 0;
+            for (int y = 0; y <= latSegments; y++)
+            {
+                float v = y / (float)latSegments;
+                float phi = (v - 0.5f) * Mathf.PI;
+                float cy = Mathf.Sin(phi);
+                float r = Mathf.Cos(phi);
+                for (int x = 0; x <= lonSegments; x++)
+                {
+                    float u = x / (float)lonSegments;
+                    float th = u * Mathf.PI * 2f;
+                    var n = new Vector3(Mathf.Cos(th) * r, cy, Mathf.Sin(th) * r);
+                    verts[vi] = n * 0.5f;
+                    norms[vi] = n;
+                    uvs[vi] = new Vector2(u, v);
+                    vi++;
+                }
+            }
+            int tCount = latSegments * lonSegments * 6;
+            var tris = new int[tCount];
+            int ti = 0;
+            for (int y = 0; y < latSegments; y++)
+            {
+                for (int x = 0; x < lonSegments; x++)
+                {
+                    int i0 = y * (lonSegments + 1) + x;
+                    int i1 = i0 + lonSegments + 1;
+                    tris[ti++] = i0; tris[ti++] = i1; tris[ti++] = i0 + 1;
+                    tris[ti++] = i0 + 1; tris[ti++] = i1; tris[ti++] = i1 + 1;
+                }
+            }
+            var mesh = new Mesh { name = "DM SkyBody Sphere " + lonSegments };
+            mesh.vertices = verts;
+            mesh.normals = norms;
+            mesh.uv = uvs;
+            mesh.triangles = tris;
+            mesh.RecalculateBounds();
+            if (s_skyBodySphere != null) Kill(s_skyBodySphere);
+            s_skyBodySphere = mesh;
+            s_skyBodySphereSeg = lonSegments;
+            return mesh;
         }
 
         // Place sky bodies at a fixed distance around each rendering camera.
