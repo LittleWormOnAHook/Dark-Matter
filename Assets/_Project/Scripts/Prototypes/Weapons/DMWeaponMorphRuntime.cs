@@ -164,8 +164,16 @@ namespace Project.Prototypes.Weapons
         public static bool TryCycleDrawnBlade(EquipmentController equipment)
         {
             if (!TryGetDrawnController(equipment, out DMWeaponMorphController c) || c.Kind != DMWeaponMorphKind.MeleeBlade)
+            {
+                // 29a debug: drawn item is the MorphBlade but no live blade controller was found.
+                if (equipment != null && equipment.IsWeaponDrawn && equipment.DrawnWeaponItem != null && equipment.DrawnWeaponItem == s_bladeItem)
+                    Debug.LogWarning("[MorphBlade] blade switch ignored: no active DMWeaponMorphController bound to " + equipment.DrawnWeaponItem.name + " (check Drawn_MorphBlade holder is active and its controller's boundItem/forms).");
                 return false;
-            return c.TryCycleForm();
+            }
+            bool ok = c.TryCycleForm();
+            if (!ok)
+                Debug.LogWarning("[MorphBlade] blade switch ignored on " + c.name + ": fewer than 2 forms assigned.", c);
+            return ok;
         }
 
         public static bool TryGetEffectiveWeaponGrip(ItemData item, out WeaponGrip grip)

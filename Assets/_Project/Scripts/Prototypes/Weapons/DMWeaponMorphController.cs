@@ -31,7 +31,21 @@ namespace Project.Prototypes.Weapons
         private GameObject _vfxInstance;
         private GameObject _vfxPrefab;
         private AudioSource _swapAudio;
-        private bool UsesAnimatorSwap => kind == DMWeaponMorphKind.MeleeBlade && morphAnimator != null && swapRenderer != null;
+        // 2026-10-29b: swap mode keys off swapRenderer only. The player's Drawn_/Holstered_ copies have no morphAnimator
+        // (null override), which silently fell back to the retired legacy blade, so key 1 / Y "did nothing".
+        private bool UsesAnimatorSwap
+        {
+            get
+            {
+                if (kind != DMWeaponMorphKind.MeleeBlade || swapRenderer == null) return false;
+                if (morphAnimator == null)
+                {
+                    Animator a = swapRenderer.GetComponentInParent<Animator>(true);
+                    if (a != null && a.transform.IsChildOf(transform)) morphAnimator = a; // never the character Animator
+                }
+                return true;
+            }
+        }
         private Coroutine _morphRoutine;
         private Vector3[] _partStartPos;
         private Quaternion[] _partStartRot;
@@ -42,7 +56,22 @@ namespace Project.Prototypes.Weapons
         private static readonly int UnlitColorId = Shader.PropertyToID("_UnlitColor");
 
         public ItemData BoundItem => boundItem;
-        public bool IsMorphing => _morphRoutine != null;
+        private float _morphStartedAt = -999f;
+        // 2026-10-29a: failsafe - a swap that threw or stalled can no longer lock blade switching forever.
+        public bool IsMorphing
+        {
+            get
+            {
+                if (_morphRoutine == null) return false;
+                DM_WeaponMorphStudioSettings s = DM_WeaponMorphStudioSettings.Live;
+                float limit = (s != null ? Mathf.Max(0.05f, s.swapHalfSeconds) * 2f : 1.4f) + 1f;
+                if (Time.unscaledTime - _morphStartedAt <= limit) return true;
+                Debug.LogWarning("[MorphBlade] morph lock expired after " + limit.ToString("0.0") + "s on " + name + " - cleared (swap stalled or threw).", this);
+                try { StopCoroutine(_morphRoutine); } catch { }
+                _morphRoutine = null;
+                return false;
+            }
+        }
         public DM_WeaponMorphProfile ActiveProfile =>
             forms != null && forms.Length > 0 ? forms[Mathf.Clamp(formIndex, 0, forms.Length - 1)] : null;
         public float ActiveBodyWeightScale
@@ -185,9 +214,21 @@ namespace Project.Prototypes.Weapons
             nextIndex = Mathf.Clamp(nextIndex, 0, forms.Length - 1);
             if (_morphRoutine != null)
                 StopCoroutine(_morphRoutine);
-            _morphRoutine = StartCoroutine(MorphRoutine(nextIndex));
+            if (!isActiveAndEnabled)
+            {
+                _morphRoutine = null;
+                ApplyFormAtIndexImmediate(nextIndex);
+                if (SharesBladeForm()) DMWeaponMorphRuntime.SetSharedBladeForm(nextIndex);
+                return;
+            }
+            _morphStartedAt = Time.unscaledTime;
+            _morphRoutine = null;
+            _morphDone = false;
+            Coroutine co = StartCoroutine(MorphRoutine(nextIndex));
+            _morphRoutine = _morphDone ? null : co; // 29a: a swap that finished synchronously must not leave the lock set
         }
 
+        private bool _morphDone;
         private IEnumerator MorphRoutine(int nextIndex)
         {
             if (UsesAnimatorSwap)
@@ -211,9 +252,13 @@ namespace Project.Prototypes.Weapons
                 yield return null;
             }
             formIndex = nextIndex;
-            ApplyFormImmediate(target);
-            if (SharesBladeForm())
-                DMWeaponMorphRuntime.SetSharedBladeForm(nextIndex); // holstered copy + icons
+            try
+            {
+                ApplyFormImmediate(target);
+                if (SharesBladeForm())
+                    DMWeaponMorphRuntime.SetSharedBladeForm(nextIndex); // holstered copy + icons
+            }
+            catch (System.Exception e) { Debug.LogException(e, this); } // 29a: never leave the morph lock set
             t = 0f;
             while (t < half)
             {
@@ -223,6 +268,7 @@ namespace Project.Prototypes.Weapons
             }
             SetAnimFrame(0f);
             _morphRoutine = null;
+            _morphDone = true;
         }
 
         private bool IsHolsteredCopy()
@@ -330,7 +376,7 @@ namespace Project.Prototypes.Weapons
 
             formIndex = nextIndex;
             ApplyFormImmediate(target);
-            _morphRoutine = null;
+            _morphRoutine = null; _morphDone = true;
             if (SharesBladeForm())
                 DMWeaponMorphRuntime.SetSharedBladeForm(nextIndex); // mirrors holstered copy + refreshes icons
 

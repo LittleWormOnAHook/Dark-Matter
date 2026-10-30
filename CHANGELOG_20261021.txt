@@ -1,3 +1,17 @@
+[2026-10-29c] MorphBlade player copies: Animator restored
+- Player_Kade_v2.prefab: added Animator (EAU_MorphBlade.controller, no avatar, no root motion, AlwaysAnimate - same as pickup) on EAU_MorphBlade under Drawn_MorphBlade/MB_Grip/MorphBlade_Held and Holstered_MorphBlade/MB_Grip/MorphBlade_Held; linked each DMWeaponMorphController.morphAnimator. No transforms changed.
+- Scene player instance still overrides morphAnimator (empty) on both copies - revert that override in Inspector.
+- Backup: Player_Kade_v2.prefab.pre20261029c. Refresh: 0 errors.
+Docs: DevManual/03-Combat.md "MorphBlade player Animator (29c)"
+2026-10-29b - MorphBlade key 1 / Y fix (player copies used the retired legacy path)
+- Root cause: the player's Drawn_/Holstered_ MorphBlade_Held copies have morphAnimator = null (scene instance override; no Animator under them), so UsesAnimatorSwap was false and switching ran the legacy part/colour morph on the retired blade - no visible change.
+- DMWeaponMorphController: swap mode now only needs swapRenderer (Blade); morphAnimator auto-resolves from an Animator under the weapon itself (never the character Animator); with no Animator the blade material/VFX/audio still swap, just without the 0->20->0 animation.
+Docs: DevManual/03-Combat.md "MorphBlade swap without Animator (29b)"
+2026-10-29a - MorphBlade blade switch failsafe (key 1 / Y tap)
+- DMWeaponMorphController: morph input lock (IsMorphing) now expires after 2 x swapHalfSeconds + 1 s (unscaled) and clears itself with a [MorphBlade] warning; swap material/VFX step wrapped in try/catch so an exception can't leave the lock set; a swap that finishes synchronously no longer re-sets the lock; BeginMorph on an inactive controller applies the form instantly.
+- DMWeaponMorphRuntime.TryCycleDrawnBlade: [MorphBlade] warnings when the drawn MorphBlade has no live controller or < 2 forms.
+- Code review: key 1 / Y routing unchanged by 28p (hold-only change); DM Ranged only claims key 1 when DM Ranged is drawn; controller state "Take 001" matches Studio. No errors in console. Root cause not confirmed without Play; most likely a stuck morph lock.
+Docs: DevManual/03-Combat.md "MorphBlade switch failsafe (29a)"
 2026-10-28p - Hold Tab / Y = holster all weapons
 - HOLD Tab (KBM) / HOLD Y (gamepad) with any weapon drawn holsters all (melee incl. MorphBlade keeps its blade; DM Ranged morphs to Pistol 1 and remembers its form via the normal holster path; tools). Tap still cycles focus (Y tap = DM Ranged form step while drawn).
 - Decision: nothing drawn -> hold still arms the focused weapon. D-pad Down hold always arms (unchanged).

@@ -1654,3 +1654,13 @@ Docs: Assets/_Project/Documentation/DevManual/03-Combat.md (2026-10-26l).
 - Hold Tab / Y past `DM_CombatCoreProfile.weaponHolsterAllHoldSeconds` (Studio > Controls, presets 0.3-2 s): if `EquipmentController.IsWeaponDrawn` -> `GameplayKeyboardShortcuts.TryHolsterAllWeapons()` -> `HolsterWeapon()`; else arms focused weapon.
 - DM Ranged holsters to Pistol 1 with LastFormIndex kept; MorphBlade keeps SharedBladeFormIndex. D-pad Down hold = arm only. `holdHolstersAllWhenDrawn=false` restores old hold-arms.
 - `Player/HolsterAll` action in InputSystem_Actions is declarative; the poll owns timing.
+
+## MorphBlade switch failsafe (29a)
+- `IsMorphing` self-clears after 2 x `swapHalfSeconds` + 1 s; logs `[MorphBlade] morph lock expired`.
+- `TryCycleDrawnBlade` logs `[MorphBlade] blade switch ignored: ...` when no live controller is bound or fewer than 2 forms are set.
+
+## MorphBlade swap without Animator (29b)
+- Swap mode = MeleeBlade + `swapRenderer`. `morphAnimator` is optional (auto-found under the weapon only); without it the material/VFX/audio swap with no blade animation.
+
+## MorphBlade player Animator (29c)
+Both held copies on Player_Kade_v2 (Drawn_ and Holstered_ MorphBlade_Held) carry an Animator on their EAU_MorphBlade child (EAU_MorphBlade.controller, generic/no avatar) referenced by DMWeaponMorphController.morphAnimator, matching the pickup. If a scene instance shows morphAnimator bold/empty, right-click the field > Revert.
