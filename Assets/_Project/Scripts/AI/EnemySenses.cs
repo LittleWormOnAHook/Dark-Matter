@@ -259,7 +259,10 @@ namespace Project.AI
             hasRecentNoise = true;
             lastNoiseKind = noiseEvent.Kind;
 
-            if (noiseEvent.Kind == EnemyNoiseKind.CombatImpact)
+            // 31u: a close player gunshot can aggro (gunshotAggroRadius31u); farther ones stay investigate-only.
+            Project.Combat.DM_CombatCoreProfile hp31u = Project.Combat.DM_CombatCoreProfile.Live;
+            bool closeShot31u = noiseEvent.Kind == EnemyNoiseKind.Gunshot && hp31u != null && distance <= hp31u.gunshotAggroRadius31u;
+            if (noiseEvent.Kind == EnemyNoiseKind.CombatImpact || closeShot31u)
             {
                 if (aiController == null)
                     aiController = GetComponent<EnemyAiController>();

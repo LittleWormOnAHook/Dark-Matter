@@ -130,7 +130,9 @@ namespace Project.Player.Invector
                 CombatHitVfx.SpawnBloodSplatter(hitPoint, direction, -direction, damage);
             }
 
-            EnemyNoiseEvents.RaiseNoise(hitPoint, 12f, source);
+            // 31u: player melee hits are combat impacts (exact Studio radius, heard-hit aggro roll).
+            Project.Combat.DM_CombatCoreProfile hp31u = Project.Combat.DM_CombatCoreProfile.Live;
+            EnemyNoiseEvents.RaiseCombatImpactNoise(hitPoint, hp31u != null ? hp31u.meleeImpactHearingRadius31u : 10f, source);
             DMCombatCameraShake.TryPlayChargedHit(source);
             return true;
         }

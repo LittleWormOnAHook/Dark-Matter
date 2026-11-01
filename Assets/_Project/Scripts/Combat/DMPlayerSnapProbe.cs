@@ -31,7 +31,7 @@ namespace Project.Combat
         private const float Threshold = 0.02f;
         private const float MinSpeed = 0.5f;
         private const float RateLimit = 0.25f;
-        private const float VisualThreshold = 0.005f; // 2026-10-20i: 0.5 cm for hips / model-child pops
+        private const float VisualThreshold = 0.04f; // 2026-10-29d: 4 cm (was 0.5 cm, flagged normal walk/turn hip sway)
 
         private Rigidbody _rb;
         private Animator _anim;

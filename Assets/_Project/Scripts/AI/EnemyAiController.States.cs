@@ -18,6 +18,21 @@ namespace Project.AI
             return patrolWalkSpeed > 0f ? patrolWalkSpeed : walkSpeed;
         }
 
+        // 31u: distance at which Chase hands over to Attack. Ranged enemies must be INSIDE their fire range (and not
+        // parked at a hold distance beyond it); the old 1.05x band let Chase -> Attack -> Chase flip each frame
+        // just outside range with no movement, so the enemy stood there without shooting.
+        private float EngageEnterDistance31u(Transform candidate, float engageDistance)
+        {
+            if (combatBridge != null && combatBridge.IsArmedRangedPreferred())
+            {
+                float hold = combatBridge.RangedHoldDistance;
+                return Mathf.Min(engageDistance * 0.97f, Mathf.Max(engageDistance * 0.9f, hold + 0.5f));
+            }
+            return engageDistance * 1.05f;
+        }
+
+        private float rangedNoLos31u;
+
         private float ResolveEffectiveEngageDistance(Transform candidate)
         {
             if (combatBridge != null && combatBridge.IsArmedRangedPreferred())
@@ -283,7 +298,7 @@ namespace Project.AI
             {
                 float distance = HorizontalDistance(transform.position, chaseTarget.position);
                 float engageDistance = ResolveEffectiveEngageDistance(chaseTarget);
-                if (distance <= engageDistance * 1.05f)
+                if (distance <= EngageEnterDistance31u(chaseTarget, engageDistance))
                 {
                     EnterState(ResolveAttackEntryState(chaseTarget, distance));
                     return;
@@ -684,6 +699,39 @@ namespace Project.AI
                 return;
             }
 
+            // 31u: ranged enemy outside fire range closes in (walks) instead of bouncing between Chase and Attack;
+            // in range but line of sight blocked -> step toward the target until it can see and shoot.
+            if (combatBridge != null && combatBridge.IsArmedRangedPreferred() && !combat.IsAttacking)
+            {
+                float engage31u = combatBridge.RangedEngageRange;
+                if (!inStrikeRange)
+                {
+                    rangedNoLos31u = 0f;
+                    if (distanceToTarget > engage31u * 1.15f && chasePlayer && (IsProvokedBy(target) || CanChaseTarget(target.position)))
+                    {
+                        EnterState(AiState.Chase);
+                        return;
+                    }
+                    MoveTowards(target.position, walkSpeed, engage31u * 0.85f);
+                    FaceTowards(target.position);
+                    return;
+                }
+                if (!senses.CanSeeThreat(target))
+                {
+                    rangedNoLos31u += Time.deltaTime;
+                    if (rangedNoLos31u > 0.6f && distanceToTarget > 2.5f)
+                    {
+                        MoveTowards(target.position, walkSpeed, 2f);
+                        FaceTowards(target.position);
+                        return;
+                    }
+                }
+                else
+                {
+                    rangedNoLos31u = 0f;
+                }
+            }
+
             if (!inStrikeRange)
             {
                 float chaseThreshold = IsPioneer(target)
@@ -746,7 +794,7 @@ namespace Project.AI
                 Transform target = combat.CurrentTarget;
                 float distance = HorizontalDistance(transform.position, target.position);
                 float engageDistance = ResolveEffectiveEngageDistance(target);
-                if (distance <= engageDistance * 1.05f)
+                if (distance <= EngageEnterDistance31u(target, engageDistance))
                 {
                     if (state != AiState.Defensive && state != AiState.Attack)
                         EnterState(ResolveAttackEntryState(target, distance));

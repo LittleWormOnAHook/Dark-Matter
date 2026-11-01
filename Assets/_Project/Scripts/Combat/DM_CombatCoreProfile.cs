@@ -1185,9 +1185,26 @@ namespace Project.Combat
         [Tooltip("A player ranged hit provokes the enemy: it targets the shooter and chases past its vision, leash and chase-time limits for this many seconds (refreshed by each hit).")]
         [Range(0f, 60f)] public float rangedHitProvokeSeconds = 15f;
         [Tooltip("Player shots that miss alert enemies within this radius of the impact (they turn, investigate, search).")]
-        [Range(0f, 30f)] public float rangedImpactAlertRadius = 8f;
+        [Range(0f, 150f)] public float rangedImpactAlertRadius = 8f; // 31u: range widened (was 0-30)
         [Tooltip("Enemies within this radius of the shooter hear the gunshot and investigate toward it. 0 = off.")]
-        [Range(0f, 80f)] public float gunshotHearingRadius = 25f;
+        [Range(0f, 300f)] public float gunshotHearingRadius = 25f; // 31u: range widened (was 0-80)
+        [Tooltip("31u: enemies this close to a player gunshot aggro on the shooter (rolls the heard-hit chance); farther ones inside the hearing radius turn and investigate. 0 = gunshots never aggro.")]
+        [Range(0f, 200f)] public float gunshotAggroRadius31u = 12f;
+        [Tooltip("31u: player melee hits alert enemies within this radius of the hit (heard-hit aggro roll, else investigate).")]
+        [Range(0f, 100f)] public float meleeImpactHearingRadius31u = 10f;
+        [Tooltip("31u: chance an enemy that hears a player impact / close gunshot aggros (else it investigates). -1 = use each enemy's own value.")]
+        [Range(-1f, 1f)] public float heardAggroChance31u = 0.75f;
+
+        /// <summary>31u: hearing presets 0 Subtle / 1 Default / 2 Extreme (Studio buttons).</summary>
+        public void ApplyHearingPreset31u(int i)
+        {
+            i = Mathf.Clamp(i, 0, 2);
+            gunshotHearingRadius = new[] { 15f, 25f, 45f }[i];
+            gunshotAggroRadius31u = new[] { 6f, 12f, 22f }[i];
+            rangedImpactAlertRadius = new[] { 5f, 8f, 14f }[i];
+            meleeImpactHearingRadius31u = new[] { 5f, 10f, 16f }[i];
+            heardAggroChance31u = new[] { 0.4f, 0.75f, 1f }[i];
+        }
         [Tooltip("Engaged enemy health bar stays up this long after the last hit even if the enemy isn't targeting the player.")]
         [Range(1f, 30f)] public float engagedHudLingerSeconds = 6f;
 

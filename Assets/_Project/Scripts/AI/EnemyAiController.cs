@@ -566,7 +566,7 @@ namespace Project.AI
             int hash = Mathf.Abs(gameObject.GetEntityId().GetHashCode());
             chaseSpeedMultiplierJitter = 0.88f + (hash % 1000) / 1000f * 0.22f;
             combatRingSlotAngle = ((hash % 360) - 180f) / 180f * combatRingSlotSpread;
-            perfPhase = hash % 3;
+            perfPhase = hash % 3; // 31s: also staggers calm perception (VisiblePlayerStaggered31s)
         }
 
         private void OnEnable()
@@ -664,7 +664,7 @@ namespace Project.AI
             TickHardSeparation();
             TrySubscribePlayerEvents();
 
-            Transform visiblePlayer = senses.GetVisiblePlayerTarget();
+            Transform visiblePlayer = VisiblePlayerStaggered31s();
             if (visiblePlayer != null)
                 lastKnownPlayerPosition = visiblePlayer.position;
 
@@ -910,6 +910,21 @@ namespace Project.AI
         /// <summary>
         /// Distant idle/patrol enemies do not need a full AI pass every frame; senses still refresh on their own interval.
         /// </summary>
+        // 31s: calm enemies re-query line of sight every N frames (staggered by perfPhase); engaged enemies every frame.
+        private Transform cachedVisible31s; private int cachedVisibleFrame31s = -1000;
+        private Transform VisiblePlayerStaggered31s()
+        {
+            DMEnemyAiTickSettings31s ts = DMEnemyAiTickSettings31s.Active;
+            int n = ts.staggerEnabled ? Mathf.Max(1, ts.tickIntervalFrames) : 1;
+            int f = Time.frameCount;
+            bool calm = !IsEngagedWithTarget && !HasActiveAggroTarget();
+            if (n > 1 && calm && f - cachedVisibleFrame31s < n && ((f + perfPhase) % n) != 0)
+                return cachedVisible31s != null && cachedVisible31s.gameObject.activeInHierarchy ? cachedVisible31s : null;
+            cachedVisible31s = senses.GetVisiblePlayerTarget();
+            cachedVisibleFrame31s = f;
+            return cachedVisible31s;
+        }
+
         private bool ShouldSkipCalmStateAiTick()
         {
             if (IsEngagedWithTarget || HasActiveAggroTarget())

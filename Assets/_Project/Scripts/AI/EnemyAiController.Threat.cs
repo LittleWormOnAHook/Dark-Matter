@@ -104,7 +104,9 @@ namespace Project.AI
 
             nextHearingAggroTime = Time.time + Mathf.Max(0.05f, hearingCooldown);
 
-            if (hearingAggroChance <= 0f || UnityEngine.Random.value > hearingAggroChance)
+            Project.Combat.DM_CombatCoreProfile hp31u = Project.Combat.DM_CombatCoreProfile.Live; // 31u: Studio-wide heard-aggro chance
+            float chance31u = hp31u != null && hp31u.heardAggroChance31u >= 0f ? hp31u.heardAggroChance31u : hearingAggroChance;
+            if (chance31u <= 0f || UnityEngine.Random.value > chance31u)
                 return;
 
             Transform attacker = EnemyThreatSourceResolver.ResolveThreatRoot(source);
