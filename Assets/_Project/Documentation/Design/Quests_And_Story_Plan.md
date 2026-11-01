@@ -1,7 +1,10 @@
 # Quests & Story Plan
 
+> **2026-10-30f canon resolution (Anthony): the Mars handoff doc (StoryQuest.docx, see Quests_And_Story_Plan.md 2.5) wins all conflicts.** Kairos needs **nine** memory cores; Kade has a **fixed backstory** (no background select; Hard Mode toggle kept); the **2 Mars survivors** are the starting companions (no starter pick); Kade takes the Io job via an **anonymous/underground contracting board** (reached aboard the Neptune-bound transport); the opening is the Mars pre-prologue, then a **crash on arrival** at Io (mechanism open). Older text below that says otherwise is superseded.
+
+
 **Status:** Design draft — August 2026 · **Restored from git Oct 8, 2026** (`c701c830f`)  
-**Alignment (Oct 8, 2026):** Prologue locks, P0–P8 timing, and step-by-step flow → `Prologue_Playthrough_And_Camp_Bootstrap_Plan.md` (§3). Campaign **10 Memory Cores** at prologue handoff supersedes §2.2 “≥3” until GDD A6 is updated. **2 Mars-survivor companions** (no starter pick) per GDD 5.0 / `Player_Identity_Kade.md`.  
+**Alignment (Oct 8, 2026):** Prologue locks, P0–P8 timing, and step-by-step flow → `Prologue_Playthrough_And_Camp_Bootstrap_Plan.md` (§3). Campaign **nine Memory Cores** (30f, handoff doc; was 10) at prologue handoff supersedes §2.2 “≥3” until GDD A6 is updated. **2 Mars-survivor companions** (no starter pick) per GDD 5.0 / `Player_Identity_Kade.md`.  
 **Authority:** GDD 5.0 (Appendix A6 story lock; Appendix B disk truth), Io world-content phase map, Kade identity doc.  
 **Player:** **Kade** (fixed name) — see `Player_Identity_Kade.md`.
 
@@ -16,7 +19,7 @@ This document is the **single quests + story roadmap** for Dark Matter: Genesis.
 | **Rumors until proven** | Io history, failed expeditions, aliens, and The Overseer’s past are **suspicions** until Memory Cores / evidence prove otherwise (Kade plan §7). |
 | **One quest framework** | Story, side, and procedural missions all use `QuestDefinition` / `QuestManager` (GDD). No parallel quest engines. |
 | **Quests are outputs** | Long-term: `StoryDirector` drives beats; QuestManager executes tracked objectives (`Audit_06_Story.md`). |
-| **AC only** | Rewards in AC / items / XP / unlocks — never a second currency. New Game starts at **0 UEA** (free starter companion). |
+| **AC only** | Rewards in AC / items / XP / unlocks — never a second currency. New Game starts at **0 UEA** (2 Mars-survivor companions; 30f). |
 | **The Overseer is the mystery hub** | Not a day-one chatty bot. Colony Ops handles radio until The Overseer awakens and climbs the trust ladder. |
 
 ---
@@ -26,7 +29,7 @@ This document is the **single quests + story roadmap** for Dark Matter: Genesis.
 ### 2.1 Spine
 
 ```
-New Game (Kade background → free starter companion)
+New Game -> Mars Pre-Prologue (AAPS-07, 2.5) -> Neptune transport / contracting board -> Io crash (30f: fixed Kade backstory, 2 Mars survivors)
   → Deploy to Io / B6 hub
   → Discover dormant The Overseer machine (prologue)
   → Repair quest (3 parts) → awaken (hostile → wary)
@@ -39,7 +42,7 @@ New Game (Kade background → free starter companion)
 
 | Act | Name | Player goal | Story outcome |
 |-----|------|-------------|---------------|
-| **0** | **Charter** | Choose Kade background + starter companion | Origin flags, synergies, 0 UEA, Hard Mode optional |
+| **0** | **Charter** | Mars pre-prologue; fixed Kade backstory; 2 Mars survivors (30f) | Origin flags, synergies, 0 UEA, Hard Mode optional |
 | **I** | **Prologue — Dormant Machine** | Find The Overseer shell; accept repair quest | Machine marked; Colony Ops is still the radio voice |
 | **II** | **Repair** | Recover **3** repair objects; restore power/core/interface | The Overseer awakens angry; first true lore dump (still incomplete) |
 | **III** | **Memory Cores** | Recover primary cores (design target: **≥3**) | Each attach → Resonance Event (10–15 min world change) + fragment |
@@ -63,6 +66,50 @@ New Game (Kade background → free starter companion)
 
 ---
 
+### 2.5 Pre-Prologue: Mars (AAPS-07) — added 2026-10-30e
+**Sources:** Anthony's "Mars Pre-Prologue | AAPS-07 — Narrative Canon & Development Handoff" (StoryQuest.docx, wording kept below) + Anthony's brief (Oct 30, 2026). Scene: `Dark Matter Mars-The Beginning`.
+
+**Anthony's brief (verbatim intent):** The pre-prologue is set in a confined area around the buildings already on the map, with a perimeter fence built from project assets, misc sci-fi props, a landing area, a maintenance area for buggies and ships, a parts/junk area, and air/terraforming equipment with stacks for local oxygen production. Normal day for Kade performing maintenance; equipment starts breaking down; the ~20 NPCs evacuate on a few shuttles. Kade and 2 future companions are abandoned and have to fix a shuttle not meant to fly. End of pre-prologue: they fix the shuttle, make orbit into radio range and are picked up by a transport ship headed to Neptune; Kade takes a job to Io. The Prologue starts with the crash landing on Io.
+
+**From the handoff doc (wording kept):**
+- Story year 2160. "The Mars opening establishes Kade as a capable working contractor before the cosmic mystery begins."
+- Kade: 35 in 2160, born on Earth ~2125; parents died during an expedition to Io ("officially described as an accident"); grandmother died when he was eight; foster care; ran away at fourteen and stowed away to Mars; dock/cargo work, maintenance, mechanical repairs → independent contractor, terraforming worker, occasional bounty hunter, eventually a ship owner. "He does not begin as a chosen hero."
+- AAPS-07: "remote Mars industrial/scientific station" — quarters/habitation, central operations, maintenance workshop, scientific operations, docking/cargo, atmospheric-processing infrastructure. "It is functioning at the start, not already ruined." Visual: dark gray painted metal, restrained wear/corrosion, mineral dust, exposed conduits, practical warning markings.
+- Runtime target 20–27 min (pacing goal). **No combat.** Emotional arc: routine → unease → concern → emergency → abandonment → desperation → escape.
+- Corporate conspiracy: a conglomerate "knowingly abandons personnel and falsifies records". Kade first sees an industrial catastrophe; the corporation later sends bounty hunters (incl. on Io). Name, motive, trigger and evidence object not finalized. "Do not presume a connection between the corporation and the ancient aliens."
+- Transition: "Kade takes an Io assignment through an anonymous or underground contracting board. Earlier missions there have failed." A magnetic/EM or alien-associated phenomenon causes the crash on arrival (mechanism undecided).
+- Do not spoil on Mars: Echo mother reveal; Kairos; memory cores.
+
+**Story beats (doc beats 1–8 mapped to the brief):**
+| # | Doc beat | Brief / set location |
+|---|---|---|
+| 1 | Kade's quarters — normal start-of-shift routine | Hab building (existing) |
+| 2 | Reporting for work — workers, status terminals, manageable trouble | Walk the compound; idle/task NPCs |
+| 3 | Maintenance assignment — diagnose, retrieve part, open panel, repair, confirm | Maintenance area (buggies/ships) + parts/junk area |
+| 4 | Warning signs — pressure, power, conflicting instructions, comms restrictions | O2 stacks / terraforming equipment start failing |
+| 5 | Cascading emergency — alarms, failures, blocked routes (no combat) | ~20 NPCs evacuate on a few shuttles (landing area) |
+| 6 | Abandoned docking sector — workers left behind, corporation falsified records | Empty landing area |
+| 7 | Two survivors — female systems engineer, male security/logistics specialist (names undecided) | Met in compound |
+| 8 | Escape — trio prepares a shuttle, Kade unknowingly carries evidence | Fix shuttle "not meant to fly" → orbit → radio range → Neptune-bound transport pickup → Kade takes Io job |
+| → | Prologue | Crash landing on Io (Act I Landing Scar) |
+
+**NPC roles (working):** Kade (player); Systems Engineer (F, future companion); Security/Logistics Specialist (M, future companion); Ops/Dispatch voice (radio); Shift supervisor; ~20 workers (maintenance techs, terraforming/atmo techs, dock/cargo handlers, science staff, shuttle pilots) — idle + task/animation-driven, then evacuation runners; Transport ship captain/comms (Neptune-bound, radio + pickup).
+
+**Radio calls (draft list, wording TBD):** R1 shift-start dispatch to Kade; R2 maintenance ticket (part + location); R3 O2 stack pressure anomaly; R4 conflicting supervisor vs ops instructions; R5 comms restriction notice; R6 station-wide evacuation order; R7 shuttle departure calls (shuttles 1..n); R8 dead air / Kade's unanswered calls (abandonment); R9 survivors on local channel; R10 shuttle pre-flight checklist; R11 orbit distress call; R12 Neptune transport reply + pickup; R13 job board / Io contract offer.
+
+**Cinematics list (draft):** C1 opening establishing shot of AAPS-07 (functioning); C2 quarters wake-up; C3 first equipment failure (O2 stack vents); C4 evacuation — shuttles lifting off; C5 abandonment realization at the empty landing area; C6 meeting the two survivors; C7 shuttle launch; C8 orbit + transport ship rendezvous; C9 aboard transport — Kade takes the Io job; → Prologue C10 Io approach + crash.
+
+**Contradictions - RESOLVED 2026-10-30f (Anthony: "any conflicts, replace with the latest document"; handoff doc wins, brief kept where the doc is silent):**
+1. Memory cores -> **nine** (docs updated).
+2. Kade background -> **fixed backstory**; Background Select retired (Hard Mode toggle kept).
+3. Starting companions -> **2 Mars survivors**, no pick (spine/act map updated).
+4. Io job -> via an **anonymous or underground contracting board**; brief kept: accessed after pickup by the Neptune-bound transport.
+5. Setting -> doc's station spaces (quarters/habitation, central ops, maintenance workshop, science ops, docking/cargo, atmospheric processing) mapped onto the existing buildings; brief's fenced outdoor compound (landing, maintenance, junk, O2/terraforming) kept as the exterior.
+6. Left behind -> doc beat 6 "workers were left behind" stands; brief's ~20 evacuees on a few shuttles kept; Kade + 2 survivors are the ones who escape (population still open).
+7. Escape vehicle -> doc leaves it open; brief's shuttle "not meant to fly" kept as the working choice. Kade's own ship: not addressed by the doc - open.
+8. Io arrival -> **crash on arrival** (mechanism open); Q0.5 / Act 0 updated.
+9. Combat test items in the Mars scene -> doc: "No combat in the initial tutorial"; items left in place for now (not removed, scene work pending).
+10. Still open per doc: AAPS-07 designation/architecture, 20-27 min runtime, corporation + companion names, initiating failure, evidence object, escape vehicle, population, Io crash mechanism, dialogue/missions/motives.
 ## 3. Campaign biome order (story geography)
 
 From `Io_World_Content_Phase_Map.md` — do not reorder without updating that map + GDD.
@@ -148,8 +195,8 @@ Ordered for value — aligns with GDD B3/B4 and World Engine spine.
 
 ```
 Main Menu → New Game
-  → Kade Background Select (+ Hard Mode)     [Kade plan — not coded yet]
-  → Free Starter Companion Select (0 UEA)     [exists; still uses 5000 UEA Credits grant — align to 0]
+  → [RETIRED 30f: Kade Background Select - fixed backstory] Hard Mode toggle only
+  → [RETIRED 30f: Free Starter Companion Select] 2 Mars survivors load automatically
   → Welcome / controls
   → Deploy (playable Genesis scene)
   → Optional: accept prototype board quests from Pioneer Guide

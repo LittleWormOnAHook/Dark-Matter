@@ -1664,3 +1664,7 @@ Docs: Assets/_Project/Documentation/DevManual/03-Combat.md (2026-10-26l).
 
 ## MorphBlade player Animator (29c)
 Both held copies on Player_Kade_v2 (Drawn_ and Holstered_ MorphBlade_Held) carry an Animator on their EAU_MorphBlade child (EAU_MorphBlade.controller, generic/no avatar) referenced by DMWeaponMorphController.morphAnimator, matching the pickup. If a scene instance shows morphAnimator bold/empty, right-click the field > Revert.
+
+## SnapProbe visual threshold (29d)
+DMPlayerSnapProbe VISUAL (hips vs capsule) check now logs only when hips fall back more than 4 cm (was 0.5 cm, which flagged normal walk sway). Disable all probe logs via DM_CombatCoreProfile.playerSnapProbeLog.
+

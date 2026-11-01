@@ -461,3 +461,105 @@ Docs: Assets/_Project/Documentation/DevManual/02-World.md (2026-10-26j).
 
 ## 2026-10-26n Moon halo + aurora over bodies
 - `_DMSkyOcc` star/MW cutout: tight disc + small soft (`starOcclusionMarginDeg` / `starOcclusionSoftDeg`); soft straddles the limb. Aurora uses `_AuroraOverBodies` / `auroraOverSkyBodies` (default on) and is not cut out — additive over moons/Jupiter. `DM_IoSkyBody` limb floor avoids black rims. In Sky Look presets.
+
+## Io orbit + shadow cleanup (30a)
+- Sun/Jupiter/moons all run on the Io clock (DM_IoClockProfile.realSecondsPerGameHour; 48 = 24 min day). If the sun stops moving, check Sky & Orbit for a Debug Hour Override warning and press Release Debug Hour.
+- Studio World > Sky & Orbit: Io Orbit (Jupiter size, moon size, Orbit Subtle 60 min / Default 24 min / Extreme 6 min day) and Shadow Cleanup (SSR on/thickness, eclipse shadow softness/strength, SSAO, Subtle/Default/Extreme presets).
+- Eclipse = sun behind Jupiter around 15:00; the Jupiter/ring light then casts the shadow (eclipseShadowSoftnessDeg). Large values look like one huge blurry shadow.
+- SSR depth thickness above ~0.3 smears the sun into vertical yellow streaks.
+
+## Debug hour override (30b)
+Studio World > Sky & Orbit > Io Orbit: tick Debug Hour Override and drag Hour to freeze sun, Jupiter, moons and eclipse at that Io hour (edit preview + Play). Untick or Release = the Io clock drives the sky. The sky drives the active, enabled light named by sunLightName; duplicates that are disabled are ignored.
+
+## Fill lights never draw a sky disc (30c)
+Every helper directional the sky creates (shade fill, Jupiter shine, night fills) must set interactsWithSky=false, angularDiameter=0, flare 0. HDRP defaults otherwise render each one as an extra sun disc in the sky. Only the real sun (sunLightName) may show a disc.
+
+## Show Jupiter / Moons (30c)
+Sky & Orbit > Io Orbit: untick Show Jupiter to remove Jupiter, its glow/shine, the eclipse and ring (sun orbits normally); untick Show Moons to hide all moons. Nothing in the scene is deleted.
+
+## Sky Look Preset: Mars / Jupiter (Io) (2026-10-30d)
+- Profile dropdown **Sky Look Preset** now has **Mars** and **Jupiter (Io)** (also buttons in Studio > Day/Night > Io Orbit).
+- These world looks write the normal look fields plus: showJupiter, showMoons, eclipseEnabled, jupiterAngularDiameterDeg, moon sizes, sunIntensityMultiplier, sunMaxLux, sunAngularDiameterDeg, sky tint, shade fill, fog, SSAO/SSR/bloom/contact/micro shadow, ring flare, cascade split. Custom stash covers the same set.
+- Jupiter (Io): 30a-30c setup snapshot. Mars: no Jupiter/moons/eclipse/aurora, 0.35 deg sun at ~43% lux, butterscotch PBS tint (Play only), fog 400 m.
+- Day length is the clock profile (48 s/h = 24 min), not the preset. Subtle/Normal/Extreme don't touch the world fields.
+- Limits: PBS tint gives a tan day sky; no true blue Mars sunset. No Phobos/Deimos.
+
+## Pre-Prologue Set (2026-10-30f)
+- Tool: `Assets/_Project/Editor/GenesisStudio/DMPrePrologueSetTool.cs`, menu **Tools > Genesis Studio > Pre-Prologue Set**.
+- Root `PrePrologue_Set` with zones Fence, Landing, Maintenance, Junk, O2_Terraform, Props. Spawn/Clear per zone or all (Undo-able). Seed + Density (Subtle 0.5 / Default 1 / Extreme 2), shuttle choice (SM_Veh_DropShip_01 default).
+- Fence rect x -1000..-735, z -430..-215 (Corp_Wall_01 20 m pieces, towers ~60 m, corner towers, main gate south x -867, service gate west z -322); light Fence_07/08 around the junk yard.
+- Zones: Landing north (3 Pod_Pad_01, 2 shuttles, control tower), Maintenance west by the cranes (buggies, rovers, Akorn = grounded shuttle), Junk SW, O2/terraform SE (silos, generators, refinery pipes, 2 scaled Big TOWER stacks, comms tower), Props scattered outside the built footprint (x -980..-754, z -406..-276).
+- Fitting ignores the MARS bundles' huge bounds. Sources: PolygonSciFiWorlds, Creepy Cat Vol 3, Buildings_constructor, SciFi_Industrial (no FORGE3D/BOTD/Gaia).
+
+## World look full restore (2026-10-30g)
+Switching Sky Look world look to Jupiter (Io) re-applies a 183-field snapshot of the pre-Mars setup (sun light, angular diameter, shadows, flare, orbit, sky, exposure, fog, 30a shadow cleanup). Mars sets its own values for all of them. Subtle/Normal/Extreme presets still apply on top per world look.
+
+## Single BOTD sun, Shade Fill strength, edit-mode runtime preview (2026-10-30i/j)
+- Sun: the sky drives 'BOTD Directional Light(Clone)' (profile sunLightName). Every other directional light, including Day DirectionalLight, is disabled while the sky runs (edit preview and Play) and restored on release, so only one light uses the cascade shadow atlas. If Gaia spawns the BOTD sun after start, the controller switches to it within 1 s.
+- Shade Fill: enable toggle + Strength (0 = off) multiplies shadeFillLux. Presets Subtle 0.25 / Default 0.5 / Extreme 2. Jupiter (Io) restores 1 (exact pre-Mars look), Mars uses 0.6.
+- Edit-mode runtime preview (Studio toggle, default on): edit mode shows the runtime sky/orbit, sun, shade fill, Jupiter/moons and the runtime post volume (DMRealtimeIndirect: SSGI/SSR/30a cleanup, exposure, fog, Mars PBS tint). Everything is hidden DontSave, removed before Play and scene save, and nothing is written to the scene.
+
+## Pre-Prologue Set terrain snap (2026-10-30k)
+Every spawned piece is dropped so its renderer-bounds bottom sits on the terrain (mean of centre + 4 footprint samples; particles and stray renderers >60 m from the pivot ignored). Upright, Y only. Use Spawn All again after terrain edits.
+
+
+## Sun shadows + Debug Hour (2026-10-30l)
+
+- Studio > World > Sky & Orbit > **Sun Shadows (30l)**: Shadow Max Distance, Cascade Split 0, Contact Shadow Length, Shadow Floor Lift, Sun Shadow Resolution (tier/512-4096), Sun Soft Shadows, presets Subtle / Default / Extreme (crisp). Presets also set Shade Fill strength (0.5 / 0.35 / 0.2).
+- HDRP allows 48 shadow requests (point light = 6, spot = 1, sun cascades = 4). Too many shadowed prop lights silently drop the sun's shadows. **Limit to 4 hero** turns off the rest (Undo + Logs/propLightShadows30l.tsv); **Restore** reads the log back.
+- Shade Fill is a shadowless anti-sun light: high strength flattens shadows. Keep about 0.2-0.5 for readable shadows.
+- **Debug Hour Override** freezes the sun/Jupiter/moons only while the toggle is ticked (debugHourEnabled). Untick it to let the sun orbit on the Io clock. In edit mode the preview still uses Preview Hour unless it is -1.
+
+## Sky & Orbit master tick (30n)
+Studio > Day/Night > **Use Sky & Orbit**. On: BOTD clone is the single sun, driven by DM_IoSkyProfile (controller, realtime indirect, Shade Fill, Jupiter/moons, runtime volume). Off: everything stands down and restores originals; Gaia stack (Day DirectionalLight, BOTD Environment, reflection probe, post) lights the scene. **Fallback: single sun disc** hides disc/flare on extra directional lights while off. Only one directional light gets HDRP shadows - keep shadows on one sun only.
+31a: with Sky & Orbit off, the fallback also switches shadows off on extra directional lights (restored when on), avoiding HDRP's cascade atlas error.
+
+## Edit mode matches runtime (31b)
+The realtime indirect volume (priority 90, hidden '(edit preview)' in edit mode, '(auto)' in Play) is a copy of DM_IoPostProcessing; it now re-syncs from the asset within 0.25 s of any edit, so tweak DM_IoPostProcessing / BOTD Environment / Sky & Orbit directly and both modes update. Sky & Orbit-driven fields (indirect, SSGI, exposure etc. per profile) still win over the asset values.
+
+## Perf 31c
+- **Batch Turn_Move**: DMTurnMoveBatch drives all Creepy Cat Turn_Move spinners in one Update (originals disabled at runtime, same math). Toggle in Studio > Sun Shadows (applies next Play).
+- **Texture streaming**: budget 2560 MB; scene textures stream mips; >4K non-hero capped at 2048. Studio row Stats/Apply/Restore; log Logs/texstream31c.tsv. Apply/Restore reimports (~2 min for ~650 textures).
+
+## Night sky + fallback sun (31e)
+- Stars and the Milky Way come from DMIoNightSky whenever Night Sky is on, with Sky & Orbit on or off. Both world presets (Jupiter, Mars) use identical star/MW values. The fade follows the real sun elevation and is smoothed over time.
+- Sky & Orbit off: "Fallback: drive sun" (Studio > Day/Night, default on) rotates the BOTD sun from Debug Hour > Preview Hour > clock. The original rotation comes back on save, Play, toggle off or Sky on.
+- The BOTD sun always keeps shadows on at 2048 with dimmer 1. Only during eclipse/night (Sky on, Jupiter preset) does Jupiter-shine take the single directional shadow. If you see no shadows on Jupiter, check that Debug Hour isn't in the eclipse window (~13.5-17.5).
+
+## BOTD volumes on top + eclipse sun shadows (31f)
+- Studio > Day/Night > "BOTD volumes on top" (default on): BOTD Post Processing / BOTD Environment override Sky & Orbit. Our realtime-indirect volume sits just below the lowest BOTD priority, DM Eclipse Ambient below that. A hidden drive volume above BOTD only carries eclipse/night indirect scaling (based on BOTD's own value) and the Mars sky tint. Presets never touch BOTD volumes or assets.
+- "Eclipse keeps sun shadows" (default on): during the Jupiter eclipse the BOTD sun keeps the single directional shadow and dims to "Eclipse Min Sun Intensity" (fraction of daylight, presets 3-60%). Turn off for the old Jupiter-shine hand-off.
+
+## Per-scene Io sky profiles (31g)
+- Map: Assets/_Project/Resources/World/DM_SceneSkyProfiles.asset (scene name -> DM_IoSkyProfile). v1.7 -> DM_IoSkyProfile_Jupiter, Mars-The Beginning -> DM_IoSkyProfile_Mars; anything else -> DM_IoSkyProfile (fallback).
+- Switches automatically with the active scene, in edit mode and Play. Studio > Sky & Orbit edits the active scene's profile and shows which one is active.
+- New scene: add an entry to the map (exact scene name). No scene changes needed.
+
+## Sky Essentials, Deep Reset and orbit time source (31h)
+- Studio > Sky & Orbit shows **Essentials** first (look preset, Sky & Orbit on, Debug Hour (+advances), edit clock, Preview Hour, sun lux / multiplier / shadow strength, exposure comp, sky tint, fog MFP, stars/Milky Way, Jupiter/moons, eclipse keeps shadows). All other fields are under **Advanced (all settings)**.
+- **Deep Reset to Recommended** (per profile): applies the look preset, then sun lux 18000 (Jupiter) / 30000 (Mars), mult 1, exposure 8-14 comp 0, fog 4000, SSAO 0.8/0.6, contact 0.15, indirect 1/1, contrast 0, floor 0.05, bloom 0.3, eclipse min 0.15. If the profile is the open scene's profile it also: gives BOTD volumes that use a Gaia original a per-scene DM copy (Resources/World/SceneVolumes), sets PBS 1/1/0, fog 4000 neutral-warm, BOTD post exposure AutoHistogram 8-14, SSAO, contact shadows, weights 1, and strips shadows/sky disc from extra active directional lights. Log + snapshots in Logs/deepreset31h_<profile>*; **Restore** reverts (scene items per scene). Save the scene afterwards.
+- Sun selection: active named light > active RenderSettings.sun > brightest active directional; an inactive light is only a last resort.
+- Time: Debug Hour > Preview Hour > edit-mode clock (Io clock rate) > DMIoClock, the same for Sky on and Sky-off fallback; sun, Jupiter, moons and eclipse share it. Eclipse = local noon (sun exactly behind Jupiter).
+### Sun disc & halo (31p, 2026-10-31)
+Each sky profile (DM_IoSkyProfile / _Jupiter / _Mars) sets the driven sun's disc and halo every frame (edit + Play): Sun disc size 0.01-10 deg (`sunAngularDiameterDeg`; no more -1 = keep light value), halo size / falloff / strength (`sunFlareSize31p`, `sunFlareFalloff31p`, `sunFlareMultiplier31p` -> HDRP flareSize/flareFalloff/flareMultiplier). Studio > Sky Essentials: sliders + presets Io 0.1 / Mars 0.35 / Earth 0.53 / Large 2. Deep Reset: Mars 0.35, Jupiter 0.1. Defaults: Jupiter 0.1 deg, halo 1/6/0.5; Mars 0.35, 2/4/1; base 0.53, 3/4/1. A huge halo usually means flareSize high with falloff 0 on the scene light.
+
+
+### Eclipse sun ramp (31q)
+- As Jupiter covers the sun (max of EclipseFactor and 1 - geometric visibility, smoothstepped, raised to Ramp Curve), the sun multiplier blends from **Sun Intensity Multiplier** (normal, 2) to **Eclipse Sun Multiplier** (0.05), and back as the sun peeks out. Shadow strength blends to **Eclipse Shadow Strength**, ambient to **Eclipse Ambient Multiplier** (darker shadows), and the sun disc shrinks by **Penumbra Scale**.
+- Follows Debug Hour and the clock in edit mode and Play. With the ramp on, Eclipse Min Sun Intensity is ignored. Turn the ramp off to use the old floor.
+- Presets: Subtle 0.3 / Default 0.05 / Extreme 0.01.
+- Jupiter defaults: `Resources/World/DM_IoSkyProfile_Jupiter_Defaults31q.json` is a snapshot of the tuned Jupiter profile. Deep Reset and the Default ramp preset on Jupiter apply it. To update it, re-export with JsonUtility.ToJson and strip the instanceID references.
+- 31r: everything the eclipse drives (sun multiplier, shadow strength, eclipse ambient volume, realtime-indirect ambient, exposure EV drop, night-sky blend) reads `DMIoSkyController.EclipseCoverage`. It is worked out each frame from the current hour with no latch, so coverage 0 = full restore. Smoothing only exists in Play (night sky). Edit mode snaps. Changing Debug Hour forces an immediate edit-mode update. Note: with **Debug hour advances** on, time keeps running from the debug hour (into dusk and night), which can look like a stuck eclipse.
+
+## Performance (31s)
+Studio > Sky > **Performance (31s)**:
+- **Shadow budget**: cascades (profile `shadowCascadeCount31s`) and max distance. Presets Subtle 4/200, Default 3/150, Extreme 2/100.
+- **Prop shadow culling**: turns off shadow casting on props below a size and/or beyond a distance. Preview first, Apply, and use Revert last if needed (log in `Logs/shadowcull31s_*.tsv`). Characters, enemies, weapons and animated rigs are never touched. Scene-level changes need a scene save.
+- **Enemy AI tick**: `Resources/AI/DMEnemyAiTickSettings31s`. Calm enemies re-check sight every N frames (staggered); engaged enemies check every frame.
+- DMCarvable sleeps when idle; DmRockCombiner has no runtime Update.
+- Texture rule: 2K max for kit atlases, BC7 for colour, BC5 for normals, streaming mips on. glTFast .glb embedded textures can't be compressed in the importer; extract them to use these settings.
+- **glTF (.glb) textures (31t):** glTFast ignores Remap, so extract the textures to `<Model>_Textures31t/` (2K, BC7/BC5, streaming mips). Then use an external material (`*_31t.mat`) on the prefab renderer or a .mat. Don't reference the .glb's built-in material, or its 4K embedded textures load again.
+
+## Enemy approach + hearing (31u)
+- Ranged enemies close to INSIDE `RangedEngageRange` before Attack (`EngageEnterDistance31u`), walk in if they drift out (re-chase past 1.15x), and step in when line of sight is blocked. Melee enemies close to the standoff/reach band; one engager holds the attack token and the others Hold.
+- Hearing (DM_CombatCoreProfile, Studio > Performance > Enemy hearing): gunshot hearing radius (turn + investigate), gunshot aggro radius, ranged impact radius, melee hit radius, heard-aggro chance, with Subtle/Default/Extreme presets.

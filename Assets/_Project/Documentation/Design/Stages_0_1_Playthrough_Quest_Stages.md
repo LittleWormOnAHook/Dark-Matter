@@ -1,5 +1,8 @@
 # Stages 0–1 — Playthrough Flow & Quest Task Stages
 
+> **2026-10-30f canon resolution (Anthony): the Mars handoff doc (StoryQuest.docx, see Quests_And_Story_Plan.md 2.5) wins all conflicts.** Kairos needs **nine** memory cores; Kade has a **fixed backstory** (no background select; Hard Mode toggle kept); the **2 Mars survivors** are the starting companions (no starter pick); Kade takes the Io job via an **anonymous/underground contracting board** (reached aboard the Neptune-bound transport); the opening is the Mars pre-prologue, then a **crash on arrival** at Io (mechanism open). Older text below that says otherwise is superseded.
+
+
 **Status:** Design draft — August 2026 · **Links retargeted Oct 8, 2026** (playthrough checklist → `Prologue_Playthrough_And_Camp_Bootstrap_Plan.md` §3)  
 **Covers:** **Stage 0 (Charter)** + **Stage 1 (Landing & Camp)** only  
 **Parents:** `Acts_0_to_3_Asset_Mapped_Plan.md` · `Prologue_Playthrough_And_Camp_Bootstrap_Plan.md` (§3) · `Prologue_Acts_Expanded.md`  
@@ -20,6 +23,29 @@ Each **quest** is broken into:
 
 ---
 
+# PRE-PROLOGUE — Mars (AAPS-07) — added 2026-10-30e
+Story context: `Quests_And_Story_Plan.md` §2.5 (handoff doc + Anthony's brief, contradictions listed there). Scene `Dark Matter Mars-The Beginning`. **No combat.** Target 20–27 min (pacing goal). Teaches movement, camera, inspection, inventory, equipment, door interaction, simple repair only.
+
+## Pre-prologue master flow
+```
+[QM.1] Start of Shift (quarters) -> [QM.2] Reporting for Work -> [QM.3] Maintenance Assignment
+  -> [QM.4] Warning Signs -> [QM.5] Cascading Emergency / Evacuation -> [QM.6] Left Behind
+  -> [QM.7] Two Survivors -> [QM.8] The Shuttle Not Meant to Fly -> [QM.9] Orbit & Pickup -> Prologue (Io crash, Stage 0/1)
+```
+
+| Quest | Objectives (task stages) | Location (set zone) | NPCs | Radio / cinematic |
+|---|---|---|---|---|
+| QM.1 Start of Shift | S1 wake / move + camera; S2 inspect personal belongings (history hints); S3 equip work gear (inventory/equipment); S4 open door, exit hab | Hab / quarters building | — | C1, C2, R1 |
+| QM.2 Reporting for Work | S1 walk to ops; S2 read status terminal; S3 talk to supervisor; observe workers + manageable trouble | Compound paths, ops building | Supervisor, idle/task workers | R2 |
+| QM.3 Maintenance Assignment | S1 diagnose machine (buggy/ship systems); S2 retrieve part from parts/junk area; S3 open panel; S4 repair; S5 confirm system | Maintenance area → parts/junk area | Maintenance techs | — |
+| QM.4 Warning Signs | S1 respond to O2 stack pressure anomaly; S2 intermittent power; S3 conflicting instructions; S4 comms restricted | Air/terraforming + O2 stacks | Atmo techs | C3, R3–R5 |
+| QM.5 Cascading Emergency | S1 alarms; S2 reroute around failures/blocked routes; S3 head to landing area (~20 NPCs evacuate on a few shuttles) | Compound → landing area | ~20 workers, pilots | C4, R6–R7 |
+| QM.6 Left Behind | S1 reach empty landing area; S2 call for pickup (no answer) | Landing area | — | C5, R8 |
+| QM.7 Two Survivors | S1 find systems engineer (F); S2 find security/logistics specialist (M); S3 cooperative action with each | Compound | 2 future companions | C6, R9 |
+| QM.8 The Shuttle Not Meant to Fly | S1 assess grounded shuttle; S2 salvage parts (junk area); S3 repairs with companions; S4 pre-flight checklist; S5 launch | Maintenance area / landing area | Companions | R10, C7 |
+| QM.9 Orbit & Pickup | S1 reach orbit / radio range; S2 distress call; S3 docked by Neptune-bound transport; S4 Kade takes Io job | Cinematic | Transport captain/comms | C8–C9, R11–R13 |
+
+Evidence object (unknowingly carried) — undecided; to be picked up during QM.3–QM.8. Quest IDs/stage numbers are working placeholders (not in code).
 # STAGE 0 — Charter
 
 **Duration:** 5–10 min  
@@ -31,10 +57,10 @@ Each **quest** is broken into:
 ```
 Main Menu
   -> [Q0.1] New Game / slot
-  -> [Q0.2] Kade Background Select (+ Hard Mode)
+  -> [Q0.2] (RETIRED 30f) Hard Mode toggle only
   -> [Q0.3] Starting Companions (no pick)
   -> [Q0.4] Controls / Welcome acknowledge
-  -> [Q0.5] Shuttle descent cinematic
+  -> [Q0.5] Io approach + crash-on-arrival cinematic (30f)
   -> SPAWN Stage 1 Scene A (Landing Scar)
 ```
 
@@ -72,7 +98,7 @@ Main Menu
 
 ---
 
-## Q0.2 — Kade Background
+## Q0.2 - Kade Background (RETIRED 30f: fixed backstory per handoff doc; Hard Mode toggle kept)
 
 **Id:** `charter_02_background` (**FUTURE** UI + SO; design-locked)  
 **Type:** Choice  
@@ -188,7 +214,7 @@ Load Kade's 2 starting companions (the Mars survivors)
 
 ---
 
-## Q0.5 — Shuttle Descent
+## Q0.5 - Shuttle Descent -> Crash on Arrival (30f: Io crash, mechanism open)
 
 **Id:** `charter_05_descent` (**FUTURE** Timeline; stand-in: loading overlay)
 

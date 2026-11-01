@@ -1,3 +1,234 @@
+== 2026-10-31 31u - Enemy approach stall + hearing aggro ==
+- Bug: a ranged enemy shot from a distance chased to just outside its fire range, then stood still. Chase handed over to Attack within 1.05x engage range, and Attack sent it straight back to Chase (its chase cutoff uses melee AttackRange x1.55), so neither state moved it. Fix (EnemyAiController.States.cs): new EngageEnterDistance31u - ranged enters Attack only inside range (0.9-0.97x engage, past the hold distance). In Attack, a ranged enemy out of range walks in to 0.85x engage, and only re-chases beyond 1.15x. In range with line of sight blocked for >0.6 s, it steps toward the target. Melee unchanged (1.05x standoff, engager / 1-attacker token as before).
+- Checked: the 31s stagger only affects calm enemies (damage sets aggro, so every-frame ticks). The facing gate is attackFacingConeHalfAngle 25 deg + 0.5 s turn (no 16 deg gate found). Ranged fire still requires LOS (requireClearLosForRangedFire).
+- Hearing: player gunshots within gunshotAggroRadius31u now roll heard-aggro (farther ones still investigate). Player melee hits raise a CombatImpact noise (meleeImpactHearingRadius31u) instead of a generic 12 m noise. New Studio-wide heardAggroChance31u (0.75, -1 = per-enemy 0.45). Ranges widened: gunshot 0-300, ranged impact 0-150.
+- Studio: Sky > Performance (31s) > "Enemy hearing (31u)" sliders + Subtle/Default/Extreme presets (gunshot 15/25/45, aggro 6/12/22, impact 5/8/14, melee 5/10/16, chance 0.4/0.75/1).
+- Body weight: no change. Hit/knockback/combat stats are untouched; this is only approach movement.
+- Backups: *.pre20261031u
+Docs: DevManual/02-World.md "Enemy approach + hearing (31u)"
+== 2026-10-31 31t - glTF embedded texture extraction ==
+- glTFast 6.19 ignores importer texture/material remaps, so the textures were extracted to <Model>_Textures31t/ next to each .glb (2048 max, BC7 colour / BC5 normal, streaming mips) and the references were repointed. The .glb files, meshes and rigs are unchanged.
+- Sulfur Needle Tuft: material.mat (used by ResourceNode_SulfurNeedleTuft.prefab) now uses the extracted textures. 373 -> 42 MB.
+- Sulfur Hound: new material_31t.mat set on the SkinnedMeshRenderer in Sulfur Hound V2.prefab and Sulfur Hound Generic.prefab (material override only). 309 -> 42 MB.
+- IO Character / scifi_-_backpack (both copies): no prefab, scene or material references found. Extracted textures + *_31t.mat are ready to assign. 192 -> 32, 437 -> 37, 528 -> 37 MB.
+- Backups: *.pre20261031t (glb + meta, material.mat, both hound prefabs + meta).
+Docs: DevManual/02-World.md "Performance (31s)" glTF note
+== 2026-10-31 31s - Performance pass (shadows, textures, scripts) ==
+- Shadows: new Studio "Performance (31s)" foldout (DMStudioPerf31s.cs). Shadow budget: cascade count (new DM_IoSkyProfile.shadowCascadeCount31s, applied by DMRealtimeIndirect) plus distance, presets Subtle 4/200m, Default 3/150m, Extreme 2/100m. All 3 profiles + Jupiter defaults JSON: 228m -> 150m, 3 cascades.
+- Prop shadow culling tool: size/distance thresholds, Subtle/Default/Extreme, Preview/Apply/Revert last, log at Logs/shadowcull31s_*.tsv. Excludes player/enemy/companion/animated/weapon hierarchies. _Project prefabs are edited at prefab level; vendor/scene objects are edited on the scene (save scene). Mars preview: 12,618 casters -> -307/-5,151/-6,409.
+- Textures: Creepy Cat Wall_Atlas_01-09 Norm -> 2048 BC5, ID -> 2048 BC7, streaming mips. 989 MB -> 192 MB. Katana image_0/1 already 2048 (no change).
+- Scripts: DMCarvable disables itself when idle (re-enabled on carve). DmRockCombiner per-frame Update removed (editor-only registry tick). Enemy AI calm-state sight queries staggered every N frames (DMEnemyAiTickSettings31s asset, Studio toggle; default on, 3 frames). Engaged combat unchanged, so no body-weight change.
+- Backups: *.pre20261031s
+Docs: DevManual/02-World.md "Performance (31s)"
+2026-10-31 31r  Eclipse exit restores fully (edit-mode scrub + runtime)
+- DMIoSkyController: new EclipseCoverage (stateless, worked out each frame from the current hour = the 31q ramp of max(EclipseFactor, 1-vis), or EclipseFactor when the ramp is off, 0 when eclipse is off and in the fallback path). Sun shadow dimmer is now set every frame (Lerp to normal at coverage 0). DM Eclipse Ambient volume weight = coverage.
+- DMRealtimeIndirect: eclipse ambient scale, eclipse exposure floor, the night/eclipse EV drop and the SSGI deep-eclipse cut all use EclipseCoverage.
+- DMIoNightSky: in edit mode the dark blend snaps to target (it used to ease 0.075 per repaint and stayed dark while the editor was idle). Play still eases.
+- DM_IoSkyProfile.OnValidate: in edit mode it queues a player-loop update and repaints the scene views, so a Debug Hour change re-runs the sky right away.
+- Verified at Debug Hour 12/15/18 and the round trips 12>15>18>15>12 and 18>12>18: lux 42621 / 1266 / 42621, dimmer 1, eclipse ambient weight 0, NightSky dark 0, RI fixed EV 13.98 at 18. Screenshots at 12 and 18 match. Anthony's profile values unchanged.
+- Backups: *.pre20261031r
+Docs: Assets/_Project/Documentation/DevManual/02-World.md (Eclipse sun ramp, 31r)
+2026-10-31 31q  Eclipse sun ramp + Jupiter defaults snapshot
+- DMIoSkyController: EclipseRamp31q = Pow(SmoothStep(max(EclipseFactor, 1-sunVisibility)), curve). Sun lux = base * Lerp(sunIntensityMultiplier (2), eclipseSunMultiplier31q (0.05), ramp). Shadow dimmer lerps to eclipseShadowStrength31q, sun angular diameter shrinks by eclipsePenumbraScale31q. Works with Debug Hour/clock in edit mode and Play. When the ramp is on it replaces Eclipse Min Sun Intensity (old slider shown only when ramp off). Eclipse keeps sun shadows still works.
+- DM_IoSkyProfile: new ramp fields + Subtle/Default/Extreme presets (ApplyEclipseSunRampPreset31q). ApplyJupiterDefaults31q loads Resources/World/DM_IoSkyProfile_Jupiter_Defaults31q.json (a snapshot of Anthony's current Jupiter profile with no object refs). Deep Reset and the Default ramp preset on Jupiter use it. Mars profile values unchanged.
+- Studio Sky Essentials: eclipse ramp controls + preset buttons.
+- Backups: *.pre20261031q
+Docs: Assets/_Project/Documentation/DevManual/02-World.md (Eclipse sun ramp)
+=== 2026-10-31 31p - Sun disc size per profile ===
+Cause: v1.7 (Jupiter) drives 'Day DirectionalLight' (BOTD clone inactive in that scene). Jupiter profile sunAngularDiameterDeg was -1 = keep the light's 0.5 deg, and nothing drove the halo: the light has flareSize 11.5 deg with flareFalloff 0 -> huge flat glow that no angular value could shrink.
+Fix: sunAngularDiameterDeg range 0.01-10 (always applied, old <=0 -> 0.35); new sunFlareSize31p / sunFlareFalloff31p / sunFlareMultiplier31p driven onto the sun every frame; ApplySunDiscPreset31p (Io 0.1 / Mars 0.35 / Earth 0.53 / Large 2) in Studio Essentials with sliders; Deep Reset Mars 0.35, Jupiter 0.1. Profiles set: Jupiter 0.1 (halo 1/6/0.5), Mars 0.35 (2/4/1), base 0.53 (3/4/1). Live check: Day DirectionalLight now ang 0.1, flare 1/6/0.5.
+Backups: .pre20261031p (profile, controller, Essentials, 3 profile assets, 02-World.md, CHANGELOG). Console 0/0.
+Docs: Assets/_Project/Documentation/DevManual/02-World.md (Sun disc & halo).
+
+=== 2026-10-31 31o - BOTD sun driven by sky profiles ===
+State: hour 8.9 (day, Debug Hour), controller drives BOTD Directional Light(Clone) (enabled, shadows on); light 'e' is only GameObject-inactive (31k), BOTD clone untouched by 31k. BOTD volumes still above ours (31m). Dark/black-sky renders matched Anthony's report; he restored the Light Probe System to Adaptive and lighting returned (31n legacy switch not reapplied).
+Added (DM_IoSkyProfile/DMIoSkyController/Essentials): sunTemperature31o (0 = keep), sunVolumetricDimmer31o (-1 = keep), sunShadowResolution31o (2048), sunDisc31o; applied to the BOTD sun every frame in edit + Play, sun forced enabled + shadowed each frame; Deep Reset sets defaults. Existing: lux, multiplier, max lux, shadow strength, angular diameter.
+Note: Mars BOTD Environment clone has planetRadius 3000 with planetCenter y -6378.1 (camera ends up in space -> black sky / no sun in test renders); not changed.
+Backups: .pre20261031o. Console 0/0.
+Docs: none changed.
+
+=== 2026-10-31 31n - Player black in Indirect Diffuse ===
+Cause: all Genesis HDRP assets had Light Probe System = Adaptive Probe Volumes, but the Mars scene has no baked APV data (0 per-scene data, 0 lightmaps, no legacy probes). Dynamic renderers (player SkinnedMeshRenderers, Light Probes=Blend Probes) sample the empty APV -> black indirect diffuse. Static geometry/terrain gets indirect from SSGI. Volumes don't zero indirect (ILC multipliers 0.6-1.53, all layers).
+Fix: Light Probe System -> Light Probe Groups (legacy) on Genesis_HDRP_Balanced/High/Performance/Quality/Ultra. With no probes baked, dynamic objects fall back to the sky ambient probe (Dynamic). No bake run; no renderer or scene changes.
+Backups: .pre20261031n (5 HDRP assets, CHANGELOG). Console 0/0.
+Docs: none changed.
+
+=== 2026-10-31 31m - BOTD volumes back on top ===
+Cause: priorities/toggles were fine (BOTD 0/1, our copy -1, eclipse -2; botdVolumesOnTop+essentialsOverBotd ON in all 3 profiles). The hidden top drive volume (prio 2) carried a Fog meanFreePath override (31h) and a full auto-exposure param set (31j/31l), overriding BOTD.
+Fix (DMRealtimeIndirect.cs): drive fog disabled (BOTD owns fog; our fog distance stays on the below-BOTD copy). New BotdSetsExposure31m(); drive Exposure active only when BOTD sets no exposure, and carries only mode+fixedExposure when Fixed (auto range/adaptation only when auto exposure on). Drive now = PBS tint + eclipse ILC + Exposure(Fixed). Deep Reset/presets keep toggles ON.
+Backups: .pre20261031m. Console 0/0.
+Docs: none changed.
+
+=== 2026-10-31 pass 31l (Grok Bot) - Fixed exposure everywhere ===
+Anthony drops auto exposure (too hard to tune per environment). New DM_IoSkyProfile fields: autoExposure31l (default OFF), fixedExposureEV31l, fixedNightDropEV31l (3 EV brighter at full night/eclipse), ApplyFixedExposurePreset31l (14 / 13 / 11.5).
+DMRealtimeIndirect: Exposure + drive volume (above BOTD) set to Fixed at fixedExposureEV31l (minus night/eclipse drop) unless the toggle is on; no code path forces automatic while off. Deep Reset: Fixed (Mars 13, others 14) on profile and BOTD copies. Studio Sky & Orbit Essentials: "Auto exposure" toggle, "Fixed exposure (EV)" slider (-6..20), "Night/eclipse brighten (EV)", preset row Subtle 14 / Default 13 / Extreme 11.5; min/max/adaptation only under Advanced (used only when Auto is on).
+Values = previous outdoor clamp (limitMax): Mars 13.09, Jupiter 14, base 14. DM_IoPostProcessing, Gaia User Data BOTD Post Processing copy, DM_RealtimeIndirect.asset -> Fixed 13.09 (runtime drive overrides per scene profile).
+Backups .pre20261031l. Console 0/0. Not Play-tested.
+Docs: CHANGELOG only (Studio tooltips).
+=== 2026-10-31 pass 31k (Grok Bot) - contact shadows OFF project-wide ===
+Cause: HDRP global settings in use were the Gaia vendor asset (Gaia PC_High HDRP 14 Global Settings) with Camera default frame setting Contact Shadows ON; plus our code: DMRealtimeIndirect forced ContactShadows.enable=true and sun light useContactShadow=true (sunContactShadows), Deep Reset 31h set BOTD copies on/0.15, presets set sunContactShadows=true.
+Fix: copied global settings to Assets/Settings/HDRP/Genesis_HDRPGlobalSettings.asset (Gaia original untouched) and assigned it in Graphics settings; Contact Shadows frame setting off (Camera; Realtime/Baked reflection already off). Contact Shadows enable=false in DM_IoPostProcessing, Gaia User Data BOTD Post Processing copy, HDRPDefaultResources DefaultSettingsVolumeProfile. New DM_IoSkyProfile.contactShadowsProject31k (default OFF) + Studio Sky & Orbit Essentials toggle "Contact shadows (project)" (syncs all sky profiles); DMRealtimeIndirect, Deep Reset and presets never enable contact shadows while off. Open-scene directional lights set useContactShadow off (not saved). Genesis HDRP quality assets hold no contact-shadow frame bit (unchanged).
+Files: DMRealtimeIndirect.cs, DM_IoSkyProfile.cs, DMStudioSkyEssentials31h.cs, GraphicsSettings.asset, volume profiles above (backups .pre20261031k). Console 0/0. Not Play-tested.
+Docs: CHANGELOG only (toggle tooltip documents behaviour).
+=== 2026-10-31 pass 31j (Grok Bot) ===
+Blood: one control for all blood (enemy + player, all via DMVolumetricBlood.TrySpawn). DM_EnemyHitMarkProfile.bloodBrightness (0-4) scales fluid + decal glint; volumetricFluidMaxLux 5500->700 (fluid ~1.2x ground decal, no bloom). Presets Subtle 0.5 / Default 1 / Extreme 2.5 in Studio > Combat > Hit Marks > "Blood brightness" (top). Asset set to Default.
+Exposure: subtle auto exposure. DM_IoSkyProfile.ApplyExposurePreset31j: Subtle 11.5-14 EV adapt 0.6, Default 10.5-14 adapt 1, Extreme 8-14 adapt 2/1.5. Drive volume now overrides exposure range/adaptation above BOTD. Studio Sky & Orbit Essentials: Exposure min/max, Adaptation speed sliders + Auto exposure preset row; Deep Reset uses Subtle. Applied Subtle to Mars, Jupiter, base profile; DM_IoPostProcessing Exposure = Histogram 11.5-14, progressive 0.6/0.6.
+Files: DMVolumetricBlood.cs, DM_EnemyHitMarkProfile.cs/.asset, DMStudioAssetPanel.cs, DMRealtimeIndirect.cs, DM_IoSkyProfile.cs, DMStudioSkyEssentials31h.cs, sky profile assets, DM_IoPostProcessing.asset (backups .pre20261031j). Not Play-tested. Console 0/0.
+Docs: CHANGELOG only (Studio tooltips describe controls).
+2026-10-31 pass 31i - Mars blood glowing red blob (backups .pre20261031i)
+- Cause: KriptoFX volumetric blood fluid (BFX_Blood, unlit, not HDRP-exposed) is brightened by DMVolumetricBlood.FluidScale = sun lux / pi x volumetricFluidBrightness. The 31h Deep Reset set the Mars sun to 30000 lux (was ~5500 = BOTD 2745 x mult 2), so the fluid went ~5.5x brighter (scale 175 -> 955) and bloomed into a red blob. Blood materials, decals, hit lights unchanged/innocent (no emissive, no red hit lights).
+- Fix: DM_EnemyHitMarkProfile.volumetricFluidMaxLux (default 5500, 0 = no cap; Studio label 'Fluid sun lux cap') caps the lux used by FluidScale. Vendor files untouched. Console 0/0.
+Docs: tooltip on DM_EnemyHitMarkProfile.volumetricFluidMaxLux (no DevManual change)
+
+2026-10-31 pass 31h - Deep reset + Sky Essentials + sun/Jupiter orbit alignment (backups .pre20261031h)
+- Root cause of misalignment (v1.7): controller drove the INACTIVE "BOTD Directional Light(Clone)"; visible sun is "Day DirectionalLight". FindSun30i now prefers active named light > active RenderSettings.sun > brightest active directional > inactive named (last resort).
+- One time source TotalHours31h for Sky on + Sky-off fallback: Debug Hour (optional debugHourAdvances at Io clock rate) > Edit Preview Hour > edit-mode running clock (editModeClockRuns, DM_IoClockProfile rate) > DMIoClock. Verified v1.7: sun-to-Jupiter angle 0.0 deg at hour 15 (eclipse=1), 23 deg at 12, 38 deg at 10/20; edit clock 6.00->6.28 h in 20 s.
+- Profile: sunBaseLux31h (0=scene light), sunShadowStrength31h (shadow dimmer), essentialsOverBotd31h (drive volume adds exposure compensation + fog MFP above BOTD), debugHourAdvances, editModeClockRuns.
+- Studio: new DMStudioSkyEssentials31h (Essentials on top, everything else under 'Advanced (all settings)' foldout); Deep Reset to Recommended + Restore (Undo, Logs/deepreset31h_<profile>.tsv + JSON snapshots).
+- Deep Reset run: Jupiter (profile + v1.7 scene), Mars (profile only; scene part pending). v1.7 BOTD Environment(Clone) now uses DM copy Resources/World/SceneVolumes/Dark_Matter_Genesis_v1.7_BOTD_Environment_Clone_.asset (PBS 2.89/6.36/1.16 -> 1/1/0, fog MFP 2000 -> 4000, albedo/tint pinkish -> neutral-warm); BOTD volume weights 0.665/0.258 -> 1; DM_IoPostProcessing exposure Fixed 4.73 -> AutoHistogram 8-14, SSAO 0.85/0.25 -> 0.8/0.6, contact shadows off -> on 0.15.
+- Console 0 errors / 0 warnings. Scene v1.7 dirty - save it.
+Docs: Assets/_Project/Documentation/DevManual/02-World.md (Sky Essentials, Deep Reset, orbit time source 31h)
+2026-10-31 31g - Per-scene Io sky profiles (Jupiter v1.7 / Mars)
+- New Scripts\World\Sky\DMSceneSkyProfileMap.cs + Resources/World/DM_SceneSkyProfiles.asset: scene name -> profile. "Dark Matter Genesis v1.7" -> DM_IoSkyProfile_Jupiter, "Dark Matter Mars-The Beginning" -> DM_IoSkyProfile_Mars. Unmapped scenes -> Resources DM_IoSkyProfile (fallback). No scene edits.
+- New assets: DM_IoSkyProfile_Mars.asset = exact copy of DM_IoSkyProfile.asset; DM_IoSkyProfile_Jupiter.asset = copy + World Look: Jupiter (Io) snapshot (non-snapshot settings incl. 31e/31f toggles kept).
+- DM_IoSkyProfile.Live resolves by active scene name, re-resolves on active-scene change, sceneOpened, activeSceneChangedInEditMode, projectChanged (edit + Play). All readers (controller, realtime indirect, night sky, edit preview, anti-ghost, Studio) go through Live. Controller releases/re-acquires and DMRealtimeIndirect rebuilds its copy when the profile changes.
+- Studio Sky & Orbit subtab edits the active scene's profile; Day/Night shows "Active Io sky profile: <name> [source] scene: <scene>".
+- Backups .pre20261031g (DM_IoSkyProfile.cs/.asset, DMIoSkyController, DMRealtimeIndirect, DMStudioDayNight, DMStudioAssetPanel, CHANGELOG, 02-World.md). 0 errors / 0 warnings.
+Docs: 02-World.md "Per-scene Io sky profiles (31g)"
+2026-10-31 31f - BOTD volumes on top of Sky & Orbit + eclipse keeps sun shadows
+- Audit: no preset/snapshot code writes to BOTD volumes or their profiles/weights/priorities. The loss came from our hidden full-copy realtime-indirect volume at priority 90 (DM_IoPostProcessing copy) overriding BOTD Post Processing(Clone) (pri 1) and BOTD Environment(Clone) (pri 0); presets change that copy.
+- New Studio toggle "BOTD volumes on top" (default on, DM_IoSkyProfile.botdVolumesOnTop): realtime-indirect volume -> lowest BOTD priority -1, DM Eclipse Ambient -> -2 (edit preview + runtime). BOTD now wins on everything it overrides; ours only fills the rest. A small hidden drive volume (highest BOTD +1) carries only the dynamic bits: eclipse/night indirect scaling (BOTD's own ILC value read-only x eclipse factor, active only while dimming) and the Mars PBSky sky tint. Stars/MW (night dome), sun disc and Gaia space emission untouched. Off = old priority 90 behaviour.
+- Eclipse: new "Eclipse keeps sun shadows" (default on): no hand-off to Jupiter-shine; BOTD sun keeps its shadow (single shadowed directional) and is dimmed to "Eclipse Min Sun Intensity" (0-1 of daylight lux, default 0.15; presets 3/8/15/30/60%).
+- Files: DMRealtimeIndirect.cs, DMIoSkyController.cs, DM_IoSkyProfile.cs, DMStudioDayNight.cs. Backups .pre20261031f (also CHANGELOG, 02-World.md). 0 errors / 0 warnings.
+- Note: scene BOTD Post Processing(Clone) volume uses profile DM_IoPostProcessing (not BOTD Post Processing.asset) - left as is.
+Docs: 02-World.md "BOTD volumes on top + eclipse sun shadows (31f)"
+2026-10-31 31e - Stars/Milky Way + Debug Hour without Sky & Orbit, BOTD sun shadows
+- DMIoNightSky.cs: night dome (stars + Milky Way) now runs whenever Night Sky is on, Sky & Orbit on or off (was off with Sky off -> only Gaia's skybox stars, no MW). Fade uses the real BOTD sun elevation (cached), time-smoothed (no flicker); eclipse/aurora only with Sky on.
+- DMIoSkyController.cs: Sky off -> new FallbackDriveSun31e rotates the BOTD sun from Debug Hour / Preview Hour / clock on the same orbit path as Sky on; original rotation restored on Sky on, toggle off, disable, scene save and entering Play. New EnsureSunShadows31e: BOTD sun keeps shadows on, 2048 override, dimmer 1 on every path (Sky on/off, preview, runtime) except while Jupiter-shine owns the shadow during eclipse/night.
+- DM_IoSkyProfile.cs: fallbackDriveSun (default on); Studio Day/Night toggle "Fallback: drive sun (clock / Debug Hour)".
+- Presets: Jupiter and Mars both apply the full snapshot (same star/MW values, skyEnabled=1) -> switching restores exactly; Mars only changes Jupiter/moons/eclipse/aurora/sun/tint.
+- Jupiter "no shadows": sun shadows were not disabled by the preset; at an eclipse hour (Jupiter preset, eclipse centre ~15.5) the sun is hidden and the shadow hands off to dim Jupiter-shine (by design). Verified: active BOTD clone Hard shadows, 2048, dimmer 1, 0 console errors.
+- Backups .pre20261031e (DMIoSkyController, DMIoNightSky, DM_IoSkyProfile, DMStudioDayNight, CHANGELOG, 02-World.md).
+Docs: 02-World.md "Night sky + fallback sun (31e)"
+2026-10-31 31d - Warnings cleanup
+- DMStudioPerf30m.cs (2) + DMStudioShadowBudget.cs (2): obsolete FindObjectsByType(FindObjectsSortMode) -> new overloads (8 CS0618 warnings). Backups .pre20261031d.
+- Hemisphere_01 convex warning: scene instance Maintenance/P_Spaceship_Akorn_Mark_2/.../P_Hemisphere_01 MeshCollider convex -> off (no Rigidbody, static collider; prefab override, Undo; vendor prefab untouched). Scene needs saving.
+- Left: Biodome_02.FBX MaterialLocation.External (vendor importer, changing it remaps materials), Unity Input Manager deprecation, AI account timeout, MCP websocket notices.
+Docs: none (no workflow change)
+2026-10-31 31c - Perf: Turn_Move batch + texture streaming (terrain detail untouched)
+- Console after restart: 0 errors.
+- New Scripts\World\Perf\DMTurnMoveBatch.cs: in Play disables each enabled Creepy Cat Turn_Move (vendor file untouched) and runs the identical Rotate/Translate in ONE Update; re-enabled ones are handed back; rescans every 2 s. Scene count 57 Turn_Move -> 1 Update. Studio > Sun Shadows > "Batch Turn_Move" toggle (PlayerPrefs dm.turnMoveBatch, next Play).
+- New Editor\GenesisStudio\DMStudioTexStream31c.cs (Studio row Stats/Apply/Restore). Applied: mip streaming budget 512 -> 2560 MB (already active); streamingMipmaps on for 647 scene textures; 4 non-hero >4K textures capped 2048. Importer-only (incl. third-party .meta), logged Logs/texstream31c.tsv; Restore reverts importers + quality. Scene texture estimate ~4570 -> ~4482 MB (full-res; streaming now trims at runtime to budget).
+- Backup DMStudioShadowBudget.cs.pre20261031c.
+Docs: 02-World.md "Perf 31c"
+2026-10-31 31b - Edit mode = runtime post/sky (live re-sync) + shadow-request check
+- DMRealtimeIndirect: its priority-90 volume uses a COPY of DM_IoPostProcessing made at enable, so profile edits never showed (stale snapshot) in edit preview or Play. New ResyncFromSource31b(): every 0.25 s compares editor dirty counts of the source profile + its components; on change copies values/override states/active into the copy, then Apply() re-drives Sky & Orbit fields. Same code path in edit preview and Play (same priority/weight). No visual values changed.
+- BOTD Environment volume references the asset directly and Sky & Orbit profile is read live each frame - already live.
+- DMIoSkyController: obsolete FindObjectsByType(SortMode) warning fixed.
+- "Max shadow requests count reached": in Play only 3 shadowed lights active (sun + 2 spots, ~5 requests). Likely source was two shadowed directional suns x realtime BOTD reflection probe faces - fixed by 31a single shadowed sun. Limit (48) not raised; no lights changed.
+- Backups .pre20261031b (DMRealtimeIndirect, DMIoSkyController).
+Docs: 02-World.md "Edit mode matches runtime (31b)"
+2026-10-31 31a - Console fix + 30m applied
+- Error x15 "Cascade Shadow atlasing has failed, only one directional light can cast shadows": Sky & Orbit off left Day DirectionalLight + BOTD clone both shadowed. DMIoSkyController fallback now also turns shadows off on non-primary directional lights (restored when Sky & Orbit is back on). Backup .pre20261031a.
+- 30m Apply run (edit mode): shadow casters 5534 -> 3963 (1571 off), caster tris 2.31M -> 2.00M; static already set (5342). Undo: Studio "Restore 30m" (Logs/perf30m.tsv). Console 0 errors.
+Docs: 02-World.md "Sky & Orbit master tick (30n)" (fallback also limits shadows to one sun)
+2026-10-30 30n - Sky & Orbit master tick + single-sun fallback (CODE IN; compile pending - Unity was in Play)
+- Studio Day/Night: "Use Sky & Orbit" tick (profile.skyEnabled). OFF = full Gaia fallback: DMIoSkyController releases (restores sun/other dir lights), DMRealtimeIndirect stands down (restores contact/masks, volume weight 0), DMIoNightSky (Jupiter/moons) off. Works edit + Play; reversible by re-ticking.
+- New profile flag fallbackSingleSunDisc (default on): while OFF, hides sun disc + lens flare on extra enabled directional lights (keeps one); restored when ON.
+- Root cause of player/terrain lighting: sky off but DMRealtimeIndirect still overriding volume (half-on), plus 2 shadowed dir lights (BOTD clone + Day DirectionalLight) - HDRP only shadows one.
+- Files: DMIoSkyController, DMRealtimeIndirect, DMIoNightSky, DM_IoSkyProfile, DMStudioDayNight (.pre20261030n backups).
+Docs: 02-World.md "Sky & Orbit master tick (30n)"
+2026-10-30m  Perf fix 2 tooling (NOT yet applied to the scene)
+- New Editor/GenesisStudio/DMStudioPerf30m.cs: Apply (shadow casting off on PrePrologue_Set Fence/Junk/Props except towers/large silhouettes + renderers < 1.5 m in the base area; Batching+Occludee Static, Occluder if >= 4 m, on non-dynamic PrePrologue_Set + MARS Prefabs objects; skips Rigidbody/Animator/CharacterController/Player/gameplay scripts/pickups/turrets/vendors/doors/Gaia) and Restore, log Logs/perf30m.tsv. Studio buttons 'Apply 30m' / 'Restore 30m' in Sun Shadows (30l). DMPrePrologueSetTool.Place applies the same rules to new spawns.
+- Backups .pre20261030m (DMPrePrologueSetTool.cs, DMStudioShadowBudget.cs).
+Docs: DevManual/02-World.md "Sun shadows + Debug Hour (2026-10-30l)"
+
+2026-10-30l  Sun shadows readable + sun orbits again
+- Causes: 147 shadowed prop lights vs HDRP max 48 shadow requests (sun cascades dropped, 'Max shadow requests' spam); anti-sun Shade Fill (shadowless directional) lifting the shadow side; contact shadows length 0; sun shadow res on quality tier. Sun orbit: Debug Hour Override was on (13.4 h) and froze the sun.
+- New Editor/GenesisStudio/DMStudioShadowBudget.cs: Studio 'Sun Shadows (30l)' - max distance, cascade split 0, contact length, floor lift, sun shadow resolution, soft toggle, Subtle/Default/Extreme presets, prop light shadow 'Limit to 4 hero' / 'Restore' (log Logs/propLightShadows30l.tsv).
+- Applied: 181 prop lights shadows off (4 hero spotlights kept, one Undo group, restorable), BOTD sun shadow res override 2048, profile shadeFillStrength 0.35, contactShadowLength 0.1.
+- Jupiter (Io) preset shadeFillStrength 1 -> 0.35 (only preset change). Mars unchanged (0.6).
+- DM_IoSkyProfile.debugHourEnabled (new): Debug Hour freezes the sky only while ticked; DMIoSkyController + Studio use DebugHourActive. Now unticked (hour 13.4 kept).
+- Backups .pre20261030l (DM_IoSkyProfile.cs, DMIoSkyController.cs, DMStudioDayNight.cs). Scene not saved.
+Docs: DevManual/02-World.md "Sun shadows + Debug Hour (2026-10-30l)"
+
+2026-10-30k4  Pre-Prologue: loose items grounded (Y only) + crane assembly restored
+- Active Combat Scene Items, Medpack/scrap, MorphBlade/DMRanged pickups snapped individually by bounds bottom (-0.49..-0.58). The script also wrongly moved 23 inactive TEST SCENE duplicates; those were reverted to their original Y (Logs/align30k_run4_revert.tsv). Crane_Base_01 inside P_Crane_Full_01 put back to local Y 0 (its original place in the assembly); the assembly's lowest part is on the terrain. Logs/align30k_run4.tsv. Scene not saved.
+Docs: DevManual/02-World.md "Pre-Prologue Set terrain snap (2026-10-30k)"
+
+2026-10-30k3  Pre-Prologue: align hand-moved buildings too (Y only)
+- Measured each building's current renderer-bounds bottom vs terrain; position Y only (no scale/rotation). P_Base_ComStation_A +0.34 (with Stairs01 (2)), P_Crane_Full_01 +0.33, 8 set pieces (fences/pylon) re-snapped; all other buildings already within 0.05 m. Undo groups '30k3 / 30k3b Align all to terrain (Y only)'. Logs/align30k_run3*.tsv. Scene not saved.
+Docs: DevManual/02-World.md "Pre-Prologue Set terrain snap (2026-10-30k)"
+
+2026-10-30k2  Pre-Prologue Set: no PolygonSciFiWorlds + terrain alignment applied
+- DMPrePrologueSetTool.cs: all PolygonSciFiWorlds picks removed. Perimeter BC Fence_07/08 x3 (~3 m) with CC P_Radar_Pylon_01 (x0.6) towers/corners and P_Wall_Fence_02 gate posts (10 m gaps); pads BC Pad_04 x7; control tower P_Radar_Pylon_01; buggies -> P_Rover_Body_02/P_Landing_Gear_01; hover pad -> BC Extras_02_pad; crates/containers/barrels/antennas -> CC + BC boxes; junk -> BC boxes, CC pipes/barrels/rover parts, SIK pipes; silos -> P_Big_Oxygen_Tank_01; generators/hubs -> P_Reactor_01/02/03; refinery pipes -> P_Pipe_Tube; comms -> P_Big_Radar_01; solar -> P_Solar_Panel_01/02/04. Shuttle default P_Drop_Ship_Mark_01 (Akorn option kept).
+- Respawned (286 objects) + one Undo group 'Align to terrain': building Y drops, loose items/pickups/Ion Turret dropped as a cluster, player spawn moved out of Biodome_02 onto ground. Log Logs/align30k_run2.tsv (run1 reverted: align30k_run1_reverted.tsv). Scene not saved.
+Docs: DevManual/02-World.md "Pre-Prologue Set terrain snap (2026-10-30k)"
+
+2026-10-30k  Pre-Prologue Set: snap to flattened terrain (tool) + area alignment pass
+- DMPrePrologueSetTool.cs: Place() now calls SnapBottom (renderer-bounds bottom on mean ground of centre + 4 footprint points; particles/strays >60 m ignored); new public RobustBounds/SnapBottom/GroundAt. Backup .pre20261030k.
+- Alignment pass ran once (Undo-registered, log Logs/align30k_terrain.tsv) but the scene was reverted in the editor afterwards; NOT re-applied pending Anthony. Script: GrokBotPerf/mb/a30k.cs.
+Docs: DevManual/02-World.md "Pre-Prologue Set terrain snap (2026-10-30k)"
+
+2026-10-30i/j  BOTD sun as single driven light, Shade Fill strength, edit-mode runtime preview
+- DM_IoSkyProfile: sunLightName default/asset = 'BOTD Directional Light(Clone)'; new shadeFillStrength (0-4, default 0.5, 0 = off; Jupiter snapshot = 1 exact restore, Mars 0.6); new editModeRuntimePreview (default on).
+- DMIoSkyController: FindSun30i (profile name > BOTD clone > BOTD, active first); 1 s runtime recheck re-acquires if Gaia spawns the BOTD sun later; edit preview now also disables other directional lights (Day DirectionalLight) and restores them in Release -> Cascade Shadow atlasing errors gone. Shade fill intensity x strength. Preview obeys the toggle.
+- DMRealtimeIndirect: [ExecuteAlways] + hidden HideAndDontSave edit instance (runtime volume copy incl. SSR/30a cleanup, exposure, fog, PBS Mars tint); killed before Play and on scene save; camera masks only patched in Play.
+- Studio Day/Night: 'Edit-mode runtime preview' toggle; Shade Fill toggle + strength slider + Subtle/Default/Extreme (0.25/0.5/2). Backups .pre20261030i. Console 0 errors.
+Docs: DevManual/02-World.md "Single BOTD sun, Shade Fill strength, edit-mode runtime preview (2026-10-30i/j)"
+
+2026-10-30g  World look Jupiter<->Mars: full restore
+- DM_IoSkyProfile.cs: JupiterIoSnapshot (183 fields from pre-Mars profile .pre20261030d: lighting, sun light/angular/shadows/flare, orbit, sky, volume/post incl. 30a shadow cleanup, exposure, fog). Jupiter (Io) re-applies the snapshot; Mars applies its own full set. Subtle/Normal/Extreme per world look kept. Backups .pre20261030g (.cs + .asset). Round-trip probe matches.
+Docs: DevManual/02-World.md "World look full restore (2026-10-30g)"
+
+2026-10-30f  Pre-Prologue: canon resolved + Pre-Prologue Set tool
+- Docs: StoryQuest.docx wins all conflicts (Anthony). Nine memory cores; fixed Kade backstory (Background Select retired, Hard Mode kept); 2 Mars survivors as companions; Io job via contracting board (after Neptune transport pickup); crash on arrival. Canon banner + edits in Quests_And_Story_Plan.md (2.5 contradictions -> RESOLVED), Prologue_Acts_Expanded.md, Stages_0_1_Playthrough_Quest_Stages.md (backups .pre20261030f).
+- New Editor/GenesisStudio/DMPrePrologueSetTool.cs (Tools > Genesis Studio > Pre-Prologue Set): spawns under PrePrologue_Set (Fence, Landing, Maintenance, Junk, O2_Terraform, Props), terrain-snapped, measured fence spacing, Spawn/Clear per zone + all, seed, density Subtle/Default/Extreme, shuttle choice.
+- Spawned in edit mode (194 objects). Scene NOT saved.
+Docs: DevManual/02-World.md "Pre-Prologue Set (2026-10-30f)"; Design/Quests_And_Story_Plan.md 2.5
+
+2026-10-30e  Pre-Prologue: Mars (AAPS-07) story + quest docs
+- Quests_And_Story_Plan.md: new 2.5 Pre-Prologue: Mars (Anthony's handoff doc wording + brief, beats, NPC roles, radio calls R1-R13, cinematics C1-C10, 10 flagged contradictions).
+- Stages_0_1_Playthrough_Quest_Stages.md: new PRE-PROLOGUE section (QM.1-QM.9 objectives/zones/NPCs/cues). Backups .pre20261030e. No code/scene changes; set-dressing layout is a plan awaiting approval.
+Docs: Design/Quests_And_Story_Plan.md 2.5; Design/Stages_0_1_Playthrough_Quest_Stages.md PRE-PROLOGUE
+
+2026-10-30d  Sky Look Preset: Mars + Jupiter (Io)
+- DM_IoSkyProfile: SkyLookPreset gains Mars and "Jupiter (Io)". World looks also set Show Jupiter/Moons, eclipse, Jupiter size, moon size, sun lux, new sun disc size, new PBS sky tint and the 30a shadow-cleanup fields; the Custom stash now saves them too, so switching is lossless.
+- Jupiter (Io) = snapshot of the 30a-30c setup (Jupiter 37.5 deg, moons 4x, Jupiter + moons on). Mars = Jupiter/moons/eclipse/aurora off, sun 0.35 deg at ~43% lux, butterscotch zenith/horizon tint, dusty fog, dim night fill. Day length stays on the clock (24 min).
+- New fields: sunAngularDiameterDeg (controller, restored on release), skyTintEnabled/skyZenithTint/skyHorizonTint/skyHorizonZenithShift (DMRealtimeIndirect PBS, Play only).
+- Studio Io Orbit: World Look Mars/Jupiter buttons, sun disc slider + Subtle/Default/Extreme, sky tint controls.
+- Files: DM_IoSkyProfile.cs, DMIoSkyController.cs, DMRealtimeIndirect.cs, DMStudioDayNight.cs (backups .pre20261030d).
+Docs: DevManual/02-World.md "Sky Look Preset: Mars / Jupiter (Io) (2026-10-30d)"
+[2026-10-30c+] Show Jupiter / Show Moons toggles
+- DM_IoSkyProfile.showJupiter (off = Jupiter + small moons hidden, Jupiter-shine 0, no eclipse/ring/sun warp, no Jupiter night shadow; sun keeps orbiting) and showMoons (off = Europa/Ganymede/Callisto + small moons hidden, removed from star cutout). Applied live in DMIoSkyController (edit preview + Play); Jupiter's original active state restored on release.
+- Studio World > Sky & Orbit > Io Orbit: Show Jupiter (+ eclipse), Show Moons.
+- Files: DM_IoSkyProfile.cs, DMIoSkyController.cs, DMStudioDayNight.cs. Backups .pre20261030c. No scene edits.
+Docs: DevManual/02-World.md "Show Jupiter / Moons (30c)"
+[2026-10-30c] Second white sun disc removed (shade fill)
+- Cause: DMIoSkyController.CreateShadeFill made the anti-sun 'DM Io Shade Fill' directional with HDRP defaults (interactsWithSky=true, angularDiameter 0.5, flare) -> drawn as a bright white sun disc + halo opposite the sun, visible at night/eclipse (fill lux 2078 + eclipse fill 373). Same bug class as the 26h night fills.
+- Fix: shade fill now interactsWithSky=false, angularDiameter/flareSize/flareMultiplier 0, no surface texture, lens flare off. Fill lighting unchanged. Real sun, Jupiter shine, moons untouched.
+- Files: DMIoSkyController.cs. Backup .pre20261030c. No scene edits.
+Docs: DevManual/02-World.md "Fill lights never draw a sky disc (30c)"
+[2026-10-30b] Debug Hour Override now drives the visible sun
+- Cause: scene has two lights named "Day DirectionalLight" (one disabled duplicate). DMIoSkyController.FindSceneComponentByName returned the first match incl. inactive, so the debug hour / clock rotated the hidden copy (and in Play would activate it and disable the real sun). Jupiter/moons/eclipse moved, the visible sun did not.
+- Fix: FindSceneComponentByName prefers an active + enabled match, falls back to inactive (Jupiter root still found).
+- Studio Sky & Orbit > Io Orbit: Debug Hour Override toggle + Hour slider (0-30), Release button kept.
+- Files: DMIoSkyController.cs, DMStudioDayNight.cs. Backups .pre20261030b. No scene edits.
+Docs: DevManual/02-World.md "Debug hour override (30b)"
+[2026-10-30a] Io orbit restored + shadow cleanup
+- Cause (sun not orbiting): DM_IoSkyProfile.debugHourOverride was left at 15.95 -> sky frozen at mid-eclipse (Play + edit). Clock was also 240 s/h (2 h real day). Now -1 (follows clock) and clock 48 s/h (24 min Io day).
+- Cause (giant blurry shadow): frozen hour sat inside the eclipse, where the Jupiter/ring light owns the directional shadow with 9.44 deg softness @ 0.94 strength. Now 3 deg @ 0.5.
+- Cause (yellow vertical column): SSR depthBufferThickness 0.846 on DM_IoPostProcessing smeared sun/ring flare into streaks. New profile fields ssrEnabled/ssrDepthThickness (0.08) applied to the runtime volume clone (asset untouched). Ring flare 0.378->0.2, eclipse ring flare 0.605->0.3, bloom 0.873->0.35.
+- Muddy darks: SSAO 1.54/r1.14/31px -> 0.9/0.5/20px, contact shadow 0.49->0.12 m, micro shadow 0.48->0.35.
+- Visibility: Jupiter 37.5 deg (~75x Moon), Galilean moons size x4.
+- New: DM_IoSkyProfile.ApplyIoOrbitPreset / ApplyShadowCleanupPreset; Studio World > Sky & Orbit (and Io Clock) "Io Orbit (30a)" + "Shadow Cleanup (30a)" sliders, Release Debug Hour button, Subtle/Default/Extreme presets.
+- Files: DM_IoSkyProfile.cs, DMRealtimeIndirect.cs, DMStudioDayNight.cs, DM_IoSkyProfile.asset, DM_IoClockProfile.asset. Backups .pre20261030a. No scene edits.
+Docs: DevManual/02-World.md "Io orbit + shadow cleanup (30a)"
+[2026-10-29d] SnapProbe VISUAL threshold raised
+- DMPlayerSnapProbe.cs: VisualThreshold 0.005 -> 0.04 m. Normal Walk/WalkTurnLeft hip sway (0.5-3.3 cm) no longer spams [SnapProbe] VISUAL warnings; real pops still log.
+- Backup: DMPlayerSnapProbe.cs.pre20261029d.
+Docs: DevManual/03-Combat.md "SnapProbe visual threshold (29d)"
+
 [2026-10-29c] MorphBlade player copies: Animator restored
 - Player_Kade_v2.prefab: added Animator (EAU_MorphBlade.controller, no avatar, no root motion, AlwaysAnimate - same as pickup) on EAU_MorphBlade under Drawn_MorphBlade/MB_Grip/MorphBlade_Held and Holstered_MorphBlade/MB_Grip/MorphBlade_Held; linked each DMWeaponMorphController.morphAnimator. No transforms changed.
 - Scene player instance still overrides morphAnimator (empty) on both copies - revert that override in Inspector.

@@ -1,9 +1,12 @@
 # Prologue Acts — Expanded Detail
 
+> **2026-10-30f canon resolution (Anthony): the Mars handoff doc (StoryQuest.docx, see Quests_And_Story_Plan.md 2.5) wins all conflicts.** Kairos needs **nine** memory cores; Kade has a **fixed backstory** (no background select; Hard Mode toggle kept); the **2 Mars survivors** are the starting companions (no starter pick); Kade takes the Io job via an **anonymous/underground contracting board** (reached aboard the Neptune-bound transport); the opening is the Mars pre-prologue, then a **crash on arrival** at Io (mechanism open). Older text below that says otherwise is superseded.
+
+
 **Status:** Design draft — August 2026 · **Links retargeted Oct 8, 2026** (checklist → `Prologue_Playthrough_And_Camp_Bootstrap_Plan.md` §3)  
 **Parents:** `Prologue_Playthrough_And_Camp_Bootstrap_Plan.md` (§3 checklist + systems/POIs) · `Quests_And_Story_Plan.md` (spine)  
 **Scope:** Mainline Acts **0 → I → II** only (2–5 hours). Act **III+** summarized as handoff.  
-**Locks:** Kade fixed name · 0 UEA · level 1 · no inventory · 2 starting companions (Mars survivors) · Level 5 mining/harvest gate · **10 Memory Cores** post-prologue · rumors until cores prove truth.
+**Locks:** Kade fixed name · 0 UEA · level 1 · no inventory · 2 starting companions (Mars survivors) · Level 5 mining/harvest gate · **nine Memory Cores** post-prologue (30f) · rumors until cores prove truth.
 
 ---
 
@@ -11,7 +14,7 @@
 
 | Act | Name | Player fantasy | End state |
 |-----|------|----------------|-----------|
-| **0** | Charter | Who is Kade before Io? | Dropship committed; 2 starting companions aboard |
+| **0** | Charter | Who is Kade before Io? | Mars escape done; Io job taken via contracting board; crash on arrival; 2 Mars survivors aboard (30f) |
 | **I** | Landing & Camp | We survived the crash. We have a foothold. | CC Seed + Shelter + Crafting Station live |
 | **II** | Cert & Machine | We earned the right to dig — and woke something. | Lv5 skills · The Overseer awake · Echo #1 · 10-core hunt accepted |
 | **III+** | (Post-prologue) | Hunt the ten memories. | Outside 2–5 h budget |
@@ -26,7 +29,7 @@
 
 ### Purpose
 
-1. Lock Kade identity (background + optional Hard Mode).  
+1. Kade identity is fixed (handoff backstory, 30f); optional Hard Mode only.  
 2. Introduce Kade's 2 starting companions, the Mars survivors (synergy preview if class matches).  
 3. Sell the charter: establish a camp on Basalt Highlands, report to Colony Ops.  
 4. Transition emotionally from menu → crash.
@@ -37,7 +40,7 @@
 - Main Menu → New Expedition / New Game.  
 - Save slot created empty: `aetherCredits = 0`, no cores, The Overseer not awakened.
 
-**0.2 Kade Background Select**  
+**0.2 Kade Background Select** - **RETIRED 30f** (fixed backstory; keep Hard Mode toggle)  
 - Full-screen cards (Shift / Dark Matter palette).  
 - Each card: tagline, 3-line hook, expandable “Rumors you have heard,” stat/perk summary, companion synergy highlights (≥2 classes).  
 - Hard Mode toggle visible: **−20% Kade damage**, same kit, same 0 UEA.  
@@ -54,7 +57,7 @@
 - Short KBM + gamepad sheet.  
 - Must acknowledge before cinematic (GameSession gate pattern).
 
-**0.5 Shuttle descent cinematic**  
+**0.5 Io approach + crash-on-arrival cinematic** (30f; mechanism open)  
 - Visual: Io sulfur haze, basalt ridges, Colony Ops VO: *“Charter drop to Basalt Highlands. Establish camp. Report.”*  
 - Impact: hard landing, blackout frames, fade up exterior.  
 - Optional: companion one-liner by class (scout / medic / engineer flavor only).
