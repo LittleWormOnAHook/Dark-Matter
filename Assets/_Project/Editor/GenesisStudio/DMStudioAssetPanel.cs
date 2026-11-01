@@ -44,6 +44,7 @@ namespace Project.EditorTools.GenesisStudio
         public void DrawSingleton(string assetPath, string description)
         {
             ScriptableObject asset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(assetPath);
+            if (assetPath == Project.World.Sky.DM_IoSkyProfile.AssetPath && Project.World.Sky.DM_IoSkyProfile.Live != null) asset = Project.World.Sky.DM_IoSkyProfile.Live; // 31g: active scene's profile
             if (asset == null)
             {
                 var blockers = DMStudioActionValidation.CollectMissingProfileAsset(assetPath, "Profile asset");
@@ -55,6 +56,8 @@ namespace Project.EditorTools.GenesisStudio
             }
 
             DrawAssetHeader(asset, description);
+            if (asset is Project.Combat.DM_EnemyHitMarkProfile blood31j) DrawBloodBrightness31j(blood31j); // 31j: on top so it is visible
+            if (asset is Project.World.Sky.DM_IoSkyProfile sky31h) { bool adv31s = DMStudioSkyEssentials31h.Draw(sky31h); DMStudioPerf31s.Draw(sky31h); if (!adv31s) return; } // 31s: Performance foldout // 31h: Essentials on top, rest under Advanced
             DrawInspector(asset);
         }
 
@@ -685,6 +688,24 @@ namespace Project.EditorTools.GenesisStudio
             }
 
             EditorGUILayout.EndHorizontal();
+        }
+
+        // 2026-10-31j: Studio > Combat > Hit Marks > Blood brightness (enemy + player KriptoFX blood).
+        private static void DrawBloodBrightness31j(Project.Combat.DM_EnemyHitMarkProfile p)
+        {
+            EditorGUILayout.Space(4f);
+            EditorGUILayout.LabelField("Blood brightness (enemy + player hits)", EditorStyles.boldLabel);
+            EditorGUI.BeginChangeCheck();
+            float bb = EditorGUILayout.Slider(new GUIContent("Blood brightness", "1 = natural dark red, ~1.2x the ground decal. Scales airborne fluid colour and the sun glint on fluid + ground decals."), p.bloodBrightness, 0f, 4f);
+            float cap = EditorGUILayout.Slider(new GUIContent("Fluid sun lux cap", "Sun lux used to brighten the unexposed KriptoFX fluid (0 = no cap)."), p.volumetricFluidMaxLux, 0f, 30000f);
+            if (EditorGUI.EndChangeCheck()) { Undo.RecordObject(p, "Blood brightness"); p.bloodBrightness = bb; p.volumetricFluidMaxLux = cap; EditorUtility.SetDirty(p); }
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Subtle (0.5)")) { Undo.RecordObject(p, "Blood preset"); p.ApplyBloodBrightnessPreset(0); EditorUtility.SetDirty(p); }
+            if (GUILayout.Button("Default (1)")) { Undo.RecordObject(p, "Blood preset"); p.ApplyBloodBrightnessPreset(1); EditorUtility.SetDirty(p); }
+            if (GUILayout.Button("Extreme (2.5)")) { Undo.RecordObject(p, "Blood preset"); p.ApplyBloodBrightnessPreset(2); EditorUtility.SetDirty(p); }
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.HelpBox("Applies to the next blood spawned (Live in Play).", MessageType.None);
+            EditorGUILayout.Space(4f);
         }
 
         private void DrawAssetHeader(UnityEngine.Object asset, string description)

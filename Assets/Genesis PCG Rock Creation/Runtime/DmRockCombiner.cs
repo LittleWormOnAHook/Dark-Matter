@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -281,6 +281,9 @@ namespace GenesisPCG.RockCreation
             if (placementStamp == 0)
                 placementStamp = MakeStamp();
             PcgSeededRegistry.Register(this);
+#if UNITY_EDITOR
+            Register31s(this); // 31s
+#endif
             DmRockCombineRecipe.Changed += OnRecipeChanged;
             DmRockKit.Changed += OnKitChanged;
             DmRockStyle.Changed += OnStyleChanged;
@@ -559,6 +562,9 @@ namespace GenesisPCG.RockCreation
 
         private void OnDisable()
         {
+#if UNITY_EDITOR
+            Unregister31s(this); // 31s
+#endif
             DmRockCombineRecipe.Changed -= OnRecipeChanged;
             DmRockKit.Changed -= OnKitChanged;
             DmRockStyle.Changed -= OnStyleChanged;
@@ -640,7 +646,18 @@ namespace GenesisPCG.RockCreation
 #if UNITY_EDITOR
         [NonSerialized] private double m_settleAt = -1;
 
-        private void Update() => HandleEditorMove();
+        // 31s: no per-frame Update (it ran in Play for nothing). Edit mode polls live combiners from EditorApplication.update.
+        private static readonly HashSet<DmRockCombiner> s_live31s = new HashSet<DmRockCombiner>();
+        private static readonly List<DmRockCombiner> s_tmp31s = new List<DmRockCombiner>();
+        private static bool s_hooked31s;
+        private static void Register31s(DmRockCombiner r) { s_live31s.Add(r); if (!s_hooked31s) { s_hooked31s = true; UnityEditor.EditorApplication.update += Tick31s; } }
+        private static void Unregister31s(DmRockCombiner r) { s_live31s.Remove(r); }
+        private static void Tick31s()
+        {
+            if (Application.isPlaying || s_live31s.Count == 0) return;
+            s_tmp31s.Clear(); s_tmp31s.AddRange(s_live31s);
+            for (int i = 0; i < s_tmp31s.Count; i++) { var r = s_tmp31s[i]; if (r == null) { s_live31s.Remove(r); continue; } if (r.transform.hasChanged) r.HandleEditorMove(); }
+        }
 
         /// <summary>
         /// Edit mode: re-conform whenever the rock is moved/rotated/snapped (from the undeformed mesh); once the move

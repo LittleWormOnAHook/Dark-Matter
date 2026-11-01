@@ -178,7 +178,7 @@ Material:
     - _DMAOChannel: 0
     - _DMAOReplace: 0
     - _DMAOStrength: 1
-    - _DMBrightness: 1
+    - _DMBrightness: 0.96
     - _DMColor: 0
     - _DMHeightAO: 0
     - _DMHeightAOMid: 0.4
@@ -251,7 +251,7 @@ Material:
     - _ReceivesSSRTransparent: 0
     - _RefractionModel: 0
     - _Smoothness: 0.5
-    - _SmoothnessRemapMax: 0.57369894
+    - _SmoothnessRemapMax: 0.19580227
     - _SmoothnessRemapMin: 0
     - _SpecularAAScreenSpaceVariance: 0.1
     - _SpecularAAThreshold: 0.2
@@ -290,8 +290,8 @@ Material:
     - _ZTestTransparent: 4
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 0.7132075, g: 0.7132075, b: 0.7132075, a: 1}
-    - _Color: {r: 0.7132074, g: 0.7132074, b: 0.7132074, a: 1}
+    - _BaseColor: {r: 0.37525812, g: 0.4059655, b: 0.4792453, a: 1}
+    - _Color: {r: 0.3752581, g: 0.40596548, b: 0.4792453, a: 1}
     - _DMTint: {r: 1, g: 1, b: 1, a: 1}
     - _DiffusionProfileAsset: {r: 0, g: 0, b: 0, a: 0}
     - _DoubleSidedConstants: {r: 1, g: 1, b: -1, a: 0}

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -251,7 +251,7 @@ namespace Project.SurfaceCarve
             if (updateCollider)
             {
                 if (Application.isPlaying)
-                    colliderDirty = true;
+                { colliderDirty = true; enabled = true; } // 31s: wake
                 else
                     RefreshCollider();
             }
@@ -325,10 +325,12 @@ namespace Project.SurfaceCarve
                 RefreshCollider();
         }
 
+        private void Start() { if (Application.isPlaying && !colliderDirty) enabled = false; } // 31s: idle carvables cost no per-frame call
+
         private void LateUpdate()
         {
-            if (!colliderDirty || !Application.isPlaying)
-                return;
+            if (!Application.isPlaying) return;
+            if (!colliderDirty) { enabled = false; return; } // 31s: sleep while idle (carve wakes it)
             if (Time.unscaledTime < nextColliderTime)
                 return;
             nextColliderTime = Time.unscaledTime + DMCarveSettings.Active.runtimeColliderRefresh;
