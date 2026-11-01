@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 
 namespace Project.Combat
@@ -329,6 +329,13 @@ namespace Project.Combat
         public bool slashOnKillingBlow = true;
 
         /// <summary>0 Subtle, 1 Default, 2 Extreme.</summary>
+        /// <summary>31j: blood brightness presets. 0 Subtle, 1 Default, 2 Extreme.</summary>
+        public void ApplyBloodBrightnessPreset(int preset)
+        {
+            bloodBrightness = preset <= 0 ? 0.5f : preset == 1 ? 1f : 2.5f;
+            volumetricFluidMaxLux = 700f;
+        }
+
         public void ApplyGroundDecalCapPreset(int preset)
         {
             volumetricGroundDecalCap = preset <= 0 ? 12 : preset == 1 ? 24 : 60;
@@ -339,6 +346,10 @@ namespace Project.Combat
         public bool volumetricFluidExposureComp = true;
         [Tooltip("Fluid brightness multiplier on top of the exposure compensation (1 = lit like a 100% albedo surface).")]
         [Range(0f, 4f)] public float volumetricFluidBrightness = 0.07f;
+        [Tooltip("2026-10-31i: sun lux cap for the fluid exposure compensation. BFX_Blood writes its colour straight to the frame (no HDRP exposure), so scaling by a 30000 lux sun (31h Deep Reset) blew the fluid out into a red bloom blob. 5500 = the pre-31h BOTD sun (2745 x 2). 0 = no cap.")]
+        [Range(0f, 150000f)] public float volumetricFluidMaxLux = 700f; // 31j: 5500 -> 700 = fluid ~1.2x the ground decal (natural, no bloom)
+        [Tooltip("2026-10-31j: ONE brightness control for all KriptoFX blood (enemy AND player hits): airborne fluid colour and the sun glint on fluid + ground decals. 1 = default dark red; Studio > Combat > Hit Marks > Blood brightness.")]
+        [Range(0f, 4f)] public float bloodBrightness = 1f;
         [Tooltip("Airborne fluid: the material color is brought down to this max channel before the glow (hue kept). The Android / Mech copies are HDR (2.4) and bloomed into a screen-filling glow; 0.75 = the vendor red's brightness.")]
         [Range(0.1f, 4f)] public float fluidMaxChannel = 0.75f;
         [Tooltip("Per body type glow multiplier on the airborne fluid brightness (hue unchanged). 1 = natural.")]

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering.HighDefinition;
@@ -154,12 +154,13 @@ namespace Project.Combat
                         if (l.type == LightType.Directional && l.isActiveAndEnabled) { _sun = l; break; }
             }
             float lux = _sun != null ? _sun.intensity : 0f;
+            if (p.volumetricFluidMaxLux > 0f) lux = Mathf.Min(lux, p.volumetricFluidMaxLux); // 31i: fluid is unexposed - a brighter sun must not blow it out
             return Mathf.Max(1f, lux / Mathf.PI * p.volumetricFluidBrightness);
         }
 
         private static void ApplyFluidColor(DM_EnemyHitMarkProfile p, GameObject go, DMEnemyBodyType body)
         {
-            float s = FluidScale(p) * (body == DMEnemyBodyType.Android ? p.fluidGlowAndroid : body == DMEnemyBodyType.Robot ? p.fluidGlowMech : p.fluidGlowFlesh);
+            float s = FluidScale(p) * Mathf.Max(0f, p.bloodBrightness) * (body == DMEnemyBodyType.Android ? p.fluidGlowAndroid : body == DMEnemyBodyType.Robot ? p.fluidGlowMech : p.fluidGlowFlesh);
             foreach (MeshRenderer r in go.GetComponentsInChildren<MeshRenderer>(true))
             {
                 Material m = r.sharedMaterial;
@@ -206,7 +207,7 @@ namespace Project.Combat
             var settings = go.GetComponent<BFX_BloodSettings>();
             if (settings != null)
             {
-                settings.LightIntensityMultiplier = p.volumetricLightIntensity;
+                settings.LightIntensityMultiplier = p.volumetricLightIntensity * Mathf.Clamp01(0.5f * p.bloodBrightness); // 31j: sun glint on fluid + decals follows Blood brightness
                 float gy = 0f;
                 bool allowGroundSnap = p.volumetricGroundSnap && (!playerHit || p.volumetricPlayerFluidGroundSnap);
                 bool grounded = allowGroundSnap && TryGround(p, point, enemy, out gy);
