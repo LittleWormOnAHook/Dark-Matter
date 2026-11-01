@@ -40,18 +40,40 @@ namespace Project.World.Sky
         private static DM_IoSkyProfile live;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetLive() { live = null; }
+        private static void ResetLive() { live = null; liveScene31g = null; sceneMap31g = null; }
+        private static string liveScene31g; private static DMSceneSkyProfileMap sceneMap31g;
+        public const string SceneMapResourcesPath = "World/DM_SceneSkyProfiles";
+        public static string LiveSource { get; private set; } = "";
+        public static void InvalidateLive31g() { live = null; liveScene31g = null; sceneMap31g = null; }
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void Boot31g()
+        {
+            UnityEditor.SceneManagement.EditorSceneManager.sceneOpened += (s, m) => InvalidateLive31g();
+            UnityEditor.SceneManagement.EditorSceneManager.activeSceneChangedInEditMode += (a, b) => InvalidateLive31g();
+            UnityEditor.EditorApplication.projectChanged += InvalidateLive31g;
+        }
+#endif
 
         public static DM_IoSkyProfile Live
         {
             get
             {
-                if (live == null) live = Resources.Load<DM_IoSkyProfile>(ResourcesPath);
+                // 31g: per-scene profile (DM_SceneSkyProfiles map, keyed by active scene name); re-resolves when the active scene changes.
+                string sn = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+                if (live == null || sn != liveScene31g)
+                {
+                    liveScene31g = sn;
+                    if (sceneMap31g == null) sceneMap31g = Resources.Load<DMSceneSkyProfileMap>(SceneMapResourcesPath);
+                    DM_IoSkyProfile m = sceneMap31g != null ? sceneMap31g.Find(sn) : null;
+                    live = m != null ? m : Resources.Load<DM_IoSkyProfile>(ResourcesPath);
+                    LiveSource = m != null ? "scene map (" + sn + ")" : "default (Resources)";
+                }
                 return live;
             }
         }
 
-        public enum SkyLookPreset { Custom = 0, Subtle = 1, Normal = 2, Extreme = 3 }
+        public enum SkyLookPreset { Custom = 0, Subtle = 1, Normal = 2, Extreme = 3, Mars = 4, [InspectorName("Jupiter (Io)")] JupiterIo = 5 }
 
         [Header("Sky Look Preset (2026-10-26m)")]
         [Tooltip("Custom = your saved look (current settings snapshotted first). Subtle / Normal / Extreme = authored full look snapshots (sky, MW, aurora, stars, night light/shadow, eclipse brightness, dither). Orbit/time never touched. Edit any look field on a preset -> flips to Custom and keeps the edit.")]
@@ -59,6 +81,64 @@ namespace Project.World.Sky
 
         [Header("Controller")]
         public bool skyEnabled = true;
+        [Tooltip("30n: with Use Sky & Orbit OFF (Gaia lighting stack), hide the sun disc + lens flare of any extra directional light so only the Gaia sun shows. Lights themselves untouched.")]
+        public bool fallbackSingleSunDisc = true;
+        [Tooltip("31e: Use Sky & Orbit off -> still rotate the BOTD sun from the clock / Debug Hour / Preview Hour (orbit path only; no Jupiter, eclipse or lux changes).")]
+        public bool fallbackDriveSun = true;
+        [Tooltip("31f: BOTD Post Processing / BOTD Environment volumes sit ON TOP of Sky & Orbit. Our realtime-indirect + eclipse ambient volumes go below them; only eclipse/night ambient scaling and the sky tint ride above (small drive volume). BOTD assets are never written.")]
+        public bool botdVolumesOnTop = true;
+        [Tooltip("31h: sun lux used by Sky & Orbit (0 = use the scene light's own intensity). Makes lux independent of which Gaia light is active.")]
+        [Range(0f, 150000f)] public float sunBaseLux31h = 0f;
+        [Tooltip("31h: BOTD sun shadow strength (HDRP shadow dimmer).")]
+        [Range(0f, 1f)] public float sunShadowStrength31h = 1f;
+        [Tooltip("31o: BOTD sun colour temperature in K (0 = keep the light's own colour).")]
+        [Range(0f, 20000f)] public float sunTemperature31o = 0f;
+        [Tooltip("31o: BOTD sun volumetric dimmer (-1 = keep the light's own value).")]
+        [Range(-1f, 16f)] public float sunVolumetricDimmer31o = -1f;
+        [Tooltip("31o: BOTD sun shadow resolution (always shadowed).")]
+        public int sunShadowResolution31o = 2048;
+        [Tooltip("31o: draw the sun disc in the sky (off = disc hidden, light and atmosphere unchanged).")]
+        public bool sunDisc31o = true;
+        [Tooltip("31h: with BOTD volumes on top, exposure compensation + fog distance from this profile still apply above BOTD (only those two parameters).")]
+        public bool essentialsOverBotd31h = true;
+        [Tooltip("31h: Debug Hour is a start point and the sky keeps moving at the Io clock rate (DM_IoClockProfile real seconds per hour). Off = frozen at the Debug Hour.")]
+        public bool debugHourAdvances = false;
+        [Tooltip("31h: in edit mode (no Debug/Preview Hour) the sky runs on the Io clock rate instead of freezing.")]
+        public bool editModeClockRuns = true;
+        [Tooltip("31f: during the Jupiter eclipse the BOTD sun keeps casting shadows (dimmed) instead of handing the shadow to Jupiter-shine.")]
+        public bool eclipseKeepsSunShadows = true;
+        [Tooltip("31f: minimum sun intensity during the eclipse, as a fraction of its normal daylight lux (0 = black, 1 = no dimming). Only with Eclipse keeps sun shadows.")]
+        [Range(0f, 1f)] public float eclipseMinSunIntensity = 0.15f;
+        /// <summary>31j: auto-exposure presets. 0 Subtle (11.5-14 EV, adapt 0.6), 1 Default (10.5-14, 1), 2 Extreme (8-14, 2/1.5). Outdoors sits at the 14 EV top.</summary>
+        public void ApplyExposurePreset31j(int preset)
+        {
+            exposureOverride = true; exposureHistogram = true; exposureLimitMax = 14f; // 31l: range only used when autoExposure31l is on
+            if (preset <= 0) { exposureLimitMin = 11.5f; exposureAdaptDarkToLight = 0.6f; exposureAdaptLightToDark = 0.6f; }
+            else if (preset == 1) { exposureLimitMin = 10.5f; exposureAdaptDarkToLight = 1f; exposureAdaptLightToDark = 1f; }
+            else { exposureLimitMin = 8f; exposureAdaptDarkToLight = 2f; exposureAdaptLightToDark = 1.5f; }
+        }
+
+        [Tooltip("31q: eclipse ramps the sun intensity multiplier smoothly from Sun intensity multiplier (normal) to Eclipse sun multiplier at full coverage, and back as the sun peeks out. Replaces Eclipse min sun intensity while on.")]
+        public bool eclipseSunRamp31q = true;
+        [Range(0f, 10f)] public float eclipseSunMultiplier31q = 0.05f;
+        [Tooltip("31q: HDRP shadow dimmer at full eclipse (normal = Sun shadow strength).")]
+        [Range(0f, 1f)] public float eclipseShadowStrength31q = 1f;
+        [Tooltip("31q: penumbra scale at full eclipse (1 = unchanged, lower = sharper shadows).")]
+        [Range(0.05f, 2f)] public float eclipsePenumbraScale31q = 0.6f;
+        [Tooltip("31q: ramp curve exponent on the eclipse coverage (1 = smoothstep, >1 = stays bright longer then drops, <1 = drops early).")]
+        [Range(0.2f, 5f)] public float eclipseRampCurve31q = 1f;
+        public void ApplyEclipseSunRampPreset31q(int i) { float[] m = { 0.3f, 0.05f, 0.01f }; float[] s = { 0.9f, 1f, 1f }; float[] pen = { 0.85f, 0.6f, 0.3f }; float[] cv = { 1.5f, 1f, 0.7f }; float[] amb = { 0.5f, 0.3f, 0.12f }; i = Mathf.Clamp(i, 0, 2); eclipseSunRamp31q = true; eclipseSunMultiplier31q = m[i]; eclipseShadowStrength31q = s[i]; eclipsePenumbraScale31q = pen[i]; eclipseRampCurve31q = cv[i]; eclipseAmbientMultiplier = amb[i];
+            if (i == 1 && IsJupiterProfile31q) { var ta = Resources.Load<TextAsset>("World/DM_IoSkyProfile_Jupiter_Defaults31q"); if (ta != null) { var d = CreateInstance<DM_IoSkyProfile>(); JsonUtility.FromJsonOverwrite(ta.text, d); eclipseSunMultiplier31q = d.eclipseSunMultiplier31q; eclipseShadowStrength31q = d.eclipseShadowStrength31q; eclipsePenumbraScale31q = d.eclipsePenumbraScale31q; eclipseRampCurve31q = d.eclipseRampCurve31q; eclipseAmbientMultiplier = d.eclipseAmbientMultiplier; sunIntensityMultiplier = d.sunIntensityMultiplier; if (Application.isPlaying) Destroy(d); else DestroyImmediate(d); } } // 31q: Jupiter Default = Anthony's values
+        }
+        // 31q: Anthony's Jupiter values (2026-10-31 17:55) are the Jupiter defaults: Resources/World/DM_IoSkyProfile_Jupiter_Defaults31q.json (JsonUtility).
+        public bool IsJupiterProfile31q => name.ToLowerInvariant().Contains("jupiter");
+        public bool ApplyJupiterDefaults31q()
+        {
+            if (!IsJupiterProfile31q) return false;
+            var ta = Resources.Load<TextAsset>("World/DM_IoSkyProfile_Jupiter_Defaults31q"); if (ta == null) return false;
+            string n = name; JsonUtility.FromJsonOverwrite(ta.text, this); name = n; return true;
+        }
+        public void ApplyEclipseMinSunPreset(int preset) { float[] v = { 0.03f, 0.08f, 0.15f, 0.3f, 0.6f }; eclipseMinSunIntensity = v[Mathf.Clamp(preset, 0, v.Length - 1)]; }
         [Tooltip("Spawn DMIoSkyController automatically in Play (no scene edit needed).")]
         public bool autoSpawnController = true;
         [Tooltip("Only run in scenes that contain the Jupiter object (keeps menus untouched).")]
@@ -67,12 +147,16 @@ namespace Project.World.Sky
         public Shader skyBodyShader;
         [Tooltip("-1 = follow the Io clock. 0-30 = force this hour (preview / testing in Play).")]
         [Range(-1f, 30f)] public float debugHourOverride = -1f;
+        [Tooltip("30l: Debug Hour freezes the sun/Jupiter/moons ONLY while this is ticked; the hour value is kept when unticked.")]
+        public bool debugHourEnabled = false;
+        /// <summary>30l: true only when Debug Hour is ticked and has a valid hour.</summary>
+        public bool DebugHourActive => debugHourEnabled && debugHourOverride >= 0f;
         [Tooltip("2026-10-24ao: Io hour the clock starts at when Play starts (and on New Game), then runs normally. 15 = noon (eclipse centre). Loading a save restores the saved time instead. Debug Hour Override >= 0 still wins.")]
         [Range(0f, 30f)] public float startHour = 6f;
 
         [Header("Sun")]
         [Tooltip("Scene directional light the controller drives as the sun.")]
-        public string sunLightName = "Day DirectionalLight";
+        public string sunLightName = "BOTD Directional Light(Clone)"; // 30i: BOTD clone is the single sun (Gaia may spawn it at runtime)
         [Tooltip("Turn off every other enabled directional light (BOTD sun etc.) at runtime.")]
         public bool disableOtherDirectionalLights = true;
         [Tooltip("Multiplier on the sun light's scene intensity.")]
@@ -90,6 +174,10 @@ namespace Project.World.Sky
         [Tooltip("24al: shadowless, specular-free fill light from the anti-sun side (bounce from sun-lit ground SSGI can't see). Scales with sun elevation + eclipse.")]
         public bool shadeFillEnabled = true;
         [Range(0f, 3000f)] public float shadeFillLux = 700f;
+        [Tooltip("2026-10-30i: Shade Fill strength multiplier on shadeFillLux (0 = off).")]
+        [Range(0f, 4f)] public float shadeFillStrength = 0.5f;
+        [Tooltip("2026-10-30j: edit mode mirrors runtime (sky/orbit, sun, shade fill, Jupiter/moons, runtime volume) via hidden DontSave temps; restored on disable/save.")]
+        public bool editModeRuntimePreview = true;
         [Tooltip("Degrees the fill travels downward (0 = horizontal, negative = from below like ground bounce).")]
         [Range(-45f, 45f)] public float shadeFillElevationDeg = -10f;
         public Color shadeFillColor = new Color(1f, 0.8f, 0.6f, 1f);
@@ -114,6 +202,26 @@ namespace Project.World.Sky
 
         [Header("Jupiter")]
         public string jupiterObjectName = "Jupiter";
+        [Tooltip("2026-10-30c: off = hide Jupiter (and its small moons), Jupiter-shine, eclipse, ring and Jupiter night shadow. Sun keeps orbiting.")]
+        public bool showJupiter = true;
+        [Tooltip("2026-10-30c: off = hide Europa, Ganymede, Callisto and the small moons.")]
+        public bool showMoons = true;
+        // 2026-10-30d: world-look extras (Mars / Jupiter (Io) Sky Look Presets).
+        [Tooltip("2026-10-30d: sun disc size in degrees (Earth 0.53, Mars 0.35, Io 0.10). -1 = leave the scene light's value.")]
+        [Range(0.01f, 10f)] public float sunAngularDiameterDeg = 0.35f; // 31p: real size always (old -1 "keep light value" removed; <=0 in old assets -> 0.35)
+        [Tooltip("31p: sun halo/flare size in degrees (HDRP flareSize). Small = tight glow around the disc.")]
+        [Range(0f, 30f)] public float sunFlareSize31p = 2f;
+        [Tooltip("31p: sun halo falloff (HDRP flareFalloff). Higher = tighter halo; 0 = flat huge halo.")]
+        [Range(0f, 20f)] public float sunFlareFalloff31p = 4f;
+        [Tooltip("31p: sun halo strength (HDRP flareMultiplier).")]
+        [Range(0f, 5f)] public float sunFlareMultiplier31p = 1f;
+        public void ApplySunDiscPreset31p(int i) { float[] a = { 0.1f, 0.35f, 0.53f, 2f }; float[] fs = { 1f, 2f, 3f, 8f }; float[] ff = { 6f, 4f, 4f, 2f }; float[] fm = { 0.5f, 1f, 1f, 1f }; i = Mathf.Clamp(i, 0, 3); sunAngularDiameterDeg = a[i]; sunFlareSize31p = fs[i]; sunFlareFalloff31p = ff[i]; sunFlareMultiplier31p = fm[i]; }
+        [Tooltip("2026-10-30d: tint the Physically Based Sky (zenith/horizon), e.g. Mars butterscotch. Off = scene sky untouched.")]
+        public bool skyTintEnabled = false;
+        public Color skyZenithTint = Color.white;
+        public Color skyHorizonTint = Color.white;
+        [Tooltip("2026-10-30d: shifts the PBS horizon/zenith blend (-1..1).")]
+        [Range(-1f, 1f)] public float skyHorizonZenithShift = 0f;
         [InspectorName("Sky Rotation")]
         [Tooltip("24aw: turns the whole sky (Jupiter, sun path/eclipse, moons, chunks, ring light, stars, aurora) around the vertical. 200 = original.")]
         [Range(0f, 360f)] public float jupiterAzimuthDeg = 200f;
@@ -213,6 +321,13 @@ namespace Project.World.Sky
         public bool exposureOverride = true;
         [Tooltip("On = Automatic Histogram, off = Automatic.")]
         public bool exposureHistogram = true;
+        [Tooltip("31l: OFF (default) = Fixed exposure at fixedExposureEV31l everywhere we control it. ON = automatic (min/max/adaptation below).")]
+        public bool autoExposure31l = false;
+        [Tooltip("31l: Fixed exposure EV100 when Auto exposure is off. Higher = darker. ~13-14 matches the sunlit outdoor look.")]
+        [Range(-6f, 20f)] public float fixedExposureEV31l = 14f;
+        [Tooltip("31l: EV the fixed exposure drops (brightens) at full eclipse / full night so the night/eclipse fills stay visible. 0 = no change.")]
+        [Range(0f, 12f)] public float fixedNightDropEV31l = 3f;
+        public void ApplyFixedExposurePreset31l(int preset) { autoExposure31l = false; exposureOverride = true; fixedExposureEV31l = preset <= 0 ? 14f : preset == 1 ? 13f : 11.5f; }
         [Tooltip("EV100 floor (brightest the image gets). ~6.6 = BOTD look, keeps shaded views as before.")]
         [Range(-6f, 20f)] public float exposureLimitMin = 6.4f;
         [Tooltip("EV100 ceiling (how far it darkens when facing the sun).")]
@@ -237,12 +352,19 @@ namespace Project.World.Sky
         [Range(0f, 1f)] public float contactShadowLength = 0.12f;
         [Tooltip("Enable contact shadows on the sun light at runtime (restored on exit).")]
         public bool sunContactShadows = true;
+        [Tooltip("31k: project-wide contact shadows master (Studio 'Contact shadows (project)', synced across all sky profiles). OFF = our code never enables contact shadows.")]
+        public bool contactShadowsProject31k = false;
+        public static bool ContactShadowsAllowed31k => Live != null && Live.contactShadowsProject31k;
         [Tooltip("Micro shadowing from normal/AO maps (0 = off).")]
         [Range(0f, 1f)] public float microShadowOpacity = 0.5f;
         [Tooltip("Max directional shadow distance (BOTD 150).")]
         [Range(50f, 400f)] public float shadowMaxDistance = 150f;
         [Tooltip("First cascade split (BOTD 0.076). Smaller = sharper shadows near the character.")]
         [Range(0.02f, 0.2f)] public float shadowCascadeSplit0 = 0.06f;
+        [Tooltip("31s: sun (directional) shadow cascade count, driven on the DM shadow volume. Fewer = cheaper.")]
+        [Range(1, 4)] public int shadowCascadeCount31s = 3;
+        /// <summary>31s: shadow budget presets: 0 Subtle (4 cascades, 200 m), 1 Default (3, 150 m), 2 Extreme (2, 100 m).</summary>
+        public void ApplyShadowBudgetPreset31s(int i) { int[] c = { 4, 3, 2 }; float[] d = { 200f, 150f, 100f }; i = Mathf.Clamp(i, 0, 2); shadowCascadeCount31s = c[i]; shadowMaxDistance = d[i]; }
         [Tooltip("Fog attenuation distance / mean free path (scene 2000). 0 = leave scene fog.")]
         [Range(0f, 8000f)] public float fogMeanFreePath = 3000f;
         [Tooltip("Colour Adjustments contrast (0 = none).")]
@@ -421,6 +543,30 @@ namespace Project.World.Sky
         [Range(0f, 1f)] public float eclipseShadowStrength = 0.6f;
         [Range(0.5f, 20f)] public float eclipseShadowSoftnessDeg = 6f;
 
+        [Header("Io Orbit + Shadow Cleanup (2026-10-30a)")]
+        [Tooltip("30a: SSR on the Io post volume. Off removes all screen-space reflections (incl. the yellow sun streak).")]
+        public bool ssrEnabled = true;
+        [Tooltip("30a: SSR depth thickness. High values (BOTD 0.85) smear the sun/sky into tall vertical streaks on the ground. ~0.05-0.15 = clean.")]
+        [Range(0.005f, 1f)] public float ssrDepthThickness = 0.08f;
+
+        /// <summary>30a: 0 Subtle, 1 Default, 2 Extreme. Releases the debug hour (sun orbits), sizes Jupiter + Galilean moons for visibility. Clock speed is set by Studio (Io Clock profile).</summary>
+        public void ApplyIoOrbitPreset(int preset)
+        {
+            debugHourOverride = -1f;
+            if (preset <= 0) { jupiterAngularDiameterDeg = 25f; SetMoonSize(2f); }
+            else if (preset == 1) { jupiterAngularDiameterDeg = 37.5f; SetMoonSize(4f); }
+            else { jupiterAngularDiameterDeg = 55f; SetMoonSize(8f); }
+        }
+
+        /// <summary>30a: 0 Subtle, 1 Default, 2 Extreme cleanup of the blurry eclipse shadow, muddy AO, contact darkening, bloom, ring flare and SSR streak.</summary>
+        public void ApplyShadowCleanupPreset(int preset)
+        {
+            ssrEnabled = true; sunContactShadows = contactShadowsProject31k;
+            if (preset <= 0) { eclipseShadowSoftnessDeg = 5f; eclipseShadowStrength = 0.7f; ssaoIntensity = 1.1f; ssaoRadius = 0.7f; ssaoMaxRadiusPixels = 24; ssaoDirectLightingStrength = 0.2f; contactShadowLength = 0.25f; microShadowOpacity = 0.45f; bloomIntensity = 0.5f; bloomThreshold = 0.7f; ringFlareIntensity = 0.3f; flareRingDuringEclipse = 0.45f; ssrDepthThickness = 0.2f; shadowCascadeSplit0 = 0.07f; }
+            else if (preset == 1) { eclipseShadowSoftnessDeg = 3f; eclipseShadowStrength = 0.5f; ssaoIntensity = 0.9f; ssaoRadius = 0.5f; ssaoMaxRadiusPixels = 20; ssaoDirectLightingStrength = 0.15f; contactShadowLength = 0.12f; microShadowOpacity = 0.35f; bloomIntensity = 0.35f; bloomThreshold = 0.8f; ringFlareIntensity = 0.2f; flareRingDuringEclipse = 0.3f; ssrDepthThickness = 0.08f; shadowCascadeSplit0 = 0.06f; }
+            else { eclipseShadowSoftnessDeg = 1.5f; eclipseShadowStrength = 0.35f; ssaoIntensity = 0.6f; ssaoRadius = 0.35f; ssaoMaxRadiusPixels = 16; ssaoDirectLightingStrength = 0.1f; contactShadowLength = 0.06f; microShadowOpacity = 0.2f; bloomIntensity = 0.2f; bloomThreshold = 1.2f; ringFlareIntensity = 0.1f; flareRingDuringEclipse = 0.15f; ssrDepthThickness = 0.04f; shadowCascadeSplit0 = 0.05f; }
+        }
+
         [Header("Eclipse Ring & Flare (24aq)")]
         [Tooltip("Soft edge (deg) where the sun disc slides behind Jupiter's limb. Direct sun = 0 when fully behind.")]
         [Range(0.05f, 3f)] public float sunOcclusionSoftDeg = 0.6f;
@@ -491,7 +637,7 @@ namespace Project.World.Sky
 
         public void ApplyPolishPreset(int preset)
         {
-            polishEnabled = true; sunContactShadows = true; shadowMaxDistance = 150f;
+            polishEnabled = true; sunContactShadows = contactShadowsProject31k; shadowMaxDistance = 150f;
             if (preset <= 0) { ssaoRadius = 0.35f; ssaoMaxRadiusPixels = 16; contactShadowLength = 0.08f; microShadowOpacity = 0.3f; shadowCascadeSplit0 = 0.07f; fogMeanFreePath = 3600f; gradeContrast = 3f; splitToneStrength = 0.08f; vignetteIntensity = 0.21f; }
             else if (preset == 1) { ssaoRadius = 0.5f; ssaoMaxRadiusPixels = 24; contactShadowLength = 0.12f; microShadowOpacity = 0.5f; shadowCascadeSplit0 = 0.06f; fogMeanFreePath = 3000f; gradeContrast = 5f; splitToneStrength = 0.15f; vignetteIntensity = 0.22f; }
             else { ssaoRadius = 0.8f; ssaoMaxRadiusPixels = 32; contactShadowLength = 0.2f; microShadowOpacity = 0.75f; shadowCascadeSplit0 = 0.05f; fogMeanFreePath = 2200f; gradeContrast = 10f; splitToneStrength = 0.3f; vignetteIntensity = 0.26f; }
@@ -632,6 +778,35 @@ namespace Project.World.Sky
         };
 
         private static System.Collections.Generic.List<System.Reflection.FieldInfo> s_skyLookFields;
+        // 2026-10-30d: extra fields the world presets (Mars / Jupiter (Io)) set; also kept in the Custom stash.
+        private static readonly string[] SkyWorldExtraFieldNames =
+        {
+            "showJupiter","showMoons","jupiterAngularDiameterDeg","eclipseEnabled","sunIntensityMultiplier","sunMaxLux",
+            "sunAngularDiameterDeg","skyTintEnabled","skyZenithTint","skyHorizonTint","skyHorizonZenithShift",
+            "groundBounceTint","shadowFloorTint","shadeFillColor","shadeFillLux","ssaoIntensity","ssaoRadius","ssaoMaxRadiusPixels",
+            "ssaoDirectLightingStrength","ssrEnabled","ssrDepthThickness","bloomIntensity","bloomThreshold","contactShadowLength",
+            "microShadowOpacity","ringFlareIntensity","flareRingDuringEclipse","fogMeanFreePath","shadowCascadeSplit0"
+        };
+        private static System.Collections.Generic.List<System.Reflection.FieldInfo> s_skyAllFields;
+        private static System.Collections.Generic.List<System.Reflection.FieldInfo> SkyAllFields
+        {
+            get
+            {
+                if (s_skyAllFields != null) return s_skyAllFields;
+                s_skyAllFields = new System.Collections.Generic.List<System.Reflection.FieldInfo>(SkyLookFields);
+                // 30g: world looks cover EVERY public float/int/bool/Color/enum field (sun, orbit, sky, post), not only the look list.
+                foreach (var f in typeof(DM_IoSkyProfile).GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+                {
+                    if (f.Name == "skyLookPreset" || f.Name == "debugHourOverride" || f.Name == "debugHourEnabled" || f.Name == "editPreviewHour") continue;
+                    var ft = f.FieldType;
+                    if (ft != typeof(float) && ft != typeof(int) && ft != typeof(bool) && ft != typeof(Color) && !ft.IsEnum) continue;
+                    if (!s_skyAllFields.Contains(f)) s_skyAllFields.Add(f);
+                }
+                return s_skyAllFields;
+            }
+        }
+        private static bool IsWorldLook(SkyLookPreset p) { return p == SkyLookPreset.Mars || p == SkyLookPreset.JupiterIo; }
+
         private static System.Collections.Generic.List<System.Reflection.FieldInfo> SkyLookFields
         {
             get
@@ -685,7 +860,13 @@ namespace Project.World.Sky
         {
             skyLookCustomStashNames = new System.Collections.Generic.List<string>();
             skyLookCustomStashValues = new System.Collections.Generic.List<string>();
-            foreach (var f in SkyLookFields)
+            var moons = Moons;
+            if (moons != null) for (int mi = 0; mi < moons.Length; mi++) if (moons[mi] != null)
+            {
+                skyLookCustomStashNames.Add("moon:" + mi);
+                skyLookCustomStashValues.Add(SkyLookSerialize(moons[mi].sizeMultiplier));
+            }
+            foreach (var f in SkyAllFields)
             {
                 string s = SkyLookSerialize(f.GetValue(this));
                 if (s == null) continue;
@@ -699,8 +880,16 @@ namespace Project.World.Sky
             if (!HasSkyLookCustomStash || skyLookCustomStashValues == null) return;
             for (int i = 0; i < skyLookCustomStashNames.Count && i < skyLookCustomStashValues.Count; i++)
             {
-                var f = typeof(DM_IoSkyProfile).GetField(skyLookCustomStashNames[i], System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                if (f == null || SkyLookFields.IndexOf(f) < 0) continue;
+                string sn = skyLookCustomStashNames[i];
+                if (sn != null && sn.StartsWith("moon:"))
+                {
+                    var ms = Moons; int mi;
+                    if (ms != null && int.TryParse(sn.Substring(5), out mi) && mi >= 0 && mi < ms.Length && ms[mi] != null)
+                        ms[mi].sizeMultiplier = float.Parse(skyLookCustomStashValues[i], System.Globalization.CultureInfo.InvariantCulture);
+                    continue;
+                }
+                var f = typeof(DM_IoSkyProfile).GetField(sn, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                if (f == null || SkyAllFields.IndexOf(f) < 0) continue;
                 if (SkyLookTryParse(f, skyLookCustomStashValues[i], out object v)) f.SetValue(this, v);
             }
         }
@@ -735,7 +924,13 @@ namespace Project.World.Sky
             try
             {
                 probe.ApplySkyLookAuthored(preset);
-                foreach (var f in SkyLookFields)
+                if (IsWorldLook(preset))
+                {
+                    var a = probe.Moons; var b = Moons;
+                    if (a != null && b != null) for (int mi = 0; mi < a.Length && mi < b.Length; mi++)
+                        if (a[mi] != null && b[mi] != null && Mathf.Abs(a[mi].sizeMultiplier - b[mi].sizeMultiplier) > 1e-3f) return false;
+                }
+                foreach (var f in (IsWorldLook(preset) ? SkyAllFields : SkyLookFields))
                 {
                     if (!SkyLookValuesEqual(f.GetValue(probe), f.GetValue(this))) return false;
                 }
@@ -749,6 +944,7 @@ namespace Project.World.Sky
 
         private void ApplySkyLookAuthored(SkyLookPreset preset)
         {
+            if (IsWorldLook(preset)) { ApplySkyWorldLook(preset); return; }
             // Shared enables
             nightSkyEnabled = true;
             auroraEnabled = true;
@@ -853,6 +1049,223 @@ namespace Project.World.Sky
             }
         }
 
+        // 2026-10-30d: world looks. Jupiter (Io) = snapshot of the 30a-30c Io setup (Anthony's look + shadow cleanup, Jupiter 37.5 deg, moons 4x).
+        // Mars = same base, Jupiter/moons/eclipse/aurora off, smaller dimmer sun (0.35 deg, ~43%), butterscotch sky tint, dusty fog.
+        // 2026-10-30g: Jupiter (Io) = FULL profile snapshot of the pre-Mars setup (DM_IoSkyProfile.asset.pre20261030d) with Jupiter + moons on:
+        // lighting, sun (lux/colour/temp/shadows/flare), orbit, sky, exposure/fog/post + 30a shadow cleanup. Mars starts from it and overrides.
+        private static readonly string[] JupiterIoSnapshot =
+        {
+            "skyEnabled=1",
+            "autoSpawnController=1",
+            "onlyInScenesWithJupiter=1",
+            "startHour=11.6",
+            "disableOtherDirectionalLights=1",
+            "sunIntensityMultiplier=2",
+            "horizonFadeDegrees=11.78",
+            "sunHorizonDimDegrees=3.66",
+            "sunHorizonMinFactor=0.009",
+            "sunHorizonDesaturate=0.35",
+            "sunMaxLux=42621",
+            "shadeFillEnabled=1",
+            "shadeFillLux=1856",
+            "shadeFillStrength=0.35", // 30l: was 1 (30i); 1856 lux fill washed out sun shadows
+            "shadeFillElevationDeg=8.5",
+            "shadeFillColor=0.87169814,0.81413317,0.8384384,1",
+            "orbitPoleTiltDeg=-0.8",
+            "reverseSkyMotion=0",
+            "eclipseEnabled=1",
+            "eclipseDurationHours=4",
+            "eclipseFadeHours=1.33",
+            "eclipseSunRemaining=0.858",
+            "eclipseAmbientMultiplier=0.605",
+            "sunHidesBehindJupiter=1",
+            "ambientVolumePriority=90",
+            "showJupiter=1",
+            "showMoons=1",
+            "jupiterAzimuthDeg=188",
+            "jupiterElevationDeg=42.8",
+            "jupiterAngularDiameterDeg=37.5",
+            "skyDistance=6998",
+            "jupiterSpinHours=10.9",
+            "jupiterBrightness=1.48",
+            "jupiterLimbDarkening=0.131",
+            "jupiterRimColor=0.97853035,1,0.91886795,1",
+            "jupiterEclipseRimLux=3412",
+            "jupiterRimSoftness=4",
+            "skyBodyEdgeSoft=0.035",
+            "skyBodySphereSegments=64",
+            "jupiterShineColor=0.7853827,0.87747157,0.93962264,1",
+            "jupiterShineLux=103",
+            "eclipseJupiterShineLux=129",
+            "otherMoonsUseSkyMaterial=1",
+            "otherMoonColor=0.24301174,0.31151927,0.3509434,1",
+            "realtimeIndirectEnabled=1",
+            "indirectVolumePriority=90",
+            "ssgiEnabled=1",
+            "ssgiQuality=3",
+            "ssgiMaxRaySteps=64",
+            "ssgiFullResolution=1",
+            "ssgiDenoise=1",
+            "ssgiHalfResDenoiser=1",
+            "ssgiDenoiserRadius=0.431",
+            "ssgiDepthThickness=0.11",
+            "shadowFloorLift=0.113",
+            "shadowFloorTint=0.19999999,0.15207545,0.18115325,1",
+            "overrideGroundTint=1",
+            "groundBounceTint=0.6901961,0.28429884,0.19215685,1",
+            "ssaoIntensity=0.9",
+            "ssaoDirectLightingStrength=0.472",
+            "fixCameraVolumeMask=1",
+            "indirectDiffuseMultiplier=1.2",
+            "indirectReflectionMultiplier=1",
+            "ambientModeDynamic=1",
+            "exposureOverride=1",
+            "exposureHistogram=1",
+            "exposureLimitMin=3.9",
+            "exposureLimitMax=15.9",
+            "exposureHistogramLow=40",
+            "exposureHistogramHigh=88",
+            "exposureAdaptDarkToLight=2.07",
+            "exposureAdaptLightToDark=1.3",
+            "bloomIntensity=0.591",
+            "bloomThreshold=0.94",
+            "exposureCompensation=-0.01",
+            "polishEnabled=1",
+            "ssaoRadius=0.59",
+            "ssaoMaxRadiusPixels=16",
+            "contactShadowLength=0",
+            "sunContactShadows=1",
+            "microShadowOpacity=0.497",
+            "shadowMaxDistance=228",
+            "shadowCascadeSplit0=0.057",
+            "fogMeanFreePath=663",
+            "gradeContrast=-13.78",
+            "splitToneStrength=0.291",
+            "splitToneShadows=0.42,0.52,0.66,1",
+            "splitToneHighlights=0.66,0.55,0.42,1",
+            "vignetteIntensity=0.406",
+            "eclipseFloorEnabled=1",
+            "eclipseMinAmbient=0.893",
+            "eclipseFillLux=373",
+            "eclipseExposureLimitMin=2",
+            "nightSkyEnabled=1",
+            "starDensity=75",
+            "starBrightness=3",
+            "starSize=0.36",
+            "starTwinkle=0.644",
+            "starColorVariation=1",
+            "milkyWayIntensity=0.035",
+            "milkyWayWidth=0.177",
+            "milkyWayDust=1",
+            "milkyWayCoreColor=1,0.85,0.7,1",
+            "milkyWayEdgeColor=0.55,0.65,1,1",
+            "milkyWayTiltDeg=-34.7",
+            "milkyWayYawDeg=32",
+            "starRotationDeg=0",
+            "starsRotateWithClock=1",
+            "nightFadeStartDeg=-1.2",
+            "nightFadeEndDeg=18.6",
+            "enableNightLight=1",
+            "nightLightGroundColor=0.58472764,0.82641506,0.63728845,1",
+            "nightLightMidColor=0.934017,0.4901961,1,1",
+            "nightLightSkyColor=0.5469348,0.6291979,0.93207544,1",
+            "nightLightAmount=1128",
+            "nightExposureLimitMin=0.5",
+            "nightAmbientBoost=2.66",
+            "enableNightShadow=1",
+            "nightShadowStrength=0.55",
+            "nightShadowSoftnessDeg=4",
+            "nightShadowDirectionMode=0",
+            "nightShadowCustomYawDeg=200",
+            "nightShadowCustomPitchDeg=35",
+            "nightShadowResolutionTier=1",
+            "nightShadowMaxDistance=120",
+            "nightSkyDayVisibility=0.094",
+            "milkyWayDayVisibility=0",
+            "milkyWaySmoothness=0.55",
+            "nightSkyDitherEnabled=0",
+            "nightSkyDitherAmount=0.55",
+            "nightSkySoftExpPower=0.28",
+            "starsBehindSkyBodies=1",
+            "auroraOverSkyBodies=1",
+            "starOcclusionMarginDeg=0",
+            "starOcclusionSoftDeg=0.08",
+            "editPreviewEnabled=1",
+            "nightDomeFarFraction=0.98",
+            "nightDomeCoverTerrain=1",
+            "nightDomeTerrainMargin=500",
+            "nightDomeMinRadius=0",
+            "auroraEnabled=1",
+            "auroraIntensity=0.4",
+            "auroraColorLow=0.114575684,1,0,1",
+            "auroraColorHigh=0.8980392,0.22878446,0.19999997,1",
+            "auroraSpeed=0.047",
+            "auroraHeight=0.723",
+            "auroraCoverage=0.614",
+            "auroraDayVisibility=0",
+            "auroraSmoothness=0.313",
+            "auroraMinElevDeg=-7.3",
+            "auroraMaxElevDeg=21.1",
+            "auroraHeightVariationDeg=13.1",
+            "auroraHeightNoiseScale=3.63",
+            "auroraBottomSoftDeg=21.1",
+            "auroraTopSoftDeg=15.2",
+            "auroraAzimuthSpanDeg=360",
+            "auroraAzimuthCenterDeg=0",
+            "auroraAzimuthEdgeSoftDeg=112.8",
+            "auroraHeightDriftSpeed=0.078",
+            "auroraHeightBobDeg=5.69",
+            "disableVolumetricClouds=0",
+            "eclipseShadowsEnabled=1",
+            "eclipseShadowStrength=0.5",
+            "eclipseShadowSoftnessDeg=3",
+            "ssrEnabled=1",
+            "ssrDepthThickness=0.08",
+            "sunOcclusionSoftDeg=0.73",
+            "ringSunBias=3.85",
+            "ringEdgeGrowDeg=27.8",
+            "ringMinFactor=0.052",
+            "ringLightLux=107",
+            "ringFlareIntensity=0.2",
+            "dayFraction=0.783",
+            "flareEnabled=1",
+            "flareUseOcclusion=1",
+            "flareOcclusionSamples=16",
+            "flareIntensityScale=1",
+            "flareMinElevationDeg=1",
+            "flareElevationFadeDeg=16",
+            "flareEclipseFade=1",
+            "flareRingDuringEclipse=0.3",
+            "flareOcclusionRadius=0.28",
+            "eclipseDisableSsgi=1",
+            "disableOtherSunFlares=1",
+            "sunAngularDiameterDeg=0.5",
+            "skyTintEnabled=0",
+            "skyZenithTint=1,1,1,1",
+            "skyHorizonTint=1,1,1,1",
+            "skyHorizonZenithShift=0",
+        };
+
+        private void ApplySkyWorldLook(SkyLookPreset preset)
+        {
+            foreach (var kv in JupiterIoSnapshot)
+            {
+                int eq = kv.IndexOf('=');
+                var f = typeof(DM_IoSkyProfile).GetField(kv.Substring(0, eq), System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                if (f != null && SkyLookTryParse(f, kv.Substring(eq + 1), out object v)) f.SetValue(this, v);
+            }
+            var ms = Moons; if (ms != null) foreach (var mo in ms) if (mo != null) mo.sizeMultiplier = 4f;
+            if (preset != SkyLookPreset.Mars) return;
+            showJupiter = false; showMoons = false; eclipseEnabled = false;
+            auroraEnabled = false; eclipseFloorEnabled = false; eclipseShadowsEnabled = false; ringFlareIntensity = 0f; flareRingDuringEclipse = 0f;
+            sunAngularDiameterDeg = 0.35f; sunIntensityMultiplier = 0.86f; sunMaxLux = 18327f;
+            skyTintEnabled = true; skyZenithTint = new Color(0.78f, 0.6f, 0.42f, 1f); skyHorizonTint = new Color(0.92f, 0.74f, 0.52f, 1f); skyHorizonZenithShift = 0.2f;
+            groundBounceTint = new Color(0.62f, 0.38f, 0.22f, 1f); shadowFloorTint = new Color(0.22f, 0.16f, 0.12f, 1f);
+            shadeFillColor = new Color(0.95f, 0.82f, 0.68f, 1f); shadeFillLux = 900f; shadeFillStrength = 0.6f; fogMeanFreePath = 400f;
+            nightLightGroundColor = new Color(0.45f, 0.3f, 0.2f, 1f); nightLightMidColor = new Color(0.5f, 0.42f, 0.45f, 1f);
+            nightLightSkyColor = new Color(0.35f, 0.4f, 0.6f, 1f); nightLightAmount = 300f;
+        }
+
 #if UNITY_EDITOR
         private bool _skyLookValidateQueued;
 
@@ -865,6 +1278,7 @@ namespace Project.World.Sky
 
         private void OnValidate()
         {
+            if (!Application.isPlaying) { UnityEditor.EditorApplication.QueuePlayerLoopUpdate(); UnityEditor.SceneView.RepaintAll(); } // 31r: Debug Hour scrubs re-run the sky immediately
             if (_skyLookValidateQueued) return;
             if (skyLookPreset == SkyLookPreset.Custom && skyLookAppliedPresetInternal == SkyLookPreset.Custom)
                 return; // Live fields are Custom; stash is captured when leaving Custom.

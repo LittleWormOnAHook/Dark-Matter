@@ -65,20 +65,26 @@ namespace Project.World.Sky
         private void LateUpdate()
         {
             DM_IoSkyProfile p = DM_IoSkyProfile.Live;
-            bool on = p != null && (p.nightSkyEnabled || p.auroraEnabled);
+            // 31e: stars + Milky Way also run with Use Sky & Orbit off (same starfield for every preset); aurora only with the sky system.
+            bool on = p != null && (p.nightSkyEnabled || (p.skyEnabled && p.auroraEnabled));
             if (!on) { if (dome != null) dome.gameObject.SetActive(false); return; }
             if (!Ensure(p)) return;
             dome.gameObject.SetActive(true);
 
             DMIoSkyController sky = DMIoSkyController.Instance;
-            float elev = sky != null && sky.isActiveAndEnabled ? sky.SunElevationDeg : -20f;
-            float ecl = sky != null && sky.isActiveAndEnabled ? sky.EclipseFactor : 0f;
+            // 31e: elevation from the real sun light (works with Sky & Orbit off / idle controller); eclipse only with the sky on;
+            // fade is time-smoothed so a sun switch or one-frame gap cannot flicker the stars.
+            float elev = SunElev31e(sky);
+            float ecl = p.skyEnabled && sky != null && sky.isActiveAndEnabled ? sky.EclipseCoverage : 0f; // 31r
             float night = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(p.nightFadeStartDeg, p.nightFadeEndDeg, elev));
-            float dark = Mathf.Max(night, ecl);
+            float darkT = Mathf.Max(night, ecl);
+            float dtS = Application.isPlaying ? Time.unscaledDeltaTime : 0.05f;
+            dark31e = (dark31e < 0f || !Application.isPlaying) ? darkT : Mathf.MoveTowards(dark31e, darkT, dtS * 1.5f); // 31r: edit mode snaps to target (no stuck fade between repaints)
+            float dark = dark31e;
             float nightVis = p.nightSkyEnabled ? Mathf.Lerp(p.nightSkyDayVisibility, 1f, dark) : 0f;
             // 2026-10-26i: MW has its own day floor (was sharing nightVis and showed as blotchy daytime fog when nightSkyDayVisibility was high).
             float mwVis = p.nightSkyEnabled ? Mathf.Lerp(p.milkyWayDayVisibility, 1f, dark) : 0f;
-            float auroraVis = p.auroraEnabled ? Mathf.Lerp(p.auroraDayVisibility, 1f, dark) : 0f;
+            float auroraVis = p.auroraEnabled && p.skyEnabled ? Mathf.Lerp(p.auroraDayVisibility, 1f, dark) : 0f;
 
             mat.SetFloat("_NightVis", nightVis);
             mat.SetFloat("_MWVis", mwVis);
@@ -127,6 +133,20 @@ namespace Project.World.Sky
             Shader.SetGlobalFloat(TimeId, Time.time);
         }
 
+        private float dark31e = -1f;
+        private static Light sunCache31e; private static float sunScan31e;
+        private static float SunElev31e(DMIoSkyController sky)
+        {
+            float now = Time.realtimeSinceStartup;
+            if (sunCache31e != null && sunCache31e.isActiveAndEnabled && now < sunScan31e) return Mathf.Asin(Mathf.Clamp(-sunCache31e.transform.forward.y, -1f, 1f)) * Mathf.Rad2Deg;
+            sunScan31e = now + 1f;
+            Light s = RenderSettings.sun;
+            DM_IoSkyProfile p = DM_IoSkyProfile.Live;
+            if (p != null) { Light byName = null; foreach (Light l in FindObjectsByType<Light>()) if (l.type == LightType.Directional && l.isActiveAndEnabled && (l.name == p.sunLightName || l.name.StartsWith("BOTD Directional Light"))) { byName = l; break; } if (byName != null) s = byName; }
+            sunCache31e = s;
+            if (s != null && s.isActiveAndEnabled) return Mathf.Asin(Mathf.Clamp(-s.transform.forward.y, -1f, 1f)) * Mathf.Rad2Deg;
+            return sky != null && sky.isActiveAndEnabled ? sky.SunElevationDeg : -20f;
+        }
         public static float LastDomeRadius, LastTerrainExtent; public static bool LastDomeCapped;
         private static Bounds tbCache; private static bool tbValid; private static float tbTime = -10f;
         private static bool TerrainBounds(out Bounds b)

@@ -95,7 +95,7 @@ Material:
     - _DMHeightMapForBlend: 1
     - _DMHeightMipBias: 1.7
     - _DMHeightOffset0: 0.321
-    - _DMHeightOffset1: 0
+    - _DMHeightOffset1: 1
     - _DMHeightOffset2: 0.65
     - _DMHeightOffset3: 0.222
     - _DMHeightOffset4: 0.997
@@ -103,7 +103,7 @@ Material:
     - _DMHeightOffset6: 0.229
     - _DMHeightOffset7: 0
     - _DMHeightScale0: 0.34
-    - _DMHeightScale1: 0.5
+    - _DMHeightScale1: 2.01
     - _DMHeightScale2: 4
     - _DMHeightScale3: 1.96
     - _DMHeightScale4: 0.57
@@ -111,7 +111,7 @@ Material:
     - _DMHeightScale6: 0.96
     - _DMHeightScale7: 1
     - _DMLayerBrightness0: 2.97
-    - _DMLayerBrightness1: 1
+    - _DMLayerBrightness1: 0.37
     - _DMLayerBrightness2: 1.25
     - _DMLayerBrightness3: 0.92
     - _DMLayerBrightness4: 1
@@ -119,7 +119,7 @@ Material:
     - _DMLayerBrightness6: 1
     - _DMLayerBrightness7: 1
     - _DMLayerHeightAO0: 2.07
-    - _DMLayerHeightAO1: 1.92
+    - _DMLayerHeightAO1: 0
     - _DMLayerHeightAO2: 2.24
     - _DMLayerHeightAO3: 1.53
     - _DMLayerHeightAO4: 1.5
@@ -127,7 +127,7 @@ Material:
     - _DMLayerHeightAO6: 1.52
     - _DMLayerHeightAO7: 1.41
     - _DMLayerParallax0: 1.55
-    - _DMLayerParallax1: 1.54
+    - _DMLayerParallax1: 1.68
     - _DMLayerParallax2: 1.18
     - _DMLayerParallax3: 0.28
     - _DMLayerParallax4: 2.24
@@ -135,7 +135,7 @@ Material:
     - _DMLayerParallax6: 1.88
     - _DMLayerParallax7: 1.17
     - _DMLayerSaturation0: 0.56
-    - _DMLayerSaturation1: 1
+    - _DMLayerSaturation1: 0.66
     - _DMLayerSaturation2: 1
     - _DMLayerSaturation3: 1.21
     - _DMLayerSaturation4: 1.32
@@ -153,7 +153,7 @@ Material:
     - _DMParallaxFadeStart: 97
     - _DMParallaxHeight: 0.12
     - _DMPeakDetail0: 0.536
-    - _DMPeakDetail1: 0.514
+    - _DMPeakDetail1: 1
     - _DMPeakDetail2: 0.503
     - _DMPeakDetail3: 0.495
     - _DMPeakDetail4: 0.503
@@ -161,7 +161,7 @@ Material:
     - _DMPeakDetail6: 0.503
     - _DMPeakDetail7: 0.485
     - _DMPeakDetailScale0: 10.68
-    - _DMPeakDetailScale1: 9.89
+    - _DMPeakDetailScale1: 20
     - _DMPeakDetailScale2: 10.03
     - _DMPeakDetailScale3: 9.89
     - _DMPeakDetailScale4: 9.74
@@ -169,7 +169,7 @@ Material:
     - _DMPeakDetailScale6: 10.54
     - _DMPeakDetailScale7: 9.52
     - _DMPeakKnee0: 0.775
-    - _DMPeakKnee1: 0.759
+    - _DMPeakKnee1: 0.812
     - _DMPeakKnee2: 0.746
     - _DMPeakKnee3: 0.748
     - _DMPeakKnee4: 0.739
@@ -177,7 +177,7 @@ Material:
     - _DMPeakKnee6: 0.75
     - _DMPeakKnee7: 0.744
     - _DMPeakSoftness0: 0.692
-    - _DMPeakSoftness1: 0.51
+    - _DMPeakSoftness1: 0.126
     - _DMPeakSoftness2: 0.488
     - _DMPeakSoftness3: 0.477
     - _DMPeakSoftness4: 0.474

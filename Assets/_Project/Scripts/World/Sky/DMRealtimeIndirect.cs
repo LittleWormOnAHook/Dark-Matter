@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -15,6 +15,7 @@ namespace Project.World.Sky
     /// Volume Layer Mask excludes this layer get it added at runtime (restored on exit).
     /// </summary>
     [DisallowMultipleComponent]
+    [ExecuteAlways] // 30j: edit-mode runtime preview (hidden DontSave instance)
     public sealed class DMRealtimeIndirect : MonoBehaviour
     {
         public const string ProfileResourcePath = "World/DM_IoPostProcessing";
@@ -33,6 +34,7 @@ namespace Project.World.Sky
         private IndirectLightingController ilc;
         private Exposure exposure;
         private ScreenSpaceAmbientOcclusion ssao;
+        private ScreenSpaceReflection ssr; // 30a
         private ShadowsMidtonesHighlights smh;
         private PhysicallyBasedSky pbs;
         private Bloom bloom;
@@ -58,7 +60,7 @@ namespace Project.World.Sky
         {
             if (instance != null) return;
             DM_IoSkyProfile p = DM_IoSkyProfile.Live;
-            if (p == null || !p.realtimeIndirectEnabled) return;
+            if (p == null || !p.realtimeIndirectEnabled || !p.skyEnabled) return; // 30n master tick
             if (FindAnyObjectByType<DMRealtimeIndirect>() != null) return;
             var go = new GameObject("DMRealtimeIndirect (auto)");
             DontDestroyOnLoad(go);
@@ -71,6 +73,8 @@ namespace Project.World.Sky
             instance = this;
             DM_IoSkyProfile p = DM_IoSkyProfile.Live;
             VolumeProfile src = p != null && p.indirectVolumeProfile != null ? p.indirectVolumeProfile : Resources.Load<VolumeProfile>(ProfileResourcePath);
+            sourceProfile31b = src; // 31b: live re-sync source
+            builtFor31g = p;
             runtimeProfile = ScriptableObject.CreateInstance<VolumeProfile>();
             runtimeProfile.name = "DM_IoPostProcessing (runtime)";
             if (src != null)
@@ -83,7 +87,7 @@ namespace Project.World.Sky
             if (!runtimeProfile.TryGet(out ssao)) ssao = runtimeProfile.Add<ScreenSpaceAmbientOcclusion>();
             if (!runtimeProfile.TryGet(out smh)) smh = runtimeProfile.Add<ShadowsMidtonesHighlights>();
             if (!runtimeProfile.TryGet(out pbs)) { pbs = runtimeProfile.Add<PhysicallyBasedSky>(); pbs.active = false; }
-            runtimeProfile.TryGet(out bloom);
+            runtimeProfile.TryGet(out bloom); runtimeProfile.TryGet(out ssr); // 30a
             runtimeProfile.TryGet(out contact);
             runtimeProfile.TryGet(out shadowSettings);
             runtimeProfile.TryGet(out vignette);
@@ -99,24 +103,163 @@ namespace Project.World.Sky
         }
 
         private bool exposureWasActive;
+        private DM_IoSkyProfile builtFor31g; // 31g
+
+        // 31f: BOTD volumes on top. Scene volumes named BOTD* (global, active) are read only - never written.
+        private Volume drive31f; private VolumeProfile driveProfile31f; private IndirectLightingController driveIlc31f; private PhysicallyBasedSky drivePbs31f; private Exposure driveExp31h; private Fog driveFog31h;
+        private static float botdScan31f = -1f; private static bool botdHas31f; private static float botdMin31f, botdMax31f;
+        private static readonly List<Volume> botdVols31f = new List<Volume>();
+        public static bool BotdPriorityRange31f(out float min, out float max)
+        {
+            float now = Time.realtimeSinceStartup;
+            if (now >= botdScan31f || now < botdScan31f - 2f)
+            {
+                botdScan31f = now + 1f; botdHas31f = false; botdMin31f = float.MaxValue; botdMax31f = float.MinValue; botdVols31f.Clear();
+                foreach (Volume v in FindObjectsByType<Volume>(FindObjectsInactive.Exclude))
+                {
+                    if (v == null || !v.isActiveAndEnabled || !v.isGlobal || !v.gameObject.name.StartsWith("BOTD")) continue;
+                    botdHas31f = true; botdVols31f.Add(v);
+                    botdMin31f = Mathf.Min(botdMin31f, v.priority); botdMax31f = Mathf.Max(botdMax31f, v.priority);
+                }
+            }
+            min = botdMin31f; max = botdMax31f; return botdHas31f;
+        }
+        private static void BotdIlc31f(out float diffuse, out float refl)
+        {
+            diffuse = 1f; refl = 1f; float best = float.MinValue;
+            foreach (Volume v in botdVols31f)
+            {
+                if (v == null || v.sharedProfile == null || v.priority < best) continue;
+                if (!v.sharedProfile.TryGet(out IndirectLightingController c) || !c.active) continue;
+                if (c.indirectDiffuseLightingMultiplier.overrideState) diffuse = c.indirectDiffuseLightingMultiplier.value;
+                if (c.reflectionLightingMultiplier.overrideState) refl = c.reflectionLightingMultiplier.value;
+                best = v.priority;
+            }
+        }
+        // 31m: true when an active BOTD volume sets exposure itself (then the top drive defers to BOTD).
+        private static bool BotdSetsExposure31m()
+        {
+            foreach (Volume v in botdVols31f)
+                if (v != null && v.isActiveAndEnabled && v.sharedProfile != null && v.sharedProfile.TryGet(out Exposure e) && e.active && e.mode.overrideState) return true;
+            return false;
+        }
+        private void EnsureDrive31f()
+        {
+            if (drive31f != null) return;
+            driveProfile31f = ScriptableObject.CreateInstance<VolumeProfile>();
+            driveProfile31f.name = "DM Sky Drive 31f (runtime)"; driveProfile31f.hideFlags = HideFlags.DontSave;
+            driveIlc31f = driveProfile31f.Add<IndirectLightingController>(); driveIlc31f.active = false;
+            drivePbs31f = driveProfile31f.Add<PhysicallyBasedSky>(); drivePbs31f.active = false;
+            driveExp31h = driveProfile31f.Add<Exposure>(); foreach (VolumeParameter prm in driveExp31h.parameters) prm.overrideState = false; driveExp31h.active = false;
+            driveFog31h = driveProfile31f.Add<Fog>(); foreach (VolumeParameter prm in driveFog31h.parameters) prm.overrideState = false; driveFog31h.active = false;
+            foreach (VolumeParameter prm in drivePbs31f.parameters) prm.overrideState = false;
+            drive31f = gameObject.AddComponent<Volume>(); drive31f.isGlobal = true; drive31f.weight = 0f; drive31f.sharedProfile = driveProfile31f;
+        }
+
+        // 31b: live re-sync. Edits to the source profile (DM_IoPostProcessing) are copied into the runtime/edit-preview copy
+        // (values + override states + active), then Apply() re-drives the Sky & Orbit fields. Same path in edit mode and Play.
+        private VolumeProfile sourceProfile31b;
+        private long srcStamp31b = long.MinValue;
+        private float srcCheck31b;
+        private long SourceStamp31b()
+        {
+            long h = 17;
+#if UNITY_EDITOR
+            h = h * 31 + UnityEditor.EditorUtility.GetDirtyCount(sourceProfile31b);
+            foreach (VolumeComponent c in sourceProfile31b.components) if (c != null) h = h * 31 + UnityEditor.EditorUtility.GetDirtyCount(c) + (c.active ? 1 : 0);
+#endif
+            return h + sourceProfile31b.components.Count;
+        }
+        private void ResyncFromSource31b()
+        {
+            if (sourceProfile31b == null || runtimeProfile == null) return;
+            float now = Time.realtimeSinceStartup;
+            if (now < srcCheck31b) return;
+            srcCheck31b = now + 0.25f;
+            long s = SourceStamp31b();
+            if (s == srcStamp31b) return;
+            bool first = srcStamp31b == long.MinValue;
+            srcStamp31b = s;
+            if (first) return; // copy was just made from the source
+            foreach (VolumeComponent sc in sourceProfile31b.components)
+            {
+                if (sc == null) continue;
+                VolumeComponent dc = null;
+                foreach (VolumeComponent c in runtimeProfile.components) if (c != null && c.GetType() == sc.GetType()) { dc = c; break; }
+                if (dc == null) { runtimeProfile.components.Add(Instantiate(sc)); continue; }
+                dc.active = sc.active;
+                int n = Mathf.Min(sc.parameters.Count, dc.parameters.Count);
+                for (int i = 0; i < n; i++) { dc.parameters[i].SetValue(sc.parameters[i]); dc.parameters[i].overrideState = sc.parameters[i].overrideState; }
+            }
+        }
 
         private void OnDisable()
         {
-            if (contactSun != null) contactSun.useContactShadow.@override = contactSunWasOn;
+            if (contactSun != null) contactSun.useContactShadow.@override = contactSunWasOn && DM_IoSkyProfile.ContactShadowsAllowed31k;
             contactSun = null;
             foreach (var kv in patchedMasks) if (kv.Key != null) kv.Key.volumeLayerMask = kv.Value;
             patchedMasks.Clear();
-            if (volume != null) Destroy(volume);
+            if (volume != null) Kill(volume);
+            if (drive31f != null) Kill(drive31f);
+            if (driveProfile31f != null) { foreach (VolumeComponent c in driveProfile31f.components) if (c != null) Kill(c); Kill(driveProfile31f); }
+            drive31f = null; driveProfile31f = null; driveIlc31f = null; drivePbs31f = null;
             if (runtimeProfile != null)
             {
-                foreach (VolumeComponent c in runtimeProfile.components) if (c != null) Destroy(c);
-                Destroy(runtimeProfile);
+                foreach (VolumeComponent c in runtimeProfile.components) if (c != null) Kill(c);
+                Kill(runtimeProfile);
             }
             volume = null; runtimeProfile = null;
             if (instance == this) instance = null;
         }
 
         private void LateUpdate() { Apply(); }
+
+        // 30n: stand down without destroying (restores sun contact + camera volume masks, zero weight).
+        private void StandDown30n()
+        {
+            if (contactSun != null) contactSun.useContactShadow.@override = contactSunWasOn && DM_IoSkyProfile.ContactShadowsAllowed31k;
+            contactSun = null;
+            foreach (var kv in patchedMasks) if (kv.Key != null) kv.Key.volumeLayerMask = kv.Value;
+            patchedMasks.Clear();
+            if (volume != null) volume.weight = 0f; if (drive31f != null) drive31f.weight = 0f; // 31f
+        }
+
+        private static void Kill(Object o) { if (o == null) return; if (Application.isPlaying) Destroy(o); else DestroyImmediate(o); }
+
+#if UNITY_EDITOR
+        // 30j: edit-mode runtime preview. Hidden HideAndDontSave instance; never saved, destroyed before Play / scene save,
+        // and when the toggle (DM_IoSkyProfile.editModeRuntimePreview) or realtimeIndirectEnabled is off.
+        private const string EditName = "DMRealtimeIndirect (edit preview)";
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void EditorBoot()
+        {
+            KillEditPreviews();
+            UnityEditor.EditorApplication.update -= EditorTick; UnityEditor.EditorApplication.update += EditorTick;
+            UnityEditor.EditorApplication.playModeStateChanged -= OnPlayMode; UnityEditor.EditorApplication.playModeStateChanged += OnPlayMode;
+            UnityEditor.SceneManagement.EditorSceneManager.sceneSaving -= OnSaving; UnityEditor.SceneManagement.EditorSceneManager.sceneSaving += OnSaving;
+        }
+        private static void OnSaving(UnityEngine.SceneManagement.Scene s, string path) { KillEditPreviews(); }
+        private static void OnPlayMode(UnityEditor.PlayModeStateChange c) { if (c == UnityEditor.PlayModeStateChange.ExitingEditMode) KillEditPreviews(); }
+        private static void KillEditPreviews()
+        {
+            foreach (DMRealtimeIndirect r in Resources.FindObjectsOfTypeAll<DMRealtimeIndirect>())
+                if (r != null && r.gameObject.name == EditName) DestroyImmediate(r.gameObject);
+            instance = null;
+        }
+        private static void EditorTick()
+        {
+            if (Application.isPlaying || UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode) return;
+            DM_IoSkyProfile p = DM_IoSkyProfile.Live;
+            bool want = p != null && p.realtimeIndirectEnabled && p.editModeRuntimePreview && p.skyEnabled; // 30n
+            if (!want) { if (instance != null && instance.gameObject.name == EditName) KillEditPreviews(); return; }
+            if (instance == null)
+            {
+                var go = new GameObject(EditName); go.hideFlags = HideFlags.HideAndDontSave;
+                go.AddComponent<DMRealtimeIndirect>();
+            }
+            else instance.Apply();
+        }
+#endif
 
         private static void SetParam(object comp, string field, object value)
         {
@@ -138,14 +281,17 @@ namespace Project.World.Sky
         {
             if (volume == null) return;
             DM_IoSkyProfile p = DM_IoSkyProfile.Live;
-            if (p == null || !p.realtimeIndirectEnabled) { volume.weight = 0f; return; }
+            if (p != builtFor31g && p != null) { OnDisable(); OnEnable(); if (volume == null) return; p = DM_IoSkyProfile.Live; } // 31g: per-scene profile switched -> rebuild copy
+            if (p == null || !p.realtimeIndirectEnabled || !p.skyEnabled) { StandDown30n(); return; } // 30n: Use Sky & Orbit off -> Gaia stack owns lighting
 
             volume.weight = 1f;
-            volume.priority = p.indirectVolumePriority;
-            if (p.fixCameraVolumeMask && Time.unscaledTime >= nextCamScan) { nextCamScan = Time.unscaledTime + 1f; PatchCameraMasks(); }
+            bool hasB31f = BotdPriorityRange31f(out float bMin31f, out float bMax31f); bool onTop31f = p.botdVolumesOnTop && hasB31f;
+            volume.priority = onTop31f ? bMin31f - 1f : p.indirectVolumePriority; // 31f: below BOTD -> only fills what BOTD does not override
+            EnsureDrive31f(); if (drive31f != null) { drive31f.priority = onTop31f ? bMax31f + 1f : p.indirectVolumePriority + 1f; drive31f.weight = onTop31f ? 1f : 0f; }
+            if (Application.isPlaying && p.fixCameraVolumeMask && Time.unscaledTime >= nextCamScan) { nextCamScan = Time.unscaledTime + 1f; PatchCameraMasks(); }
 
             gi.active = true;
-            { DMIoSkyController skyG = DMIoSkyController.Instance; bool deepEclipse = p.eclipseDisableSsgi && skyG != null && skyG.isActiveAndEnabled && skyG.EclipseFactor > 0.6f; gi.enable.Override(p.ssgiEnabled && !deepEclipse); } // 24aq
+            { DMIoSkyController skyG = DMIoSkyController.Instance; bool deepEclipse = p.eclipseDisableSsgi && skyG != null && skyG.isActiveAndEnabled && skyG.EclipseCoverage > 0.6f /* 31r */; gi.enable.Override(p.ssgiEnabled && !deepEclipse); } // 24aq
             gi.tracing.Override(RayCastingMode.RayMarching);
             gi.quality.Override((int)p.ssgiQuality);
             SetParam(gi, "m_MaxRaySteps", p.ssgiMaxRaySteps);
@@ -165,7 +311,7 @@ namespace Project.World.Sky
             if (sky != null && sky.isActiveAndEnabled)
             {
                 float amb = p.eclipseFloorEnabled ? Mathf.Max(p.eclipseAmbientMultiplier, p.eclipseMinAmbient) : p.eclipseAmbientMultiplier;
-                eclipseScale = Mathf.Lerp(1f, amb, Mathf.Clamp01(sky.EclipseFactor));
+                eclipseScale = Mathf.Lerp(1f, amb, Mathf.Clamp01(sky.EclipseCoverage) /* 31r */);
                 // 2026-10-26g: Night Ambient boost (lifts Indirect Diffuse with Ground/Mid/Sky night lighting)
                 if (p.enableNightLight)
                     nightAmb = Mathf.Max(0f, p.nightAmbientBoost) * Mathf.Clamp01(sky.NightLightFactor);
@@ -173,8 +319,17 @@ namespace Project.World.Sky
             ilc.active = true;
             ilc.indirectDiffuseLightingMultiplier.Override(p.indirectDiffuseMultiplier * eclipseScale + nightAmb);
             ilc.reflectionLightingMultiplier.Override(p.indirectReflectionMultiplier * eclipseScale + nightAmb * 0.5f);
+            if (driveIlc31f != null)
+            {
+                // 31f: on top of BOTD, scale BOTD's own indirect values by the eclipse / night factors (read-only).
+                BotdIlc31f(out float bd, out float br);
+                bool dyn = eclipseScale < 0.999f || nightAmb > 0.0001f;
+                driveIlc31f.active = dyn;
+                driveIlc31f.indirectDiffuseLightingMultiplier.Override(bd * eclipseScale + nightAmb);
+                driveIlc31f.reflectionLightingMultiplier.Override(br * eclipseScale + nightAmb * 0.5f);
+            }
 
-            ssao.intensity.Override(p.ssaoIntensity);
+            ssao.intensity.Override(p.ssaoIntensity); if (ssr != null) { ssr.enabled.Override(p.ssrEnabled); ssr.depthBufferThickness.Override(p.ssrDepthThickness); } // 30a: thick depth smeared the sun into a vertical streak
             ssao.directLightingStrength.Override(p.ssaoDirectLightingStrength);
 
             smh.active = p.shadowFloorLift > 0f;
@@ -182,14 +337,35 @@ namespace Project.World.Sky
             smh.shadows.Override(new Vector4(st.r, st.g, st.b, p.shadowFloorLift));
 
             // Ground bounce: only touch the PBS ground tint (the BOTD Environment volume keeps everything else).
-            if (p.overrideGroundTint)
+            // 30d: optional sky tint (Mars butterscotch) rides on the same PBS override.
+            if (p.overrideGroundTint || p.skyTintEnabled)
             {
                 pbs.active = true;
                 groundTintPushed = true;
-                pbs.groundTint.Override(p.groundBounceTint);
-                foreach (VolumeParameter prm in pbs.parameters) if (prm != pbs.groundTint) prm.overrideState = false;
+                foreach (VolumeParameter prm in pbs.parameters) prm.overrideState = false;
+                if (p.overrideGroundTint) pbs.groundTint.Override(p.groundBounceTint);
+                if (p.skyTintEnabled)
+                {
+                    pbs.zenithTint.Override(p.skyZenithTint);
+                    pbs.horizonTint.Override(p.skyHorizonTint);
+                    pbs.horizonZenithShift.Override(p.skyHorizonZenithShift);
+                }
             }
             else if (groundTintPushed) { pbs.active = false; groundTintPushed = false; }
+            if (driveExp31h != null && driveFog31h != null)
+            {
+                // 31h: Studio Essentials exposure compensation + fog distance ride above BOTD (only these two params).
+                driveExp31h.active = p.essentialsOverBotd31h && !BotdSetsExposure31m(); // 31m: exposure only, and only when BOTD does not set it
+                driveFog31h.active = false; // 31m: fog belongs to BOTD Environment (our fog distance stays on the below-BOTD copy)
+            }
+            if (drivePbs31f != null)
+            {
+                // 31f: Mars sky tint must ride above BOTD Environment (tint only; all other PBSky values stay BOTD's).
+                drivePbs31f.active = p.skyTintEnabled;
+                drivePbs31f.zenithTint.Override(p.skyZenithTint);
+                drivePbs31f.horizonTint.Override(p.skyHorizonTint);
+                drivePbs31f.horizonZenithShift.Override(p.skyHorizonZenithShift);
+            }
 
             if (p.exposureOverride)
             {
@@ -201,11 +377,19 @@ namespace Project.World.Sky
                 {
                     // 24ap: eclipse floor
                     if (p.eclipseFloorEnabled)
-                        expMin = Mathf.Lerp(expMin, Mathf.Min(expMin, p.eclipseExposureLimitMin), Mathf.Clamp01(skyE.EclipseFactor));
+                        expMin = Mathf.Lerp(expMin, Mathf.Min(expMin, p.eclipseExposureLimitMin), Mathf.Clamp01(skyE.EclipseCoverage) /* 31r */);
                     // 2026-10-26g: night light floor (same nightFade* factor) so auto-exposure does not eat the fills
                     if (p.enableNightLight)
                         expMin = Mathf.Lerp(expMin, Mathf.Min(expMin, p.nightExposureLimitMin), Mathf.Clamp01(skyE.NightLightFactor));
                 }
+                // 31l: Fixed exposure unless the project Auto exposure toggle is on (no code switches back to automatic).
+                float fixEv = p.fixedExposureEV31l;
+                if (skyE != null && skyE.isActiveAndEnabled)
+                {
+                    float darkF = Mathf.Max(p.eclipseFloorEnabled ? Mathf.Clamp01(skyE.EclipseCoverage) /* 31r */ : 0f, p.enableNightLight ? Mathf.Clamp01(skyE.NightLightFactor) : 0f);
+                    fixEv -= p.fixedNightDropEV31l * darkF;
+                }
+                if (!p.autoExposure31l) { exposure.mode.Override(ExposureMode.Fixed); exposure.fixedExposure.Override(fixEv); }
                 exposure.limitMin.Override(Mathf.Min(expMin, p.exposureLimitMax));
                 exposure.limitMax.Override(Mathf.Max(p.exposureLimitMin, p.exposureLimitMax));
                 exposure.compensation.Override(p.exposureCompensation);
@@ -215,6 +399,21 @@ namespace Project.World.Sky
                 exposure.adaptationSpeedDarkToLight.Override(p.exposureAdaptDarkToLight);
                 exposure.adaptationSpeedLightToDark.Override(p.exposureAdaptLightToDark);
                 exposure.meteringMode.Override(MeteringMode.CenterWeighted);
+                if (driveExp31h != null && driveExp31h.active)
+                {
+                    // 31j: the whole auto-exposure (range + adaptation) rides above BOTD Post so Studio Essentials win (interiors were blowing out at EV 8).
+                    driveExp31h.mode.Override(p.exposureHistogram ? ExposureMode.AutomaticHistogram : ExposureMode.Automatic);
+                    driveExp31h.limitMin.Override(Mathf.Min(expMin, p.exposureLimitMax));
+                    driveExp31h.limitMax.Override(Mathf.Max(p.exposureLimitMin, p.exposureLimitMax));
+                    driveExp31h.histogramPercentages.Override(new Vector2(Mathf.Min(p.exposureHistogramLow, p.exposureHistogramHigh), Mathf.Max(p.exposureHistogramLow, p.exposureHistogramHigh)));
+                    driveExp31h.adaptationMode.Override(AdaptationMode.Progressive);
+                    driveExp31h.adaptationSpeedDarkToLight.Override(p.exposureAdaptDarkToLight);
+                    driveExp31h.adaptationSpeedLightToDark.Override(p.exposureAdaptLightToDark);
+                    driveExp31h.meteringMode.Override(MeteringMode.CenterWeighted);
+                    foreach (VolumeParameter prm in driveExp31h.parameters) prm.overrideState = false; // 31m: carry only what the chosen mode needs
+                    if (!p.autoExposure31l) { driveExp31h.mode.Override(ExposureMode.Fixed); driveExp31h.fixedExposure.Override(fixEv); }
+                    else { driveExp31h.mode.Override(p.exposureHistogram ? ExposureMode.AutomaticHistogram : ExposureMode.Automatic); driveExp31h.limitMin.Override(Mathf.Min(expMin, p.exposureLimitMax)); driveExp31h.limitMax.Override(Mathf.Max(p.exposureLimitMin, p.exposureLimitMax)); driveExp31h.adaptationMode.Override(AdaptationMode.Progressive); driveExp31h.adaptationSpeedDarkToLight.Override(p.exposureAdaptDarkToLight); driveExp31h.adaptationSpeedLightToDark.Override(p.exposureAdaptLightToDark); driveExp31h.compensation.Override(p.exposureCompensation); }
+                }
             }
             else exposure.active = exposureWasActive; // keep BOTD exposure from the copy
 
@@ -242,7 +441,7 @@ namespace Project.World.Sky
                 ssao.radius.Override(p.ssaoRadius);
                 SetParam(ssao, "m_MaximumRadiusInPixels", p.ssaoMaxRadiusPixels);
             }
-            if (contact != null && on) { contact.enable.Override(true); contact.length.Override(p.contactShadowLength); }
+            if (contact != null) { bool cs31k = on && p.contactShadowsProject31k; contact.active = cs31k; contact.enable.Override(cs31k); if (cs31k) contact.length.Override(p.contactShadowLength); }
             micro.active = on && p.microShadowOpacity > 0f;
             micro.enable.Override(true);
             micro.opacity.Override(p.microShadowOpacity);
@@ -255,6 +454,7 @@ namespace Project.World.Sky
                     dist = sky.NightShadowMaxDistanceOverride;
                 shadowSettings.maxShadowDistance.Override(dist);
                 shadowSettings.cascadeShadowSplit0.Override(p.shadowCascadeSplit0);
+                shadowSettings.cascadeShadowSplitCount.Override(Mathf.Clamp(p.shadowCascadeCount31s, 1, 4)); // 31s
             }
             fog.active = on && p.fogMeanFreePath > 0f;
             if (fog.active) fog.meanFreePath.Override(p.fogMeanFreePath);
@@ -270,11 +470,11 @@ namespace Project.World.Sky
             HDAdditionalLightData hd = sunLight != null ? sunLight.GetComponent<HDAdditionalLightData>() : null;
             if (hd != contactSun)
             {
-                if (contactSun != null) contactSun.useContactShadow.@override = contactSunWasOn;
+                if (contactSun != null) contactSun.useContactShadow.@override = contactSunWasOn && DM_IoSkyProfile.ContactShadowsAllowed31k;
                 contactSun = hd;
                 if (hd != null) contactSunWasOn = hd.useContactShadow.@override;
             }
-            if (contactSun != null) contactSun.useContactShadow.@override = on && p.sunContactShadows ? true : contactSunWasOn;
+            if (contactSun != null) contactSun.useContactShadow.@override = p.contactShadowsProject31k && (on && p.sunContactShadows ? true : contactSunWasOn);
         }
 
         private void PatchCameraMasks()

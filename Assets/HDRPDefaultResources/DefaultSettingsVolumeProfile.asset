@@ -208,10 +208,10 @@ MonoBehaviour:
     m_Value: 1
   upperHemisphereLuxValue:
     m_OverrideState: 1
-    m_Value: 1
+    m_Value: 0.79661
   upperHemisphereLuxColor:
     m_OverrideState: 1
-    m_Value: {x: 0, y: 0, z: 0}
+    m_Value: {x: 0.5, y: 0.37843996, z: 0.14261824}
   desiredLuxValue:
     m_OverrideState: 1
     m_Value: 20000
@@ -239,10 +239,10 @@ MonoBehaviour:
     m_Value: 1
   hdriSky:
     m_OverrideState: 1
-    m_Value: {fileID: 0}
+    m_Value: {fileID: 8900000, guid: 64de07694abd4032912aac9b39b3638f, type: 3}
   distortionMode:
     m_OverrideState: 1
-    m_Value: 0
+    m_Value: 1
   flowmap:
     m_OverrideState: 1
     m_Value: {fileID: 0}
@@ -417,7 +417,7 @@ MonoBehaviour:
     m_Value: {r: 1, g: 1, b: 1, a: 1}
   colorTemperature:
     m_OverrideState: 1
-    m_Value: 5500
+    m_Value: 4315
   intensity:
     m_OverrideState: 1
     m_Value: 1
@@ -952,7 +952,7 @@ MonoBehaviour:
     m_Value: 1
   enable:
     m_OverrideState: 1
-    m_Value: 0
+    m_Value: 1
   tracing:
     m_OverrideState: 1
     m_Value: 1
@@ -1301,7 +1301,7 @@ MonoBehaviour:
     m_Value: 0
   material:
     m_OverrideState: 1
-    m_Value: {fileID: -876546973899608171, guid: 02532cbb810fb404db49da84f1efe41e, type: 3}
+    m_Value: {fileID: 2100000, guid: 8045df0e9022893418fe6306d30c8468, type: 2}
   airDensityR:
     m_OverrideState: 1
     m_Value: 0.04534
@@ -1343,10 +1343,10 @@ MonoBehaviour:
     m_Value: {r: 0.12, g: 0.1, b: 0.09, a: 1}
   groundColorTexture:
     m_OverrideState: 1
-    m_Value: {fileID: 0}
+    m_Value: {fileID: 8900000, guid: b0e9226313734802ba3279919e2eea98, type: 3}
   groundEmissionTexture:
     m_OverrideState: 1
-    m_Value: {fileID: 0}
+    m_Value: {fileID: 8900000, guid: ec8ef930e36e4647ac0ea07ffea93a73, type: 3}
   groundEmissionMultiplier:
     m_OverrideState: 1
     m_Value: 1
@@ -1355,7 +1355,7 @@ MonoBehaviour:
     m_Value: {x: 0, y: 0, z: 0}
   spaceEmissionTexture:
     m_OverrideState: 1
-    m_Value: {fileID: 0}
+    m_Value: {fileID: 8900000, guid: e2c253f0dd4403143b2ba6e4bbc23de1, type: 3}
   spaceEmissionMultiplier:
     m_OverrideState: 1
     m_Value: 1
@@ -1650,10 +1650,10 @@ MonoBehaviour:
   active: 1
   mode:
     m_OverrideState: 1
-    m_Value: 0
+    m_Value: 2
   useFullACES:
     m_OverrideState: 1
-    m_Value: 0
+    m_Value: 1
   toeStrength:
     m_OverrideState: 1
     m_Value: 0
@@ -2218,6 +2218,10 @@ MonoBehaviour:
     - {fileID: 11400000, guid: 99cac7f61886b234598f106a51052588, type: 2}
     - {fileID: 11400000, guid: 14035658b052d6c438430a23dbd7abf6, type: 2}
     - {fileID: 11400000, guid: 86d97fbd3ca825843866769b15956999, type: 2}
+    - {fileID: 11400000, guid: e757c67f815166a46bf02923652e8e19, type: 2}
+    - {fileID: 11400000, guid: ce16666c90341cb4fbce2c0f01db0a28, type: 2}
+    - {fileID: 11400000, guid: 2b7005ba3a4d8474b8cdc34141ad766e, type: 2}
+    - {fileID: 11400000, guid: 8b4dee5d886ffb544a4d4cc04941219a, type: 2}
 --- !u!114 &-1016694868962581565
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -2663,13 +2667,13 @@ MonoBehaviour:
     m_Value: 1
   intensity:
     m_OverrideState: 1
-    m_Value: 0
+    m_Value: 1.93
   directLightingStrength:
     m_OverrideState: 1
-    m_Value: 0
+    m_Value: 0.509
   radius:
     m_OverrideState: 1
-    m_Value: 2
+    m_Value: 3.76
   spatialBilateralAggressiveness:
     m_OverrideState: 1
     m_Value: 0.15
@@ -3059,13 +3063,13 @@ MonoBehaviour:
   active: 1
   quality:
     m_OverrideState: 1
-    m_Value: 1
+    m_Value: 3
   threshold:
     m_OverrideState: 1
     m_Value: 0
   intensity:
     m_OverrideState: 1
-    m_Value: 0
+    m_Value: 0.074
   scatter:
     m_OverrideState: 1
     m_Value: 0.7
@@ -3086,7 +3090,7 @@ MonoBehaviour:
     m_Value: 2
   m_HighQualityPrefiltering:
     m_OverrideState: 1
-    m_Value: 0
+    m_Value: 1
   m_HighQualityFiltering:
     m_OverrideState: 1
     m_Value: 1
@@ -3731,7 +3735,7 @@ MonoBehaviour:
     m_Value: 1
   fixedExposure:
     m_OverrideState: 1
-    m_Value: 6.681204
+    m_Value: 6.4199796
   compensation:
     m_OverrideState: 1
     m_Value: 0

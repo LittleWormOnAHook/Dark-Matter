@@ -14,23 +14,45 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.World.Sky.DM_IoSkyProfile
   skyLookPreset: 0
   skyEnabled: 1
+  fallbackSingleSunDisc: 1
+  fallbackDriveSun: 1
+  botdVolumesOnTop: 1
+  sunBaseLux31h: 0
+  sunShadowStrength31h: 1
+  sunTemperature31o: 0
+  sunVolumetricDimmer31o: -1
+  sunShadowResolution31o: 2048
+  sunDisc31o: 1
+  essentialsOverBotd31h: 1
+  debugHourAdvances: 0
+  editModeClockRuns: 1
+  eclipseKeepsSunShadows: 1
+  eclipseMinSunIntensity: 0.154
+  eclipseSunRamp31q: 1
+  eclipseSunMultiplier31q: 0.05
+  eclipseShadowStrength31q: 1
+  eclipsePenumbraScale31q: 0.6
+  eclipseRampCurve31q: 1
   autoSpawnController: 1
   onlyInScenesWithJupiter: 1
   skyBodyShader: {fileID: 4800000, guid: a32e9106cf6171c48a524cba2fe54c0b, type: 3}
-  debugHourOverride: 7.04
+  debugHourOverride: 24.9
+  debugHourEnabled: 1
   startHour: 11.6
-  sunLightName: Day DirectionalLight
+  sunLightName: BOTD Directional Light(Clone)
   disableOtherDirectionalLights: 1
-  sunIntensityMultiplier: 0.2
+  sunIntensityMultiplier: 2
   horizonFadeDegrees: 11.78
-  sunHorizonDimDegrees: 2.1
+  sunHorizonDimDegrees: 3.66
   sunHorizonMinFactor: 0.009
   sunHorizonDesaturate: 0.35
-  sunMaxLux: 26788
+  sunMaxLux: 42621
   shadeFillEnabled: 1
-  shadeFillLux: 2078
-  shadeFillElevationDeg: 6
-  shadeFillColor: {r: 0.3509434, g: 0.17149875, b: 0.24757197, a: 1}
+  shadeFillLux: 1856
+  shadeFillStrength: 0.35
+  editModeRuntimePreview: 1
+  shadeFillElevationDeg: 8.5
+  shadeFillColor: {r: 0.87169814, g: 0.81413317, b: 0.8384384, a: 1}
   orbitPoleTiltDeg: -0.8
   reverseSkyMotion: 0
   eclipseEnabled: 1
@@ -41,6 +63,16 @@ MonoBehaviour:
   sunHidesBehindJupiter: 1
   ambientVolumePriority: 90
   jupiterObjectName: Jupiter
+  showJupiter: 1
+  showMoons: 1
+  sunAngularDiameterDeg: 0.53
+  sunFlareSize31p: 3
+  sunFlareFalloff31p: 4
+  sunFlareMultiplier31p: 1
+  skyTintEnabled: 0
+  skyZenithTint: {r: 1, g: 1, b: 1, a: 1}
+  skyHorizonTint: {r: 1, g: 1, b: 1, a: 1}
+  skyHorizonZenithShift: 0
   jupiterAzimuthDeg: 188
   jupiterElevationDeg: 42.8
   jupiterAngularDiameterDeg: 37.5
@@ -68,7 +100,7 @@ MonoBehaviour:
     periodRatio: 2.73
     orbitRadiusKm: 671083.94
     diameterKm: 8000
-    sizeMultiplier: 6.86
+    sizeMultiplier: 4
     startPhaseDeg: 155
     colorA: {r: 0.29071552, g: 0.39257458, b: 0.5018867, a: 1}
     colorB: {r: 0.7056604, g: 0.7056604, b: 0.7056604, a: 1}
@@ -82,7 +114,7 @@ MonoBehaviour:
     periodRatio: 4
     orbitRadiusKm: 1070400
     diameterKm: 6103
-    sizeMultiplier: 7.34
+    sizeMultiplier: 4
     startPhaseDeg: 91
     colorA: {r: 0.16226411, g: 0.048679214, b: 0.057294063, a: 1}
     colorB: {r: 0.7660377, g: 0.53261304, b: 0.2991883, a: 1}
@@ -96,7 +128,7 @@ MonoBehaviour:
     periodRatio: 9.43
     orbitRadiusKm: 1882700
     diameterKm: 6099
-    sizeMultiplier: 8.3
+    sizeMultiplier: 4
     startPhaseDeg: 233
     colorA: {r: 0.4339267, g: 0.46914923, b: 0.9622642, a: 1}
     colorB: {r: 0.9019608, g: 0.19607843, b: 0.2264577, a: 1}
@@ -113,38 +145,43 @@ MonoBehaviour:
   ssgiFullResolution: 1
   ssgiDenoise: 1
   ssgiHalfResDenoiser: 1
-  ssgiDenoiserRadius: 0.598
+  ssgiDenoiserRadius: 0.431
   ssgiDepthThickness: 0.11
-  shadowFloorLift: 0.08
-  shadowFloorTint: {r: 0.7132075, g: 0.36467773, b: 0.575552, a: 1}
+  shadowFloorLift: 0.113
+  shadowFloorTint: {r: 0.19999999, g: 0.15207545, b: 0.18115325, a: 1}
   overrideGroundTint: 1
-  groundBounceTint: {r: 0.690566, g: 0.47801548, b: 0.19153433, a: 1}
-  ssaoIntensity: 1.54
-  ssaoDirectLightingStrength: 0.22
+  groundBounceTint: {r: 0.6901961, g: 0.28429884, b: 0.19215685, a: 1}
+  ssaoIntensity: 0.9
+  ssaoDirectLightingStrength: 0.472
   fixCameraVolumeMask: 1
   indirectDiffuseMultiplier: 1.2
   indirectReflectionMultiplier: 1
   ambientModeDynamic: 1
   exposureOverride: 1
   exposureHistogram: 1
-  exposureLimitMin: 1.1
-  exposureLimitMax: 15.9
+  autoExposure31l: 0
+  fixedExposureEV31l: 14
+  fixedNightDropEV31l: 3
+  exposureLimitMin: 11.5
+  exposureLimitMax: 14
   exposureHistogramLow: 40
   exposureHistogramHigh: 88
-  exposureAdaptDarkToLight: 2.07
-  exposureAdaptLightToDark: 1.3
-  bloomIntensity: 0.873
-  bloomThreshold: 0.62
+  exposureAdaptDarkToLight: 0.6
+  exposureAdaptLightToDark: 0.6
+  bloomIntensity: 0.591
+  bloomThreshold: 0.94
   exposureCompensation: -0.01
   polishEnabled: 1
-  ssaoRadius: 1.137
-  ssaoMaxRadiusPixels: 31
-  contactShadowLength: 0.489
-  sunContactShadows: 1
-  microShadowOpacity: 0.476
+  ssaoRadius: 0.59
+  ssaoMaxRadiusPixels: 16
+  contactShadowLength: 0
+  sunContactShadows: 0
+  contactShadowsProject31k: 0
+  microShadowOpacity: 0.497
   shadowMaxDistance: 150
-  shadowCascadeSplit0: 0.0994
-  fogMeanFreePath: 1069
+  shadowCascadeSplit0: 0.057
+  shadowCascadeCount31s: 3
+  fogMeanFreePath: 663
   gradeContrast: -13.78
   splitToneStrength: 0.291
   splitToneShadows: {r: 0.42, g: 0.52, b: 0.66, a: 1}
@@ -225,14 +262,16 @@ MonoBehaviour:
   auroraHeightBobDeg: 5.69
   disableVolumetricClouds: 0
   eclipseShadowsEnabled: 1
-  eclipseShadowStrength: 0.944
-  eclipseShadowSoftnessDeg: 9.44
+  eclipseShadowStrength: 0.5
+  eclipseShadowSoftnessDeg: 3
+  ssrEnabled: 1
+  ssrDepthThickness: 0.08
   sunOcclusionSoftDeg: 0.73
   ringSunBias: 3.85
   ringEdgeGrowDeg: 27.8
   ringMinFactor: 0.052
   ringLightLux: 107
-  ringFlareIntensity: 0.378
+  ringFlareIntensity: 0.2
   dayFraction: 0.783
   flareEnabled: 1
   flareUseOcclusion: 1
@@ -241,12 +280,15 @@ MonoBehaviour:
   flareMinElevationDeg: 1
   flareElevationFadeDeg: 16
   flareEclipseFade: 1
-  flareRingDuringEclipse: 0.605
+  flareRingDuringEclipse: 0.3
   flareOcclusionRadius: 0.28
   eclipseDisableSsgi: 1
   disableOtherSunFlares: 1
   skyLookAppliedPresetInternal: 0
   skyLookCustomStashNames:
+  - moon:0
+  - moon:1
+  - moon:2
   - nightSkyEnabled
   - starDensity
   - starBrightness
@@ -319,6 +361,8 @@ MonoBehaviour:
   - jupiterBrightness
   - jupiterLimbDarkening
   - jupiterRimColor
+  - jupiterRimSoftness
+  - skyBodyEdgeSoft
   - eclipseFloorEnabled
   - eclipseMinAmbient
   - eclipseFillLux
@@ -329,15 +373,129 @@ MonoBehaviour:
   - nightSkyDitherEnabled
   - nightSkyDitherAmount
   - nightSkySoftExpPower
+  - skyEnabled
+  - fallbackSingleSunDisc
+  - fallbackDriveSun
+  - botdVolumesOnTop
+  - eclipseKeepsSunShadows
+  - eclipseMinSunIntensity
+  - autoSpawnController
+  - onlyInScenesWithJupiter
+  - startHour
+  - disableOtherDirectionalLights
+  - sunIntensityMultiplier
+  - horizonFadeDegrees
+  - sunHorizonDimDegrees
+  - sunHorizonMinFactor
+  - sunHorizonDesaturate
+  - sunMaxLux
+  - shadeFillEnabled
+  - shadeFillLux
+  - shadeFillStrength
+  - editModeRuntimePreview
+  - shadeFillElevationDeg
+  - shadeFillColor
+  - orbitPoleTiltDeg
+  - reverseSkyMotion
+  - eclipseEnabled
+  - eclipseDurationHours
+  - eclipseFadeHours
+  - sunHidesBehindJupiter
+  - ambientVolumePriority
+  - showJupiter
+  - showMoons
+  - sunAngularDiameterDeg
+  - skyTintEnabled
+  - skyZenithTint
+  - skyHorizonTint
+  - skyHorizonZenithShift
+  - jupiterAzimuthDeg
+  - jupiterElevationDeg
+  - jupiterAngularDiameterDeg
+  - skyDistance
+  - jupiterSpinHours
+  - skyBodySphereSegments
+  - otherMoonsUseSkyMaterial
+  - otherMoonColor
+  - realtimeIndirectEnabled
+  - indirectVolumePriority
+  - ssgiEnabled
+  - ssgiQuality
+  - ssgiMaxRaySteps
+  - ssgiFullResolution
+  - ssgiDenoise
+  - ssgiHalfResDenoiser
+  - ssgiDenoiserRadius
+  - ssgiDepthThickness
+  - shadowFloorLift
+  - shadowFloorTint
+  - overrideGroundTint
+  - groundBounceTint
+  - ssaoIntensity
+  - ssaoDirectLightingStrength
+  - fixCameraVolumeMask
+  - indirectDiffuseMultiplier
+  - indirectReflectionMultiplier
+  - ambientModeDynamic
+  - exposureOverride
+  - exposureHistogram
+  - exposureLimitMin
+  - exposureLimitMax
+  - exposureHistogramLow
+  - exposureHistogramHigh
+  - exposureAdaptDarkToLight
+  - exposureAdaptLightToDark
+  - bloomIntensity
+  - bloomThreshold
+  - exposureCompensation
+  - polishEnabled
+  - ssaoRadius
+  - ssaoMaxRadiusPixels
+  - contactShadowLength
+  - sunContactShadows
+  - microShadowOpacity
+  - shadowMaxDistance
+  - shadowCascadeSplit0
+  - fogMeanFreePath
+  - gradeContrast
+  - splitToneStrength
+  - splitToneShadows
+  - splitToneHighlights
+  - vignetteIntensity
+  - editPreviewEnabled
+  - disableVolumetricClouds
+  - ssrEnabled
+  - ssrDepthThickness
+  - sunOcclusionSoftDeg
+  - ringSunBias
+  - ringEdgeGrowDeg
+  - ringMinFactor
+  - ringLightLux
+  - ringFlareIntensity
+  - dayFraction
+  - flareEnabled
+  - flareUseOcclusion
+  - flareOcclusionSamples
+  - flareIntensityScale
+  - flareMinElevationDeg
+  - flareElevationFadeDeg
+  - flareEclipseFade
+  - flareRingDuringEclipse
+  - flareOcclusionRadius
+  - eclipseDisableSsgi
+  - disableOtherSunFlares
   skyLookCustomStashValues:
+  - 4
+  - 4
+  - 4
   - 1
   - 75
   - 3
   - 0.36
   - 0.644
   - 1
-  - 0.15
-  - 0.232
+  - 0.035
+  - 0.177
   - 1
   - 1,0.85,0.7,1
   - 0.55,0.65,1,1
@@ -359,20 +517,20 @@ MonoBehaviour:
   - 500
   - 0
   - 1
-  - 0.1
+  - 0.4
   - 0.114575684,1,0,1
   - 0.8980392,0.228784457,0.199999973,1
-  - 0.12
+  - 0.047
   - 0.723
   - 0.614
   - 0
-  - 0
+  - 0.313
   - -7.3
   - 21.1
   - 13.1
   - 3.63
   - 21.1
-  - 5.1
+  - 15.2
   - 360
   - 0
   - 112.8
@@ -395,20 +553,133 @@ MonoBehaviour:
   - 120
   - 0.858
   - 0.605
-  - 0.9529412,0.874298155,0.7607843,1
+  - 0.7853827,0.877471566,0.939622641,1
   - 103
   - 129
   - 3412
-  - 0.69
-  - 0.752
-  - 0.901886761,0.892153144,0.6585475,1
+  - 1.48
+  - 0.131
+  - 0.978530347,1,0.918867946,1
+  - 4
+  - 0.035
   - 1
   - 0.893
   - 373
   - 2
   - 1
-  - 0.944
-  - 9.44
+  - 0.5
+  - 3
   - 0
   - 0.55
   - 0.28
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 0.154
+  - 1
+  - 1
+  - 11.6
+  - 1
+  - 2
+  - 11.78
+  - 3.66
+  - 0.009
+  - 0.35
+  - 42621
+  - 1
+  - 1856
+  - 0.35
+  - 1
+  - 8.5
+  - 0.871698141,0.814133167,0.8384384,1
+  - -0.8
+  - 0
+  - 1
+  - 4
+  - 1.33
+  - 1
+  - 90
+  - 1
+  - 1
+  - 0.5
+  - 0
+  - 1,1,1,1
+  - 1,1,1,1
+  - 0
+  - 188
+  - 42.8
+  - 37.5
+  - 6998
+  - 10.9
+  - 64
+  - 1
+  - 0.243011743,0.311519265,0.3509434,1
+  - 1
+  - 90
+  - 1
+  - Custom
+  - 64
+  - 1
+  - 1
+  - 1
+  - 0.431
+  - 0.11
+  - 0.113
+  - 0.199999988,0.152075455,0.181153253,1
+  - 1
+  - 0.6901961,0.284298837,0.192156851,1
+  - 0.9
+  - 0.472
+  - 1
+  - 1.2
+  - 1
+  - 1
+  - 1
+  - 1
+  - 3.9
+  - 15.9
+  - 40
+  - 88
+  - 2.07
+  - 1.3
+  - 0.591
+  - 0.94
+  - -0.01
+  - 1
+  - 0.59
+  - 16
+  - 0
+  - 1
+  - 0.497
+  - 228
+  - 0.057
+  - 663
+  - -13.78
+  - 0.291
+  - 0.42,0.52,0.66,1
+  - 0.66,0.55,0.42,1
+  - 0.406
+  - 1
+  - 0
+  - 1
+  - 0.08
+  - 0.73
+  - 3.85
+  - 27.8
+  - 0.052
+  - 107
+  - 0.2
+  - 0.783
+  - 1
+  - 1
+  - 16
+  - 1
+  - 1
+  - 16
+  - 1
+  - 0.3
+  - 0.28
+  - 1
+  - 1

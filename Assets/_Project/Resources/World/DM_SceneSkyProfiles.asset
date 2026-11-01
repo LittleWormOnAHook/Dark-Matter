@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ecb3e1153b2883a428e1b8f652f0d512, type: 3}
+  m_Name: DM_SceneSkyProfiles
+  m_EditorClassIdentifier: Assembly-CSharp::Project.World.Sky.DMSceneSkyProfileMap
+  entries:
+  - sceneName: Dark Matter Genesis v1.7
+    profile: {fileID: 11400000, guid: 5f440fbf69a765a40ae6b9c15c304493, type: 2}
+  - sceneName: Dark Matter Mars-The Beginning
+    profile: {fileID: 11400000, guid: 2013e7aab389e9b45a63285b45d3dce9, type: 2}

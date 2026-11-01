@@ -40,6 +40,8 @@ namespace Project.World.Sky
 
         public float HourOfDay { get; private set; }
         public float EclipseFactor { get; private set; }
+        /// <summary>31r: 0..1 live eclipse coverage (ramp of max(EclipseFactor, 1-SunVisibility) when the sun ramp is on, else EclipseFactor). Recomputed every frame from the current hour; 0 = full restore.</summary>
+        public float EclipseCoverage { get; private set; }
         /// <summary>2026-10-26f: 1 at full night (sun elev &lt;= nightFadeStartDeg), 0 at day (elev &gt;= nightFadeEndDeg).</summary>
         public float NightLightFactor { get; private set; }
         /// <summary>2026-10-26j: true when Jupiter-shine (not the sun) owns the single HDRP directional shadow.</summary>
@@ -80,6 +82,13 @@ namespace Project.World.Sky
         private float sunBaseLux;
         private Color sunOriginalColor = Color.white; // 24al
         private Quaternion sunOriginalRot;
+        private float sunOriginalAngular = -1f; // 30d
+        private void CaptureSunAngular30d()
+        {
+            if (sun == null) return;
+            var hd = sun.GetComponent<HDAdditionalLightData>();
+            if (hd != null && sunOriginalAngular < 0f) sunOriginalAngular = hd.angularDiameter;
+        }
         private Light previousRenderSun;
         private Light jupiterShine;
         private Light nightLightSky, nightLightMid, nightLightGround; // 2026-10-26f trilight night ambient
@@ -115,7 +124,7 @@ namespace Project.World.Sky
         {
             if (instance != null) return;
             DM_IoSkyProfile p = DM_IoSkyProfile.Live;
-            if (p == null || !p.skyEnabled || !p.autoSpawnController) return;
+            if (p == null || !p.autoSpawnController) return; // 30n: always spawn; idles + restores when Use Sky & Orbit is off
             if (FindAnyObjectByType<DMIoSkyController>() != null) return;
             var go = new GameObject("DMIoSkyController (auto)");
             DontDestroyOnLoad(go);
@@ -158,9 +167,11 @@ namespace Project.World.Sky
             if (instance == this) instance = null;
             SceneManager.activeSceneChanged -= OnActiveSceneChanged;
             RenderPipelineManager.beginCameraRendering -= OnBeginCamera;
+            RestoreFallbackSun31e(); // 31e
             Release();
         }
 
+        private DM_IoSkyProfile lastProfile31g;
         private void OnActiveSceneChanged(Scene a, Scene b)
         {
             Release();
@@ -169,31 +180,191 @@ namespace Project.World.Sky
         private void Update()
         {
             DM_IoSkyProfile p = Profile;
-            if (p == null || !p.skyEnabled)
+            if (p == null || !p.skyEnabled || (Preview && !p.editModeRuntimePreview)) // 30j toggle
             {
-                if (acquired) Release();
+                if (acquired) Release(); FallbackSunDisc30n(p); // 30n
+                if (p != null && !p.skyEnabled) FallbackDriveSun31e(p); else RestoreFallbackSun31e(); // 31e
                 return;
-            }
+            } RestoreSunDiscs30n(); // 30n
+            RestoreFallbackSun31e(); // 31e: put the scene rotation back before Acquire captures it
 
             // 25o: structural settings (body names, shaders, moon list) changed live -> rebuild so Studio edits apply in Play.
+            if (p != lastProfile31g) { if (acquired) Release(); lastProfile31g = p; } // 31g: scene switched profile
             int sig = StructureSig(p);
             if (acquired && sig != structSig) Release();
             structSig = sig;
             if (!acquired) Acquire(p);
+            else if (!idle && !Preview && Time.realtimeSinceStartup >= sunRecheck30i)
+            {
+                // 30i: Gaia can spawn the BOTD sun after we acquired a fallback -> switch to it.
+                sunRecheck30i = Time.realtimeSinceStartup + 1f;
+                if (sun == null || sun.name != p.sunLightName) { Light want = FindSun30i(p); if (want != null && want != sun && want.name == p.sunLightName) { Release(); Acquire(p); } }
+            }
             if (idle) return;
             Simulate(p);
         }
 
         // ---------------------------------------------------------------- acquire / release
 
+        private float sunRecheck30i;
+
+        // 31e: Use Sky & Orbit off -> keep rotating the primary (BOTD) sun from clock / Debug Hour / Preview Hour, same
+        // orbit path as Simulate (Mars presets have eclipse/Jupiter off so no warp). Original rotation restored when the
+        // sky system takes over, the option is off, on disable and before a scene save.
+        // 31h: single time source for Sky on and the Sky-off fallback (sun, Jupiter, moons, eclipse all use it).
+        private double editClock31h = -1.0, editLast31h, dbgStart31h; private float dbgKey31h = float.NaN;
+        private double TotalHours31h(DM_IoSkyProfile p, float hpd)
+        {
+            double now = Time.realtimeSinceStartupAsDouble;
+            DMIoClockProfile cp = DMIoClockProfile.Live;
+            double realPerHour = cp != null ? Mathf.Max(1f, cp.realSecondsPerGameHour) : 120.0;
+            if (p.DebugHourActive)
+            {
+                double bt = (DMIoClock.Day - 1) * (double)hpd + p.debugHourOverride;
+                if (!p.debugHourAdvances) { dbgKey31h = float.NaN; return bt; }
+                if (p.debugHourOverride != dbgKey31h) { dbgKey31h = p.debugHourOverride; dbgStart31h = now; }
+                return bt + (now - dbgStart31h) / realPerHour;
+            }
+            dbgKey31h = float.NaN;
+            if (Preview && p.editPreviewHour >= 0f) { editClock31h = -1.0; return (DMIoClock.Day - 1) * (double)hpd + p.editPreviewHour; }
+            if (Preview && p.editModeClockRuns)
+            {
+                if (editClock31h < 0.0) { editClock31h = DMIoClock.TotalHoursContinuous; editLast31h = now; }
+                editClock31h += Mathf.Clamp((float)(now - editLast31h), 0f, 1f) / realPerHour; editLast31h = now;
+                return editClock31h;
+            }
+            editClock31h = -1.0;
+            return DMIoClock.TotalHoursContinuous;
+        }
+
+        private Light fbSun31e; private Quaternion fbRot31e;
+        private void FallbackDriveSun31e(DM_IoSkyProfile p)
+        {
+            bool want = p.fallbackDriveSun && (!Preview || (p.editModeRuntimePreview && (p.DebugHourActive || p.editPreviewHour >= 0f || p.editModeClockRuns))); // 31h
+            Light s = want ? FindSun30i(p) : null;
+            if (s == null) { RestoreFallbackSun31e(); return; }
+            if (s != fbSun31e) { RestoreFallbackSun31e(); fbSun31e = s; fbRot31e = s.transform.rotation; }
+            float hpd = Mathf.Max(1f, DMIoClock.HoursPerDayValue);
+            double total = TotalHours31h(p, hpd); // 31h
+            float hour = (float)(total % hpd);
+            if (Preview) { PreviewActive = true; PreviewHour = hour; PreviewSource = (p.DebugHourActive ? "debug override" : (p.editPreviewHour >= 0f ? "Preview Hour" : "clock")) + " (fallback)"; }
+            float jEl = Mathf.Clamp(p.jupiterElevationDeg, -10f, 89.5f);
+            Vector3 J = Quaternion.Euler(-jEl, p.jupiterAzimuthDeg, 0f) * Vector3.forward;
+            Vector3 N = Vector3.up - Vector3.Dot(Vector3.up, J) * J;
+            N = Quaternion.AngleAxis(p.orbitPoleTiltDeg, J) * N.normalized;
+            Vector3 V = Vector3.Cross(N, J).normalized;
+            if (p.reverseSkyMotion) V = -V;
+            float th = Mathf.PI + 2f * Mathf.PI * (WarpSunHour(p, hour, hpd) - hpd * 0.5f) / hpd;
+            Vector3 S = (J * -Mathf.Cos(th) + V * -Mathf.Sin(th)).normalized;
+            s.transform.rotation = Quaternion.LookRotation(-S, N);
+            EnsureSunShadows31e(s); // 31e: shadows on (2048) in fallback too
+            HourOfDay = hour; SunDirection = S; EclipseFactor = 0f; SunVisibility = 1f; EclipseCoverage = 0f; // 31r
+            SunElevationDeg = Mathf.Asin(Mathf.Clamp(S.y, -1f, 1f)) * Mathf.Rad2Deg;
+            DMIoClockProfile cp = DMIoClockProfile.Live;
+            float bl = cp != null ? Mathf.Max(0.01f, cp.nightTransitionDeg) : 4f;
+            DMIoClock.NightFactor = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(-bl, bl, SunElevationDeg));
+        }
+        // 31e: the BOTD sun always keeps shadows on at 2048, full dimmer, in every preset / path.
+        // 31q: 0..1 eclipse coverage (timed eclipse factor or sun hidden behind Jupiter), smoothstep + curve exponent.
+        private static float EclipseRamp31q(DM_IoSkyProfile p, float e, float vis)
+        {
+            if (!p.eclipseEnabled) return 0f;
+            float k = Mathf.Clamp01(Mathf.Max(e, 1f - vis));
+            return Mathf.Pow(Mathf.SmoothStep(0f, 1f, k), Mathf.Max(0.05f, p.eclipseRampCurve31q));
+        }
+        private void EnsureSunShadows31e(Light l)
+        {
+            if (l == null) return;
+            if (l.shadows == LightShadows.None) l.shadows = LightShadows.Soft;
+            if (sunOriginalShadows == LightShadows.None) sunOriginalShadows = LightShadows.Soft;
+            if (l.TryGetComponent(out HDAdditionalLightData hd))
+            {
+                int wantRes = Profile != null ? Mathf.Clamp(Mathf.ClosestPowerOfTwo(Profile.sunShadowResolution31o), 256, 8192) : 2048; // 31o
+                if (!hd.shadowResolution.useOverride || hd.shadowResolution.@override != wantRes) { hd.shadowResolution.useOverride = true; hd.shadowResolution.@override = wantRes; }
+                if (Profile != null && Profile.sunVolumetricDimmer31o >= 0f && !Mathf.Approximately(hd.volumetricDimmer, Profile.sunVolumetricDimmer31o)) hd.volumetricDimmer = Profile.sunVolumetricDimmer31o; // 31o
+                float wantDim = Profile != null ? Profile.sunShadowStrength31h : 1f; if (!Mathf.Approximately(hd.shadowDimmer, wantDim)) hd.shadowDimmer = wantDim; // 31h
+            }
+        }
+
+        private void RestoreFallbackSun31e()
+        {
+            if (fbSun31e != null) fbSun31e.transform.rotation = fbRot31e;
+            fbSun31e = null;
+        }
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void Boot31e()
+        {
+            UnityEditor.SceneManagement.EditorSceneManager.sceneSaving -= Saving31e; UnityEditor.SceneManagement.EditorSceneManager.sceneSaving += Saving31e;
+            UnityEditor.EditorApplication.playModeStateChanged -= Play31e; UnityEditor.EditorApplication.playModeStateChanged += Play31e;
+        }
+        private static void Saving31e(Scene s, string path) { if (instance != null) instance.RestoreFallbackSun31e(); }
+        private static void Play31e(UnityEditor.PlayModeStateChange c) { if (c == UnityEditor.PlayModeStateChange.ExitingEditMode && instance != null) instance.RestoreFallbackSun31e(); }
+#endif
+
+        // 30n: Gaia fallback (Use Sky & Orbit off). Gaia keeps all its lights; only the extra sun DISC + flare on
+        // non-primary directionals is hidden (one sun in the sky). Restored when the sky system is back on or option off.
+        private readonly List<KeyValuePair<HDAdditionalLightData, bool>> discRestore30n = new List<KeyValuePair<HDAdditionalLightData, bool>>();
+        private readonly List<LensFlareComponentSRP> flareRestore30n = new List<LensFlareComponentSRP>();
+        private readonly List<KeyValuePair<Light, LightShadows>> shadowRestore31a = new List<KeyValuePair<Light, LightShadows>>(); // 31a: HDRP shadows one directional only
+        private float discScan30n;
+        private void FallbackSunDisc30n(DM_IoSkyProfile p)
+        {
+            if (p == null || !p.fallbackSingleSunDisc) { RestoreSunDiscs30n(); return; }
+            if (Time.realtimeSinceStartup < discScan30n) return;
+            discScan30n = Time.realtimeSinceStartup + 1f;
+            Light primary = FindSun30i(p);
+            foreach (Light l in FindObjectsByType<Light>())
+            {
+                if (l == primary || l.type != LightType.Directional || !l.enabled || !l.gameObject.activeInHierarchy) continue;
+                var hd = l.GetComponent<HDAdditionalLightData>();
+                if (hd != null && hd.interactsWithSky) { discRestore30n.Add(new KeyValuePair<HDAdditionalLightData, bool>(hd, true)); hd.interactsWithSky = false; }
+                var fl = l.GetComponent<LensFlareComponentSRP>();
+                if (fl != null && fl.enabled) { flareRestore30n.Add(fl); fl.enabled = false; }
+                if (primary != null && l.shadows != LightShadows.None) { shadowRestore31a.Add(new KeyValuePair<Light, LightShadows>(l, l.shadows)); l.shadows = LightShadows.None; } // 31a: fixes "Cascade Shadow atlasing has failed"
+            }
+        }
+        private void RestoreSunDiscs30n()
+        {
+            if (discRestore30n.Count == 0 && flareRestore30n.Count == 0 && shadowRestore31a.Count == 0) return;
+            foreach (var kv in shadowRestore31a) if (kv.Key != null) kv.Key.shadows = kv.Value;
+            shadowRestore31a.Clear();
+            foreach (var kv in discRestore30n) if (kv.Key != null) kv.Key.interactsWithSky = kv.Value;
+            foreach (var f in flareRestore30n) if (f != null) f.enabled = true;
+            discRestore30n.Clear(); flareRestore30n.Clear();
+        }
+        // 30i: profile sun name first, then the BOTD clone / original, active preferred; directional only.
+        private static Light FindSun30i(DM_IoSkyProfile p)
+        {
+            // 31h: the visible (active) sun always wins; an inactive named light is only the last resort (v1.7: BOTD clone inactive, "Day DirectionalLight" active).
+            string[] names = { p.sunLightName, "BOTD Directional Light(Clone)", "BOTD Directional Light" };
+            for (int i = 0; i < names.Length; i++) { Light a = FindSceneComponentByName<Light>(names[i]); if (a != null && a.type == LightType.Directional && a.gameObject.activeInHierarchy && a.enabled) return a; }
+            if (RenderSettings.sun != null && RenderSettings.sun.type == LightType.Directional && RenderSettings.sun.isActiveAndEnabled && RenderSettings.sun.gameObject.scene.IsValid()) return RenderSettings.sun;
+            Light best = null; foreach (Light d in FindObjectsByType<Light>(FindObjectsInactive.Exclude)) if (d.type == LightType.Directional && d.enabled && d.gameObject.scene.IsValid() && d.name != "DM Io Sun" && !d.name.StartsWith("DM ") && (best == null || d.intensity > best.intensity)) best = d;
+            if (best != null) return best;
+            for (int i = 0; i < names.Length; i++)
+            {
+                Light l = FindSceneComponentByName<Light>(names[i]);
+                if (l != null && l.type == LightType.Directional && l.gameObject.activeInHierarchy) return l;
+            }
+            Light any = FindSceneComponentByName<Light>(p.sunLightName);
+            return any != null && any.type == LightType.Directional ? any : null;
+        }
+
         private static T FindSceneComponentByName<T>(string objectName) where T : Component
         {
             if (string.IsNullOrEmpty(objectName)) return null;
             T[] all = FindObjectsByType<T>(FindObjectsInactive.Include);
+            // 2026-10-30b: prefer an active match. Scene has a disabled duplicate "Day DirectionalLight"; picking it first meant
+            // the debug hour / clock rotated the hidden copy and the visible sun never moved.
+            T fallback = null;
             for (int i = 0; i < all.Length; i++)
                 if (all[i] != null && all[i].name == objectName && all[i].gameObject.scene.IsValid())
-                    return all[i];
-            return null;
+                {
+                    if (all[i].gameObject.activeInHierarchy && (!(all[i] is Behaviour) || ((Behaviour)(Component)all[i]).enabled)) return all[i];
+                    if (fallback == null) fallback = all[i];
+                }
+            return fallback;
         }
 
         private void DisableBehaviour(Behaviour b)
@@ -254,18 +425,26 @@ namespace Project.World.Sky
                 // 25p: edit preview drives the scene sun non-destructively (rotation/intensity/colour/shadows cached, restored in
                 // Release, which runs before scene save/close, Play and reload). No Undo/SetDirty -> scene not dirtied; no
                 // RenderSettings / other-light / flare / camera changes.
-                sun = FindSceneComponentByName<Light>(p.sunLightName);
+                sun = FindSun30i(p);
                 if (sun != null && sun.type != LightType.Directional) sun = null;
                 if (sun == null && RenderSettings.sun != null && RenderSettings.sun.type == LightType.Directional) sun = RenderSettings.sun;
                 if (sun == null) { PreviewSunDriven = false; sunBaseLux = 100000f; return; }
-                sunBaseLux = sun.intensity; sunOriginalRot = sun.transform.rotation; sunOriginalColor = sun.color; sunOriginalShadows = sun.shadows;
+                sunBaseLux = sun.intensity; sunOriginalRot = sun.transform.rotation; sunOriginalColor = sun.color; sunOriginalShadows = sun.shadows; EnsureSunShadows31e(sun); CaptureSunAngular30d();
                 PreviewSunDriven = true;
                 sunFlare = sun.GetComponent<LensFlareComponentSRP>(); // 25p: preview now fades/occludes the flare too (was left at full -> streak through terrain at night)
                 if (sunFlare != null) sunFlareBase = sunFlare.intensity;
                 CacheFlareOcclusion();
+                // 30i: one shadowed sun in edit preview too (other directionals off, restored in Release) -> no cascade atlas errors.
+                if (p.disableOtherDirectionalLights)
+                {
+                    Light[] pl = FindObjectsByType<Light>(FindObjectsInactive.Exclude);
+                    for (int i = 0; i < pl.Length; i++)
+                        if (pl[i] != sun && pl[i] != shadeFill && pl[i].type == LightType.Directional && pl[i].enabled && pl[i].transform.root != (skyRoot != null ? skyRoot.root : null))
+                            DisableBehaviour(pl[i]);
+                }
                 return;
             }
-            sun = FindSceneComponentByName<Light>(p.sunLightName);
+            sun = FindSun30i(p);
             if (sun != null && sun.type != LightType.Directional) sun = null;
             if (sun == null && RenderSettings.sun != null && RenderSettings.sun.type == LightType.Directional) sun = RenderSettings.sun;
             if (sun == null)
@@ -285,6 +464,8 @@ namespace Project.World.Sky
             sunOriginalRot = sun.transform.rotation;
             sunOriginalColor = sun.color; // 24al
             sunOriginalShadows = sun.shadows; // 24av
+            EnsureSunShadows31e(sun); // 31e
+            CaptureSunAngular30d();
             previousRenderSun = RenderSettings.sun;
             RenderSettings.sun = sun;
 
@@ -453,6 +634,15 @@ namespace Project.World.Sky
             if (hd == null) hd = go.AddComponent<HDAdditionalLightData>();
             hd.affectsVolumetric = false;
             hd.affectSpecular = false;
+            // 2026-10-30c: HDRP defaults (interactsWithSky=true, angularDiameter=0.5) drew this fill as a second white sun disc
+            // + halo opposite the sun (same bug as the 26h night fills). Lighting unchanged.
+            hd.interactsWithSky = false;
+            hd.angularDiameter = 0f;
+            hd.flareSize = 0f;
+            hd.flareMultiplier = 0f;
+            hd.surfaceTexture = null;
+            LensFlareComponentSRP sfFlare = go.GetComponent<LensFlareComponentSRP>();
+            if (sfFlare != null) sfFlare.enabled = false;
             shadeFill.shadows = LightShadows.None;
             shadeFill.intensity = 0f;
         }
@@ -631,6 +821,7 @@ namespace Project.World.Sky
                 sun.transform.rotation = sunOriginalRot;
                 sun.color = sunOriginalColor;
                 sun.shadows = sunOriginalShadows; // 24av
+                if (sunOriginalAngular >= 0f) { var hdR = sun.GetComponent<HDAdditionalLightData>(); if (hdR != null) hdR.angularDiameter = sunOriginalAngular; }
             }
             if (previousRenderSun != null) RenderSettings.sun = previousRenderSun;
             if (sunFlare != null) sunFlare.intensity = sunFlareBase;
@@ -674,7 +865,7 @@ namespace Project.World.Sky
             float noon = hoursPerDay * 0.5f;
             float half = p.eclipseDurationHours * 0.5f * k;
             float g = hoursPerDay * Mathf.Max(0.5f, p.jupiterAngularDiameterDeg * 0.5f - 1.5f) / 360f; // 24aq: sun stays fully behind the disc (was limb + 0.6 deg)
-            if (!p.eclipseEnabled || !p.sunHidesBehindJupiter || half <= g || half >= noon - 0.01f) return hour;
+            if (!p.eclipseEnabled || !p.showJupiter || !p.sunHidesBehindJupiter || half <= g || half >= noon - 0.01f) return hour;
             float d = Wrap(hour - noon, hoursPerDay);
             float ad = Mathf.Abs(d);
             float dw = ad <= half ? ad * (g / half) : g + (ad - half) * ((noon - g) / (noon - half));
@@ -684,12 +875,9 @@ namespace Project.World.Sky
         private void Simulate(DM_IoSkyProfile p)
         {
             float hpd = Mathf.Max(1f, DMIoClock.HoursPerDayValue);
-            double total = p.debugHourOverride >= 0f
-                ? (DMIoClock.Day - 1) * (double)hpd + p.debugHourOverride
-                : DMIoClock.TotalHoursContinuous;
+            double total = TotalHours31h(p, hpd); // 31h: one time source (debug / preview / clock incl. edit-mode clock)
             // 25p precedence: debug hour override (>=0) > edit Preview Hour (>=0, edit mode only) > clock.
-            if (Preview && p.debugHourOverride < 0f && p.editPreviewHour >= 0f) total = (DMIoClock.Day - 1) * (double)hpd + p.editPreviewHour;
-            if (Preview) { PreviewActive = true; PreviewHour = (float)(total % hpd); PreviewSource = p.debugHourOverride >= 0f ? "debug override" : (p.editPreviewHour >= 0f ? "Preview Hour" : "clock"); }
+            if (Preview) { PreviewActive = true; PreviewHour = (float)(total % hpd); PreviewSource = p.DebugHourActive ? "debug override" : (p.editPreviewHour >= 0f ? "Preview Hour" : "clock"); }
             float hour = (float)(total % hpd);
             HourOfDay = hour;
             float noon = hpd * 0.5f;
@@ -707,7 +895,7 @@ namespace Project.World.Sky
 
             // Eclipse factor (real clock), sun path (optionally warped so it stays behind Jupiter).
             float e = 0f;
-            if (p.eclipseEnabled && p.eclipseDurationHours > 0f)
+            if (p.eclipseEnabled && p.showJupiter && p.eclipseDurationHours > 0f) // 30c
             {
                 float d = Mathf.Abs(Wrap(hour - noon, hpd));
                 float half = p.eclipseDurationHours * 0.5f;
@@ -730,28 +918,47 @@ namespace Project.World.Sky
                 DMIoClock.NightFactor = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(-bl, bl, el));
             }
             float vis = 1f, ring = 0f;
-            if (p.eclipseEnabled)
+            if (p.eclipseEnabled && p.showJupiter) // 30c
             {
                 vis = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(jr - p.sunOcclusionSoftDeg, jr + p.sunOcclusionSoftDeg, sep));
                 ring = sep < jr ? Mathf.Lerp(p.ringMinFactor, 1f, sep / Mathf.Max(0.01f, jr))
                                 : 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(jr, jr + p.ringEdgeGrowDeg, sep));
             }
             SunVisibility = vis;
+            EclipseCoverage = (p.eclipseEnabled && p.showJupiter) ? (p.eclipseSunRamp31q ? EclipseRamp31q(p, e, vis) : Mathf.Clamp01(e)) : 0f; // 31r: stateless, from current hour
             SunDirection = S;
             SunElevationDeg = Mathf.Asin(Mathf.Clamp(S.y, -1f, 1f)) * Mathf.Rad2Deg;
 
-            float baseLux = sunBaseLux * p.sunIntensityMultiplier;
+            float baseLux = (p.sunBaseLux31h > 0f ? p.sunBaseLux31h : sunBaseLux) * p.sunIntensityMultiplier; // 31h
             if (sun != null)
             {
+                // 30d: sun disc size (Mars 0.35 deg); -1 = leave/restore the scene value.
+                var hdA = sun.GetComponent<HDAdditionalLightData>();
+                if (hdA != null)
+                {
+                    float wantA = Mathf.Clamp(p.sunAngularDiameterDeg > 0f ? p.sunAngularDiameterDeg : 0.35f, 0.01f, 10f); // 31p: always a real size
+                    if (p.eclipseSunRamp31q) wantA *= Mathf.Lerp(1f, p.eclipsePenumbraScale31q, EclipseRamp31q(p, e, vis)); // 31q: sharper penumbra in eclipse
+                    if (!Mathf.Approximately(hdA.angularDiameter, wantA)) hdA.angularDiameter = wantA;
+                    if (!Mathf.Approximately(hdA.flareSize, p.sunFlareSize31p)) hdA.flareSize = p.sunFlareSize31p; // 31p: v1.7 light had halo 11.5 deg / falloff 0
+                    if (!Mathf.Approximately(hdA.flareFalloff, p.sunFlareFalloff31p)) hdA.flareFalloff = p.sunFlareFalloff31p;
+                    if (!Mathf.Approximately(hdA.flareMultiplier, p.sunFlareMultiplier31p)) hdA.flareMultiplier = p.sunFlareMultiplier31p;
+                }
                 sun.transform.rotation = Quaternion.LookRotation(-S, N);
                 float hf = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(-p.horizonFadeDegrees, p.horizonFadeDegrees, SunElevationDeg));
                 float lux = baseLux * hf * Mathf.Lerp(1f, p.eclipseSunRemaining, e) * vis;
+                float rk31q = p.eclipseSunRamp31q ? EclipseRamp31q(p, e, vis) : 0f;
+                if (p.eclipseSunRamp31q) lux = (p.sunBaseLux31h > 0f ? p.sunBaseLux31h : sunBaseLux) * hf * Mathf.Lerp(p.sunIntensityMultiplier, p.eclipseSunMultiplier31q, rk31q); // 31q: multiplier ramps normal -> eclipse -> normal
+                if (!p.eclipseSunRamp31q && p.eclipseKeepsSunShadows && e > 0f) lux = Mathf.Max(lux, baseLux * hf * Mathf.Lerp(1f, p.eclipseMinSunIntensity, Mathf.Clamp01(e))); // 31f: dim, keep shadows
                 // 2026-10-24al: low-sun dimming + colour desaturation near the horizon, then lux cap.
                 float low = p.sunHorizonDimDegrees > 0f ? 1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(SunElevationDeg / p.sunHorizonDimDegrees)) : 0f;
                 lux *= Mathf.Lerp(1f, p.sunHorizonMinFactor, low);
                 if (p.sunMaxLux > 0f) lux = Mathf.Min(lux, p.sunMaxLux);
                 sun.intensity = Mathf.Max(lux, 0.01f); // 24ar: never exactly 0 (PBS sky / fog sky-colour guard)
                 sun.color = Color.Lerp(sunOriginalColor, Color.white, p.sunHorizonDesaturate * low);
+                if (p.sunTemperature31o > 0f) { sun.useColorTemperature = true; sun.colorTemperature = p.sunTemperature31o; } // 31o
+                if (!sun.enabled) sun.enabled = true; EnsureSunShadows31e(sun); // 31o
+                if (hdA != null) { float sd = Mathf.Lerp(p.sunShadowStrength31h, p.eclipseShadowStrength31q, rk31q); /* 31r: every frame, rk=0 -> normal */ if (!Mathf.Approximately(hdA.shadowDimmer, sd)) hdA.shadowDimmer = sd; } // 31q: stronger eclipse shadows: the driven BOTD sun is always on and shadowed (edit + Play)
+                if (hdA != null) { float dm = p.sunDisc31o ? 1f : 0f; if (!Mathf.Approximately(hdA.diameterMultiplier, dm) || !hdA.diameterMultiplerMode) { hdA.diameterMultiplerMode = true; hdA.diameterMultiplier = dm; } } // 31o sun disc
             }
             Shader.SetGlobalVector(SunDirId, new Vector4(S.x, S.y, S.z, baseLux));
 
@@ -766,9 +973,10 @@ namespace Project.World.Sky
                 shadeFill.transform.rotation = Quaternion.LookRotation(fwd, N);
                 float sunUp = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(-p.horizonFadeDegrees, p.horizonFadeDegrees, SunElevationDeg));
                 float floorLux = p.eclipseFloorEnabled ? p.eclipseFillLux * e : 0f; // 24ap eclipse readability
-                shadeFill.enabled = p.shadeFillEnabled || floorLux > 0f;
+                float fillK = p.shadeFillEnabled ? Mathf.Max(0f, p.shadeFillStrength) : 0f; // 30i
+                shadeFill.enabled = fillK > 0f || floorLux > 0f;
                 shadeFill.color = p.shadeFillColor;
-                shadeFill.intensity = (p.shadeFillEnabled ? p.shadeFillLux * sunUp * Mathf.Lerp(1f, p.eclipseSunRemaining, e) : 0f) + floorLux;
+                shadeFill.intensity = (fillK > 0f ? p.shadeFillLux * fillK * sunUp * Mathf.Lerp(1f, p.eclipseSunRemaining, e) : 0f) + floorLux;
             }
 
             // 2026-10-26f: night light factor (shared fade with stars / eclipse night sky).
@@ -791,13 +999,13 @@ namespace Project.World.Sky
                 else
                     jupiterShine.transform.rotation = Quaternion.LookRotation(-J, N);
                 jupiterShine.color = p.jupiterShineColor;
-                jupiterShine.intensity = p.jupiterShineLux * lit + p.eclipseJupiterShineLux * e + p.ringLightLux * ring;
+                jupiterShine.intensity = p.showJupiter ? p.jupiterShineLux * lit + p.eclipseJupiterShineLux * e + p.ringLightLux * ring : 0f; // 30c
 
                 // 24av + 2026-10-26j: HDRP has ONE directional shadow cascade atlas.
                 // Day -> sun. Eclipse / night -> Jupiter-shine. Edit preview -> never (scene sun keeps the slot).
-                bool eclShadow = p.eclipseShadowsEnabled && e > 0.5f && vis < 0.5f;
+                bool eclShadow = !p.eclipseKeepsSunShadows && p.eclipseShadowsEnabled && e > 0.5f && vis < 0.5f; // 31f: keep shadows on the sun by default
                 // Hand off when night factor is past mid-fade and sun is at/below the nightFade end elevation.
-                bool nightShadow = p.enableNightShadow && NightLightFactor > 0.5f
+                bool nightShadow = p.enableNightShadow && p.showJupiter && NightLightFactor > 0.5f // 30c
                     && SunElevationDeg <= Mathf.Max(p.nightFadeEndDeg, p.nightFadeStartDeg);
                 bool jupiterOwns = !Preview && (eclShadow || nightShadow);
                 NightShadowOwnsDirectional = jupiterOwns;
@@ -805,7 +1013,7 @@ namespace Project.World.Sky
                     ? (nightShadow ? Mathf.Max(20f, p.nightShadowMaxDistance) : -1f)
                     : -1f;
 
-                if (sun != null) sun.shadows = jupiterOwns ? LightShadows.None : sunOriginalShadows;
+                if (sun != null) { if (jupiterOwns) sun.shadows = LightShadows.None; else EnsureSunShadows31e(sun); } // 31e
                 jupiterShine.shadows = jupiterOwns ? LightShadows.Soft : LightShadows.None;
 
                 if (jupiterShine.TryGetComponent(out HDAdditionalLightData jhd))
@@ -864,14 +1072,17 @@ namespace Project.World.Sky
             // Dim ambient during eclipse.
             if (ambientVolume != null && ambientCtl != null)
             {
-                ambientVolume.priority = p.ambientVolumePriority;
+                bool hasB31f = DMRealtimeIndirect.BotdPriorityRange31f(out float bMin31f, out _); ambientVolume.priority = p.botdVolumesOnTop && hasB31f ? bMin31f - 2f : p.ambientVolumePriority; // 31f
                 ambientCtl.indirectDiffuseLightingMultiplier.Override(p.eclipseAmbientMultiplier);
                 ambientCtl.reflectionLightingMultiplier.Override(p.eclipseAmbientMultiplier);
-                ambientVolume.weight = DMRealtimeIndirect.IsDriving ? 0f : e; // 24aj: realtime indirect owns ambient when active
+                ambientVolume.weight = DMRealtimeIndirect.IsDriving ? 0f : EclipseCoverage; // 31r // 24aj: realtime indirect owns ambient when active
             }
 
             // Jupiter orientation + spin; small moons on the Io clock.
             float spin = 360f * (float)(total / Mathf.Max(0.05f, p.jupiterSpinHours) % 1.0);
+            if (jupiterBody != null && jupiterBody.gameObject.activeSelf != p.showJupiter) jupiterBody.gameObject.SetActive(p.showJupiter); // 30c
+            for (int i = 0; i < anchors.Count; i++) // 30c: small moons follow showMoons
+                if (anchors[i] != null && anchors[i].gameObject.activeSelf != p.showMoons) anchors[i].gameObject.SetActive(p.showMoons);
             if (jupiterBody != null)
             {
                 jupiterBody.rotation = Quaternion.LookRotation(J, N) * Quaternion.Euler(p.jupiterTiltEuler) * Quaternion.Euler(0f, -spin, 0f);
@@ -904,7 +1115,7 @@ namespace Project.World.Sky
             {
                 MoonRuntime m = moons[i];
                 DMIoMoonSettings s = m.settings;
-                bool on = s.enabled;
+                bool on = s.enabled && p.showMoons; // 30c
                 if (m.tr.gameObject.activeSelf != on) m.tr.gameObject.SetActive(on);
                 if (!on) continue;
 
@@ -1007,7 +1218,7 @@ namespace Project.World.Sky
                 for (int i = 0; i < moons.Count && n < 8; i++)
                 {
                     MoonRuntime m = moons[i];
-                    if (m.tr == null || !m.settings.enabled) continue;
+                    if (m.tr == null || !m.settings.enabled || !p.showMoons) continue; // 30c
                     Vector3 d = m.dir.normalized;
                     occ[n++] = new Vector4(d.x, d.y, d.z, 0.5f * m.angularDiameterRad + marg);
                 }
