@@ -1,3 +1,13 @@
+== 2026-10-31 31v - Per-profile clock hour range (Mars 5.5-15) ==
+- Checked: nothing limited Mars to 5.5-15 before, and Mars was not stuck. Its Debug Hour = 5.5 with "Debug Hour advances" on, so it starts at 5.5 and kept running through the full 30 h Io day.
+- New per-profile Clock Min Hour / Clock Max Hour (0-30, the Io day is 30 h) + Clock range mode Loop (default) / PingPong / Clamp (DM_IoSkyProfile). Applied in DMIoSkyController.TotalHours31h to the realtime clock, the edit-mode clock and the Debug Hour (advancing or frozen), in edit mode and Play. Edit Preview Hour is an explicit pin and is not limited.
+- Mars profile = 5.5-15 Loop. Base + Jupiter = 0-30 (full day = unchanged; 0-24 would have cut hours 24-30 off the 30 h day).
+- Loop is a hard wrap (15 -> 5.5 in one frame). There is no fade: a fade needs a lighting/exposure crossfade, which isn't a quick add. PingPong gives a seamless alternative (the sun runs back).
+- Studio Essentials: Clock Min/Max + mode, presets Full day / Mars 5.5-15 / Daylight 6-24 / Midday 10-20. The Debug Hour slider (Essentials + Day/Night) is clamped to the range. Mars Deep Reset now sets 5.5-15 Loop; other profiles get full day.
+- Mars defaults (31q-style): Anthony's current Mars values + clock 5.5-15 were snapshotted to Resources/World/DM_IoSkyProfile_Mars_Defaults31v.json (shader/volume object links stripped). Mars Deep Reset applies the whole snapshot, and the Mars eclipse ramp Default preset takes its values from it. Restore is still the pre-Deep-Reset snapshot. The Mars asset's values are unchanged (only the new clock fields were set). Jupiter is unchanged.
+- Console: 0 errors / 0 warnings before and after; nothing to fix.
+- Backups: *.pre20261031v
+Docs: DevManual/02-World.md "Clock hour range (31v)"
 == 2026-10-31 31u - Enemy approach stall + hearing aggro ==
 - Bug: a ranged enemy shot from a distance chased to just outside its fire range, then stood still. Chase handed over to Attack within 1.05x engage range, and Attack sent it straight back to Chase (its chase cutoff uses melee AttackRange x1.55), so neither state moved it. Fix (EnemyAiController.States.cs): new EngageEnterDistance31u - ranged enters Attack only inside range (0.9-0.97x engage, past the hold distance). In Attack, a ranged enemy out of range walks in to 0.85x engage, and only re-chases beyond 1.15x. In range with line of sight blocked for >0.6 s, it steps toward the target. Melee unchanged (1.05x standoff, engager / 1-attacker token as before).
 - Checked: the 31s stagger only affects calm enemies (damage sets aggro, so every-frame ticks). The facing gate is attackFacingConeHalfAngle 25 deg + 0.5 s turn (no 16 deg gate found). Ranged fire still requires LOS (requireClearLosForRangedFire).

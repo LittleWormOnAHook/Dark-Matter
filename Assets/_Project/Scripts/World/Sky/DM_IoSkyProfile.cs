@@ -103,6 +103,34 @@ namespace Project.World.Sky
         public bool essentialsOverBotd31h = true;
         [Tooltip("31h: Debug Hour is a start point and the sky keeps moving at the Io clock rate (DM_IoClockProfile real seconds per hour). Off = frozen at the Debug Hour.")]
         public bool debugHourAdvances = false;
+        // 31v: per-profile clock hour range. Realtime clock + advancing Debug Hour run only inside [min, max] (Io hours, 0-30 day).
+        // Full range (0..hours per day) = unchanged. Loop = hard wrap back to min, PingPong = runs back and forth, Clamp = holds at the ends.
+        public enum ClockRangeMode31v { Loop, PingPong, Clamp }
+        [Tooltip("31v: clock only runs from this hour (0 = day start). Mars 5.5.")]
+        [Range(0f, 30f)] public float clockMinHour31v = 0f;
+        [Tooltip("31v: clock only runs up to this hour (>= hours per day = no limit). Mars 15.")]
+        [Range(0f, 30f)] public float clockMaxHour31v = 30f;
+        [Tooltip("31v: Loop = wrap back to Min (hard cut), PingPong = run back down to Min, Clamp = stop at the ends.")]
+        public ClockRangeMode31v clockRangeMode31v = ClockRangeMode31v.Loop;
+        public bool ClockRangeActive31v(float hpd) => clockMaxHour31v - clockMinHour31v > 0.01f && (clockMinHour31v > 0.001f || clockMaxHour31v < hpd - 0.001f);
+        public double ApplyClockRange31v(double total, float hpd)
+        {
+            if (hpd < 1f || !ClockRangeActive31v(hpd)) return total;
+            double mn = System.Math.Max(0.0, clockMinHour31v), mx = System.Math.Min(clockMaxHour31v, hpd), span = mx - mn;
+            if (span <= 0.01) return total;
+            double day = System.Math.Floor(total / hpd), h;
+            if (clockRangeMode31v == ClockRangeMode31v.Clamp) { h = total - day * hpd; h = h < mn ? mn : (h > mx ? mx : h); }
+            else if (clockRangeMode31v == ClockRangeMode31v.PingPong) { double m = (total - mn) % (2.0 * span); if (m < 0) m += 2.0 * span; h = mn + (m <= span ? m : 2.0 * span - m); }
+            else { double m = (total - mn) % span; if (m < 0) m += span; h = mn + m; }
+            return day * hpd + h;
+        }
+        /// <summary>31v presets: 0 Full day (0-30), 1 Mars (5.5-15), 2 Daylight (6-24), 3 Midday (10-20).</summary>
+        public void ApplyClockRangePreset31v(int i)
+        {
+            float[] mn = { 0f, 5.5f, 6f, 10f }; float[] mx = { 30f, 15f, 24f, 20f }; i = Mathf.Clamp(i, 0, 3);
+            clockMinHour31v = mn[i]; clockMaxHour31v = mx[i]; clockRangeMode31v = ClockRangeMode31v.Loop;
+            if (debugHourOverride >= 0f && ClockRangeActive31v(30f)) debugHourOverride = Mathf.Clamp(debugHourOverride, clockMinHour31v, clockMaxHour31v);
+        }
         [Tooltip("31h: in edit mode (no Debug/Preview Hour) the sky runs on the Io clock rate instead of freezing.")]
         public bool editModeClockRuns = true;
         [Tooltip("31f: during the Jupiter eclipse the BOTD sun keeps casting shadows (dimmed) instead of handing the shadow to Jupiter-shine.")]
@@ -128,10 +156,19 @@ namespace Project.World.Sky
         [Tooltip("31q: ramp curve exponent on the eclipse coverage (1 = smoothstep, >1 = stays bright longer then drops, <1 = drops early).")]
         [Range(0.2f, 5f)] public float eclipseRampCurve31q = 1f;
         public void ApplyEclipseSunRampPreset31q(int i) { float[] m = { 0.3f, 0.05f, 0.01f }; float[] s = { 0.9f, 1f, 1f }; float[] pen = { 0.85f, 0.6f, 0.3f }; float[] cv = { 1.5f, 1f, 0.7f }; float[] amb = { 0.5f, 0.3f, 0.12f }; i = Mathf.Clamp(i, 0, 2); eclipseSunRamp31q = true; eclipseSunMultiplier31q = m[i]; eclipseShadowStrength31q = s[i]; eclipsePenumbraScale31q = pen[i]; eclipseRampCurve31q = cv[i]; eclipseAmbientMultiplier = amb[i];
-            if (i == 1 && IsJupiterProfile31q) { var ta = Resources.Load<TextAsset>("World/DM_IoSkyProfile_Jupiter_Defaults31q"); if (ta != null) { var d = CreateInstance<DM_IoSkyProfile>(); JsonUtility.FromJsonOverwrite(ta.text, d); eclipseSunMultiplier31q = d.eclipseSunMultiplier31q; eclipseShadowStrength31q = d.eclipseShadowStrength31q; eclipsePenumbraScale31q = d.eclipsePenumbraScale31q; eclipseRampCurve31q = d.eclipseRampCurve31q; eclipseAmbientMultiplier = d.eclipseAmbientMultiplier; sunIntensityMultiplier = d.sunIntensityMultiplier; if (Application.isPlaying) Destroy(d); else DestroyImmediate(d); } } // 31q: Jupiter Default = Anthony's values
+            if (i == 1 && IsJupiterProfile31q) { var ta = Resources.Load<TextAsset>("World/DM_IoSkyProfile_Jupiter_Defaults31q"); if (ta != null) { var d = CreateInstance<DM_IoSkyProfile>(); JsonUtility.FromJsonOverwrite(ta.text, d); eclipseSunMultiplier31q = d.eclipseSunMultiplier31q; eclipseShadowStrength31q = d.eclipseShadowStrength31q; eclipsePenumbraScale31q = d.eclipsePenumbraScale31q; eclipseRampCurve31q = d.eclipseRampCurve31q; eclipseAmbientMultiplier = d.eclipseAmbientMultiplier; sunIntensityMultiplier = d.sunIntensityMultiplier; if (Application.isPlaying) Destroy(d); else DestroyImmediate(d); } } if (i == 1 && IsMarsProfile31v) { var ta31v = Resources.Load<TextAsset>("World/DM_IoSkyProfile_Mars_Defaults31v"); if (ta31v != null) { var d = CreateInstance<DM_IoSkyProfile>(); JsonUtility.FromJsonOverwrite(ta31v.text, d); eclipseSunMultiplier31q = d.eclipseSunMultiplier31q; eclipseShadowStrength31q = d.eclipseShadowStrength31q; eclipsePenumbraScale31q = d.eclipsePenumbraScale31q; eclipseRampCurve31q = d.eclipseRampCurve31q; eclipseAmbientMultiplier = d.eclipseAmbientMultiplier; sunIntensityMultiplier = d.sunIntensityMultiplier; if (Application.isPlaying) Destroy(d); else DestroyImmediate(d); } } // 31v: Mars Default = Anthony's values
+            // 31q: Jupiter Default = Anthony's values
         }
         // 31q: Anthony's Jupiter values (2026-10-31 17:55) are the Jupiter defaults: Resources/World/DM_IoSkyProfile_Jupiter_Defaults31q.json (JsonUtility).
         public bool IsJupiterProfile31q => name.ToLowerInvariant().Contains("jupiter");
+        // 31v: Anthony's Mars values (2026-10-31 21:00) + clock 5.5-15 are the Mars defaults: Resources/World/DM_IoSkyProfile_Mars_Defaults31v.json (object links stripped).
+        public bool IsMarsProfile31v => name.ToLowerInvariant().Contains("mars");
+        public bool ApplyMarsDefaults31v()
+        {
+            if (!IsMarsProfile31v) return false;
+            var ta = Resources.Load<TextAsset>("World/DM_IoSkyProfile_Mars_Defaults31v"); if (ta == null) return false;
+            string n = name; JsonUtility.FromJsonOverwrite(ta.text, this); name = n; return true;
+        }
         public bool ApplyJupiterDefaults31q()
         {
             if (!IsJupiterProfile31q) return false;

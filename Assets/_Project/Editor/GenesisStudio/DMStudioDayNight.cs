@@ -73,7 +73,7 @@ namespace Project.EditorTools.GenesisStudio
             if (dNew != dOn) { Undo.RecordObject(sky, "Debug hour"); sky.debugHourEnabled = dNew; if (dNew && sky.debugHourOverride < 0f) sky.debugHourOverride = Mathf.Max(0f, sky.editPreviewHour >= 0f ? sky.editPreviewHour : 15f); EditorUtility.SetDirty(sky); }
             if (sky.DebugHourActive)
             {
-                float dh = EditorGUILayout.Slider("  Hour (0-" + clk.hoursPerDay + ", noon/eclipse " + (clk.hoursPerDay * 0.5f).ToString("0.#") + ")", sky.debugHourOverride, 0f, Mathf.Max(1, clk.hoursPerDay));
+                bool r31v = sky.ClockRangeActive31v(clk.hoursPerDay); float dh = EditorGUILayout.Slider("  Hour (" + (r31v ? sky.clockMinHour31v.ToString("0.#") + "-" + sky.clockMaxHour31v.ToString("0.#") : "0-" + clk.hoursPerDay) + ", noon/eclipse " + (clk.hoursPerDay * 0.5f).ToString("0.#") + ")", sky.debugHourOverride, r31v ? sky.clockMinHour31v : 0f, r31v ? sky.clockMaxHour31v : Mathf.Max(1, clk.hoursPerDay)); // 31v
                 if (!Mathf.Approximately(dh, sky.debugHourOverride)) { Undo.RecordObject(sky, "Debug hour"); sky.debugHourOverride = dh; EditorUtility.SetDirty(sky); SceneView.RepaintAll(); }
                 EditorGUILayout.HelpBox("Debug Hour Override = " + sky.debugHourOverride.ToString("0.00") + " h: sun, Jupiter, moons and eclipse are FROZEN at that hour (no orbit).", MessageType.Warning);
                 if (GUILayout.Button("Release Debug Hour (let the sun orbit)")) { Undo.RecordObject(sky, "Release hour"); sky.debugHourEnabled = false; EditorUtility.SetDirty(sky); }

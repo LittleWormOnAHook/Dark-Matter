@@ -27,7 +27,11 @@ namespace Project.EditorTools.GenesisStudio
             var look = (DM_IoSkyProfile.SkyLookPreset)EditorGUILayout.EnumPopup("World Look preset", p.skyLookPreset);
             bool skyOn = EditorGUILayout.Toggle("Use Sky & Orbit", p.skyEnabled);
             bool dbgOn = EditorGUILayout.Toggle("Debug Hour on", p.debugHourEnabled);
-            float dbg = EditorGUILayout.Slider("Debug Hour", Mathf.Max(0f, p.debugHourOverride), 0f, 30f);
+            bool rng31v = p.ClockRangeActive31v(30f); // 31v: Debug Hour slider limited to the clock range
+            float dbg = EditorGUILayout.Slider("Debug Hour" + (rng31v ? " (" + p.clockMinHour31v.ToString("0.#") + "-" + p.clockMaxHour31v.ToString("0.#") + ")" : ""), Mathf.Max(0f, p.debugHourOverride), rng31v ? p.clockMinHour31v : 0f, rng31v ? p.clockMaxHour31v : 30f);
+            float cMin31v = EditorGUILayout.Slider(new GUIContent("Clock Min Hour", "31v: realtime clock and advancing Debug Hour run only from Min to Max. 0-30 = full day (unchanged)."), p.clockMinHour31v, 0f, 30f);
+            float cMax31v = EditorGUILayout.Slider(new GUIContent("Clock Max Hour", "31v: Mars 15."), p.clockMaxHour31v, 0f, 30f);
+            var cMode31v = (DM_IoSkyProfile.ClockRangeMode31v)EditorGUILayout.EnumPopup(new GUIContent("Clock range mode", "Loop = hard wrap to Min, PingPong = back and forth, Clamp = stop at the ends."), p.clockRangeMode31v);
             bool dbgAdv = EditorGUILayout.Toggle(new GUIContent("Debug Hour advances (clock rate)", "Debug Hour is a start point; sun, Jupiter and moons keep moving at the Io clock rate."), p.debugHourAdvances);
             bool editRun = EditorGUILayout.Toggle(new GUIContent("Edit mode clock runs", "No Debug/Preview Hour: edit-mode sky runs at the Io clock rate."), p.editModeClockRuns);
             float prev = EditorGUILayout.Slider(new GUIContent("Edit Preview Hour (-1 = clock)"), p.editPreviewHour, -1f, 30f);
@@ -82,7 +86,7 @@ namespace Project.EditorTools.GenesisStudio
             if (EditorGUI.EndChangeCheck())
             {
                 Undo.RecordObject(p, "Sky Essentials");
-                p.skyEnabled = skyOn; p.debugHourEnabled = dbgOn; p.debugHourOverride = dbg; p.debugHourAdvances = dbgAdv; p.editModeClockRuns = editRun;
+                p.skyEnabled = skyOn; p.debugHourEnabled = dbgOn; p.debugHourOverride = dbg; p.debugHourAdvances = dbgAdv; p.editModeClockRuns = editRun; p.clockMinHour31v = Mathf.Min(cMin31v, cMax31v); p.clockMaxHour31v = Mathf.Max(cMin31v, cMax31v); p.clockRangeMode31v = cMode31v; // 31v
                 p.editPreviewHour = prev; p.sunBaseLux31h = lux; p.sunIntensityMultiplier = mult; p.sunShadowStrength31h = shs; p.sunTemperature31o = sTemp; p.sunVolumetricDimmer31o = sVol; p.sunShadowResolution31o = sRes; p.sunDisc31o = sDisc; p.sunAngularDiameterDeg = sAng; p.sunFlareSize31p = sFs; p.sunFlareFalloff31p = sFf; p.sunFlareMultiplier31p = sFm; p.exposureCompensation = comp; p.autoExposure31l = autoEx; p.fixedExposureEV31l = fixEv; p.fixedNightDropEV31l = nDrop;
                 p.skyTintEnabled = tint; p.skyZenithTint = zt; p.skyHorizonTint = ht; p.fogMeanFreePath = fog; p.nightSkyEnabled = stars; p.starBrightness = sb; p.milkyWayIntensity = mw;
                 p.showJupiter = jup; p.showMoons = moons; p.eclipseKeepsSunShadows = eks; p.eclipseMinSunIntensity = emin; p.eclipseSunRamp31q = eRamp; if (eRamp) { p.eclipseSunMultiplier31q = eMul; p.eclipseShadowStrength31q = eSh; p.eclipsePenumbraScale31q = ePen; p.eclipseRampCurve31q = eCv; p.eclipseAmbientMultiplier = eAmb; } // 31q
@@ -92,6 +96,11 @@ namespace Project.EditorTools.GenesisStudio
             bool cs31k = EditorGUILayout.Toggle(new GUIContent("Contact shadows (project)", "31k: project-wide master, default OFF. Synced to every sky profile; our code and Deep Reset never enable contact shadows while off."), p.contactShadowsProject31k);
             if (cs31k != p.contactShadowsProject31k)
                 foreach (var g31k in AssetDatabase.FindAssets("t:DM_IoSkyProfile")) { var q = AssetDatabase.LoadAssetAtPath<DM_IoSkyProfile>(AssetDatabase.GUIDToAssetPath(g31k)); if (q == null) continue; Undo.RecordObject(q, "Contact shadows (project)"); q.contactShadowsProject31k = cs31k; q.sunContactShadows = cs31k; EditorUtility.SetDirty(q); }
+            EditorGUILayout.BeginHorizontal(); // 31v
+            EditorGUILayout.LabelField("Clock range", GUILayout.Width(100f));
+            string[] crN = { "Full day", "Mars 5.5-15", "Daylight 6-24", "Midday 10-20" };
+            for (int i = 0; i < crN.Length; i++) if (GUILayout.Button(crN[i])) { Undo.RecordObject(p, "Clock range preset"); p.ApplyClockRangePreset31v(i); EditorUtility.SetDirty(p); SceneView.RepaintAll(); }
+            EditorGUILayout.EndHorizontal();
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("Fixed exposure", GUILayout.Width(100f));
             string[] exN = { "Subtle (14)", "Default (13)", "Extreme (11.5)" };
@@ -130,8 +139,9 @@ namespace Project.EditorTools.GenesisStudio
             p.ApplyExposurePreset31j(0); p.exposureCompensation = 0f; p.autoExposure31l = false; p.fixedExposureEV31l = mars ? 13f : 14f; // 31l: Fixed (auto range kept for the toggle)
             p.fogMeanFreePath = 4000f; p.ssaoIntensity = 0.8f; p.ssaoRadius = 0.6f; p.contactShadowLength = 0.15f; p.sunContactShadows = p.contactShadowsProject31k;
             p.indirectDiffuseMultiplier = 1f; p.indirectReflectionMultiplier = 1f; p.gradeContrast = 0f; p.shadowFloorLift = 0.05f; p.bloomIntensity = 0.3f;
-            p.eclipseKeepsSunShadows = true; p.eclipseMinSunIntensity = 0.15f; p.ApplyEclipseSunRampPreset31q(1); if (!mars) p.sunIntensityMultiplier = 2f; p.nightSkyEnabled = true; p.editModeClockRuns = true; // 31q
-            if (p.ApplyJupiterDefaults31q()) log.Append("# 31q: Jupiter defaults snapshot applied\n"); // 31q: Anthony's Jupiter values are the Jupiter defaults
+            p.eclipseKeepsSunShadows = true; p.eclipseMinSunIntensity = 0.15f; p.ApplyEclipseSunRampPreset31q(1); if (!mars) p.sunIntensityMultiplier = 2f; p.nightSkyEnabled = true; p.editModeClockRuns = true; p.ApplyClockRangePreset31v(mars ? 1 : 0); // 31q; 31v: Mars clock 5.5-15 Loop, others full day
+            if (p.ApplyJupiterDefaults31q()) log.Append("# 31q: Jupiter defaults snapshot applied\n");
+            if (p.ApplyMarsDefaults31v()) log.Append("# 31v: Mars defaults snapshot applied (incl. clock 5.5-15)\n"); // 31v // 31q: Anthony's Jupiter values are the Jupiter defaults
             EditorUtility.SetDirty(p);
             foreach (var f in typeof(DM_IoSkyProfile).GetFields())
             {

@@ -563,3 +563,8 @@ Studio > Sky > **Performance (31s)**:
 ## Enemy approach + hearing (31u)
 - Ranged enemies close to INSIDE `RangedEngageRange` before Attack (`EngageEnterDistance31u`), walk in if they drift out (re-chase past 1.15x), and step in when line of sight is blocked. Melee enemies close to the standoff/reach band; one engager holds the attack token and the others Hold.
 - Hearing (DM_CombatCoreProfile, Studio > Performance > Enemy hearing): gunshot hearing radius (turn + investigate), gunshot aggro radius, ranged impact radius, melee hit radius, heard-aggro chance, with Subtle/Default/Extreme presets.
+
+## Clock hour range (31v)
+- Per sky profile: `clockMinHour31v`, `clockMaxHour31v` (Io hours 0-30), `clockRangeMode31v` Loop / PingPong / Clamp. A full range (0 to hours per day) means no limit.
+- It limits the realtime clock, the edit-mode clock and the Debug Hour (advancing or frozen). Edit Preview Hour is not limited. The global DMIoClock keeps running; only the sky hour is mapped.
+- Mars = 5.5-15 Loop (hard wrap, no fade). Base/Jupiter = full day. Studio Essentials presets: Full day, Mars 5.5-15, Daylight 6-24, Midday 10-20. Mars Deep Reset sets 5.5-15.- Mars defaults: `Resources/World/DM_IoSkyProfile_Mars_Defaults31v.json` (Anthony's Mars values + clock 5.5-15, no object links), used by Mars Deep Reset and the Mars eclipse-ramp Default preset. Same pattern as the 31q Jupiter defaults.

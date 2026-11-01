@@ -24,7 +24,10 @@ MonoBehaviour:
   sunShadowResolution31o: 4096
   sunDisc31o: 1
   essentialsOverBotd31h: 1
-  debugHourAdvances: 1
+  debugHourAdvances: 0
+  clockMinHour31v: 5.5
+  clockMaxHour31v: 15
+  clockRangeMode31v: 0
   editModeClockRuns: 1
   eclipseKeepsSunShadows: 1
   eclipseMinSunIntensity: 0.15
@@ -36,7 +39,7 @@ MonoBehaviour:
   autoSpawnController: 1
   onlyInScenesWithJupiter: 1
   skyBodyShader: {fileID: 4800000, guid: a32e9106cf6171c48a524cba2fe54c0b, type: 3}
-  debugHourOverride: 8.88
+  debugHourOverride: 5.5
   debugHourEnabled: 1
   startHour: 11.6
   sunLightName: BOTD Directional Light(Clone)
@@ -65,7 +68,7 @@ MonoBehaviour:
   jupiterObjectName: Jupiter
   showJupiter: 0
   showMoons: 0
-  sunAngularDiameterDeg: 0.5
+  sunAngularDiameterDeg: 0.01
   sunFlareSize31p: 2
   sunFlareFalloff31p: 4
   sunFlareMultiplier31p: 1
@@ -193,31 +196,31 @@ MonoBehaviour:
   eclipseExposureLimitMin: 2
   nightSkyEnabled: 1
   nightSkyShader: {fileID: 0}
-  starDensity: 75
-  starBrightness: 3
-  starSize: 0.36
-  starTwinkle: 0.644
+  starDensity: 117
+  starBrightness: 29
+  starSize: 0.92
+  starTwinkle: 0.96
   starColorVariation: 1
-  milkyWayIntensity: 0.035
-  milkyWayWidth: 0.177
+  milkyWayIntensity: 0.7
+  milkyWayWidth: 0.136
   milkyWayDust: 1
   milkyWayCoreColor: {r: 1, g: 0.85, b: 0.7, a: 1}
   milkyWayEdgeColor: {r: 0.55, g: 0.65, b: 1, a: 1}
   milkyWayTiltDeg: -34.7
-  milkyWayYawDeg: 32
+  milkyWayYawDeg: 0
   starRotationDeg: 0
   starsRotateWithClock: 1
   nightFadeStartDeg: -1.2
   nightFadeEndDeg: 18.6
   enableNightLight: 1
-  nightLightGroundColor: {r: 0.45, g: 0.3, b: 0.2, a: 1}
+  nightLightGroundColor: {r: 0.5999999, g: 0.48479354, b: 0.4109433, a: 1}
   nightLightMidColor: {r: 0.5, g: 0.42, b: 0.45, a: 1}
   nightLightSkyColor: {r: 0.35, g: 0.4, b: 0.6, a: 1}
-  nightLightAmount: 300
-  nightExposureLimitMin: 0.5
-  nightAmbientBoost: 2.66
+  nightLightAmount: 149
+  nightExposureLimitMin: -0.7
+  nightAmbientBoost: 0.2
   enableNightShadow: 1
-  nightShadowStrength: 0.55
+  nightShadowStrength: 0.818
   nightShadowSoftnessDeg: 4
   nightShadowDirectionMode: 0
   nightShadowCustomYawDeg: 200
@@ -225,8 +228,8 @@ MonoBehaviour:
   nightShadowResolutionTier: 1
   nightShadowMaxDistance: 120
   nightSkyDayVisibility: 0.094
-  milkyWayDayVisibility: 0
-  milkyWaySmoothness: 0.55
+  milkyWayDayVisibility: 0.311
+  milkyWaySmoothness: 0.347
   nightSkyDitherEnabled: 0
   nightSkyDitherAmount: 0.55
   nightSkySoftExpPower: 0.28

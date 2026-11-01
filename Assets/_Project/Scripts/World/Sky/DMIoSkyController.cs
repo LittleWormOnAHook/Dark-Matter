@@ -221,9 +221,9 @@ namespace Project.World.Sky
             if (p.DebugHourActive)
             {
                 double bt = (DMIoClock.Day - 1) * (double)hpd + p.debugHourOverride;
-                if (!p.debugHourAdvances) { dbgKey31h = float.NaN; return bt; }
+                if (!p.debugHourAdvances) { dbgKey31h = float.NaN; return p.ApplyClockRange31v(bt, hpd); } // 31v
                 if (p.debugHourOverride != dbgKey31h) { dbgKey31h = p.debugHourOverride; dbgStart31h = now; }
-                return bt + (now - dbgStart31h) / realPerHour;
+                return p.ApplyClockRange31v(bt + (now - dbgStart31h) / realPerHour, hpd); // 31v
             }
             dbgKey31h = float.NaN;
             if (Preview && p.editPreviewHour >= 0f) { editClock31h = -1.0; return (DMIoClock.Day - 1) * (double)hpd + p.editPreviewHour; }
@@ -231,10 +231,10 @@ namespace Project.World.Sky
             {
                 if (editClock31h < 0.0) { editClock31h = DMIoClock.TotalHoursContinuous; editLast31h = now; }
                 editClock31h += Mathf.Clamp((float)(now - editLast31h), 0f, 1f) / realPerHour; editLast31h = now;
-                return editClock31h;
+                return p.ApplyClockRange31v(editClock31h, hpd); // 31v
             }
             editClock31h = -1.0;
-            return DMIoClock.TotalHoursContinuous;
+            return p.ApplyClockRange31v(DMIoClock.TotalHoursContinuous, hpd); // 31v: Mars 5.5-15 etc.
         }
 
         private Light fbSun31e; private Quaternion fbRot31e;
