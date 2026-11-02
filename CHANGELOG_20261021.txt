@@ -1,3 +1,24 @@
+== 2026-11-01c - Lightning MorphBlade VFX remade (static crackle arcs) ==
+- MorphBladeVFX_Lightning.prefab rebuilt: root = Arcs (Hovl HandPaintedLightning2, 3x3 grid, random frame, 0.05-0.13 s, random roll, flicker alpha), child Sparks (Creepy Cat _SpriteSheet/Lightning_01, 8x8 grid detected, stretched, 0.08-0.22 s, damped), child BoltFlicker (FORGE3D lightning_gun_bolt_005, faint full-length quad along the blade, random roll). Max particles 120 / 200 / 8.
+- New DMBladeLightningVfx (Scripts/Prototypes/Weapons): bursty crackle clusters at random points along the blade (length = shape scale.z the morph controller sets), arcs + sparks fly outward from the blade axis. Brightness via material _Boost, exposure weight 0 (no auto-exposure pull).
+- New materials (DarkMatter/HDRP Particle Unlit, additive): MorphBladeVFX_Lightning_Arcs/_Sparks/_Bolt.mat in Prefabs/VFX/MorphBlade. Vendor textures referenced only; FORGE3D/Hovl/Creepy Cat originals untouched. Old MorphBladeVFX_Lightning.mat left (unused).
+- DM_WeaponMorphStudioSettings: "Lightning blade VFX" (intensity 0-6, arc rate 0-120/s, arc length 0.02-0.6 m, outward speed 0-8 m/s, sparks per arc 0-12, bolt flicker 0-1, colour) + Subtle/Default/Extreme (buttons on the settings inspector). Set to Default.
+- Backups: *.pre20261101c
+Docs: DevManual/03-Combat.md "Lightning blade VFX (11-01c)"
+== 2026-11-01b - Mars FPS pass: shadow cull, set lights, sun shadow budget, SSR ==
+- Prop shadow cull (PrePrologue_Set + base): DMStudioPerf30m.Apply (4 casters + 24 static flags), then an extra set pass: 314 casters off (26 under 1.5 m, 288 fence/junk/prop/debris/crate/barrel under 6 m; towers and big shapes kept). Scene casters 2951 -> 2659, caster tris 1.52 M -> 1.39 M. Undo + logged to Logs/perf30m.tsv (Studio 'Restore 30m' reverts).
+- New DMPrePrologueLights1101b (Editor): lights inside the PrePrologue_Set bounds + 40 m (446, includes the MARS base spots). Shadows off except the 4 hero lights (top range x intensity of the shadowed ones = the 4 Wall_Fan_01 'Spot Light (1-4)' on P_Base_RadarStation_A), range clamped 8-15 m (lights > 40 m, e.g. the 60 m Spotlight_A/B, -> 25 m), Affects Volumetrics off. Shadowed 15 -> 4, ranges changed 326, volumetrics off 345. Originals in Logs/lights1101b.tsv; Studio Performance 'Revert lights' (presets Subtle 8 / Default 4 / Extreme 0 heroes).
+- Mars sun shadows: profile 150 m / 3 cascades / sun res 2048 (was 200 / 4 / 4096). New profile flag budgetOverBotd1101b (Mars on, Jupiter off) puts the shadow budget + SSR on the above-BOTD drive volume, because BOTD Environment(Clone) was forcing 500 m / 4 cascades in edit mode and Play. Edit stack now 150/3.
+- SSR: profile ssrQuality1101b (-1 keep, Low, Medium, High, Custom) + Custom max steps / min smoothness; Studio Performance presets Subtle (Medium) / Default (Low) / Extreme (Custom 12 steps, min smoothness 0.9). Mars = Low. Mars Defaults JSON updated. BOTD originals untouched.
+- Backups: *.pre20261101b
+Docs: DevManual/02-World.md "Mars FPS pass (11-01b)"
+== 2026-11-01a - SnapProbe logs no longer warnings ==
+- [SnapProbe] RB/XFORM/VISUAL lines come from our diagnostic DMPlayerSnapProbe (DM_CombatCoreProfile.playerSnapProbeLog = on). In Play it reports when the player capsule/root/hips end up 2-4 cm short of where velocity predicts (small Invector/physics corrections). They're diagnostics, not faults, but they were logged with LogWarning and filled the console with warnings.
+- DMPlayerSnapProbe.cs: Debug.LogWarning -> Debug.Log. Detection, thresholds and the profile toggle are unchanged (untick Player Snap Probe Log in the Combat Core profile to silence it completely).
+- Not touched: 4 import warnings 'MaterialLocation.External is obsolete' on Creepy Cat FBX (Wall_Door_Simple_01, Bed_Large_01, Wall_Fan_01, Floor_06_B). Vendor import settings; Unity 6 shows them on reimport.
+- Backups: *.pre20261101a
+Docs: DevManual/03-Combat.md "SnapProbe log level (11-01a)"
+
 == 2026-10-31 31v - Per-profile clock hour range (Mars 5.5-15) ==
 - Checked: nothing limited Mars to 5.5-15 before, and Mars was not stuck. Its Debug Hour = 5.5 with "Debug Hour advances" on, so it starts at 5.5 and kept running through the full 30 h Io day.
 - New per-profile Clock Min Hour / Clock Max Hour (0-30, the Io day is 30 h) + Clock range mode Loop (default) / PingPong / Clamp (DM_IoSkyProfile). Applied in DMIoSkyController.TotalHours31h to the realtime clock, the edit-mode clock and the Debug Hour (advancing or frozen), in edit mode and Play. Edit Preview Hour is an explicit pin and is not limited.

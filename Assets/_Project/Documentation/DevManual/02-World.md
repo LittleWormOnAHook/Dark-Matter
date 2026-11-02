@@ -568,3 +568,9 @@ Studio > Sky > **Performance (31s)**:
 - Per sky profile: `clockMinHour31v`, `clockMaxHour31v` (Io hours 0-30), `clockRangeMode31v` Loop / PingPong / Clamp. A full range (0 to hours per day) means no limit.
 - It limits the realtime clock, the edit-mode clock and the Debug Hour (advancing or frozen). Edit Preview Hour is not limited. The global DMIoClock keeps running; only the sky hour is mapped.
 - Mars = 5.5-15 Loop (hard wrap, no fade). Base/Jupiter = full day. Studio Essentials presets: Full day, Mars 5.5-15, Daylight 6-24, Midday 10-20. Mars Deep Reset sets 5.5-15.- Mars defaults: `Resources/World/DM_IoSkyProfile_Mars_Defaults31v.json` (Anthony's Mars values + clock 5.5-15, no object links), used by Mars Deep Reset and the Mars eclipse-ramp Default preset. Same pattern as the 31q Jupiter defaults.
+
+## Mars FPS pass (11-01b)
+- **Studio > Sky Essentials > Performance (31s)**: new *Screen-space reflections* block (SSR on, quality Keep/Low/Medium/High/Custom, custom steps + min smoothness, presets Subtle/Default/Extreme) and *Pre-Prologue Set lights* block (light presets + Revert lights, Apply/Restore 30m shadow cull).
+- `DM_IoSkyProfile.budgetOverBotd1101b`: when on, sun shadow distance/cascades and SSR quality go on the above-BOTD drive volume (BOTD Environment otherwise forces 500 m / 4 cascades). Mars on, Jupiter off.
+- `DMPrePrologueLights1101b`: lights inside the set bounds + 40 m; shadows off except N heroes, range 8-15 m (>40 m -> 25 m), volumetrics off. Originals in `Logs/lights1101b.tsv` (first apply only); Revert restores them.
+- After applying: save the scene, re-bake Occlusion Culling and APV.

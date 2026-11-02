@@ -124,6 +124,36 @@ namespace Project.Prototypes.Weapons
         public bool vfxWhenHolstered = false;
         [Range(0f, 3f)] public float vfxIntensity = 1f;
 
+        public enum LightningVfxPreset { Custom, Subtle, Default, Extreme }
+        [Header("Lightning blade VFX (2026-11-01c; DMBladeLightningVfx on MorphBladeVFX_Lightning)")]
+        [Tooltip("Subtle / Default / Extreme write the fields below; editing them by hand is fine (Custom).")]
+        public LightningVfxPreset lightningVfxPreset = LightningVfxPreset.Default;
+        [SerializeField, HideInInspector] private LightningVfxPreset _lastLightningVfxPreset = LightningVfxPreset.Default;
+        [Tooltip("Brightness multiplier on all lightning layers (material boost). Kept unexposed so auto-exposure is not pulled around.")]
+        [Range(0f, 6f)] public float lightningVfxIntensity = 1f;
+        [Tooltip("Crackle clusters per second along the blade (each = 1-4 arcs + sparks). x vfxIntensity.")]
+        [Range(0f, 120f)] public float lightningArcRate = 18f;
+        [Tooltip("Arc sprite size (m).")]
+        [Range(0.02f, 0.6f)] public float lightningArcLength = 0.12f;
+        [Tooltip("How fast arcs/sparks drift outward from the blade (m/s).")]
+        [Range(0f, 8f)] public float lightningOutwardSpeed = 0.8f;
+        [Tooltip("Sparks per crackle cluster.")]
+        [Range(0, 12)] public int lightningSparksPerArc = 3;
+        [Tooltip("Faint full-length bolt flicker along the blade (0 = off).")]
+        [Range(0f, 1f)] public float lightningBoltFlicker = 0.35f;
+        [ColorUsage(false)] public Color lightningVfxColor = new Color(0.6f, 0.78f, 1f, 1f);
+
+        public void ApplyLightningVfxPreset(LightningVfxPreset next)
+        {
+            lightningVfxPreset = next; _lastLightningVfxPreset = next;
+            switch (next)
+            {
+                case LightningVfxPreset.Subtle: lightningVfxIntensity = 0.6f; lightningArcRate = 8f; lightningArcLength = 0.08f; lightningOutwardSpeed = 0.4f; lightningSparksPerArc = 1; lightningBoltFlicker = 0.15f; break;
+                case LightningVfxPreset.Default: lightningVfxIntensity = 1f; lightningArcRate = 18f; lightningArcLength = 0.12f; lightningOutwardSpeed = 0.8f; lightningSparksPerArc = 3; lightningBoltFlicker = 0.35f; break;
+                case LightningVfxPreset.Extreme: lightningVfxIntensity = 1.8f; lightningArcRate = 45f; lightningArcLength = 0.22f; lightningOutwardSpeed = 2f; lightningSparksPerArc = 6; lightningBoltFlicker = 0.7f; break;
+            }
+        }
+
         [Header("EAU MorphBlade swap audio (2026-10-28o)")]
         public AudioClip swapClip;
         [Range(0f, 1f)] public float swapVolume = 0.8f;
@@ -242,7 +272,7 @@ namespace Project.Prototypes.Weapons
         private void OnValidate()
         {
             if (bladeWeightPreset != _lastBladeWeightPreset)
-                ApplyBladeWeightPreset(bladeWeightPreset);
+                ApplyBladeWeightPreset(bladeWeightPreset); if (lightningVfxPreset != _lastLightningVfxPreset) ApplyLightningVfxPreset(lightningVfxPreset); // 11-01c
             if (preset != Preset.Custom)
             {
                 // Keep inspector edits that move away from preset values → Custom.

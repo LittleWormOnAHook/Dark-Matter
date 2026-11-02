@@ -1668,3 +1668,11 @@ Both held copies on Player_Kade_v2 (Drawn_ and Holstered_ MorphBlade_Held) carry
 ## SnapProbe visual threshold (29d)
 DMPlayerSnapProbe VISUAL (hips vs capsule) check now logs only when hips fall back more than 4 cm (was 0.5 cm, which flagged normal walk sway). Disable all probe logs via DM_CombatCoreProfile.playerSnapProbeLog.
 
+
+## SnapProbe log level (11-01a)
+- `DMPlayerSnapProbe` [SnapProbe] lines are Info (Debug.Log), not warnings. Toggle: `DM_CombatCoreProfile.playerSnapProbeLog`. They show small physics/animation pull-backs of the player (2 cm RB/XFORM, 4 cm VISUAL) and are only worth reading when chasing a visible rubber-band.
+
+## Lightning blade VFX (11-01c)
+- Prefab `Prefabs/VFX/MorphBlade/MorphBladeVFX_Lightning.prefab`: Arcs (root) + Sparks + BoltFlicker, driven by `DMBladeLightningVfx` (Play only; spawned by DMWeaponMorphController along base -> MB_BladeTip, local Z = blade).
+- Tune in Studio > Combat > Weapon Morph (DM_WeaponMorphStudioSettings) > "Lightning blade VFX": intensity, arc rate, arc length, outward speed, sparks per arc, bolt flicker, colour; Subtle/Default/Extreme buttons at the top of the inspector. Global vfxIntensity also scales arc rate.
+- Materials use DarkMatter/HDRP Particle Unlit (additive, exposure weight 0) with vendor textures referenced, not copied.

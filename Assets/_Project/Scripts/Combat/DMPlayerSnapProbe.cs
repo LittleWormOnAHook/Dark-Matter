@@ -102,7 +102,7 @@ namespace Project.Combat
             last = now;
             if (now - lastLog < RateLimit) return;
             lastLog = now;
-            Debug.LogWarning("[SnapProbe] " + kind + " back " + shortBy.ToString("0.000") + " m @ " + speed.ToString("0.0")
+            Debug.Log("[SnapProbe] " + kind /* 2026-11-01a: diagnostic info, not a warning */ + " back " + shortBy.ToString("0.000") + " m @ " + speed.ToString("0.0")
                 + " m/s t=" + now.ToString("0.00") + " gap=" + gap.ToString("0.00") + "s " + extra);
         }
 

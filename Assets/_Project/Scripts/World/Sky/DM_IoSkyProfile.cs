@@ -402,6 +402,17 @@ namespace Project.World.Sky
         [Range(1, 4)] public int shadowCascadeCount31s = 3;
         /// <summary>31s: shadow budget presets: 0 Subtle (4 cascades, 200 m), 1 Default (3, 150 m), 2 Extreme (2, 100 m).</summary>
         public void ApplyShadowBudgetPreset31s(int i) { int[] c = { 4, 3, 2 }; float[] d = { 200f, 150f, 100f }; i = Mathf.Clamp(i, 0, 2); shadowCascadeCount31s = c[i]; shadowMaxDistance = d[i]; }
+        // 2026-11-01b: SSR cost on this profile. -1 = keep the volume's SSR quality (Jupiter/Base). 0 Low, 1 Medium, 2 High, 3 Custom (steps + min smoothness).
+        [Tooltip("11-01b: SSR quality override: -1 keep volume, 0 Low, 1 Medium, 2 High, 3 Custom (Max steps + Min smoothness).")]
+        [Range(-1, 3)] public int ssrQuality1101b = -1;
+        [Tooltip("11-01b: Custom SSR ray march steps (fewer = cheaper).")]
+        [Range(4, 128)] public int ssrMaxSteps1101b = 32;
+        [Tooltip("11-01b: Custom SSR minimum smoothness: only surfaces smoother than this reflect (higher = fewer pixels traced = cheaper).")]
+        [Range(0f, 1f)] public float ssrMinSmoothness1101b = 0.9f;
+        [Tooltip("11-01b: push the sun shadow budget (distance/cascades) and SSR quality ABOVE the BOTD volumes (BOTD Environment sets 500 m / 4 cascades). Mars on, Jupiter off.")]
+        public bool budgetOverBotd1101b = false;
+        /// <summary>11-01b SSR presets (how much to lower): 0 Subtle = Medium, 1 Default = Low, 2 Extreme = Custom 12 steps / min smoothness 0.9.</summary>
+        public void ApplySsrPreset1101b(int i) { i = Mathf.Clamp(i, 0, 2); ssrQuality1101b = i == 0 ? 1 : (i == 1 ? 0 : 3); if (i == 2) { ssrMaxSteps1101b = 12; ssrMinSmoothness1101b = 0.9f; } }
         [Tooltip("Fog attenuation distance / mean free path (scene 2000). 0 = leave scene fog.")]
         [Range(0f, 8000f)] public float fogMeanFreePath = 3000f;
         [Tooltip("Colour Adjustments contrast (0 = none).")]

@@ -123,6 +123,13 @@ namespace Project.EditorTools
                 if (GUILayout.Button("Create / Find MorphBlade Holders")) status = DMMorphBladeHoldersTool.CreateOrFind();
             if (!string.IsNullOrEmpty(status)) EditorGUILayout.HelpBox(status, MessageType.None);
             EditorGUILayout.Space(4f);
+            // 11-01c: lightning blade VFX presets
+            var s = (DM_WeaponMorphStudioSettings)target;
+            EditorGUILayout.LabelField("Lightning blade VFX (11-01c)", EditorStyles.boldLabel);
+            using (new EditorGUILayout.HorizontalScope())
+                foreach (var pr in new[] { DM_WeaponMorphStudioSettings.LightningVfxPreset.Subtle, DM_WeaponMorphStudioSettings.LightningVfxPreset.Default, DM_WeaponMorphStudioSettings.LightningVfxPreset.Extreme })
+                    if (GUILayout.Button(pr.ToString(), EditorStyles.miniButton)) { Undo.RecordObject(s, "Lightning VFX preset"); s.ApplyLightningVfxPreset(pr); EditorUtility.SetDirty(s); }
+            EditorGUILayout.HelpBox("Fields under 'Lightning blade VFX' below. Changes apply live in Play.", MessageType.None);
             DrawDefaultInspector();
         }
     }

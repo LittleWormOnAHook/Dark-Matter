@@ -106,7 +106,7 @@ namespace Project.World.Sky
         private DM_IoSkyProfile builtFor31g; // 31g
 
         // 31f: BOTD volumes on top. Scene volumes named BOTD* (global, active) are read only - never written.
-        private Volume drive31f; private VolumeProfile driveProfile31f; private IndirectLightingController driveIlc31f; private PhysicallyBasedSky drivePbs31f; private Exposure driveExp31h; private Fog driveFog31h;
+        private Volume drive31f; private VolumeProfile driveProfile31f; private IndirectLightingController driveIlc31f; private PhysicallyBasedSky drivePbs31f; private Exposure driveExp31h; private Fog driveFog31h; private HDShadowSettings driveShadow1101b; private ScreenSpaceReflection driveSsr1101b;
         private static float botdScan31f = -1f; private static bool botdHas31f; private static float botdMin31f, botdMax31f;
         private static readonly List<Volume> botdVols31f = new List<Volume>();
         public static bool BotdPriorityRange31f(out float min, out float max)
@@ -153,6 +153,8 @@ namespace Project.World.Sky
             driveExp31h = driveProfile31f.Add<Exposure>(); foreach (VolumeParameter prm in driveExp31h.parameters) prm.overrideState = false; driveExp31h.active = false;
             driveFog31h = driveProfile31f.Add<Fog>(); foreach (VolumeParameter prm in driveFog31h.parameters) prm.overrideState = false; driveFog31h.active = false;
             foreach (VolumeParameter prm in drivePbs31f.parameters) prm.overrideState = false;
+            driveShadow1101b = driveProfile31f.Add<HDShadowSettings>(); foreach (VolumeParameter prm in driveShadow1101b.parameters) prm.overrideState = false; driveShadow1101b.active = false; // 11-01b
+            driveSsr1101b = driveProfile31f.Add<ScreenSpaceReflection>(); foreach (VolumeParameter prm in driveSsr1101b.parameters) prm.overrideState = false; driveSsr1101b.active = false; // 11-01b
             drive31f = gameObject.AddComponent<Volume>(); drive31f.isGlobal = true; drive31f.weight = 0f; drive31f.sharedProfile = driveProfile31f;
         }
 
@@ -202,7 +204,7 @@ namespace Project.World.Sky
             if (volume != null) Kill(volume);
             if (drive31f != null) Kill(drive31f);
             if (driveProfile31f != null) { foreach (VolumeComponent c in driveProfile31f.components) if (c != null) Kill(c); Kill(driveProfile31f); }
-            drive31f = null; driveProfile31f = null; driveIlc31f = null; drivePbs31f = null;
+            drive31f = null; driveProfile31f = null; driveIlc31f = null; drivePbs31f = null; driveShadow1101b = null; driveSsr1101b = null;
             if (runtimeProfile != null)
             {
                 foreach (VolumeComponent c in runtimeProfile.components) if (c != null) Kill(c);
@@ -329,7 +331,7 @@ namespace Project.World.Sky
                 driveIlc31f.reflectionLightingMultiplier.Override(br * eclipseScale + nightAmb * 0.5f);
             }
 
-            ssao.intensity.Override(p.ssaoIntensity); if (ssr != null) { ssr.enabled.Override(p.ssrEnabled); ssr.depthBufferThickness.Override(p.ssrDepthThickness); } // 30a: thick depth smeared the sun into a vertical streak
+            ssao.intensity.Override(p.ssaoIntensity); if (ssr != null) { ssr.enabled.Override(p.ssrEnabled); ssr.depthBufferThickness.Override(p.ssrDepthThickness); ApplySsrQuality1101b(p); } // 30a: thick depth smeared the sun into a vertical streak
             ssao.directLightingStrength.Override(p.ssaoDirectLightingStrength);
 
             smh.active = p.shadowFloorLift > 0f;
@@ -433,6 +435,21 @@ namespace Project.World.Sky
         }
 
         // 2026-10-24an: subtle AAA polish on the runtime copy only (BOTD/Gaia untouched).
+        // 2026-11-01b: SSR quality from the profile (Mars Low). -1 = leave the volume's quality.
+        private void ApplySsrQuality1101b(DM_IoSkyProfile p)
+        {
+            if (ssr == null || p.ssrQuality1101b < 0) return;
+            int q = Mathf.Clamp(p.ssrQuality1101b, 0, 3);
+            ssr.quality.Override(q); // 3 = ScalableSettingLevelParameter.LevelCount (custom)
+            if (q < 3) return;
+            ssr.rayMaxIterations = p.ssrMaxSteps1101b; ssr.minSmoothness = p.ssrMinSmoothness1101b; ssr.smoothnessFadeStart = Mathf.Min(1f, p.ssrMinSmoothness1101b + 0.05f);
+            foreach (string n in new[] { "m_RayMaxIterations", "m_MinSmoothness", "m_SmoothnessFadeStart" })
+            {
+                var fi = typeof(ScreenSpaceReflection).GetField(n, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (fi != null && fi.GetValue(ssr) is VolumeParameter vp) vp.overrideState = true;
+            }
+        }
+
         private void ApplyPolish(DM_IoSkyProfile p)
         {
             bool on = p.polishEnabled;
@@ -455,6 +472,19 @@ namespace Project.World.Sky
                 shadowSettings.maxShadowDistance.Override(dist);
                 shadowSettings.cascadeShadowSplit0.Override(p.shadowCascadeSplit0);
                 shadowSettings.cascadeShadowSplitCount.Override(Mathf.Clamp(p.shadowCascadeCount31s, 1, 4)); // 31s
+            }
+            // 11-01b: same budget on the above-BOTD drive volume (BOTD Environment forces 500 m / 4 cascades otherwise).
+            if (driveShadow1101b != null)
+            {
+                driveShadow1101b.active = on && p.budgetOverBotd1101b;
+                driveShadow1101b.maxShadowDistance.Override(shadowSettings != null ? shadowSettings.maxShadowDistance.value : p.shadowMaxDistance);
+                driveShadow1101b.cascadeShadowSplit0.Override(p.shadowCascadeSplit0);
+                driveShadow1101b.cascadeShadowSplitCount.Override(Mathf.Clamp(p.shadowCascadeCount31s, 1, 4));
+            }
+            if (driveSsr1101b != null)
+            {
+                driveSsr1101b.active = p.budgetOverBotd1101b && p.ssrQuality1101b >= 0;
+                if (driveSsr1101b.active) { var keep = ssr; ssr = driveSsr1101b; ssr.enabled.Override(p.ssrEnabled); ApplySsrQuality1101b(p); ssr = keep; }
             }
             fog.active = on && p.fogMeanFreePath > 0f;
             if (fog.active) fog.meanFreePath.Override(p.fogMeanFreePath);

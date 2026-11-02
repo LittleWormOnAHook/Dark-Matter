@@ -43,6 +43,37 @@ namespace Project.EditorTools.GenesisStudio
                 for (int i = 0; i < 3; i++) if (GUILayout.Button(PresetNames[i], EditorStyles.miniButton)) { Undo.RecordObject(p, "Shadow budget preset"); p.ApplyShadowBudgetPreset31s(i); EditorUtility.SetDirty(p); }
             }
 
+            // --- 11-01b: SSR quality (profile -> DM runtime volume)
+            EditorGUILayout.Space(4f);
+            EditorGUILayout.LabelField("Screen-space reflections (11-01b)", EditorStyles.boldLabel);
+            EditorGUI.BeginChangeCheck();
+            bool ssrOn = EditorGUILayout.Toggle("SSR on", p.ssrEnabled);
+            int sq = EditorGUILayout.IntPopup("SSR quality (Keep = volume)", p.ssrQuality1101b, new[] { "Keep volume", "Low", "Medium", "High", "Custom" }, new[] { -1, 0, 1, 2, 3 });
+            int ss = EditorGUILayout.IntSlider(new GUIContent("  Custom max steps"), p.ssrMaxSteps1101b, 4, 128);
+            float sm = EditorGUILayout.Slider(new GUIContent("  Custom min smoothness", "Higher = fewer surfaces reflect = cheaper."), p.ssrMinSmoothness1101b, 0f, 1f);
+            if (EditorGUI.EndChangeCheck()) { Undo.RecordObject(p, "SSR quality"); p.ssrEnabled = ssrOn; p.ssrQuality1101b = sq; p.ssrMaxSteps1101b = ss; p.ssrMinSmoothness1101b = sm; EditorUtility.SetDirty(p); }
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                GUILayout.Space(EditorGUI.indentLevel * 15f);
+                for (int i = 0; i < 3; i++) if (GUILayout.Button(PresetNames[i], EditorStyles.miniButton)) { Undo.RecordObject(p, "SSR preset"); p.ApplySsrPreset1101b(i); EditorUtility.SetDirty(p); }
+            }
+
+            // --- 11-01b: Pre-Prologue Set lights + 30m shadow cull
+            EditorGUILayout.Space(4f);
+            EditorGUILayout.LabelField("Pre-Prologue Set lights (11-01b)", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("  " + DMPrePrologueLights1101b.Stats(), EditorStyles.miniLabel);
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                GUILayout.Space(EditorGUI.indentLevel * 15f);
+                for (int i = 0; i < 3; i++) if (GUILayout.Button(new[] { "Subtle (8 hero)", "Default (4 hero)", "Extreme (0 hero)" }[i], EditorStyles.miniButton)) Debug.Log("[DM] " + DMPrePrologueLights1101b.Apply(new[] { 8, 4, 0 }[i]));
+                if (GUILayout.Button("Revert lights", EditorStyles.miniButton)) Debug.Log("[DM] " + DMPrePrologueLights1101b.Revert());
+            }
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                GUILayout.Space(EditorGUI.indentLevel * 15f);
+                if (GUILayout.Button("Apply 30m shadow cull", EditorStyles.miniButton)) Debug.Log("[DM] 30m " + DMStudioPerf30m.Apply());
+                if (GUILayout.Button("Restore 30m", EditorStyles.miniButton)) Debug.Log("[DM] 30m restore " + DMStudioPerf30m.Restore());
+            }
             // --- small / distant prop shadow culling
             EditorGUILayout.Space(4f);
             EditorGUILayout.LabelField("Prop shadow culling (open scenes)", EditorStyles.boldLabel);

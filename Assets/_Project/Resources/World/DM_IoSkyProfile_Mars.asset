@@ -21,7 +21,7 @@ MonoBehaviour:
   sunShadowStrength31h: 1
   sunTemperature31o: 0
   sunVolumetricDimmer31o: -1
-  sunShadowResolution31o: 4096
+  sunShadowResolution31o: 2048
   sunDisc31o: 1
   essentialsOverBotd31h: 1
   debugHourAdvances: 0
@@ -181,9 +181,13 @@ MonoBehaviour:
   sunContactShadows: 0
   contactShadowsProject31k: 0
   microShadowOpacity: 0.497
-  shadowMaxDistance: 200
+  shadowMaxDistance: 150
   shadowCascadeSplit0: 0.057
-  shadowCascadeCount31s: 4
+  shadowCascadeCount31s: 3
+  ssrQuality1101b: 0
+  ssrMaxSteps1101b: 32
+  ssrMinSmoothness1101b: 0.9
+  budgetOverBotd1101b: 1
   fogMeanFreePath: 4000
   gradeContrast: 0
   splitToneStrength: 0.291

@@ -106,7 +106,16 @@ MonoBehaviour:
   cryoVfx: {fileID: 8732994759974362346, guid: 8d87a8e359f7ea947a783c86cf5e6289, type: 3}
   lightningVfx: {fileID: 4282850122121031280, guid: 57382098739eaa3448225c15fd384e0d, type: 3}
   vfxWhenHolstered: 0
-  vfxIntensity: 1
+  vfxIntensity: 0.5
+  lightningVfxPreset: 2
+  _lastLightningVfxPreset: 2
+  lightningVfxIntensity: 1
+  lightningArcRate: 18
+  lightningArcLength: 0.12
+  lightningOutwardSpeed: 0.8
+  lightningSparksPerArc: 3
+  lightningBoltFlicker: 0.35
+  lightningVfxColor: {r: 0.6, g: 0.78, b: 1, a: 1}
   swapClip: {fileID: 8300000, guid: f5e8b1259bfbbe341ab07fd7f8c059ae, type: 3}
   swapVolume: 0.8
   swapPitch: 1
