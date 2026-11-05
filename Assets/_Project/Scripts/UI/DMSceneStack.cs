@@ -296,9 +296,9 @@ namespace Project.UI
             // 2026-11-04f: J / I / Cancel subscriptions must follow the rig that now owns the world
             // (each scene brings its own PlayerInput; the hidden one's action map is disabled).
             DMUiToolkitPlayerInputBridge.RebindForLivePlayer();
-            EnforceSingleEventSystem();
+            Project.Player.DMInputSchemeRouter.RefreshLiveInstance();
+            RefreshEventSystemOwnership();
             EnforceSingleAudioListener();
-            EnforceSingleInputModule();
             ApplyWorldScope(destination);
 
             current = destination;
@@ -337,6 +337,7 @@ namespace Project.UI
             // Harmless here (the reload replaces the rig anyway) and keeps the invariant "the input
             // bridge is always bound to the live player" true on every path.
             DMUiToolkitPlayerInputBridge.RebindForLivePlayer();
+            Project.Player.DMInputSchemeRouter.RefreshLiveInstance();
         }
 
         // --------------------------------------------------------------------- scope
@@ -346,6 +347,19 @@ namespace Project.UI
             DMWorldScope.Set(
                 destination == DMSceneDestination.Io ? DMWorldScope.World.Io : DMWorldScope.World.Mars,
                 DualWorldActive);
+        }
+
+        /// <summary>
+        /// Single entry point for play-mode EventSystem ownership (survivor + UITK bridge + input module).
+        /// Safe to call from boot, scene loads, menus, and deferred runners.
+        /// </summary>
+        public static void RefreshEventSystemOwnership()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            EnforceSingleEventSystem();
+            EnforceSingleInputModule();
         }
 
         /// <summary>
@@ -367,7 +381,7 @@ namespace Project.UI
             if (enabledSystems != 1 || EventSystem.current == null)
             {
                 Debug.Log($"{LogTag} menu arbitration: {enabledSystems} enabled EventSystem(s) found - enforcing one.");
-                EnforceSingleEventSystem();
+                RefreshEventSystemOwnership();
             }
 
             RefreshWorldScopeOnly();
@@ -1126,7 +1140,7 @@ namespace Project.UI
             // aimed at a UI Toolkit panel throws, so treat "not an EventSystem" the same as "none".
             // UIElementsRuntimeUtility is internal (CS0122 if referenced), hence reflection.
             object before = ReadToolkitActiveEventSystem();
-            if (before as EventSystem != null)
+            if (before as EventSystem == survivor)
                 return;
 
             // Toggling the override off and back on is what actually forces Unregister/Register:
@@ -1363,6 +1377,12 @@ namespace Project.UI
             Debug.Log($"{LogTag} bootstrap: starting world '{active.name}' (destination {current}); "
                 + $"authored known = Mars:{authoredPositions.ContainsKey(DMSceneDestination.Mars)} "
                 + $"Io:{authoredPositions.ContainsKey(DMSceneDestination.Io)}.");
+
+            // 2026-11-05: Play often starts with MainMenuController already in the scene, so the old
+            // EnsureExists path never called EnforceSingleEventSystem and a second runtime EventSystem
+            // (e.g. DMUiGamepadNavigation) left two enabled bridges -> Editor.log spam every frame.
+            RefreshEventSystemOwnership();
+            EventSystemOwnershipRunner.EnsureScheduled();
         }
 
         /// <summary>
@@ -1402,6 +1422,66 @@ namespace Project.UI
             authoredRotations.Clear();
             hiddenRoots.Clear();
             DMWorldScope.ResetToMars();
+            EventSystemOwnershipRunner.ResetSchedule();
+
+            SceneManager.sceneLoaded -= OnSceneLoadedRefreshEventSystem;
+            SceneManager.sceneLoaded += OnSceneLoadedRefreshEventSystem;
+        }
+
+        private static void OnSceneLoadedRefreshEventSystem(Scene scene, LoadSceneMode mode)
+        {
+            if (!Application.isPlaying)
+                return;
+
+            RefreshEventSystemOwnership();
+            EventSystemOwnershipRunner.EnsureScheduled();
+        }
+
+        /// <summary>
+        /// Re-asserts ownership for a few LateUpdate frames so EventSystems that enable after
+        /// RuntimeInitialize AfterSceneLoad (Enter Play Mode without domain reload, late hosts) cannot
+        /// leave two active systems registered with UI Toolkit.
+        /// </summary>
+        private sealed class EventSystemOwnershipRunner : MonoBehaviour
+        {
+            private const int ReassertFrames = 3;
+            private static bool scheduled;
+            private int framesLeft;
+
+            internal static void ResetSchedule()
+            {
+                scheduled = false;
+            }
+
+            internal static void EnsureScheduled()
+            {
+                if (!Application.isPlaying || scheduled)
+                    return;
+
+                scheduled = true;
+                GameObject go = new GameObject("DM_EventSystemOwnershipRunner");
+                go.hideFlags = HideFlags.HideAndDontSave;
+                DontDestroyOnLoad(go);
+                EventSystemOwnershipRunner runner = go.AddComponent<EventSystemOwnershipRunner>();
+                runner.framesLeft = ReassertFrames;
+            }
+
+            private void Awake()
+            {
+                RefreshEventSystemOwnership();
+            }
+
+            private void LateUpdate()
+            {
+                RefreshEventSystemOwnership();
+
+                framesLeft--;
+                if (framesLeft < 0)
+                {
+                    scheduled = false;
+                    Destroy(gameObject);
+                }
+            }
         }
     }
 }

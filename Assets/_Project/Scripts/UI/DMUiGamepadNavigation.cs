@@ -36,7 +36,7 @@ namespace Project.UI
 
             EventSystem es = EventSystem.current;
             if (es == null)
-                es = Object.FindAnyObjectByType<EventSystem>();
+                es = Object.FindAnyObjectByType<EventSystem>(FindObjectsInactive.Include);
 
             // Re-wire immediately whenever the current EventSystem changed; only throttle the
             // repeat calls that hit the same object.
@@ -46,10 +46,14 @@ namespace Project.UI
 
             if (es == null)
             {
-                GameObject go = new GameObject("EventSystem");
-                es = go.AddComponent<EventSystem>();
-                go.AddComponent<InputSystemUIInputModule>();
+                DMSceneStack.RefreshEventSystemOwnership();
+                es = EventSystem.current;
+                if (es == null)
+                    es = Object.FindAnyObjectByType<EventSystem>(FindObjectsInactive.Include);
             }
+
+            if (es == null)
+                return;
 
             InputSystemUIInputModule module = es.GetComponent<InputSystemUIInputModule>();
             if (module == null)

@@ -180,6 +180,23 @@ namespace Project.Core
             return true;
         }
 
+        /// <summary>
+        /// After a graphics settings scene reload: restore the live expedition from the settings snapshot,
+        /// or fall back to the Continue slot written in the same pre-reload pass. Does not modify slot files on failure.
+        /// </summary>
+        public static bool TryRestoreExpeditionAfterSettingsReload(out string message)
+        {
+            if (TryLoadSettingsReloadSnapshot(out message))
+                return true;
+
+            string settingsMessage = message;
+            if (TryLoadContinueExpedition(out message))
+                return true;
+
+            message = $"Settings snapshot: {settingsMessage} Continue slot: {message}";
+            return false;
+        }
+
         public static bool TryLoadSettingsReloadSnapshot(out string message)
         {
             if (!File.Exists(SettingsReloadFilePath))

@@ -213,7 +213,7 @@ namespace Project.EditorTools.Rendering
 
         static int LayerIndex(TerrainLayer layer, Terrain terrain, Material mat)
         {
-            if (mat == null || terrain == null || terrain.terrainData == null || !mat.HasProperty("_DMHeightMap0"))
+            if (mat == null || terrain == null || terrain.terrainData == null || !mat.HasProperty("_DMLayerParallax0"))
                 return -1;
             int idx = Array.IndexOf(terrain.terrainData.terrainLayers, layer);
             return idx > 7 ? -1 : idx;
