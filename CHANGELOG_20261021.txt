@@ -1,3 +1,9 @@
+== 2026-11-05d - Single EventSystem at Play boot (Editor.log duplicate spam) ==
+- ROOT CAUSE: EnforceSingleEventSystem ran on world switch and when MainMenuController was runtime-created, but NOT when Play started with MainMenuController already in the Genesis scene. DMUiGamepadNavigation and several uGUI menu EnsureUiInput paths could spawn a second "EventSystem" GameObject, leaving two enabled bridges (EventSystem.Update x1559 + UIToolkitInteroperabilityBridge "only one active Event System").
+- FIX: DMSceneStack.RefreshEventSystemOwnership() (EnforceSingleEventSystem + EnforceSingleInputModule); called from BootstrapFromActiveScene, MainMenuController Bootstrap (always), SceneManager.sceneLoaded, and a short-lived DM_EventSystemOwnershipRunner (LateUpdate reassert for Enter Play Mode without domain reload). DMUiGamepadNavigation and QuestGiver/Quora/PPT/BuildingControl EnsureUiInput delegate instead of spawning. ReassertToolkitEventSystem now re-binds when activeEventSystem != survivor.
+- NOT FIXED HERE: AI account API timeout, CreepyCat Biodome FBX obsolete import, Cinemachine partial-class note (vendor/package).
+- Test: DarkMatterStackValidationTests.RefreshEventSystemOwnership_EditMode_DoesNotThrow (not run in cloud). Play verify: Editor.log clean of duplicate EventSystem warnings for full session.
+
 == 2026-11-05c - PR #60 Windows incremental build handoff (prep only) ==
 - DMTerrainParallaxHeightArrayBinder: Destroy runtime height arrays on Application.quitting (player exit), not only SubsystemRegistration; release replaced arrays when rebinding materials.
 - Engineering handoff: Assets/_Project/Documentation/Engineering/PR60_Windows_Incremental_Build_Handoff_2026-11-05.md (dirty-tree apply, incremental build to A:\Dark Matter Mars, verification plan). No cloud Unity compile/build.

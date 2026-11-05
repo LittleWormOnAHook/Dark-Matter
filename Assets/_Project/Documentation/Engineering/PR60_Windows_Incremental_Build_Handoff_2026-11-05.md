@@ -22,7 +22,10 @@ Apply these paths only (plus this handoff doc after you pull the branch tip):
 | Doors | `Assets/_Project/Scripts/Environment/Doors/DMSlidingDoorController.cs` |
 | Input | `Assets/_Project/Scripts/Player/DMInputSchemeRouter.cs` |
 | Input | `Assets/_Project/Scripts/Player/DMInputSchemePromotionRules.cs` |
-| Input | `Assets/_Project/Scripts/UI/DMSceneStack.cs` |
+| Input / UI stack | `Assets/_Project/Scripts/UI/DMSceneStack.cs` |
+| Input / UI stack | `Assets/_Project/Scripts/UI/MainMenuController.cs` |
+| Input / UI stack | `Assets/_Project/Scripts/UI/DMUiGamepadNavigation.cs` |
+| uGUI menus | `Assets/_Project/Scripts/UI/QuestGiverDialogUI.cs`, `QuoraShelterMenuUI.cs`, `PptDirectionsMenuUI.cs`, `BuildingControlPanelUI.Layout.cs` |
 | Terrain shader | `Assets/_Project/Rendering/DMShaders/DM_TerrainParallax.shader` |
 | Terrain shader | `Assets/_Project/Rendering/DMShaders/DM_TerrainParallax_Splatmap.hlsl` |
 | Terrain runtime | `Assets/_Project/Scripts/Rendering/DMTerrainParallaxHeightArrayBinder.cs` |
@@ -73,6 +76,7 @@ Run the new exe from `A:\Dark Matter Mars` and spot-check:
 | **Doors** | Walk through Creepy Cat / legacy `DoorDoubleSlide` triggers — no `NullReferenceException` spam in `Player.log` on enter/exit. |
 | **Terrain** | Mars terrain using `DM/TerrainParallax` renders splats/parallax; no “texture limit” / pink shader; height detail sane on layered areas. |
 | **UI startup** | Main menu / first UI Toolkit screen loads without “missing script” on registry-owned assets. |
+| **EventSystem (Editor)** | After Play, `Editor.log` has **no** repeating “There are 2 event systems in the scene” / “There can be only one active Event System.” (2026-11-05d boot ownership). |
 | **Pad at launch** | Controller connected before start → gameplay uses Gamepad scheme (movement/aim per project bindings). |
 | **KBM ↔ pad** | Mid-session: press key/mouse button → Keyboard&Mouse scheme; move stick past deadzone (~0.28) → Gamepad scheme; no stuck mute on Invector gate. |
 | **Hotplug** | Connect/disconnect pad after main menu and after in-world load. |
@@ -87,6 +91,7 @@ Run the new exe from `A:\Dark Matter Mars` and spot-check:
 - **Input pairing:** `InputUser.PerformPairingWithDevice(device, playerInput.user)` before `SwitchCurrentControlScheme` — matches Input System **1.19.0**; failures are caught and logged as warnings.
 - **Shader legacy heights:** `_DMHeightMap0..7` removed from shader Properties; materials may still hold orphan assignments — `DMTerrainParallaxHeightArrayBinder` reads them via `GetTexture` and packs `_DMHeightMapArray` at runtime.
 - **DMRealtimeIndirect:** edit-mode disable uses deferred `Kill()` to avoid Editor destroy-on-disable asserts.
+- **EventSystem boot:** `RefreshEventSystemOwnership()` at play boot + scene loads; menu helpers no longer spawn duplicate EventSystems.
 
 ---
 

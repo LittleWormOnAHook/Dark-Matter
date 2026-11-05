@@ -438,18 +438,7 @@ namespace Project.UI
 
 
 
-            if (FindAnyObjectByType<EventSystem>() != null)
-
-                return;
-
-
-
-            GameObject eventSystemObject = new GameObject("EventSystem");
-
-            eventSystemObject.AddComponent<EventSystem>();
-
-            eventSystemObject.AddComponent<InputSystemUIInputModule>();
-
+            DMSceneStack.RefreshEventSystemOwnership();
         }
 
     }

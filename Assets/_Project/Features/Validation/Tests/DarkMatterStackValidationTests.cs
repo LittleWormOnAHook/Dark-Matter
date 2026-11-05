@@ -4,6 +4,7 @@ using Project.Features.GameState;
 using Project.Features.Validation;
 using Project.Features.WorldState;
 using Project.Player;
+using Project.UI;
 using System.Collections.Generic;
 
 namespace Project.Features.Validation.Tests
@@ -74,6 +75,12 @@ namespace Project.Features.Validation.Tests
         {
             Assert.IsFalse(DMInputSchemePromotionRules.StickDeflects(0.1f, 0.1f));
             Assert.IsTrue(DMInputSchemePromotionRules.StickDeflects(0.5f, 0f));
+        }
+
+        [Test]
+        public void RefreshEventSystemOwnership_EditMode_DoesNotThrow()
+        {
+            Assert.DoesNotThrow(() => DMSceneStack.RefreshEventSystemOwnership());
         }
 
         private sealed class StubSessionWorldStateProvider : IWorldStateProvider

@@ -766,12 +766,7 @@ namespace Project.UI
             if (canvas != null && canvas.GetComponent<GraphicRaycaster>() == null)
                 canvas.gameObject.AddComponent<GraphicRaycaster>();
 
-            if (FindAnyObjectByType<EventSystem>() != null)
-                return;
-
-            GameObject eventSystemObject = new GameObject("EventSystem");
-            eventSystemObject.AddComponent<EventSystem>();
-            eventSystemObject.AddComponent<InputSystemUIInputModule>();
+            DMSceneStack.RefreshEventSystemOwnership();
         }
 
         private void Close()

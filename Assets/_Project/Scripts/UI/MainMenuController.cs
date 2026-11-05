@@ -152,6 +152,8 @@ namespace Project.UI
             if (!Application.isPlaying)
                 return;
 
+            // Always enforce before EnsureExists — the scene may already contain MainMenuController.
+            DMSceneStack.RefreshEventSystemOwnership();
             EnsureExists();
         }
 
@@ -255,7 +257,7 @@ namespace Project.UI
             // after the first IO load and each ships its own EventSystem, so the old "only if
             // none exists" check left two enabled EventSystems in the scene - see
             // DMSceneStack.EnforceSingleEventSystem for the pointer-click failure that caused.
-            DMSceneStack.EnforceSingleEventSystem();
+            DMSceneStack.RefreshEventSystemOwnership();
         }
 
         private static void EnsureGraphicRaycaster(Canvas canvas)
