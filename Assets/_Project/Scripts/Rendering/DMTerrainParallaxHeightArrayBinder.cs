@@ -17,7 +17,14 @@ namespace Project.Rendering
         private static Texture2D grayFallback;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetRuntimeTextures()
+        private static void RegisterLifecycleHooks()
+        {
+            Application.quitting -= DestroyAllRuntimeTextures;
+            Application.quitting += DestroyAllRuntimeTextures;
+            DestroyAllRuntimeTextures();
+        }
+
+        private static void DestroyAllRuntimeTextures()
         {
             for (int i = RuntimeArrays.Count - 1; i >= 0; i--)
             {
@@ -30,6 +37,7 @@ namespace Project.Rendering
             {
                 Object.Destroy(grayFallback);
                 grayFallback = null;
+                grayW = grayH = 0;
             }
         }
 
@@ -99,6 +107,7 @@ namespace Project.Rendering
             Texture2DArray array = material.GetTexture(ArrayProperty) as Texture2DArray;
             if (array == null || array.depth != LayerCount || array.width != width || array.height != height)
             {
+                ReleaseTrackedArray(array);
                 array = new Texture2DArray(width, height, LayerCount, format, true, false)
                 {
                     wrapMode = TextureWrapMode.Repeat,
@@ -123,6 +132,7 @@ namespace Project.Rendering
             if (existing != null && existing.depth == LayerCount)
                 return;
 
+            ReleaseTrackedArray(existing);
             Texture2DArray array = new Texture2DArray(4, 4, LayerCount, TextureFormat.R8, false, false)
             {
                 wrapMode = TextureWrapMode.Repeat,
@@ -147,6 +157,15 @@ namespace Project.Rendering
             RuntimeArrays.Add(array);
         }
 
+        private static void ReleaseTrackedArray(Texture2DArray array)
+        {
+            if (array == null)
+                return;
+
+            RuntimeArrays.Remove(array);
+            Object.Destroy(array);
+        }
+
         private static int grayW;
         private static int grayH;
         private static TextureFormat grayFormat;
@@ -155,6 +174,12 @@ namespace Project.Rendering
         {
             if (grayFallback != null && grayW == width && grayH == height && grayFormat == format)
                 return grayFallback;
+
+            if (grayFallback != null)
+            {
+                Object.Destroy(grayFallback);
+                grayFallback = null;
+            }
 
             grayFallback = new Texture2D(width, height, format, false, true)
             {

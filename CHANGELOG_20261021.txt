@@ -1,6 +1,10 @@
+== 2026-11-05c - PR #60 Windows incremental build handoff (prep only) ==
+- DMTerrainParallaxHeightArrayBinder: Destroy runtime height arrays on Application.quitting (player exit), not only SubsystemRegistration; release replaced arrays when rebinding materials.
+- Engineering handoff: Assets/_Project/Documentation/Engineering/PR60_Windows_Incremental_Build_Handoff_2026-11-05.md (dirty-tree apply, incremental build to A:\Dark Matter Mars, verification plan). No cloud Unity compile/build.
+
 == 2026-11-05b - Gamepad scheme auto-switch + runtime texture cleanup audit ==
 - DMInputSchemeRouter: symmetric pad promotion (stick deadzone 0.28, deliberate buttons), hot-connect via InputSystem.onDeviceChange, initial adopt when pad present and KBM idle, InputUser pairing, scheme-change logs (not one-shot). Removed GameSession gate on promotion. DMSceneStack calls RefreshLiveInstance after world switch/reload.
-- DMTerrainParallaxHeightArrayBinder: track runtime Texture2DArray/gray fallback and Destroy on SubsystemRegistration (owned GPU-allocation hygiene).
+- DMTerrainParallaxHeightArrayBinder: track runtime Texture2DArray/gray fallback; Destroy on SubsystemRegistration and Application.quitting (see 2026-11-05c for rebind release).
 - Shutdown ComputeBuffer/GraphicsBuffer/JobTempJob: no ComputeBuffer/GraphicsBuffer/Persistent NativeArray in Assets/_Project runtime code; remaining log lines unproven without stack-enabled repro (likely HDRP/vendor/engine).
 - Test: DarkMatterStackValidationTests.InputSchemePromotion_StickDeadzone_IgnoresDrift (not run here).
 Docs: DevManual 09-Controls (scheme router), 13-Rendering (shutdown audit note)
