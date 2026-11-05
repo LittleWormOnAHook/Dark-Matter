@@ -23,6 +23,10 @@ DM shaders (DM_ copies only; nothing is reassigned automatically).
 **Where:**
 - Studio: `Genesis Studio / Rendering / DM Shaders: Master` (panel mode `ExternalTool`)
 
+## DM Terrain Parallax: D3D11 64-texture limit (2026-11-05)
+
+Eight per-layer `_DMHeightMap0..7` Properties pushed `DM/TerrainParallax` over the D3D11 64-texture bound (~65/66 in Player.log). The shader now declares one `_DMHeightMapArray` (2DArray). `DMTerrainParallaxHeightArrayBinder` copies legacy `_DMHeightMap#` material assignments into that array at runtime (materials keep their existing slot data; no `.mat` commit required). Terrain-layer mask **B** remains the fallback when **Use Height Map** is off. Editor height-map UI still writes `_DMHeightMap#` on the material template.
+
 ## DM Terrain Parallax: debug baseColor (2026-11-04a)
 
 `DM_TerrainParallax_Splatmap.hlsl` `TerrainLitDebug()` sets `baseColor` to black first. The 8-layer chain now ends in a texture-streaming fallback `else`. This removes the "use of potentially uninitialized variable (baseColor)" warning at line 591. Normal rendering is unchanged, because the function only feeds HDRP debug display.
@@ -33,5 +37,6 @@ DM shaders (DM_ copies only; nothing is reassigned automatically).
 
 ## DMRealtimeIndirect: edit preview teardown on save (2026-11-04b)
 
-`KillEditPreviews()` destroys the hidden edit-preview GameObject. Its `OnDisable` then runs inside that deactivation, where `DestroyImmediate` is illegal ("Cannot destroy Component while GameObject is being activated or deactivated"). While `KillEditPreviews` runs, `Kill()` now queues edit-mode destroys in `deferredKills`. `FlushDeferredKills()` empties the queue from `EditorTick` and from `EditorApplication.delayCall` after a scene save. Play-mode and normal edit-mode teardown are unchanged.
+`KillEditPreviews()` destroys the hidden edit-preview GameObject. Its `OnDisable` then runs inside that deactivation, where `DestroyImmediate` is illegal ("Cannot destroy Component while GameObject is being activated or deactivated"). While `KillEditPreviews` runs, `Kill()` now queues edit-mode destroys in `deferredKills`. `FlushDeferredKills()` empties the queue from `EditorTick` and from `EditorApplication.delayCall` after a scene save. **2026-11-05:** any edit-mode `OnDisable` on `DMRealtimeIndirect` uses the same deferred `Kill()` path (not only `KillEditPreviews`). Play-mode teardown is unchanged.
+
 

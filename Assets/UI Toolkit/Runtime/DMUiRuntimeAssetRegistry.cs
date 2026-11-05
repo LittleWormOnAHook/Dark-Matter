@@ -61,21 +61,35 @@ namespace Project.UI
             return null;
         }
 
-        /// <summary>Last-resort safety net: any loaded Resources asset of type T whose name matches. Not a hot path.</summary>
+        /// <summary>Last-resort: targeted Resources paths only (never LoadAll("") — that walks every Resources asset and logs missing-script noise).</summary>
         internal static T ResolveByName<T>(string fileName) where T : Object
         {
             if (string.IsNullOrEmpty(fileName))
                 return null;
 
-            T[] all = Resources.LoadAll<T>(string.Empty);
-            for (int i = 0; i < all.Length; i++)
+            T direct = Resources.Load<T>(fileName);
+            if (direct != null)
+                return direct;
+
+            ReadOnlySpan<string> roots = UiResourceSearchRoots;
+            for (int r = 0; r < roots.Length; r++)
             {
-                if (all[i] != null && string.Equals(all[i].name, fileName, StringComparison.Ordinal))
-                    return all[i];
+                string path = string.IsNullOrEmpty(roots[r]) ? fileName : roots[r] + "/" + fileName;
+                T hit = Resources.Load<T>(path);
+                if (hit != null)
+                    return hit;
             }
 
             return null;
         }
+
+        private static readonly string[] UiResourceSearchRoots =
+        {
+            "UI",
+            "UI Toolkit",
+            "UITK",
+            "Themes"
+        };
 
 #if UNITY_EDITOR
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]

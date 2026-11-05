@@ -105,6 +105,8 @@ Map calibration, fog-of-war, the Io clock, and loot chests.
 
 **What it does:** Slide/rotate motion, open direction, timing, pooled VFX, and door SFX profiles.
 
+**Legacy Creepy Cat `DoorDoubleSlide` (2026-11-05):** Vendor trigger scripts call `GetComponent<AudioSource>().Play()` without a null check. `DMDoorDoubleSlideAudioCompat` (auto, `-450` execution order) adds/configures an `AudioSource` before triggers run. When `DMSlidingDoorController` manages the door hierarchy, duplicate `DoorDoubleSlide` components are disabled so motion/audio stay on the DM controller. Vendor files are never edited.
+
 **Where:**
 - Studio: `Genesis Studio / World / Sliding Doors` (panel mode `AssetFolder`)
 - Asset folder: `Assets/_Project/Resources/Environment/SlidingDoors` (`t:DMSlidingDoorProfile`)

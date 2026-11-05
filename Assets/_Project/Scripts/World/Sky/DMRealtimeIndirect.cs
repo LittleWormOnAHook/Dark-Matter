@@ -201,17 +201,57 @@ namespace Project.World.Sky
             contactSun = null;
             foreach (var kv in patchedMasks) if (kv.Key != null) kv.Key.volumeLayerMask = kv.Value;
             patchedMasks.Clear();
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                insideDeactivation = true;
+                try
+                {
+                    TeardownRuntimeObjects();
+                }
+                finally
+                {
+                    insideDeactivation = false;
+                }
+
+                UnityEditor.EditorApplication.delayCall -= FlushDeferredKills;
+                UnityEditor.EditorApplication.delayCall += FlushDeferredKills;
+                if (instance == this) instance = null;
+                return;
+            }
+#endif
+            TeardownRuntimeObjects();
+            if (instance == this) instance = null;
+        }
+
+        private void TeardownRuntimeObjects()
+        {
             if (volume != null) Kill(volume);
             if (drive31f != null) Kill(drive31f);
-            if (driveProfile31f != null) { foreach (VolumeComponent c in driveProfile31f.components) if (c != null) Kill(c); Kill(driveProfile31f); }
-            drive31f = null; driveProfile31f = null; driveIlc31f = null; drivePbs31f = null; driveShadow1101b = null; driveSsr1101b = null;
+            if (driveProfile31f != null)
+            {
+                foreach (VolumeComponent c in driveProfile31f.components)
+                    if (c != null)
+                        Kill(c);
+                Kill(driveProfile31f);
+            }
+
+            drive31f = null;
+            driveProfile31f = null;
+            driveIlc31f = null;
+            drivePbs31f = null;
+            driveShadow1101b = null;
+            driveSsr1101b = null;
             if (runtimeProfile != null)
             {
-                foreach (VolumeComponent c in runtimeProfile.components) if (c != null) Kill(c);
+                foreach (VolumeComponent c in runtimeProfile.components)
+                    if (c != null)
+                        Kill(c);
                 Kill(runtimeProfile);
             }
-            volume = null; runtimeProfile = null;
-            if (instance == this) instance = null;
+
+            volume = null;
+            runtimeProfile = null;
         }
 
         private void LateUpdate() { Apply(); }

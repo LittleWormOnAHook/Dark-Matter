@@ -100,6 +100,7 @@ namespace Project.Environment.Doors
             EnsureTriggerRelay();
             EnsureTriggerPhysics();
             DisableLegacyKitTriggerDrivers();
+            DisableLegacyDoorDoubleSlideWhenManaged();
             DisableLegacyDoorAnimations();
         }
 
@@ -821,6 +822,23 @@ namespace Project.Environment.Doors
                 && type.GetField("action") != null;
         }
 
+        private void DisableLegacyDoorDoubleSlideWhenManaged()
+        {
+            Transform root = ResolveDoorHierarchyRoot();
+            MonoBehaviour[] behaviours = root.GetComponentsInChildren<MonoBehaviour>(true);
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                MonoBehaviour behaviour = behaviours[i];
+                if (behaviour == null || behaviour == this)
+                    continue;
+
+                if (behaviour.GetType().Name != "DoorDoubleSlide")
+                    continue;
+
+                behaviour.enabled = false;
+            }
+        }
+
         private float GetMoveDuration()
         {
             DMSlidingDoorProfile p = ActiveProfile;
@@ -880,6 +898,7 @@ namespace Project.Environment.Doors
             EnsureTriggerRelay();
             EnsureTriggerPhysics();
             DisableLegacyKitTriggerDrivers();
+            DisableLegacyDoorDoubleSlideWhenManaged();
             DisableLegacyDoorAnimations();
         }
 #endif
