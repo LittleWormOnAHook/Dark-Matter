@@ -29,6 +29,8 @@ namespace Project.UI
         private EngagedEnemyHealthHud cachedEnemyHud;
         private string lastEnemyName;
         private float lastEnemyFill = -1f;
+        private bool enemyCueWasOn;
+        private static readonly Color EnemyFillBase = new Color(235f / 255f, 46f / 255f, 36f / 255f, 1f);
         private int lastEnemyPresentationStamp = -1;
         private bool lastEnemyShown;
 
@@ -208,6 +210,23 @@ namespace Project.UI
                         enemyFill.style.width = Length.Percent(Mathf.Clamp01(normalized) * 100f);
                 }
 
+                bool cue = enemyHud != null
+                    && Project.Combat.DMSlice6Runtime.CueActive
+                    && enemyHud.IsFocused(Project.Combat.DMSlice6Runtime.CueTarget);
+                if (enemyFill != null)
+                {
+                    if (cue)
+                    {
+                        enemyFill.style.backgroundColor = Project.Combat.DMSlice6Runtime.EvaluateCueFill(EnemyFillBase);
+                        enemyCueWasOn = true;
+                    }
+                    else if (enemyCueWasOn)
+                    {
+                        enemyFill.style.backgroundColor = StyleKeyword.Null;
+                        enemyCueWasOn = false;
+                    }
+                }
+
                 return;
             }
 
@@ -216,6 +235,11 @@ namespace Project.UI
                 lastEnemyShown = false;
                 lastEnemyName = null;
                 lastEnemyFill = -1f;
+                if (enemyFill != null && enemyCueWasOn)
+                {
+                    enemyFill.style.backgroundColor = StyleKeyword.Null;
+                    enemyCueWasOn = false;
+                }
                 enemyFocusRoot.style.display = DisplayStyle.None;
             }
         }

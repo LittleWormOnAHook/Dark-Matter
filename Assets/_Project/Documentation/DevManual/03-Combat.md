@@ -1676,3 +1676,15 @@ DMPlayerSnapProbe VISUAL (hips vs capsule) check now logs only when hips fall ba
 - Prefab `Prefabs/VFX/MorphBlade/MorphBladeVFX_Lightning.prefab`: Arcs (root) + Sparks + BoltFlicker, driven by `DMBladeLightningVfx` (Play only; spawned by DMWeaponMorphController along base -> MB_BladeTip, local Z = blade).
 - Tune in Studio > Combat > Weapon Morph (DM_WeaponMorphStudioSettings) > "Lightning blade VFX": intensity, arc rate, arc length, outward speed, sparks per arc, bolt flicker, colour; Subtle/Default/Extreme buttons at the top of the inspector. Global vfxIntensity also scales arc rate.
 - Materials use DarkMatter/HDRP Particle Unlit (additive, exposure weight 0) with vendor textures referenced, not copied.
+
+## Scope mode: build-only "no reticle, no zoom" (11-04y)
+- Symptom: in a build, RMB gives plain ADS zoom only - no scoped FOV, no reticle; editor runtime is fine.
+- Cause: `DMScopeMode` is added by `WeaponModeSwitchController.Awake`. If more than one player/rig exists
+  across a world switch, or the menu resolves a different instance than the live player, the weapon-menu
+  Scope rows set `_rifleOn`/`_pistolOn` on a component the player never reads, so `IsScopeModeArmed`
+  stays false and `LateUpdate` never enters scope. Plain ADS still works because it is Invector's path.
+- Fix (11-04y): `_rifleOn`/`_pistolOn` are `static` and shared by every instance, loaded once behind
+  `_scopePrefsLoaded` (reset in a `SubsystemRegistration` hook). Setters also call `PlayerPrefs.Save()`.
+- Rule: scope armed state is global, not per-component. Do not make these arming flags instance fields again.
+- Diagnostics: `[ScopeDiag] rifle scope -> ON/OFF ... armedNow=` on toggle; `[ScopeDiag] aiming <weapon> but
+  scope OFF rifle=.. pistol=.. isRifle=..` once per 2 s when ADS runs while scope is unarmed.

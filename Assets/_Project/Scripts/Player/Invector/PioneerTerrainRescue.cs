@@ -1,3 +1,4 @@
+using Project.Core;
 using Project.Vehicles;
 using UnityEngine;
 
@@ -18,6 +19,7 @@ namespace Project.Player.Invector
         [SerializeField] private float checkInterval = 0.1f;
 
         private float nextCheckTime;
+        private float suppressUntil;
         private Rigidbody body;
         private Project.Player.DMLandingDirector landing;
 
@@ -32,6 +34,18 @@ namespace Project.Player.Invector
             nextCheckTime = 0f;
         }
 
+        /// <summary>
+        /// 2026-11-04g: a Mars &lt;-&gt; IO switch teleports the rig between worlds. Do not run the
+        /// rescue during that settle window: the sampled surface belongs to whichever terrain is
+        /// enabled, and a mid-air restore must be allowed to fall to the ground we validated rather
+        /// than being yanked somewhere else.
+        /// </summary>
+        public void SuppressFor(float seconds)
+        {
+            suppressUntil = Mathf.Max(suppressUntil, Time.time + Mathf.Max(0f, seconds));
+            nextCheckTime = suppressUntil;
+        }
+
         private void LateUpdate()
         {
             if (!isActiveAndEnabled)
@@ -43,7 +57,7 @@ namespace Project.Player.Invector
             if (transform.parent != null && transform.parent.name == "HiddenCrewHolder")
                 return;
 
-            if (Time.time < nextCheckTime)
+            if (Time.time < nextCheckTime || Time.time < suppressUntil)
                 return;
 
             nextCheckTime = Time.time + Mathf.Max(0.05f, checkInterval);
@@ -97,6 +111,14 @@ namespace Project.Player.Invector
             {
                 Terrain terrain = terrains[i];
                 if (terrain == null || !terrain.enabled || terrain.terrainData == null)
+                    continue;
+
+                // 2026-11-04f: both worlds are resident once IO is loaded, so activeTerrains also
+                // contains the other world's ground. Mars' terrain covers the IO build area, and
+                // sampling it under an IO-space player produced "[TerrainRescue] ... snapped back
+                // to surface at y=122.08" - i.e. Kade teleported 100 m up and the camera showed
+                // only sky/terrain. Only the terrain of the world the player is standing in counts.
+                if (!DMWorldScope.BelongsToCurrentWorld(terrain))
                     continue;
 
                 Vector3 origin = terrain.transform.position;

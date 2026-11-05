@@ -515,6 +515,32 @@ namespace Project.Features.Jetpack
         private void ApplyMotorTuningForJetpack()
         {
             ApplyMotorPhysicsOverrides();
+            ApplyFlightInterpolation();
+        }
+
+        // 2026-11-04x: build-only boost jitter. DM_CombatCoreProfile.playerRigidbodyInterpolation is None (asset value 1), so the
+        // player Rigidbody moves only at the 50 Hz physics tick while this controller drives velocity in FixedUpdate and the
+        // camera follows per rendered frame. At editor frame rates it hides; at build frame rates it judders. Interpolate in flight only.
+        private bool _interpolationOverridden;
+        private RigidbodyInterpolation _savedInterpolation;
+
+        private void ApplyFlightInterpolation()
+        {
+            if (_rigidbody == null || _interpolationOverridden || _rigidbody.interpolation != RigidbodyInterpolation.None)
+                return;
+            _savedInterpolation = _rigidbody.interpolation;
+            _rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
+            _interpolationOverridden = true;
+            Debug.Log("[JetpackInterp] " + _rigidbody.name + " interpolation None -> Interpolate for flight");
+        }
+
+        private void RestoreFlightInterpolation()
+        {
+            if (!_interpolationOverridden)
+                return;
+            _interpolationOverridden = false;
+            if (_rigidbody != null)
+                _rigidbody.interpolation = _savedInterpolation;
         }
 
         /// <summary>Jetpack owns vertical gravity while active — disable Invector extraGravity so it does not stack.</summary>
@@ -633,6 +659,7 @@ namespace Project.Features.Jetpack
         {
             RestoreAirSpeed();
             RestoreMotorPhysicsOverrides();
+            RestoreFlightInterpolation();
         }
 
         private void RegenerateFuel(float dt)

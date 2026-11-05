@@ -42,6 +42,7 @@ namespace Project.UI
         private Toggle minimapToggle;
         private Toggle toggleCrouchStickToggle;
         private Toggle toggleSprintStickToggle;
+        private Toggle subtitlesToggle; // 2026-11-03n shared with DMPlayerSystemsProfile
         private Slider padLookSlider; // 2026-10-25b
         private Label padLookValue;
         private Toggle padInvertYToggle;
@@ -172,6 +173,8 @@ namespace Project.UI
             VisualElement gameOptsGrid = AddSection(sections, "GAME OPTIONS");
             toggleCrouchStickToggle = AddToggleRow(gameOptsGrid, "Toggle Crouch (RS Click)");
             toggleSprintStickToggle = AddToggleRow(gameOptsGrid, "Toggle Sprint (LS Click)");
+            subtitlesToggle = AddToggleRow(gameOptsGrid, "Subtitles");
+            subtitlesToggle.RegisterValueChangedCallback(evt => GameSettings.SetSubtitlesEnabled(evt.newValue));
             toggleCrouchStickToggle.RegisterValueChangedCallback(evt =>
             {
                 GameSettings.SetToggleCrouchStickClick(evt.newValue);
@@ -299,6 +302,7 @@ namespace Project.UI
             minimapToggle?.SetValueWithoutNotify(snap.MinimapEnabled);
             toggleCrouchStickToggle?.SetValueWithoutNotify(GameSettings.ToggleCrouchStickClick);
             toggleSprintStickToggle?.SetValueWithoutNotify(GameSettings.ToggleSprintStickClick);
+            subtitlesToggle?.SetValueWithoutNotify(GameSettings.SubtitlesEnabled);
             padLookSlider?.SetValueWithoutNotify(GameSettings.GamepadLookSensitivity);
             if (padLookValue != null) padLookValue.text = GameSettings.GamepadLookSensitivity.ToString("0.00") + "x";
             padInvertYToggle?.SetValueWithoutNotify(GameSettings.GamepadInvertY);

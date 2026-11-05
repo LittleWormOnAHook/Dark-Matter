@@ -1236,6 +1236,22 @@ namespace Project.UI
                     barVisuals.LastFillPct = fillPct;
                     fill.style.width = Length.Percent(fillPct);
                 }
+                // 2026-10-26e: finisher cue on the nearest eligible enemy's world HP fill.
+                if (fill != null)
+                {
+                    bool cue = Project.Combat.DMSlice6Runtime.IsCueTarget(bar.EnemyTarget);
+                    if (cue)
+                    {
+                        fill.style.backgroundColor = Project.Combat.DMSlice6Runtime.EvaluateCueFill(
+                            new Color(235f / 255f, 46f / 255f, 36f / 255f, 1f));
+                        barVisuals.CueOn = true;
+                    }
+                    else if (barVisuals.CueOn)
+                    {
+                        fill.style.backgroundColor = StyleKeyword.Null;
+                        barVisuals.CueOn = false;
+                    }
+                }
 
                 if (label != null && textChanged)
                 {
@@ -1278,6 +1294,7 @@ namespace Project.UI
             public float LastTop = float.NaN;
             public float LastFillPct = -1f;
             public string LastHpText;
+            public bool CueOn;
         }
 
         private sealed class DotVisuals

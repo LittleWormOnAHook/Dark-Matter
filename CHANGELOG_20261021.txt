@@ -1012,3 +1012,289 @@ Docs: Assets/_Project/Documentation/DevManual/02-World.md (2026-10-26o).
 === 2026-10-27b  MorphGun runtime draw without preloaded Drawn_ slot (backup .pre20261027b) ===
 PioneerInvectorWeaponBridge: ranged items missing a collector Drawn_ slot (MorphGun prototype) now GetOrCreateInstance + MountAuthoredWeaponVisual instead of warning-and-bail.
 Visual audit: Dark Matter/Audit/Morph Weapon Visual Audit — 9 form screenshots under Assets/_Project/Art/Debug/MorphShots (Gun Pistol/Rifle/Sniper + Blade Metal..Cryo). No combat.
+
+=== 2026-11-03a Voices P0+P1: voice actors + Genesis Studio > Audio > Voices (backups .pre20261103a) ===
+- P0 reuse scan: no existing dialogue/subtitle/radio/voice classes and no AudioMixer assets (git-tracked). QuestManager.OnQuestUpdated/OnQuestCompleted noted for P3 playback hooks. Voices sits under the existing Audio category next to Game Audio.
+- New runtime SOs (Scripts/Audio/Voice): DMVoiceActor (name, provider Parler, model, named speaker, seed, {speaker} description, pronunciation list word->audio spelling, pitch -12..+12 with Subtle -1 / Default -2 / Extreme -4, trim, length range + 5-try seed re-roll, baked radio filter) and DMVoiceLineSet (id, subtitle, QM stage tag, change hash, baked clip).
+- Genesis Studio > Audio > Voices (DMStudioVoicesPanel): actor dropdown, New Voice (name + description, optional Duplicate current, saved to Audio/Voices/Actors), description, speaker, Pitch, Test line, Preview / Try 3 variants (seeds or speakers, Use to adopt) / Save / Bake changed lines. Advanced foldout: seed, model, pronunciations, trim, length range, radio, python paths (EditorPrefs).
+- Bake runs async: external A:\DMG_Tools\parler-tts\.venv python + bake.py (JSON in, WAV out). WAVs to Assets/_Project/Audio/Voices/<Actor>/; AssetDatabase.Refresh only when not playing. Previews go to Temp/DMVoicePreview (not Assets). No runtime generation.
+- Kade: Audio/Voices/Actors/VA_Kade.asset (Rick, Mini v1, seed 42, extremely deep NY description, pitch 0, Kade->Kayd audio-only) + Audio/Voices/Kade/Kade_Lines.asset with kade_test_01 baked (5.39 s, seed 42).
+- Edited: DMStudioRegistry.cs (VoicesCombined=21, Voices subtab), GenesisStudioWindow.cs (panel case). No scene saves, no commit.
+Docs: Assets/_Project/Documentation/DevManual/12-Audio.md (2026-11-03a).
+
+=== 2026-11-03b Voices tab: Add Line, delete, inline subtitles, page scroll, pause tags (backups .pre20261103b) ===
+- DMStudioVoicesPanel: inline Add Line box (Id with Suggest <actor>_<n>, wrapped Subtitle area, optional Stage tag, Add with Undo + save); per-line x delete with confirm (WAV kept); subtitles editable inline as wrapped text areas; inner 180px lines scroll removed (Genesis Studio page scroll only). New line sets no longer get a test line; Test line + Preview + Try 3 variants kept.
+- Pause tags: [pause] = 0.4 s, [pause 0.8] = seconds (clamped 0.05-5). bake.py splits at tags, generates each chunk with the same seed/description, trims, joins with silence and 10 ms fades. DMVoiceLine.SubtitleClean strips tags for display. Tags are part of the subtitle text, so they count in the change hash (hash formula unchanged; existing bakes stay valid).
+- Removed Kade test content: kade_test_01 line + WAV/meta (backup A:\Dark Matter Genesis\Backups\voices_pre20261103b\). kade_Chap_1_Chat_1 untouched.
+Docs: Assets/_Project/Documentation/DevManual/12-Audio.md (2026-11-03b).
+
+2026-11-03c  Voice actors: sentence splitting
+- bake.py: each line is split into sentences (. ! ? ..., abbreviations like Mr./Dr. kept, fragments <3 words merged), each generated separately with the same seed/description, trimmed, and joined with a gap (+0.15 s after "..."). Works inside [pause] chunks. Per-sentence seed re-roll (up to 5) only when length is way off for its word count (~2.5-4 words/s). Still one WAV per line.
+- DMVoiceActor: Advanced "Split sentences" (default on) and "Sentence gap" (0-2 s; Subtle 0.15 / Default 0.25 / Extreme 0.6). Both are in SettingsKey, so existing bakes show as changed.
+- Voices panel: gap presets in Advanced; per-line "Split to lines" button (id_01, id_02..., Undo).
+- DMVoiceLineSet: static SplitSentences().
+- Backups: *.pre20261103c
+
+2026-11-03d  Voice actors: speaker change = new profile, Delete profile
+- Voices panel: changing Speaker on an actor no longer edits it. A "New voice profile" box appears (name prefilled "<Actor> (<Speaker>)"); Create duplicates the actor (all settings incl. pronunciations/pitch) with the new speaker into Voices/Actors/, saves and selects it; Cancel reverts the dropdown. Line sets stay with the original actor.
+- Advanced: "Delete profile" (confirm; backs up .asset+.meta to Backups/voices/<name>.<timestamp>.asset first; line sets/WAVs kept).
+- Backups: *.pre20261103d
+
+2026-11-03e  Voices panel: "Use" on a variant with a different speaker opens the New voice profile box (prefilled "<Actor> (<Speaker>)", carries the variant seed); same-speaker variants still just update the seed. Backup: DMStudioVoicesPanel.cs.pre20261103e
+
+2026-11-03f: Voices panel - fixed CS0117 (SplitSentences lives on DMVoiceLine, not DMVoiceLineSet). Backup in Backups\voices_pre20261103b.
+
+2026-11-03g  Voices panel: Display name is a delayed field; changing it no longer renames. Inline box "Create new voice <Name>" duplicates the actor settings into VA_<Name>.asset plus an empty Voices/<Name>/<Name>_Lines.asset linked to it, and selects both; Cancel reverts; existing names are rejected. Empty actors show "No lines yet" + Create line set. (Line sets are matched only by actor reference; previews clear on actor switch.) Backup: DMStudioVoicesPanel.cs.pre20261103g
+
+2026-11-03h  Voices panel: line ids hardened. Add treats a sentence typed into Id (spaces or >40 chars, empty Subtitle) as the Subtitle and auto-ids it; ids are sanitized to letters/digits/_ (max 40, fallback to suggestion); Bake skips and lists lines with empty id/subtitle; existing line ids are editable inline (Enter to commit, duplicates rejected). Backup: DMStudioVoicesPanel.cs.pre20261103h
+
+2026-11-03i: Restored VA_Kade approved voice (Rick, seed 42, deep NY description, pitch 0, Kade->Kayd); it had been overwritten with Alisa settings. Backup Backups\voices\VA_Kade.pre20261103i.asset.
+
+2026-11-03j  Voices panel: per-line "Bake" button (next to x) bakes only that line even if unchanged, same bake.py/import path; import updates its hash so the * clears. Main Bake unchanged. Backup: DMStudioVoicesPanel.cs.pre20261103j
+
+2026-11-03k  Parler Large v1 adopted as default model (Apache-2.0, 2.33B params, ~9.3 GB fp16). DMVoiceActor.modelId defaults to parler-tts/parler-tts-large-v1 (ModelLarge/ModelMini consts); Voices panel has a Model dropdown Large (best) / Mini (fast) replacing the Advanced modelId field; bake.py falls back to Large when a job has no model. Existing actors keep their modelId (VA_Kade stays on Mini until changed).
+
+2026-11-03l  Voice actors: per-line seed override. DMVoiceLine.seed (0 = actor seed) with inline Seed field per line row; StartBake/StartPreview pass it as the job seed (bake.py already reads ln seed); seed included in ComputeHash so changing it marks the line changed. bake.py: explicit per-line seed disables the length re-roll loop; RESULT now reports a median pitch (librosa YIN) that the panel shows as "~NNN Hz". Kade_Lines: kade_2 seed set to 56 and its subtitle restored to the text its 107 Hz WAV was made from; hash set to 8d6b1aa1c2a6cef5 so a per-line Bake reproduces it.
+
+2026-11-03m  bake.py: Parler Large v1 now loads the fixed HF revision refs/pr/9 automatically (the published main checkpoint outputs static noise). job 'revision' overrides it; Mini unaffected. Backup: bake.py.pre20261103m
+
+2026-11-03n  Voice manager Phase 1: runtime manager, subtitles (main-menu toggle, default ON), triggers, play-once save, VoiceSkip
+- DMVoiceManager (Assets/_Project/Scripts/Audio/Voice/DMVoiceManager.cs, namespace Project.Audio.Voice): runtime singleton created by EnsureExists() + DontDestroyOnLoad, DefaultExecutionOrder(-150). API: Play(DMVoiceLineRef, DMVoicePlayOptions), Play(string lineId, opts), PlayStage(string stageTag, opts), PlayOnce(DMVoiceLineRef, opts), PlayStageOnce(string stageTag, opts), Skip(), StopAll(), IsPlaying, CurrentLine, CurrentSpeakerName, CurrentOutputMode, QueuedCount, events OnLineStarted(DMVoiceLine) / OnLineFinished(DMVoiceLine, bool skipped). One line at a time. Priority Cinematic 100 > Story 80 > Radio 60 > NPC 40 > Bark 10, FIFO inside a band, queue cap 8, queued barks expire after 3 s. Higher priority interrupts lower (Bark dropped, other lines re-queued); opts.interrupt forces. Three AudioSources: Narration (2D dry), Radio (2D + 320 Hz high-pass / 3400 Hz low-pass fallback + procedural comm clicks in/out), World (3D, spatialBlend 1, rolloff 2-25 m, follows the speaker transform). Ducking through GameAudioManager.SetVoiceDuck (music + loading ambience multiply by it): 0.45 Story/Cinematic, 0.6 Radio, 0.7 NPC, 0.88 Bark; attack 0.15 s, release 0.4 s. Pauses on timeScale 0 / AudioListener.pause and waits for GameSession.HasStarted and the loading overlay. Play-once keys are static (HashSet<string>, "setKey:lineId"), never written for barks.
+- DMVoicePlayOptions.cs: DMVoicePriority + DMVoiceOutputMode (Narration/Radio/World) enums and the options class (priority, output, interrupt, worldTarget, volumeScale) with Narration/Radio/World helpers. The manager copies options, so a shared instance (PlayStage) is never mutated.
+- DMVoiceLineRef.cs: serializable struct { DMVoiceLineSet set; string lineId; } with ResolveLine(), Key ("setKey:lineId") and a custom drawer in Assets/_Project/Editor/Audio/DMVoiceLineRefDrawer.cs (set field + line popup showing the subtitle and a (no clip) flag + Play button using the Voices-tab AudioUtil preview path).
+- DMVoiceLineSet.cs: new public string SetKey => name (stable across editor and builds; matches the asset name, e.g. Kade_Lines). Backup DMVoiceLineSet.cs.pre20261103n.
+- DMVoiceTrigger.cs (AddComponentMenu "Dark Matter/Voice/Voice Trigger"): collider zone, line ref or stage tag, playOnce (default on, per save), priority + output mode + world target + volume override, player tag filter (default "Player", also accepts a child of the tagged object), delaySeconds, rearm on exit, optional quest gate (required quest id + status + objective index/count, forbidden quest id + status). Fires PlayOnce / PlayStageOnce when playOnce is on. Line ids and stage tags only - nothing auto-plays.
+- Subtitles (UITK): DMVoiceSubtitlePresenter.cs (Assets/UI Toolkit/Runtime, namespace Project.UI) hosts UITK_VoiceSubtitle through DMUiToolkitOverlayDocument.Ensure (sort 21) with DMVoiceSubtitle.uxml + .uss in Assets/UI Toolkit/Screens. Speaker name (upper case, hidden when empty) + DMVoiceLine.SubtitleClean, fade in 0.12 s / out 0.2 s, hold after line, hidden while a modal menu is open, the loading overlay is up, or the gameplay HUD is down. Font size / hold come from DMVoiceSubtitleSettings (PlayerPrefs settings.voice.subtitleFontSize default 24, settings.voice.subtitleHoldSeconds default 0.5).
+- Subtitles on/off is ONE value: GameSettings.SubtitlesEnabled, PlayerPrefs key settings.game.subtitles, default ON = 1 when nothing is stored yet (fresh install / first run). The value is player-level PlayerPrefs, like the volume sliders, and is not stored in the save file, so a new game or an old save never resets it: once a player turns subtitles off they stay off, and an existing player keeps whatever they picked. Main Menu > Settings > GAME OPTIONS > Subtitles (DMUiToolkitSettings) and the uGUI SettingsPanelController Gameplay column both write it; DMPlayerSystemsProfile exposes the same value (static SubtitlesEnabled / SetSubtitles + DMPlayerSystemsProfileEditor tick in the inspector and Genesis Studio > Player), so the menu toggle and the Kade profile tick can never disagree. Changing it takes effect on the next line and hides an open subtitle at once.
+- Play-once save: GameSaveData.voicePlayedKeys (string[], null in older saves), written in GameSaveSystem.BuildSaveData from DMVoiceManager.BuildPlayedSave() and read back in ApplySaveData; cleared by SimpleGameManager.BeginNewGameSession(grantStartingItems: true). Save version unchanged (additive field).
+- Input: new "Player" action VoiceSkip (Keyboard/enter, Gamepad/buttonEast), read only while a line plays and gameplay input is not UI-locked; Enter is also Attack and pad B is also Dodge, so the read is gated on IsGameplayInputLockedByUi. VoiceSkip skips cinematic lines too (skippable per Anthony, Nov 3 2026) and fires OnLineFinished(line, skipped: true).
+- No scene or prefab saved, nothing auto-added to a scene: DMVoiceManager and the subtitle host are created at runtime by RuntimeInitializeOnLoadMethod.
+Docs: Assets/_Project/Documentation/DevManual/12-Audio.md (2026-11-03n).
+
+2026-11-03o  Voice manager Phase 2: quest hook, interact hook, box trigger, item pickup trigger, random delay on all triggers
+- DMVoiceTriggerUtility.cs (new, static): ResolveDelay(fixed, randomMin, randomMax) = fixed + Random.Range(min, max) (max 0 = off, swapped if entered backwards), BuildOptions(...), Fire(line, stageTag, playOnce, options), HasContent(...), PassesQuestGate(...) (same semantics as DMVoiceTrigger).
+- DMVoiceTrigger.cs: new randomDelayMin / randomDelayMax added on top of delaySeconds (re-rolled every entry). Existing serialized fields unchanged. Backup DMVoiceTrigger.cs.pre20261103p.
+- DMVoiceTriggerBox.cs (new, "Dark Matter/Voice/Voice Trigger Box"): no collider needed; local center/size box drawn as a gizmo, follows the transform (rotation + scale), checks the live player position (PlayerLocator.FindPlayerObject) every checkInterval (0.1 s). Same options as DMVoiceTrigger (line/stage, playOnce, priority, output, worldTarget, volume, delay + random delay, rearmOnExit, quest gate). Public ContainsPoint(Vector3).
+- DMVoiceItemPickupTrigger.cs (new, "Dark Matter/Voice/Voice Item Pickup Trigger"): binds to PlayerLocator.FindLiveInventory().OnInventoryChanged and diffs per-ItemData slot counts against a baseline (no inventory code changed). Filter: ItemData item and/or itemId (StableItemId / asset name / itemName); both empty = any pickup; minAmount. Gains only re-baseline while not Playing, timeScale 0, a menu holds gameplay input (ignoreWhileMenuOpen: crafting, vendor, storage), the first ignoreSecondsAfterBind (1 s, starter kit) or the frame a save was applied. Event OnMatchingPickup(ItemData, int). Ammo auto-credited straight into a weapon never reaches a slot, so it does not count.
+- DMVoiceQuestHook.cs (new, "Dark Matter/Voice/Voice Quest Hook") + DMVoiceQuestHookTable.cs (new ScriptableObject, "Dark Matter/Voice/Quest Hook Table"): entries (questId, Started/Updated/Completed, objectiveIndex -1 = any, objectiveCount 0 = any change, line or stageTag, priority, output, worldTarget, volume, oncePerEvent (default on), delay + random delay). Subscribes to QuestManager.OnQuestUpdated / OnQuestCompleted (retries every 0.5 s until QuestManager.Instance exists). Started = transition into Active seen in OnQuestUpdated (QuestManager.StartQuest has no own event); Updated = objective counter changed on an Active quest; Completed = OnQuestCompleted. Once keys "quest:<id>:<event>:<objIndex>[:<count>]" go through DMVoiceManager.IsPlayed/MarkPlayed (saved in voicePlayedKeys). Events are processed in LateUpdate and dropped in the frame a save is applied, so QuestManager.ApplySaveProgress re-broadcasts never read as Started. Event OnEntryFired(entry, event); logEvents toggle.
+- DMVoiceInteractHook.cs (new, "Dark Matter/Voice/Voice Interact Hook"): target QuestGiverNpc / PptNpcInteractor / any IWorldUsable (auto-found on the object or parents). WorldUseController has no "used" event, so detection watches the use's result: QuestGiverDialog (quest dialog/board opened while the player is in that giver's range), HoldCompleted (IHoldWorldUsable hold ended and a dialog / PPT directions menu / modal opened within 0.35 s; a cancelled hold opens nothing), UiOpenedNearby (modal opened within useRadius), ManualOnly; public NotifyUsed() for code. line = first use (firstLineOncePerSave, key "interact:<useKey or scene/path>"), repeatBarks = random pick afterwards (no immediate repeat). Output World on the target transform by default, Narration/Radio override; priority Npc; cooldownSeconds 2; delay + random delay; quest gate.
+- DMVoiceManager.cs: new static LastSaveAppliedFrame (set in ApplyPlayedSave) + SaveAppliedRecently(frames = 1), used by the quest hook and pickup trigger to ignore load replays. Backup DMVoiceManager.cs.pre20261103p.
+- Ducking verified, unchanged: DMVoiceManager.StartLine -> DuckTo(level) and StopCurrent -> DuckTo(1) ramp with unscaled time and call GameAudioManager.SetVoiceDuck every frame of the ramp; RefreshVolumes (the only musicSource.volume writer) and every loadingSource.volume write multiply by voiceDuck, and a new track keeps the duck. AmbientAudioZone beds and SFX are not ducked (by design). No AudioMixer.
+- Nothing outside Assets/_Project/Scripts/Audio/Voice changed. No scene or prefab saved; nothing auto-adds itself to a scene.
+Docs: Assets/_Project/Documentation/DevManual/12-Audio.md (2026-11-03o).
+
+2026-11-04a  Build console cleanup (Anthony's player build log)
+- TMP: the six never-generated dynamic fonts in Assets/_Project/UI/Fonts/Genesis/SDF (Exo2, Inter, NotoSans, Oxanium, Rajdhani-SemiBold, SourceSans3) had m_ClearDynamicDataOnBuild 1 with an empty atlas, so TMP_PreBuildProcessor threw UnassignedReferenceException: m_AtlasTextures. The flag is now 0. The fonts are unreferenced. Regenerate one before use, or delete them.
+- Shader: DM_TerrainParallax_Splatmap.hlsl TerrainLitDebug() now initialises baseColor and has a final else on the 8-layer chain (warning at line 591).
+- C#: DMWorldAmmoHud.bakeWhileSelected CS0414 in the player build. Added a read-only BakeWhileSelected property. Serialization is unchanged.
+- Shader errors: new editor hook Assets/_Project/Editor/Rendering/DMRayTracingPassStripper.cs (IPreprocessShaders) strips only the DXR passes of Shader Graphs/PW_Water_RP and Shader Graphs/BotD_Graph_Lit_TranslucentAlphaCutoff. Those passes never compiled (DerivCoarseX/Y, Sample in lib_6_3 closesthit). No vendor file edited.
+- Backups: *.pre20261104a. Backup .meta files were given fresh GUIDs, including 2026-11-03p's DMVoiceManager/DMVoiceTrigger .cs backups that had been copied with live GUIDs. csc replays: Player 0/0, Runtime 0/0, Editor (+stripper) 0/0.
+Docs: DevManual 10-UI.md, 13-Rendering.md (2026-11-04a).
+
+2026-11-04b  Build: UI Toolkit assets missing in player (no main menu); IO scene button; DMRealtimeIndirect save error
+- New Assets/UI Toolkit/Runtime/DMUiRuntimeAssetRegistry.cs (+meta, guid 7d3e9a41c2b84f6e9a05d1c38b2f6e74) and Assets/UI Toolkit/Resources/DMUiRuntimeAssetRegistry.asset (+meta). The asset holds 75 direct references (Screens uxml/uss, DarkMatterGenesis.uss, UnityDefaultRuntimeTheme.tss, PanelSettings/LoadingPanelSettings/WorldAmmoPanelSettings, Ammo_Electricity sprite), so builds include and resolve them.
+- DMUiToolkitBootstrap.LoadAsset<T>: Resources.Load ?? registry Resolve ?? registry ResolveByName. The Editor path is unchanged. DMWorldAmmoHud already goes through LoadAsset (no edit).
+- MainMenu.uxml btn-io "IO (v1.7)", DMUiToolkitMainMenu ioButton bind/wire/visibility, MainMenuController.InvokeLoadIoScene(): loads "Dark Matter Genesis v1.7" by name, with a guard plus a warning and ShowMainMenu if the scene is not in the build. EditorBuildSettings not changed.
+- DMRealtimeIndirect: Kill() defers edit-mode destroys while KillEditPreviews tears down the preview GameObject. FlushDeferredKills runs from EditorTick and from delayCall after a scene save.
+- Backups *.pre20261104b (fresh-GUID metas). csc replays: Player 0/0, Runtime 0/0, Editor 0/0.
+Docs: DevManual 10-UI.md, 13-Rendering.md (2026-11-04b).
+Follow-up (2026-11-04b): IO (v1.7) button now loads 'Dark Matter Genesis v1.7' with LoadSceneMode.Additive instead of Single, then sets it as the active scene once loaded (validity-checked). Mars is not unloaded, so the player, pickups, HUD hooks, tilde/Esc and pause menu stay alive. Player/spawns untouched. File: MainMenuController.cs (backup .pre20261104c).
+Follow-up 2 (2026-11-04b): after the additive IO load, MainMenuController.MovePlayerIntoScene moves the live player (PlayerLocator.FindPlayerObject) into IO. Destination, IO-scene objects only: PlayerSpawn/SpawnPoint (or first child) -> IO MainCamera offset 2m back/1m up -> first non-zero IO root -> warn and leave in place. Move: CharacterController off, Rigidbody pos/velocity zeroed, SetPositionAndRotation, Physics.SyncTransforms, controller back on. One log line names the destination and position. File: MainMenuController.cs (backup .pre20261104d).
+Follow-up 3 (2026-11-04b): IO destination order changed per Anthony - use Kade's authored placement in the target scene (name contains 'Kade' or has PlayerController/vThirdPersonController), else 'Player Versions' (position, keep rotation), else IO MainCamera, else first non-zero root, else warn. PlayerSpawn/SpawnPoint lookup removed. Files: MainMenuController.cs, DevManual 10-UI.md (backups .pre20261104e).
+
+2026-11-04f  Mars <-> IO: symmetric scene switch, one EventSystem, one Kade, UI on both worlds
+Anthony: "make sure the menus work on both scene, switch between them in the menu, and make sure all the ui works as well."
+
+Root causes fixed in this entry
+- Enemy teleport (2026-11-04e follow-up 3 defect). The destination matcher accepted ANY component whose type name was "PlayerController" OR "vThirdPersonController" (MainMenuController.cs:1013). Every enemy prefab carries Invector's vThirdPersonController and no project PlayerController, so the first enemy root in GetRootGameObjects() order won: Editor.log shows "IO move: player moved to authored Kade placement 'Corrupt Patrol Android'". MovePlayerIntoScene is gone; the matcher now requires Project.Player.PlayerController and rejects enemy rigs.
+- Dead main-menu buttons after Esc from IO. Two enabled EventSystems (Mars "EventSystem" + IO "EventSystem") after the additive load. UIToolkitInteroperabilityBridge.OnEnable calls UIElementsRuntimeUtility.RegisterEventSystem and refuses the second ("There can be only one active Event System."), EventSystem.current is first-wins m_EventSystems[0], EventSystem.Update returns early for anything but current (EventSystem.cs:478), and the bridge parents the PanelEventHandler/PanelRaycaster objects UNDER its own EventSystem while refusing to clean up objects it did not create (UIToolkitInteroperabilityBridge.cs:141/156). The panel-to-EventSystem binding is therefore write-once, so a second Scene toggle could leave the UITK documents with no live pointer raycaster while gamepad navigation (EventSystem.current / direct polling) kept working - matching the log (journal focus still moved, clicks did not).
+- Kade snapped to y=122.08 in IO. PioneerTerrainRescue iterates Terrain.activeTerrains, which is cross-scene. IO's only Terrain is authored inactive, Mars' terrain is active and its bounds cover the IO build area, so the rescue sampled Mars ground under an IO-space player and teleported him 100 m up ("[TerrainRescue] Player_Kade_v2 fell below terrain - snapped back to surface at y=122.08").
+
+What changed
+- NEW Assets/_Project/Scripts/UI/DMSceneStack.cs (+ .meta, guid 5584b9407f1e42218d4678c733341387): the single authority for Mars <-> IO switching. Both scenes stay resident after the first IO load; SwitchRoutine() loads only if not already loaded (logs "already loaded - reusing it, no reload"), captures the outgoing placement, SetActiveScene, hides the non-shown world's roots, applies player ownership, arbitrates EventSystem/AudioListener/InputModule, sets the world scope and logs every step. SwitchToOtherRoutine() is the menu entry point. ResetForSingleSceneReload() is required before any LoadScene(Single) path. RefreshMenuInputArbitration() re-asserts the invariant before a menu paint.
+- NEW Assets/_Project/Scripts/Core/DMWorldScope.cs: Current world (Mars/Io) + DualWorldActive + BelongsToCurrentWorld(Component), so world systems can tell resident-but-hidden content from the world on screen. Lives in Project.Core so player/world code does not reference Project.UI.
+- MainMenuController.cs: LoadIoScene()/InvokeLoadIoScene() kept as thin wrappers; new SwitchWorld()/SwitchWorldRoutine()/InvokeSwitchWorld() drive the toggle and log "[MainMenu] World switch: 'X' -> 'Y'". MovePlayerIntoScene deleted. EnsureEventSystem() now delegates to DMSceneStack.EnforceSingleEventSystem() instead of only creating one when none exists. ShowMainMenu() and ShowPauseMenu() call DMSceneStack.RefreshMenuInputArbitration() before painting.
+- DMUiToolkitMainMenu.cs: btn-io is now one toggling button - RefreshButtonStates sets its text from DMSceneStack.SwitchButtonLabel ("IO (v1.7)" from Mars, "Mars" from IO) and WireButtons sends it to InvokeSwitchWorld(). Environment bar resets its zone selection when the world changes.
+- DMUiGamepadNavigation.cs: re-wires immediately when EventSystem.current changed (new _wiredFor), instead of trusting a 1 s throttle. The old throttle left a replaced EventSystem with unassigned UI actions.
+- DMUiToolkitPlayerInputBridge.cs: TryBind() prefers PlayerLocator.FindLivePlayerInput() over FindAnyObjectByType, rebinds when the live rig changed, and new RebindForLivePlayer() is called from DMSceneStack.SwitchRoutine (after ApplyPlayerOwnership) and from ResetForSingleSceneReload(), so J / I / Cancel stay on the rig that owns the shown world.
+- PioneerTerrainRescue.cs: terrain sampling skips terrains that do not belong to the current world when both are resident (DMWorldScope.BelongsToCurrentWorld). In IO this means no rescue at all (IO's terrain is authored inactive), which is the safe behaviour.
+- SettingsSceneReloader.cs / UIManager.Death.cs: both single-scene reloads were GetActiveScene().buildIndex, which after a switch would reload IO alone and destroy Mars (player rig, UI hosts, progression). Both now call DMSceneStack.ResetForSingleSceneReload() and load the Mars boot scene by build index, with a logged fallback.
+
+Single-Kade policy: one authoritative rig (the Mars Player_Kade_v2 that PlayerReference/PlayerLocator/progression are bound to). On every switch any other non-enemy object with PlayerController is deactivated, and the survivor is moved to the authored placement of the world being entered (or back to where he left). IO's own Player_Kade_v2 and the Player_v7 mesh props are never made live.
+
+Kept alive when a world is hidden: EventSystem, PoolManager, Game Manager, CameraShakeService, CommunicationsBootstrap, ProbeVolumePerSceneData, Turret Audio Controler, Gaia Runtime, Gaia Tools, DM_UiRuntimeHost, UITK_Root, UITK_Loading, UITK_Hud, anything containing the live player rig, a UIDocument, an EventSystem or an enabled AudioListener. Everything else (terrain, props, lighting, enemies) is SetActive(false), not unloaded. Tradeoff: the hidden world still costs memory and its scripts are simply inactive; in exchange the UI stack, progression and the player never have to be rebuilt.
+
+Verification: compile-clean and runtime-static. Live Unity 6000.4.11f1 Editor was woken for a script refresh and did a full synchronous recompile + assembly reload at 12:02:46 PM (Assembly-CSharp.dll 6,129,664 bytes, Assembly-CSharp-Editor.dll): no "error CS" and no "warning CS" anywhere in Editor.log, no compilation/domain-reload failure. The two new files are in the shipped assembly (DMSceneStack, DMWorldScope, RebindForLivePlayer, FindPanelOwner, SwitchButtonLabel, BelongsToCurrentWorld, MarsSceneIndex all present). An independent csc replay of Assembly-CSharp (project Roslyn + project-defined references, 156 defines / 452 references) also returned 0 errors / 0 warnings. Play was never pressed, nothing was built, no scene or prefab was saved or edited.
+
+Backups (each with a .meta carrying a fresh GUID, distinct from the live asset's):
+- Assets/_Project/Scripts/UI/MainMenuController.cs.pre20261104f
+- Assets/_Project/Scripts/UI/DMSceneStack.cs.pre20261104f
+- Assets/UI Toolkit/Runtime/DMUiToolkitMainMenu.cs.pre20261104f
+- Assets/_Project/Scripts/UI/DMUiGamepadNavigation.cs.pre20261104f
+- Assets/UI Toolkit/Runtime/DMUiToolkitPlayerInputBridge.cs.pre20261104f
+- Assets/_Project/Scripts/Player/Invector/PioneerTerrainRescue.cs.pre20261104f
+- Assets/_Project/Scripts/Core/SettingsSceneReloader.cs.pre20261104f
+- Assets/_Project/Scripts/UI/UIManager.Death.cs.pre20261104f
+New files in this entry (no backup - nothing to restore): Assets/_Project/Scripts/UI/DMSceneStack.cs (new, guid 5584b9407f1e42218d4678c733341387), Assets/_Project/Scripts/Core/DMWorldScope.cs (new, guid 14c5d7428034cda8bf7d7f4498e0459d).
+Docs: DevManual 10-UI.md (2026-11-04f).
+2026-11-04g  Mars <-> IO toggle: world-correct placement bookkeeping, ground-validated restore, no death from a switch
+Anthony (IO-first play): "started with IO, then main menu, then to mars, was ok but then i went back to main menu to return to IO, IO loaded but then kades position wasnt in the last place on the ground, but way above it and fell and died, i did go back to main menu again and goto mars and Kade was in the last position i left him."
+
+ROOT CAUSE (A): no Mars authored placement was ever recorded (Editor.log 12:20:39)
+"no placement known for 'Dark Matter Mars-The Beginning'; player left at (-764.90, 131.85, -287.73)"
+then "deactivated duplicate player 'Player_Kade_v2' in 'Dark Matter Mars-The Beginning'".
+ApplyPlayerOwnership() read the authored placement from the entering scene's stand-in, but guarded it
+with `standIn != primary` (DMSceneStack.cs:488 pre-fix). Play had started in the IO scene, so the rig
+being carried was IO's Kade. Switching to Mars loaded it additively, and every PlayerController in the
+newly activated scene runs OnEnable -> PlayerReference.Register (PlayerController.cs:215) during that
+load, so ResolvePrimaryRig() (PlayerReference first, DMSceneStack.cs:579) returned the Mars Kade. The
+stand-in WAS the primary, the `!=` test failed, and the authored Mars placement was silently skipped.
+The rig was then left wherever it happened to be - a Mars coordinate - and the very next step retired
+the Mars stand-in.
+
+ROOT CAUSE (B): IO's "where he left" slot held a Mars position (Editor.log 12:21:37)
+"player moved to where he left 'Dark Matter Genesis v1.7' at (-764.90, 131.85, -287.73)".
+CapturePlayerPlacement(previous) ran AFTER the additive load (DMSceneStack.cs:248 pre-fix) and measured
+whatever ResolvePrimaryRig() returned at that point - by then the Mars Kade, standing at the Mars
+coordinate. That value was written into savedPositions[Io]. IO's real ground is about y=21 and the
+known-good IO spot is about (-823.4, 21.2, -123.1), so the next IO switch spawned Kade ~110 m up with
+nothing under him, and he fell to his death. The third switch "worked" only because it restored a Mars
+slot that genuinely held a Mars position.
+
+WHAT CHANGED
+- DMSceneStack.cs
+  * CapturePlayerPlacement(destination, rig) now runs BEFORE the load (SwitchRoutine) on a rig anchored
+    before the load, and refuses to record a position unless the rig was last deliberately placed in
+    that world (new rigPlacementKnown / rigPlacedIn). A transform's scene name never changes when it
+    moves, so scene membership was rejected as a proxy.
+  * ApplyPlayerOwnership(shown, anchoredRig) trusts the anchored rig (ResolvePrimaryRig only as a
+    fallback) and records the authored placement without the `!= primary` trap.
+  * BootstrapFromActiveScene() (AfterSceneLoad) supports Play starting in EITHER scene: it resolves the
+    starting world, records each resident scene's authored placement before anything moves, and records
+    the live rig's own start position as that world's authored placement.
+  * ValidatePlacement() / TryProbeGround(): before committing a restore, cast down from 4 m above the
+    target over 80 m, ignoring colliders from the world that is not being shown (Mars terrain is still
+    enabled while IO shows and its bounds cover IO), ignoring the rig's own capsule. If a surface is
+    found the rig is placed on it (surface + 0.06 m) instead of trusting the stored Y. If no ground is
+    found, or the saved Y is more than 25 m from the destination's authored Y, the authored placement is
+    used and the reason is logged. Adds a "Player Versions" marker fallback before giving up.
+  * switchRig + ReactivateChain(): the rig carried by a switch is kept alive through ApplyWorldVisibility
+    and its whole ancestor chain is activated before the move, because PlayerReference may already have
+    been stolen by the entering scene's Kade.
+  * NotifySwitchSettled() tells the landing director and the terrain rescue that this was a switch.
+- DMLandingDirector.cs: new NotifySceneTeleport(seconds) / IsSwitchSettling and a settle window
+  (_teleportGraceActive / _teleportGraceUntil). Fall classification - and therefore fall damage and the
+  lethal-fall ragdoll via ClassifyFall/BeginLethalFall - is held off until the rig is grounded once or
+  0.9 s elapses, whichever comes first; the apex is pinned to the placement height so the drop is never
+  measured from the world we left. Invector's own motor.blockApplyFallDamage is muted for the window and
+  restored afterwards (EndLanding runs first so it cannot undo the mute). FixedUpdate returns early
+  during the window. Normal play is unaffected: the flag only lives for the settle window.
+- PioneerTerrainRescue.cs: new SuppressFor(seconds) and a suppressUntil gate, so the terrain rescue does
+  not fire mid-switch. The existing DMWorldScope.BelongsToCurrentWorld guard is unchanged.
+
+NOTE ON THE EVENT SYSTEM (verified from the same log): the first switch reported
+"EventSystem survivor: 'EventSystem' in 'DontDestroyOnLoad'; disabled 2 duplicate(s)" and every later
+switch reported 0 - the DDOL'd survivor stayed EventSystem.current and kept ownership of the
+PanelRaycaster objects, which is why pointer clicks kept working. No change needed.
+
+Verification: compile-clean. Live Unity 6000.4.11f1 script refresh at 12:40:10 PM (Assembly-CSharp.dll
+6,134,784 bytes) - no "error CS" and no "warning CS" anywhere in Editor.log (42,049 lines), no
+compilation failure. All new symbols verified present in the shipped assembly. An independent csc replay
+of Assembly-CSharp (project Roslyn, 156 defines / 452 references) also returned 0 errors / 0 warnings.
+The 12 NullReferenceExceptions in the log are all at PanelEventHandler.ProcessImguiEvents from the 12:20
+Play session and predate this recompile (0 after it). Play was never pressed by the agent; nothing was
+built; no scene or prefab was saved or edited.
+
+Backups (each with a .meta carrying a fresh GUID, distinct from the live asset's):
+- Assets/_Project/Scripts/UI/DMSceneStack.cs.pre20261104g
+- Assets/_Project/Scripts/Player/DMLandingDirector.cs.pre20261104g
+- Assets/_Project/Scripts/Player/Invector/PioneerTerrainRescue.cs.pre20261104g
+Docs: DevManual 10-UI.md (2026-11-04g).
+
+--------------------------------------------------------------------------------
+2026-11-04h  Scene switch: three console NullReferenceExceptions after starting the game
+--------------------------------------------------------------------------------
+Source log: Editor.log Play session starting 12:59:22 (switch IO -> Mars at 12:59:32). Exactly three
+exceptions in that run, all NullReferenceException, no warnings:
+
+1) vThirdPersonMotor.get_upperBodyLayer <- PioneerShooterMeleeInput.ResolveUpperBodyLayer (<- ExitUpperInteract
+   <- RestoreMeleeFullBodyIdle <- OnDisable <- GameObject.SetActive <- DMSceneStack.RetireDuplicateRigs).
+2) vRagdoll.ChangeToHipsParent, one frame later, no managed stack beyond the vendor method.
+3) PanelEventHandler.ProcessImguiEvents <- OnCancel <- InputSystemUIInputModule.ProcessNavigation
+   <- EventSystem.Update.
+
+ROOT CAUSE 1+2: both are a retired stand-in rig that never ran Start(). vThirdPersonInput.Start calls
+cc.Init(), which is the only place vThirdPersonMotor.animator is assigned, and vRagdoll.Start calls
+LoadBodyPart(), the only place characterHips/hipsParent are assigned. DMSceneStack deactivated the entering
+scene's Kade in the same frame its scene finished loading, so Start had not run; OnDisable then
+dereferenced both nulls. vRagdoll.OnDisable additionally queues ChangeToHipsParent behind a 0.01 s
+Invoke, so that NRE landed after the switch had already reported success.
+
+FIX 1 (PioneerShooterMeleeInput.cs): ResolveUpperBodyLayer / ResolveFullBodyLayer / the ReleaseGuardImpact
+layer lookup now require cc.animator != null before reading cc.upperBodyLayer / cc.fullbodyLayer. Falls
+through to animator.GetLayerIndex, which is already null-guarded, so the call is safe on an uninitialised
+rig and unchanged on a live one.
+
+FIX 2 (DMSceneStack.cs RetireDuplicateRigs): disable each incoming rig's vRagdoll component and
+CancelInvoke("ChangeToHipsParent") BEFORE SetActive(false) (after it, OnDisable has already queued the
+call), then deactivate.
+
+ROOT CAUSE 3: PanelEventHandler.eventSystem is `UIElementsRuntimeUtility.activeEventSystem as EventSystem`
+and ProcessImguiEvents dereferences it without a null check. Disabling a duplicate EventSystem runs its
+UIToolkitInteroperabilityBridge.OnDisable, which calls UnregisterEventSystem - if that duplicate was the
+registered one, the utility is left with nobody while EventSystem.current keeps dispatching navigation to
+the surviving panel's handler, and the next Cancel/Move NREs. The log confirms the setup: "There can be
+only one active Event System." at 43711, then two duplicates deactivated at 44120/44133.
+
+FIX 3 (DMSceneStack.cs): new ReassertToolkitEventSystem(survivor), called at the end of
+EnforceSingleEventSystem. It reads UIElementsRuntimeUtility.activeEventSystem through reflection (the type
+is internal - a direct reference is CS0122) and, when it is null or not an EventSystem, re-registers the
+survivor by toggling EventSystem.SetUITookitEventSystemOverride(survivor, false/true, true) - the toggle
+matters because assigning the same value twice early-returns on the bridge's old-value check. Logs a warning
+with the before/after value so the next log shows whether this path was needed. New DescribeRef(object) is
+a null-safe describer for that message.
+
+Verification: compile-clean. Live Unity 6000.4.11f1 script refresh, Assembly-CSharp.dll rebuilt at 13:31:27
+(6,136,320 bytes) after the final edit at 13:24:40; the only "error CS" lines in Editor.log are the six from
+the rejected first attempt (line 47576-47587, direct UIElementsRuntimeUtility reference), and there are no
+"error CS" or "warning CS" lines after it. All new symbols verified present in the rebuilt assembly
+(ReassertToolkitEventSystem, ReadToolkitActiveEventSystem, DescribeRef, toolkitActiveEventSystemProperty).
+Play was never pressed by the agent; nothing was built; no scene or prefab was saved or edited.
+
+Backups (each with a .meta carrying a fresh GUID, distinct from the live asset's):
+- Assets/_Project/Scripts/Player/Invector/PioneerShooterMeleeInput.cs.pre20261104h
+- Assets/_Project/Scripts/UI/DMSceneStack.cs.pre20261104h   (retire guard, first cut)
+- Assets/_Project/Scripts/UI/DMSceneStack.cs.pre20261104hb  (event system reassert)
+- Assets/_Project/Scripts/UI/DMSceneStack.cs.pre20261104hc  (ragdoll cancel reordered)
+- Assets/_Project/Scripts/UI/DMSceneStack.cs.pre20261104hd  (reassert diagnostics)
+- Assets/_Project/Scripts/UI/DMSceneStack.cs.pre20261104he  (reflection read, final)
+Docs: DevManual 10-UI.md (2026-11-04h).
+
+=== 2026-11-04x  Build-only regressions: blood / jetpack / scope ===
+Blood (fix, root cause probable): every KriptoFX spray, decal fade-in and renderer switch-off is ticked by one hidden driver
+  BFX.GlobalUpdate (HideAndDontSave GameObject created in the active scene). DMSceneStack hides non-shown world roots on a world
+  switch (build log: Mars -> Genesis v1.7 -> Mars, "hid 11 root(s)"); a hidden/unloaded driver = frame-0 ball, no gravity, no decals,
+  never deactivates. Editor test never switched worlds. Fix: DMVolumetricBlood.EnsureBfxDriver() on prewarm + every TrySpawn moves the
+  driver to DontDestroyOnLoad and re-enables it; logs "[BloodFX] BFX driver ok|REPAIRED (was scene=...)".
+  Ground raycast: 64/73 enemy hits in the build DID ground (grounded=True); the 9 misses are geometry, not a build issue. No change.
+Jetpack (fix): Resources/Combat/DM_CombatCoreProfile.asset playerRigidbodyInterpolation: 1 = None, so the player Rigidbody is not
+  interpolated while the jetpack drives velocity in FixedUpdate -> judder at build frame rates. DMJetpackController now sets
+  Interpolate while jetpack tuning is applied and restores on landing; logs "[JetpackInterp]".
+Scope (diagnostic only, cause not proven): registry covers OpticsOverlay.uxml (9b5c3e1f...) and .uss (ac6d4f20...); reticle is
+  Painter2D (no asset/shader); profile via Resources. Added "[ScopeDiag]" logs in DMUiToolkitOpticsOverlay.ApplyScopeState and
+  DMScopeMode.EnterScope. Note scope toggles are PlayerPrefs (DM.Scope.Rifle/Pistol) - separate store in the build.
+Files / backups (.meta fresh GUIDs):
+  Assets/_Project/Scripts/Combat/HitMarks/DMVolumetricBlood.cs        -> DMVolumetricBlood.cs.pre20261104x
+  Assets/_Project/Features/Jetpack/Runtime/DMJetpackController.cs     -> DMJetpackController.cs.pre20261104x
+  Assets/UI Toolkit/Runtime/DMUiToolkitOpticsOverlay.cs               -> DMUiToolkitOpticsOverlay.cs.pre20261104x
+  Assets/_Project/Scripts/Combat/Scope/DMScopeMode.cs                 -> DMScopeMode.cs.pre20261104x
+
+
+2026-11-04 (y) Build-only scope fix: scope never armed for the held weapon.
+- DMScopeMode: the weapon-menu Scope rows and the live player could hold separate DMScopeMode
+  components; the toggle set the copy the player never used, so RMB kept giving plain ADS with
+  no scoped FOV zoom and no reticle. _rifleOn/_pistolOn are now static (shared, loaded once via
+  _scopePrefsLoaded, reset in a SubsystemRegistration hook), and the setters call PlayerPrefs.Save().
+- Added [ScopeDiag] lines: "rifle/pistol scope -> ON/OFF ... armedNow=..." on toggle, and
+  "aiming <weapon> but scope OFF rifle=.. pistol=.. isRifle=.." when ADS runs with scope unarmed.
+- Backup: DMScopeMode.cs.pre20261104y (+ fresh-GUID .meta)

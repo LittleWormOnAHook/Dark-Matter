@@ -35,10 +35,14 @@ namespace Project.Core
         private const string SaveExistsKey = "save.exists";
         private const string GamepadLookSensitivityKey = "settings.game.gamepadLookSensitivity"; // 2026-10-25b
         private const string GamepadInvertYKey = "settings.game.gamepadInvertY";
+        // 2026-11-03n: one subtitles value for the main menu Game Options toggle and the Kade Player Systems profile tick.
+        private const string SubtitlesKey = "settings.game.subtitles";
         public const float GamepadLookSensitivityMin = 0.1f;
         public const float GamepadLookSensitivityMax = 5f;
         public static float GamepadLookSensitivity { get; private set; } = 1f;
         public static bool GamepadInvertY { get; private set; }
+        /// <summary>Voice subtitles on the HUD. Default ON for a fresh install (Anthony, 2026-11-03).</summary>
+        public static bool SubtitlesEnabled { get; private set; } = true;
 
         public const float UiScaleMin = 0.4f;
         public const float UiScaleMax = 1.25f;
@@ -111,6 +115,7 @@ namespace Project.Core
             ToggleSprintStickClick = PlayerPrefs.GetInt(ToggleSprintStickKey, 1) == 1;
             GamepadLookSensitivity = Mathf.Clamp(PlayerPrefs.GetFloat(GamepadLookSensitivityKey, 1f), GamepadLookSensitivityMin, GamepadLookSensitivityMax);
             GamepadInvertY = PlayerPrefs.GetInt(GamepadInvertYKey, 0) == 1;
+            SubtitlesEnabled = PlayerPrefs.GetInt(SubtitlesKey, 1) == 1;
             Fullscreen = PlayerPrefs.GetInt(FullscreenKey, Screen.fullScreen ? 1 : 0) == 1;
             VSync = PlayerPrefs.GetInt(VSyncKey, QualitySettings.vSyncCount > 0 ? 1 : 0) == 1;
             RayTracingEnabled = PlayerPrefs.GetInt(RayTracingKey, 0) == 1;
@@ -154,6 +159,7 @@ namespace Project.Core
             PlayerPrefs.SetInt(ToggleSprintStickKey, ToggleSprintStickClick ? 1 : 0);
             PlayerPrefs.SetFloat(GamepadLookSensitivityKey, GamepadLookSensitivity);
             PlayerPrefs.SetInt(GamepadInvertYKey, GamepadInvertY ? 1 : 0);
+            PlayerPrefs.SetInt(SubtitlesKey, SubtitlesEnabled ? 1 : 0);
             PlayerPrefs.SetInt(FullscreenKey, Fullscreen ? 1 : 0);
             PlayerPrefs.SetInt(VSyncKey, VSync ? 1 : 0);
             PlayerPrefs.SetInt(RayTracingKey, RayTracingEnabled ? 1 : 0);
@@ -577,6 +583,24 @@ namespace Project.Core
             GamepadInvertY = enabled;
             PlayerPrefs.SetInt(GamepadInvertYKey, enabled ? 1 : 0);
             PlayerPrefs.Save();
+        }
+
+        /// <summary>
+        /// 2026-11-03n. Shared by the main menu Game Options toggle and the Kade Player Systems
+        /// profile tick so they can never disagree. Persists to PlayerPrefs immediately.
+        /// </summary>
+        public static void SetSubtitlesEnabled(bool enabled)
+        {
+            SubtitlesEnabled = enabled;
+            PlayerPrefs.SetInt(SubtitlesKey, enabled ? 1 : 0);
+            PlayerPrefs.Save();
+            Project.UI.DMVoiceSubtitlePresenter.RefreshEnabled();
+        }
+
+        /// <summary>Re-reads only the subtitles pref (cheap; used by Genesis Studio and profile sync).</summary>
+        public static void ReloadSubtitles()
+        {
+            SubtitlesEnabled = PlayerPrefs.GetInt(SubtitlesKey, 1) == 1;
         }
 
     }

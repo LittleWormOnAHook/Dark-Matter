@@ -43,15 +43,50 @@ namespace Project.UI
             GameSession.GameStarted -= TryBind;
             UnbindAll();
         }
+        /// <summary>
+        /// 2026-11-04f: called after every Mars &lt;-&gt; IO switch. Both scenes are resident and each
+        /// has its own PlayerInput, so the Journal/Inventory/Cancel subscriptions must move to the
+        /// rig that actually owns the world being shown (otherwise J and I do nothing in the new
+        /// world because they are still bound to the hidden rig's disabled action instance).
+        /// </summary>
+        public static void RebindForLivePlayer()
+        {
+            if (!Application.isPlaying || !DMUiToolkitConfig.IsEnabled)
+                return;
+            if (!DMUiToolkitBootstrap.IsRootActive)
+                return;
+
+            DMUiToolkitBootstrap bootstrap = DMUiToolkitBootstrap.Instance;
+            if (bootstrap == null)
+                return;
+
+            DMUiToolkitPlayerInputBridge bridge = bootstrap.GetComponent<DMUiToolkitPlayerInputBridge>();
+            if (bridge == null)
+                bridge = bootstrap.gameObject.AddComponent<DMUiToolkitPlayerInputBridge>();
+
+            bridge.UnbindAll();
+            bridge.TryBind();
+        }
+
         private void TryBind()
         {
             if (!DMUiToolkitConfig.IsEnabled || !DMUiToolkitBootstrap.IsRootActive)
                 return;
+
+            // 2026-11-04f: prefer the live rig. FindAnyObjectByType could return the other world's
+            // resident PlayerInput, whose action map is disabled while that world is hidden.
+            PlayerInput live = PlayerLocator.FindLivePlayerInput();
+            if (live == null)
+                live = FindAnyObjectByType<PlayerInput>(FindObjectsInactive.Include);
+            if (live == null || live.actions == null)
+                return;
+
+            if (bound && live == playerInput)
+                return;
             if (bound)
-                return;
-            playerInput = FindAnyObjectByType<PlayerInput>(FindObjectsInactive.Include);
-            if (playerInput == null || playerInput.actions == null)
-                return;
+                UnbindAll();
+
+            playerInput = live;
             BindPlayer("Journal", ctx =>
             {
                 if (ctx.performed)

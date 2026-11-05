@@ -197,6 +197,8 @@ namespace Project.UI
                 ApplyState(boundUgui.IsVisible, boundUgui.ActiveToolType, boundUgui.IsPassthroughMode, boundUgui.BoundRenderTexture);
         }
 
+        private static float scopeDiagNext; // 2026-11-04x
+
         private void ApplyScopeState(Project.Combat.DM_ScopeProfile p)
         {
             scopeShowing = true;
@@ -250,6 +252,17 @@ namespace Project.UI
                     SetDisplay(reticle, true);
                     reticle.Refresh();
                     reticle.BringToFront();
+                    if (Time.unscaledTime >= scopeDiagNext) // 2026-11-04x build-only missing reticle: one line per 2 s while scoped
+                    {
+                        scopeDiagNext = Time.unscaledTime + 2f;
+                        Debug.Log("[ScopeDiag] reticle rect=" + reticle.contentRect + " world=" + reticle.worldBound
+                            + " disp=" + reticle.resolvedStyle.display + " parentDisp=" + (reticle.parent != null ? reticle.parent.resolvedStyle.display.ToString() : "-")
+                            + " vis=" + reticle.resolvedStyle.visibility + " rootOpacity=" + (opticsRoot != null ? opticsRoot.resolvedStyle.opacity : -1f)
+                            + " ringPx=" + ringDiameterPx + " ringCol=" + p.ResolveScopedRingColor(rifle) + " retCol=" + p.ResolveScopedReticleColor(rifle)
+                            + " panel=" + (document != null && document.panelSettings != null ? document.panelSettings.name : "null")
+                            + " sort=" + (document != null ? document.sortingOrder : -1f) + " docOn=" + (document != null && document.isActiveAndEnabled)
+                            + " blend=" + Project.Combat.DMScopeMode.ZoomBlend.ToString("F2"));
+                    }
                 }
                 else
                 {

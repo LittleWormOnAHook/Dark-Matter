@@ -1,0 +1,10 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="../Themes/DarkMatterGenesis.uss"/>
+    <Style src="DMVoiceSubtitle.uss"/>
+    <ui:VisualElement name="subtitle-root" picking-mode="Ignore" class="dmg-subtitle-root">
+        <ui:VisualElement name="subtitle-card" picking-mode="Ignore" class="dmg-subtitle-card">
+            <ui:Label name="subtitle-speaker" picking-mode="Ignore" class="dmg-subtitle-speaker" text=""/>
+            <ui:Label name="subtitle-body" picking-mode="Ignore" class="dmg-subtitle-body" text=""/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

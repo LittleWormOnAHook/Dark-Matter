@@ -34,6 +34,11 @@ namespace Project.Player
         [Tooltip("When on, Climb / Dash / Jetpack require the matching Journal system anchor (Tier 0).")]
         public bool requireSkillTreeUnlocks = true;
 
+        // 2026-11-03n: Subtitles has no serialized field here on purpose. The tick this profile shows
+        // is the shared GameSettings value (PlayerPrefs settings.game.subtitles), so it and
+        // Main Menu > Settings > Game Options > Subtitles can never disagree. DMPlayerSystemsProfileEditor
+        // draws that tick in the inspector and in Genesis Studio > Player.
+
         [Header("World")]
         [Tooltip("Final authority for Gaia terrain streaming, content scenes, expedition tile wait, and related world loaders. Off keeps Terrain Loader Manager disabled in Play and after returning to Edit. Editor bind: BindDmGenesisGaiaTerrainScenes reads this via IsWorldTerrainLoadingEnabled (Player_v7 prefab / scene instance, not TerrainScenes.asset).")]
         public bool terrainLoading = true;
@@ -105,6 +110,19 @@ namespace Project.Player
         private void Awake()
         {
             Apply(force: true);
+        }
+
+        /// <summary>
+        /// 2026-11-03n. The shared subtitles value: Main Menu > Settings > Game Options > Subtitles
+        /// and this profile tick read and write the same GameSettings.SubtitlesEnabled, so the two
+        /// surfaces can never disagree. Default is ON for a fresh install.
+        /// </summary>
+        public static bool SubtitlesEnabled => Project.Core.GameSettings.SubtitlesEnabled;
+
+        /// <summary>Writes the shared subtitles value (called by the profile tick).</summary>
+        public static void SetSubtitles(bool enabled)
+        {
+            Project.Core.GameSettings.SetSubtitlesEnabled(enabled);
         }
 
         private void OnValidate()

@@ -83,6 +83,11 @@ namespace Project.Player
         private float _suppressJumpUntil;
         private int _flopBoneCount;
 
+        // 2026-11-04g: scene-switch settle window. A Mars <-> IO toggle teleports the rig, which the
+        // fall tracker would otherwise read as a huge drop and turn into fall damage / a lethal flop.
+        private float _teleportGraceUntil;
+        private bool _teleportGraceActive;
+
         private bool _hasVerticalVelocity;
         private bool _hasJetpackLand;
         private bool _hasLandHigh;
@@ -144,6 +149,8 @@ namespace Project.Player
             _ignoreLandsUntil = 0f;
             _unmuteAt = -1f;
             _groundedFor = 0f;
+            _teleportGraceActive = false;
+            _teleportGraceUntil = 0f;
 
             if (ragdoll != null)
             {
@@ -207,6 +214,45 @@ namespace Project.Player
             _airVerticalVelocity = 0f;
             IgnoreLandsFor(1.25f);
         }
+
+        /// <summary>
+        /// 2026-11-04g: called by DMSceneStack right after it teleports the rig between Mars and IO.
+        /// Fall classification (and therefore fall damage and the lethal-fall ragdoll) stays
+        /// suppressed until the rig is grounded once or <paramref name="seconds"/> elapses, whichever
+        /// comes first. A scene switch must never be able to kill the player. Normal play is
+        /// untouched: the flag only lives for the length of the settle window.
+        /// </summary>
+        public void NotifySceneTeleport(float seconds = 0.9f)
+        {
+            float grace = Mathf.Max(0.1f, seconds);
+            _teleportGraceActive = true;
+            _teleportGraceUntil = Time.unscaledTime + grace;
+            _ignoreLandsUntil = Mathf.Max(_ignoreLandsUntil, _teleportGraceUntil);
+            _fallTime = 0f;
+            _physAir = false;
+            _wasGrounded = true;
+            _groundedFor = GroundCommitSeconds;
+            _airApexY = transform.position.y;
+            _airVerticalVelocity = 0f;
+
+            if (motor != null)
+            {
+                motor.verticalVelocity = 0f;
+                motor.isJumping = false;
+            }
+
+            // EndLanding() restores motor.blockApplyFallDamage from its own held value, so it must
+            // run BEFORE the mute or it would undo it.
+            if (_landing)
+                EndLanding(true);
+
+            // Invector keeps its own fall-damage path (motor.blockApplyFallDamage). Mute it for the
+            // settle window as well, so the switch cannot kill the player through that route either.
+            MuteInvectorFall();
+        }
+
+        /// <summary>True while a scene-switch settle window is keeping fall classification quiet.</summary>
+        public bool IsSwitchSettling => _teleportGraceActive;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureOnPlayer()
@@ -376,6 +422,10 @@ namespace Project.Player
             if (motor == null)
                 return;
 
+            // 2026-11-04g: a scene switch is settling - never track air/lands from the teleport.
+            if (_teleportGraceActive && Time.unscaledTime < _teleportGraceUntil)
+                return;
+
             if (climb != null && climb.IsClimbing)
                 return;
 
@@ -447,6 +497,33 @@ namespace Project.Player
                 return;
 
             bool walkable = OnWalkableGround(out _);
+
+            // 2026-11-04g: settle window after a Mars <-> IO switch. Hold the apex at the height we
+            // were placed at so the "drop" is never measured from the world we left, and stay out of
+            // fall classification until the rig has actually touched the destination ground.
+            if (_teleportGraceActive)
+            {
+                if (walkable)
+                {
+                    _teleportGraceActive = false;
+                    // Short tail so the first step off a ledge does not inherit the switch's apex.
+                    _ignoreLandsUntil = Mathf.Max(_ignoreLandsUntil, Time.unscaledTime + 0.2f);
+                    UnmuteInvectorFall();
+                }
+                else if (Time.unscaledTime < _teleportGraceUntil)
+                {
+                    ResetAirTracking();
+                    _wasGrounded = false;
+                    return;
+                }
+                else
+                {
+                    // Settle window expired without touching ground (odd, but not a death sentence).
+                    _teleportGraceActive = false;
+                    UnmuteInvectorFall();
+                }
+            }
+
             float vy = ReadFallVelocity();
             if (walkable)
             {

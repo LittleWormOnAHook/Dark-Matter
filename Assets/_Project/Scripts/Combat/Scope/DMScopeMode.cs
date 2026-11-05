@@ -46,8 +46,12 @@ namespace Project.Combat
         private WeaponAmmoState _ammoState;
         private vShooterManager _shooter;
         private Invector.vCharacterController.vShooterMeleeInput _input;
-        private bool _rifleOn;
-        private bool _pistolOn;
+        // 2026-11-04y build: the weapon-menu Scope rows and the live player could hold different
+        // DMScopeMode components, so pressing Scope ON armed a copy the player never used and scope
+        // stayed dead (RMB gave plain ADS: no scope zoom, no reticle). Share the flags across instances.
+        private static bool _rifleOn;
+        private static bool _pistolOn;
+        private static bool _scopePrefsLoaded;
         private bool _scoped;
         private bool _scopedRifle;
         private bool _toggleAdsActive;
@@ -58,6 +62,7 @@ namespace Project.Combat
         private float _patchedOriginalFreq;
         private Vector2 _sway;
         private DMCameraCollisionOverlay _cameraOverlay;
+        private float _scopeOffDiagNext; // 2026-11-04y
 
         public bool RifleScopeEnabled => _rifleOn;
         public bool PistolScopeEnabled => _pistolOn;
@@ -81,11 +86,21 @@ namespace Project.Combat
             }
         }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetScopePrefsOnce()
+        {
+            _scopePrefsLoaded = false;
+        }
+
         private void Awake()
         {
             Instance = this;
-            _rifleOn = PlayerPrefs.GetInt(PrefRifle, 0) == 1;
-            _pistolOn = PlayerPrefs.GetInt(PrefPistol, 0) == 1;
+            if (!_scopePrefsLoaded)
+            {
+                _scopePrefsLoaded = true;
+                _rifleOn = PlayerPrefs.GetInt(PrefRifle, 0) == 1;
+                _pistolOn = PlayerPrefs.GetInt(PrefPistol, 0) == 1;
+            }
         }
 
         private void OnDisable()
@@ -103,12 +118,16 @@ namespace Project.Combat
         {
             _rifleOn = on;
             PlayerPrefs.SetInt(PrefRifle, on ? 1 : 0);
+            PlayerPrefs.Save(); // 2026-11-04y build: menu toggles were not surviving the run
+            Debug.Log("[ScopeDiag] rifle scope -> " + (on ? "ON" : "OFF") + " on " + name + " armedNow=" + IsScopeModeArmed(ActiveWeapon()));
         }
 
         public void SetPistolScopeEnabled(bool on)
         {
             _pistolOn = on;
             PlayerPrefs.SetInt(PrefPistol, on ? 1 : 0);
+            PlayerPrefs.Save(); // 2026-11-04y build: menu toggles were not surviving the run
+            Debug.Log("[ScopeDiag] pistol scope -> " + (on ? "ON" : "OFF") + " on " + name + " armedNow=" + IsScopeModeArmed(ActiveWeapon()));
         }
 
         // 2026-10-13 (i): ItemData.IsTwoHanded is melee-only, so every ranged weapon read as "pistol" and both types shared the pistol toggle.
@@ -179,6 +198,19 @@ namespace Project.Combat
             if (!modeOn)
                 _toggleAdsActive = false;
 
+            // 2026-11-04y build: the "held RMB, ADS zoomed, but no reticle / no scope zoom" case is exactly
+            // scope mode not armed for the held weapon. Say so once every 2 s instead of failing silently.
+            if (!modeOn && Time.unscaledTime >= _scopeOffDiagNext)
+            {
+                bool aiming = Aiming(); // resolves _input lazily (it is null until something asks)
+                if (aiming && ranged)
+                {
+                    _scopeOffDiagNext = Time.unscaledTime + 2f;
+                    Debug.Log("[ScopeDiag] aiming " + (w != null ? w.name : "null") + " but scope OFF rifle=" + _rifleOn
+                        + " pistol=" + _pistolOn + " isRifle=" + rifle);
+                }
+            }
+
             bool want = WantsTacticalScoped(p, modeOn);
 
             if (want && !_scoped)
@@ -226,6 +258,9 @@ namespace Project.Combat
             _cam = ResolveGameplayCamera();
             if (_cam != null && _blend <= 0.001f)
                 _baseFov = _cam.fieldOfView;
+            DM_ScopeProfile dp = DM_ScopeProfile.Live; // 2026-11-04x build-only zoom check
+            Debug.Log("[ScopeDiag] enter rifle=" + rifle + " cam=" + (_cam != null ? _cam.name + " enabled=" + _cam.enabled : "null") + " baseFov=" + _baseFov.ToString("F1")
+                + " zoomOverlay=" + dp.scopeAdsEnablesZoomOverlay + " targetFov=" + (rifle ? dp.rifleScopedFov : dp.pistolScopedFov) + " newArt=" + dp.useNewScopeArt);
         }
 
         private void ExitScope(bool instant)

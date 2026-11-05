@@ -14,11 +14,18 @@ namespace Project.UI
     {
         private static bool _wired;
         private static float _nextEnsure;
+        /// <summary>
+        /// 2026-11-04f: which EventSystem the wiring was applied to. The 1 s throttle used to hide
+        /// the fact that a different EventSystem had become current (the additive IO load brings
+        /// its own), leaving the new one with unassigned UI actions and no movement/submit input.
+        /// </summary>
+        private static EventSystem _wiredFor;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
         {
             _wired = false;
+            _wiredFor = null;
             EnsureConfigured();
         }
 
@@ -27,13 +34,15 @@ namespace Project.UI
             if (!Application.isPlaying)
                 return;
 
-            if (_wired && Time.unscaledTime < _nextEnsure)
-                return;
-            _nextEnsure = Time.unscaledTime + 1f;
-
             EventSystem es = EventSystem.current;
             if (es == null)
                 es = Object.FindAnyObjectByType<EventSystem>();
+
+            // Re-wire immediately whenever the current EventSystem changed; only throttle the
+            // repeat calls that hit the same object.
+            if (_wired && es == _wiredFor && Time.unscaledTime < _nextEnsure)
+                return;
+            _nextEnsure = Time.unscaledTime + 1f;
 
             if (es == null)
             {
@@ -86,6 +95,7 @@ namespace Project.UI
                 ui.Enable();
 
             _wired = true;
+            _wiredFor = es;
         }
 
         private static InputActionAsset ResolveActionsAsset()

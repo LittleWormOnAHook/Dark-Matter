@@ -69,6 +69,8 @@ namespace Project.Core
         public string[] scannedDiscoveryIds;
         public string[] identifiedResourceIds;
         public string[] pptKnownKeywordIds;
+        /// <summary>Voice lines flagged play-once, keyed 'lineSetGuid:lineId' (2026-11-03n). Null in older saves.</summary>
+        public string[] voicePlayedKeys;
         public int ioDay = 1;
         public int ioHour = 6;
         public int ioMinute;

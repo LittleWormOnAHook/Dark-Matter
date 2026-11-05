@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Project.Audio.Voice;
 using Project.Building;
 using Project.Data;
 using Project.Inventory;
@@ -407,6 +408,7 @@ namespace Project.Core
             data.storageCrates = Project.Storage.DMStorageCrateRuntime.BuildSave();
             data.lootChests = Project.Events.DMLootChestRuntime.BuildSave();
             data.builtPieces = DMBuildingSaveRuntime.BuildSave();
+            data.voicePlayedKeys = DMVoiceManager.BuildPlayedSave();
 
             if (progressionManager != null)
             {
@@ -527,6 +529,7 @@ namespace Project.Core
             ApplyStorageCrateSave(data);
             ApplyLootChestSave(data);
             DMBuildingSaveRuntime.ApplySave(data.builtPieces);
+            DMVoiceManager.ApplyPlayedSave(data.voicePlayedKeys);
 
             ApplyQuestSave(player, data.questProgress);
             ApplyCraftingSave(player, data.discoveredRecipeIds, data.pendingRecipeScrollIds);

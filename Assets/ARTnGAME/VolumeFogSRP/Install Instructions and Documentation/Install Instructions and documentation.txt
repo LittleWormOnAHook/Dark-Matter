@@ -1,0 +1,36 @@
+First install the Post Processing Stack v2.0 as shown in Image included (Install figure 1).
+
+Then add the "Volume Fog SM SRP" effect in the stack effects and override its parameters in the Post Process Volume
+to adjust it. Note that "Sun", "Camera Diff" & "Camera Roll" overrides should be active (checkbox pressed on the left
+of property). Make sure to save the instantiated profile after the activation, otherwise it may
+reset when enter play mode. 
+
+The script "controlVolumeFogSRPPOSTFX" can be added to the PostProcessing Volume object and assign the sun light to the effect.
+
+Also the effect requires a camera tagged as "MainCamera" to regulate the effect depending on its orientation.
+
+If Sky Master ULTIMATE is used, drag the "Sun" object transform from Sky Master ULTIMATE sun light to the "Sun" slot 
+of the script and will update the sun position at run time to properly based on sun positioning.
+
+The effect is sun position based, thus will require a system like Sky Master ULTIMATE to display
+correctly (is based on real sun positioning in sky based on earth center) and has been extensively
+tested with it.
+
+Scripting the asset requires to access the post processing stack and change its values at run time.
+The script "controlVolumeFogSRPPOSTFX" that provides the sun placement to the system has also
+functionality to change the effect properties and can be used as base template for programming the
+system to change values at run time. Also a single point light may be defined for use with the system (effect is shadowless).
+
+Note that the system currently only supports Stack v2.0, so works in all Unity version where the stack is supported.
+
+NOTE 1:
+Make sure to download and install the latest Stack v2.0 version, as described in the links below
+
+1. Download the latest version
+https://github.com/Unity-Technologies/PostProcessing/releases
+
+2. Unzip the folder and Press + Sign in Package Manager to add it (find .json file in the folder)
+https://github.com/Unity-Technologies/PostProcessing/issues/683
+https://forum.unity.com/threads/r8_srgb-is-not-supported.636058/
+
+NOTE: The effect is compatible with stack v2.0 and is a requirement for it to work properly.

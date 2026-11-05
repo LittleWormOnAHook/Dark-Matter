@@ -17,6 +17,7 @@
                 <ui:Button name="btn-resume" text="Continue" picking-mode="Position" class="dmg-mainmenu-btn" />
                 <ui:Button name="btn-continue" text="Continue Expedition" picking-mode="Position" class="dmg-mainmenu-btn" />
                 <ui:Button name="btn-new" text="New Expedition" picking-mode="Position" class="dmg-mainmenu-btn" />
+                <ui:Button name="btn-io" text="IO (v1.7)" picking-mode="Position" class="dmg-mainmenu-btn" />
                 <ui:Button name="btn-load" text="Load" picking-mode="Position" class="dmg-mainmenu-btn" />
                 <ui:Button name="btn-save" text="Save" picking-mode="Position" class="dmg-mainmenu-btn" />
                 <ui:Button name="btn-settings" text="Settings" picking-mode="Position" class="dmg-mainmenu-btn" />

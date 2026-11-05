@@ -21,7 +21,40 @@ namespace Project.UI
         public void RestartScene()
         {
             Time.timeScale = 1f;
+
+            // 2026-11-04f: after a Mars <-> IO menu switch the active scene can be IO. Reloading
+            // IO alone would drop Mars and with it the player rig, the runtime UI host and all
+            // progression state, so the death restart is pinned to the Mars boot scene and the
+            // scene stack is reset first (it must not think IO is still resident).
+            int marsIndex = MarsSceneIndex();
+            if (marsIndex >= 0)
+            {
+                Debug.Log($"[UIManager] death restart: single-scene reload of '{DMSceneStack.MarsSceneName}' "
+                    + $"(build index {marsIndex}); active scene was '{SceneManager.GetActiveScene().name}'.");
+                DMSceneStack.ResetForSingleSceneReload();
+                SceneManager.LoadScene(marsIndex);
+                return;
+            }
+
+            Debug.LogWarning($"[UIManager] death restart: '{DMSceneStack.MarsSceneName}' is not in the build scene list; "
+                + $"reloading the active scene '{SceneManager.GetActiveScene().name}' instead.");
+            DMSceneStack.ResetForSingleSceneReload();
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        }
+
+        /// <summary>2026-11-04f: build index of the Mars boot scene, or -1 when it is not in the build list.</summary>
+        private static int MarsSceneIndex()
+        {
+            for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
+            {
+                string path = UnityEngine.SceneManagement.SceneUtility.GetScenePathByBuildIndex(i);
+                if (string.IsNullOrEmpty(path))
+                    continue;
+                string name = System.IO.Path.GetFileNameWithoutExtension(path);
+                if (string.Equals(name, DMSceneStack.MarsSceneName, System.StringComparison.OrdinalIgnoreCase))
+                    return i;
+            }
+            return -1;
         }
 
         public void RespawnPlayer()

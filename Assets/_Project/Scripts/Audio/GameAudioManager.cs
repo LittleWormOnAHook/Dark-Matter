@@ -24,6 +24,8 @@ namespace Project.Audio
         private Coroutine poiseStaggerDingRoutine;
         private static bool deferGameplayMusicUntilLoaderReveal;
         private bool pendingGameplayMusic;
+        // 2026-11-03n: DMVoiceManager ducks music + loading ambience while a voice line plays.
+        private float voiceDuck = 1f;
 
         public GameAudioProfile Profile => profile;
 
@@ -104,8 +106,24 @@ namespace Project.Audio
         public void RefreshVolumes()
         {
             if (musicSource != null && profile != null)
-                musicSource.volume = GameSettings.MusicVolume * profile.musicVolume;
+                musicSource.volume = GameSettings.MusicVolume * profile.musicVolume * voiceDuck;
         }
+
+        /// <summary>
+        /// 2026-11-03n. Voice-line ducking multiplier (1 = no duck). DMVoiceManager ramps this
+        /// instead of an AudioMixer snapshot, so music and the loading ambience bed both follow it.
+        /// </summary>
+        public void SetVoiceDuck(float multiplier)
+        {
+            voiceDuck = Mathf.Clamp01(multiplier);
+            RefreshVolumes();
+
+            if (loadingSource != null && loadingSource.isPlaying && profile != null)
+                loadingSource.volume = GameSettings.MusicVolume * profile.loadingAmbienceVolume * voiceDuck;
+        }
+
+        /// <summary>Current duck multiplier (1 when nothing is ducking music).</summary>
+        public float VoiceDuck => voiceDuck;
 
         public static void SetDeferGameplayMusicUntilLoaderReveal(bool defer)
         {
@@ -174,7 +192,7 @@ namespace Project.Audio
                 return;
 
             loadingSource.clip = profile.loadingAmbience;
-            loadingSource.volume = GameSettings.MusicVolume * profile.loadingAmbienceVolume;
+            loadingSource.volume = GameSettings.MusicVolume * profile.loadingAmbienceVolume * voiceDuck;
             loadingSource.Play();
         }
 
@@ -183,7 +201,7 @@ namespace Project.Audio
             if (loadingSource == null || profile == null)
                 return;
 
-            loadingSource.volume = GameSettings.MusicVolume * profile.loadingAmbienceVolume * Mathf.Clamp01(normalized);
+            loadingSource.volume = GameSettings.MusicVolume * profile.loadingAmbienceVolume * Mathf.Clamp01(normalized) * voiceDuck;
         }
 
         public void StopLoadingAmbience()

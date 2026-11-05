@@ -55,6 +55,8 @@ namespace Project.Managers
                 Project.Combat.DMRanged.DMRangedMorphRuntime.MarkFirstDraw(); // 2026-10-28g: new game -> DM Ranged first draw in Pistol 1
                 ScannerDiscoveryRegistry.Clear();
                 ResourceIdentificationRegistry.Clear();
+                // 2026-11-03n: a new game re-arms every play-once voice line.
+                Project.Audio.Voice.DMVoiceManager.ClearPlayed();
                 InitializePlayer();
             }
 

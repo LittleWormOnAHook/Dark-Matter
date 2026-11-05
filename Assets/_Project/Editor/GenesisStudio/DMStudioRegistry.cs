@@ -26,7 +26,8 @@ namespace Project.EditorTools.GenesisStudio
         CombatPlanPlaceholder = 17,
         EnemyTypesTable = 18,
         CharacterCreatorCombined = 19,
-        CombatRangedLinks = 20
+        CombatRangedLinks = 20,
+        VoicesCombined = 21
     }
 
     public readonly struct DMStudioSubtab
@@ -738,7 +739,13 @@ new DMStudioSubtab(
                             "Music, body impacts, weapon clashes, player pain and circular hit-direction feedback.",
                             DMStudioPanelMode.SingletonAsset,
                             "Assets/_Project/Resources/GameAudioProfile.asset",
-                            playModeSave: true)
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "voices",
+                            "Voices",
+                            "Voice actors from a text description (local Parler-TTS): preview, try 3 variants, bake lines to WAV. Editor only.",
+                            DMStudioPanelMode.VoicesCombined,
+                            searchFolder: "Assets/_Project/Audio/Voices/Actors")
                     }),
                 new DMStudioCategory(
                     "rendering",

@@ -1,0 +1,56 @@
+/* Runtime voice subtitles (Phase 1 voice manager, 2026-11-03n).
+   Same construction as the other DMG overlay screens: full-screen transparent root,
+   centred card via left: 50% + negative margin-left. */
+
+.dmg-subtitle-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0);
+    -unity-font-definition: url("project://database/Assets/Shift%20-%20Complete%20Sci-Fi%20UI/Fonts/Rajdhani-Regular.ttf?fileID=12800000&guid=11524516bb0f95d4ba72a86cdd3756e0&type=3#Rajdhani-Regular");
+}
+
+.dmg-subtitle-card {
+    position: absolute;
+    left: 50%;
+    bottom: 132px;
+    width: 860px;
+    margin-left: -430px;
+    padding: 10px 20px 12px 20px;
+    border-radius: 3px;
+    background-color: rgba(12, 14, 18, 0.72);
+    border-left-width: 3px;
+    border-left-color: rgb(212, 160, 23);
+    flex-direction: column;
+    opacity: 0;
+}
+
+.dmg-subtitle-speaker {
+    font-size: 17px;
+    color: rgb(212, 160, 23);
+    -unity-font-style: bold;
+    letter-spacing: 1.2px;
+    margin-bottom: 2px;
+    white-space: normal;
+    -unity-text-align: middle-center;
+}
+
+.dmg-subtitle-body {
+    font-size: 24px;
+    color: rgb(237, 233, 228);
+    white-space: normal;
+    -unity-text-align: middle-center;
+}
+
+.dmg-subtitle-body-radio {
+    color: rgb(242, 208, 86);
+}
+
+.dmg-subtitle-body-narration {
+    -unity-font-style: italic;
+    color: rgba(237, 233, 228, 0.92);
+}

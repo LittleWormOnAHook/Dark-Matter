@@ -55,6 +55,12 @@ namespace Project.UI
         [Tooltip("In Edit Mode, moving/rotating/scaling the selected host bakes into the fields above.")]
         [SerializeField] private bool bakeWhileSelected = true;
 
+        /// <summary>
+        /// Edit Mode authoring toggle (only acted on in the editor). Exposed so the serialized field is read
+        /// in player builds too (2026-11-04a: was CS0414 assigned-but-never-used outside UNITY_EDITOR).
+        /// </summary>
+        public bool BakeWhileSelected => bakeWhileSelected;
+
         [Header("Glow")]
         [Tooltip("HDRP Unlit emissive multiplier. Raise this to make the mag number bloom.")]
         [SerializeField, Min(0f)] private float emissionIntensity = 6f;

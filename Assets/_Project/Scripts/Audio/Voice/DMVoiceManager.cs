@@ -1,0 +1,861 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using Project.Core;
+using Project.Player;
+using Project.UI;
+using UnityEngine;
+
+namespace Project.Audio.Voice
+{
+    /// <summary>
+    /// Runtime voice playback. One line at a time, priority ordered queue, music/ambience ducking
+    /// through <see cref="GameAudioManager"/>, subtitles through DMVoiceSubtitlePresenter, and
+    /// play-once keys persisted in GameSaveData.voicePlayedKeys.
+    /// Created by EnsureExists() and kept across scene loads, like GameAudioManager.
+    /// </summary>
+    [DefaultExecutionOrder(-150)]
+    [DisallowMultipleComponent]
+    public sealed class DMVoiceManager : MonoBehaviour
+    {
+        public const string ObjectName = "DMVoiceManager";
+
+        /// <summary>Queue cap (plan 10.2). Anything past this is dropped unless a weaker entry gives way.</summary>
+        public const int MaxQueued = 8;
+
+        /// <summary>Queued barks older than this are thrown away instead of played.</summary>
+        public const float BarkQueueExpirySeconds = 3f;
+
+        public const string SkipActionName = "VoiceSkip";
+
+        private const float DuckAttackSeconds = 0.15f;
+        private const float DuckReleaseSeconds = 0.4f;
+        private const float WorldMinDistance = 2f;
+        private const float WorldMaxDistance = 25f;
+        private const float RadioClickVolume = 0.35f;
+
+        public static DMVoiceManager Instance { get; private set; }
+
+        /// <summary>Fires when a line actually starts playing.</summary>
+        public event Action<DMVoiceLine> OnLineStarted;
+
+        /// <summary>Fires when a line ends. <c>skipped</c> is true when Skip() cut it short.</summary>
+        public event Action<DMVoiceLine, bool> OnLineFinished;
+
+        private AudioSource narrationSource;
+        private AudioSource radioSource;
+        private AudioSource worldSource;
+        private AudioClip commInClip;
+        private AudioClip commOutClip;
+
+        private DMVoiceLine currentLine;
+        private DMVoicePlayOptions currentOptions;
+        private string currentSpeaker = string.Empty;
+        private Transform currentWorldTarget;
+        private float lineEndUnscaled;
+        private float pausedAtUnscaled;
+        private bool lineActive;
+        private bool linePaused;
+        private float lineDuck = 1f;
+        private float appliedDuck = 1f;
+        private Coroutine duckRoutine;
+
+        private readonly List<QueueEntry> queue = new List<QueueEntry>(MaxQueued + 4);
+        private int queueSequence;
+
+        private struct QueueEntry
+        {
+            public DMVoiceLine line;
+            public DMVoicePlayOptions options;
+            public string speaker;
+            public string markKey;
+            public float queuedAtUnscaled;
+            public int sequence;
+        }
+
+        public bool IsPlaying => lineActive && currentLine != null;
+        public DMVoiceLine CurrentLine => currentLine;
+        public string CurrentSpeakerName => currentSpeaker;
+        public DMVoiceOutputMode CurrentOutputMode =>
+            currentOptions != null ? currentOptions.output : DMVoiceOutputMode.Narration;
+        public int QueuedCount => queue.Count;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            Instance = null;
+            PlayedKeys.Clear();
+            loadedSets.Clear();
+            nextSetScanTime = 0f;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void Bootstrap()
+        {
+            if (Application.isPlaying)
+                EnsureExists();
+        }
+
+        public static DMVoiceManager EnsureExists()
+        {
+            if (Instance != null)
+                return Instance;
+
+            DMVoiceManager existing = FindAnyObjectByType<DMVoiceManager>();
+            if (existing != null)
+            {
+                Instance = existing;
+                return existing;
+            }
+
+            if (!Application.isPlaying)
+                return null;
+
+            GameObject host = new GameObject(ObjectName);
+            return host.AddComponent<DMVoiceManager>();
+        }
+
+        private void Awake()
+        {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+            BuildSources();
+        }
+
+        private void OnDestroy()
+        {
+            if (Instance == this)
+                Instance = null;
+        }
+
+        private void BuildSources()
+        {
+            narrationSource = CreateSource("Voice_Narration");
+            radioSource = CreateSource("Voice_Radio");
+            worldSource = CreateSource("Voice_World");
+
+            worldSource.spatialBlend = 1f;
+            worldSource.rolloffMode = AudioRolloffMode.Logarithmic;
+            worldSource.minDistance = WorldMinDistance;
+            worldSource.maxDistance = WorldMaxDistance;
+            worldSource.dopplerLevel = 0f;
+
+            // Comm band fallback for lines baked dry (plan 10.2 "runtime low/high-pass as fallback").
+            AudioHighPassFilter highPass = radioSource.gameObject.AddComponent<AudioHighPassFilter>();
+            highPass.cutoffFrequency = 320f;
+            highPass.highpassResonanceQ = 0.7f;
+            AudioLowPassFilter lowPass = radioSource.gameObject.AddComponent<AudioLowPassFilter>();
+            lowPass.cutoffFrequency = 3400f;
+            lowPass.lowpassResonanceQ = 0.7f;
+
+            commInClip = BuildCommClick("Voice_CommIn", 1250f, rising: true, seed: 1337);
+            commOutClip = BuildCommClick("Voice_CommOut", 780f, rising: false, seed: 7331);
+        }
+
+        private AudioSource CreateSource(string sourceName)
+        {
+            GameObject child = new GameObject(sourceName);
+            child.transform.SetParent(transform, false);
+            AudioSource source = child.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+            source.loop = false;
+            source.spatialBlend = 0f;
+            source.priority = 24;
+            return source;
+        }
+
+        private static AudioClip BuildCommClick(string clipName, float frequency, bool rising, int seed)
+        {
+            const int sampleRate = 44100;
+            const float seconds = 0.055f;
+            int count = Mathf.CeilToInt(sampleRate * seconds);
+            float[] data = new float[count];
+            var random = new System.Random(seed);
+            for (int i = 0; i < count; i++)
+            {
+                float t = i / (float)count;
+                float envelope = (rising ? Mathf.Sin(t * Mathf.PI) : 1f) * (1f - t) * (1f - t);
+                float noise = (float)(random.NextDouble() * 2.0 - 1.0);
+                float tone = Mathf.Sin(2f * Mathf.PI * frequency * i / sampleRate);
+                data[i] = (noise * 0.35f + tone * 0.45f) * envelope * 0.6f;
+            }
+
+            AudioClip clip = AudioClip.Create(clipName, count, 1, sampleRate, false);
+            clip.SetData(data, 0);
+            return clip;
+        }
+
+        // ================================================================== Public API
+
+        /// <summary>Queue a designer line reference. False when the ref or its clip is missing.</summary>
+        public bool Play(DMVoiceLineRef lineRef, DMVoicePlayOptions options = null)
+        {
+            DMVoiceLine line = lineRef.ResolveLine();
+            if (line == null)
+                return false;
+
+            if (line.clip == null)
+            {
+                Debug.LogWarning($"[DMVoiceManager] Line '{lineRef.lineId}' has no baked clip. Bake it in Genesis Studio > Audio > Voices.");
+                return false;
+            }
+
+            return Enqueue(line, options, ResolveSpeaker(lineRef.set), null);
+        }
+
+        /// <summary>Queue by stable line id, searching every loaded line set.</summary>
+        public bool Play(string lineId, DMVoicePlayOptions options = null)
+        {
+            if (string.IsNullOrWhiteSpace(lineId))
+                return false;
+
+            if (!FindLineById(lineId, out DMVoiceLine line, out DMVoiceLineSet set))
+            {
+                Debug.LogWarning($"[DMVoiceManager] No loaded line set contains line id '{lineId}'.");
+                return false;
+            }
+
+            if (line.clip == null)
+            {
+                Debug.LogWarning($"[DMVoiceManager] Line '{lineId}' has no baked clip.");
+                return false;
+            }
+
+            return Enqueue(line, options, ResolveSpeaker(set), null);
+        }
+
+        /// <summary>
+        /// Queue every loaded line tagged <paramref name="stageTag"/>, in set order then line order.
+        /// Returns how many lines were accepted.
+        /// </summary>
+        public int PlayStage(string stageTag, DMVoicePlayOptions options = null)
+        {
+            if (string.IsNullOrWhiteSpace(stageTag))
+                return 0;
+
+            DMVoicePlayOptions stageOptions = options ?? DMVoicePlayOptions.Narration(DMVoicePriority.Story);
+            List<DMVoiceLineSet> sets = CollectLineSets();
+            int queued = 0;
+            for (int s = 0; s < sets.Count; s++)
+            {
+                DMVoiceLineSet set = sets[s];
+                if (set == null || set.lines == null)
+                    continue;
+
+                string speaker = ResolveSpeaker(set);
+                for (int i = 0; i < set.lines.Count; i++)
+                {
+                    DMVoiceLine line = set.lines[i];
+                    if (line == null || line.clip == null)
+                        continue;
+                    if (!string.Equals(line.stageTag, stageTag, StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    if (Enqueue(line, stageOptions, speaker, null))
+                        queued++;
+                }
+            }
+
+            return queued;
+        }
+
+        /// <summary>
+        /// PlayStage, but each line is flagged in the save once (setKey:lineId) and lines already
+        /// flagged are skipped. Used by a play-once trigger that fires a whole stage tag.
+        /// </summary>
+        public int PlayStageOnce(string stageTag, DMVoicePlayOptions options = null)
+        {
+            if (string.IsNullOrWhiteSpace(stageTag))
+                return 0;
+
+            DMVoicePlayOptions stageOptions = options ?? DMVoicePlayOptions.Narration(DMVoicePriority.Story);
+            bool flag = stageOptions.priority != DMVoicePriority.Bark;
+            List<DMVoiceLineSet> sets = CollectLineSets();
+            int queued = 0;
+            for (int s = 0; s < sets.Count; s++)
+            {
+                DMVoiceLineSet set = sets[s];
+                if (set == null || set.lines == null)
+                    continue;
+
+                string speaker = ResolveSpeaker(set);
+                for (int i = 0; i < set.lines.Count; i++)
+                {
+                    DMVoiceLine line = set.lines[i];
+                    if (line == null || line.clip == null)
+                        continue;
+                    if (!string.Equals(line.stageTag, stageTag, StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    string key = flag ? set.SetKey + ":" + line.id : null;
+                    if (!string.IsNullOrEmpty(key) && IsPlayed(key))
+                        continue;
+                    if (Enqueue(line, stageOptions, speaker, key))
+                        queued++;
+                }
+            }
+
+            return queued;
+        }
+
+        /// <summary>
+        /// Same as Play, but once per save. Already played keys are ignored. Barks are never flagged
+        /// and never suppressed.
+        /// </summary>
+        public bool PlayOnce(DMVoiceLineRef lineRef, DMVoicePlayOptions options = null)
+        {
+            DMVoiceLine line = lineRef.ResolveLine();
+            if (line == null || line.clip == null)
+                return false;
+
+            string key = lineRef.Key;
+            bool flag = !string.IsNullOrEmpty(key)
+                        && (options == null || options.priority != DMVoicePriority.Bark);
+
+            if (flag && IsPlayed(key))
+                return false;
+
+            return Enqueue(line, options, ResolveSpeaker(lineRef.set), flag ? key : null);
+        }
+
+        /// <summary>Skip the current line. Cinematic lines are skippable (Anthony, Nov 3 2026).</summary>
+        public bool Skip()
+        {
+            if (!lineActive || currentLine == null)
+                return false;
+
+            StopCurrent(skipped: true, notify: true, playOutClick: true);
+            TryStartNext();
+            return true;
+        }
+
+        /// <summary>
+        /// Stop the current line and clear the queue. Listeners still get OnLineFinished (skipped:false)
+        /// so the subtitle presenter and any body/lip hook tear down instead of hanging.
+        /// </summary>
+        public void StopAll()
+        {
+            queue.Clear();
+            if (lineActive)
+                StopCurrent(skipped: false, notify: true, playOutClick: false);
+        }
+
+        // ================================================================== Queue
+
+        private bool Enqueue(DMVoiceLine line, DMVoicePlayOptions options, string speaker, string markKey)
+        {
+            // Copy: the caller's options object is never mutated (PlayStage shares one instance).
+            DMVoicePlayOptions opts = Clone(options);
+            if (opts.output == DMVoiceOutputMode.World && opts.worldTarget == null)
+                opts.output = DMVoiceOutputMode.Narration;
+
+            if (lineActive && currentLine != null)
+            {
+                DMVoicePriority playing = currentOptions != null ? currentOptions.priority : DMVoicePriority.Story;
+                if (!opts.interrupt && opts.priority <= playing)
+                {
+                    // Equal or lower priority waits its turn (it may still bounce off the queue cap).
+                    return EnqueueQueued(line, opts, speaker, markKey);
+                }
+
+                if (playing != DMVoicePriority.Bark)
+                    RequeueCurrent();
+                StopCurrent(skipped: false, notify: true, playOutClick: true);
+            }
+
+            bool added = EnqueueQueued(line, opts, speaker, markKey);
+            TryStartNext();
+            return added;
+        }
+
+        private static DMVoicePlayOptions Clone(DMVoicePlayOptions source)
+        {
+            if (source == null)
+                return DMVoicePlayOptions.Narration();
+
+            return new DMVoicePlayOptions
+            {
+                priority = source.priority,
+                output = source.output,
+                interrupt = source.interrupt,
+                worldTarget = source.worldTarget,
+                volumeScale = Mathf.Clamp(source.volumeScale, 0f, 2f)
+            };
+        }
+
+        private bool EnqueueQueued(DMVoiceLine line, DMVoicePlayOptions opts, string speaker, string markKey)
+        {
+            PruneQueue();
+
+            if (!string.IsNullOrEmpty(markKey))
+            {
+                for (int i = 0; i < queue.Count; i++)
+                {
+                    if (string.Equals(queue[i].markKey, markKey, StringComparison.Ordinal))
+                        return true;
+                }
+            }
+
+            if (queue.Count >= MaxQueued)
+            {
+                int weakest = FindWeakestQueueIndex();
+                if (weakest < 0)
+                    return false;
+
+                if (queue[weakest].options.priority >= opts.priority)
+                {
+                    // Nothing weaker to drop. Barks are disposable; a real line still gets turned away.
+                    return false;
+                }
+
+                queue.RemoveAt(weakest);
+            }
+
+            queue.Add(new QueueEntry
+            {
+                line = line,
+                options = opts,
+                speaker = speaker,
+                markKey = markKey,
+                queuedAtUnscaled = Time.unscaledTime,
+                sequence = queueSequence++
+            });
+            return true;
+        }
+
+        private void RequeueCurrent()
+        {
+            if (currentLine == null || currentOptions == null)
+                return;
+            if (queue.Count >= MaxQueued)
+                PruneQueue();
+            if (queue.Count >= MaxQueued)
+                return;
+
+            queue.Add(new QueueEntry
+            {
+                line = currentLine,
+                options = currentOptions,
+                speaker = currentSpeaker,
+                markKey = null,
+                queuedAtUnscaled = Time.unscaledTime,
+                sequence = queueSequence++
+            });
+        }
+
+        private void PruneQueue()
+        {
+            float now = Time.unscaledTime;
+            for (int i = queue.Count - 1; i >= 0; i--)
+            {
+                if (queue[i].options.priority != DMVoicePriority.Bark)
+                    continue;
+                if (now - queue[i].queuedAtUnscaled > BarkQueueExpirySeconds)
+                    queue.RemoveAt(i);
+            }
+        }
+
+        private int FindWeakestQueueIndex()
+        {
+            int best = -1;
+            for (int i = 0; i < queue.Count; i++)
+            {
+                if (best < 0)
+                {
+                    best = i;
+                    continue;
+                }
+
+                QueueEntry candidate = queue[i];
+                QueueEntry held = queue[best];
+                bool candidateWorse = candidate.options.priority < held.options.priority
+                                      || (candidate.options.priority == held.options.priority
+                                          && candidate.sequence > held.sequence);
+                if (candidateWorse)
+                    best = i;
+            }
+            return best;
+        }
+
+        private int FindNextQueueIndex()
+        {
+            int best = -1;
+            for (int i = 0; i < queue.Count; i++)
+            {
+                if (best < 0)
+                {
+                    best = i;
+                    continue;
+                }
+
+                QueueEntry candidate = queue[i];
+                QueueEntry held = queue[best];
+                bool candidateBetter = candidate.options.priority > held.options.priority
+                                       || (candidate.options.priority == held.options.priority
+                                           && candidate.sequence < held.sequence);
+                if (candidateBetter)
+                    best = i;
+            }
+            return best;
+        }
+
+        private void TryStartNext()
+        {
+            if (lineActive || queue.Count == 0 || !CanPlayNow())
+                return;
+
+            PruneQueue();
+            int index = FindNextQueueIndex();
+            if (index < 0)
+                return;
+
+            QueueEntry entry = queue[index];
+            queue.RemoveAt(index);
+            StartLine(entry);
+        }
+
+        private static bool CanPlayNow()
+        {
+            if (!Application.isPlaying || !GameSession.HasStarted)
+                return false;
+            if (AudioListener.pause)
+                return false;
+            return !DMUiToolkitLoadingOverlay.IsShowing;
+        }
+
+        // ================================================================== Playback
+
+        private void StartLine(QueueEntry entry)
+        {
+            currentLine = entry.line;
+            currentOptions = entry.options;
+            currentSpeaker = entry.speaker ?? string.Empty;
+            currentWorldTarget = entry.options.worldTarget;
+            lineActive = true;
+            linePaused = false;
+            lineDuck = DuckAmountFor(entry.options.priority);
+
+            AudioSource source = ResolveSource(entry.options.output);
+            source.Stop();
+            source.transform.localPosition = Vector3.zero;
+            source.clip = entry.line.clip;
+            source.pitch = 1f;
+            source.volume = Mathf.Clamp01(GameSettings.SfxVolume * Mathf.Max(0f, entry.options.volumeScale));
+
+            if (entry.options.output == DMVoiceOutputMode.World)
+                FollowWorldTarget();
+
+            source.Play();
+            lineEndUnscaled = Time.unscaledTime + Mathf.Max(0.05f, entry.line.clip.length);
+
+            if (entry.options.output == DMVoiceOutputMode.Radio)
+                PlayCommClick(commInClip, 1.06f);
+
+            if (!string.IsNullOrEmpty(entry.markKey))
+                MarkPlayed(entry.markKey);
+
+            DuckTo(lineDuck);
+            OnLineStarted?.Invoke(entry.line);
+        }
+
+        private void StopCurrent(bool skipped, bool notify, bool playOutClick)
+        {
+            DMVoiceLine finished = currentLine;
+            DMVoiceOutputMode mode = CurrentOutputMode;
+            AudioSource source = ResolveSource(mode);
+
+            if (source != null)
+                source.Stop();
+
+            // After Stop(), or the one-shot would be cut off with the line itself.
+            if (playOutClick && mode == DMVoiceOutputMode.Radio)
+                PlayCommClick(commOutClip, 0.94f);
+
+            if (worldSource != null)
+                worldSource.transform.localPosition = Vector3.zero;
+
+            lineActive = false;
+            linePaused = false;
+            currentLine = null;
+            currentOptions = null;
+            currentWorldTarget = null;
+
+            DuckTo(1f);
+
+            if (notify)
+                OnLineFinished?.Invoke(finished, skipped);
+        }
+
+        /// <summary>
+        /// World lines ride the speaker transform without being parented to it: a speaker that is
+        /// destroyed mid-line must not take the shared 3D source with it.
+        /// </summary>
+        private void FollowWorldTarget()
+        {
+            if (worldSource == null)
+                return;
+
+            if (currentWorldTarget != null)
+                worldSource.transform.position = currentWorldTarget.position;
+            else
+                worldSource.transform.position = transform.position;
+        }
+
+        private AudioSource ResolveSource(DMVoiceOutputMode mode)
+        {
+            switch (mode)
+            {
+                case DMVoiceOutputMode.Radio:
+                    return radioSource != null ? radioSource : narrationSource;
+                case DMVoiceOutputMode.World:
+                    return worldSource != null ? worldSource : narrationSource;
+                default:
+                    return narrationSource;
+            }
+        }
+
+        private void PlayCommClick(AudioClip clip, float pitch)
+        {
+            if (clip == null || radioSource == null)
+                return;
+            radioSource.pitch = pitch;
+            radioSource.PlayOneShot(clip, Mathf.Clamp01(GameSettings.SfxVolume * RadioClickVolume));
+            radioSource.pitch = 1f;
+        }
+
+        private void Update()
+        {
+            if (lineActive)
+            {
+                TickCurrentLine();
+                return;
+            }
+
+            if (queue.Count > 0)
+                TryStartNext();
+        }
+
+        private void TickCurrentLine()
+        {
+            if (CurrentOutputMode == DMVoiceOutputMode.World)
+                FollowWorldTarget();
+
+            bool shouldPause = Time.timeScale <= 0f || AudioListener.pause;
+            if (shouldPause != linePaused)
+            {
+                linePaused = shouldPause;
+                AudioSource source = ResolveSource(CurrentOutputMode);
+                if (source != null)
+                {
+                    if (shouldPause)
+                    {
+                        source.Pause();
+                        pausedAtUnscaled = Time.unscaledTime;
+                    }
+                    else
+                    {
+                        source.UnPause();
+                        lineEndUnscaled += Time.unscaledTime - pausedAtUnscaled;
+                    }
+                }
+            }
+
+            if (linePaused)
+                return;
+
+            if (Time.unscaledTime >= lineEndUnscaled)
+            {
+                StopCurrent(skipped: false, notify: true, playOutClick: true);
+                TryStartNext();
+                return;
+            }
+
+            if (WasSkipPressed())
+                Skip();
+        }
+
+        private static bool WasSkipPressed()
+        {
+            if (GameplayKeyboardShortcuts.IsGameplayInputLockedByUi())
+                return false;
+
+            return DMPlayerInputActions.WasPressedThisFrame(SkipActionName);
+        }
+
+        // ================================================================== Ducking
+
+        private static float DuckAmountFor(DMVoicePriority priority)
+        {
+            switch (priority)
+            {
+                case DMVoicePriority.Cinematic:
+                case DMVoicePriority.Story:
+                    return 0.45f;
+                case DMVoicePriority.Radio:
+                    return 0.6f;
+                case DMVoicePriority.Npc:
+                    return 0.7f;
+                default:
+                    return 0.88f;
+            }
+        }
+
+        private void DuckTo(float target)
+        {
+            target = Mathf.Clamp01(target);
+            if (duckRoutine != null)
+            {
+                StopCoroutine(duckRoutine);
+                duckRoutine = null;
+            }
+
+            if (!isActiveAndEnabled)
+            {
+                ApplyDuck(target);
+                return;
+            }
+
+            float duration = target < appliedDuck ? DuckAttackSeconds : DuckReleaseSeconds;
+            duckRoutine = StartCoroutine(DuckRoutine(target, duration));
+        }
+
+        private IEnumerator DuckRoutine(float target, float duration)
+        {
+            float from = appliedDuck;
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                ApplyDuck(Mathf.Lerp(from, target, t * t * (3f - 2f * t)));
+                yield return null;
+            }
+
+            ApplyDuck(target);
+            duckRoutine = null;
+        }
+
+        private void ApplyDuck(float value)
+        {
+            appliedDuck = Mathf.Clamp01(value);
+            GameAudioManager.Instance?.SetVoiceDuck(appliedDuck);
+        }
+
+        // ================================================================== Line lookup
+
+        private static readonly List<DMVoiceLineSet> loadedSets = new List<DMVoiceLineSet>(4);
+        private static float nextSetScanTime;
+
+        private static List<DMVoiceLineSet> CollectLineSets()
+        {
+            float now = Time.unscaledTime;
+            if (loadedSets.Count > 0 && now < nextSetScanTime)
+                return loadedSets;
+
+            nextSetScanTime = now + 2f;
+            loadedSets.Clear();
+            if (!Application.isPlaying)
+                return loadedSets;
+
+            DMVoiceLineSet[] found = Resources.FindObjectsOfTypeAll<DMVoiceLineSet>();
+            for (int i = 0; i < found.Length; i++)
+            {
+                if (found[i] != null)
+                    loadedSets.Add(found[i]);
+            }
+            return loadedSets;
+        }
+
+        private static bool FindLineById(string lineId, out DMVoiceLine line, out DMVoiceLineSet set)
+        {
+            List<DMVoiceLineSet> sets = CollectLineSets();
+            for (int s = 0; s < sets.Count; s++)
+            {
+                DMVoiceLineSet candidate = sets[s];
+                if (candidate == null || candidate.lines == null)
+                    continue;
+                for (int i = 0; i < candidate.lines.Count; i++)
+                {
+                    DMVoiceLine entry = candidate.lines[i];
+                    if (entry == null || !string.Equals(entry.id, lineId, StringComparison.Ordinal))
+                        continue;
+                    line = entry;
+                    set = candidate;
+                    return true;
+                }
+            }
+
+            line = null;
+            set = null;
+            return false;
+        }
+
+        private static string ResolveSpeaker(DMVoiceLineSet set)
+        {
+            if (set == null)
+                return string.Empty;
+            if (set.actor != null && !string.IsNullOrWhiteSpace(set.actor.displayName))
+                return set.actor.displayName.Trim();
+            return set.name;
+        }
+
+        // ================================================================== Play-once save
+
+        private static readonly HashSet<string> PlayedKeys = new HashSet<string>(StringComparer.Ordinal);
+
+        public static bool IsPlayed(string key) =>
+            !string.IsNullOrEmpty(key) && PlayedKeys.Contains(key);
+
+        public static void MarkPlayed(string key)
+        {
+            if (!string.IsNullOrEmpty(key))
+                PlayedKeys.Add(key);
+        }
+
+        /// <summary>Sorted snapshot for GameSaveData.voicePlayedKeys.</summary>
+        public static string[] BuildPlayedSave()
+        {
+            if (PlayedKeys.Count == 0)
+                return Array.Empty<string>();
+
+            string[] keys = new string[PlayedKeys.Count];
+            PlayedKeys.CopyTo(keys);
+            Array.Sort(keys, StringComparer.Ordinal);
+            return keys;
+        }
+
+        /// <summary>
+        /// 2026-11-03o. Frame of the last ApplyPlayedSave (a save load). Voice hooks that react to quest /
+        /// inventory broadcasts use it to ignore the replay a load causes. -1 = never.
+        /// </summary>
+        public static int LastSaveAppliedFrame { get; private set; } = -1;
+
+        /// <summary>True when a save was applied this frame or within the last <paramref name="frames"/> frames.</summary>
+        public static bool SaveAppliedRecently(int frames = 1) =>
+            LastSaveAppliedFrame >= 0
+            && Time.frameCount >= LastSaveAppliedFrame
+            && Time.frameCount - LastSaveAppliedFrame <= frames;
+
+        public static void ApplyPlayedSave(string[] keys)
+        {
+            LastSaveAppliedFrame = Time.frameCount;
+            PlayedKeys.Clear();
+            if (keys == null)
+                return;
+
+            for (int i = 0; i < keys.Length; i++)
+            {
+                if (!string.IsNullOrWhiteSpace(keys[i]))
+                    PlayedKeys.Add(keys[i]);
+            }
+        }
+
+        /// <summary>New game: every play-once line becomes available again.</summary>
+        public static void ClearPlayed() => PlayedKeys.Clear();
+    }
+}

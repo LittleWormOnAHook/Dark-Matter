@@ -1,0 +1,46 @@
+start keepTerrain=true noCombat=true
+bypass attempt 1: clean
+terrains active=1
+arm gun: ok
+FindMorph candidates: [MorphBlade_Pickup kind=MeleeBlade bound=MorphBlade vis=False kindOk=False] [MorphBlade_Pickup kind=MeleeBlade bound=MorphBlade vis=False kindOk=False] [PioneerVisual_MorphGun_Held kind=Ranged bound=MorphGun vis=True kindOk=True]
+FindMorph pick=PioneerVisual_MorphGun_Held kind=Ranged bound=MorphGun
+Gun/Pistol: formIndex=0 display=Pistol visual=ok
+Gun TryCycleForm after 0 -> index=1 ok=True
+screenshot Assets/_Project/Art/Debug/MorphShots/Gun_Pistol.png
+Gun cycle 0->1 ok=True
+Gun/Rifle: formIndex=1 display=Rifle visual=ok
+screenshot Assets/_Project/Art/Debug/MorphShots/Gun_Rifle.png
+Gun cycle 1->2 ok=True
+Gun/Sniper: formIndex=2 display=Sniper visual=ok
+screenshot Assets/_Project/Art/Debug/MorphShots/Gun_Sniper.png
+arm blade: ok
+FindMorph candidates: [PioneerVisual_MorphBlade_Held kind=MeleeBlade bound=MorphBlade vis=True kindOk=True] [MorphBlade_Pickup kind=MeleeBlade bound=MorphBlade vis=False kindOk=True] [MorphBlade_Pickup kind=MeleeBlade bound=MorphBlade vis=False kindOk=True] [PioneerVisual_MorphGun_Held kind=Ranged bound=MorphGun vis=True kindOk=False]
+FindMorph pick=PioneerVisual_MorphBlade_Held kind=MeleeBlade bound=MorphBlade
+Blade/Metal: formIndex=0 display=Metal visual=ok
+Blade TryCycleForm after 0 -> index=1 ok=True
+screenshot Assets/_Project/Art/Debug/MorphShots/Blade_Metal.png
+Blade cycle 0->1 ok=True
+Blade/Light: formIndex=1 display=Light visual=ok
+screenshot Assets/_Project/Art/Debug/MorphShots/Blade_Light.png
+Blade cycle 1->2 ok=True
+Blade/Plasma: formIndex=2 display=Plasma visual=ok
+screenshot Assets/_Project/Art/Debug/MorphShots/Blade_Plasma.png
+Blade cycle 2->3 ok=True
+Blade/Ion: formIndex=3 display=Ion visual=ok
+screenshot Assets/_Project/Art/Debug/MorphShots/Blade_Ion.png
+Blade cycle 3->4 ok=True
+Blade/Laser: formIndex=4 display=Laser visual=ok
+screenshot Assets/_Project/Art/Debug/MorphShots/Blade_Laser.png
+Blade cycle 4->5 ok=True
+Blade/Cryo: formIndex=5 display=Cryo visual=ok
+screenshot Assets/_Project/Art/Debug/MorphShots/Blade_Cryo.png
+shots:
+  Assets/_Project/Art/Debug/MorphShots/Gun_Pistol.png
+  Assets/_Project/Art/Debug/MorphShots/Gun_Rifle.png
+  Assets/_Project/Art/Debug/MorphShots/Gun_Sniper.png
+  Assets/_Project/Art/Debug/MorphShots/Blade_Metal.png
+  Assets/_Project/Art/Debug/MorphShots/Blade_Light.png
+  Assets/_Project/Art/Debug/MorphShots/Blade_Plasma.png
+  Assets/_Project/Art/Debug/MorphShots/Blade_Ion.png
+  Assets/_Project/Art/Debug/MorphShots/Blade_Laser.png
+  Assets/_Project/Art/Debug/MorphShots/Blade_Cryo.png

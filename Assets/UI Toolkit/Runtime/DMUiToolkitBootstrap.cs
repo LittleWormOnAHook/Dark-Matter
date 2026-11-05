@@ -566,7 +566,10 @@ namespace Project.UI
 #endif
 
             string fileName = System.IO.Path.GetFileNameWithoutExtension(assetPath);
-            return Resources.Load<T>(fileName);
+            // 2026-11-04b: UI assets are not in a Resources folder, so builds resolve them via the registry.
+            return Resources.Load<T>(fileName)
+                ?? DMUiRuntimeAssetRegistry.Resolve<T>(fileName)
+                ?? DMUiRuntimeAssetRegistry.ResolveByName<T>(fileName);
         }
 
         public static void ApplyUiScale(float uiScale)

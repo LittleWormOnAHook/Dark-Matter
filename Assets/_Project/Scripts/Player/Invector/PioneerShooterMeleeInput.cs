@@ -1,4 +1,4 @@
-﻿using Invector.vCharacterController;
+using Invector.vCharacterController;
 using InvInputDevice = Invector.vCharacterController.InputDevice;
 using Invector.vEventSystems;
 using Invector.vMelee;
@@ -2114,7 +2114,9 @@ namespace Project.Player.Invector
 
         private int ResolveUpperBodyLayer()
         {
-            if (cc != null && cc.upperBodyLayer >= 0)
+            // 2026-11-04h: a retired stand-in rig never runs vThirdPersonInput.Start -> cc.Init(),
+            // so cc.animator is null and cc.upperBodyLayer dereferences it (NRE on deactivate).
+            if (cc != null && cc.animator != null && cc.upperBodyLayer >= 0)
                 return cc.upperBodyLayer;
             return animator != null ? animator.GetLayerIndex("UpperBody") : -1;
         }
@@ -2295,7 +2297,8 @@ namespace Project.Player.Invector
 
         private int ResolveFullBodyLayer()
         {
-            if (cc != null && cc.fullbodyLayer >= 0)
+            // 2026-11-04h: see ResolveUpperBodyLayer - never read a layer off an uninitialised cc.
+            if (cc != null && cc.animator != null && cc.fullbodyLayer >= 0)
                 return cc.fullbodyLayer;
             return animator != null ? animator.GetLayerIndex("FullBody") : -1;
         }
@@ -2667,7 +2670,7 @@ namespace Project.Player.Invector
             if (animator == null || !isBlocking)
                 yield break;
 
-            int layer = cc != null ? cc.fullbodyLayer : animator.GetLayerIndex("FullBody");
+            int layer = cc != null && cc.animator != null ? cc.fullbodyLayer : animator.GetLayerIndex("FullBody");
             if (layer >= 0)
                 RestoreMeleeFullBodyIdle();
 

@@ -89,7 +89,7 @@ Backups: _AgentBackups\...\DM_ClimbDashProfile.cs.pre20261022b, DMAmmoFxProfile_
 
 [2026-10-23c] Player Prefab Creator: weapons survive mesh swap (Kade v2 onto Player_v7 Combat Variant)
 - NEW Editor/DMHumanoidCombatNodeCarryUtility.cs: before the old Visual is destroyed, lifts Drawn_/Holstered_/handler/holder/socket/hitBox nodes out (unpacking outer prefab layers only when base-owned nodes can't move), records parent bone by HumanBodyBones, re-seats them on the new bones with original local pose; rewires serialized refs (vMeleeManager members, handlers, bridges) by bone identity and pastes bone-hosted components (e.g. melee attack objects) onto the matching new bone.
-- DMHumanoidVisualAttachUtility: AttachVisualModel(carryCombatNodes, useSourceAsIs) — Player path carries nodes; wrapper prefab keeps root rotation/scale.
+- DMHumanoidVisualAttachUtility: AttachVisualModel(carryCombatNodes, useSourceAsIs) ï¿½ Player path carries nodes; wrapper prefab keeps root rotation/scale.
 - PlayerPrefabVisualSetupUtility: NormalizeTemplateSelection (Hierarchy object -> prefab asset, warns on unapplied overrides; errors instead of silent Player_Invector fallback); ShouldUseSourceAsIs (mesh wrapper prefab like Kade v2 used as-is incl. Rebreather (1) + root rotation).
 - PlayerPrefabCreatorPanel / Window: Template field accepts Hierarchy objects (mapped to their prefab asset with dialog warning).
 - EnemyInvectorWeaponHolderRebind: RebindOrphansUnderVisual (only holders not under any humanoid bone; placed holders untouched).
@@ -494,3 +494,50 @@ Docs: Dev Manual 03-Combat / 09-Controls (regenerate later with Tools/DevManual/
 - Cause: since 25n native UITK Navigate is the only pad nav source (navDirectPoll off), so our spatial MoveFocusNearest (which already had tab->content logic) never ran; UITK's default NavigationMoveEvent handling moves along the focus ring, not spatially into the body.
 - Fix (DMUiJournalGamepadNav): TrickleDown NavigationMoveEvent callback on each nav root routes Up/Down/Left/Right through MoveFocusNearest, then focusController.IgnoreEvent + StopPropagation (single step; native repeat 0.5/0.25 + right stick/D-pad kept). Down from a tab -> first body focusable (Inventory: first dmg-inv-slot); Up from the body's top row -> active tab. Keyboard direct-poll gated by navDirectPoll (native already sends arrows/WASD; avoids double steps). Focusables unchanged (Button/Toggle/Slider/Dropdown/Foldout + slot/row classes get focusable + tabIndex 0). Log: [JournalPad] navmove <dir> from -> to.
 - Docs: CHANGELOG only. Backups .pre20261025r.
+
+=== 2026-10-25s  Combat slice 4 finish, Phase 4 flank + morale, Slice 5 momentum spin, slices audit (backups .pre20261025s*) ===
+Slice 4 (Scripts/Combat/DMMeleeAttackFacing.cs, DM_CombatCoreProfile): target-switch camera follow (keep-in-view 40 deg, max 360 deg/s, 0.5 s)
+  + snap ease (last 25 deg down to 0.3 speed). Stick retarget suppressed during camera follow. In ApplyTargetSwitchPreset Subtle/Default/Extreme.
+Phase 4 (AI/Brain/DM_CombatDirectorProfile + DMEnemyEngagementDirector, EnemyAiController.Engagement): live flanking (1 flanker, 2-7 s hold,
+  115 deg off player facing, min 3 enemies) and group morale (casualty / leader / gruesome drops, recovery, break -> 1 attacker + outer ring,
+  hysteresis recover). ApplyFlankMoralePreset. Studio: Combat Director panel preset buttons + Play stats.
+Slice 5 (new Scripts/Combat/Momentum/DM_MomentumProfile + DMPlayerMomentum + DMMomentumSpin; Resources/Combat/DM_MomentumProfile.asset):
+  momentum meter (melee hit gain, chain bonus, decay, loss on damage); 360 spin AoE costing 100, hits each enemy once, restores Invector lock.
+  PioneerInvectorDamageReceiver notifies momentum on player melee hits. Studio "Momentum & spin" (presets, Fill, Test Spin). No input binding yet.
+Audit (Editor/Audit/DMEnemyRuntimeAudit.Slices.cs + Setup/FloorGuard options keepTerrain/slicesOnly/useActiveScene): terrain-on slice scenarios.
+Docs: DevManual/03-Combat.md section "2026-10-25s".
+
+=== 2026-10-26a Spin input, Slice 6 (finishers/taunts/camera), morale fix, Humadroid melee diagnosis ===
+- Momentum Spin trigger: BOTH hold Attack (KBM Left Mouse / Pad Right Trigger) with full meter for spinHoldSeconds (0.7 s default; Subtle 0.9 / Extreme 0.5) AND auto on charged release (spinAutoOnChargedRelease=ON). No new input action. Studio: Controls > Momentum Spin.
+- Slice 6: DMSlice6Runtime + DM_FinisherTauntProfile (Resources/Combat). Finishers on low-HP (<=20%) or staggered (1.2 s window) enemies, press Attack in range 2.4 m / 70 deg; paired SwordFinisher_Player/_Enemy clips. Taunts for Director ring holders (PROTOFACTOR TauntA/B 2HandMelee, Taunt1, Taunt3), max 1 concurrent. Camera pull-back up to 1.6 m when 3-6+ enemies/slot threat, smooth return. Studio: Combat > Finishers, taunts & camera (Subtle/Default/Extreme). Existing project clips only; nothing imported.
+- Morale fix (DMEnemyEngagementDirector): destroyed (destroyOnDeath) members were Unity-null so NoteCasualty returned early; now counted as casualties. GruesomeKills uses reference list.
+- Humadroid melee: diagnostic s5.hitdiag/s5.hitprobe added. Runtime DMHitbox rig builds 18 live hitboxes covering the mesh (hit Y 0.1-1.7 vs mesh -0.1-1.9); no damage was caused by spacing (weapon trigger passing 0.4-0.6 m from chest), not hitbox size/layer. Humadroid prefab NOT modified (body hitboxes are runtime-generated, not authored in prefab); weapons untouched.
+- Blood decals unchanged (~8 s fade).
+- Audit: 71 PASS / 0 FAIL / 11 WARN, 0 console errors (terrain ON).
+
+=== 2026-10-26b Humadroid melee lock (stay in melee range vs a melee player) ===
+- New DM_MeleeLockProfile (Scripts/AI/Brain, asset Resources/AI/DM_MeleeLockProfile.asset). Studio: Combat > Melee lock (stay close), presets Subtle / Default / Extreme (engage 5/8/14 m, hold 1.3/1.0/0.75 m, release 0.8/1.5/3 s). Fields: enableMeleeLock, enemyTypes ("Humadroid"; "*" = all gun+melee enemies), requireEnemyMeleeWeapon, engageDistance 1-30, holdDistance 0.4-3, releaseSeconds 0-8.
+- EnemyAiController.CombatPositioning: IsMeleeLocked/MeleeLockActive; while the player has a melee weapon drawn within engageDistance, ranged hold/retreat is skipped and min separation + standoff are capped to holdDistance.
+- EnemyInvectorCombatBridge.IsArmedRangedPreferred returns false while melee-locked (enemy has a melee weapon) so it closes, swaps to melee and stops standing off to shoot.
+- PioneerShooterMeleeInput: public IsDrawnMeleeActive (read-only).
+- Body weight: DM_ClimbDashProfile bodyWeightEnemyTypeScales adds Humadroid=0.8 (stiffer robot sway at close range).
+- No prefab, weapon placement, NavMesh or scene changes. Backups *.pre20261026b(_b/_c/_d).
+- Audit: sliceFilter "humaMelee" scenario (Humadroid only). 2 runs: lock PASS, closes to 1.0-1.5 m, spin hits (200->172), swings kill it (3-4 hits/10), 0 console errors.
+Docs: Assets/_Project/Documentation/DevManual/03-Combat.md (2026-10-26b section).
+
+=== 2026-10-26e Finisher-available cue (brighten + pulse eligible enemy HP fill) ===
+- DM_FinisherTauntProfile: enableFinisherCue, finisherCueBrightColor, finisherCueBrightnessBoost (0-2), finisherCuePulseSpeed (0.2-10 Hz), finisherCuePulseDepth (0-1), finisherCueProbeHz (1-30), finisherCueSound (off, unused). Studio > Combat > Finishers, taunts & camera; Subtle/Default/Extreme presets include cue.
+- DMSlice6Runtime: throttled ProbeFinisher (nearest eligible only) exposes CueTarget / IsCueTarget / EvaluateCueFill.
+- Applied on EngagedEnemyHealthHud (uGUI), UITK enemy-focus fill (DMUiToolkitHud.XpAmmoEnemy), FloatingTargetHealthBar, and UITK world chrome bars. Restores normal colour when not eligible. No sound. No prefab/scene/weapon changes. Backups *.pre20261026e.
+Docs: Assets/_Project/Documentation/DevManual/03-Combat.md (2026-10-26e section).
+
+=== 2026-10-26f Night Light (trilight ambient fill on DM_IoSkyProfile) ===
+- Studio World > Sky & Orbit: Night Light section - Enable, Ground / Mid / Sky colours, Light Amount (0-400 lux). Fades in with existing nightFadeStartDeg/nightFadeEndDeg (shared with stars). Blends additively with Jupiter-shine / eclipse fill; day lighting unchanged. No aurora-driven light.
+- Runtime: DMIoSkyController creates three shadowless specular-free directional fills (sky/mid/ground), NightLightFactor exposed. Live in Play and edit-mode preview (skyRoot DontSave lights).
+- Presets Subtle (22 lux) / Default (55 lux, noticeably brighter than prior night) / Extreme (140 lux). ApplyNightLightPreset. Backups *.pre20261026f. No scene saves, no commit.
+Docs: Assets/_Project/Documentation/DevManual/02-World.md (2026-10-26f Night Light).
+
+=== 2026-10-26g Night Light strength (exposure was eating the fills) ===
+- Cause: auto-exposure Exposure Limit Min stayed at ~6.4 EV at night (only lowered in eclipse), so added Night Light fills were adapted away. Ambient/indirect was also unchanged by the colours.
+- Fix: Light Amount max 400->1200 lux; Extreme preset ~420 lux. New Night Exposure Limit Min (EV, fades with nightFade*/NightLightFactor like eclipse floor) and Night Ambient Boost (adds to Indirect Diffuse + half to reflections at night). Studio Night Light section updated. Presets Subtle 40/4.5/0.35, Default 120/3.5/0.75, Extreme 420/2/1.6. Backups *.pre20261026g.
+Docs: Assets/_Project/Documentation/DevManual/02-World.md (2026-10-26g).

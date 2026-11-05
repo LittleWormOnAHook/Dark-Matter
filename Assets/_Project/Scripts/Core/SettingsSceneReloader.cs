@@ -68,9 +68,44 @@ namespace Project.Core
             {
                 LoadingOverlayController.SuppressNextBootOverlay();
                 MapRuntimeCleanup.NotifySceneTransitionStarted();
+
+                // 2026-11-04f: this reload is single-scene, so it throws away the other world.
+                // GetActiveScene() may now be IO (the menu switch sets it active), and reloading
+                // IO alone would destroy Mars - the scene that owns the player rig, the runtime UI
+                // host and all progression state. Pin the reload to Mars and reset the stack so
+                // DMSceneStack stops believing IO is still resident.
                 Scene activeScene = SceneManager.GetActiveScene();
-                SceneManager.LoadScene(activeScene.buildIndex);
+                int targetIndex = MarsSceneIndex();
+                if (targetIndex >= 0)
+                {
+                    Debug.Log($"[SettingsSceneReloader] single-scene reload pinned to '{DMSceneStack.MarsSceneName}' "
+                        + $"(build index {targetIndex}); active scene was '{activeScene.name}'.");
+                    DMSceneStack.ResetForSingleSceneReload();
+                    SceneManager.LoadScene(targetIndex);
+                }
+                else
+                {
+                    Debug.LogWarning($"[SettingsSceneReloader] '{DMSceneStack.MarsSceneName}' is not in the build scene list; "
+                        + $"falling back to the active scene '{activeScene.name}'.");
+                    DMSceneStack.ResetForSingleSceneReload();
+                    SceneManager.LoadScene(activeScene.buildIndex);
+                }
             });
+        }
+
+        /// <summary>2026-11-04f: build index of the Mars boot scene, or -1 when it is not in the build list.</summary>
+        private static int MarsSceneIndex()
+        {
+            for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
+            {
+                string path = UnityEngine.SceneManagement.SceneUtility.GetScenePathByBuildIndex(i);
+                if (string.IsNullOrEmpty(path))
+                    continue;
+                string name = System.IO.Path.GetFileNameWithoutExtension(path);
+                if (string.Equals(name, DMSceneStack.MarsSceneName, System.StringComparison.OrdinalIgnoreCase))
+                    return i;
+            }
+            return -1;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]

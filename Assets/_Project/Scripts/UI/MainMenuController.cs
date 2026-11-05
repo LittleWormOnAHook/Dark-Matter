@@ -14,6 +14,7 @@ using Project.Survival;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
 
@@ -250,14 +251,11 @@ namespace Project.UI
 
         private static void EnsureEventSystem()
         {
-            if (FindAnyObjectByType<EventSystem>() == null)
-            {
-                GameObject eventSystemObject = new GameObject("EventSystem");
-                eventSystemObject.AddComponent<EventSystem>();
-                eventSystemObject.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
-            }
-
-            DMUiGamepadNavigation.EnsureConfigured();
+            // 2026-11-04f: creating one when none exists is not enough. Both worlds are resident
+            // after the first IO load and each ships its own EventSystem, so the old "only if
+            // none exists" check left two enabled EventSystems in the scene - see
+            // DMSceneStack.EnforceSingleEventSystem for the pointer-click failure that caused.
+            DMSceneStack.EnforceSingleEventSystem();
         }
 
         private static void EnsureGraphicRaycaster(Canvas canvas)
@@ -456,6 +454,10 @@ namespace Project.UI
             pauseOverlayActive = false;
             GameSession.SetPhase(GamePhase.MainMenu);
 
+            // 2026-11-04f: re-assert exactly one enabled EventSystem (and the world scope) before
+            // any menu chrome is painted, so pointer clicks always land on the surviving one.
+            DMSceneStack.RefreshMenuInputArbitration();
+
             if (DMUiToolkitConfig.IsEnabled)
                 DMUiToolkitBootstrap.EnsureExists();
 
@@ -537,6 +539,10 @@ namespace Project.UI
 
         public void ShowPauseMenu()
         {
+            // 2026-11-04f: same invariant as ShowMainMenu - the pause overlay is the surface that
+            // went dead after Esc from IO, so it re-checks the input wiring before painting.
+            DMSceneStack.RefreshMenuInputArbitration();
+
             pauseOverlayActive = true;
 
             if (menuBackground != null)
@@ -719,6 +725,7 @@ namespace Project.UI
         }
 
         public void InvokeNewGame() => StartNewGame();
+        public void InvokeLoadIoScene() => LoadIoScene();
         public void InvokeContinueExpedition() => ContinueExpedition();
         public void InvokeResumeFromPause() => ResumeFromPause();
 
@@ -911,6 +918,95 @@ namespace Project.UI
             DmUiRuntimeRefs.ResolveUiManager()?.RefreshSurvivalDisplay();
             RefreshMenuButtonStates();
             MainCanvasFlow.Refresh();
+        }
+
+        /// <summary>
+        /// 2026-11-04f: the two world scene names now live in DMSceneStack (which forwards to
+        /// DMWorldScope). Kept here so existing call sites and the DevManual still resolve.
+        /// </summary>
+        public const string IoSceneName = DMSceneStack.IoSceneName;
+        public const string MarsSceneName = DMSceneStack.MarsSceneName;
+
+        private bool ioSceneLoading;
+
+        /// <summary>
+        /// 2026-11-04f: symmetric Mars &lt;-&gt; IO toggle. Both scenes stay resident after the first
+        /// IO load, so the second and every later press is a pure swap (no reload). The actual
+        /// work - visibility, player ownership, EventSystem/AudioListener arbitration - lives in
+        /// DMSceneStack so the pause menu, settings and reload paths can re-use it.
+        /// </summary>
+        private void LoadIoScene()
+        {
+            SwitchWorld();
+        }
+
+        /// <summary>2026-11-04f: the single menu button (label flips between "IO (v1.7)" and "Mars").</summary>
+        public void InvokeSwitchWorld() => SwitchWorld();
+
+        private void SwitchWorld()
+        {
+            if (ioSceneLoading || DMSceneStack.IsSwitching)
+                return;
+
+            if (LoadingOverlayController.IsBlockingMenu)
+                return;
+
+            // Never trust a cached world: derive it from the scene Unity reports as active.
+            DMUiToolkitMainMenu.SyncVisibilityToPainted();
+            DMSceneStack.RefreshCurrentFromActiveScene();
+
+            string from = DMSceneStack.CurrentSceneName;
+            string target = DMSceneStack.DestinationSceneName;
+            if (!Application.CanStreamedLevelBeLoaded(target))
+            {
+                Debug.LogWarning($"[MainMenu] Cannot switch to '{target}': it is not in the build scene list (File > Build Profiles).");
+                ShowMainMenu();
+                ShowMenuMessage($"Scene '{target}' is not in the build scene list.");
+                return;
+            }
+
+            Debug.Log($"[MainMenu] World switch: '{from}' -> '{target}' (already loaded: {DMSceneStack.IsLoaded(target)}).");
+
+            ioSceneLoading = true;
+            pauseOverlayActive = false;
+            HideMenuChrome();
+            HideGameplayChromeForMenu();
+            GameSession.MarkStarted();
+            SetGameWorldPaused(false);
+            ReleaseGameplayInputCapture();
+            StartCoroutine(SwitchWorldRoutine());
+        }
+
+        private IEnumerator SwitchWorldRoutine()
+        {
+            bool switched = false;
+            string failure = null;
+
+            yield return DMSceneStack.SwitchToOtherRoutine((ok, error) =>
+            {
+                switched = ok;
+                failure = error;
+            });
+
+            ioSceneLoading = false;
+
+            if (!switched)
+            {
+                Debug.LogWarning($"[MainMenu] World switch failed: {failure}");
+                ShowMainMenu();
+                ShowMenuMessage(failure);
+                yield break;
+            }
+
+            // Gameplay hand-off - same sequence StartNewGame and LoadFromSlot use. Dropping
+            // straight into the new world is the point of the button: it must be visibly IO
+            // (or visibly Mars) the moment the switch finishes.
+            HideMenuChrome();
+            SetGameWorldPaused(false);
+            ReleaseGameplayInputCapture();
+            RefreshGameplayCamera();
+            MainCanvasFlow.Refresh();
+            RefreshMenuButtonStates();
         }
 
         private void StartNewGame()

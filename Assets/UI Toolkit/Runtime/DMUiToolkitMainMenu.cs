@@ -27,6 +27,7 @@ namespace Project.UI
         private Button resumeButton;
         private Button continueButton;
         private Button newButton;
+        private Button ioButton;
         private Button loadButton;
         private Button saveButton;
         private Button settingsButton;
@@ -45,6 +46,8 @@ namespace Project.UI
         private bool visible;
         private bool pauseMode;
         private int zoneIndex;
+        /// <summary>2026-11-04f: which world the environment bar currently describes.</summary>
+        private DMSceneDestination barWorld = DMSceneDestination.Mars;
         private bool uguiHidden;
 
         public static DMUiToolkitMainMenu Instance => instance;
@@ -183,7 +186,17 @@ namespace Project.UI
             SetButtonVisible(resumeButton, pauseOverlay);
             SetButtonVisible(continueButton, !pauseOverlay && hasContinueSave);
             SetButtonVisible(newButton, !pauseOverlay);
+            SetButtonVisible(ioButton, !pauseOverlay);
             SetButtonVisible(mainMenuButton, pauseOverlay);
+
+            // 2026-11-04f: one button that toggles between the two worlds, so the label has to
+            // follow the world that is actually showing ("IO (v1.7)" from Mars, "Mars" from IO).
+            if (ioButton != null)
+            {
+                string label = DMSceneStack.SwitchButtonLabel;
+                if (!string.Equals(ioButton.text, label, System.StringComparison.Ordinal))
+                    ioButton.text = label;
+            }
 
             if (saveButton != null)
                 saveButton.SetEnabled(sessionStarted);
@@ -268,6 +281,7 @@ namespace Project.UI
             resumeButton = tree.Q<Button>("btn-resume");
             continueButton = tree.Q<Button>("btn-continue");
             newButton = tree.Q<Button>("btn-new");
+            ioButton = tree.Q<Button>("btn-io");
             loadButton = tree.Q<Button>("btn-load");
             saveButton = tree.Q<Button>("btn-save");
             settingsButton = tree.Q<Button>("btn-settings");
@@ -303,6 +317,7 @@ namespace Project.UI
             Wire(resumeButton, () => ResolveController()?.InvokeResumeFromPause());
             Wire(continueButton, () => ResolveController()?.InvokeContinueExpedition());
             Wire(newButton, () => ResolveController()?.InvokeNewGame());
+            Wire(ioButton, () => ResolveController()?.InvokeSwitchWorld());
             Wire(loadButton, () => ResolveController()?.InvokeOpenLoad());
             Wire(saveButton, () => ResolveController()?.InvokeOpenSave());
             Wire(settingsButton, () => ResolveController()?.InvokeOpenSettings());
@@ -373,6 +388,14 @@ namespace Project.UI
             IReadOnlyList<MainMenuZoneProfile> zones = MainMenuZoneProfile.GetDefaultZones();
             if (zones == null || zones.Count == 0)
                 return;
+
+            // 2026-11-04f: the bar describes the world that is showing, so it restarts at that
+            // world's first zone instead of carrying the previous world's selection across.
+            if (barWorld != DMSceneStack.Current)
+            {
+                barWorld = DMSceneStack.Current;
+                zoneIndex = 0;
+            }
 
             MainMenuZoneProfile zone = zones[Mathf.Clamp(zoneIndex, 0, zones.Count - 1)];
 

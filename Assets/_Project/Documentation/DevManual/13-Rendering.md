@@ -23,3 +23,15 @@ DM shaders (DM_ copies only; nothing is reassigned automatically).
 **Where:**
 - Studio: `Genesis Studio / Rendering / DM Shaders: Master` (panel mode `ExternalTool`)
 
+## DM Terrain Parallax: debug baseColor (2026-11-04a)
+
+`DM_TerrainParallax_Splatmap.hlsl` `TerrainLitDebug()` sets `baseColor` to black first. The 8-layer chain now ends in a texture-streaming fallback `else`. This removes the "use of potentially uninitialized variable (baseColor)" warning at line 591. Normal rendering is unchanged, because the function only feeds HDRP debug display.
+
+## Vendor shader graphs: DXR pass stripping (2026-11-04a)
+
+`Assets/_Project/Editor/Rendering/DMRayTracingPassStripper.cs` is an `IPreprocessShaders` build hook. It strips only the ray tracing (DXR) passes of `Shader Graphs/PW_Water_RP` and `Shader Graphs/BotD_Graph_Lit_TranslucentAlphaCutoff`. Those passes use ddx/ddy and implicit-LOD sampling, which `lib_6_3` closesthit shaders reject, so they never compiled. Stripping them removes about 141 build shader errors. The vendor graphs are not edited and raster rendering is untouched. These surfaces still do not show in RT reflections or path tracing, the same as before. To restore the old behaviour, set `DMRayTracingPassStripper.Enabled = false` or add more names to its list.
+
+## DMRealtimeIndirect: edit preview teardown on save (2026-11-04b)
+
+`KillEditPreviews()` destroys the hidden edit-preview GameObject. Its `OnDisable` then runs inside that deactivation, where `DestroyImmediate` is illegal ("Cannot destroy Component while GameObject is being activated or deactivated"). While `KillEditPreviews` runs, `Kill()` now queues edit-mode destroys in `deferredKills`. `FlushDeferredKills()` empties the queue from `EditorTick` and from `EditorApplication.delayCall` after a scene save. Play-mode and normal edit-mode teardown are unchanged.
+

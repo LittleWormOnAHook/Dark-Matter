@@ -32,6 +32,7 @@ namespace Project.UI
         private Toggle vignetteToggle;
         private Toggle rayTracingToggle;
         private Toggle minimapToggle;
+        private Toggle subtitlesToggle; // 2026-11-03n shared with DMPlayerSystemsProfile
         private Toggle fullscreenToggle;
         private Toggle vsyncToggle;
         private Toggle dlssToggle;
@@ -194,6 +195,7 @@ namespace Project.UI
 
             CreateSectionTitle(leftColumn, "Gameplay");
             minimapToggle = MenuUiBuilder.CreateToggleRow(leftColumn, "Minimap", GameSettings.MinimapEnabled);
+            subtitlesToggle = MenuUiBuilder.CreateToggleRow(leftColumn, "Subtitles", GameSettings.SubtitlesEnabled);
             uiScaleSlider = MenuUiBuilder.CreateSliderRow(leftColumn, "UI Scale", GameSettings.UiScale, out uiScaleValueLabel);
             uiScaleSlider.minValue = GameSettings.UiScaleMin;
             uiScaleSlider.maxValue = GameSettings.UiScaleMax;
@@ -444,6 +446,12 @@ namespace Project.UI
                 GameSettings.SetMinimapEnabled(value);
                 MapUI.ApplyMinimapEnabled(value);
                 MenuUiBuilder.RefreshToggleVisual(minimapToggle);
+            });
+            subtitlesToggle.onValueChanged.RemoveAllListeners();
+            subtitlesToggle.onValueChanged.AddListener(value =>
+            {
+                GameSettings.SetSubtitlesEnabled(value);
+                MenuUiBuilder.RefreshToggleVisual(subtitlesToggle);
             });
             fullscreenToggle.onValueChanged.RemoveAllListeners();
             fullscreenToggle.onValueChanged.AddListener(value =>
@@ -716,6 +724,7 @@ namespace Project.UI
             MenuUiBuilder.RefreshToggleVisual(vsyncToggle);
             MenuUiBuilder.RefreshToggleVisual(rayTracingToggle);
             MenuUiBuilder.RefreshToggleVisual(minimapToggle);
+            MenuUiBuilder.RefreshToggleVisual(subtitlesToggle);
         }
 
         private void SyncControlsFromSettings()
@@ -738,6 +747,7 @@ namespace Project.UI
             colorGradingToggle.SetIsOnWithoutNotify(GameSettings.ColorGradingEnabled);
             vignetteToggle.SetIsOnWithoutNotify(GameSettings.VignetteEnabled);
             minimapToggle.SetIsOnWithoutNotify(GameSettings.MinimapEnabled);
+            subtitlesToggle.SetIsOnWithoutNotify(GameSettings.SubtitlesEnabled);
             fullscreenToggle.SetIsOnWithoutNotify(GameSettings.Fullscreen);
             vsyncToggle.SetIsOnWithoutNotify(GameSettings.VSync);
             rayTracingToggle.SetIsOnWithoutNotify(GameSettings.RayTracingEnabled);

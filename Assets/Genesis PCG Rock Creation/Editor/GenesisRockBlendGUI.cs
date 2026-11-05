@@ -128,6 +128,7 @@ namespace GenesisPCG.RockCreation.Editor
                         owns = n => (Starts(n, "_GRB_Bottom") && n != "_GRB_BottomEnable") || Array.IndexOf(TerrainMapProps, n) >= 0 },
             new Group { key = "fade", title = "Transparency Fade", toggle = "_GRB_FadeEnable", owns = n => Starts(n, "_GRB_Fade") && n != "_GRB_FadeEnable" },
             new Group { key = "ao", title = "Contact AO", enabledBy = new[] { "_GRB_FadeEnable", "_GRB_BottomEnable" }, onWhen = ps => AnyValue(ps, "_GRB_ContactAOKeep", v => v < 0.999f), owns = n => Starts(n, "_GRB_ContactAO") },
+            new Group { key = "aosup", title = "Base AO Suppression", enabledBy = new[] { "_GRB_FadeEnable", "_GRB_BottomEnable" }, owns = n => Starts(n, "_GRB_BaseAOSuppress") }, // 24az
             new Group { key = "strata", title = "World Strata Bands", toggle = "_GRB_StrataEnable", owns = n => Starts(n, "_GRB_Strata") && n != "_GRB_StrataEnable" },
             new Group { key = "macro", title = "Macro Variation", onWhen = ps => AnyValue(ps, "_GRB_MacroStrength", v => v > 0.001f), owns = n => Starts(n, "_GRB_Macro") },
             new Group { key = "data", title = "Vertex ranges + texture arrays (set on bake)", owns = n => n == "_GRB_HeightRange" || n == "_GRB_SizeRange" || n == "_GRB_BaseLumRef" || n == "_GRB_VColorRange" || n == "_GRB_UseTexArray" || Starts(n, "_GRB_BaseArray", "_GRB_NormalArray", "_GRB_MaskArray") },

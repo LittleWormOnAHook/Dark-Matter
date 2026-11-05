@@ -55,7 +55,30 @@ namespace Project.Combat
         private static Transform _root;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics() { Pool.Clear(); Active.Clear(); CapStripped.Clear(); _root = null; _prewarmQueue = null; _prewarmShown = null; }
+        private static void ResetStatics() { Pool.Clear(); Active.Clear(); CapStripped.Clear(); _root = null; _prewarmQueue = null; _prewarmShown = null; _bfxDriverLogged = false; }
+
+        // 2026-11-04x: build-only frozen blood. Every BFX spray / decal / fade is ticked by ONE hidden driver
+        // (BFX.GlobalUpdate, HideAndDontSave GameObject created in the active scene on first spawn). If that root is
+        // hidden by DMSceneStack (non-shown world roots go SetActive(false)) or unloaded, nothing ticks: fluid stays a
+        // frame-0 ball with no gravity, ground decals never fade in, renderers never switch off. Keep it alive in DDOL.
+        private static bool _bfxDriverLogged;
+        private static void EnsureBfxDriver()
+        {
+            BFX.GlobalUpdate.CreateInstanceIfRequired();
+            BFX.GlobalUpdate gu = BFX.GlobalUpdate.Instance;
+            if (gu == null) return;
+            GameObject g = gu.gameObject;
+            string was = "scene='" + g.scene.name + "' active=" + g.activeInHierarchy + " enabled=" + gu.enabled;
+            bool repaired = false;
+            if (g.transform.parent == null && g.scene.name != "DontDestroyOnLoad") { UnityEngine.Object.DontDestroyOnLoad(g); repaired = true; }
+            if (!g.activeSelf) { g.SetActive(true); repaired = true; }
+            if (!gu.enabled) { gu.enabled = true; repaired = true; }
+            if (repaired || !_bfxDriverLogged)
+            {
+                _bfxDriverLogged = true;
+                Debug.Log("[BloodFX] BFX driver " + (repaired ? "REPAIRED" : "ok") + " (was " + was + "; now scene='" + g.scene.name + "' active=" + g.activeInHierarchy + " scripts=" + BFX.GlobalUpdate.ScriptInstances.Count + ")");
+            }
+        }
 
         private static Queue<GameObject> _prewarmQueue;
         private static GameObject _prewarmShown, _prewarmShownPrefab;
@@ -87,6 +110,7 @@ namespace Project.Combat
             GameObject go = Get(prefab);
             go.transform.position = new Vector3(0f, -5000f, 0f);
             go.SetActive(true);
+            EnsureBfxDriver(); // 2026-11-04x: driver is created by this first OnEnable
             _prewarmShown = go; _prewarmShownPrefab = prefab;
         }
 
@@ -177,6 +201,7 @@ namespace Project.Combat
         public static bool TrySpawn(DM_EnemyHitMarkProfile p, DMEnemyBodyType body, Transform enemy, Vector3 point, Vector3 normal, Vector3 travel, bool playerHit = false)
         {
             if (p == null || !p.useVolumetricBlood) return false;
+            EnsureBfxDriver(); // 2026-11-04x
             Transform victimRoot = enemy;
             if (playerHit && enemy != null)
                 victimRoot = enemy.root;

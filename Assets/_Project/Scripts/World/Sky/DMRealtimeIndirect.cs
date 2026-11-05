@@ -226,7 +226,26 @@ namespace Project.World.Sky
             if (volume != null) volume.weight = 0f; if (drive31f != null) drive31f.weight = 0f; // 31f
         }
 
-        private static void Kill(Object o) { if (o == null) return; if (Application.isPlaying) Destroy(o); else DestroyImmediate(o); }
+        // 2026-11-04b: edit-mode destroys requested while KillEditPreviews is tearing down a GameObject (OnDisable runs inside
+        // the deactivation) are queued and flushed later; DestroyImmediate is illegal inside activation/deactivation.
+        private static readonly List<Object> deferredKills = new List<Object>();
+        private static bool insideDeactivation;
+
+        private static void Kill(Object o)
+        {
+            if (o == null) return;
+            if (Application.isPlaying) { Destroy(o); return; }
+            if (insideDeactivation) { if (!deferredKills.Contains(o)) deferredKills.Add(o); return; }
+            DestroyImmediate(o);
+        }
+
+        private static void FlushDeferredKills()
+        {
+            if (insideDeactivation || deferredKills.Count == 0) return;
+            Object[] pending = deferredKills.ToArray();
+            deferredKills.Clear();
+            foreach (Object o in pending) if (o != null) DestroyImmediate(o);
+        }
 
 #if UNITY_EDITOR
         // 30j: edit-mode runtime preview. Hidden HideAndDontSave instance; never saved, destroyed before Play / scene save,
@@ -240,17 +259,23 @@ namespace Project.World.Sky
             UnityEditor.EditorApplication.playModeStateChanged -= OnPlayMode; UnityEditor.EditorApplication.playModeStateChanged += OnPlayMode;
             UnityEditor.SceneManagement.EditorSceneManager.sceneSaving -= OnSaving; UnityEditor.SceneManagement.EditorSceneManager.sceneSaving += OnSaving;
         }
-        private static void OnSaving(UnityEngine.SceneManagement.Scene s, string path) { KillEditPreviews(); }
+        private static void OnSaving(UnityEngine.SceneManagement.Scene s, string path) { KillEditPreviews(); UnityEditor.EditorApplication.delayCall -= FlushDeferredKills; UnityEditor.EditorApplication.delayCall += FlushDeferredKills; } // 2026-11-04b: flush after the save
         private static void OnPlayMode(UnityEditor.PlayModeStateChange c) { if (c == UnityEditor.PlayModeStateChange.ExitingEditMode) KillEditPreviews(); }
         private static void KillEditPreviews()
         {
-            foreach (DMRealtimeIndirect r in Resources.FindObjectsOfTypeAll<DMRealtimeIndirect>())
-                if (r != null && r.gameObject.name == EditName) DestroyImmediate(r.gameObject);
+            insideDeactivation = true; // 2026-11-04b
+            try
+            {
+                foreach (DMRealtimeIndirect r in Resources.FindObjectsOfTypeAll<DMRealtimeIndirect>())
+                    if (r != null && r.gameObject.name == EditName) DestroyImmediate(r.gameObject);
+            }
+            finally { insideDeactivation = false; }
             instance = null;
         }
         private static void EditorTick()
         {
             if (Application.isPlaying || UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode) return;
+            FlushDeferredKills(); // 2026-11-04b
             DM_IoSkyProfile p = DM_IoSkyProfile.Live;
             bool want = p != null && p.realtimeIndirectEnabled && p.editModeRuntimePreview && p.skyEnabled; // 30n
             if (!want) { if (instance != null && instance.gameObject.name == EditName) KillEditPreviews(); return; }

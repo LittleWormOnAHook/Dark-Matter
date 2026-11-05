@@ -110,3 +110,100 @@ Global music, SFX, and footstep libraries.
 | 3D Playback | `pitchMax` | float | 1.05f | 0.8f–1.2f |  |
 | 3D Playback | `playAtRandomPointInZone` | bool | true |  |  |
 
+
+## Voices (voice actors, local TTS) - 2026-11-03a
+
+**Where:** Genesis Studio > Audio > Voices. Editor-only; shipped builds play baked WAVs, no Python.
+
+**Setup (once):** Python 3.11 venv at `A:\DMG_Tools\parler-tts\.venv` with Parler-TTS (torch cu128, RTX 5070). Model cache `A:\DMG_Tools\hf_cache`. Bake script `A:\DMG_Tools\parler-tts\bake.py`. Paths editable in Advanced (EditorPrefs).
+
+**Make a voice:** New Voice > name + description (use `{speaker}` where the speaker name goes) > pick Speaker > Try 3 variants > Use the best > Save. Pitch slider -12..+12 (Subtle -1, Default -2, Extreme -4; Kade 0).
+
+**Pronunciation:** Advanced > Pronunciations maps word -> audio spelling (Kade -> Kayd). Only the TTS text changes; subtitles keep the real word.
+
+**Lines:** each actor has a DMVoiceLineSet in `Assets/_Project/Audio/Voices/<Actor>/` (id, subtitle, QM stage tag, hash, clip). Bake only regenerates lines whose text or actor settings changed. Seed re-rolls up to 5 times if a line is outside the min/max seconds range; trailing silence trimmed.
+
+**Assets:** `DMVoiceActor` / `DMVoiceLineSet` (Scripts/Audio/Voice), panel `DMStudioVoicesPanel` (Editor/GenesisStudio). Kade = `Audio/Voices/Actors/VA_Kade.asset` (Rick, Mini v1, seed 42).
+
+**Limits:** English only; Parler named speakers only (34); emotion range limited; ~1-2x real time per line on GPU. Runtime playback, subtitles and ducking landed in Phase 1 (2026-11-03n, below); quest hooks, banter/thoughts and Timeline tracks are still to come.
+
+### Voices update - 2026-11-03b
+- **Add Line** box under the lines list: Id (blank or Suggest = `<actor>_<n>`), Subtitle (wrapped), optional Stage tag, Add. Each line has Play and **x** (delete with confirm; the WAV stays on disk). Subtitles edit inline.
+- **Pauses:** use `,` or `...` for natural pauses; `[pause]` (0.4 s) or `[pause 0.8]` (0.05-5 s) for exact silence. The bake generates each chunk separately (same seed) and joins them with silence. Show subtitles with `DMVoiceLine.SubtitleClean` (tags removed).
+- The panel uses the Genesis Studio page scroll (no inner list scroll). New line sets start empty.
+
+### Sentence splitting (2026-11-03c)
+- **Split sentences** (Advanced, default on): paragraphs are generated one sentence at a time with the same seed and voice, then joined. Much more accurate on long lines.
+- **Sentence gap**: silence between sentences, 0-2 s. Presets Subtle 0.15 / Default 0.25 / Extreme 0.6. "..." adds 0.15 s.
+- Sentence ends: `.` `!` `?` `...`. Abbreviations (Mr., Dr., St., etc.) don't split. Fragments under 3 words join their neighbour.
+- A sentence is re-rolled (seed+1, up to 5 tries) only if its length is way off for its word count.
+- **Split to lines** (per line): turns a paragraph into separate lines `<id>_01`, `<id>_02`... (Undo works). Use when subtitles should show one sentence at a time.
+
+### Speaker profiles (2026-11-03d)
+- Changing **Speaker** creates a new voice profile instead of editing the current one. Name it (default `<Actor> (<Speaker>)`), then **Create** (copies every setting, new speaker) or **Cancel**.
+- The new profile has no lines; the original keeps its line set. Create a line set for the new profile if you want to bake with it.
+- **Advanced > Delete profile** removes a test profile after a confirm. The asset is backed up to `Backups/voices/` first; line sets and WAVs are left alone.
+
+### New voice from Display name (2026-11-03g)
+- Editing **Display name** and pressing Enter (or leaving the field) does not rename the voice. A box offers **Create new voice "<Name>"**: it copies every setting into `VA_<Name>.asset` and creates an empty `Voices/<Name>/<Name>_Lines.asset` linked to it. **Cancel** restores the name. Names already used are rejected.
+- Each actor shows only its own line set (linked by reference). Previews and variants clear when you switch actors. An actor with no set shows "No lines yet" and **Create line set**.
+
+### Bake one line (2026-11-03j)
+- Each line row has a **Bake** button: re-bakes just that line (even if not marked *), using the actor's current settings. The main **Bake** still only does changed lines.
+
+### Models (2026-11-03k)
+- Default checkpoint is **parler-tts/parler-tts-large-v1** (2.33B, Apache-2.0). New actors use it automatically.
+- **Model** dropdown (Large best / Mini fast) sits above Speaker. Changing it marks that actor's lines for re-bake; nothing re-bakes until you press Bake.
+- bake.py uses `model` from the job, else Large. Large needs ~5.5 GB VRAM peak at fp16 (measured ~11.5 GB total GPU with Unity open), Mini ~2 GB; load ~230 s vs ~50 s cold, generation ~2x realtime vs ~4x.
+
+### Per-line seed (2026-11-03l)
+- Parler voice identity can drift between seeds. Each line row has **Seed** (0 = actor seed). Press Enter to commit; the line is marked changed and only that line re-bakes.
+- An explicit per-line seed turns off the length re-roll loop, so the same seed always reproduces the same audio.
+- Bake status shows the seed and a rough median pitch (`~110 Hz`). A sudden jump (male ~90-110 Hz, female ~200+) means try another seed.
+- Seed is part of the change hash; changing it re-bakes that line only.
+- Keep a line's subtitle exactly as it was baked if you want to keep that take: Bake follows the text.
+
+### Runtime voice (Phase 1) - 2026-11-03n
+
+**Where:** `Assets/_Project/Scripts/Audio/Voice/` (runtime, namespace `Project.Audio.Voice`), subtitle view in `Assets/UI Toolkit/` (`DMVoiceSubtitlePresenter.cs`, `DMVoiceSubtitle.uxml`, `DMVoiceSubtitle.uss`), line drawer `Editor/Audio/DMVoiceLineRefDrawer.cs`.
+
+**Manager:** `DMVoiceManager` is created at runtime by `EnsureExists()` (nothing to drop in a scene) and survives scene loads. One line at a time; priorities `Cinematic 100 > Story 80 > Radio 60 > NPC 40 > Bark 10`, FIFO inside a band, 8 in the queue, queued barks expire after 3 s. A higher priority line interrupts; `opts.interrupt` forces it. Call it in code:
+
+```csharp
+DMVoiceManager.Instance.Play(new DMVoiceLineRef { set = kadeLines, lineId = "kade_Chap_1_Chat_1" },
+                             DMVoicePlayOptions.Narration(DMVoicePriority.Story));
+```
+
+`Play(string lineId)` searches every loaded line set. `PlayStage("QM.3.S2")` queues every line carrying that stage tag, in set order. `Skip()` skips the current line (cinematic lines included) and raises `OnLineFinished(line, skipped: true)`.
+
+**Output modes:** `Narration` (2D, dry - journal / inner voice), `Radio` (2D + comm clicks, 320 Hz / 3.4 kHz fallback filter; baked radio filters still apply), `World` (3D on the speaker transform, rolloff 2-25 m). Ducking goes through `GameAudioManager.SetVoiceDuck` (music and loading ambience), 0.45 Story, 0.6 Radio, 0.7 NPC, 0.88 Bark; attack 0.15 s, release 0.4 s.
+
+**Triggers:** add **Dark Matter > Voice > Voice Trigger** to a trigger collider. Pick the line set + line in the popup (its subtitle is shown, `(no clip)` flags an unbaked line, **Play** auditions it), or type a stage tag instead. Options: play once per save, priority, output mode, volume, player tag, delay, re-arm on exit, and an optional quest gate (quest id + status + objective, plus a forbidden quest id + status). Lines play from triggers only - nothing auto-plays when a quest stage starts.
+
+**Play once:** the manager keeps `setKey:lineId` keys (`DMVoiceLineSet.SetKey` is the asset name). They are saved in `GameSaveData.voicePlayedKeys` by `GameSaveSystem`, restored on load, and cleared by `SimpleGameManager.BeginNewGameSession` on a new game. Barks are never flagged.
+
+**Subtitles:** on-screen subtitle is a UITK overlay (`UITK_VoiceSubtitle`, sort 21) showing the speaker name plus `DMVoiceLine.SubtitleClean`. It hides while a modal menu is open, the loading overlay is up, or the HUD is down; it fades in 0.12 s and out 0.2 s. Font size and hold-after-line are `DMVoiceSubtitleSettings` (PlayerPrefs `settings.voice.subtitleFontSize` default 24, `settings.voice.subtitleHoldSeconds` default 0.5).
+
+**Subtitles on/off is one shared value:** `GameSettings.SubtitlesEnabled`, PlayerPrefs key `settings.game.subtitles`, **default ON** when no choice has been stored yet (fresh install / first run). The value is a player-level setting in PlayerPrefs, like the volume sliders, not a field in the save file, so starting a new game or loading an old save never changes it: once a player turns subtitles off they stay off, and an existing player keeps whatever they picked. It is edited in **Main Menu > Settings > GAME OPTIONS > Subtitles** and in the matching tick on the Kade **Player Systems** profile (inspector and Genesis Studio > Player) - both read and write the same value, so they can never disagree. Toggling it hides/shows the current subtitle immediately.
+
+**Skip key:** action `VoiceSkip` in `InputSystem_Actions.inputactions` (Player map) - Keyboard Enter and gamepad B (`<Gamepad>/buttonEast`). It is only read while a line is playing and gameplay input is not UI-locked.
+
+### Runtime voice (Phase 2) - 2026-11-03o
+
+All components live in `Assets/_Project/Scripts/Audio/Voice` (namespace `Project.Audio.Voice`) and under **Add Component > Dark Matter > Voice**. None of them add themselves to a scene.
+
+**Random delay (every trigger):** each trigger/hook has `delaySeconds` plus `randomDelayMin` / `randomDelayMax`. The wait is `delaySeconds + Random.Range(min, max)`, re-rolled every time; max 0 turns the random part off.
+
+**Voice Trigger Box:** a box zone with no collider or layer setup. Set `center` / `size` (local space, drawn as a magenta box, follows the object's rotation and scale). It checks the live player position every `checkInterval` (0.1 s). Options are the same as Voice Trigger: line or stage tag, play once, priority, output, world target, volume, delay, re-arm on exit, quest gate.
+
+**Voice Item Pickup Trigger:** fires when the player gains an item. Leave `item` and `itemId` empty for any pickup, or set an ItemData asset or an id (StableItemId, asset name or display name). `minAmount` is the minimum gained in one change. It watches the player inventory's `OnInventoryChanged` and compares item counts, so no inventory code changed. Gains do not count while a menu holds gameplay input (crafting, vendor, storage crate; toggle `ignoreWhileMenuOpen`), in the first second after the player inventory appears (new-game starter kit), while time is frozen, or in the frame a save loads. Ammo credited straight into a weapon never lands in a slot and does not count.
+
+**Voice Quest Hook:** one per scene (or on any persistent object). Fill `entries` inline and/or assign **Quest Hook Table** assets (Create > Dark Matter > Voice > Quest Hook Table). Each entry: quest id, event (`Started`, `Updated`, `Completed`), objective index (-1 = any) and objective count (0 = any change) for Updated, line or stage tag, priority, output, world target, volume, `oncePerEvent` (default on) and delays. It listens to `QuestManager.OnQuestUpdated` / `OnQuestCompleted`. Started is a quest becoming Active (QuestManager has no separate start event). Once-per-event keys (`quest:<id>:<event>:<objective>`) are stored with the play-once keys in the save. Loading a save re-broadcasts every quest; the hook ignores that frame, so loaded quests do not replay their Started line. Turn on `logEvents` to see what fires while wiring.
+
+**Voice Interact Hook:** put it on a QuestGiverNpc, PptNpcInteractor or any IWorldUsable / IHoldWorldUsable object (or set `target`). The use system has no "used" event, so the hook watches what the use does. `Auto` picks the mode:
+- quest giver: its quest dialog opens while you are in range;
+- hold usable (PPT directions): the hold ends and a menu opens right after (a cancelled hold does nothing);
+- other usable: a menu opens while you are within `useRadius`.
+Code can call `NotifyUsed()` directly. `line` plays on first use (once per save by default, key `interact:<useKey>`). Later uses pick randomly from `repeatBarks`, never the same one twice in a row. Output is World on the NPC by default; switch to Narration or Radio to override. Priority NPC, 2 s cooldown.
+
+**Ducking:** checked, unchanged. Music and the loading ambience follow `GameAudioManager.SetVoiceDuck`; ambient zones and SFX are not ducked.
