@@ -23,6 +23,10 @@ DM shaders (DM_ copies only; nothing is reassigned automatically).
 **Where:**
 - Studio: `Genesis Studio / Rendering / DM Shaders: Master` (panel mode `ExternalTool`)
 
+## Shutdown GPU / job leak audit (2026-11-05b)
+
+Nov 5 Player.log shutdown listed ComputeBuffer (×13), GraphicsBuffer (×11), TempJob (×1), Persistent (×168), and JobTempAlloc warnings **without allocation stacks**. Repo scan: **no** `ComputeBuffer` / `GraphicsBuffer` / `NativeArray` with `Allocator.Persistent` under `Assets/_Project` runtime scripts. Owned mitigation: `DMTerrainParallaxHeightArrayBinder` now destroys runtime-created `Texture2DArray` / gray fallback on `SubsystemRegistration`. `ScannerHdrpCustomPass.Cleanup()` already destroys its engine material. Further attribution needs `-stacktrace` / Memory Profiler repro — do not dispose HDRP/vendor buffers from gameplay code.
+
 ## DM Terrain Parallax: D3D11 64-texture limit (2026-11-05)
 
 Eight per-layer `_DMHeightMap0..7` Properties pushed `DM/TerrainParallax` over the D3D11 64-texture bound (~65/66 in Player.log). The shader now declares one `_DMHeightMapArray` (2DArray). `DMTerrainParallaxHeightArrayBinder` copies legacy `_DMHeightMap#` material assignments into that array at runtime (materials keep their existing slot data; no `.mat` commit required). Terrain-layer mask **B** remains the fallback when **Use Height Map** is off. Editor height-map UI still writes `_DMHeightMap#` on the material template.

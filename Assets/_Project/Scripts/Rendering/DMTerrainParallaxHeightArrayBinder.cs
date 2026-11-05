@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Project.Rendering
@@ -12,6 +13,25 @@ namespace Project.Rendering
         public const string ArrayProperty = "_DMHeightMapArray";
         private const int LayerCount = 8;
         private const string LegacySlotPrefix = "_DMHeightMap";
+        private static readonly List<Texture2DArray> RuntimeArrays = new List<Texture2DArray>(8);
+        private static Texture2D grayFallback;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetRuntimeTextures()
+        {
+            for (int i = RuntimeArrays.Count - 1; i >= 0; i--)
+            {
+                if (RuntimeArrays[i] != null)
+                    Object.Destroy(RuntimeArrays[i]);
+            }
+
+            RuntimeArrays.Clear();
+            if (grayFallback != null)
+            {
+                Object.Destroy(grayFallback);
+                grayFallback = null;
+            }
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void BindAfterSceneLoad()
@@ -93,6 +113,7 @@ namespace Project.Rendering
 
             array.Apply(false, true);
             material.SetTexture(ArrayProperty, array);
+            TrackRuntimeArray(array);
             return true;
         }
 
@@ -115,9 +136,17 @@ namespace Project.Rendering
 
             array.Apply(false, true);
             material.SetTexture(ArrayProperty, array);
+            TrackRuntimeArray(array);
         }
 
-        private static Texture2D grayFallback;
+        private static void TrackRuntimeArray(Texture2DArray array)
+        {
+            if (array == null || RuntimeArrays.Contains(array))
+                return;
+
+            RuntimeArrays.Add(array);
+        }
+
         private static int grayW;
         private static int grayH;
         private static TextureFormat grayFormat;

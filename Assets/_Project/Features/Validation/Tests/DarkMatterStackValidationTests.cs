@@ -3,6 +3,7 @@ using Project.Features.Directors;
 using Project.Features.GameState;
 using Project.Features.Validation;
 using Project.Features.WorldState;
+using Project.Player;
 using System.Collections.Generic;
 
 namespace Project.Features.Validation.Tests
@@ -66,6 +67,13 @@ namespace Project.Features.Validation.Tests
             Assert.IsNotNull(snap.Session);
             Assert.IsFalse(string.IsNullOrEmpty(snap.Session.PhaseLabel));
             GameStateService.SetInstance(null);
+        }
+
+        [Test]
+        public void InputSchemePromotion_StickDeadzone_IgnoresDrift()
+        {
+            Assert.IsFalse(DMInputSchemePromotionRules.StickDeflects(0.1f, 0.1f));
+            Assert.IsTrue(DMInputSchemePromotionRules.StickDeflects(0.5f, 0f));
         }
 
         private sealed class StubSessionWorldStateProvider : IWorldStateProvider

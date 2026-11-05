@@ -296,6 +296,7 @@ namespace Project.UI
             // 2026-11-04f: J / I / Cancel subscriptions must follow the rig that now owns the world
             // (each scene brings its own PlayerInput; the hidden one's action map is disabled).
             DMUiToolkitPlayerInputBridge.RebindForLivePlayer();
+            Project.Player.DMInputSchemeRouter.RefreshLiveInstance();
             EnforceSingleEventSystem();
             EnforceSingleAudioListener();
             EnforceSingleInputModule();
@@ -337,6 +338,7 @@ namespace Project.UI
             // Harmless here (the reload replaces the rig anyway) and keeps the invariant "the input
             // bridge is always bound to the live player" true on every path.
             DMUiToolkitPlayerInputBridge.RebindForLivePlayer();
+            Project.Player.DMInputSchemeRouter.RefreshLiveInstance();
         }
 
         // --------------------------------------------------------------------- scope

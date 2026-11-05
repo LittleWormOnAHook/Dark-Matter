@@ -1,3 +1,10 @@
+== 2026-11-05b - Gamepad scheme auto-switch + runtime texture cleanup audit ==
+- DMInputSchemeRouter: symmetric pad promotion (stick deadzone 0.28, deliberate buttons), hot-connect via InputSystem.onDeviceChange, initial adopt when pad present and KBM idle, InputUser pairing, scheme-change logs (not one-shot). Removed GameSession gate on promotion. DMSceneStack calls RefreshLiveInstance after world switch/reload.
+- DMTerrainParallaxHeightArrayBinder: track runtime Texture2DArray/gray fallback and Destroy on SubsystemRegistration (owned GPU-allocation hygiene).
+- Shutdown ComputeBuffer/GraphicsBuffer/JobTempJob: no ComputeBuffer/GraphicsBuffer/Persistent NativeArray in Assets/_Project runtime code; remaining log lines unproven without stack-enabled repro (likely HDRP/vendor/engine).
+- Test: DarkMatterStackValidationTests.InputSchemePromotion_StickDeadzone_IgnoresDrift (not run here).
+Docs: DevManual 09-Controls (scheme router), 13-Rendering (shutdown audit note)
+
 == 2026-11-05 - Player.log fixes: doors, terrain shader limit, UI registry scan, RI teardown ==
 - DoorDoubleSlide NullReferenceException (50): DMDoorDoubleSlideAudioCompat ensures AudioSource before vendor trigger audio; disables DoorDoubleSlide when DMSlidingDoorController manages the same hierarchy. Vendor untouched.
 - DM/TerrainParallax: eight per-layer _DMHeightMap# 2D slots exceeded D3D11 64-texture limit (~65/66). Replaced with one _DMHeightMapArray (2DArray); DMTerrainParallaxHeightArrayBinder packs legacy material slots at runtime (no .mat edits). Per-layer height maps unchanged when assigned on material.
