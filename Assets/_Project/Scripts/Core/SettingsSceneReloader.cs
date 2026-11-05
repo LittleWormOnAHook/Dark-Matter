@@ -184,7 +184,8 @@ namespace Project.Core
                 const int maxFrames = 120;
                 for (int i = 0; i < maxFrames; i++)
                 {
-                    if (FindAnyObjectByType<MainMenuController>() != null)
+                    if (FindAnyObjectByType<MainMenuController>() != null
+                        && PlayerLocator.FindPlayerObject() != null)
                         break;
 
                     yield return null;
@@ -195,8 +196,10 @@ namespace Project.Core
                     DMUiToolkitBootstrap.EnsureExists();
                 yield return null;
 
-                GameSession.ResetSession();
                 ApplySettingsAfterReload();
+
+                if (!GameSaveSystem.TryRestoreExpeditionAfterSettingsReload(out string restoreMessage))
+                    Debug.LogWarning($"SettingsSceneReloader: expedition not restored after reload. {restoreMessage}");
 
                 MainMenuController menu = FindAnyObjectByType<MainMenuController>();
                 if (menu == null)
@@ -205,12 +208,11 @@ namespace Project.Core
                     menu = FindAnyObjectByType<MainMenuController>();
                 }
 
-                // Do not ApplySaveData here — that MarkStarted + unpauses the player and dumps
-                // into the live world. Continue Expedition already has the slot written in ReloadAfterApply.
+                // Return to in-game pause + Settings (snapshot already applied). Do not ResetSession or
+                // ShowMainMenu — that left default empty inventory, HasStarted false, and broken Esc/journal.
                 LoadingOverlayController.ReleaseOpaqueCover();
-                menu?.ShowMainMenu();
+                menu?.ReturnToSettingsAfterApply();
                 yield return null;
-                menu?.ShowMainMenu();
                 TryShowSettingsAppliedToast();
                 Destroy(gameObject);
             }

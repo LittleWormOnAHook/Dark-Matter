@@ -449,7 +449,6 @@ namespace Project.UI
         {
             // New Expedition sets StartPopup then Playing. Do not yank those back to the
             // title screen — that is the first-click bounce. Pause uses ShowPauseMenu.
-            // Settings reload calls ResetSession first, so Phase is MainMenu here.
             if (GameSession.Phase == GamePhase.StartPopup || GameSession.Phase == GamePhase.Playing)
                 return;
 

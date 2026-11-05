@@ -32,6 +32,7 @@ Apply these paths only (plus this handoff doc after you pull the branch tip):
 | Terrain editor | `Assets/_Project/Editor/Rendering/DMTerrainParallaxGUI.cs` |
 | UI | `Assets/UI Toolkit/Runtime/DMUiRuntimeAssetRegistry.cs` |
 | Sky / RI | `Assets/_Project/Scripts/World/Sky/DMRealtimeIndirect.cs` |
+| Settings reload | `Assets/_Project/Scripts/Core/SettingsSceneReloader.cs`, `Assets/_Project/Scripts/Core/GameSaveSystem.cs` |
 | Tests | `Assets/_Project/Features/Validation/Tests/DMUiRuntimeAssetRegistryTests.cs` |
 | Tests | `Assets/_Project/Features/Validation/Tests/DarkMatterStackValidationTests.cs` |
 | Docs | `CHANGELOG_20261021.txt`, `Assets/_Project/Documentation/DevManual/02-World.md`, `09-Controls.md`, `10-UI.md`, `13-Rendering.md` |
@@ -77,6 +78,7 @@ Run the new exe from `A:\Dark Matter Mars` and spot-check:
 | **Terrain** | Mars terrain using `DM/TerrainParallax` renders splats/parallax; no “texture limit” / pink shader; height detail sane on layered areas. |
 | **UI startup** | Main menu / first UI Toolkit screen loads without “missing script” on registry-owned assets. |
 | **EventSystem (Editor)** | After Play, `Editor.log` has **no** repeating “There are 2 event systems in the scene” / “There can be only one active Event System.” (2026-11-05d boot ownership). |
+| **Settings Apply (in-game)** | Pause → Settings → change **quality / RT / DLSS** → Apply → reload finishes on **pause + Settings** with **inventory and weapons restored**; close Settings → gameplay; Esc opens pause; journal navigates. Resolution-only Apply should **not** reload (live apply). |
 | **Pad at launch** | Controller connected before start → gameplay uses Gamepad scheme (movement/aim per project bindings). |
 | **KBM ↔ pad** | Mid-session: press key/mouse button → Keyboard&Mouse scheme; move stick past deadzone (~0.28) → Gamepad scheme; no stuck mute on Invector gate. |
 | **Hotplug** | Connect/disconnect pad after main menu and after in-world load. |

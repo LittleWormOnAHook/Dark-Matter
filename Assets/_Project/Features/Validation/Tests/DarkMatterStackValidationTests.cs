@@ -3,6 +3,7 @@ using Project.Features.Directors;
 using Project.Features.GameState;
 using Project.Features.Validation;
 using Project.Features.WorldState;
+using Project.Core;
 using Project.Player;
 using Project.UI;
 using System.Collections.Generic;
@@ -81,6 +82,13 @@ namespace Project.Features.Validation.Tests
         public void RefreshEventSystemOwnership_EditMode_DoesNotThrow()
         {
             Assert.DoesNotThrow(() => DMSceneStack.RefreshEventSystemOwnership());
+        }
+
+        [Test]
+        public void TryRestoreExpeditionAfterSettingsReload_MissingSnapshots_ReturnsFalse()
+        {
+            Assert.IsFalse(GameSaveSystem.TryRestoreExpeditionAfterSettingsReload(out string message));
+            StringAssert.Contains("Settings snapshot", message);
         }
 
         private sealed class StubSessionWorldStateProvider : IWorldStateProvider
