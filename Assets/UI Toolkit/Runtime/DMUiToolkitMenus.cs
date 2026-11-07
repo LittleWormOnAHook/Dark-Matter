@@ -608,15 +608,17 @@ namespace Project.UI
                         RefreshMapMarkers();
                     }
                 }
-                JournalPanelUI.EnsurePointerForOpenJournal();
+                JournalPanelUI.EnsurePointerForOpenJournal(boundJournal);
                 if (!uguiHidden)
                     HideUguiWindows(window.Value);
                 return;
             }
 
-            ForceShow(window.Value);
+            using (s_pmOpenForceShow.Auto())
+                ForceShow(window.Value);
             if (!uguiHidden)
-                HideUguiWindows(window.Value);
+                using (s_pmOpenHideUgui.Auto())
+                    HideUguiWindows(window.Value);
         }
 
         private void ShowMenus(JournalWindowId window)
@@ -665,13 +667,19 @@ namespace Project.UI
 
             if (window == JournalWindowId.JournalQuest)
             {
-                ApplyJournalSectionVisibility();
-                RefreshJournalContent();
+                using (s_pmOpenRefreshJournal.Auto())
+                {
+                    ApplyJournalSectionVisibility();
+                    RefreshJournalContent();
+                }
             }
             else if (window == JournalWindowId.Inventory)
             {
-                SuppressLegacyInventoryPanel();
-                RefreshInventory();
+                using (s_pmOpenRefreshInv.Auto())
+                {
+                    SuppressLegacyInventoryPanel();
+                    RefreshInventory();
+                }
             }
             else if (window == JournalWindowId.Map)
             {
@@ -680,12 +688,16 @@ namespace Project.UI
             }
             else
             {
-                RefreshExtraPanel(window);
+                using (s_pmOpenRefreshExtra.Auto())
+                    RefreshExtraPanel(window);
             }
 
-            JournalPanelUI.EnsurePointerForOpenJournal();
-            GameplayMenuTime.SyncJournal(true, window);
-            DMUiToolkitHud.RefreshMenuChrome();
+            using (s_pmOpenSync.Auto())
+            {
+                JournalPanelUI.EnsurePointerForOpenJournal();
+                GameplayMenuTime.SyncJournal(true, window);
+                DMUiToolkitHud.RefreshMenuChrome();
+            }
         }
 
         private void HideMenus()
@@ -779,7 +791,7 @@ namespace Project.UI
         private void OpenTab(JournalWindowId id)
         {
 
-            JournalPanelUI journal = Object.FindAnyObjectByType<JournalPanelUI>(FindObjectsInactive.Include);
+            JournalPanelUI journal = JournalPanelUI.ResolveCachedJournal(); // Round6: cached lookup
             if (journal == null)
                 return;
 
@@ -1437,7 +1449,7 @@ namespace Project.UI
             GameObject player = PlayerLocator.FindPlayerObject();
             if (player == null)
                 return;
-            MapUI mapUi = FindAnyObjectByType<MapUI>(FindObjectsInactive.Include);
+            MapUI mapUi = ResolveCachedMapUi();
             Vector3 worldPos = mapUi != null && mapUi.HasMinimapPlayerPosition
                 ? mapUi.MinimapPlayerWorldPosition
                 : player.transform.position;
@@ -1448,8 +1460,47 @@ namespace Project.UI
             float facingYaw = mapUi != null
                 ? mapUi.MapPlayerCompassYaw
                 : provider.GetMapCompassYaw(player.transform.eulerAngles.y);
-            ApplyPlayerMapIcon(mapPlayer, iconSize, facingYaw + iconBase, centerWithNegativeMargin: false);
+            float rotateDegrees = facingYaw + iconBase;
+            // Write icon styles only when an input changed (same values -> same styles as before).
+            if (!ReferenceEquals(lastIconElement, mapPlayer)
+                || lastIconFitted != fitted
+                || lastIconUv != uv
+                || lastIconSize != iconSize
+                || lastIconRotate != rotateDegrees)
+            {
+                PlaceOnMap(mapPlayer, fitted, uv, iconSize);
+                ApplyPlayerMapIcon(mapPlayer, iconSize, rotateDegrees, centerWithNegativeMargin: false);
+                lastIconElement = mapPlayer;
+                lastIconFitted = fitted;
+                lastIconUv = uv;
+                lastIconSize = iconSize;
+                lastIconRotate = rotateDegrees;
+            }
             DMUiToolkitOverlayDocument.SetShown(mapPlayer, true);
+        }
+
+        // Full-map player icon / MapUI caches (B fix). MapUI re-find is throttled only after a miss.
+        private MapUI cachedMapUi;
+        private float nextMapUiSearchTime;
+        private VisualElement lastIconElement;
+        private Rect lastIconFitted;
+        private Vector2 lastIconUv;
+        private float lastIconSize = -1f;
+        private float lastIconRotate = float.NaN;
+        private VisualElement lastSquareImage;
+        private float lastSquareHostW = -1f;
+        private float lastSquareHostH = -1f;
+
+        private MapUI ResolveCachedMapUi()
+        {
+            if (cachedMapUi != null)
+                return cachedMapUi;
+            if (Time.unscaledTime < nextMapUiSearchTime)
+                return null;
+            cachedMapUi = FindAnyObjectByType<MapUI>(FindObjectsInactive.Include);
+            if (cachedMapUi == null)
+                nextMapUiSearchTime = Time.unscaledTime + 0.5f;
+            return cachedMapUi;
         }
 
         private void ApplyFullMapFog()
@@ -1523,6 +1574,13 @@ namespace Project.UI
             if (w <= 1f || h <= 1f)
                 return;
 
+            // Geometry unchanged since the last write -> styles already hold these exact values.
+            if (ReferenceEquals(lastSquareImage, mapImage) && w == lastSquareHostW && h == lastSquareHostH)
+                return;
+            lastSquareImage = mapImage;
+            lastSquareHostW = w;
+            lastSquareHostH = h;
+
             float side = Mathf.Min(w, h);
             mapImage.style.position = Position.Absolute;
             mapImage.style.left = (w - side) * 0.5f;
@@ -1565,6 +1623,8 @@ namespace Project.UI
         private void HideUguiWindows(JournalWindowId window)
         {
             _ = window;
+            using (s_pmHideHosts.Auto())
+            {
             SetNamedActive("JournalOverlay", false);
             SetNamedActive("JournalTabRailHost", false);
             SetNamedActive("JournalQuestWindowHost", false);
@@ -1579,6 +1639,7 @@ namespace Project.UI
             SetNamedActive("EchoesWindowHost", false);
             SetNamedActive("AchievementsWindowHost", false);
             SetNamedActive("FullMapOverlay", false);
+            }
             HideConvertedUguiPanels(true);
 
             uguiHidden = true;
@@ -1605,10 +1666,39 @@ namespace Project.UI
 
         private readonly System.Collections.Generic.List<global::UnityEngine.CanvasGroup> convertedUguiGroups = new System.Collections.Generic.List<global::UnityEngine.CanvasGroup>();
 
+        private bool convertedUguiGroupsCached;
+
+        private bool ConvertedGroupsStillHidden()
+        {
+            if (convertedUguiGroups.Count == 0)
+                return false;
+            for (int i = 0; i < convertedUguiGroups.Count; i++)
+            {
+                global::UnityEngine.CanvasGroup g = convertedUguiGroups[i];
+                if (g == null || g.alpha != 0f || g.blocksRaycasts || g.interactable)
+                    return false;
+            }
+            return true;
+        }
+
         private void HideConvertedUguiPanels(bool hide)
         {
+            // Round8: while UITK drives the journal these legacy panels are never shown, so keep them hidden
+            // across close/open instead of flipping CanvasGroup alpha/interactable/blocksRaycasts every time
+            // (each flip fans out OnCanvasGroupChanged to every Selectable/Graphic underneath).
+            if (!hide && DMUiToolkitConfig.IsEnabled)
+                return;
+            if (hide && convertedUguiGroupsCached && ConvertedGroupsStillHidden())
+            {
+                if (DMUiToolkitConfig.IsEnabled)
+                    using (s_pmHideLegacyInv.Auto())
+                        SuppressLegacyInventoryPanel();
+                return;
+            }
+
             if (!hide)
             {
+                convertedUguiGroupsCached = false;
                 for (int i = 0; i < convertedUguiGroups.Count; i++)
                 {
                     global::UnityEngine.CanvasGroup group = convertedUguiGroups[i];
@@ -1623,11 +1713,16 @@ namespace Project.UI
                 return;
             }
 
-            HideUguiBehaviour<SkillsPanelUI>();
-            HideUguiBehaviour<PioneerRosterPanelUI>();
-            HideUguiBehaviour<PetUI>();
+            using (s_pmHideBehaviours.Auto())
+            {
+                HideUguiBehaviour<SkillsPanelUI>();
+                HideUguiBehaviour<PioneerRosterPanelUI>();
+                HideUguiBehaviour<PetUI>();
+                convertedUguiGroupsCached = true;
+            }
             if (DMUiToolkitConfig.IsEnabled)
-                SuppressLegacyInventoryPanel();
+                using (s_pmHideLegacyInv.Auto())
+                    SuppressLegacyInventoryPanel();
         }
 
         private static void SuppressLegacyInventoryPanel()
@@ -1647,9 +1742,10 @@ namespace Project.UI
                 global::UnityEngine.CanvasGroup group = behaviour.GetComponent<global::UnityEngine.CanvasGroup>();
                 if (group == null)
                     group = behaviour.gameObject.AddComponent<global::UnityEngine.CanvasGroup>();
-                group.alpha = 0f;
-                group.blocksRaycasts = false;
-                group.interactable = false;
+                // Round8: write only on change (each write re-notifies the whole subtree).
+                if (group.alpha != 0f) group.alpha = 0f;
+                if (group.blocksRaycasts) group.blocksRaycasts = false;
+                if (group.interactable) group.interactable = false;
                 if (!convertedUguiGroups.Contains(group))
                     convertedUguiGroups.Add(group);
             }

@@ -8,6 +8,10 @@ namespace Project.Progression
     {
         private static SkillRegistry cached;
 
+        private static List<SkillDefinition> cachedSkillList;
+        private static IReadOnlyList<SkillDefinition> cachedSkillView;
+        private static SkillRegistry cacheBuiltFrom;
+
         [SerializeField] private SkillDefinition[] skills;
 
         public static SkillRegistry Instance
@@ -23,8 +27,11 @@ namespace Project.Progression
 
         public static IReadOnlyList<SkillDefinition> GetAllSkills()
         {
-            List<SkillDefinition> result = new List<SkillDefinition>();
             SkillRegistry registry = Instance;
+            if (cachedSkillView != null && cacheBuiltFrom == registry)
+                return cachedSkillView;
+
+            List<SkillDefinition> result = new List<SkillDefinition>();
             if (registry?.skills != null)
             {
                 for (int i = 0; i < registry.skills.Length; i++)
@@ -44,7 +51,34 @@ namespace Project.Progression
                 }
             }
 
-            return result;
+            cachedSkillList = result;
+            cachedSkillView = result.AsReadOnly();
+            cacheBuiltFrom = registry;
+            return cachedSkillView;
+        }
+
+        public static void InvalidateCache()
+        {
+            cachedSkillList = null;
+            cachedSkillView = null;
+            cacheBuiltFrom = null;
+        }
+
+        private void OnEnable()
+        {
+            InvalidateCache();
+        }
+
+        private void OnValidate()
+        {
+            InvalidateCache();
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnDomainReload()
+        {
+            cached = null;
+            InvalidateCache();
         }
 
         public static SkillDefinition Resolve(string skillId)

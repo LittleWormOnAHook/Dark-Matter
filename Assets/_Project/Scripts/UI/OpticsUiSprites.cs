@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Project.UI
 {
@@ -7,6 +8,23 @@ namespace Project.UI
         private const string LibraryResourcePath = "Optics/OpticsCrosshairLibrary";
 
         private static OpticsCrosshairLibrary library;
+        private static bool libraryLoadAttempted;
+        public static int CacheVersion { get; private set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            SceneManager.sceneLoaded += OnSceneLoaded;
+            ResetCache();
+        }
+
+        private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            // Keep valid sprite/library references; only retry missing assets after a scene lifecycle change.
+            if (library == null) libraryLoadAttempted = false;
+            CacheVersion++;
+        }
         private static Sprite binocularScopeFull;
         private static Sprite binocularScopeInnerGlow;
         private static Sprite binocularScopeOuter;
@@ -56,6 +74,9 @@ namespace Project.UI
         public static void ResetCache()
         {
             library = null;
+            libraryLoadAttempted = false;
+            CacheVersion++;
+            Project.Combat.DM_ScopeProfile.InvalidateCrosshairCache();
             DestroySprite(ref binocularScopeFull);
             DestroySprite(ref binocularScopeInnerGlow);
             DestroySprite(ref binocularScopeOuter);
@@ -66,9 +87,16 @@ namespace Project.UI
 
         private static void EnsureLoaded()
         {
-            if (library != null)
+            if (library == null && !ReferenceEquals(library, null))
+            {
+                library = null;
+                libraryLoadAttempted = false;
+                CacheVersion++;
+            }
+            if (library != null || libraryLoadAttempted)
                 return;
 
+            libraryLoadAttempted = true;
             library = Resources.Load<OpticsCrosshairLibrary>(LibraryResourcePath);
         }
 

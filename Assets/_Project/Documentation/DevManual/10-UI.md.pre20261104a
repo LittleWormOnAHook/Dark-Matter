@@ -1,0 +1,74 @@
+# UI — Genesis Studio
+
+**Status:** Stub (generated tables; notes pending)  
+**Open:** Tools → Dark Matter Genesis → Genesis Studio → **UI**  
+Scanner optics, journal skill-tree lines, and layout tooling.
+
+## Tabs
+
+- [Skill Tree Lines](#skill-tree-lines)
+- [Scanner Highlight](#scanner-highlight)
+- [UI Studio](#ui-studio)
+
+## Skill Tree Lines
+
+**What it does:** Journal prerequisite link sprites, gold glow strength, and line thickness.
+
+**Where:**
+- Studio: `Genesis Studio / UI / Skill Tree Lines` (panel mode `SingletonAsset`)
+- Asset: `Assets/_Project/Resources/UI/Skills/Tree/DMSkillTreeLineProfile.asset`
+- Script: `Assets/_Project/Scripts/UI/DMSkillTreeLineProfile.cs`
+
+**Key settings** (from code):
+
+| Group | Field | Type | Default | Range | Notes |
+|---|---|---|---|---|---|
+| Sprites (optional overrides) | `pathCore` | Sprite |  |  | Default horizontal line strip. Resources/UI/Skills/Tree/skill_path_core |
+| Sprites (optional overrides) | `pathGlow` | Sprite |  |  | Gold glow strip behind the core. Resources/UI/Skills/Tree/skill_path_glow |
+| Sprites (optional overrides) | `pathLocked` | Sprite |  |  | Optional per-state cores; tint still applies if set. |
+| Sprites (optional overrides) | `pathReady` | Sprite |  |  |  |
+| Sprites (optional overrides) | `pathOwned` | Sprite |  |  |  |
+| Thickness (pixels) | `coreHeight` | float | 5f |  |  |
+| Thickness (pixels) | `glowHeight` | float | 13f |  |  |
+| Gold glow strength | `glowAlphaLocked` | float | 0.1f | 0f–1f |  |
+| Gold glow strength | `glowAlphaReady` | float | 0.42f | 0f–1f |  |
+| Gold glow strength | `glowAlphaOwned` | float | 0.78f | 0f–1f |  |
+| Core tints (when using shared core sprite) | `usePaletteTints` | bool | true |  |  |
+
+## Scanner Highlight
+
+**What it does:** Optics scan outline / highlight profile.
+
+**Where:**
+- Studio: `Genesis Studio / UI / Scanner Highlight` (panel mode `SingletonAsset`)
+- Asset: `Assets/_Project/Resources/Scanner/ScannerHighlightProfile.asset`
+- Script: `Assets/_Project/Scripts/Interaction/ScannerHighlightProfile.cs`
+
+**Key settings** (from code):
+
+| Group | Field | Type | Default | Range | Notes |
+|---|---|---|---|---|---|
+|  | `tag` | string |  |  |  |
+|  | `category` | ScannerTargetCategory |  |  |  |
+|  | `outlineColor` | Color |  |  |  |
+|  | `alpha` | float |  | 0f–1f |  |
+|  | `durationSeconds` | float |  |  |  |
+|  | `priority` | int |  |  |  |
+| Sweep | `sweepRange` | float | 40f |  |  |
+| Sweep | `sweepDuration` | float | 0.85f |  |  |
+| Sweep | `sweepSampleSteps` | int | 12 |  |  |
+| Post-Scan | `defaultPostScanDuration` | float | 10f |  |  |
+| Post-Scan | `postScanRangeFalloff` | float | 40f |  |  |
+| Tag Rules (first match wins) | `tagRules` | ScannerHighlightRule[] |  |  |  |
+| Fallback | `fallbackRule` | ScannerHighlightRule |  |  |  |
+| Future Skill Upgrades | `skillRangeBonus` | float |  |  |  |
+| Future Skill Upgrades | `unlockedTagFilters` | string[] |  |  |  |
+| Future Skill Upgrades | `EffectiveSweepRange` | float | > Mathf.Max(4f, sweepRange + skillRangeBonus) |  |  |
+
+## UI Studio
+
+**What it does:** Browse panels, preview sandbox, layout profiles.
+
+**Where:**
+- Studio: `Genesis Studio / UI / UI Studio` (panel mode `ExternalTool`)
+

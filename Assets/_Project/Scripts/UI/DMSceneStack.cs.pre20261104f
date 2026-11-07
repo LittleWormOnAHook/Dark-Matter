@@ -1,0 +1,792 @@
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using Project.Core;
+using Project.Player;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
+using UnityEngine.SceneManagement;
+
+namespace Project.UI
+{
+    public enum DMSceneDestination
+    {
+        Mars = 0,
+        Io = 1
+    }
+
+    /// <summary>
+    /// Symmetric, repeatable Mars &lt;-&gt; IO (v1.7) scene switch for the main menu.
+    ///
+    /// Design (2026-11-04f):
+    ///  * Both scenes stay resident after the first IO load. All UI hosts (DM_UiRuntimeHost,
+    ///    UITK_Root, MainMenuController), the progression/inventory/survival state and the live
+    ///    player rig live in the boot (Mars) scene; unloading Mars would destroy them.
+    ///  * Exactly one live player rig. The Mars Kade is the authoritative one (PlayerReference /
+    ///    PlayerLocator / DmUiRuntimeRefs / InventorySystem / SurvivalStats are all bound to it).
+    ///    The IO scene authors its own stand-in Player_Kade_v2; we read its placement once and
+    ///    then keep it deactivated, so two Kades are never live.
+    ///  * Exactly one EventSystem and one AudioListener. UITK panel picking is bound to the FIRST
+    ///    EventSystem that registers (UIElementsRuntimeUtility.activeEventSystem), which is not the
+    ///    same thing as EventSystem.current. When a second scene adds another EventSystem the
+    ///    interop bridge rejects it and the panel handlers stay owned by the old one - see
+    ///    UIToolkitInteroperabilityBridge.CreatePanelGameObject (bails when
+    ///    panel.selectableGameObject != null) and DestroyPanelGameObject (bails when the panel was
+    ///    not created by that bridge). The survivor is therefore moved to DontDestroyOnLoad so no
+    ///    scene toggle can ever disable it, and every other EventSystem is deactivated.
+    ///
+    /// Nothing here touches .unity or .prefab assets; everything is runtime only.
+    /// </summary>
+    public static class DMSceneStack
+    {
+        public const string MarsSceneName = "Dark Matter Mars-The Beginning";
+        public const string IoSceneName = "Dark Matter Genesis v1.7";
+        public const string PersistentEventSystemName = "DM_EventSystem (persistent)";
+
+        private const string LogTag = "[DMSceneStack]";
+
+        private static DMSceneDestination current = DMSceneDestination.Mars;
+        private static bool switching;
+
+        private static readonly Dictionary<DMSceneDestination, Vector3> rigPositions = new Dictionary<DMSceneDestination, Vector3>();
+        private static readonly Dictionary<DMSceneDestination, Quaternion> rigRotations = new Dictionary<DMSceneDestination, Quaternion>();
+        private static readonly Dictionary<DMSceneDestination, List<GameObject>> hiddenRoots = new Dictionary<DMSceneDestination, List<GameObject>>();
+
+        /// <summary>Roots that must stay alive in every scene: audio, pools, Gaia, lighting data, UI hosts.</summary>
+        private static readonly string[] KeepAliveRootNames =
+        {
+            "EventSystem", "PoolManager", "Game Manager", "Gaia Runtime", "Gaia Tools",
+            "CommunicationsBootstrap", "ProbeVolumePerSceneData", "CameraShakeService",
+            "Turret Audio Controler", "-=SYSTEMS=-", "StaticLightingSky", "Canvas",
+            "DM_UiRuntimeHost", "UITK_Root", "UITK_Loading", "UITK_Hud"
+        };
+
+        private static readonly string[] EnemyTypeMarkers =
+        {
+            "Enemy", "EnemyAI", "Ai", "Brain", "Agent", "Patrol", "Npc",
+            "HumanoidPerformance", "vShooterManager", "vMeleeManager"
+        };
+
+        public static DMSceneDestination Current => current;
+        public static DMSceneDestination Other => current == DMSceneDestination.Io ? DMSceneDestination.Mars : DMSceneDestination.Io;
+        public static bool IsSwitching => switching;
+        public static string CurrentSceneName => SceneName(current);
+        public static string DestinationSceneName => SceneName(Other);
+
+        /// <summary>Label for the single menu button that toggles between the two worlds.</summary>
+        public static string SwitchButtonLabel
+        {
+            get
+            {
+                RefreshCurrentFromActiveScene();
+                return current == DMSceneDestination.Io ? "Mars" : "IO (v1.7)";
+            }
+        }
+
+        public static string SceneName(DMSceneDestination destination)
+        {
+            return destination == DMSceneDestination.Io ? IoSceneName : MarsSceneName;
+        }
+
+        public static DMSceneDestination DestinationForScene(string sceneName)
+        {
+            if (string.IsNullOrEmpty(sceneName))
+                return current;
+
+            if (string.Equals(sceneName, IoSceneName, StringComparison.OrdinalIgnoreCase))
+                return DMSceneDestination.Io;
+            if (string.Equals(sceneName, MarsSceneName, StringComparison.OrdinalIgnoreCase))
+                return DMSceneDestination.Mars;
+            return current;
+        }
+
+        /// <summary>Re-derives the current destination from whichever scene is active (cheap, no allocation).</summary>
+        public static void RefreshCurrentFromActiveScene()
+        {
+            if (switching)
+                return;
+
+            Scene active = SceneManager.GetActiveScene();
+            if (!active.IsValid())
+                return;
+
+            if (string.Equals(active.name, IoSceneName, StringComparison.OrdinalIgnoreCase))
+                current = DMSceneDestination.Io;
+            else if (string.Equals(active.name, MarsSceneName, StringComparison.OrdinalIgnoreCase))
+                current = DMSceneDestination.Mars;
+        }
+
+        /// <summary>Menu-facing entry point: switch to the other world, or to a specific one.</summary>
+        public static IEnumerator SwitchRoutine(DMSceneDestination destination, Action<bool, string> completed)
+        {
+            if (switching)
+            {
+                Debug.LogWarning($"{LogTag} switch to '{SceneName(destination)}' ignored: a switch is already running.");
+                completed?.Invoke(false, "A scene switch is already running.");
+                yield break;
+            }
+
+            switching = true;
+            string targetName = SceneName(destination);
+            string failure = null;
+
+            Scene target = SceneManager.GetSceneByName(targetName);
+            bool needsLoad = !target.IsValid() || !target.isLoaded;
+
+            if (needsLoad)
+            {
+                if (!Application.CanStreamedLevelBeLoaded(targetName))
+                {
+                    failure = $"Scene '{targetName}' is not in the build scene list.";
+                    Debug.LogWarning($"{LogTag} {failure}");
+                }
+                else
+                {
+                    AsyncOperation op = null;
+                    try
+                    {
+                        op = SceneManager.LoadSceneAsync(targetName, LoadSceneMode.Additive);
+                    }
+                    catch (Exception ex)
+                    {
+                        failure = $"LoadSceneAsync('{targetName}') threw: {ex.Message}";
+                        Debug.LogWarning($"{LogTag} {failure}");
+                    }
+
+                    if (op != null)
+                    {
+                        yield return op;
+                        target = SceneManager.GetSceneByName(targetName);
+                    }
+                }
+            }
+            else
+            {
+                Debug.Log($"{LogTag} '{targetName}' already loaded - reusing it (no reload).");
+            }
+
+            if (failure == null && (!target.IsValid() || !target.isLoaded))
+                failure = $"Scene '{targetName}' is not loaded after the load finished.";
+
+            if (failure != null)
+            {
+                switching = false;
+                completed?.Invoke(false, failure);
+                yield break;
+            }
+
+            Scene previous = SceneManager.GetActiveScene();
+            SceneManager.SetActiveScene(target);
+            Debug.Log($"{LogTag} active scene: '{previous.name}' -> '{target.name}' (both resident).");
+
+            ApplyRootVisibility(destination);
+            ApplyPlayerOwnership(destination);
+            EnforceSingleEventSystem();
+            EnforceSingleAudioListener();
+            EnforceSingleInputModule();
+
+            current = destination;
+            switching = false;
+
+            PlayerReference.ResolveTransform();
+            Debug.Log($"{LogTag} switched to '{targetName}' at {Now()}; player rig '{Describe(PlayerReference.Transform)}'.");
+            completed?.Invoke(true, null);
+        }
+
+        private static string Now()
+        {
+            return DateTime.Now.ToString("HH:mm:ss");
+        }
+
+        // ---------------------------------------------------------------- roots
+
+        private static void ApplyRootVisibility(DMSceneDestination shown)
+        {
+            DMSceneDestination hidden = shown == DMSceneDestination.Io ? DMSceneDestination.Mars : DMSceneDestination.Io;
+            RestoreHiddenRoots(shown);
+            HideRootsOf(hidden);
+        }
+
+        private static void RestoreHiddenRoots(DMSceneDestination destination)
+        {
+            if (!hiddenRoots.TryGetValue(destination, out List<GameObject> roots) || roots.Count == 0)
+                return;
+
+            int restored = 0;
+            for (int i = 0; i < roots.Count; i++)
+            {
+                GameObject root = roots[i];
+                if (root == null)
+                    continue;
+                if (!root.activeSelf)
+                {
+                    root.SetActive(true);
+                    restored++;
+                }
+            }
+
+            roots.Clear();
+            Debug.Log($"{LogTag} re-activated {restored} root object(s) in '{SceneName(destination)}'.");
+        }
+
+        private static void HideRootsOf(DMSceneDestination destination)
+        {
+            Scene scene = SceneManager.GetSceneByName(SceneName(destination));
+            if (!scene.IsValid() || !scene.isLoaded)
+                return;
+
+            if (!hiddenRoots.TryGetValue(destination, out List<GameObject> roots))
+            {
+                roots = new List<GameObject>(32);
+                hiddenRoots[destination] = roots;
+            }
+
+            GameObject[] all = scene.GetRootGameObjects();
+            int hidden = 0;
+
+            for (int i = 0; i < all.Length; i++)
+            {
+                GameObject root = all[i];
+                if (root == null || !root.activeSelf)
+                    continue;
+
+                string reason;
+                if (MustKeepAlive(root, out reason))
+                {
+                    Debug.Log($"{LogTag} keep '{scene.name}' root '{root.name}' ({reason}).");
+                    continue;
+                }
+
+                roots.Add(root);
+                root.SetActive(false);
+                hidden++;
+            }
+
+            Debug.Log($"{LogTag} hid {hidden} root object(s) of the non-active scene '{scene.name}' (level art, enemies, props).");
+        }
+
+        private static bool MustKeepAlive(GameObject root, out string reason)
+        {
+            reason = null;
+
+            for (int i = 0; i < KeepAliveRootNames.Length; i++)
+            {
+                if (root.name == KeepAliveRootNames[i])
+                {
+                    reason = "persistent system root";
+                    return true;
+                }
+            }
+
+            // The authoritative player rig must never be disabled by a scene toggle.
+            GameObject live = PlayerReference.Transform != null ? PlayerReference.Transform.gameObject : null;
+            if (live != null && (root == live || live.transform.IsChildOf(root.transform)))
+            {
+                reason = "owns the live player rig";
+                return true;
+            }
+
+            // Anything holding an EventSystem / AudioListener / UIDocument / Terrain stays: those are
+            // either UI infrastructure or world collision we must not remove.
+            if (root.GetComponentInChildren<EventSystem>(true) != null)
+            {
+                reason = "contains an EventSystem";
+                return true;
+            }
+
+            if (root.GetComponentInChildren<AudioListener>(true) != null)
+            {
+                reason = "contains an AudioListener";
+                return true;
+            }
+
+            if (root.GetComponentInChildren<UnityEngine.UIElements.UIDocument>(true) != null)
+            {
+                reason = "contains a UIDocument";
+                return true;
+            }
+
+            if (root.GetComponentInChildren<Terrain>(true) != null)
+            {
+                reason = "contains Terrain (collision)";
+                return true;
+            }
+
+            // Level art / lighting containers: keep, the tradeoff is reported in the DevManual.
+            if (root.name == "MARS" || root.name == "StaticLightingSky")
+            {
+                reason = "level art or HDRP lighting";
+                return true;
+            }
+
+            return false;
+        }
+
+        // --------------------------------------------------------------- player
+
+        private static void ApplyPlayerOwnership(DMSceneDestination shown)
+        {
+            Scene shownScene = SceneManager.GetSceneByName(SceneName(shown));
+            Scene hiddenScene = SceneManager.GetSceneByName(SceneName(OtherOf(shown)));
+
+            GameObject primary = ResolvePrimaryRig();
+            if (primary == null)
+            {
+                Debug.LogWarning($"{LogTag} no player rig found; nothing to activate.");
+                return;
+            }
+
+            // Record where the hidden scene expects its Kade, then retire that stand-in copy.
+            GameObject standIn = shownScene.IsValid() && shownScene.isLoaded ? FindPlayerRig(shownScene) : null;
+            if (standIn != null && standIn != primary)
+            {
+                rigPositions[shown] = standIn.transform.position;
+                rigRotations[shown] = standIn.transform.rotation;
+                if (standIn.activeSelf)
+                {
+                    standIn.SetActive(false);
+                    Debug.Log($"{LogTag} deactivated duplicate player '{standIn.name}' in '{shownScene.name}' (single-Kade policy).");
+                }
+            }
+
+            if (hiddenScene.IsValid() && hiddenScene.isLoaded)
+            {
+                GameObject other = FindPlayerRig(hiddenScene);
+                if (other != null && other != primary && other.activeSelf)
+                {
+                    other.SetActive(false);
+                    Debug.Log($"{LogTag} deactivated duplicate player '{other.name}' in '{hiddenScene.name}' (single-Kade policy).");
+                }
+            }
+
+            if (!primary.activeSelf)
+            {
+                primary.SetActive(true);
+                Debug.Log($"{LogTag} re-activated the authoritative player '{primary.name}'.");
+            }
+
+            Vector3 position;
+            Quaternion rotation;
+            if (rigPositions.TryGetValue(shown, out position))
+            {
+                rotation = rigRotations.TryGetValue(shown, out Quaternion r) ? r : primary.transform.rotation;
+                MoveRig(primary, position, rotation, $"authored '{shown}' placement");
+            }
+            else if (standIn != null)
+            {
+                MoveRig(primary, standIn.transform.position, standIn.transform.rotation, $"live '{shown}' stand-in '{standIn.name}'");
+            }
+            else
+            {
+                Debug.LogWarning($"{LogTag} no authored placement recorded for '{SceneName(shown)}'; player left where he is.");
+            }
+
+            PlayerReference.Register(primary.transform);
+            Debug.Log($"{LogTag} player owner: '{primary.name}' in '{primary.scene.name}' at {primary.transform.position}.");
+        }
+
+        private static DMSceneDestination OtherOf(DMSceneDestination destination)
+        {
+            return destination == DMSceneDestination.Io ? DMSceneDestination.Mars : DMSceneDestination.Io;
+        }
+
+        /// <summary>
+        /// The one rig that owns progression / inventory / survival: whatever PlayerReference already
+        /// points at, else the Mars scene rig, else any live Project.Player.PlayerController.
+        /// </summary>
+        public static GameObject ResolvePrimaryRig()
+        {
+            if (PlayerReference.Transform != null)
+                return PlayerReference.Transform.gameObject;
+
+            Scene mars = SceneManager.GetSceneByName(MarsSceneName);
+            if (mars.IsValid() && mars.isLoaded)
+            {
+                GameObject fromMars = FindPlayerRig(mars);
+                if (fromMars != null)
+                    return fromMars;
+            }
+
+            PlayerController[] controllers = UnityEngine.Object.FindObjectsByType<PlayerController>(FindObjectsInactive.Exclude);
+            for (int i = 0; i < controllers.Length; i++)
+            {
+                if (controllers[i] == null)
+                    continue;
+                if (IsEnemyRig(controllers[i].gameObject))
+                    continue;
+                return controllers[i].gameObject;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Hardened matcher. Order: (1) a Kade-named object carrying the project PlayerController,
+        /// (2) an object named exactly "Player Versions", (3) any non-enemy object carrying the
+        /// project PlayerController. Anything with an enemy/AI marker is rejected outright.
+        ///
+        /// The old matcher accepted any component whose type name was "PlayerController" or
+        /// "vThirdPersonController". The Corrupt Patrol Android prefab carries vThirdPersonController
+        /// (and no project PlayerController), so it matched and the player was teleported to it.
+        /// </summary>
+        public static GameObject FindPlayerRig(Scene scene)
+        {
+            if (!scene.IsValid() || !scene.isLoaded)
+                return null;
+
+            GameObject kade = null;
+            GameObject playerVersions = null;
+            GameObject anyPlayer = null;
+
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int r = 0; r < roots.Length; r++)
+            {
+                Transform[] transforms = roots[r].GetComponentsInChildren<Transform>(true);
+                for (int i = 0; i < transforms.Length; i++)
+                {
+                    Transform t = transforms[i];
+                    if (t == null)
+                        continue;
+
+                    GameObject go = t.gameObject;
+                    if (go.scene != scene)
+                        continue;
+                    if (IsEnemyRig(go))
+                        continue;
+
+                    bool hasProjectController = go.GetComponent<PlayerController>() != null;
+
+                    if (kade == null
+                        && hasProjectController
+                        && go.name.IndexOf("Kade", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        kade = go;
+                    }
+
+                    if (playerVersions == null && string.Equals(go.name, "Player Versions", StringComparison.Ordinal))
+                        playerVersions = go;
+
+                    if (anyPlayer == null && hasProjectController && go.activeSelf)
+                        anyPlayer = go;
+                }
+            }
+
+            if (kade != null)
+                return kade;
+            if (playerVersions != null && anyPlayer == null)
+                return playerVersions;
+            return anyPlayer != null ? anyPlayer : playerVersions;
+        }
+
+        /// <summary>
+        /// True when this object looks like an enemy / NPC rather than the player. The authoritative
+        /// test is the project PlayerController: every enemy prefab in the project carries
+        /// vThirdPersonController (Invector) but none carries Project.Player.PlayerController.
+        /// The name/type markers are a second, defensive gate.
+        /// </summary>
+        public static bool IsEnemyRig(GameObject candidate)
+        {
+            if (candidate == null)
+                return true;
+
+            if (candidate.GetComponent<PlayerController>() != null)
+                return false;
+
+            if (candidate.GetComponent<Invector.vCharacterController.vThirdPersonController>() != null)
+                return true;
+
+            string name = candidate.name;
+            if (name.IndexOf("Enemy", StringComparison.OrdinalIgnoreCase) >= 0
+                || name.IndexOf("Patrol", StringComparison.OrdinalIgnoreCase) >= 0
+                || name.IndexOf("Android", StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+
+            MonoBehaviour[] behaviours = candidate.GetComponentsInChildren<MonoBehaviour>(true);
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                if (behaviours[i] == null)
+                    continue;
+                string typeName = behaviours[i].GetType().Name;
+                for (int m = 0; m < EnemyTypeMarkers.Length; m++)
+                {
+                    if (typeName.IndexOf(EnemyTypeMarkers[m], StringComparison.OrdinalIgnoreCase) >= 0)
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static void MoveRig(GameObject player, Vector3 position, Quaternion rotation, string source)
+        {
+            if (player == null)
+                return;
+
+            CharacterController controller = player.GetComponent<CharacterController>();
+            bool controllerWasEnabled = controller != null && controller.enabled;
+            if (controllerWasEnabled)
+                controller.enabled = false;
+
+            Rigidbody body = player.GetComponent<Rigidbody>();
+            if (body != null)
+            {
+                body.position = position;
+                body.rotation = rotation;
+                body.linearVelocity = Vector3.zero;
+                body.angularVelocity = Vector3.zero;
+            }
+
+            player.transform.SetPositionAndRotation(position, rotation);
+            Physics.SyncTransforms();
+
+            if (controllerWasEnabled)
+                controller.enabled = true;
+
+            Debug.Log($"{LogTag} player moved to {source} at {position} (rot {rotation.eulerAngles}).");
+        }
+
+        // ------------------------------------------------- event system / audio
+
+        /// <summary>
+        /// Leaves exactly one EventSystem enabled and makes it immune to scene toggles.
+        /// UITK picking is bound to the first bridge that registered; EventSystem.current is
+        /// m_EventSystems[0]. Both "first wins", so the survivor is the currently-current one.
+        /// </summary>
+        public static void EnforceSingleEventSystem()
+        {
+            EventSystem[] all = UnityEngine.Object.FindObjectsByType<EventSystem>(FindObjectsInactive.Include);
+            if (all.Length == 0)
+            {
+                GameObject created = new GameObject(PersistentEventSystemName);
+                created.AddComponent<EventSystem>();
+                created.AddComponent<InputSystemUIInputModule>();
+                UnityEngine.Object.DontDestroyOnLoad(created);
+                Debug.Log($"{LogTag} created the persistent EventSystem '{PersistentEventSystemName}'.");
+                DMUiGamepadNavigation.EnsureConfigured();
+                return;
+            }
+
+            EventSystem survivor = EventSystem.current;
+            if (survivor == null || !survivor.isActiveAndEnabled)
+            {
+                survivor = null;
+                for (int i = 0; i < all.Length; i++)
+                {
+                    if (all[i] != null && all[i].isActiveAndEnabled)
+                    {
+                        survivor = all[i];
+                        break;
+                    }
+                }
+            }
+
+            if (survivor == null)
+                survivor = all[0];
+
+            int disabled = 0;
+            for (int i = 0; i < all.Length; i++)
+            {
+                EventSystem candidate = all[i];
+                if (candidate == null || candidate == survivor)
+                    continue;
+                if (!candidate.gameObject.activeSelf)
+                    continue;
+
+                candidate.gameObject.SetActive(false);
+                disabled++;
+                Debug.Log($"{LogTag} deactivated extra EventSystem '{candidate.name}' in scene '{candidate.gameObject.scene.name}'.");
+            }
+
+            AdoptPersistent(survivor.gameObject);
+
+            InputSystemUIInputModule module = survivor.GetComponent<InputSystemUIInputModule>();
+            if (module == null)
+            {
+                module = survivor.gameObject.AddComponent<InputSystemUIInputModule>();
+                Debug.LogWarning($"{LogTag} survivor '{survivor.name}' had no InputSystemUIInputModule; added one.");
+            }
+
+            if (!module.enabled)
+                module.enabled = true;
+
+            Debug.Log($"{LogTag} EventSystem survivor: '{survivor.name}' in '{survivor.gameObject.scene.name}' "
+                + $"(current={Describe(current: EventSystem.current)}); disabled {disabled} duplicate(s).");
+
+            DMUiGamepadNavigation.EnsureConfigured();
+        }
+
+        /// <summary>
+        /// One AudioListener. Prefers the listener under the live player's camera so the mix follows
+        /// whichever Kade is authoritative.
+        /// </summary>
+        public static void EnforceSingleAudioListener()
+        {
+            AudioListener[] all = UnityEngine.Object.FindObjectsByType<AudioListener>(FindObjectsInactive.Include);
+            if (all.Length <= 1)
+            {
+                if (all.Length == 1 && !all[0].enabled)
+                    all[0].enabled = true;
+                return;
+            }
+
+            AudioListener survivor = null;
+            Transform player = PlayerReference.Transform;
+            if (player != null)
+            {
+                AudioListener[] onPlayer = player.GetComponentsInChildren<AudioListener>(true);
+                for (int i = 0; i < onPlayer.Length; i++)
+                {
+                    if (onPlayer[i] != null && onPlayer[i].isActiveAndEnabled)
+                    {
+                        survivor = onPlayer[i];
+                        break;
+                    }
+                }
+            }
+
+            if (survivor == null)
+            {
+                for (int i = 0; i < all.Length; i++)
+                {
+                    if (all[i] != null && all[i].isActiveAndEnabled)
+                    {
+                        survivor = all[i];
+                        break;
+                    }
+                }
+            }
+
+            if (survivor == null)
+                survivor = all[0];
+
+            int disabled = 0;
+            for (int i = 0; i < all.Length; i++)
+            {
+                AudioListener candidate = all[i];
+                if (candidate == null || candidate == survivor)
+                    continue;
+                if (!candidate.enabled)
+                    continue;
+
+                candidate.enabled = false;
+                disabled++;
+            }
+
+            Debug.Log($"{LogTag} AudioListener survivor: '{Describe(survivor.transform)}' in "
+                + $"'{survivor.gameObject.scene.name}'; disabled {disabled} duplicate(s).");
+        }
+
+        /// <summary>Exactly one enabled InputSystemUIInputModule, on the EventSystem survivor.</summary>
+        public static void EnforceSingleInputModule()
+        {
+            InputSystemUIInputModule[] all = UnityEngine.Object.FindObjectsByType<InputSystemUIInputModule>(FindObjectsInactive.Include);
+            if (all.Length == 0)
+                return;
+
+            EventSystem survivor = EventSystem.current;
+            InputSystemUIInputModule keep = null;
+
+            if (survivor != null)
+                keep = survivor.GetComponent<InputSystemUIInputModule>();
+
+            if (keep == null)
+            {
+                for (int i = 0; i < all.Length; i++)
+                {
+                    if (all[i] != null && all[i].isActiveAndEnabled)
+                    {
+                        keep = all[i];
+                        break;
+                    }
+                }
+            }
+
+            if (keep == null)
+                keep = all[0];
+
+            int disabled = 0;
+            for (int i = 0; i < all.Length; i++)
+            {
+                if (all[i] == null || all[i] == keep)
+                    continue;
+                if (!all[i].enabled)
+                    continue;
+
+                all[i].enabled = false;
+                disabled++;
+            }
+
+            if (!keep.enabled)
+                keep.enabled = true;
+
+            Debug.Log($"{LogTag} InputSystemUIInputModule survivor: '{Describe(keep)}' (disabled {disabled}).");
+        }
+
+        private static void AdoptPersistent(GameObject target)
+        {
+            if (target == null)
+                return;
+            if (target.transform.parent != null)
+                return;
+            if (target.scene.name == "DontDestroyOnLoad")
+                return;
+
+            UnityEngine.Object.DontDestroyOnLoad(target);
+            Debug.Log($"{LogTag} '{target.name}' moved to DontDestroyOnLoad so scene toggles cannot disable it.");
+        }
+
+        /// <summary>
+        /// Re-asserts the single-EventSystem / single-AudioListener invariant before the menu paints.
+        /// Cheap: returns immediately when the counts are already correct.
+        /// </summary>
+        public static void RefreshMenuInputArbitration()
+        {
+            EventSystem[] systems = UnityEngine.Object.FindObjectsByType<EventSystem>(FindObjectsInactive.Include);
+            int enabledSystems = 0;
+            for (int i = 0; i < systems.Length; i++)
+            {
+                if (systems[i] != null && systems[i].isActiveAndEnabled)
+                    enabledSystems++;
+            }
+
+            if (enabledSystems != 1 || EventSystem.current == null)
+                EnforceSingleEventSystem();
+
+            AudioListener[] listeners = UnityEngine.Object.FindObjectsByType<AudioListener>(FindObjectsInactive.Include);
+            int enabledListeners = 0;
+            for (int i = 0; i < listeners.Length; i++)
+            {
+                if (listeners[i] != null && listeners[i].enabled)
+                    enabledListeners++;
+            }
+
+            if (enabledListeners != 1)
+                EnforceSingleAudioListener();
+
+            RefreshCurrentFromActiveScene();
+        }
+
+        private static string Describe(Component component)
+        {
+            if (component == null)
+                return "<none>";
+            return component.gameObject.name + " (" + component.gameObject.scene.name + ")";
+        }
+
+        private static string Describe(EventSystem current)
+        {
+            return current == null ? "<none>" : current.gameObject.name;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            current = DMSceneDestination.Mars;
+            switching = false;
+            rigPositions.Clear();
+            rigRotations.Clear();
+            hiddenRoots.Clear();
+        }
+    }
+}

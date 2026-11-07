@@ -14,6 +14,9 @@ namespace Project.UI
     /// </summary>
     public static class GameplayInputRecovery
     {
+        private static readonly Unity.Profiling.ProfilerMarker s_pmHasBlockingUi = new Unity.Profiling.ProfilerMarker("DM.Input.CursorRestore.HasBlockingUi");
+        private static readonly Unity.Profiling.ProfilerMarker s_pmApplyIfIdle = new Unity.Profiling.ProfilerMarker("DM.Input.CursorRestore.ApplyIfIdle");
+        private static readonly Unity.Profiling.ProfilerMarker s_pmApplyCursor = new Unity.Profiling.ProfilerMarker("DM.Input.CursorRestore.ApplyCursorState");
         public static void ReleaseAllInputCapture()
         {
             CloseAllGameplayUi();
@@ -221,10 +224,17 @@ namespace Project.UI
 
         private static bool HasVisibleUiBlockingInput()
         {
+            using (s_pmHasBlockingUi.Auto())
+                return HasVisibleUiBlockingInputCore();
+        }
+
+        private static bool HasVisibleUiBlockingInputCore()
+        {
             if (DMUiToolkitDeath.IsOpen)
                 return true;
 
-            JournalPanelUI journal = Object.FindAnyObjectByType<JournalPanelUI>(FindObjectsInactive.Include);
+            // Round3: cached/validated journal (was a scene-wide FindAnyObjectByType(Include) per call).
+            JournalPanelUI journal = JournalPanelUI.ResolveCachedJournal();
             if (journal != null && journal.IsOpen)
                 return true;
 
@@ -373,6 +383,7 @@ namespace Project.UI
 
             private static void ApplyIfIdle()
             {
+                using var _ = s_pmApplyIfIdle.Auto();
                 if (HasVisibleUiBlockingInput())
                     return;
 
@@ -381,7 +392,8 @@ namespace Project.UI
                 {
                     if (player.IsGameplayPaused)
                         return;
-                    player.ApplyCursorState();
+                    using (s_pmApplyCursor.Auto())
+                        player.ApplyCursorState();
                     return;
                 }
 

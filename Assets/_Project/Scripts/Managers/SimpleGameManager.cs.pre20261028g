@@ -1,0 +1,143 @@
+using UnityEngine;
+using Project.Core;
+using Project.Survival;
+using Project.Inventory;
+using Project.UI;
+using Project.Data;
+using Project.Pioneers;
+using Project.Map;
+
+namespace Project.Managers
+{
+    public class SimpleGameManager : MonoBehaviour
+    {
+        public static SimpleGameManager Instance { get; private set; }
+
+        [Header("Starting Items")]
+        public ItemData[] startingItems;
+        public int[] startingAmounts;
+
+        private bool playerInitialized;
+
+        private void Awake()
+        {
+            if (Instance == null)
+            {
+                Instance = this;
+                DontDestroyOnLoad(gameObject);
+            }
+            else
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            if (startingItems != null)
+                ItemRegistry.RegisterRuntimeItems(startingItems);
+
+            PioneerRosterManager.EnsureExists();
+            CompanionSystemsBootstrap.EnsureGameplaySystems(this);
+            DMGameAutosave.EnsureExists();
+        }
+
+        private void Start()
+        {
+            Debug.Log("GameManager Initialized - Dark Matter Genesis");
+        }
+
+        public void BeginNewGameSession(bool grantStartingItems = true)
+        {
+            if (playerInitialized)
+                return;
+
+            if (grantStartingItems)
+            {
+                ScannerDiscoveryRegistry.Clear();
+                ResourceIdentificationRegistry.Clear();
+                InitializePlayer();
+            }
+
+            HolsterStartingWeapons();
+            playerInitialized = true;
+        }
+
+        private static void HolsterStartingWeapons()
+        {
+            GameObject player = PlayerLocator.FindPlayerObject();
+            if (player == null)
+                return;
+
+            EquipmentController equipment = player.GetComponent<EquipmentController>();
+            equipment?.HolsterWeapon();
+        }
+
+        private void InitializePlayer()
+        {
+            GameObject player = PlayerLocator.FindPlayerObject();
+            if (player == null)
+            {
+                Debug.LogError("Player not found in scene!");
+                return;
+            }
+
+            // 0927-start-items: the inventory may sit on a child of the player rig; fall back to any in the scene.
+            InventorySystem inventory = player.GetComponent<InventorySystem>();
+            if (inventory == null)
+                inventory = player.GetComponentInChildren<InventorySystem>(true);
+            if (inventory == null)
+                inventory = PlayerLocator.FindLiveInventory();
+            if (inventory == null)
+            {
+                Debug.LogWarning("[GameManager] New game: the player has no InventorySystem, so no starting items were given.");
+                return;
+            }
+
+            if (startingItems != null)
+            {
+                for (int i = 0; i < startingItems.Length; i++)
+                {
+                    if (startingItems[i] != null)
+                    {
+                        int amount = (startingAmounts != null && startingAmounts.Length > i) ? startingAmounts[i] : 5;
+                        // Starting kit goes to inventory/reserve only — magazines stay empty until load or pickup.
+                        inventory.AddItem(startingItems[i], amount, autoCreditAmmoToWeapons: false);
+                    }
+                }
+            }
+        }
+
+        public void AddAetherCredits(int amount, string source = "Unknown")
+        {
+            PioneerRosterManager roster = PioneerRosterManager.EnsureExists();
+            if (roster != null)
+            {
+                roster.AddAetherCredits(amount, source);
+                return;
+            }
+
+            UIManager ui = FindAnyObjectByType<UIManager>();
+            ui?.ShowAcReward(amount, source);
+        }
+
+        public void AddPi(int amount, string source = "Unknown")
+        {
+            AddAetherCredits(amount, source);
+        }
+
+        public void SaveGame(int slotIndex = 0)
+        {
+            if (GameSaveSystem.TrySave(slotIndex, out string message))
+                Debug.Log(message);
+            else
+                Debug.LogWarning(message);
+        }
+
+        public void LoadGame(int slotIndex = 0)
+        {
+            if (GameSaveSystem.TryLoad(slotIndex, out string message))
+                Debug.Log(message);
+            else
+                Debug.LogWarning(message);
+        }
+    }
+}

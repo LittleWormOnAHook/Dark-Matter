@@ -89,8 +89,11 @@ namespace Project.UI
             playerInput = live;
             BindPlayer("Journal", ctx =>
             {
-                if (ctx.performed)
-                    DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.JournalQuest, journalHotkey: true);
+                using (s_pmJournal.Auto())
+                {
+                    if (ctx.performed)
+                        DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.JournalQuest, journalHotkey: true);
+                }
             });
             BindPlayer("Inventory", ctx =>
             {
@@ -98,18 +101,26 @@ namespace Project.UI
                     return;
                 if (DMInputSchemeRouter.IsGamepadScheme)
                     return;
-                DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Inventory);
+                using (s_pmInventory.Auto())
+                    DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.Inventory);
             });
             BindUi("Cancel", ctx =>
             {
                 if (!ctx.performed)
                     return;
                 // Menus/popups: B = back. Gameplay: B is Dodge/Dash (Cancel must not steal it).
-                if (GameplayKeyboardShortcuts.IsModalUiOpenForCancel())
-                    GameplayKeyboardShortcuts.HandleUiCancelBack();
+                using (s_pmCancel.Auto())
+                {
+                    if (GameplayKeyboardShortcuts.IsModalUiOpenForCancel())
+                        GameplayKeyboardShortcuts.HandleUiCancelBack();
+                }
             });
             bound = true;
         }
+        private static readonly Unity.Profiling.ProfilerMarker s_pmJournal = new Unity.Profiling.ProfilerMarker("DM.Input.Bridge.Journal");
+        private static readonly Unity.Profiling.ProfilerMarker s_pmInventory = new Unity.Profiling.ProfilerMarker("DM.Input.Bridge.Inventory");
+        private static readonly Unity.Profiling.ProfilerMarker s_pmCancel = new Unity.Profiling.ProfilerMarker("DM.Input.Bridge.Cancel");
+
         private void BindPlayer(string actionName, Action<InputAction.CallbackContext> handler)
         {
             InputAction action = playerInput.actions.FindAction(actionName, false);

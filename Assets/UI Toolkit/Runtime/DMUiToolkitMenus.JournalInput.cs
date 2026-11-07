@@ -1,4 +1,4 @@
-using Project.Core;
+﻿using Project.Core;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -6,6 +6,20 @@ namespace Project.UI
 {
     public partial class DMUiToolkitMenus
     {
+        // Round6: open-path breakdown markers (inventory/journal first-open lag trace).
+        private static readonly Unity.Profiling.ProfilerMarker s_pmOpenToggle = new Unity.Profiling.ProfilerMarker("DM.Journal.Open.PanelToggle");
+        private static readonly Unity.Profiling.ProfilerMarker s_pmOpenForceShow = new Unity.Profiling.ProfilerMarker("DM.Journal.Open.ForceShow");
+        private static readonly Unity.Profiling.ProfilerMarker s_pmOpenChrome = new Unity.Profiling.ProfilerMarker("DM.Journal.Open.ClearCinematicChrome");
+        private static readonly Unity.Profiling.ProfilerMarker s_pmOpenEnsureHost = new Unity.Profiling.ProfilerMarker("DM.Journal.Open.EnsureHost");
+        internal static readonly Unity.Profiling.ProfilerMarker s_pmHideHosts = new Unity.Profiling.ProfilerMarker("DM.Journal.Open.HideUgui.Hosts");
+        internal static readonly Unity.Profiling.ProfilerMarker s_pmHideBehaviours = new Unity.Profiling.ProfilerMarker("DM.Journal.Open.HideUgui.Behaviours");
+        internal static readonly Unity.Profiling.ProfilerMarker s_pmHideLegacyInv = new Unity.Profiling.ProfilerMarker("DM.Journal.Open.HideUgui.LegacyInventory");
+        internal static readonly Unity.Profiling.ProfilerMarker s_pmOpenHideUgui = new Unity.Profiling.ProfilerMarker("DM.Journal.Open.HideUgui");
+        internal static readonly Unity.Profiling.ProfilerMarker s_pmOpenRefreshInv = new Unity.Profiling.ProfilerMarker("DM.Journal.Open.RefreshInventory");
+        internal static readonly Unity.Profiling.ProfilerMarker s_pmOpenRefreshJournal = new Unity.Profiling.ProfilerMarker("DM.Journal.Open.RefreshJournal");
+        internal static readonly Unity.Profiling.ProfilerMarker s_pmOpenRefreshExtra = new Unity.Profiling.ProfilerMarker("DM.Journal.Open.RefreshExtraPanel");
+        internal static readonly Unity.Profiling.ProfilerMarker s_pmOpenSync = new Unity.Profiling.ProfilerMarker("DM.Journal.Open.SyncTimeChrome");
+
         private static int lastJournalToggleFrame = -1;
         private static JournalWindowId lastJournalToggleWindow;
 
@@ -17,7 +31,7 @@ namespace Project.UI
 
         /// <summary>
         /// Navigator reports open but Toolkit menus were force-hidden / never painted (climb Detach recovery).
-        /// Re-paint from the live navigator window — do not CloseAll.
+        /// Re-paint from the live navigator window â€” do not CloseAll.
         /// </summary>
         public static void RepairOpenNavigatorChrome()
         {
@@ -40,7 +54,8 @@ namespace Project.UI
                 window = JournalWindowId.JournalQuest;
 
             EnsureHost()?.ForceShow(window.Value);
-            GameplayHudVisibility.ClearCinematicChrome();
+            using (s_pmOpenChrome.Auto())
+                GameplayHudVisibility.ClearCinematicChrome();
         }
 
 
@@ -55,7 +70,7 @@ namespace Project.UI
             if (!GameSession.HasStarted || !IsToolkitWindow(windowId))
                 return false;
 
-            JournalPanelUI journal = Object.FindAnyObjectByType<JournalPanelUI>(FindObjectsInactive.Include);
+            JournalPanelUI journal = JournalPanelUI.ResolveCachedJournal(); // Round6: cached (was FindAnyObjectByType Include)
             if (journal == null)
                 return false;
 
@@ -66,7 +81,9 @@ namespace Project.UI
             if (!switched)
                 return false;
 
-            DMUiToolkitMenus host = EnsureHost();
+            DMUiToolkitMenus host;
+            using (s_pmOpenEnsureHost.Auto())
+                host = EnsureHost();
             if (host == null)
                 return true;
 
@@ -101,16 +118,18 @@ namespace Project.UI
             if (!GameSession.HasStarted || !IsToolkitWindow(windowId))
                 return false;
 
-            JournalPanelUI journal = Object.FindAnyObjectByType<JournalPanelUI>(FindObjectsInactive.Include);
+            JournalPanelUI journal = JournalPanelUI.ResolveCachedJournal(); // Round6: cached (was FindAnyObjectByType Include)
             if (journal == null)
                 return false;
 
             bool wasOpen = journal.IsOpen;
             JournalWindowId? wasWindow = journal.ActiveJournalWindow;
 
-            bool toggled = journalHotkey
-                ? journal.TryToggleJournal()
-                : journal.TryToggleTab(windowId);
+            bool toggled;
+            using (s_pmOpenToggle.Auto())
+                toggled = journalHotkey
+                    ? journal.TryToggleJournal()
+                    : journal.TryToggleTab(windowId);
 
             if (!toggled)
                 return false;
@@ -118,9 +137,12 @@ namespace Project.UI
             lastJournalToggleFrame = Time.frameCount;
             lastJournalToggleWindow = windowId;
 
-            GameplayHudVisibility.ClearCinematicChrome();
+            using (s_pmOpenChrome.Auto())
+                GameplayHudVisibility.ClearCinematicChrome();
 
-            DMUiToolkitMenus host = EnsureHost();
+            DMUiToolkitMenus host;
+            using (s_pmOpenEnsureHost.Auto())
+                host = EnsureHost();
             if (host == null)
                 return true;
 
@@ -132,7 +154,8 @@ namespace Project.UI
             if (journal.IsOpen || (!closedSameTab && !wasOpen))
             {
                 JournalWindowId show = journal.ActiveJournalWindow ?? windowId;
-                host.ForceShow(show);
+                using (s_pmOpenForceShow.Auto())
+                    host.ForceShow(show);
             }
             else
             {

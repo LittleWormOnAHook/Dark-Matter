@@ -1,0 +1,731 @@
+﻿#if UNITY_EDITOR
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
+using Project.Audio.Voice;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.Networking;
+
+namespace Project.EditorTools.GenesisStudio
+{
+    /// <summary>
+    /// Genesis Studio > Audio > Voices. Simple voice-actor editor: describe a voice, preview it, bake lines to WAV.
+    /// Generation runs in an external Parler-TTS Python venv (A:\DMG_Tools\parler-tts); nothing runs at game runtime.
+    /// </summary>
+    internal sealed class DMStudioVoicesPanel
+    {
+        public const string ActorsFolder = "Assets/_Project/Audio/Voices/Actors";
+        public const string VoicesRoot = "Assets/_Project/Audio/Voices";
+        private const string PrefPython = "DMVoices.PythonExe";
+        private const string PrefBake = "DMVoices.BakeScript";
+        private const string DefaultPython = @"A:\DMG_Tools\parler-tts\.venv\Scripts\python.exe";
+        private const string DefaultBake = @"A:\DMG_Tools\parler-tts\bake.py";
+
+        private static readonly string[] Speakers =
+        {
+            "Rick", "Gary", "Jon", "Mike", "David", "Bruce", "Will", "James", "Jason", "Aaron", "Patrick", "Jerry",
+            "Bill", "Tom", "Eric", "Jordan", "Yann",
+            "Laura", "Lea", "Karen", "Brenda", "Eileen", "Joy", "Lauren", "Rose", "Naomie", "Alisa", "Tina", "Jenna",
+            "Carol", "Barbara", "Rebecca", "Anna", "Emily"
+        };
+
+        private int actorIndex;
+        private string pendingSpeaker, pendingRename, pendingName = "";
+        private int? pendingSeed;
+        private bool showNew, newDuplicate, showAdvanced, variantsBySpeaker;
+        private string newName = "", newDescription = "{speaker} speaks with a calm voice, close-up recording, very clear audio.";
+        private string testLine = "Command, this is Kade. I'm on the surface. Mars is quieter than I expected.";
+        private SerializedObject so;
+        private DMVoiceActor bound;
+
+        // async job state
+        private System.Diagnostics.Process proc;
+        private readonly ConcurrentQueue<string> outQ = new ConcurrentQueue<string>();
+        private string status = "";
+        private string jobKind = "";
+        private DMVoiceLineSet jobSet;
+        private readonly List<string> pendingImports = new List<string>();
+        private readonly List<VariantResult> variants = new List<VariantResult>();
+        private UnityWebRequest clipReq;
+
+        private sealed class VariantResult { public string label, path, speaker; public int seed; public float seconds; public AudioClip clip; }
+
+        [Serializable] private sealed class Result { public string id, @out, error, modelText; public bool ok; public int seed; public float seconds, gen; }
+
+        public void Draw()
+        {
+            Pump();
+            List<DMVoiceActor> actors = FindActors();
+
+            EditorGUILayout.HelpBox("Describe a voice, Preview, then Bake lines to WAV under " + VoicesRoot + "/<Actor>/. Local Parler-TTS, editor only (no runtime generation).", MessageType.Info);
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                string[] names = actors.ConvertAll(a => a.displayName + "  (" + a.name + ")").ToArray();
+                actorIndex = Mathf.Clamp(actorIndex, 0, Mathf.Max(0, names.Length - 1));
+                actorIndex = names.Length > 0 ? EditorGUILayout.Popup("Voice actor", actorIndex, names) : actorIndex;
+                if (names.Length == 0) EditorGUILayout.LabelField("Voice actor", "(none yet)");
+                if (GUILayout.Button(showNew ? "Cancel" : "New Voice", GUILayout.Width(90f))) showNew = !showNew;
+            }
+
+            DMVoiceActor actor = actors.Count > 0 ? actors[actorIndex] : null;
+            if (showNew) DrawNew(actor);
+            if (actor == null) return;
+
+            if (bound != actor || so == null) { bound = actor; pendingSpeaker = null; pendingRename = null; so = new SerializedObject(actor); variants.Clear(); }
+            so.Update();
+
+            EditorGUILayout.Space(4f);
+            string typed = EditorGUILayout.DelayedTextField(new GUIContent("Display name", "Press Enter to create a new voice with this name (the current one is not renamed)."), pendingRename ?? actor.displayName);
+            if (typed != (pendingRename ?? actor.displayName))
+                pendingRename = string.IsNullOrWhiteSpace(typed) || typed.Trim() == actor.displayName ? null : typed.Trim();
+            if (pendingRename != null)
+            {
+                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+                {
+                    EditorGUILayout.LabelField("Create new voice \"" + pendingRename + "\"", EditorStyles.boldLabel);
+                    string clash = NameClash(pendingRename);
+                    if (clash != null) EditorGUILayout.HelpBox(clash, MessageType.Warning);
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        using (new EditorGUI.DisabledScope(clash != null))
+                            if (GUILayout.Button("Create")) { so.ApplyModifiedProperties(); CreateNamedVoice(actor, pendingRename); GUIUtility.ExitGUI(); }
+                        if (GUILayout.Button("Cancel")) { pendingRename = null; GUI.FocusControl(null); }
+                    }
+                }
+            }
+            EditorGUILayout.LabelField("Description  ({speaker} = speaker name)");
+            SerializedProperty desc = so.FindProperty("description");
+            desc.stringValue = EditorGUILayout.TextArea(desc.stringValue, GUILayout.MinHeight(48f));
+
+            SerializedProperty mdl = so.FindProperty("modelId");
+            string[] models = { DMVoiceActor.ModelLarge, DMVoiceActor.ModelMini };
+            bool custom = Array.IndexOf(models, mdl.stringValue) < 0;
+            int mi = custom ? 2 : Array.IndexOf(models, mdl.stringValue);
+            int mp = EditorGUILayout.Popup(new GUIContent("Model", "Large: best quality. Mini: faster, lighter. Changing it marks all lines for re-bake."), mi, new[] { "Large v1 (best)", "Mini v1 (fast)", "Custom..." });
+            if (mp != mi) { if (mp < 2) mdl.stringValue = models[mp]; custom = mp == 2; }
+            if (custom) mdl.stringValue = EditorGUILayout.TextField("Model id", mdl.stringValue);
+            SerializedProperty spk = so.FindProperty("speaker");
+            int si = Mathf.Max(0, Array.IndexOf(Speakers, spk.stringValue));
+            if (pendingSpeaker != null) si = Mathf.Max(0, Array.IndexOf(Speakers, pendingSpeaker));
+            int pick = EditorGUILayout.Popup(new GUIContent("Speaker", "Changing the speaker creates a new voice profile."), si, Speakers);
+            if (Speakers[pick] != (pendingSpeaker ?? spk.stringValue))
+            {
+                if (Speakers[pick] == spk.stringValue) pendingSpeaker = null;
+                else { pendingSpeaker = Speakers[pick]; pendingSeed = null; pendingName = actor.displayName + " (" + pendingSpeaker + ")"; }
+            }
+            if (pendingSpeaker != null)
+            {
+                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+                {
+                    EditorGUILayout.LabelField("New voice profile", EditorStyles.boldLabel);
+                    pendingName = EditorGUILayout.TextField("Name", pendingName);
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        using (new EditorGUI.DisabledScope(string.IsNullOrWhiteSpace(pendingName)))
+                            if (GUILayout.Button("Create")) { so.ApplyModifiedProperties(); CreateSpeakerProfile(actor, pendingSpeaker, pendingName); GUIUtility.ExitGUI(); }
+                        if (GUILayout.Button("Cancel")) pendingSpeaker = null;
+                    }
+                }
+            }
+
+            SerializedProperty pitch = so.FindProperty("pitchSemitones");
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                pitch.floatValue = EditorGUILayout.Slider("Pitch (semitones)", pitch.floatValue, -12f, 12f);
+                if (GUILayout.Button("0", EditorStyles.miniButtonLeft, GUILayout.Width(28f))) pitch.floatValue = 0f;
+                if (GUILayout.Button("Subtle", EditorStyles.miniButtonMid, GUILayout.Width(50f))) pitch.floatValue = DMVoiceActor.PitchSubtle;
+                if (GUILayout.Button("Default", EditorStyles.miniButtonMid, GUILayout.Width(54f))) pitch.floatValue = DMVoiceActor.PitchDefault;
+                if (GUILayout.Button("Extreme", EditorStyles.miniButtonRight, GUILayout.Width(58f))) pitch.floatValue = DMVoiceActor.PitchExtreme;
+            }
+
+            testLine = EditorGUILayout.TextField("Test line", testLine);
+
+            showAdvanced = EditorGUILayout.Foldout(showAdvanced, "Advanced", true);
+            if (showAdvanced)
+            {
+                EditorGUI.indentLevel++;
+                foreach (string p in new[] { "seed", "minSeconds", "maxSeconds", "splitSentences", "sentenceGap", "pronunciations", "trimSilence", "trimTopDb", "tailPadSeconds", "radioFilter", "radioLowHz", "radioHighHz", "radioDrive", "radioNoise" })
+                    EditorGUILayout.PropertyField(so.FindProperty(p), true);
+                SerializedProperty gap = so.FindProperty("sentenceGap");
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    EditorGUILayout.PrefixLabel("Gap presets");
+                    if (GUILayout.Button("Subtle", EditorStyles.miniButtonLeft)) gap.floatValue = DMVoiceActor.GapSubtle;
+                    if (GUILayout.Button("Default", EditorStyles.miniButtonMid)) gap.floatValue = DMVoiceActor.GapDefault;
+                    if (GUILayout.Button("Extreme", EditorStyles.miniButtonRight)) gap.floatValue = DMVoiceActor.GapExtreme;
+                }
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    GUILayout.Space(EditorGUIUtility.labelWidth);
+                    if (GUILayout.Button(new GUIContent("Delete profile", "Delete this voice profile (backed up to Backups/voices first). Line sets and WAVs are kept.")))
+                    { so.ApplyModifiedProperties(); DeleteProfile(actor); GUIUtility.ExitGUI(); }
+                }
+                EditorPrefs.SetString(PrefPython, EditorGUILayout.TextField("Python exe", PythonExe));
+                EditorPrefs.SetString(PrefBake, EditorGUILayout.TextField("bake.py", BakeScript));
+                EditorGUI.indentLevel--;
+            }
+            if (so.ApplyModifiedProperties()) EditorUtility.SetDirty(actor);
+
+            DMVoiceLineSet set = FindLineSet(actor);
+            bool busy = proc != null;
+            EditorGUILayout.Space(6f);
+            using (new EditorGUI.DisabledScope(busy))
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("Preview", GUILayout.Height(26f))) StartPreview(actor, false);
+                if (GUILayout.Button("Try 3 variants", GUILayout.Height(26f))) StartPreview(actor, true);
+                if (GUILayout.Button("Save", GUILayout.Height(26f))) { EditorUtility.SetDirty(actor); AssetDatabase.SaveAssetIfDirty(actor); status = "Saved " + actor.name; }
+                using (new EditorGUI.DisabledScope(set == null))
+                    if (GUILayout.Button("Bake", GUILayout.Height(26f))) StartBake(actor, set);
+            }
+            variantsBySpeaker = EditorGUILayout.Toggle("Variants vary speaker", variantsBySpeaker);
+
+            if (busy && GUILayout.Button("Cancel job")) Kill("Cancelled.");
+            if (!string.IsNullOrEmpty(status)) EditorGUILayout.HelpBox(status, MessageType.None);
+
+            DrawVariants(actor);
+            DrawLines(actor, set);
+        }
+
+        // ---------- UI pieces ----------
+        private void DrawNew(DMVoiceActor current)
+        {
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                newName = EditorGUILayout.TextField("Name", newName);
+                EditorGUILayout.LabelField("Description");
+                newDescription = EditorGUILayout.TextArea(newDescription, GUILayout.MinHeight(40f));
+                using (new EditorGUI.DisabledScope(current == null)) newDuplicate = EditorGUILayout.Toggle("Duplicate current", newDuplicate);
+                using (new EditorGUI.DisabledScope(string.IsNullOrWhiteSpace(newName)))
+                    if (GUILayout.Button("Create Voice Actor")) CreateActor(current);
+            }
+        }
+
+        private void DrawVariants(DMVoiceActor actor)
+        {
+            if (variants.Count == 0) return;
+            EditorGUILayout.LabelField("Previews", EditorStyles.boldLabel);
+            foreach (VariantResult v in variants)
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    EditorGUILayout.LabelField(v.label + "  " + v.seconds.ToString("0.0") + " s");
+                    using (new EditorGUI.DisabledScope(v.clip == null))
+                        if (GUILayout.Button("Play", GUILayout.Width(50f))) PlayClip(v.clip);
+                    if (variants.Count > 1 && GUILayout.Button("Use", GUILayout.Width(50f)))
+                    {
+                        Undo.RecordObject(actor, "Use voice variant");
+                        if (v.speaker != actor.speaker) { pendingSpeaker = v.speaker; pendingSeed = v.seed; pendingName = actor.displayName + " (" + v.speaker + ")"; status = "Name the new profile below the Speaker field."; }
+                        else { actor.seed = v.seed; EditorUtility.SetDirty(actor); so = null; }
+                        status = "Using " + v.label + ". Press Save.";
+                    }
+                }
+        }
+
+        private void DrawLines(DMVoiceActor actor, DMVoiceLineSet set)
+        {
+            EditorGUILayout.Space(6f);
+            if (set == null)
+            {
+                EditorGUILayout.HelpBox("No lines yet for " + actor.displayName + ".", MessageType.None);
+                if (GUILayout.Button("Create line set for " + actor.displayName)) CreateLineSet(actor);
+                return;
+            }
+            int dirty = 0; foreach (DMVoiceLine l in set.lines) if (set.IsDirty(l)) dirty++;
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                EditorGUILayout.LabelField("Lines: " + set.lines.Count + "   changed: " + dirty, EditorStyles.boldLabel);
+                if (GUILayout.Button("Select set", GUILayout.Width(80f))) Selection.activeObject = set;
+            }
+            GUIStyle wrap = new GUIStyle(EditorStyles.textArea) { wordWrap = true };
+            int removeAt = -1, splitAt = -1;
+            DMVoiceLine bakeOne = null;
+            for (int i = 0; i < set.lines.Count; i++)
+            {
+                DMVoiceLine l = set.lines[i];
+                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+                {
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        GUILayout.Label(set.IsDirty(l) ? "*" : " ", EditorStyles.boldLabel, GUILayout.Width(10f));
+                        string newId = EditorGUILayout.DelayedTextField(l.id ?? "", GUILayout.MinWidth(80f));
+                        if (newId != l.id)
+                        {
+                            string clean = SanitizeId(newId);
+                            if (clean.Length == 0) status = "Id must contain letters, digits or _.";
+                            else if (set.lines.Exists(o => o != l && o.id == clean)) status = "Id '" + clean + "' already exists.";
+                            else { Undo.RecordObject(set, "Rename voice line"); l.id = clean; EditorUtility.SetDirty(set); AssetDatabase.SaveAssetIfDirty(set); status = "Renamed to " + clean + " (bake to write " + clean + ".wav)."; }
+                        }
+                        if (!string.IsNullOrEmpty(l.stageTag)) GUILayout.Label("[" + l.stageTag + "]", GUILayout.ExpandWidth(false));
+                        GUILayout.Label(new GUIContent("Seed", "0 = actor seed (" + actor.seed + ")"), GUILayout.ExpandWidth(false));
+                        int seedVal = EditorGUILayout.DelayedIntField(l.seed, EditorStyles.numberField, GUILayout.Width(56f));
+                        if (seedVal != l.seed)
+                        {
+                            Undo.RecordObject(set, "Voice line seed");
+                            l.seed = Mathf.Max(0, seedVal); EditorUtility.SetDirty(set); AssetDatabase.SaveAssetIfDirty(set);
+                            status = l.id + " seed = " + (l.seed == 0 ? "actor (" + actor.seed + ")" : l.seed.ToString()) + ". Press Bake.";
+                        }
+                        using (new EditorGUI.DisabledScope(l.clip == null))
+                            if (GUILayout.Button("Play", GUILayout.Width(50f))) PlayClip(l.clip);
+                        if (GUILayout.Button(new GUIContent("Split to lines", "Turn this paragraph into one line per sentence (id_01, id_02...)."), GUILayout.Width(92f)))
+                            splitAt = i;
+                        using (new EditorGUI.DisabledScope(proc != null))
+                            if (GUILayout.Button(new GUIContent("Bake", "Bake only this line now (even if unchanged)."), GUILayout.Width(44f)))
+                                bakeOne = l;
+                        if (GUILayout.Button("x", GUILayout.Width(22f))
+                            && EditorUtility.DisplayDialog("Delete line", "Delete line '" + l.id + "' from " + set.name + "?\n(The baked WAV is kept on disk.)", "Delete", "Cancel"))
+                            removeAt = i;
+                    }
+                    EditorGUI.BeginChangeCheck();
+                    string sub = EditorGUILayout.TextArea(l.subtitle ?? "", wrap, GUILayout.MinHeight(36f));
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        Undo.RecordObject(set, "Edit voice line");
+                        l.subtitle = sub; EditorUtility.SetDirty(set);
+                    }
+                }
+            }
+            if (removeAt >= 0)
+            {
+                Undo.RecordObject(set, "Delete voice line");
+                set.lines.RemoveAt(removeAt); EditorUtility.SetDirty(set); AssetDatabase.SaveAssetIfDirty(set);
+                GUIUtility.ExitGUI();
+            }
+            if (bakeOne != null) { StartBake(actor, set, bakeOne); GUIUtility.ExitGUI(); }
+            if (splitAt >= 0) SplitLine(set, splitAt);
+            DrawAddLine(actor, set, wrap);
+        }
+
+        private void SplitLine(DMVoiceLineSet set, int index)
+        {
+            DMVoiceLine src = set.lines[index];
+            List<string> parts = DMVoiceLine.SplitSentences(src.subtitle);
+            if (parts.Count < 2) { status = "'" + src.id + "' is a single sentence."; return; }
+            if (!EditorUtility.DisplayDialog("Split to lines", "Split '" + src.id + "' into " + parts.Count + " lines (" + src.id + "_01...)?", "Split", "Cancel")) GUIUtility.ExitGUI();
+            Undo.RecordObject(set, "Split voice line");
+            set.lines.RemoveAt(index);
+            for (int k = 0; k < parts.Count; k++)
+                set.lines.Insert(index + k, new DMVoiceLine { id = src.id + "_" + (k + 1).ToString("00"), subtitle = parts[k], stageTag = src.stageTag });
+            EditorUtility.SetDirty(set); AssetDatabase.SaveAssetIfDirty(set);
+            status = "Split into " + parts.Count + " lines. Press Bake.";
+            GUIUtility.ExitGUI();
+        }
+
+        private string addId = "", addSubtitle = "", addStage = "";
+
+        private void DrawAddLine(DMVoiceActor actor, DMVoiceLineSet set, GUIStyle wrap)
+        {
+            EditorGUILayout.Space(6f);
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                EditorGUILayout.LabelField("Add Line", EditorStyles.boldLabel);
+                string suggest = Safe(actor.displayName).ToLowerInvariant() + "_" + (set.lines.Count + 1);
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    addId = EditorGUILayout.TextField("Id", addId);
+                    if (GUILayout.Button("Suggest", GUILayout.Width(64f))) { addId = suggest; GUI.FocusControl(null); }
+                }
+                if (string.IsNullOrWhiteSpace(addId)) EditorGUILayout.LabelField(" ", "(blank = " + suggest + ")", EditorStyles.miniLabel);
+                EditorGUILayout.LabelField("Subtitle");
+                addSubtitle = EditorGUILayout.TextArea(addSubtitle, wrap, GUILayout.MinHeight(54f));
+                EditorGUILayout.LabelField("Use , or ... for natural pauses; [pause 0.5] for exact silence", EditorStyles.miniLabel);
+                addStage = EditorGUILayout.TextField("Stage tag (optional)", addStage);
+                bool idIsText = string.IsNullOrWhiteSpace(addSubtitle) && !string.IsNullOrWhiteSpace(addId) && (addId.Trim().Contains(" ") || addId.Trim().Length > MaxIdLength);
+                if (idIsText) EditorGUILayout.HelpBox("That Id looks like a sentence; Add will use it as the Subtitle with id " + suggest + ".", MessageType.Info);
+                using (new EditorGUI.DisabledScope(string.IsNullOrWhiteSpace(addSubtitle) && !idIsText))
+                    if (GUILayout.Button("Add", GUILayout.Height(22f)))
+                    {
+                        if (idIsText) { addSubtitle = addId.Trim(); addId = ""; }
+                        string id = SanitizeId(addId);
+                        if (id.Length == 0) id = SanitizeId(suggest);
+                        foreach (DMVoiceLine l in set.lines) if (l.id == id) { status = "Id '" + id + "' already exists."; return; }
+                        Undo.RecordObject(set, "Add voice line");
+                        set.lines.Add(new DMVoiceLine { id = id, subtitle = addSubtitle.Trim(), stageTag = addStage.Trim() });
+                        EditorUtility.SetDirty(set); AssetDatabase.SaveAssetIfDirty(set);
+                        status = "Added " + id + ". Press Bake to generate it.";
+                        addId = ""; addSubtitle = ""; GUI.FocusControl(null);
+                    }
+            }
+        }
+
+        // ---------- assets ----------
+        private static List<DMVoiceActor> FindActors()
+        {
+            var list = new List<DMVoiceActor>();
+            if (!AssetDatabase.IsValidFolder(ActorsFolder)) return list;
+            foreach (string g in AssetDatabase.FindAssets("t:DMVoiceActor", new[] { ActorsFolder }))
+            {
+                var a = AssetDatabase.LoadAssetAtPath<DMVoiceActor>(AssetDatabase.GUIDToAssetPath(g));
+                if (a != null) list.Add(a);
+            }
+            list.Sort((x, y) => string.CompareOrdinal(x.name, y.name));
+            return list;
+        }
+
+        private static DMVoiceLineSet FindLineSet(DMVoiceActor actor)
+        {
+            foreach (string g in AssetDatabase.FindAssets("t:DMVoiceLineSet", new[] { VoicesRoot }))
+            {
+                var s = AssetDatabase.LoadAssetAtPath<DMVoiceLineSet>(AssetDatabase.GUIDToAssetPath(g));
+                if (s != null && s.actor == actor) return s;
+            }
+            return null;
+        }
+
+        private static void EnsureFolder(string path)
+        {
+            if (AssetDatabase.IsValidFolder(path)) return;
+            string parent = Path.GetDirectoryName(path).Replace('\\', '/');
+            EnsureFolder(parent);
+            AssetDatabase.CreateFolder(parent, Path.GetFileName(path));
+        }
+
+        private static string Safe(string s)
+        {
+            foreach (char c in Path.GetInvalidFileNameChars()) s = s.Replace(c, '_');
+            return s.Replace(' ', '_');
+        }
+
+        private void CreateActor(DMVoiceActor current)
+        {
+            EnsureFolder(ActorsFolder);
+            DMVoiceActor a = newDuplicate && current != null ? UnityEngine.Object.Instantiate(current) : ScriptableObject.CreateInstance<DMVoiceActor>();
+            a.displayName = newName.Trim();
+            if (!string.IsNullOrWhiteSpace(newDescription)) a.description = newDescription;
+            string path = AssetDatabase.GenerateUniqueAssetPath(ActorsFolder + "/VA_" + Safe(a.displayName) + ".asset");
+            AssetDatabase.CreateAsset(a, path);
+            AssetDatabase.SaveAssets();
+            showNew = false; newName = "";
+            List<DMVoiceActor> all = FindActors();
+            actorIndex = Mathf.Max(0, all.IndexOf(a));
+            status = "Created " + path;
+        }
+
+        private void CreateSpeakerProfile(DMVoiceActor src, string speaker, string name)
+        {
+            EnsureFolder(ActorsFolder);
+            DMVoiceActor a = UnityEngine.Object.Instantiate(src); // copies all settings incl. pronunciations and pitch
+            a.displayName = name.Trim(); a.speaker = speaker;
+            if (pendingSeed.HasValue) a.seed = pendingSeed.Value;
+            pendingSeed = null;
+            string path = AssetDatabase.GenerateUniqueAssetPath(ActorsFolder + "/VA_" + Safe(a.displayName) + ".asset");
+            AssetDatabase.CreateAsset(a, path);
+            AssetDatabase.SaveAssetIfDirty(a);
+            pendingSpeaker = null; so = null;
+            actorIndex = Mathf.Max(0, FindActors().IndexOf(a));
+            status = "Created profile " + path + " (no lines yet; " + src.displayName + " keeps its line set).";
+        }
+
+        private void DeleteProfile(DMVoiceActor actor)
+        {
+            string path = AssetDatabase.GetAssetPath(actor);
+            DMVoiceLineSet set = FindLineSet(actor);
+            string msg = "Delete voice profile '" + actor.displayName + "'?\n" + path + "\n\nA backup goes to Backups/voices first. Line sets and WAVs are not deleted."
+                + (set != null ? "\n\nWarning: line set '" + set.name + "' uses this profile and will lose its actor link." : "");
+            if (!EditorUtility.DisplayDialog("Delete profile", msg, "Delete", "Cancel")) return;
+            string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string backupDir = Path.Combine(root, "Backups", "voices");
+            Directory.CreateDirectory(backupDir);
+            string stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            string full = Path.Combine(root, path);
+            try
+            {
+                File.Copy(full, Path.Combine(backupDir, Path.GetFileNameWithoutExtension(path) + "." + stamp + ".asset"), true);
+                if (File.Exists(full + ".meta")) File.Copy(full + ".meta", Path.Combine(backupDir, Path.GetFileNameWithoutExtension(path) + "." + stamp + ".asset.meta"), true);
+            }
+            catch (Exception e) { status = "Backup failed, profile not deleted: " + e.Message; return; }
+            AssetDatabase.DeleteAsset(path);
+            so = null; bound = null; actorIndex = 0;
+            status = "Deleted " + path + " (backup in Backups/voices).";
+        }
+
+        private static string NameClash(string name)
+        {
+            string safe = Safe(name);
+            foreach (DMVoiceActor a in FindActors())
+                if (string.Equals(a.displayName, name, StringComparison.OrdinalIgnoreCase)) return "A voice named \"" + a.displayName + "\" already exists.";
+            if (AssetDatabase.LoadAssetAtPath<DMVoiceActor>(ActorsFolder + "/VA_" + safe + ".asset") != null) return "VA_" + safe + ".asset already exists.";
+            if (AssetDatabase.LoadAssetAtPath<DMVoiceLineSet>(VoicesRoot + "/" + safe + "/" + safe + "_Lines.asset") != null) return safe + "_Lines.asset already exists.";
+            return null;
+        }
+
+        private void CreateNamedVoice(DMVoiceActor src, string name)
+        {
+            if (NameClash(name) != null) return;
+            EnsureFolder(ActorsFolder);
+            DMVoiceActor a = UnityEngine.Object.Instantiate(src); // all settings incl. speaker, pitch, pronunciations
+            a.displayName = name;
+            string path = ActorsFolder + "/VA_" + Safe(name) + ".asset";
+            AssetDatabase.CreateAsset(a, path);
+            AssetDatabase.SaveAssetIfDirty(a);
+            DMVoiceLineSet set = CreateLineSet(a);
+            pendingRename = null; so = null; GUI.FocusControl(null);
+            actorIndex = Mathf.Max(0, FindActors().IndexOf(a));
+            Selection.activeObject = set; EditorGUIUtility.PingObject(set);
+            status = "Created " + path + " and " + AssetDatabase.GetAssetPath(set) + ". " + src.displayName + " is unchanged.";
+        }
+
+        private DMVoiceLineSet CreateLineSet(DMVoiceActor actor)
+        {
+            string folder = VoicesRoot + "/" + Safe(actor.displayName);
+            EnsureFolder(folder);
+            var set = ScriptableObject.CreateInstance<DMVoiceLineSet>();
+            set.actor = actor;
+            AssetDatabase.CreateAsset(set, AssetDatabase.GenerateUniqueAssetPath(folder + "/" + Safe(actor.displayName) + "_Lines.asset"));
+            AssetDatabase.SaveAssetIfDirty(set);
+            return set;
+        }
+
+        // ---------- jobs ----------
+        private static string PythonExe => EditorPrefs.GetString(PrefPython, DefaultPython);
+        private static string BakeScript => EditorPrefs.GetString(PrefBake, DefaultBake);
+        private static string ProjectRoot => Path.GetDirectoryName(Application.dataPath);
+
+        private static Dictionary<string, object> BaseJob(DMVoiceActor a)
+        {
+            var rules = new List<object>();
+            if (a.pronunciations != null)
+                foreach (DMVoicePronunciation p in a.pronunciations)
+                    if (!string.IsNullOrEmpty(p.word)) rules.Add(new List<object> { p.word, p.audioSpelling ?? "" });
+            return new Dictionary<string, object>
+            {
+                { "model", a.modelId }, { "description", a.BuildDescription() }, { "seed", a.seed },
+                { "minSeconds", a.minSeconds }, { "maxSeconds", a.maxSeconds }, { "pitch", a.pitchSemitones },
+                { "split", a.splitSentences }, { "gap", a.sentenceGap }, { "trim", a.trimSilence }, { "trimTopDb", a.trimTopDb }, { "tailPad", a.tailPadSeconds }, { "rules", rules },
+                { "radio", new Dictionary<string, object> { { "enabled", a.radioFilter }, { "low", a.radioLowHz }, { "high", a.radioHighHz }, { "drive", a.radioDrive }, { "noise", a.radioNoise } } }
+            };
+        }
+
+        private DMVoiceLine FindTestLine(DMVoiceActor a)
+        {
+            DMVoiceLineSet s = FindLineSet(a);
+            if (s == null || string.IsNullOrWhiteSpace(testLine)) return null;
+            string t = testLine.Trim();
+            foreach (DMVoiceLine l in s.lines) if ((l.subtitle ?? "").Trim() == t) return l;
+            return null;
+        }
+
+        private void StartPreview(DMVoiceActor a, bool three)
+        {
+            string dir = Path.Combine(ProjectRoot, "Temp", "DMVoicePreview");
+            Directory.CreateDirectory(dir);
+            Dictionary<string, object> job = BaseJob(a);
+            var lines = new List<object>();
+            variants.Clear();
+            int si = Mathf.Max(0, Array.IndexOf(Speakers, a.speaker));
+            for (int i = 0; i < (three ? 3 : 1); i++)
+            {
+                string spk = three && variantsBySpeaker ? Speakers[(si + i) % 17] : a.speaker; // male block first
+                int seed = three && !variantsBySpeaker ? a.seed + i * 7 : a.seed;
+                DMVoiceLine match = FindTestLine(a);
+                if (match != null) seed = match.seed;
+                string id = "preview_" + i;
+                string outPath = Path.Combine(dir, id + "_" + DateTime.Now.Ticks + ".wav");
+                string d = (a.description ?? "").Contains("{speaker}") ? a.description.Replace("{speaker}", spk) : spk + "'s voice: " + a.description;
+                lines.Add(new Dictionary<string, object> { { "id", id }, { "text", testLine }, { "out", outPath }, { "seed", seed }, { "description", d } });
+                variants.Add(new VariantResult { label = spk + " / seed " + seed, path = outPath, speaker = spk, seed = seed });
+            }
+            job["lines"] = lines;
+            RunJob(job, "preview", null);
+        }
+
+        public const int MaxIdLength = 40;
+
+        /// <summary>Letters, digits and _ only (spaces/dashes become _), max 40 chars.</summary>
+        public static string SanitizeId(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id)) return "";
+            var sb = new System.Text.StringBuilder();
+            foreach (char c in id.Trim())
+            {
+                if (char.IsLetterOrDigit(c) && c < 128) sb.Append(c);
+                else if ((c == '_' || c == ' ' || c == '-') && sb.Length > 0 && sb[sb.Length - 1] != '_') sb.Append('_');
+                if (sb.Length >= MaxIdLength) break;
+            }
+            return sb.ToString().Trim('_');
+        }
+
+        private void StartBake(DMVoiceActor a, DMVoiceLineSet set, DMVoiceLine only = null)
+        {
+            string folder = VoicesRoot + "/" + Safe(a.displayName);
+            EnsureFolder(folder);
+            Dictionary<string, object> job = BaseJob(a);
+            var lines = new List<object>();
+            var skipped = new List<string>();
+            foreach (DMVoiceLine l in set.lines)
+                if (only != null ? l == only : set.IsDirty(l))
+                {
+                    string fileId = SanitizeId(l.id);
+                    if (fileId.Length == 0 || string.IsNullOrWhiteSpace(l.subtitle)) { skipped.Add(string.IsNullOrWhiteSpace(l.id) ? "(blank id)" : l.id); continue; }
+                    var entry = new Dictionary<string, object> { { "id", l.id }, { "text", l.subtitle }, { "out", Path.Combine(ProjectRoot, folder, fileId + ".wav") } };
+                    if (l.seed != 0) entry["seed"] = l.seed;
+                    lines.Add(entry);
+                }
+            string skipMsg = skipped.Count > 0 ? " Skipped (fix id/subtitle): " + string.Join(", ", skipped) + "." : "";
+            if (lines.Count == 0) { status = (skipped.Count > 0 ? "Nothing baked." : "Nothing changed. All lines are baked.") + skipMsg; return; }
+            job["lines"] = lines;
+            RunJob(job, "bake", set);
+            if (skipped.Count > 0) status += skipMsg;
+        }
+
+        private void RunJob(Dictionary<string, object> job, string kind, DMVoiceLineSet set)
+        {
+            if (!File.Exists(PythonExe) || !File.Exists(BakeScript)) { status = "Python or bake.py not found. Check Advanced paths."; return; }
+            string jobPath = Path.Combine(ProjectRoot, "Temp", "DMVoiceJob.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(jobPath));
+            File.WriteAllText(jobPath, MiniJson(job));
+            var psi = new System.Diagnostics.ProcessStartInfo(PythonExe, "\"" + BakeScript + "\" \"" + jobPath + "\"")
+            {
+                UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true,
+                WorkingDirectory = Path.GetDirectoryName(BakeScript)
+            };
+            psi.EnvironmentVariables["HF_HOME"] = @"A:\DMG_Tools\hf_cache";
+            psi.EnvironmentVariables["PYTHONIOENCODING"] = "utf-8";
+            try
+            {
+                proc = new System.Diagnostics.Process { StartInfo = psi, EnableRaisingEvents = true };
+                proc.OutputDataReceived += (s, e) => { if (e.Data != null) outQ.Enqueue(e.Data); };
+                proc.ErrorDataReceived += (s, e) => { if (e.Data != null && e.Data.Contains("Error")) outQ.Enqueue("ERR " + e.Data); };
+                proc.Start(); proc.BeginOutputReadLine(); proc.BeginErrorReadLine();
+                jobKind = kind; jobSet = set; pendingImports.Clear();
+                status = kind == "bake" ? "Baking... (loading model)" : "Generating preview... (loading model)";
+                EditorApplication.update -= Tick; EditorApplication.update += Tick;
+            }
+            catch (Exception ex) { proc = null; status = "Could not start Python: " + ex.Message; }
+        }
+
+        private void Tick() { Pump(); RepaintStudio(); }
+
+        private static void RepaintStudio()
+        {
+            foreach (GenesisStudioWindow w in Resources.FindObjectsOfTypeAll<GenesisStudioWindow>()) w.Repaint();
+        }
+
+        private void Pump()
+        {
+            while (outQ.TryDequeue(out string line))
+            {
+                if (line.StartsWith("LOADED")) status = (jobKind == "bake" ? "Baking" : "Generating") + "... model loaded";
+                else if (line.StartsWith("RESULT "))
+                {
+                    Result r = JsonUtility.FromJson<Result>(line.Substring(7));
+                    if (r == null) continue;
+                    if (!r.ok) { status = "Line " + r.id + " failed: " + r.error; continue; }
+                    status = r.id + ": " + r.seconds.ToString("0.0") + " s (seed " + r.seed + ", " + r.gen.ToString("0.0") + " s gen)";
+                    if (jobKind == "preview")
+                    {
+                        foreach (VariantResult v in variants) if (v.path == r.@out) { v.seconds = r.seconds; v.seed = r.seed; v.label = v.speaker + " / seed " + r.seed; }
+                        LoadPreviewClip(r.@out);
+                    }
+                    else pendingImports.Add(r.id + "|" + r.@out);
+                }
+                else if (line.StartsWith("ERR ")) status = line.Substring(4);
+                else if (line == "DONE") Finish();
+            }
+
+            if (clipReq != null && clipReq.isDone)
+            {
+                if (clipReq.result == UnityWebRequest.Result.Success)
+                {
+                    AudioClip c = DownloadHandlerAudioClip.GetContent(clipReq);
+                    string url = clipReq.url;
+                    foreach (VariantResult v in variants) if (new Uri(v.path).AbsoluteUri == url) { v.clip = c; if (variants.Count == 1) PlayClip(c); }
+                }
+                clipReq.Dispose(); clipReq = null;
+                foreach (VariantResult v in variants) if (v.clip == null && v.seconds > 0f && File.Exists(v.path)) { LoadPreviewClip(v.path); break; }
+            }
+
+            if (proc != null && proc.HasExited && outQ.IsEmpty && jobKind != "") Finish();
+            if (jobSet != null && pendingImports.Count > 0 && proc == null && !EditorApplication.isPlayingOrWillChangePlaymode) ImportBaked();
+        }
+
+        private void LoadPreviewClip(string path)
+        {
+            if (clipReq != null) return;
+            clipReq = UnityWebRequestMultimedia.GetAudioClip(new Uri(path).AbsoluteUri, AudioType.WAV);
+            clipReq.SendWebRequest();
+        }
+
+        private void Finish()
+        {
+            if (proc != null) { try { proc.Dispose(); } catch (Exception) { } }
+            proc = null;
+            if (jobKind == "bake" && pendingImports.Count == 0) jobSet = null;
+            if (jobKind == "bake" && EditorApplication.isPlayingOrWillChangePlaymode) status = "Baked. Import waits until Play stops.";
+            jobKind = "";
+            if (jobSet == null) EditorApplication.update -= Tick;
+        }
+
+        private void ImportBaked()
+        {
+            AssetDatabase.Refresh();
+            DMVoiceLineSet set = jobSet;
+            Undo.RecordObject(set, "Bake voice lines");
+            int n = 0;
+            foreach (string pi in pendingImports)
+            {
+                string[] parts = pi.Split('|');
+                string rel = parts[1].Replace('\\', '/');
+                string root = ProjectRoot.Replace('\\', '/') + "/";
+                if (rel.StartsWith(root)) rel = rel.Substring(root.Length);
+                AudioClip clip = AssetDatabase.LoadAssetAtPath<AudioClip>(rel);
+                foreach (DMVoiceLine l in set.lines)
+                    if (l.id == parts[0] && clip != null) { l.clip = clip; l.bakedHash = DMVoiceLineSet.ComputeHash(set.actor, l); n++; }
+            }
+            EditorUtility.SetDirty(set);
+            AssetDatabase.SaveAssetIfDirty(set);
+            pendingImports.Clear(); jobSet = null;
+            status = "Baked " + n + " line(s).";
+            EditorApplication.update -= Tick;
+        }
+
+        private void Kill(string msg)
+        {
+            try { if (proc != null && !proc.HasExited) proc.Kill(); } catch (Exception) { }
+            proc = null; jobKind = ""; jobSet = null; pendingImports.Clear(); status = msg;
+            EditorApplication.update -= Tick;
+        }
+
+        private static void PlayClip(AudioClip clip)
+        {
+            if (clip == null) return;
+            Type au = null;
+            foreach (Assembly asm in AppDomain.CurrentDomain.GetAssemblies()) { au = asm.GetType("UnityEditor.AudioUtil"); if (au != null) break; }
+            if (au == null) return;
+            au.GetMethod("StopAllPreviewClips", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)?.Invoke(null, null);
+            foreach (MethodInfo m in au.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
+            {
+                if (m.Name != "PlayPreviewClip") continue;
+                ParameterInfo[] ps = m.GetParameters();
+                var args = new object[ps.Length];
+                args[0] = clip;
+                for (int i = 1; i < ps.Length; i++) args[i] = ps[i].ParameterType == typeof(bool) ? (object)false : 0;
+                m.Invoke(null, args);
+                return;
+            }
+        }
+
+        // tiny JSON writer (strings, numbers, bools, lists, dictionaries)
+        private static string MiniJson(object o)
+        {
+            switch (o)
+            {
+                case null: return "null";
+                case string s: return "\"" + s.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "") + "\"";
+                case bool b: return b ? "true" : "false";
+                case int i: return i.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                case float f: return f.ToString("0.#####", System.Globalization.CultureInfo.InvariantCulture);
+                case Dictionary<string, object> d:
+                    var parts = new List<string>();
+                    foreach (KeyValuePair<string, object> kv in d) parts.Add(MiniJson(kv.Key) + ":" + MiniJson(kv.Value));
+                    return "{" + string.Join(",", parts) + "}";
+                case List<object> l: return "[" + string.Join(",", l.ConvertAll<string>(MiniJson)) + "]";
+                default: return MiniJson(o.ToString());
+            }
+        }
+    }
+}
+#endif

@@ -40,9 +40,9 @@ namespace Project.UI
         [Range(5f, 60f)]
         public float pilotClusterRefreshHz = 15f;
 
-        [Tooltip("Seconds between skill-rank lookups for the pilot cluster upgrade dashes (ranks change rarely). Higher = cheaper. perf-1018b")]
-        [Range(0.1f, 5f)]
-        public float pilotClusterSkillDashRefreshSeconds = 1f;
+        [Tooltip("Safety-poll interval for pilot-cluster skill-rank upgrade dashes (seconds). Counts also refresh immediately when SkillRanksVersion changes. Higher = cheaper.")]
+        [Range(0.1f, 120f)]
+        public float pilotClusterSkillDashRefreshSeconds = 30f;
 
         [Tooltip("Minimap crop blit rate that feeds the pilot cluster map (Hz). Lower = cheaper but steppier map scroll. perf-1018b")]
         [Range(5f, 60f)]

@@ -1,0 +1,165 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d3e9a41c2b84f6e9a05d1c38b2f6e74, type: 3}
+  m_Name: DMUiRuntimeAssetRegistry
+  m_EditorClassIdentifier: 
+  entries:
+  - key: AcReward
+    asset: {fileID: 7433441132597879392, guid: c9423f70a85c0e8418e0b1b88c681cec, type: 3}
+  - key: AcReward
+    asset: {fileID: 9197481963319205126, guid: 50bd9af281242eb4fb2e4172d4b7d74c, type: 3}
+  - key: ActiveQuest
+    asset: {fileID: 7433441132597879392, guid: 1e341bcc4b372f6499656b6c9967e1b0, type: 3}
+  - key: ActiveQuest
+    asset: {fileID: 9197481963319205126, guid: 1bf3f2c956aa62640a31476e40790060, type: 3}
+  - key: Controls
+    asset: {fileID: 9197481963319205126, guid: 267358fb7e376974ca9e07ab8c4eb356, type: 3}
+  - key: Craft
+    asset: {fileID: 7433441132597879392, guid: f03568cea44fc1f47b953408f73d9cc3, type: 3}
+  - key: Craft
+    asset: {fileID: 9197481963319205126, guid: 2185a638a42182d4594883a471bf417c, type: 3}
+  - key: Crate
+    asset: {fileID: 7433441132597879392, guid: a52bea4d2b5c46449901bd37e77125a4, type: 3}
+  - key: Crate
+    asset: {fileID: 9197481963319205126, guid: 74ab5c4acdbf09b4f838f30a23cf0aab, type: 3}
+  - key: DMVoiceSubtitle
+    asset: {fileID: 7433441132597879392, guid: cb92dc3bccd44ab5ac550f9a0ae7e0f4, type: 3}
+  - key: DMVoiceSubtitle
+    asset: {fileID: 9197481963319205126, guid: 1c53f9b30257469cb340aa0d2c9cdc85, type: 3}
+  - key: DamageOverlay
+    asset: {fileID: 7433441132597879392, guid: d96fbe39b4450e24ca10dcf86e67ea30, type: 3}
+  - key: DamageOverlay
+    asset: {fileID: 9197481963319205126, guid: 17d2de27c33277244b9c792e9054ae14, type: 3}
+  - key: DeathOverlay
+    asset: {fileID: 7433441132597879392, guid: 6f357b672cb248b0a3da6154111ae369, type: 3}
+  - key: DeathOverlay
+    asset: {fileID: 9197481963319205126, guid: bd70aa0ff3aa47e08214bd38a7254646, type: 3}
+  - key: DevPanel
+    asset: {fileID: 7433441132597879392, guid: f2856a4544049604c94562a3d41446ca, type: 3}
+  - key: DevPanel
+    asset: {fileID: 9197481963319205126, guid: c3d730b5a423d3c428f82164007857d2, type: 3}
+  - key: DialogueQuest
+    asset: {fileID: 7433441132597879392, guid: e115e5f62d564815ac57eef5e9ae07c3, type: 3}
+  - key: DialogueQuest
+    asset: {fileID: 9197481963319205126, guid: 8ab435ac108f42c08b2a79d7069e9098, type: 3}
+  - key: FloatingMenu
+    asset: {fileID: 7433441132597879392, guid: a98bd69b09e60c4428610ab827a88e47, type: 3}
+  - key: GameStart
+    asset: {fileID: 7433441132597879392, guid: c52bf89c11235e44398a36501eb995cb, type: 3}
+  - key: GameStart
+    asset: {fileID: 9197481963319205126, guid: 578593e4bb4baa04e90465778e9dc56c, type: 3}
+  - key: Generator
+    asset: {fileID: 7433441132597879392, guid: 8eb41ef0522f65345aaf43fd835af46c, type: 3}
+  - key: Generator
+    asset: {fileID: 9197481963319205126, guid: 516b9a3b5d1337547a710aaf439620dc, type: 3}
+  - key: Hazards
+    asset: {fileID: 7433441132597879392, guid: 1b2e141678ca4f44947960b2688f6540, type: 3}
+  - key: Hazards
+    asset: {fileID: 9197481963319205126, guid: e98419b3701c440882a82797c57c7ad1, type: 3}
+  - key: HotCross
+    asset: {fileID: 7433441132597879392, guid: 29b8f18f486e41e8bd8ac97af3f864c4, type: 3}
+  - key: HotCross
+    asset: {fileID: 9197481963319205126, guid: 022ff67a04924b27a31bf275fed08369, type: 3}
+  - key: HoverInteract
+    asset: {fileID: 7433441132597879392, guid: 62cd1dbd2c9bd014296fcc44707100b9, type: 3}
+  - key: HoverInteract
+    asset: {fileID: 9197481963319205126, guid: 793141ff32ad72c419325c4ee05c80cb, type: 3}
+  - key: Hovercraft
+    asset: {fileID: 7433441132597879392, guid: e280e0d63f0b46d395ddee371f8deffc, type: 3}
+  - key: Hovercraft
+    asset: {fileID: 9197481963319205126, guid: ec3242226ba9448090c1a959639d7986, type: 3}
+  - key: Hud
+    asset: {fileID: 7433441132597879392, guid: 962451c73430b384696206c1b77a0542, type: 3}
+  - key: Hud
+    asset: {fileID: 9197481963319205126, guid: 5472bc6ad2d1a5d4bb9d5f2772c24f20, type: 3}
+  - key: InventoryContext
+    asset: {fileID: 9197481963319205126, guid: 7e308bd64e264b24e8e73ccdf59a5a5e, type: 3}
+  - key: Journal
+    asset: {fileID: 7433441132597879392, guid: 2bd64b712cbd43c0856e43f618da2ff0, type: 3}
+  - key: Journal
+    asset: {fileID: 9197481963319205126, guid: 349436d50bc04726b81ca6147d59985a, type: 3}
+  - key: LevelUp
+    asset: {fileID: 7433441132597879392, guid: 1454fb53b35a4ffb9090023b4fae3b02, type: 3}
+  - key: LevelUp
+    asset: {fileID: 9197481963319205126, guid: a725bc8375d540da8df0536ebeb87d13, type: 3}
+  - key: LoadingOverlay
+    asset: {fileID: 7433441132597879392, guid: c0d13f8b5e9f601a2b3c4d5e6f708293, type: 3}
+  - key: LoadingOverlay
+    asset: {fileID: 9197481963319205126, guid: b9c02e7a4d8e5f0a1b2c3d4e5f607182, type: 3}
+  - key: Loot
+    asset: {fileID: 7433441132597879392, guid: 9f39440bc9008044d9eb1fcfca0d3911, type: 3}
+  - key: Loot
+    asset: {fileID: 9197481963319205126, guid: dc063a536d23977439790bc61f82f9cc, type: 3}
+  - key: MainMenu
+    asset: {fileID: 7433441132597879392, guid: e5644aa3d1524044eaddf3a3767d6193, type: 3}
+  - key: MainMenu
+    asset: {fileID: 9197481963319205126, guid: 5aaafed0736c2694b8e8de533d142ee6, type: 3}
+  - key: MenuModal
+    asset: {fileID: 7433441132597879392, guid: 99d1715f54777614caaa1f174ef98e54, type: 3}
+  - key: OpticsOverlay
+    asset: {fileID: 7433441132597879392, guid: ac6d4f205e8b7f9d1b3c7f402d5e91a3, type: 3}
+  - key: OpticsOverlay
+    asset: {fileID: 9197481963319205126, guid: 9b5c3e1f4d7a6e8c0a2b6e3f1c4d8092, type: 3}
+  - key: PetChrome
+    asset: {fileID: 9197481963319205126, guid: 029beea57f0141b4ab5c983d91c842a4, type: 3}
+  - key: PickupReticle
+    asset: {fileID: 7433441132597879392, guid: 915c75e2b46286b4fa93a56d45887df3, type: 3}
+  - key: PickupReticle
+    asset: {fileID: 9197481963319205126, guid: 247ae04423626c94188de4f62ee56fce, type: 3}
+  - key: PilotCluster
+    asset: {fileID: 7433441132597879392, guid: d5f9c02e8b3a4f7b0c2d4e6f8091a2b3, type: 3}
+  - key: PilotCluster
+    asset: {fileID: 9197481963319205126, guid: c4e8b91d7a2f4e6a9b1c3d5e7f8091a2, type: 3}
+  - key: SaveSlots
+    asset: {fileID: 9197481963319205126, guid: 7ed4049d330976144adcf92405aaa6aa, type: 3}
+  - key: Settings
+    asset: {fileID: 7433441132597879392, guid: 7c4e9a2b1f8d4e6a9b0c3d5e7f1a2b3c, type: 3}
+  - key: Settings
+    asset: {fileID: 9197481963319205126, guid: aeaa48089491872458902d0eb3840af9, type: 3}
+  - key: Shell
+    asset: {fileID: 9197481963319205126, guid: d1e2409c6fa0712b3c4d5e6f708192a3, type: 3}
+  - key: TurretCrosshair
+    asset: {fileID: 7433441132597879392, guid: b742ecda350d6c343bf675413f48b2ca, type: 3}
+  - key: TurretCrosshair
+    asset: {fileID: 9197481963319205126, guid: 495d141e2d32c1e46b983986e7bbabad, type: 3}
+  - key: TurretMenu
+    asset: {fileID: 7433441132597879392, guid: 1e06340f64717464ebff254eaa2c41a0, type: 3}
+  - key: TurretMenu
+    asset: {fileID: 9197481963319205126, guid: ced22f9b8abc03442a3ee66506776276, type: 3}
+  - key: Vendor
+    asset: {fileID: 7433441132597879392, guid: e39418770e0855b4c9881848d34097b4, type: 3}
+  - key: Vendor
+    asset: {fileID: 9197481963319205126, guid: 587028b5d40cf5d4e927dc7c55de239f, type: 3}
+  - key: WorldAmmo
+    asset: {fileID: 7433441132597879392, guid: 5517d5a4ea8547699463b58134831647, type: 3}
+  - key: WorldAmmo
+    asset: {fileID: 9197481963319205126, guid: 6a61f8bb31ca48cd964a4007d1819dc3, type: 3}
+  - key: WorldMenus
+    asset: {fileID: 7433441132597879392, guid: 8bbe4147e0ae71244af471610557d0f8, type: 3}
+  - key: WorldMenus
+    asset: {fileID: 9197481963319205126, guid: d4811077d3ab7c24682e7e0c17b79991, type: 3}
+  - key: ZoneVignette
+    asset: {fileID: 7433441132597879392, guid: 83099c67e0e887f41bf49d4bd106b28d, type: 3}
+  - key: ZoneVignette
+    asset: {fileID: 9197481963319205126, guid: 4547321e857af894191fbd70444d1a58, type: 3}
+  - key: DarkMatterGenesis
+    asset: {fileID: 7433441132597879392, guid: a8f1e5ec02e74d9b8c7f6e5d4c3b2a11, type: 3}
+  - key: UnityDefaultRuntimeTheme
+    asset: {fileID: -4733365628477956816, guid: 98fac64c6852e3f43942bc2f0c91881a, type: 3}
+  - key: PanelSettings
+    asset: {fileID: 11400000, guid: e5ff2d9fbeef5bc499843e8c0e799a35, type: 3}
+  - key: LoadingPanelSettings
+    asset: {fileID: 11400000, guid: 5e8a1c3b7d924f6e8a0b1c2d3e4f5061, type: 3}
+  - key: WorldAmmoPanelSettings
+    asset: {fileID: 11400000, guid: f0e0c9d68a634022b66f876f3914dc31, type: 3}
+  - key: Ammo_Electricity
+    asset: {fileID: 21300000, guid: 8d9b216150df809418bb2339fca49692, type: 3}

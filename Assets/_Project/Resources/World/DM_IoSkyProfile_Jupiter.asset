@@ -21,10 +21,13 @@ MonoBehaviour:
   sunShadowStrength31h: 1
   sunTemperature31o: 0
   sunVolumetricDimmer31o: -1
-  sunShadowResolution31o: 2048
+  sunShadowResolution31o: 4096
   sunDisc31o: 1
   essentialsOverBotd31h: 1
-  debugHourAdvances: 1
+  debugHourAdvances: 0
+  clockMinHour31v: 0
+  clockMaxHour31v: 30
+  clockRangeMode31v: 0
   editModeClockRuns: 0
   eclipseKeepsSunShadows: 1
   eclipseMinSunIntensity: 0.15
@@ -36,7 +39,7 @@ MonoBehaviour:
   autoSpawnController: 1
   onlyInScenesWithJupiter: 1
   skyBodyShader: {fileID: 4800000, guid: a32e9106cf6171c48a524cba2fe54c0b, type: 3}
-  debugHourOverride: 10.89
+  debugHourOverride: 10.6
   debugHourEnabled: 1
   startHour: 11.6
   sunLightName: BOTD Directional Light(Clone)
@@ -214,10 +217,10 @@ MonoBehaviour:
   nightLightMidColor: {r: 0.934017, g: 0.4901961, b: 1, a: 1}
   nightLightSkyColor: {r: 0.5469348, g: 0.6291979, b: 0.93207544, a: 1}
   nightLightAmount: 1128
-  nightExposureLimitMin: 0.5
+  nightExposureLimitMin: 0.8
   nightAmbientBoost: 2.66
   enableNightShadow: 1
-  nightShadowStrength: 0.55
+  nightShadowStrength: 0.889
   nightShadowSoftnessDeg: 4
   nightShadowDirectionMode: 0
   nightShadowCustomYawDeg: 200
@@ -225,7 +228,7 @@ MonoBehaviour:
   nightShadowResolutionTier: 1
   nightShadowMaxDistance: 120
   nightSkyDayVisibility: 0.094
-  milkyWayDayVisibility: 0
+  milkyWayDayVisibility: 0.044
   milkyWaySmoothness: 0.55
   nightSkyDitherEnabled: 0
   nightSkyDitherAmount: 0.55
@@ -244,11 +247,11 @@ MonoBehaviour:
   auroraIntensity: 0.4
   auroraColorLow: {r: 0.114575684, g: 1, b: 0, a: 1}
   auroraColorHigh: {r: 0.8980392, g: 0.22878446, b: 0.19999997, a: 1}
-  auroraSpeed: 0.047
+  auroraSpeed: 0.177
   auroraHeight: 0.723
-  auroraCoverage: 0.614
-  auroraDayVisibility: 0
-  auroraSmoothness: 0.313
+  auroraCoverage: 0.773
+  auroraDayVisibility: 0.044
+  auroraSmoothness: 0
   auroraMinElevDeg: -7.3
   auroraMaxElevDeg: 21.1
   auroraHeightVariationDeg: 13.1

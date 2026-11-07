@@ -1,0 +1,161 @@
+#if UNITY_EDITOR
+// 2026-10-25q: Day/night controls shared by Studio World > Sky & Orbit and Io Clock (Undo + SetDirty; auto-saved by DMSkyEditPreview / PlayMode saver).
+using Project.World.Clock;
+using Project.World.Sky;
+using UnityEditor;
+using UnityEngine;
+
+namespace Project.EditorTools.GenesisStudio
+{
+    public static class DMStudioDayNight
+    {
+        public static void Draw(DM_IoSkyProfile sky, DMIoClockProfile clk)
+        {
+            if (sky == null) sky = DM_IoSkyProfile.Live;
+            if (clk == null) clk = DMIoClockProfile.Live;
+            EditorGUILayout.Space(4f);
+            EditorGUILayout.LabelField("Day / Night (25q)", EditorStyles.boldLabel);
+            if (sky != null)
+            {
+                // 30n: master tick. Off = sky controller, realtime indirect, edit preview, shade fill, Jupiter/moons, night sky stand down
+                // and restore; lighting falls back to the Gaia stack (BOTD sun, BOTD Environment, Gaia probe, Gaia post volume).
+                bool use30n = EditorGUILayout.ToggleLeft("Use Sky & Orbit (off = Gaia lighting stack)", sky.skyEnabled, EditorStyles.boldLabel);
+                if (use30n != sky.skyEnabled) { Undo.RecordObject(sky, "Use Sky & Orbit"); sky.skyEnabled = use30n; EditorUtility.SetDirty(sky); SceneView.RepaintAll(); }
+                if (!sky.skyEnabled)
+                {
+                    bool sd = EditorGUILayout.Toggle("  Fallback: single sun disc", sky.fallbackSingleSunDisc);
+                    if (sd != sky.fallbackSingleSunDisc) { Undo.RecordObject(sky, "Single sun disc"); sky.fallbackSingleSunDisc = sd; EditorUtility.SetDirty(sky); }
+            bool fd = EditorGUILayout.Toggle(new GUIContent("  Fallback: drive sun (clock / Debug Hour)", "31e: with Use Sky & Orbit off the BOTD sun still follows the clock, Debug Hour Override and Preview Hour."), sky.fallbackDriveSun);
+            if (fd != sky.fallbackDriveSun) { Undo.RecordObject(sky, "Fallback drive sun"); sky.fallbackDriveSun = fd; EditorUtility.SetDirty(sky); SceneView.RepaintAll(); }
+                    EditorGUILayout.HelpBox("Sky & Orbit is OFF: Gaia lighting stack in control.", MessageType.Info);
+                }
+                float v = EditorGUILayout.Slider("Day Fraction", sky.dayFraction, 0.2f, 0.9f);
+                if (!Mathf.Approximately(v, sky.dayFraction)) { Undo.RecordObject(sky, "Day Fraction"); sky.dayFraction = v; EditorUtility.SetDirty(sky); }
+                EditorGUILayout.BeginHorizontal();
+                DayBtn(sky, "Short Days 0.35", 0.35f); DayBtn(sky, "Subtle 0.55", 0.55f); DayBtn(sky, "Default 0.5", 0.5f); DayBtn(sky, "Long Days 0.65", 0.65f); DayBtn(sky, "Extreme 0.8", 0.8f);
+                EditorGUILayout.EndHorizontal();
+            }
+            if (clk != null)
+            {
+                float r = EditorGUILayout.Slider("Real Seconds / Game Hour", clk.realSecondsPerGameHour, 1f, 3600f);
+                if (!Mathf.Approximately(r, clk.realSecondsPerGameHour)) { Undo.RecordObject(clk, "Real sec per hour"); clk.realSecondsPerGameHour = r; EditorUtility.SetDirty(clk); }
+                float n = EditorGUILayout.Slider("Night Time Scale", clk.nightTimeScale, 0.1f, 5f);
+                if (!Mathf.Approximately(n, clk.nightTimeScale)) { Undo.RecordObject(clk, "Night Time Scale"); clk.nightTimeScale = n; EditorUtility.SetDirty(clk); }
+                float b = EditorGUILayout.Slider("Night Transition (deg)", clk.nightTransitionDeg, 0.01f, 30f);
+                if (!Mathf.Approximately(b, clk.nightTransitionDeg)) { Undo.RecordObject(clk, "Night Transition"); clk.nightTransitionDeg = b; EditorUtility.SetDirty(clk); }
+                EditorGUILayout.BeginHorizontal();
+                string[] names = { "Nights: Subtle", "Nights: Default", "Nights: Extreme" };
+                for (int i = 0; i < 3; i++)
+                    if (GUILayout.Button(names[i])) { Undo.RecordObject(clk, "Night preset"); clk.ApplyNightScalePreset(i); EditorUtility.SetDirty(clk); }
+                EditorGUILayout.EndHorizontal();
+            }
+            if (sky != null && clk != null) DrawIoOrbit30a(sky, clk);
+            if (sky != null && clk != null)
+            {
+                float hpd = Mathf.Max(1, clk.hoursPerDay), noon = hpd * 0.5f, dayH = sky.dayFraction * hpd, nightH = hpd - dayH;
+                float rs = clk.realSecondsPerGameHour, ns = Mathf.Clamp(clk.nightTimeScale, 0.1f, 5f);
+                EditorGUILayout.HelpBox(string.Format(
+                    "Sunrise ~{0:0.00} h   Sunset ~{1:0.00} h   (noon {2:0.#} h, eclipse centred)\nDay {3:0.#} game h = {4:0.0} real min   Night {5:0.#} game h = {6:0.0} real min   Full Io day = {7:0.0} real min\n(night real length uses Night Time Scale; transition blend ignored)",
+                    noon - dayH * 0.5f, noon + dayH * 0.5f, noon, dayH, dayH * rs / 60f, nightH, nightH * rs / ns / 60f, (dayH * rs + nightH * rs / ns) / 60f), MessageType.None);
+            }
+        }
+
+        // 2026-10-30a: Io orbit (sun moves, Jupiter + Galilean moons visible) and shadow cleanup, Subtle / Default / Extreme.
+        private static void DrawIoOrbit30a(DM_IoSkyProfile sky, DMIoClockProfile clk)
+        {
+            EditorGUILayout.Space(4f);
+            EditorGUILayout.LabelField("Io Orbit (30a)", EditorStyles.boldLabel);
+            // 30b: explicit toggle + hour slider (sentinel: -1 = off / clock drives the sky).
+            bool dOn = sky.DebugHourActive; // 30l: explicit tick (debugHourEnabled)
+            bool dNew = EditorGUILayout.Toggle("Debug Hour Override", dOn);
+            if (dNew != dOn) { Undo.RecordObject(sky, "Debug hour"); sky.debugHourEnabled = dNew; if (dNew && sky.debugHourOverride < 0f) sky.debugHourOverride = Mathf.Max(0f, sky.editPreviewHour >= 0f ? sky.editPreviewHour : 15f); EditorUtility.SetDirty(sky); }
+            if (sky.DebugHourActive)
+            {
+                float dh = EditorGUILayout.Slider("  Hour (0-" + clk.hoursPerDay + ", noon/eclipse " + (clk.hoursPerDay * 0.5f).ToString("0.#") + ")", sky.debugHourOverride, 0f, Mathf.Max(1, clk.hoursPerDay));
+                if (!Mathf.Approximately(dh, sky.debugHourOverride)) { Undo.RecordObject(sky, "Debug hour"); sky.debugHourOverride = dh; EditorUtility.SetDirty(sky); SceneView.RepaintAll(); }
+                EditorGUILayout.HelpBox("Debug Hour Override = " + sky.debugHourOverride.ToString("0.00") + " h: sun, Jupiter, moons and eclipse are FROZEN at that hour (no orbit).", MessageType.Warning);
+                if (GUILayout.Button("Release Debug Hour (let the sun orbit)")) { Undo.RecordObject(sky, "Release hour"); sky.debugHourEnabled = false; EditorUtility.SetDirty(sky); }
+            }
+            bool sj = EditorGUILayout.Toggle("Show Jupiter (+ eclipse)", sky.showJupiter);
+            if (sj != sky.showJupiter) { Undo.RecordObject(sky, "Show Jupiter"); sky.showJupiter = sj; EditorUtility.SetDirty(sky); }
+            bool sm = EditorGUILayout.Toggle("Show Moons", sky.showMoons);
+            if (sm != sky.showMoons) { Undo.RecordObject(sky, "Show Moons"); sky.showMoons = sm; EditorUtility.SetDirty(sky); }
+            // 30d: world looks + their extra knobs.
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("World Look: Mars")) { Undo.RecordObject(sky, "Sky look Mars"); sky.ApplySkyLookPreset(DM_IoSkyProfile.SkyLookPreset.Mars); EditorUtility.SetDirty(sky); SceneView.RepaintAll(); }
+            if (GUILayout.Button("World Look: Jupiter (Io)")) { Undo.RecordObject(sky, "Sky look Jupiter"); sky.ApplySkyLookPreset(DM_IoSkyProfile.SkyLookPreset.JupiterIo); EditorUtility.SetDirty(sky); SceneView.RepaintAll(); }
+            EditorGUILayout.EndHorizontal();
+            float sa = EditorGUILayout.Slider("Sun Disc Size (deg, -1 = scene)", sky.sunAngularDiameterDeg, -1f, 5f);
+            if (!Mathf.Approximately(sa, sky.sunAngularDiameterDeg)) { Undo.RecordObject(sky, "Sun disc"); sky.sunAngularDiameterDeg = sa; EditorUtility.SetDirty(sky); }
+            EditorGUILayout.BeginHorizontal();
+            string[] sdn = { "Sun: Subtle (Io 0.1)", "Default (Mars 0.35)", "Extreme (2.0)" }; float[] sv = { 0.1f, 0.35f, 2f };
+            for (int i = 0; i < 3; i++) if (GUILayout.Button(sdn[i])) { Undo.RecordObject(sky, "Sun disc"); sky.sunAngularDiameterDeg = sv[i]; EditorUtility.SetDirty(sky); }
+            EditorGUILayout.EndHorizontal();
+            // 30j: edit mode mirrors runtime lighting / post / sky.
+            bool ep30 = EditorGUILayout.Toggle("Edit-mode runtime preview", sky.editModeRuntimePreview);
+            if (ep30 != sky.editModeRuntimePreview) { Undo.RecordObject(sky, "Edit preview"); sky.editModeRuntimePreview = ep30; EditorUtility.SetDirty(sky); SceneView.RepaintAll(); }
+            // 30i: Shade Fill (anti-sun shadowless fill) enable + strength.
+            bool sf30 = EditorGUILayout.Toggle("Shade Fill", sky.shadeFillEnabled);
+            float sk30 = EditorGUILayout.Slider("  Shade Fill Strength (0 = off)", sky.shadeFillStrength, 0f, 4f);
+            if (sf30 != sky.shadeFillEnabled || !Mathf.Approximately(sk30, sky.shadeFillStrength)) { Undo.RecordObject(sky, "Shade fill"); sky.shadeFillEnabled = sf30; sky.shadeFillStrength = sk30; EditorUtility.SetDirty(sky); }
+            EditorGUILayout.BeginHorizontal();
+            string[] sfn = { "Fill: Subtle (0.25)", "Default (0.5)", "Extreme (2.0)" }; float[] sfv = { 0.25f, 0.5f, 2f };
+            for (int i = 0; i < 3; i++) if (GUILayout.Button(sfn[i])) { Undo.RecordObject(sky, "Shade fill"); sky.shadeFillEnabled = true; sky.shadeFillStrength = sfv[i]; EditorUtility.SetDirty(sky); }
+            EditorGUILayout.EndHorizontal();
+            DMStudioShadowBudget.Draw(sky); // 30l: sun shadow knobs + prop light shadow budget
+            bool st30 = EditorGUILayout.Toggle("Sky Tint (PBS, Play)", sky.skyTintEnabled);
+            if (st30 != sky.skyTintEnabled) { Undo.RecordObject(sky, "Sky tint"); sky.skyTintEnabled = st30; EditorUtility.SetDirty(sky); }
+            if (sky.skyTintEnabled)
+            {
+                Color zt = EditorGUILayout.ColorField("  Zenith Tint", sky.skyZenithTint);
+                Color ht = EditorGUILayout.ColorField("  Horizon Tint", sky.skyHorizonTint);
+                float hz = EditorGUILayout.Slider("  Horizon/Zenith Shift", sky.skyHorizonZenithShift, -1f, 1f);
+                if (zt != sky.skyZenithTint || ht != sky.skyHorizonTint || !Mathf.Approximately(hz, sky.skyHorizonZenithShift))
+                { Undo.RecordObject(sky, "Sky tint"); sky.skyZenithTint = zt; sky.skyHorizonTint = ht; sky.skyHorizonZenithShift = hz; EditorUtility.SetDirty(sky); }
+            }
+            float j = EditorGUILayout.Slider("Jupiter Apparent Size (deg)", sky.jupiterAngularDiameterDeg, 1f, 60f);
+            if (!Mathf.Approximately(j, sky.jupiterAngularDiameterDeg)) { Undo.RecordObject(sky, "Jupiter size"); sky.jupiterAngularDiameterDeg = j; EditorUtility.SetDirty(sky); }
+            float m = EditorGUILayout.Slider("Galilean Moon Size x", sky.europa.sizeMultiplier, 0.1f, 10f);
+            if (!Mathf.Approximately(m, sky.europa.sizeMultiplier)) { Undo.RecordObject(sky, "Moon size"); foreach (DMIoMoonSettings mo in sky.Moons) mo.sizeMultiplier = m; EditorUtility.SetDirty(sky); }
+            EditorGUILayout.BeginHorizontal();
+            string[] on = { "Orbit: Subtle (60 min day)", "Orbit: Default (24 min day)", "Orbit: Extreme (6 min day)" };
+            float[] rs = { 120f, 48f, 12f };
+            for (int i = 0; i < 3; i++)
+                if (GUILayout.Button(on[i])) { Undo.RecordObject(sky, "Orbit preset"); Undo.RecordObject(clk, "Orbit preset"); sky.ApplyIoOrbitPreset(i); clk.realSecondsPerGameHour = rs[i]; EditorUtility.SetDirty(sky); EditorUtility.SetDirty(clk); }
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.LabelField("Shadow Cleanup (30a)", EditorStyles.boldLabel);
+            bool se = EditorGUILayout.Toggle("SSR Enabled", sky.ssrEnabled);
+            if (se != sky.ssrEnabled) { Undo.RecordObject(sky, "SSR"); sky.ssrEnabled = se; EditorUtility.SetDirty(sky); }
+            float st = EditorGUILayout.Slider("SSR Depth Thickness", sky.ssrDepthThickness, 0.005f, 1f);
+            if (!Mathf.Approximately(st, sky.ssrDepthThickness)) { Undo.RecordObject(sky, "SSR thickness"); sky.ssrDepthThickness = st; EditorUtility.SetDirty(sky); }
+            float es = EditorGUILayout.Slider("Eclipse Shadow Softness (deg)", sky.eclipseShadowSoftnessDeg, 0.5f, 20f);
+            if (!Mathf.Approximately(es, sky.eclipseShadowSoftnessDeg)) { Undo.RecordObject(sky, "Eclipse softness"); sky.eclipseShadowSoftnessDeg = es; EditorUtility.SetDirty(sky); }
+            float ss = EditorGUILayout.Slider("Eclipse Shadow Strength", sky.eclipseShadowStrength, 0f, 1f);
+            if (!Mathf.Approximately(ss, sky.eclipseShadowStrength)) { Undo.RecordObject(sky, "Eclipse strength"); sky.eclipseShadowStrength = ss; EditorUtility.SetDirty(sky); }
+            bool bt = EditorGUILayout.Toggle(new GUIContent("BOTD volumes on top", "31f: BOTD Post Processing / Environment override Sky & Orbit; ours only fills the rest. BOTD assets never written."), sky.botdVolumesOnTop);
+            if (bt != sky.botdVolumesOnTop) { Undo.RecordObject(sky, "BOTD on top"); sky.botdVolumesOnTop = bt; EditorUtility.SetDirty(sky); }
+            bool ek = EditorGUILayout.Toggle(new GUIContent("Eclipse keeps sun shadows", "31f: BOTD sun keeps casting shadows during the Jupiter eclipse (dimmed) instead of Jupiter-shine."), sky.eclipseKeepsSunShadows);
+            if (ek != sky.eclipseKeepsSunShadows) { Undo.RecordObject(sky, "Eclipse keeps sun shadows"); sky.eclipseKeepsSunShadows = ek; EditorUtility.SetDirty(sky); }
+            float em = EditorGUILayout.Slider(new GUIContent("Eclipse Min Sun Intensity", "Fraction of daylight sun lux kept at full eclipse (0-1)."), sky.eclipseMinSunIntensity, 0f, 1f);
+            if (!Mathf.Approximately(em, sky.eclipseMinSunIntensity)) { Undo.RecordObject(sky, "Eclipse min sun"); sky.eclipseMinSunIntensity = em; EditorUtility.SetDirty(sky); }
+            EditorGUILayout.BeginHorizontal();
+            string[] emn = { "3% (dark)", "8%", "15% (default)", "30%", "60% (bright)" };
+            for (int i = 0; i < emn.Length; i++)
+                if (GUILayout.Button(emn[i])) { Undo.RecordObject(sky, "Eclipse min sun preset"); sky.ApplyEclipseMinSunPreset(i); EditorUtility.SetDirty(sky); }
+            EditorGUILayout.EndHorizontal();
+            float ao = EditorGUILayout.Slider("SSAO Intensity", sky.ssaoIntensity, 0f, 4f);
+            if (!Mathf.Approximately(ao, sky.ssaoIntensity)) { Undo.RecordObject(sky, "SSAO"); sky.ssaoIntensity = ao; EditorUtility.SetDirty(sky); }
+            EditorGUILayout.BeginHorizontal();
+            string[] sn = { "Shadows: Subtle", "Shadows: Default", "Shadows: Extreme (crisp)" };
+            for (int i = 0; i < 3; i++)
+                if (GUILayout.Button(sn[i])) { Undo.RecordObject(sky, "Shadow preset"); sky.ApplyShadowCleanupPreset(i); EditorUtility.SetDirty(sky); }
+            EditorGUILayout.EndHorizontal();
+        }
+
+        private static void DayBtn(DM_IoSkyProfile sky, string label, float f)
+        {
+            if (GUILayout.Button(label)) { Undo.RecordObject(sky, "Day Fraction preset"); sky.ApplyDayFractionPreset(f); EditorUtility.SetDirty(sky); }
+        }
+    }
+}
+#endif

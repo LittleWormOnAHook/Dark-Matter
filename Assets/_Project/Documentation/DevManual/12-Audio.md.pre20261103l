@@ -1,0 +1,157 @@
+# Audio — Genesis Studio
+
+**Status:** Stub (generated tables; notes pending)  
+**Open:** Tools → Dark Matter Genesis → Genesis Studio → **Audio**  
+Global music, SFX, and footstep libraries.
+
+## Tabs
+
+- [Game Audio](#game-audio)
+
+## Game Audio
+
+**What it does:** Music, body impacts, weapon clashes, player pain and circular hit-direction feedback.
+
+**Where:**
+- Studio: `Genesis Studio / Audio / Game Audio` (panel mode `SingletonAsset`)
+- Asset: `Assets/_Project/Resources/GameAudioProfile.asset`
+- Script: `Assets/_Project/Scripts/Audio/GameAudioProfile.cs`
+
+**Key settings** (from code):
+
+| Group | Field | Type | Default | Range | Notes |
+|---|---|---|---|---|---|
+| Music | `musicTracks` | AudioClip[] |  |  |  |
+| Music | `musicVolume` | float | 0.45f | 0f–1f |  |
+| Music | `shuffleMusic` | bool | true |  |  |
+| Music | `loopCurrentTrack` | bool | true |  |  |
+| Loading | `loadingAmbience` | AudioClip |  |  |  |
+| Loading | `loadingAmbienceVolume` | float | 0.55f | 0f–1f |  |
+| Footsteps | `defaultFootsteps` | FootstepSurfaceSet | FootstepSurfaceSet.CreateDefault() |  | Fallback when a tag or terrain layer 0-10 has no clips of its own. |
+| Footsteps | `surfaceFootsteps` | FootstepSurfaceSet[] |  |  | Unity tag matches (Terrain, Climbable, Default). Empty clip arrays fall back to Default. |
+| Footsteps | `terrainLayerFootsteps` | FootstepTerrainLayerSet[] |  |  | Terrain splat slots 0-10. Disabled or empty slots fall back to tag, then Default. |
+| Landing | `defaultLandingClips` | AudioClip[] |  |  |  |
+| Landing | `minLandingSpeed` | float | 2.5f | ≥0.5f |  |
+| Landing | `hardLandingSpeed` | float | 9f | ≥0.5f |  |
+| Landing | `landingVolume` | float | 0.9f | 0f–1f |  |
+| Combat — Melee | `meleeSwingClips` | AudioClip[] |  |  |  |
+| Combat — Melee | `meleeHitClips` | AudioClip[] |  |  |  |
+| Combat — Melee | `meleeCriticalHitClips` | AudioClip[] |  |  |  |
+| Combat — Body impacts (not weapon clashes) | `meleeBodyHitClips` | AudioClip[] |  |  | Confirmed melee damage to a body. Empty means silent, never falls back to metallic clash clips. |
+| Combat — Body impacts (not weapon clashes) | `meleeBodyCriticalHitClips` | AudioClip[] |  |  |  |
+| Combat — Body impacts (not weapon clashes) | `meleeBodyHitVolume` | float | 0.95f | 0f–1f |  |
+| Combat — Body impacts (not weapon clashes) | `meleeClashVolume` | float | 0.9f | 0f–1f | Existing Melee Hit / Critical Hit libraries above are now weapon/guard clashes only. |
+| Combat — Player receives damage | `playerBodyHitClips` | AudioClip[] |  |  |  |
+| Combat — Player receives damage | `playerPainClips` | AudioClip[] |  |  |  |
+| Combat — Player receives damage | `playerBodyHitVolume` | float | 1f | 0f–1f |  |
+| Combat — Player receives damage | `playerPainVolume` | float | 0.65f | 0f–1f |  |
+| Combat — Player receives damage | `playerPainMinInterval` | float | 0.8f | ≥0f |  |
+| Combat — Center circular hit direction | `playerHitIndicatorEnabled` | bool | true |  |  |
+| Combat — Center circular hit direction | `playerHitIndicatorRadius` | float | 500f | 25f–750f |  |
+| Combat — Center circular hit direction | `playerHitIndicatorThickness` | float | 5f | 1f–16f |  |
+| Combat — Center circular hit direction | `playerHitIndicatorArc` | float | 55f | 15f–100f |  |
+| Combat — Center circular hit direction | `playerHitIndicatorSeconds` | float | 0.65f | 0.15f–2f |  |
+| Combat — Center circular hit direction | `playerHitIndicatorColor` | Color | Project.UI.DarkMatterGenesisUiPalette.RichFuchsia |  |  |
+| Combat — Ranged | `rangedHitClips` | AudioClip[] |  |  |  |
+| Combat — Ranged | `rangedCriticalHitClips` | AudioClip[] |  |  |  |
+| Combat — Ranged | `punchSwingClips` | AudioClip[] |  |  |  |
+| Combat — Ranged | `punchHitClips` | AudioClip[] |  |  |  |
+| Combat — Ranged | `punchCriticalHitClips` | AudioClip[] |  |  |  |
+| Combat — Ranged | `resourceHitClips` | AudioClip[] |  |  |  |
+| Combat — Ranged | `poiseStaggerDingClips` | AudioClip[] |  |  | Short ding played three times (rising pitch) when poise breaks / stagger triggers. |
+| Combat — Ranged | `poiseStaggerDingSpacing` | float | 0.075f | 0.04f–0.2f |  |
+| Combat — Ranged | `poiseStaggerDingVolume` | float | 0.92f | 0f–1f |  |
+| Combat — Ranged | `combatVolume` | float | 1f | 0f–1f |  |
+| UI | `buttonClickClips` | AudioClip[] |  |  |  |
+| UI | `uiDenyClips` | AudioClip[] |  |  |  |
+| UI | `inventoryItemClickClips` | AudioClip[] |  |  |  |
+| UI | `itemUseClips` | AudioClip[] |  |  |  |
+| UI | `itemEquipClips` | AudioClip[] |  |  |  |
+| UI | `itemUnequipClips` | AudioClip[] |  |  |  |
+| UI | `itemSplitClips` | AudioClip[] |  |  |  |
+| UI | `itemDropClips` | AudioClip[] |  |  |  |
+| UI | `itemPickupClips` | AudioClip[] |  |  |  |
+| UI | `achievementUnlockClips` | AudioClip[] |  |  |  |
+| UI | `levelUpClips` | AudioClip[] |  |  |  |
+| Loot Chests | `lootChestOpenClips` | AudioClip[] |  |  | World loot chest lid opening (3D at the chest). Empty = silent. |
+| Loot Chests | `lootChestCloseClips` | AudioClip[] |  |  | World loot chest lid closing. Empty = silent. |
+| Loot Chests | `lootChestDissolveClips` | AudioClip[] |  |  | Loot chest dissolve start. Empty = silent. |
+| Loot Chests | `lootChestVolume` | float | 0.8f | 0f–1f |  |
+| Loot Chests | `uiVolume` | float | 0.85f | 0f–1f |  |
+| 3D Playback | `sfxSpatialBlend` | float | 1f | 0f–1f |  |
+| 3D Playback | `sfxMinDistance` | float | 1f |  |  |
+| 3D Playback | `sfxMaxDistance` | float | 22f |  |  |
+| 3D Playback | `clipField` | string |  |  |  |
+| 3D Playback | `folderPath` | string |  |  |  |
+| 3D Playback | `clips` | AudioClip[] |  |  |  |
+| 3D Playback | `surfaceTag` | string | "Default" |  |  |
+| 3D Playback | `walkClips` | AudioClip[] |  |  |  |
+| 3D Playback | `runClips` | AudioClip[] |  |  |  |
+| 3D Playback | `landingClips` | AudioClip[] |  |  |  |
+| 3D Playback | `walkStepDistance` | float | 2.1f | ≥0.05f |  |
+| 3D Playback | `runStepDistance` | float | 2.8f | ≥0.05f |  |
+| 3D Playback | `volume` | float | 0.85f | 0f–1f |  |
+| 3D Playback | `layerIndex` | int |  | 0–10 |  |
+| 3D Playback | `label` | string | "Terrain Layer" |  | Authoring label. Live tiles: 0-1 sand, 2-5 rock/cliff, 6 mud, 7 snow. |
+| 3D Playback | `enabled` | bool | true |  | Off or empty clips = use tag, then Default. |
+| 3D Playback | `walkClips` | AudioClip[] |  |  |  |
+| 3D Playback | `runClips` | AudioClip[] |  |  |  |
+| 3D Playback | `landingClips` | AudioClip[] |  |  |  |
+| 3D Playback | `walkStepDistance` | float | 2.1f | ≥0.05f |  |
+| 3D Playback | `runStepDistance` | float | 2.8f | ≥0.05f |  |
+| 3D Playback | `volume` | float | 0.85f | 0f–1f |  |
+| 3D Playback | `layerName` | string | "Ambient Layer" |  |  |
+| 3D Playback | `clips` | AudioClip[] |  |  |  |
+| 3D Playback | `minInterval` | float | 4f | ≥0.5f |  |
+| 3D Playback | `maxInterval` | float | 12f | ≥0.5f |  |
+| 3D Playback | `volume` | float | 0.65f | 0f–1f |  |
+| 3D Playback | `spatialBlend` | float | 1f | 0f–1f |  |
+| 3D Playback | `pitchMin` | float | 0.95f | 0.8f–1.2f |  |
+| 3D Playback | `pitchMax` | float | 1.05f | 0.8f–1.2f |  |
+| 3D Playback | `playAtRandomPointInZone` | bool | true |  |  |
+
+
+## Voices (voice actors, local TTS) - 2026-11-03a
+
+**Where:** Genesis Studio > Audio > Voices. Editor-only; shipped builds play baked WAVs, no Python.
+
+**Setup (once):** Python 3.11 venv at `A:\DMG_Tools\parler-tts\.venv` with Parler-TTS (torch cu128, RTX 5070). Model cache `A:\DMG_Tools\hf_cache`. Bake script `A:\DMG_Tools\parler-tts\bake.py`. Paths editable in Advanced (EditorPrefs).
+
+**Make a voice:** New Voice > name + description (use `{speaker}` where the speaker name goes) > pick Speaker > Try 3 variants > Use the best > Save. Pitch slider -12..+12 (Subtle -1, Default -2, Extreme -4; Kade 0).
+
+**Pronunciation:** Advanced > Pronunciations maps word -> audio spelling (Kade -> Kayd). Only the TTS text changes; subtitles keep the real word.
+
+**Lines:** each actor has a DMVoiceLineSet in `Assets/_Project/Audio/Voices/<Actor>/` (id, subtitle, QM stage tag, hash, clip). Bake only regenerates lines whose text or actor settings changed. Seed re-rolls up to 5 times if a line is outside the min/max seconds range; trailing silence trimmed.
+
+**Assets:** `DMVoiceActor` / `DMVoiceLineSet` (Scripts/Audio/Voice), panel `DMStudioVoicesPanel` (Editor/GenesisStudio). Kade = `Audio/Voices/Actors/VA_Kade.asset` (Rick, Mini v1, seed 42).
+
+**Limits:** English only; Parler named speakers only (34); emotion range limited; ~1-2x real time per line on GPU. Playback/subtitle/radio-mixer hooks are P3.
+
+### Voices update - 2026-11-03b
+- **Add Line** box under the lines list: Id (blank or Suggest = `<actor>_<n>`), Subtitle (wrapped), optional Stage tag, Add. Each line has Play and **x** (delete with confirm; the WAV stays on disk). Subtitles edit inline.
+- **Pauses:** use `,` or `...` for natural pauses; `[pause]` (0.4 s) or `[pause 0.8]` (0.05-5 s) for exact silence. The bake generates each chunk separately (same seed) and joins them with silence. Show subtitles with `DMVoiceLine.SubtitleClean` (tags removed).
+- The panel uses the Genesis Studio page scroll (no inner list scroll). New line sets start empty.
+
+### Sentence splitting (2026-11-03c)
+- **Split sentences** (Advanced, default on): paragraphs are generated one sentence at a time with the same seed and voice, then joined. Much more accurate on long lines.
+- **Sentence gap**: silence between sentences, 0-2 s. Presets Subtle 0.15 / Default 0.25 / Extreme 0.6. "..." adds 0.15 s.
+- Sentence ends: `.` `!` `?` `...`. Abbreviations (Mr., Dr., St., etc.) don't split. Fragments under 3 words join their neighbour.
+- A sentence is re-rolled (seed+1, up to 5 tries) only if its length is way off for its word count.
+- **Split to lines** (per line): turns a paragraph into separate lines `<id>_01`, `<id>_02`... (Undo works). Use when subtitles should show one sentence at a time.
+
+### Speaker profiles (2026-11-03d)
+- Changing **Speaker** creates a new voice profile instead of editing the current one. Name it (default `<Actor> (<Speaker>)`), then **Create** (copies every setting, new speaker) or **Cancel**.
+- The new profile has no lines; the original keeps its line set. Create a line set for the new profile if you want to bake with it.
+- **Advanced > Delete profile** removes a test profile after a confirm. The asset is backed up to `Backups/voices/` first; line sets and WAVs are left alone.
+
+### New voice from Display name (2026-11-03g)
+- Editing **Display name** and pressing Enter (or leaving the field) does not rename the voice. A box offers **Create new voice "<Name>"**: it copies every setting into `VA_<Name>.asset` and creates an empty `Voices/<Name>/<Name>_Lines.asset` linked to it. **Cancel** restores the name. Names already used are rejected.
+- Each actor shows only its own line set (linked by reference). Previews and variants clear when you switch actors. An actor with no set shows "No lines yet" and **Create line set**.
+
+### Bake one line (2026-11-03j)
+- Each line row has a **Bake** button: re-bakes just that line (even if not marked *), using the actor's current settings. The main **Bake** still only does changed lines.
+
+### Models (2026-11-03k)
+- Default checkpoint is **parler-tts/parler-tts-large-v1** (2.33B, Apache-2.0). New actors use it automatically.
+- **Model** dropdown (Large best / Mini fast) sits above Speaker. Changing it marks that actor's lines for re-bake; nothing re-bakes until you press Bake.
+- bake.py uses `model` from the job, else Large. Large needs ~5.5 GB VRAM peak at fp16 (measured ~11.5 GB total GPU with Unity open), Mini ~2 GB; load ~230 s vs ~50 s cold, generation ~2x realtime vs ~4x.

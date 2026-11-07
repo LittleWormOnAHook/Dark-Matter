@@ -44,14 +44,21 @@ float _DMShadowStrength, _DMShadowSharpness, _DMShadowSteps, _DMShadowFadeStart,
 float4 _DMSunDirFallback;
 float _DMHeightAOStrength, _DMHeightAOMid;
 float _DMLayerHeightAO0, _DMLayerHeightAO1, _DMLayerHeightAO2, _DMLayerHeightAO3, _DMLayerHeightAO4, _DMLayerHeightAO5, _DMLayerHeightAO6, _DMLayerHeightAO7;
-TEXTURE2D(_DMHeightMap0); float _DMUseHeightMap0, _DMHeightScale0, _DMHeightOffset0, _DMHeightContrast0;
-TEXTURE2D(_DMHeightMap1); float _DMUseHeightMap1, _DMHeightScale1, _DMHeightOffset1, _DMHeightContrast1;
-TEXTURE2D(_DMHeightMap2); float _DMUseHeightMap2, _DMHeightScale2, _DMHeightOffset2, _DMHeightContrast2;
-TEXTURE2D(_DMHeightMap3); float _DMUseHeightMap3, _DMHeightScale3, _DMHeightOffset3, _DMHeightContrast3;
-TEXTURE2D(_DMHeightMap4); float _DMUseHeightMap4, _DMHeightScale4, _DMHeightOffset4, _DMHeightContrast4;
-TEXTURE2D(_DMHeightMap5); float _DMUseHeightMap5, _DMHeightScale5, _DMHeightOffset5, _DMHeightContrast5;
-TEXTURE2D(_DMHeightMap6); float _DMUseHeightMap6, _DMHeightScale6, _DMHeightOffset6, _DMHeightContrast6;
-TEXTURE2D(_DMHeightMap7); float _DMUseHeightMap7, _DMHeightScale7, _DMHeightOffset7, _DMHeightContrast7;
+TEXTURE2D_ARRAY(_DMHeightMapArray);
+SAMPLER(sampler_DMHeightMapArray);
+float _DMUseHeightMap0, _DMHeightScale0, _DMHeightOffset0, _DMHeightContrast0;
+float _DMUseHeightMap1, _DMHeightScale1, _DMHeightOffset1, _DMHeightContrast1;
+float _DMUseHeightMap2, _DMHeightScale2, _DMHeightOffset2, _DMHeightContrast2;
+float _DMUseHeightMap3, _DMHeightScale3, _DMHeightOffset3, _DMHeightContrast3;
+float _DMUseHeightMap4, _DMHeightScale4, _DMHeightOffset4, _DMHeightContrast4;
+float _DMUseHeightMap5, _DMHeightScale5, _DMHeightOffset5, _DMHeightContrast5;
+float _DMUseHeightMap6, _DMHeightScale6, _DMHeightOffset6, _DMHeightContrast6;
+float _DMUseHeightMap7, _DMHeightScale7, _DMHeightOffset7, _DMHeightContrast7;
+
+float DM_SampleHeightMapArray(int layerIndex, float2 uv, float2 dx, float2 dy)
+{
+    return SAMPLE_TEXTURE2D_ARRAY_GRAD(_DMHeightMapArray, sampler_DMHeightMapArray, uv, layerIndex, dx, dy).r;
+}
 
 float _DMPeakSoftness0, _DMPeakSoftness1, _DMPeakSoftness2, _DMPeakSoftness3, _DMPeakSoftness4, _DMPeakSoftness5, _DMPeakSoftness6, _DMPeakSoftness7;
 float _DMPeakKnee0, _DMPeakKnee1, _DMPeakKnee2, _DMPeakKnee3, _DMPeakKnee4, _DMPeakKnee5, _DMPeakKnee6, _DMPeakKnee7;
@@ -78,11 +85,11 @@ float DM_ApplyPeak(float h, float2 uv)
     return saturate(y);
 }
 
-// Layer height: DM height map (R) if enabled, else mask B. Shared sampler (sampler_Splat0).
-float DM_LayerHeight(TEXTURE2D_PARAM(mTex, s), TEXTURE2D(hTex), float useH, float3 hp, float2 uv, float2 dx, float2 dy)
+// Layer height: DM height map array slice (R) if enabled, else mask B. Shared sampler (sampler_Splat0).
+float DM_LayerHeight(TEXTURE2D_PARAM(mTex, s), float useH, int layerIndex, float3 hp, float2 uv, float2 dx, float2 dy)
 {
     float h;
-    UNITY_BRANCH if (useH > 0.5) h = SAMPLE_TEXTURE2D_GRAD(hTex, s, uv, dx, dy).r;
+    UNITY_BRANCH if (useH > 0.5) h = DM_SampleHeightMapArray(layerIndex, uv, dx, dy);
     else h = SAMPLE_TEXTURE2D_GRAD(mTex, s, uv, dx, dy).b;
     return DM_ApplyPeak(saturate(((h - 0.5) * hp.z + 0.5) * hp.x + hp.y), uv);
 }
@@ -113,21 +120,21 @@ float3 DM_LayerColor(float3 c, float4 tint, float sat, float bright)
 #endif
 
 // Height = mask map B. Offset parallax with grazing bias.
-float2 DM_ParallaxOffset(TEXTURE2D_PARAM(hTex, hSamp), TEXTURE2D(dmH), float useH, float3 hp, float2 uv, float2 dx, float2 dy, float3 vTS, float amp, float center)
+float2 DM_ParallaxOffset(TEXTURE2D_PARAM(hTex, hSamp), float useH, int layerIndex, float3 hp, float2 uv, float2 dx, float2 dy, float3 vTS, float amp, float center)
 {
-    float h = DM_LayerHeight(TEXTURE2D_ARGS(hTex, hSamp), dmH, useH, hp, uv, dx, dy);
+    float h = DM_LayerHeight(TEXTURE2D_ARGS(hTex, hSamp), useH, layerIndex, hp, uv, dx, dy);
     g_DMDepthFrac = center - h; // 24s: depth below geometry in units of amp (+ = below)
     float2 p = vTS.xy / (vTS.z + _DMOffsetBias) * amp;
     return uv + p * (h - center);
 }
 
 // POM: linear search + binary refinement (_DMPOMRefine 0-8). Matches offset convention at h == center.
-float2 DM_ParallaxPOM(TEXTURE2D_PARAM(hTex, hSamp), TEXTURE2D(dmH), float useH, float3 hp, float2 uv, float2 dx, float2 dy, float3 vTS, float amp, int steps, float center)
+float2 DM_ParallaxPOM(TEXTURE2D_PARAM(hTex, hSamp), float useH, int layerIndex, float3 hp, float2 uv, float2 dx, float2 dy, float3 vTS, float amp, int steps, float center)
 {
     steps = clamp(steps, 1, 64);
     float2 p = vTS.xy / max(vTS.z, 0.05) * amp;
     float2 uvTop = uv + p * (1.0 - center);
-    float diff = DM_LayerHeight(TEXTURE2D_ARGS(hTex, hSamp), dmH, useH, hp, uvTop, dx, dy) - 1.0;
+    float diff = DM_LayerHeight(TEXTURE2D_ARGS(hTex, hSamp), useH, layerIndex, hp, uvTop, dx, dy) - 1.0;
     g_DMDepthFrac = -(1.0 - center); // 24s: hit at the top
     if (diff >= 0.0) return uvTop;
     float stepT = 1.0 / steps;
@@ -137,7 +144,7 @@ float2 DM_ParallaxPOM(TEXTURE2D_PARAM(hTex, hSamp), TEXTURE2D(dmH), float useH, 
         if (k >= steps) break;
         prevT = t;
         t += stepT;
-        diff = DM_LayerHeight(TEXTURE2D_ARGS(hTex, hSamp), dmH, useH, hp, uvTop - p * t, dx, dy) - (1.0 - t);
+        diff = DM_LayerHeight(TEXTURE2D_ARGS(hTex, hSamp), useH, layerIndex, hp, uvTop - p * t, dx, dy) - (1.0 - t);
         if (diff >= 0.0) break;
     }
     float lo = prevT, hi = t;
@@ -146,7 +153,7 @@ float2 DM_ParallaxPOM(TEXTURE2D_PARAM(hTex, hSamp), TEXTURE2D(dmH), float useH, 
     {
         if (j >= refine) break;
         float mid = 0.5 * (lo + hi);
-        float dm = DM_LayerHeight(TEXTURE2D_ARGS(hTex, hSamp), dmH, useH, hp, uvTop - p * mid, dx, dy) - (1.0 - mid);
+        float dm = DM_LayerHeight(TEXTURE2D_ARGS(hTex, hSamp), useH, layerIndex, hp, uvTop - p * mid, dx, dy) - (1.0 - mid);
         if (dm >= 0.0) hi = mid; else lo = mid;
     }
     g_DMDepthFrac = 0.5 * (lo + hi) - (1.0 - center); // 24s
@@ -154,10 +161,10 @@ float2 DM_ParallaxPOM(TEXTURE2D_PARAM(hTex, hSamp), TEXTURE2D(dmH), float useH, 
 }
 
 // Soft parallax self-shadow toward the light (tangent space). 1 = lit.
-float DM_SelfShadow(TEXTURE2D_PARAM(hTex, hSamp), TEXTURE2D(dmH), float useH, float3 hp, float2 uv, float2 dx, float2 dy, float3 lTS, float amp)
+float DM_SelfShadow(TEXTURE2D_PARAM(hTex, hSamp), float useH, int layerIndex, float3 hp, float2 uv, float2 dx, float2 dy, float3 lTS, float amp)
 {
     if (lTS.z <= 0.0) return 1.0;
-    float h0 = DM_LayerHeight(TEXTURE2D_ARGS(hTex, hSamp), dmH, useH, hp, uv, dx, dy);
+    float h0 = DM_LayerHeight(TEXTURE2D_ARGS(hTex, hSamp), useH, layerIndex, hp, uv, dx, dy);
     int steps = clamp((int)_DMShadowSteps, 1, 32);
     float2 p = lTS.xy / max(lTS.z, 0.05) * amp * _DMShadowLength;
     float occ = 0.0;
@@ -166,7 +173,7 @@ float DM_SelfShadow(TEXTURE2D_PARAM(hTex, hSamp), TEXTURE2D(dmH), float useH, fl
         if (k > steps) break;
         float f = (float)k / steps;
         float t = f * (1.0 - h0);
-        float hs = DM_LayerHeight(TEXTURE2D_ARGS(hTex, hSamp), dmH, useH, hp, uv + p * t, dx, dy);
+        float hs = DM_LayerHeight(TEXTURE2D_ARGS(hTex, hSamp), useH, layerIndex, hp, uv + p * t, dx, dy);
         occ = max(occ, (hs - (h0 + t)) * (1.0 - f));
     }
     return 1.0 - saturate(occ * _DMShadowSharpness);
@@ -283,7 +290,7 @@ void TerrainSplatBlend(float2 controlUV, float2 splatBaseUV, inout TerrainLitSur
     #ifdef _DM_SELFSHADOW
         #define DM_SELFSHADOW_LAYER(i, uv, dx, dy, amp) \
             UNITY_BRANCH if (i == dmTop0 && dmShadowFade > 0.0) \
-                dmShadow = DM_SelfShadow(TEXTURE2D_ARGS(_Mask##i, sampler_Splat0), _DMHeightMap##i, _DMUseHeightMap##i, DM_HP(i), uv, dx * dmMip, dy * dmMip, dmLightTS, amp);
+                dmShadow = DM_SelfShadow(TEXTURE2D_ARGS(_Mask##i, sampler_Splat0), _DMUseHeightMap##i, i, DM_HP(i), uv, dx * dmMip, dy * dmMip, dmLightTS, amp);
     #else
         #define DM_SELFSHADOW_LAYER(i, uv, dx, dy, amp)
     #endif
@@ -301,9 +308,9 @@ void TerrainSplatBlend(float2 controlUV, float2 splatBaseUV, inout TerrainLitSur
             UNITY_BRANCH if (dmAmp > 0.0) \
             { \
                 UNITY_BRANCH if (dmPomFade > 0.0 && (i == dmTop0 || i == dmTop1)) \
-                    uv = DM_ParallaxPOM(TEXTURE2D_ARGS(_Mask##i, sampler_Splat0), _DMHeightMap##i, _DMUseHeightMap##i, DM_HP(i), uv, dx * dmMip, dy * dmMip, dmViewTS, dmAmp, dmSteps, _DMHeightCenter); \
+                    uv = DM_ParallaxPOM(TEXTURE2D_ARGS(_Mask##i, sampler_Splat0), _DMUseHeightMap##i, i, DM_HP(i), uv, dx * dmMip, dy * dmMip, dmViewTS, dmAmp, dmSteps, _DMHeightCenter); \
                 else \
-                    uv = DM_ParallaxOffset(TEXTURE2D_ARGS(_Mask##i, sampler_Splat0), _DMHeightMap##i, _DMUseHeightMap##i, DM_HP(i), uv, dx * dmMip, dy * dmMip, dmViewTS, dmAmp, _DMHeightCenter); \
+                    uv = DM_ParallaxOffset(TEXTURE2D_ARGS(_Mask##i, sampler_Splat0), _DMUseHeightMap##i, i, DM_HP(i), uv, dx * dmMip, dy * dmMip, dmViewTS, dmAmp, _DMHeightCenter); \
                 DM_ACCUM_DEPTH(i) \
             } \
             DM_SELFSHADOW_LAYER(i, uv, dx, dy, dmAmp0) \
@@ -320,7 +327,7 @@ void TerrainSplatBlend(float2 controlUV, float2 splatBaseUV, inout TerrainLitSur
 #if defined(DM_TERRAIN_DATA) && defined(_MASKMAP) && defined(_TERRAIN_BLEND_HEIGHT) && !defined(SHADER_STAGE_RAY_TRACING)
     #define DM_APPLY_BLENDHEIGHT(i, mask, uv, dx, dy) \
         UNITY_BRANCH if (_DMHeightMapForBlend > 0.5 && (_DMUseHeightMap##i > 0.5 || (_LayerHasMask##i > 0.5 && (_DMPeakSoftness##i > 0.0 || _DMPeakDetail##i > 0.0)))) \
-            masks[i].z = DM_LayerHeight(TEXTURE2D_ARGS(_Mask##i, sampler_Splat0), _DMHeightMap##i, _DMUseHeightMap##i, DM_HP(i), uv, dx, dy) * mask * _MaskMapRemapScale##i.z + _MaskMapRemapOffset##i.z;
+            masks[i].z = DM_LayerHeight(TEXTURE2D_ARGS(_Mask##i, sampler_Splat0), _DMUseHeightMap##i, i, DM_HP(i), uv, dx, dy) * mask * _MaskMapRemapScale##i.z + _MaskMapRemapOffset##i.z;
 #else
     #define DM_APPLY_BLENDHEIGHT(i, mask, uv, dx, dy)
 #endif
@@ -328,7 +335,7 @@ void TerrainSplatBlend(float2 controlUV, float2 splatBaseUV, inout TerrainLitSur
     #define DM_APPLY_HEIGHTAO(i, uv, dx, dy) \
         UNITY_BRANCH if (_DMHeightAOStrength > 0.0 && _DMLayerHeightAO##i > 0.0 && (_LayerHasMask##i > 0.5 || _DMUseHeightMap##i > 0.5)) \
         { \
-            float dmHa = DM_LayerHeight(TEXTURE2D_ARGS(_Mask##i, sampler_Splat0), _DMHeightMap##i, _DMUseHeightMap##i, DM_HP(i), uv, dx, dy); \
+            float dmHa = DM_LayerHeight(TEXTURE2D_ARGS(_Mask##i, sampler_Splat0), _DMUseHeightMap##i, i, DM_HP(i), uv, dx, dy); \
             masks[i].y *= saturate(1.0 - (1.0 - smoothstep(0.0, max(_DMHeightAOMid, 1e-3), dmHa)) * _DMHeightAOStrength * _DMLayerHeightAO##i); \
         }
 #else
@@ -551,6 +558,9 @@ void TerrainLitShade(float2 uv, inout TerrainLitSurfaceData surfaceData)
 
 void TerrainLitDebug(float2 uv, uint2 screenSpaceCoords, out float3 baseColor)
 {
+    // 2026-11-04a: always written. Without this, the 8-layer chain below (no final else) and the
+    // non-DEBUG_DISPLAY variant returned an uninitialized value (compiler warning at the LAYER7 branch).
+    baseColor = float3(0.0, 0.0, 0.0);
 #ifdef DEBUG_DISPLAY
     if (_DebugMipMapModeTerrainTexture == DEBUGMIPMAPMODETERRAINTEXTURE_CONTROL)
     {
@@ -588,6 +598,11 @@ void TerrainLitDebug(float2 uv, uint2 screenSpaceCoords, out float3 baseColor)
         else if (_DebugMipMapModeTerrainTexture == DEBUGMIPMAPMODETERRAINTEXTURE_LAYER7)
         {
             baseColor = GET_TEXTURE_STREAMING_DEBUG_FOR_TERRAIN_TEX(screenSpaceCoords, uv * _Splat7_ST.xy + _Splat7_ST.zw, _Splat7);
+        }
+        else
+        {
+            // Any other debug mode value: same basic invalid-layer debug info as the 4-layer fallback.
+            baseColor = GET_TEXTURE_STREAMING_DEBUG_FOR_TERRAIN_NO_TEX(screenSpaceCoords, uv);
         }
     #else
         else

@@ -230,9 +230,48 @@ namespace Project.AI
         private IReadOnlyList<PioneerCompanionAgent> GetActiveCompanions()
         {
             if (companionBridge == null || !companionBridge.isActiveAndEnabled)
-                companionBridge = FindAnyObjectByType<CompanionRosterBridge>();
+                companionBridge = ResolveSharedCompanionBridge();
 
             return companionBridge != null ? companionBridge.ActiveCompanions : null;
+        }
+
+        // Shared across all enemies: prefer CompanionRosterBridge.Instance; otherwise a throttled
+        // scene search (no permanent negative cache). Reset on domain/subsystem init and any scene load.
+        private const float SharedBridgeSearchInterval = 0.5f;
+        private static CompanionRosterBridge s_sharedCompanionBridge;
+        private static float s_nextSharedBridgeSearchTime;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetSharedCompanionBridge()
+        {
+            s_sharedCompanionBridge = null;
+            s_nextSharedBridgeSearchTime = 0f;
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded -= HandleSceneLoadedResetBridge;
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded += HandleSceneLoadedResetBridge;
+        }
+
+        private static void HandleSceneLoadedResetBridge(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+        {
+            // Single and additive loads: allow an immediate re-search next query.
+            s_nextSharedBridgeSearchTime = 0f;
+        }
+
+        private static CompanionRosterBridge ResolveSharedCompanionBridge()
+        {
+            CompanionRosterBridge instance = CompanionRosterBridge.Instance;
+            if (instance != null && instance.isActiveAndEnabled)
+                return s_sharedCompanionBridge = instance;
+
+            if (s_sharedCompanionBridge != null && s_sharedCompanionBridge.isActiveAndEnabled)
+                return s_sharedCompanionBridge;
+
+            float now = Time.unscaledTime;
+            if (now < s_nextSharedBridgeSearchTime)
+                return s_sharedCompanionBridge != null ? s_sharedCompanionBridge : null;
+
+            s_nextSharedBridgeSearchTime = now + SharedBridgeSearchInterval;
+            s_sharedCompanionBridge = FindAnyObjectByType<CompanionRosterBridge>();
+            return s_sharedCompanionBridge;
         }
 
         public bool TryGetHeardNoise(out Vector3 position)

@@ -112,7 +112,15 @@ namespace Project.Player.Invector
             _playerInput.ActivateInput();
         }
 
+        private static readonly Unity.Profiling.ProfilerMarker s_pmHandleAction = new Unity.Profiling.ProfilerMarker("DM.Input.Binder.HandleAction");
+
         private void HandleAction(InputAction.CallbackContext context)
+        {
+            using (s_pmHandleAction.Auto())
+                HandleActionCore(context);
+        }
+
+        private void HandleActionCore(InputAction.CallbackContext context)
         {
             if (context.action == null || context.action.actionMap == null)
                 return;
@@ -195,13 +203,15 @@ namespace Project.Player.Invector
                     // Unbound: open Journal (J / D-Pad Up), then navigate tabs with D-Pad / stick.
                     break;
                 case "Journal":
-                    if (context.performed)
+                    if (context.performed && !WeaponModeSwitchController.TryDeferPadJournal(context))
                     {
                         if (!DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.JournalQuest, journalHotkey: true))
                             ResolveUiManager()?.OnToggleJournal(context);
                     }
                     break;
                 case "Aim":
+                    if (DMBuildingMode.IsActive)
+                        break;
                     // ADS / aim — same physical as Block on pad (LT) and RMB; Block still routes melee block.
                     if (_invectorInput != null)
                         _invectorInput.OnBlock(context);

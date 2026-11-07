@@ -1,0 +1,153 @@
+﻿# UI â€” Genesis Studio
+
+**Status:** Stub (generated tables; notes pending)  
+**Open:** Tools â†’ Dark Matter Genesis â†’ Genesis Studio â†’ **UI**  
+Scanner optics, journal skill-tree lines, and layout tooling.
+
+## Tabs
+
+- [Skill Tree Lines](#skill-tree-lines)
+- [Scanner Highlight](#scanner-highlight)
+- [UI Studio](#ui-studio)
+
+## Skill Tree Lines
+
+**What it does:** Journal prerequisite link sprites, gold glow strength, and line thickness.
+
+**Where:**
+- Studio: `Genesis Studio / UI / Skill Tree Lines` (panel mode `SingletonAsset`)
+- Asset: `Assets/_Project/Resources/UI/Skills/Tree/DMSkillTreeLineProfile.asset`
+- Script: `Assets/_Project/Scripts/UI/DMSkillTreeLineProfile.cs`
+
+**Key settings** (from code):
+
+| Group | Field | Type | Default | Range | Notes |
+|---|---|---|---|---|---|
+| Sprites (optional overrides) | `pathCore` | Sprite |  |  | Default horizontal line strip. Resources/UI/Skills/Tree/skill_path_core |
+| Sprites (optional overrides) | `pathGlow` | Sprite |  |  | Gold glow strip behind the core. Resources/UI/Skills/Tree/skill_path_glow |
+| Sprites (optional overrides) | `pathLocked` | Sprite |  |  | Optional per-state cores; tint still applies if set. |
+| Sprites (optional overrides) | `pathReady` | Sprite |  |  |  |
+| Sprites (optional overrides) | `pathOwned` | Sprite |  |  |  |
+| Thickness (pixels) | `coreHeight` | float | 5f |  |  |
+| Thickness (pixels) | `glowHeight` | float | 13f |  |  |
+| Gold glow strength | `glowAlphaLocked` | float | 0.1f | 0fâ€“1f |  |
+| Gold glow strength | `glowAlphaReady` | float | 0.42f | 0fâ€“1f |  |
+| Gold glow strength | `glowAlphaOwned` | float | 0.78f | 0fâ€“1f |  |
+| Core tints (when using shared core sprite) | `usePaletteTints` | bool | true |  |  |
+
+## Scanner Highlight
+
+**What it does:** Optics scan outline / highlight profile.
+
+**Where:**
+- Studio: `Genesis Studio / UI / Scanner Highlight` (panel mode `SingletonAsset`)
+- Asset: `Assets/_Project/Resources/Scanner/ScannerHighlightProfile.asset`
+- Script: `Assets/_Project/Scripts/Interaction/ScannerHighlightProfile.cs`
+
+**Key settings** (from code):
+
+| Group | Field | Type | Default | Range | Notes |
+|---|---|---|---|---|---|
+|  | `tag` | string |  |  |  |
+|  | `category` | ScannerTargetCategory |  |  |  |
+|  | `outlineColor` | Color |  |  |  |
+|  | `alpha` | float |  | 0fâ€“1f |  |
+|  | `durationSeconds` | float |  |  |  |
+|  | `priority` | int |  |  |  |
+| Sweep | `sweepRange` | float | 40f |  |  |
+| Sweep | `sweepDuration` | float | 0.85f |  |  |
+| Sweep | `sweepSampleSteps` | int | 12 |  |  |
+| Post-Scan | `defaultPostScanDuration` | float | 10f |  |  |
+| Post-Scan | `postScanRangeFalloff` | float | 40f |  |  |
+| Tag Rules (first match wins) | `tagRules` | ScannerHighlightRule[] |  |  |  |
+| Fallback | `fallbackRule` | ScannerHighlightRule |  |  |  |
+| Future Skill Upgrades | `skillRangeBonus` | float |  |  |  |
+| Future Skill Upgrades | `unlockedTagFilters` | string[] |  |  |  |
+| Future Skill Upgrades | `EffectiveSweepRange` | float | > Mathf.Max(4f, sweepRange + skillRangeBonus) |  |  |
+
+## UI Studio
+
+**What it does:** Browse panels, preview sandbox, layout profiles.
+
+**Where:**
+- Studio: `Genesis Studio / UI / UI Studio` (panel mode `ExternalTool`)
+
+## Genesis TMP SDF fonts (build note, 2026-11-04a)
+
+**What it is:** `Assets/_Project/UI/Fonts/Genesis/SDF/` holds six dynamic TMP font assets (Exo2, Inter, NotoSans, Oxanium, Rajdhani-SemiBold, SourceSans3). They were never generated: no atlas texture, no material. Nothing in the project references them.
+
+**Gotcha:** if a dynamic TMP font has "Clear Dynamic Data On Build" on and an empty atlas, TMP's pre-build step throws `UnassignedReferenceException: m_AtlasTextures`. That flag is now off on all six. Before you use one of them, regenerate it in `Window / TextMeshPro / Font Asset Creator` (or open it and let TMP populate it). If it stays unused, delete it.
+
+## UI Toolkit runtime asset registry (2026-11-04b)
+
+**Problem:** `DMUiToolkitBootstrap.LoadAsset<T>` uses AssetDatabase in the Editor and `Resources.Load(fileName)` in builds. None of the UXML/USS/TSS/PanelSettings assets live in a Resources folder. A player build therefore left them out: no theme, no main menu, and no way to start a game.
+
+**Fix:** `Assets/UI Toolkit/Resources/DMUiRuntimeAssetRegistry.asset` (script `Runtime/DMUiRuntimeAssetRegistry.cs`) directly references the 75 runtime assets:
+- every Screens `.uxml`/`.uss`
+- `Themes/DarkMatterGenesis.uss`
+- `UnityDefaultRuntimeTheme.tss`
+- the three PanelSettings
+- `Ammo_Electricity.png`
+
+Entries are keyed by bare file name. `LoadAsset` tries Resources.Load, then `Resolve<T>(key)`, then `ResolveByName<T>` (Resources.LoadAll scan). The Editor path is unchanged.
+
+**Rule:** when you add a UXML/USS/sprite loaded through `DMUiToolkitBootstrap`, add it to the registry's `entries` (key = file name without extension), or it will be missing in builds.
+
+## Main menu: IO (v1.7) button (2026-11-04b)
+
+`btn-io` in `MainMenu.uxml` sits below New Expedition and is hidden in the pause menu. It calls `MainMenuController.InvokeLoadIoScene()`, which loads `Dark Matter Genesis v1.7` by name additively on top of Mars and makes it the active scene. The scene must be ticked in the build scene list. If it isn't, you get one warning and the menu stays up.
+
+- The IO (v1.7) button loads the IO scene additively on top of Mars (then makes it the active scene) so gameplay systems - player, pickups, HUD hooks, pause menu - stay alive. (2026-11-04b follow-up)
+- After the additive load, the IO button moves the player to Kade's own placement in the IO scene: an authored object whose name contains "Kade" (or with a PlayerController / vThirdPersonController), else `Player Versions` (position only, keeps rotation), else the IO main camera (offset back/up), else the first non-zero root. If none exists, it logs a warning and leaves the player where he is. (2026-11-04b follow-up 2)
+
+## Mars <-> IO scene switch (2026-11-04f)
+
+One menu button toggles between the two worlds, and the whole UI stack keeps working in whichever one is showing. The button is `btn-io`: it reads **IO (v1.7)** while Mars is shown and **Mars** while IO is shown, and it calls `MainMenuController.InvokeSwitchWorld()`.
+
+**How the toggle works.** `DMSceneStack.SwitchRoutine(destination, completed)` is the only place that switches:
+1. loads the target additively **only if it is not already loaded** (logs `already loaded - reusing it, no reload`), so repeated presses never reload;
+2. remembers where the player was standing in the world being left;
+3. `SceneManager.SetActiveScene(target)` - the sky profile follows this automatically, because `DM_IoSkyProfile.Live` resolves the profile by active scene name via `Resources/World/DM_SceneSkyProfiles`;
+4. `ApplyWorldVisibility` hides the other world's roots and restores the ones it hid last time;
+5. `ApplyPlayerOwnership` enforces the single-Kade policy;
+6. arbitrates EventSystem / AudioListener / InputSystemUIInputModule and re-binds the UITK input bridge;
+7. sets `DMWorldScope` and logs every step under `[DMSceneStack]`.
+
+Both scenes are resident from the first IO load onwards. That is deliberate: every UI host (`DM_UiRuntimeHost`, `UITK_Root`), `MainMenuController`, `PlayerProgressionManager`, the inventory and `SurvivalStats` are runtime objects created inside the Mars scene and none of them are `DontDestroyOnLoad`, so unloading Mars would take the whole UI with it.
+
+**Why there must be exactly one EventSystem.** This is the bug that made the main menu buttons dead after Esc from IO:
+- `UIToolkitInteroperabilityBridge.OnEnable` calls `UIElementsRuntimeUtility.RegisterEventSystem` for its EventSystem and Unity refuses the second one (`There can be only one active Event System.`).
+- `EventSystem.current` is `m_EventSystems[0]` - first one to enable wins (`EventSystem.cs:32-34`) - and `EventSystem.Update` returns immediately for any other instance (`EventSystem.cs:478`), so a second EventSystem never processes input at all.
+- The bridge parents each `PanelEventHandler` / `PanelRaycaster` under **its own** EventSystem (`UIToolkitInteroperabilityBridge.cs:141-148`) and `DestroyPanelGameObject` refuses to clean up objects it did not create (`:151-162`). The panel-to-EventSystem binding is therefore write-once per panel.
+- `PanelEventHandler` resolves its EventSystem from `UIElementsRuntimeUtility.activeEventSystem` (`PanelEventHandler.cs:41`), which is not the same static as `EventSystem.current`. Add IO's EventSystem on top of Mars' and the two can disagree, or the panel raycasters end up parented under a disabled object - and pointer clicks stop reaching the menu, while gamepad navigation (which polls the UI map directly) keeps working. That asymmetry is the signature of this bug.
+
+`DMSceneStack.EnforceSingleEventSystem()` therefore keeps exactly one, and picks it by **panel ownership first**: whichever EventSystem currently has a live `PanelRaycaster` as a child, then `EventSystem.current`, then any other enabled one. It deactivates the duplicate's whole GameObject (so the duplicate's bridge cannot keep contesting panel ownership) and re-asserts `EventSystem.current = survivor`. `MainMenuController.ShowMainMenu()` and `ShowPauseMenu()` call `DMSceneStack.RefreshMenuInputArbitration()` before painting, so the invariant is checked on every menu paint. Never add a second EventSystem to either scene; if you must author one, deactivate every other one in the same frame.
+
+**Single-Kade policy.** One authoritative rig - the Mars `Player_Kade_v2`, the instance `PlayerReference`, `PlayerLocator`, `DmUiRuntimeRefs`, progression and the gameplay camera are all bound to. Swapping rigs per scene would mean re-binding all of that, so instead the same rig is moved between the two authored placements and every other Kade stand-in is deactivated. `DMSceneStack.FindPlayerRig(Scene)` requires `Project.Player.PlayerController` and rejects enemy rigs (`IsEnemyRig`: Invector `vThirdPersonController` without the project controller, name containing Enemy/Patrol/Android/NPC, or a child type name containing Enemy/Ai/Brain/Agent/Patrol/Npc/HumanoidPerformance). Never reintroduce a matcher that accepts `vThirdPersonController` bare - every enemy prefab carries it, and that is exactly how Kade was teleported to `Corrupt Patrol Android`.
+
+**Kept alive while a world is hidden** (`DMSceneStack.KeepAliveRootNames` plus structural checks): `EventSystem`, the persistent EventSystem, `PoolManager`, `Game Manager`, `CameraShakeService`, `CommunicationsBootstrap`, `ProbeVolumePerSceneData`, `Turret Audio Controler`, `Gaia Runtime`, `Gaia Tools`, `DM_UiRuntimeHost`, `UITK_Root`, `UITK_Loading`, `UITK_Hud`; plus any root containing the live player rig, a `UIDocument`, an `EventSystem` or an enabled `AudioListener`. Everything else - terrain, props, lighting, enemies - is `SetActive(false)`, not unloaded. Tradeoff: the hidden world keeps costing memory and its scripts are simply inactive; in exchange nothing has to be rebuilt on the way back.
+
+**Two reload paths are pinned to Mars.** `SettingsSceneReloader.ReloadAfterApply()` and `UIManager.RestartScene()` are `LoadSceneMode.Single`. After a switch the active scene can be IO, so both now call `DMSceneStack.ResetForSingleSceneReload()` and load the Mars boot scene by build index (with a logged fallback). Any new `LoadScene(Single)` path must do the same, or it will destroy the other world and leave `DMSceneStack` believing IO is still resident.
+
+**Terrain sampling across two resident worlds.** `Terrain.activeTerrains` is cross-scene, and Mars' terrain bounds cover the IO build area while IO's own terrain is authored inactive. Anything that samples terrain must gate on `DMWorldScope.BelongsToCurrentWorld(terrain)` when `DMWorldScope.DualWorldActive` - `PioneerTerrainRescue` does, which is what stopped `[TerrainRescue] ... snapped back to surface at y=122.08`.
+## Placement bookkeeping across the switch (2026-11-04g)
+
+The 2026-11-04f toggle moved the player but trusted two things it should not have. Anthony hit both in one session: switching IO -> Mars -> IO put Kade ~110 m above IO's ground and he fell to his death, then Mars restored correctly.
+
+**Why it broke.**
+
+1. *The entering scene steals the player reference.* Adding a scene additively activates its objects, and every `PlayerController` runs `OnEnable -> PlayerReference.Register` (`PlayerController.cs:215`). So any call to `ResolvePrimaryRig()` *after* `LoadSceneAsync` returns the Kade in the scene that just loaded, not the one being carried.
+2. *Capture ran too late.* `CapturePlayerPlacement(previous)` used to run after the load. In the IO-first session the "previous" world was IO, but the rig it measured was already the Mars Kade standing at a Mars coordinate, so IO's `savedPositions` entry was `(-764.90, 131.85, -287.73)` - a Mars Y about 110 m above IO's y~21 ground.
+3. *The authored recording was skipped by a bad guard.* The authored placement was read with `standIn != primary`. When Play started in IO and Mars was loaded mid-switch, the resolved primary *was* the Mars stand-in, so the guard failed and Mars never got an authored placement at all. That is the `no placement known for 'Dark Matter Mars-The Beginning'` log.
+
+**The rules now.**
+
+- The rig is **anchored before the load** and carried through into `ApplyPlayerOwnership(shown, anchoredRig)`. `ResolvePrimaryRig()` is only a fallback.
+- A position is only recorded as "where he left X" if the rig was **last deliberately placed in X** (`rigPlacementKnown` / `rigPlacedIn`). A transform's `scene` does not change when you move it, so scene name is worthless as a proxy here - do not reintroduce it.
+- Authored placements are recorded **before anything moves**: at bootstrap for both resident scenes, and for the entering scene on each switch. `BootstrapFromActiveScene` also supports **Play starting in either scene** - whomever you start as owns the only rig, so that rig's start position becomes that world's authored placement.
+- A restore is **validated against the destination before it commits** (`ValidatePlacement` / `TryProbeGround`): cast down from 4 m above the target over 80 m, skipping colliders from the world that is not shown (Mars terrain stays enabled and its bounds cover IO, which is how the old y=122 rescue happened) and skipping the rig's own capsule. Ground found -> place on `surface + 0.06 m` instead of trusting the stored Y. No ground, or a saved Y more than 25 m from the destination's authored Y -> use the authored placement and log why.
+- The carried rig is kept alive through `ApplyWorldVisibility` (`switchRig`) and `ReactivateChain` activates its ancestors before the move, because the entering scene's Kade may have won `PlayerReference`.
+
+**A switch must never be able to kill the player.** `DMSceneStack.NotifySwitchSettled` calls `DMLandingDirector.NotifySceneTeleport(0.9f)` and `PioneerTerrainRescue.SuppressFor(0.9f)`. The landing director holds off fall classification - and with it fall damage and the lethal-fall ragdoll (`ClassifyFall` -> `BeginLethalFall`) - until the rig is grounded once or the window expires, pinning the apex to the placement height so the drop is never measured from the world we left. It also mutes Invector's own `motor.blockApplyFallDamage` for the window. `EndLanding()` must run **before** the mute, because `EndLanding` restores that flag from its own held value. Normal play is untouched: the flag lives only as long as the settle window.
+
+**EventSystem, confirmed from the same session.** The first switch logged `EventSystem survivor: 'EventSystem' in 'DontDestroyOnLoad'; disabled 2 duplicate(s)` and every later switch logged 0. The DDOL'd survivor stayed `EventSystem.current` and kept the `PanelRaycaster` objects it created, so pointer clicks kept working. No change was needed - but if anyone ever adds a scene-authored EventSystem that enables before the survivor, re-read `FindPanelOwner` before touching the arbitration.

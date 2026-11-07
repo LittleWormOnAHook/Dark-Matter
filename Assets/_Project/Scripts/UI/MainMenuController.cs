@@ -152,6 +152,8 @@ namespace Project.UI
             if (!Application.isPlaying)
                 return;
 
+            // Always enforce before EnsureExists — the scene may already contain MainMenuController.
+            DMSceneStack.RefreshEventSystemOwnership();
             EnsureExists();
         }
 
@@ -178,6 +180,13 @@ namespace Project.UI
             return FindAnyObjectByType<GameStartPopup>(FindObjectsInactive.Include);
         }
 
+        // Round9: FindNamedUiCanvas walks every Transform in all scenes (Include) twice; callers hit this on every
+        // journal/inventory open/close (~55 ms / 3.5 MB per call in Editor). Cache the named-canvas fallback;
+        // a hit is revalidated (alive + still a project UI canvas), a miss is retried after a short delay.
+        private static Canvas s_cachedNamedCanvas;
+        private static float s_namedCanvasMissAt = -100f;
+        private const float NamedCanvasMissRetry = 10f;
+
         public static Canvas ResolveMainCanvas()
         {
             UIManager uiManager = DmUiRuntimeRefs.ResolveUiManager(includeInactive: true);
@@ -188,8 +197,17 @@ namespace Project.UI
                     return uiCanvas;
             }
 
-            Canvas named = FindNamedUiCanvas(UIManager.RuntimeHostName)
-                           ?? FindNamedUiCanvas("MainCanvas");
+            Canvas named = null;
+            if (s_cachedNamedCanvas != null && IsProjectUiCanvas(s_cachedNamedCanvas))
+                named = s_cachedNamedCanvas;
+            else if (Time.unscaledTime - s_namedCanvasMissAt >= NamedCanvasMissRetry || Time.unscaledTime < s_namedCanvasMissAt)
+            {
+                named = FindNamedUiCanvas(UIManager.RuntimeHostName)
+                        ?? FindNamedUiCanvas("MainCanvas");
+                s_cachedNamedCanvas = named;
+                if (named == null)
+                    s_namedCanvasMissAt = Time.unscaledTime;
+            }
             if (named != null)
                 return named;
 
@@ -255,7 +273,7 @@ namespace Project.UI
             // after the first IO load and each ships its own EventSystem, so the old "only if
             // none exists" check left two enabled EventSystems in the scene - see
             // DMSceneStack.EnforceSingleEventSystem for the pointer-click failure that caused.
-            DMSceneStack.EnforceSingleEventSystem();
+            DMSceneStack.RefreshEventSystemOwnership();
         }
 
         private static void EnsureGraphicRaycaster(Canvas canvas)
@@ -447,7 +465,6 @@ namespace Project.UI
         {
             // New Expedition sets StartPopup then Playing. Do not yank those back to the
             // title screen — that is the first-click bounce. Pause uses ShowPauseMenu.
-            // Settings reload calls ResetSession first, so Phase is MainMenu here.
             if (GameSession.Phase == GamePhase.StartPopup || GameSession.Phase == GamePhase.Playing)
                 return;
 

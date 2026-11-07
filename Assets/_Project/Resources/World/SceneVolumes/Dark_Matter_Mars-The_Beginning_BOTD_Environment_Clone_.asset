@@ -27,7 +27,7 @@ MonoBehaviour:
     m_Value: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   tint:
     m_OverrideState: 1
-    m_Value: {r: 1, g: 0.88, b: 0.74, a: 1}
+    m_Value: {r: 0.6830188, g: 0.6594119, b: 0.6327589, a: 1}
   maxFogDistance:
     m_OverrideState: 1
     m_Value: 200
@@ -733,7 +733,7 @@ MonoBehaviour:
     m_Value: 55261.973
   aerosolDensity:
     m_OverrideState: 1
-    m_Value: 0.181
+    m_Value: 0.189
   aerosolTint:
     m_OverrideState: 1
     m_Value: {r: 0.4490565, g: 0.23249182, b: 0.11099321, a: 1}
@@ -742,7 +742,7 @@ MonoBehaviour:
     m_Value: 1000
   aerosolAnisotropy:
     m_OverrideState: 1
-    m_Value: -0.83
+    m_Value: -1
   ozoneDensityDimmer:
     m_OverrideState: 1
     m_Value: 0.57
@@ -754,7 +754,7 @@ MonoBehaviour:
     m_Value: 20000
   groundTint:
     m_OverrideState: 1
-    m_Value: {r: 1, g: 0, b: 0.00784599, a: 1}
+    m_Value: {r: 1, g: 0, b: 0.002648467, a: 1}
   groundColorTexture:
     m_OverrideState: 1
     m_Value: {fileID: 8900000, guid: 4396bab1fe501894b93cf602e6daae16, type: 3}
@@ -778,19 +778,19 @@ MonoBehaviour:
     m_Value: {x: 0, y: 0, z: 0}
   colorSaturation:
     m_OverrideState: 1
-    m_Value: 0.283
+    m_Value: 0.408
   alphaSaturation:
     m_OverrideState: 1
-    m_Value: 0.255
+    m_Value: 0.361
   alphaMultiplier:
     m_OverrideState: 1
-    m_Value: 0.423
+    m_Value: 0.536
   horizonTint:
     m_OverrideState: 1
-    m_Value: {r: 0.1566037, g: 0.37117568, b: 1, a: 1}
+    m_Value: {r: 0.5484301, g: 0.59830517, b: 0.7433963, a: 1}
   zenithTint:
     m_OverrideState: 1
-    m_Value: {r: 0.98490566, g: 0.40697044, b: 0.81241095, a: 1}
+    m_Value: {r: 0.8490566, g: 0.37006047, b: 0.7056836, a: 1}
   horizonZenithShift:
     m_OverrideState: 1
     m_Value: -0.32

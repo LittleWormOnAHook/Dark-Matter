@@ -3,7 +3,9 @@ using Project.Combat;
 using Project.Data;
 using TMPro;
 using UnityEngine;
+using Unity.Profiling;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 namespace Project.UI
 {
@@ -13,6 +15,10 @@ namespace Project.UI
     /// </summary>
     public class OpticsOverlayUI : MonoBehaviour
     {
+        // Scope investigation: cached samples only; runtime behavior is unchanged.
+        private static readonly ProfilerMarker OpticsRetire = new ProfilerMarker("DM.Optics.Legacy.Retire");
+        private static readonly ProfilerMarker OpticsBuild = new ProfilerMarker("DM.Optics.Legacy.Build");
+
         private const int MaxScannerMarkers = 24;
         private const string OverlayCanvasName = "OpticsOverlayCanvas";
 
@@ -55,6 +61,74 @@ namespace Project.UI
         private float passthroughMaskBuiltAspect = -1f;
         private readonly List<RectTransform> markerPool = new List<RectTransform>();
         private static OpticsOverlayUI instance;
+        // Shared by both optics drivers; absent/late-created canvases are checked at most once a second.
+        private static readonly List<Canvas> legacyCanvases = new List<Canvas>();
+        private static bool canvasCacheDirty = true;
+        private static bool canvasSceneHooks;
+        private static float nextCanvasCheck;
+        private static int canvasScanFrame = -1;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetLegacyCanvasCache()
+        {
+            SceneManager.sceneLoaded -= OnCanvasSceneLoaded;
+            SceneManager.sceneUnloaded -= OnCanvasSceneUnloaded;
+            SceneManager.activeSceneChanged -= OnCanvasActiveSceneChanged;
+            canvasSceneHooks = false;
+            instance = null;
+            InvalidateLegacyCanvasCache();
+            EnsureCanvasSceneHooks();
+        }
+
+        private static void EnsureCanvasSceneHooks()
+        {
+            if (canvasSceneHooks) return;
+            SceneManager.sceneLoaded += OnCanvasSceneLoaded;
+            SceneManager.sceneUnloaded += OnCanvasSceneUnloaded;
+            SceneManager.activeSceneChanged += OnCanvasActiveSceneChanged;
+            canvasSceneHooks = true;
+        }
+
+        private static void OnCanvasSceneLoaded(Scene scene, LoadSceneMode mode) => InvalidateLegacyCanvasCache();
+        private static void OnCanvasSceneUnloaded(Scene scene) => InvalidateLegacyCanvasCache();
+        private static void OnCanvasActiveSceneChanged(Scene previous, Scene current) => InvalidateLegacyCanvasCache();
+
+        private static void InvalidateLegacyCanvasCache()
+        {
+            legacyCanvases.Clear();
+            canvasCacheDirty = true;
+            nextCanvasCheck = 0f;
+            canvasScanFrame = -1;
+        }
+
+        private static void RefreshLegacyCanvasCache()
+        {
+            EnsureCanvasSceneHooks();
+            if ((!canvasCacheDirty && Time.unscaledTime < nextCanvasCheck) || canvasScanFrame == Time.frameCount)
+                return;
+            canvasScanFrame = Time.frameCount;
+            canvasCacheDirty = false;
+            nextCanvasCheck = Time.unscaledTime + 1f;
+            legacyCanvases.Clear();
+            Canvas[] canvases = Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include);
+            for (int i = 0; i < canvases.Length; i++)
+                if (canvases[i] != null && canvases[i].gameObject.name == OverlayCanvasName)
+                    legacyCanvases.Add(canvases[i]);
+        }
+
+        private static void RegisterLegacyCanvas(Canvas canvas)
+        {
+            if (canvas != null && !legacyCanvases.Contains(canvas))
+                legacyCanvases.Add(canvas);
+        }
+
+        internal static Canvas CachedLegacyCanvas()
+        {
+            RefreshLegacyCanvasCache();
+            for (int i = 0; i < legacyCanvases.Count; i++)
+                if (legacyCanvases[i] != null) return legacyCanvases[i];
+            return null;
+        }
         private bool uiBuilt;
         private bool isVisible;
         internal ToolType ActiveToolType { get; private set; }
@@ -87,18 +161,21 @@ namespace Project.UI
 
         internal static void EnsureRetiredWhenUitkOwns()
         {
-            if (!UitkOwnsOpticsSurface())
-                return;
-
-            if (instance != null)
-                instance.SuppressUguiOverlayRoot();
-
-            Canvas[] canvases = Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include);
-            for (int i = 0; i < canvases.Length; i++)
+            using (OpticsRetire.Auto())
             {
-                Canvas canvas = canvases[i];
-                if (canvas != null && canvas.gameObject.name == OverlayCanvasName && canvas.enabled)
-                    canvas.enabled = false;
+                if (!UitkOwnsOpticsSurface())
+                    return;
+
+                if (instance != null)
+                    instance.SuppressUguiOverlayRoot();
+
+                RefreshLegacyCanvasCache();
+                for (int i = 0; i < legacyCanvases.Count; i++)
+                {
+                    Canvas canvas = legacyCanvases[i];
+                    if (canvas != null && canvas.enabled)
+                        canvas.enabled = false;
+                }
             }
         }
 
@@ -143,6 +220,7 @@ namespace Project.UI
         public static void ResetRuntimeState()
         {
             instance = null;
+            InvalidateLegacyCanvasCache();
         }
 
         /// <summary>
@@ -161,103 +239,106 @@ namespace Project.UI
 
         public void EnsureBuilt(Transform unusedCanvasRoot = null)
         {
-            if (uiBuilt && overlayRoot != null)
-                return;
-
-            ConsolidateOverlayCanvases();
-
-            Transform overlayParent = GetOrCreateOverlayCanvas();
-            if (overlayParent == null)
-                return;
-
-            Transform existingOverlay = overlayParent.Find("OpticsOverlay");
-            if (existingOverlay != null)
+            using (OpticsBuild.Auto())
             {
-                if (TryBindExistingOverlay(existingOverlay.gameObject))
+                if (uiBuilt && overlayRoot != null)
                     return;
 
-                DestroyOverlayObject(existingOverlay.gameObject);
+                ConsolidateOverlayCanvases();
+
+                Transform overlayParent = GetOrCreateOverlayCanvas();
+                if (overlayParent == null)
+                    return;
+
+                Transform existingOverlay = overlayParent.Find("OpticsOverlay");
+                if (existingOverlay != null)
+                {
+                    if (TryBindExistingOverlay(existingOverlay.gameObject))
+                        return;
+
+                    DestroyOverlayObject(existingOverlay.gameObject);
+                }
+
+                overlayRoot = new GameObject("OpticsOverlay", typeof(RectTransform), typeof(CanvasGroup));
+                overlayRoot.transform.SetParent(overlayParent, false);
+
+                RectTransform rootRect = overlayRoot.GetComponent<RectTransform>();
+                rootRect.anchorMin = Vector2.zero;
+                rootRect.anchorMax = Vector2.one;
+                rootRect.offsetMin = Vector2.zero;
+                rootRect.offsetMax = Vector2.zero;
+
+                CanvasGroup group = overlayRoot.GetComponent<CanvasGroup>();
+                group.alpha = 1f;
+                group.blocksRaycasts = false;
+                group.interactable = false;
+
+                // Visual defaults come from OpticsCrosshairLibrary.
+                viewportBackground = CreateStretchImage(
+                    overlayRoot.transform,
+                    "ViewportBackground",
+                    OpticsUiSprites.ViewportBackground);
+
+                viewportMaterial = CreateViewportMaterial();
+                GameObject viewportObject = new GameObject("OpticsViewport", typeof(RectTransform), typeof(RawImage));
+                viewportObject.transform.SetParent(overlayRoot.transform, false);
+                RectTransform viewportRect = viewportObject.GetComponent<RectTransform>();
+                viewportRect.anchorMin = Vector2.zero;
+                viewportRect.anchorMax = Vector2.one;
+                viewportRect.offsetMin = Vector2.zero;
+                viewportRect.offsetMax = Vector2.zero;
+
+                viewportImage = viewportObject.GetComponent<RawImage>();
+                viewportImage.material = viewportMaterial;
+                viewportImage.raycastTarget = false;
+                viewportImage.enabled = false;
+
+                // HDRP-safe look-through mask: UI Image sprite (never RawImage — DrawRawMesh crash).
+                passthroughVignetteImage = CreateStretchImage(overlayRoot.transform, "PassthroughVignette", null);
+                passthroughVignetteImage.color = Color.white;
+                passthroughVignetteImage.enabled = false;
+
+                binocularRoot = new GameObject("BinocularOverlay", typeof(RectTransform));
+                binocularRoot.transform.SetParent(overlayRoot.transform, false);
+                StretchRect(binocularRoot.GetComponent<RectTransform>());
+
+                binocularOuterImage = CreateStretchImage(binocularRoot.transform, "ScopeOuter", OpticsUiSprites.BinocularScopeOuter);
+                binocularFrameImage = CreateStretchImage(binocularRoot.transform, "ScopeFull", OpticsUiSprites.BinocularScopeFull);
+                binocularInnerImage = CreateCenteredImage(
+                    binocularRoot.transform,
+                    "ScopeInnerGlow",
+                    OpticsUiSprites.BinocularScopeInnerGlow,
+                    680f);
+
+                scannerRoot = new GameObject("ScannerOverlay", typeof(RectTransform));
+                scannerRoot.transform.SetParent(overlayRoot.transform, false);
+                StretchRect(scannerRoot.GetComponent<RectTransform>());
+
+                scannerMaskFrameImage = CreateStretchImage(scannerRoot.transform, "ScannerMaskFrame", OpticsUiSprites.ScannerRectMask);
+                scannerFrameImage = CreateCenteredImage(
+                    scannerRoot.transform,
+                    "ScannerFrame",
+                    OpticsUiSprites.ScannerHolographicGlow,
+                    900f);
+                scannerReticleImage = CreateCenteredImage(
+                    scannerRoot.transform,
+                    "ScannerReticle",
+                    OpticsUiSprites.ScannerHolographic,
+                    420f);
+                scannerTint = CreateStretchImage(scannerRoot.transform, "ScannerTint", null);
+
+                GameObject markerRoot = new GameObject("ScannerMarkers", typeof(RectTransform));
+                markerRoot.transform.SetParent(overlayRoot.transform, false);
+                markerLayer = markerRoot.GetComponent<RectTransform>();
+                StretchRect(markerLayer);
+
+                modeLabel = CreateLabel(overlayRoot.transform, "ModeLabel", new Vector2(0.5f, 0.9f), 22f);
+                hintLabel = CreateLabel(overlayRoot.transform, "HintLabel", new Vector2(0.5f, 0.06f), 20f);
+
+                overlayRoot.SetActive(false);
+                uiBuilt = true;
+                ApplyLibraryPresentation(forceRebuildStyles: true);
             }
-
-            overlayRoot = new GameObject("OpticsOverlay", typeof(RectTransform), typeof(CanvasGroup));
-            overlayRoot.transform.SetParent(overlayParent, false);
-
-            RectTransform rootRect = overlayRoot.GetComponent<RectTransform>();
-            rootRect.anchorMin = Vector2.zero;
-            rootRect.anchorMax = Vector2.one;
-            rootRect.offsetMin = Vector2.zero;
-            rootRect.offsetMax = Vector2.zero;
-
-            CanvasGroup group = overlayRoot.GetComponent<CanvasGroup>();
-            group.alpha = 1f;
-            group.blocksRaycasts = false;
-            group.interactable = false;
-
-            // Visual defaults come from OpticsCrosshairLibrary.
-            viewportBackground = CreateStretchImage(
-                overlayRoot.transform,
-                "ViewportBackground",
-                OpticsUiSprites.ViewportBackground);
-
-            viewportMaterial = CreateViewportMaterial();
-            GameObject viewportObject = new GameObject("OpticsViewport", typeof(RectTransform), typeof(RawImage));
-            viewportObject.transform.SetParent(overlayRoot.transform, false);
-            RectTransform viewportRect = viewportObject.GetComponent<RectTransform>();
-            viewportRect.anchorMin = Vector2.zero;
-            viewportRect.anchorMax = Vector2.one;
-            viewportRect.offsetMin = Vector2.zero;
-            viewportRect.offsetMax = Vector2.zero;
-
-            viewportImage = viewportObject.GetComponent<RawImage>();
-            viewportImage.material = viewportMaterial;
-            viewportImage.raycastTarget = false;
-            viewportImage.enabled = false;
-
-            // HDRP-safe look-through mask: UI Image sprite (never RawImage — DrawRawMesh crash).
-            passthroughVignetteImage = CreateStretchImage(overlayRoot.transform, "PassthroughVignette", null);
-            passthroughVignetteImage.color = Color.white;
-            passthroughVignetteImage.enabled = false;
-
-            binocularRoot = new GameObject("BinocularOverlay", typeof(RectTransform));
-            binocularRoot.transform.SetParent(overlayRoot.transform, false);
-            StretchRect(binocularRoot.GetComponent<RectTransform>());
-
-            binocularOuterImage = CreateStretchImage(binocularRoot.transform, "ScopeOuter", OpticsUiSprites.BinocularScopeOuter);
-            binocularFrameImage = CreateStretchImage(binocularRoot.transform, "ScopeFull", OpticsUiSprites.BinocularScopeFull);
-            binocularInnerImage = CreateCenteredImage(
-                binocularRoot.transform,
-                "ScopeInnerGlow",
-                OpticsUiSprites.BinocularScopeInnerGlow,
-                680f);
-
-            scannerRoot = new GameObject("ScannerOverlay", typeof(RectTransform));
-            scannerRoot.transform.SetParent(overlayRoot.transform, false);
-            StretchRect(scannerRoot.GetComponent<RectTransform>());
-
-            scannerMaskFrameImage = CreateStretchImage(scannerRoot.transform, "ScannerMaskFrame", OpticsUiSprites.ScannerRectMask);
-            scannerFrameImage = CreateCenteredImage(
-                scannerRoot.transform,
-                "ScannerFrame",
-                OpticsUiSprites.ScannerHolographicGlow,
-                900f);
-            scannerReticleImage = CreateCenteredImage(
-                scannerRoot.transform,
-                "ScannerReticle",
-                OpticsUiSprites.ScannerHolographic,
-                420f);
-            scannerTint = CreateStretchImage(scannerRoot.transform, "ScannerTint", null);
-
-            GameObject markerRoot = new GameObject("ScannerMarkers", typeof(RectTransform));
-            markerRoot.transform.SetParent(overlayRoot.transform, false);
-            markerLayer = markerRoot.GetComponent<RectTransform>();
-            StretchRect(markerLayer);
-
-            modeLabel = CreateLabel(overlayRoot.transform, "ModeLabel", new Vector2(0.5f, 0.9f), 22f);
-            hintLabel = CreateLabel(overlayRoot.transform, "HintLabel", new Vector2(0.5f, 0.06f), 20f);
-
-            overlayRoot.SetActive(false);
-            uiBuilt = true;
-            ApplyLibraryPresentation(forceRebuildStyles: true);
         }
 
         public void ApplyLibraryPresentation(bool forceRebuildStyles = false)
@@ -1160,7 +1241,10 @@ namespace Project.UI
             {
                 Canvas canvas = canvases[i];
                 if (canvas != null && canvas.gameObject.name == OverlayCanvasName)
+                {
+                    RegisterLegacyCanvas(canvas);
                     return canvas.transform;
+                }
             }
 
             GameObject canvasObject = new GameObject(
@@ -1171,6 +1255,7 @@ namespace Project.UI
                 typeof(GraphicRaycaster));
 
             Canvas newCanvas = canvasObject.GetComponent<Canvas>();
+            RegisterLegacyCanvas(newCanvas);
             newCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
             newCanvas.sortingOrder = 1000;
             newCanvas.pixelPerfect = false;

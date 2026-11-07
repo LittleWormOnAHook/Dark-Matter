@@ -1,0 +1,976 @@
+using System.Collections.Generic;
+using MalbersAnimations.PathCreation;
+using UnityEngine;
+using UnityEngine.AI;
+using UnityEngine.Serialization;
+using Project.AI.Invector;
+using Project.Companions;
+using Project.Core;
+using Project.Survival;
+using Project.World;
+
+namespace Project.AI
+{
+    // Core: fields/config, the enum + threat-ledger struct, lifecycle (Awake/OnEnable/OnDisable),
+    // the main Update()/LateUpdate() dispatch loop, and state-transition bookkeeping (EnterState/
+    // EnterCalmState). Split across partials by responsibility — see EnemyAiController.Threat.cs
+    // (aggro/threat-ledger/player-target-legality), .States.cs (the per-AiState Update* behaviors),
+    // .CombatPositioning.cs (combat ring/standoff/enemy-separation math + pioneer retarget scans),
+    // .Movement.cs (NavMeshAgent plumbing + raw transform locomotion). Purely a mechanical
+    // reorganization (partial class split) — no behavior changed by the split.
+    [RequireComponent(typeof(EnemySenses))]
+    [RequireComponent(typeof(EnemyHealth))]
+    [RequireComponent(typeof(EnemyCombat))]
+    public partial class EnemyAiController : MonoBehaviour
+    {
+        private enum AiState
+        {
+            Idle,
+            Wander,
+            Patrol,
+            Investigate,
+            ReturnHome,
+            Chase,
+            Defensive,
+            Attack,
+            Search,
+            /// <summary>Phase 3 spacing: waiting on a world-anchored hold point without the attack token.</summary>
+            Hold
+        }
+
+        [Header("Movement Mode")]
+        [SerializeField] private EnemyMovementMode movementMode = EnemyMovementMode.Wander;
+        [SerializeField] private EnemyPatrolMode patrolMode = EnemyPatrolMode.Loop;
+        [SerializeField] private bool investigateNoise = true;
+        [SerializeField] private bool chasePlayer = true;
+        [SerializeField] private bool returnToHomeAfterSearch = true;
+        [FormerlySerializedAs("homeLeashRadius")]
+        [Tooltip("Max horizontal distance from spawn/home to pursue the player. 0 = unlimited.")]
+        [SerializeField] private float chaseRadius = 0f;
+
+        [Header("Movement")]
+        [SerializeField] private float walkSpeed = 2.4f;
+        [SerializeField] private float runSpeed = 4.8f;
+        [Tooltip("Patrol-only walk speed. Defaults to walkSpeed when zero.")]
+        [SerializeField] private float patrolWalkSpeed;
+        [Tooltip("Explicit chase speed. 0 = runSpeed * chaseSpeedMultiplier.")]
+        [SerializeField] private float chaseSpeed;
+        [SerializeField] [Range(0.5f, 1.25f)] private float chaseSpeedMultiplier = 0.88f;
+        [SerializeField] private float turnSpeed = 8f;
+        [SerializeField] private float stopDistance = 0.35f;
+        [SerializeField] private float groundOffset = 0f;
+
+        [Header("NavMesh")]
+        [Tooltip("Use NavMeshAgent for Wander and Chase only. Other states keep transform movement.")]
+        [SerializeField] private bool useNavMeshForChaseAndWander = false;
+        [SerializeField] private float navMeshSampleRadius = 2.5f;
+        [SerializeField] private float navDestinationRepathThreshold = 0.5f;
+
+        [Header("Wander")]
+        [SerializeField] private float wanderRadius = 8f;
+        [SerializeField] private float wanderPauseMin = 2f;
+        [SerializeField] private float wanderPauseMax = 5f;
+        private float wanderCommittedAt;
+        private const float WanderRetargetTimeoutSeconds = 5.5f;
+
+        [Header("Patrol")]
+        [SerializeField] private Transform[] patrolPoints;
+        [SerializeField] private PathCreator patrolPath;
+        [SerializeField] private DMIPathFollowProvider patrolPathProvider;
+        [SerializeField] private float patrolWaitDuration = 2f;
+        [SerializeField] private float idleDuration = 3f;
+
+        [Header("Aggro Triggers")]
+        [SerializeField] private bool aggroOnDamaged = true;
+        [SerializeField] private bool aggroOnHeardHit = true;
+        [SerializeField] [Range(0f, 1f)] private float hearingAggroChance = 0.45f;
+        [SerializeField] private float hearingCooldown = 0.75f;
+
+        [Header("Behavior")]
+        [SerializeField] private float loseTargetDelay = 2.5f;
+        [SerializeField] private float maxChaseDuration = 6f;
+        [SerializeField] private float investigateArriveDistance = 1.2f;
+        [SerializeField] private float searchDuration = 6f;
+        [SerializeField] private float searchRadius = 4f;
+
+        [Header("Chase Stamina")]
+        [SerializeField] private float chaseStaminaPauseMin = 0.5f;
+        [SerializeField] private float chaseStaminaPauseMax = 0.9f;
+        [SerializeField] private float chaseStaminaRollIntervalMin = 2.4f;
+        [SerializeField] private float chaseStaminaRollIntervalMax = 5.2f;
+        [SerializeField] [Range(0f, 1f)] private float chaseStaminaPauseChance = 0.38f;
+
+        [Header("Pioneer Retarget")]
+        [SerializeField] private float pioneerRetargetChanceMin = 0.10f;
+        [SerializeField] private float pioneerRetargetChanceMax = 0.20f;
+        [SerializeField] private float pioneerRetargetRadius = 4f;
+        [SerializeField] private float pioneerRetargetRollIntervalMin = 0.75f;
+        [SerializeField] private float pioneerRetargetRollIntervalMax = 1.35f;
+
+        [Header("Player Threat")]
+        [Tooltip("Unprovoked players closer than this are treated as a melee threat. Visible players beyond this are ignored.")]
+        [SerializeField] private float playerThreatRange = 3f;
+
+        [Header("Combat Spacing")]
+        [Tooltip("Minimum horizontal gap kept between this enemy and its melee target — prevents body-shoving the player or pioneers.")]
+        [SerializeField] private float minCombatSeparation = 0.95f;
+        [SerializeField] [Range(0.45f, 0.95f)] private float attackStandoffFraction = 0.62f;
+        [SerializeField] private float playerStandoffBonus = 0.15f;
+        [SerializeField] private float pioneerChaseRangeMultiplier = 1.45f;
+
+        [Header("Defensive Engage")]
+        [SerializeField] private float defensivePauseMin = 0.35f;
+        [SerializeField] private float defensivePauseMax = 0.75f;
+        [SerializeField] private float defensiveBlockDuration = 1.2f;
+        [SerializeField] [Range(0f, 1f)] private float defensiveAttackWeight = 0.55f;
+        [SerializeField] [Range(0f, 1f)] private float defensiveBlockWeight = 0.25f;
+        [SerializeField] [Range(0f, 1f)] private float defensiveRollWeight = 0.20f;
+
+        [Header("Threat Ledger")]
+        [SerializeField] [Range(0f, 1f)] private float threatSwitchLeadFraction = 0.15f;
+        [SerializeField] private bool debugAggro;
+
+        [Header("Crowd")]
+        [Tooltip("Keep a small buffer between nearby enemies while chasing or brawling.")]
+        [SerializeField] private float enemyAvoidanceRadius = 1.45f;
+        [SerializeField] private float enemyAvoidanceStrength = 0.85f;
+        [Tooltip("Spreads enemies around the combat ring so they do not stack on one slot.")]
+        [SerializeField] private float combatRingSlotSpread = 42f;
+
+        private struct ThreatEntry
+        {
+            public Transform Root;
+            public float TotalDamage;
+            public float LastHitTime;
+        }
+
+        private readonly Dictionary<Transform, ThreatEntry> threatLedger = new Dictionary<Transform, ThreatEntry>();
+
+        private EnemySenses senses;
+        private EnemyHealth health;
+        private EnemyCombat combat;
+        private EnemyInvectorCombatBridge combatBridge;
+        private CompanionRosterBridge companionRosterBridge;
+
+        private AiState state = AiState.Idle;
+        private Vector3 homePosition;
+        private Vector3 moveTarget;
+        private Vector3 lastKnownPlayerPosition;
+        private float stateTimer;
+        private float lostTargetTimer;
+        private int patrolIndex;
+        private int patrolDirection = 1;
+        private bool hasPatrolRoute;
+        /// <summary>Runtime world anchors from path providers (takes precedence over Transform patrolPoints).</summary>
+        private Vector3[] patrolWorldPoints;
+        private float nextHearingAggroTime;
+        private float currentLocomotionSpeed;
+        private Vector3 currentLocalMoveDirection;
+        private float chaseStaminaPauseUntil;
+        private float nextChaseStaminaRollTime;
+        private float nextPioneerRetargetRollTime;
+        private Transform playerTarget;
+        private Transform aggroTarget;
+        private Transform firstBloodTarget;
+        private float aggroUntil;
+        private float chaseStartedTime;
+        private float defensiveActionUntil;
+        private bool defensiveActionPending;
+        private SurvivalStats playerSurvivalStats;
+        private NavMeshAgent navAgent;
+        private bool navMeshReady;
+        private Vector3 lastNavDestination = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
+        private float chaseSpeedMultiplierJitter = 1f;
+        private float combatRingSlotAngle;
+        private int perfPhase;
+        private float nextCalmStateTickTime;
+        private const float CalmDormantBeyondSenseMeters = 12f;
+        private const float CalmStateTickSeconds = 0.16f;
+        private Vector3 cachedSeparationOffset;
+        private static readonly Collider[] AvoidanceHits = new Collider[12];
+        private const float AggroDuration = 8f;
+        private bool locomotionPaused;
+        internal int chaseWallBlockedFrames;
+        internal bool RecentWallBufferContact;
+        internal int ChaseWallStutterFrames;
+        internal int ChaseWallFollowSideSign;
+        internal float ChaseWallFollowSideLockUntil;
+        internal int ChaseWallFollowFailStreak;
+        internal Collider ChaseWallSurface;
+        internal Vector3 ChaseWallSurfaceNormal;
+        internal Vector3 ChaseFanLatchedDirection;
+        internal float ChaseFanLatchUntil;
+        internal float ChaseFanLastRetargetTime;
+        private Vector3 cachedCombatRingPoint;
+        private float combatRingPointLockUntil;
+        internal float chaseWallBufferStuckTimer;
+        internal Vector3 chaseWallLastContactNormal;
+        internal Vector3 VirtualSteerHint;
+        internal Vector3 VirtualSteerMoveTarget;
+        internal bool VirtualSteerActive;
+        private Vector3 wallRetreatSidestepTarget;
+        private float wallRetreatSidestepUntil;
+        private float wallRetreatCooldownUntil;
+        private Vector3 cachedCombatRingDir;
+        private float combatRingDirLockUntil;
+        private Vector3 hardSeparationPushDir;
+        private float hardSeparationDirLockUntil;
+        private bool investigateFromCombatLoss;
+        private float investigateLookUntil;
+        private float searchOrbitAngle;
+        private int searchPingDirection = 1;
+        private bool investigateUseWallPatrol;
+        private Vector3 investigateAnchor;
+        private Vector3 investigateWallNormal;
+        private Vector3 investigateWallTangent;
+        private float searchWallPatrolOffset;
+        private float elevatedBlindNoLosTimer;
+        private float investigateStuckTimer;
+        private Vector3 investigateStuckSamplePosition;
+
+        public float CurrentLocomotionSpeed => currentLocomotionSpeed;
+        public Vector3 CurrentLocalMoveDirection => currentLocalMoveDirection;
+        public float RunSpeed => runSpeed;
+        public bool IsWalkOnlyLocomotion => state == AiState.Patrol;
+        public bool IsDefensiveActionActive => defensiveActionPending || Time.time < defensiveActionUntil;
+
+        public float ResolveChaseSpeed()
+        {
+            float speed;
+            if (chaseSpeed > 0f)
+                speed = chaseSpeed;
+            else
+                speed = runSpeed * Mathf.Max(0.5f, chaseSpeedMultiplier);
+
+            return speed * chaseSpeedMultiplierJitter;
+        }
+
+        public bool IsEngagedWithTarget =>
+            state == AiState.Attack || state == AiState.Chase || state == AiState.Defensive || state == AiState.Hold;
+
+        /// <summary>Chasing, attacking, or still inside the damage/heard-hit aggro window.</summary>
+        public bool IsAggroed => IsEngagedWithTarget || HasActiveAggroTarget();
+
+        public bool IsAttacking => state == AiState.Attack;
+
+        /// <summary>
+        /// True when the enemy is in Attack state with a ranged weapon and the target is within
+        /// ranged engage range. Used by the combat bridge to drive the aim stance every frame.
+        /// </summary>
+        public bool IsInRangedEngagement
+        {
+            get
+            {
+                if (state != AiState.Attack) return false;
+                if (combatBridge == null || !combatBridge.IsArmedRangedPreferred()) return false;
+                Transform t = combat?.CurrentTarget;
+                if (t == null) return false;
+                return HorizontalDistance(transform.position, t.position) <= combatBridge.RangedEngageRange;
+            }
+        }
+
+        private float locomotionPausedSince = -1f;
+        private float animatorFrozenSince = -1f;
+        private Animator stallWatchAnimator;
+
+        /// <summary>24ae: releases a locomotion pause / animator hit-stop that never ended (enemy frozen in a pose, no tracking).</summary>
+        private void TickStallWatchdog()
+        {
+            DM_EnemyBrainProfile p = DM_EnemyBrainProfile.Live;
+            if (p == null || (health != null && health.IsDead))
+                return;
+            if (locomotionPaused && p.stallWatchdogPauseSeconds > 0f && locomotionPausedSince >= 0f &&
+                Time.time - locomotionPausedSince > p.stallWatchdogPauseSeconds)
+            {
+                if (p.stallWatchdogLog)
+                    Debug.Log("[EnemyStall] '" + name + "' locomotion pause held " + (Time.time - locomotionPausedSince).ToString("F1") + "s -> released", this);
+                SetLocomotionPaused(false);
+            }
+            if (stallWatchAnimator == null)
+                stallWatchAnimator = GetComponentInChildren<Animator>();
+            if (stallWatchAnimator == null || p.stallWatchdogAnimatorSeconds <= 0f)
+                return;
+            if (stallWatchAnimator.speed > 0.01f) { animatorFrozenSince = -1f; return; }
+            if (animatorFrozenSince < 0f) { animatorFrozenSince = Time.time; return; }
+            if (Time.time - animatorFrozenSince > p.stallWatchdogAnimatorSeconds)
+            {
+                if (p.stallWatchdogLog)
+                    Debug.Log("[EnemyStall] '" + name + "' animator speed 0 for " + (Time.time - animatorFrozenSince).ToString("F1") + "s -> restored 1", this);
+                stallWatchAnimator.speed = 1f;
+                animatorFrozenSince = -1f;
+            }
+        }
+
+        public void SetLocomotionPaused(bool paused)
+        {
+            if (paused && !locomotionPaused) locomotionPausedSince = Time.time;
+            if (!paused) locomotionPausedSince = -1f;
+            locomotionPaused = paused;
+            if (paused)
+            {
+                ClearLocomotion();
+                if (navAgent != null && navAgent.enabled)
+                    navAgent.isStopped = true;
+                return;
+            }
+
+            if (navAgent != null && navAgent.enabled)
+                navAgent.isStopped = false;
+        }
+
+        /// <summary>
+        /// Assigns a Transform patrol route after spawn (used by surface encounter zones).
+        /// </summary>
+        public void ConfigurePatrolRoute(Transform[] points, EnemyPatrolMode mode)
+        {
+            patrolWorldPoints = null;
+            patrolPoints = points;
+            patrolMode = mode;
+            CaptureChildPatrolAnchors();
+            RefreshPatrolRouteFlag();
+            if (!hasPatrolRoute)
+                return;
+
+            movementMode = EnemyMovementMode.Patrol;
+            patrolIndex = 0;
+            patrolDirection = 1;
+        }
+
+        /// <summary>
+        /// Assigns world-space patrol anchors (used by <c>DMIPathFollowProvider</c>).
+        /// </summary>
+        public void ConfigurePatrolRoute(Vector3[] worldPoints, EnemyPatrolMode mode)
+        {
+            patrolPoints = null;
+            patrolWorldPoints = worldPoints != null && worldPoints.Length > 0
+                ? (Vector3[])worldPoints.Clone()
+                : null;
+            patrolMode = mode;
+            RefreshPatrolRouteFlag();
+            if (!hasPatrolRoute)
+                return;
+
+            movementMode = EnemyMovementMode.Patrol;
+            patrolIndex = 0;
+            patrolDirection = 1;
+        }
+
+        /// <summary>Configure a world patrol loop and enter calm Patrol state (validation / encounter tooling).</summary>
+        public void BeginPatrolRouteNow(Vector3[] worldPoints, EnemyPatrolMode mode = EnemyPatrolMode.Loop)
+        {
+            ConfigurePatrolRoute(worldPoints, mode);
+            if (hasPatrolRoute)
+                EnterCalmState();
+        }
+
+        private Transform[] _validationSavedPatrolTransforms;
+        private Vector3[] _validationSavedPatrolWorld;
+        private EnemyMovementMode _validationSavedMovementMode;
+        private EnemyPatrolMode _validationSavedPatrolMode;
+        private bool _validationPatrolActive;
+
+        /// <summary>Play-mode collision walk validation only — saves patrol/wander, then loops world waypoints.</summary>
+        public void BeginValidationPatrolRoute(Vector3[] worldPoints, EnemyPatrolMode mode = EnemyPatrolMode.Loop)
+        {
+            if (!_validationPatrolActive)
+            {
+                _validationSavedMovementMode = movementMode;
+                _validationSavedPatrolMode = patrolMode;
+                _validationSavedPatrolTransforms = patrolPoints;
+                _validationSavedPatrolWorld = patrolWorldPoints != null
+                    ? (Vector3[])patrolWorldPoints.Clone()
+                    : null;
+            }
+
+            _validationPatrolActive = true;
+            ConfigurePatrolRoute(worldPoints, mode);
+            if (hasPatrolRoute)
+                EnterCalmState();
+        }
+
+        /// <summary>Restores movement mode and patrol anchors after validation tooling.</summary>
+        public void EndValidationPatrolRoute()
+        {
+            if (!_validationPatrolActive)
+                return;
+
+            _validationPatrolActive = false;
+            movementMode = _validationSavedMovementMode;
+            patrolMode = _validationSavedPatrolMode;
+            patrolPoints = _validationSavedPatrolTransforms;
+            patrolWorldPoints = _validationSavedPatrolWorld;
+            RefreshPatrolRouteFlag();
+            patrolIndex = 0;
+            patrolDirection = 1;
+            StopNavMeshMovement();
+            EnterCalmState();
+        }
+
+        public bool IsValidationPatrolActive => _validationPatrolActive;
+
+        /// <summary>Assign Path Creator for Patrol and register with bezier anchors.</summary>
+        public void SetPatrolPath(PathCreator path, DMIPathFollowProvider provider = null)
+        {
+            patrolPath = path;
+            patrolPathProvider = provider;
+            if (path != null || provider != null)
+                movementMode = EnemyMovementMode.Patrol;
+            TryBindAssignedPatrolPath();
+        }
+
+        public PathCreator PatrolPath => patrolPath;
+        public DMIPathFollowProvider PatrolPathProvider => patrolPathProvider;
+
+        private void TryBindAssignedPatrolPath()
+        {
+            if (movementMode != EnemyMovementMode.Patrol)
+                return;
+
+            DMIPathFollowProvider provider = patrolPathProvider;
+            if (provider == null)
+                provider = DMIPathFollowBinding.Resolve((Object)patrolPath ?? patrolPathProvider);
+
+            if (provider == null)
+                return;
+
+            patrolPathProvider = provider;
+            if (patrolPath == null)
+                patrolPath = provider.PathCreator;
+
+            provider.TryAssignEnemy(this);
+        }
+
+        // Patrol anchors that are CHILDREN of this enemy (e.g. a "PatrolPoints" child baked into the prefab) move and
+        // rotate with the enemy, so walking toward them is chasing its own tail: the enemy circles in place. Such
+        // anchors are captured as spawn-pose offsets and turned into fixed world points when the enemy is enabled.
+        private Vector3[] patrolChildLocal;
+        private bool[] patrolChildHas;
+        private Vector3[] patrolChildWorld;
+
+        private void CaptureChildPatrolAnchors()
+        {
+            patrolChildLocal = null;
+            patrolChildHas = null;
+            patrolChildWorld = null;
+            if (patrolPoints == null || patrolPoints.Length == 0)
+                return;
+
+            for (int i = 0; i < patrolPoints.Length; i++)
+            {
+                Transform anchor = patrolPoints[i];
+                if (anchor == null || anchor == transform || !anchor.IsChildOf(transform))
+                    continue;
+
+                if (patrolChildLocal == null)
+                {
+                    patrolChildLocal = new Vector3[patrolPoints.Length];
+                    patrolChildHas = new bool[patrolPoints.Length];
+                }
+
+                patrolChildLocal[i] = transform.InverseTransformPoint(anchor.position);
+                patrolChildHas[i] = true;
+            }
+
+            BuildChildPatrolWorldPoints();
+        }
+
+        private void BuildChildPatrolWorldPoints()
+        {
+            if (patrolChildLocal == null)
+                return;
+
+            if (patrolChildWorld == null || patrolChildWorld.Length != patrolChildLocal.Length)
+                patrolChildWorld = new Vector3[patrolChildLocal.Length];
+
+            for (int i = 0; i < patrolChildLocal.Length; i++)
+            {
+                if (patrolChildHas[i])
+                    patrolChildWorld[i] = transform.TransformPoint(patrolChildLocal[i]);
+            }
+        }
+
+        private void RefreshPatrolRouteFlag()
+        {
+            hasPatrolRoute = (patrolWorldPoints != null && patrolWorldPoints.Length > 0) ||
+                             (patrolPoints != null && patrolPoints.Length > 0);
+        }
+
+        private int PatrolPointCount
+        {
+            get
+            {
+                if (patrolWorldPoints != null && patrolWorldPoints.Length > 0)
+                    return patrolWorldPoints.Length;
+                return patrolPoints != null ? patrolPoints.Length : 0;
+            }
+        }
+
+        private bool TryGetPatrolWorldPoint(int index, out Vector3 point)
+        {
+            if (patrolWorldPoints != null && patrolWorldPoints.Length > 0)
+            {
+                if (index < 0 || index >= patrolWorldPoints.Length)
+                {
+                    point = default;
+                    return false;
+                }
+
+                point = patrolWorldPoints[index];
+                return true;
+            }
+
+            if (patrolPoints == null || index < 0 || index >= patrolPoints.Length)
+            {
+                point = default;
+                return false;
+            }
+
+            if (patrolChildWorld != null && index < patrolChildWorld.Length && patrolChildHas[index])
+            {
+                point = patrolChildWorld[index];
+                return true;
+            }
+
+            Transform anchor = patrolPoints[index];
+            if (anchor == null)
+            {
+                point = default;
+                return false;
+            }
+
+            point = anchor.position;
+            return true;
+        }
+
+        private bool IsStationary => movementMode == EnemyMovementMode.Stationary;
+
+        private bool AllowsTranslation =>
+            !IsStationary || state == AiState.Chase;
+
+        private void Awake()
+        {
+            senses = GetComponent<EnemySenses>();
+            health = GetComponent<EnemyHealth>();
+            combat = GetComponent<EnemyCombat>();
+            combatBridge = GetComponent<EnemyInvectorCombatBridge>();
+            CaptureChildPatrolAnchors();
+            RefreshPatrolRouteFlag();
+            ConfigureNavMeshAgent();
+            InitializeCrowdProfile();
+            InitializeEngagement();
+            TryBindAssignedPatrolPath();
+        }
+
+        private void InitializeCrowdProfile()
+        {
+            int hash = Mathf.Abs(gameObject.GetEntityId().GetHashCode());
+            chaseSpeedMultiplierJitter = 0.88f + (hash % 1000) / 1000f * 0.22f;
+            combatRingSlotAngle = ((hash % 360) - 180f) / 180f * combatRingSlotSpread;
+            perfPhase = hash % 3;
+        }
+
+        private void OnEnable()
+        {
+            if (!ActiveEnemies.Contains(this))
+                ActiveEnemies.Add(this);
+            homePosition = transform.position;
+            BuildChildPatrolWorldPoints();
+            currentLocomotionSpeed = 0f;
+            currentLocalMoveDirection = Vector3.zero;
+
+            if (health != null)
+            {
+                health.Died += HandleDeath;
+                health.DamagedWithSource += HandleDamagedWithSource;
+            }
+
+            ClearThreatLedger();
+            companionRosterBridge = CompanionRosterBridge.Instance;
+
+            ConfigureNavMeshAgent();
+            TryBindAssignedPatrolPath();
+
+            EnterCalmState();
+            TrySubscribePlayerEvents();
+        }
+
+        private void OnDisable()
+        {
+            ActiveEnemies.Remove(this);
+            if (health != null)
+            {
+                health.Died -= HandleDeath;
+                health.DamagedWithSource -= HandleDamagedWithSource;
+            }
+
+            if (patrolPathProvider != null)
+                patrolPathProvider.UnregisterEnemy(this);
+
+            LeaveEngagement();
+            UnsubscribePlayerEvents();
+        }
+
+        private void LateUpdate()
+        {
+            if (GameplayWorldSimulation.IsFrozen)
+                return;
+
+            if (IsStationary)
+                return;
+
+            // Hit slides and other late movers can re-penetrate static geometry after Update().
+            if (InCombatGeometryRecoveryState && !CombatGeometryRecoveryBlocked)
+                TickCombatGeometryRecovery(afterDisplacement: true);
+
+            // NavMeshAgent owns vertical placement while active on the mesh.
+            if (navMeshReady && navAgent != null && navAgent.enabled)
+                return;
+
+            if (((Time.frameCount + perfPhase) & 1) != 0)
+                return;
+
+            if (!ShouldApplyGroundSnap())
+                return;
+
+            SnapToGround();
+        }
+
+        private void Update()
+        {
+            currentLocomotionSpeed = 0f;
+            currentLocalMoveDirection = Vector3.zero;
+            engagementActiveThisFrame = false;
+
+            if (GameplayWorldSimulation.IsFrozen)
+                return;
+
+            if (health != null && health.IsDead)
+                return;
+
+            TickStallWatchdog(); // 24ae
+
+            if (locomotionPaused)
+                return;
+
+            if (ShouldSkipCalmStateAiTick())
+                return;
+
+            // A dodge roll owns the enemy until it ends: state changes (target lost while facing sideways, token hand-off, ...) must not cancel its movement.
+            if ((dodgeRollUntil > 0f && TickDodgeRoll()) || (dodgeStrikeUntil > 0f && TickDodgeStrike()))
+                return;
+
+            BeginCombatPositionFrame();
+            TickCombatGeometryRecovery(afterDisplacement: false);
+            TickHardSeparation();
+            TrySubscribePlayerEvents();
+
+            Transform visiblePlayer = senses.GetVisiblePlayerTarget();
+            if (visiblePlayer != null)
+                lastKnownPlayerPosition = visiblePlayer.position;
+
+            if (HasActiveAggroTarget())
+            {
+                playerTarget = null;
+                UpdateAggroCombat();
+            }
+            else if (TryPickVisibleThreat(visiblePlayer, out Transform visibleThreat))
+            {
+                bool threatIsPlayer = IsCombatTargetPlayer(visibleThreat);
+                playerTarget = threatIsPlayer ? visibleThreat : null;
+                lostTargetTimer = 0f;
+
+                if (!threatIsPlayer || !IsTargetingLivingPioneer())
+                    combat.SetTarget(visibleThreat);
+
+                if (RunEngagementTransitions(combat.CurrentTarget))
+                {
+                    // Phase 3 spacing: role + range hysteresis handled by the engagement director.
+                }
+                else if (combat.IsTargetInEffectiveRange())
+                {
+                    if (state != AiState.Defensive && state != AiState.Attack)
+                    {
+                        float dist = HorizontalDistance(transform.position, visibleThreat.position);
+                        EnterState(ResolveAttackEntryState(visibleThreat, dist));
+                    }
+                }
+                else if (chasePlayer && CanChaseTarget(visibleThreat.position))
+                {
+                    if (state != AiState.Chase)
+                        EnterState(AiState.Chase);
+                }
+                else if (state == AiState.Chase || state == AiState.Attack)
+                {
+                    GiveUpChaseAndReturnHome();
+                }
+            }
+            else
+            {
+                playerTarget = null;
+                TryCorrectIllegalPlayerTarget();
+
+                if (IsCombatTargetPlayer(combat.CurrentTarget))
+                    combat.SetTarget(null);
+
+                if (state == AiState.Chase || state == AiState.Attack || state == AiState.Hold)
+                {
+                    lostTargetTimer += Time.deltaTime;
+                    if (lostTargetTimer >= loseTargetDelay)
+                        TryBeginInvestigateLostSight();
+                }
+            }
+
+            if (state == AiState.Attack || state == AiState.Chase)
+                TryCorrectIllegalPlayerTarget();
+
+            TickCrowdingDrift();
+
+            switch (state)
+            {
+                case AiState.Idle:
+                    UpdateIdle();
+                    break;
+                case AiState.Wander:
+                    UpdateWander();
+                    break;
+                case AiState.Patrol:
+                    UpdatePatrol();
+                    break;
+                case AiState.Investigate:
+                    UpdateInvestigate();
+                    break;
+                case AiState.ReturnHome:
+                    UpdateReturnHome();
+                    break;
+                case AiState.Chase:
+                    UpdateChase();
+                    break;
+                case AiState.Defensive:
+                    UpdateDefensive();
+                    break;
+                case AiState.Attack:
+                    UpdateAttack();
+                    break;
+                case AiState.Search:
+                    UpdateSearch();
+                    break;
+                case AiState.Hold:
+                    UpdateHold();
+                    break;
+            }
+
+            FinalizeCombatPositionFrame();
+            LateEngagementBookkeeping();
+        }
+
+        private void EnterCalmState()
+        {
+            switch (movementMode)
+            {
+                case EnemyMovementMode.Stationary:
+                case EnemyMovementMode.Idle:
+                    EnterState(AiState.Idle);
+                    break;
+                case EnemyMovementMode.Wander:
+                    EnterState(AiState.Wander);
+                    break;
+                case EnemyMovementMode.Patrol:
+                    EnterState(hasPatrolRoute ? AiState.Patrol : AiState.Wander);
+                    break;
+            }
+        }
+
+        private void EnterState(AiState newState)
+        {
+            if (IsStationary && IsRelocationState(newState))
+                return;
+
+            bool wasNavState = state == AiState.Wander || state == AiState.Chase;
+            bool willNavState = newState == AiState.Wander || newState == AiState.Chase;
+            if (wasNavState && !willNavState)
+                StopNavMeshMovement();
+
+            if (state == AiState.Hold && newState != AiState.Hold)
+                CancelHolderAction();
+
+            if (state == AiState.Defensive && newState == AiState.Hold)
+            {
+                // Token moved on mid-guard: drop the block pose before holding.
+                combatBridge?.EndBlock();
+                defensiveActionPending = false;
+                defensiveActionUntil = 0f;
+            }
+
+            state = newState;
+            chaseWallBlockedFrames = 0;
+            ChaseWallStutterFrames = 0;
+            ChaseWallFollowSideSign = 0;
+            ChaseWallFollowSideLockUntil = 0f;
+            ChaseWallFollowFailStreak = 0;
+            ChaseWallSurface = null;
+            ChaseWallSurfaceNormal = Vector3.zero;
+            ResetWallRouteProgress();
+            ChaseFanLatchedDirection = Vector3.zero;
+            ChaseFanLatchUntil = 0f;
+            ChaseFanLastRetargetTime = 0f;
+            chaseWallBufferStuckTimer = 0f;
+            chaseWallLastContactNormal = Vector3.zero;
+            wallRetreatSidestepUntil = 0f;
+            wallRetreatCooldownUntil = 0f;
+            cachedCombatRingDir = Vector3.zero;
+            combatRingDirLockUntil = 0f;
+            cachedCombatRingPoint = Vector3.zero;
+            combatRingPointLockUntil = 0f;
+            hardSeparationPushDir = Vector3.zero;
+            hardSeparationDirLockUntil = 0f;
+            investigateUseWallPatrol = false;
+            elevatedBlindNoLosTimer = 0f;
+            investigateStuckTimer = 0f;
+
+            switch (newState)
+            {
+                case AiState.Idle:
+                    stateTimer = idleDuration;
+                    break;
+                case AiState.Wander:
+                    moveTarget = ClampPointToWanderRadius(PickRandomGroundPoint(homePosition, wanderRadius));
+                    stateTimer = Random.Range(wanderPauseMin, wanderPauseMax);
+                    wanderCommittedAt = Time.time;
+                    lastNavDestination = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
+                    break;
+                case AiState.Patrol:
+                    stateTimer = patrolWaitDuration;
+                    if (hasPatrolRoute && TryGetPatrolWorldPoint(patrolIndex, out Vector3 patrolPoint))
+                        moveTarget = patrolPoint;
+                    break;
+                case AiState.Investigate:
+                    if (investigateFromCombatLoss)
+                        moveTarget = lastKnownPlayerPosition;
+                    else
+                        moveTarget = senses.TryGetHeardNoise(out Vector3 noisePosition)
+                            ? noisePosition
+                            : transform.position;
+                    break;
+                case AiState.ReturnHome:
+                    moveTarget = homePosition;
+                    break;
+                case AiState.Chase:
+                    moveTarget = lastKnownPlayerPosition;
+                    chaseStartedTime = Time.time;
+                    chaseStaminaPauseUntil = 0f;
+                    ScheduleNextChaseStaminaRoll();
+                    lastNavDestination = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
+                    break;
+                case AiState.Defensive:
+                    StopNavMeshMovement();
+                    defensiveActionPending = false;
+                    defensiveActionUntil = 0f;
+                    stateTimer = Random.Range(defensivePauseMin, defensivePauseMax);
+                    break;
+                case AiState.Attack:
+                    StopNavMeshMovement();
+                    coneBlockedSince = -1f;
+                    offscreenReadySince = -1f;
+                    creeping = false;
+                    creepTimer = 0f;
+                    break;
+                case AiState.Hold:
+                    OnEnterHold();
+                    break;
+                case AiState.Search:
+                    ConfigureSearchFromProfile();
+                    break;
+            }
+        }
+
+        private static bool IsRelocationState(AiState aiState)
+        {
+            return aiState == AiState.Wander ||
+                   aiState == AiState.Patrol ||
+                   aiState == AiState.Investigate ||
+                   aiState == AiState.ReturnHome ||
+                   aiState == AiState.Chase ||
+                   aiState == AiState.Defensive ||
+                   aiState == AiState.Hold ||
+                   aiState == AiState.Search;
+        }
+
+        private void HandleDeath()
+        {
+            LeaveEngagement();
+            ClearThreatLedger();
+            ClearLocomotion();
+            StopNavMeshMovement();
+            if (navAgent != null)
+                navAgent.enabled = false;
+
+            enabled = false;
+        }
+
+        /// <summary>
+        /// Distant idle/patrol enemies do not need a full AI pass every frame; senses still refresh on their own interval.
+        /// </summary>
+        private bool ShouldSkipCalmStateAiTick()
+        {
+            if (IsEngagedWithTarget || HasActiveAggroTarget())
+                return false;
+
+            if (state != AiState.Idle && state != AiState.Wander && state != AiState.Patrol && state != AiState.ReturnHome)
+                return false;
+
+            if (senses == null)
+                senses = GetComponent<EnemySenses>();
+
+            float wakeRange = (senses != null ? senses.OuterSenseRange : 18f) + CalmDormantBeyondSenseMeters;
+            Transform player = PlayerReference.ResolveTransform();
+            if (player == null)
+                return false;
+
+            Vector3 delta = transform.position - player.position;
+            delta.y = 0f;
+            if (delta.sqrMagnitude <= wakeRange * wakeRange)
+            {
+                nextCalmStateTickTime = 0f;
+                return false;
+            }
+
+            if (Time.time < nextCalmStateTickTime)
+                return true;
+
+            nextCalmStateTickTime = Time.time + CalmStateTickSeconds + perfPhase * 0.02f;
+            return false;
+        }
+
+        private void OnDrawGizmosSelected()
+        {
+            DrawEngagementGizmos();
+
+            Vector3 home = Application.isPlaying ? homePosition : transform.position;
+
+            Gizmos.color = new Color(0.2f, 0.8f, 1f, 0.35f);
+            if (movementMode == EnemyMovementMode.Wander && wanderRadius > 0f)
+                Gizmos.DrawWireSphere(home, wanderRadius);
+
+            if (chaseRadius > 0f)
+            {
+                Gizmos.color = new Color(1f, 0.6f, 0.1f, 0.35f);
+                Gizmos.DrawWireSphere(home, chaseRadius);
+            }
+
+            int count = PatrolPointCount;
+            if (count == 0)
+                return;
+
+            Gizmos.color = Color.green;
+            for (int i = 0; i < count; i++)
+            {
+                if (!TryGetPatrolWorldPoint(i, out Vector3 point))
+                    continue;
+
+                Gizmos.DrawWireSphere(point, 0.35f);
+                if (TryGetPatrolWorldPoint((i + 1) % count, out Vector3 next))
+                    Gizmos.DrawLine(point, next);
+            }
+        }
+    }
+}

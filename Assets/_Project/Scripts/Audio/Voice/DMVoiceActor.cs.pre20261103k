@@ -1,0 +1,84 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace Project.Audio.Voice
+{
+    public enum DMVoiceProvider { ParlerLocal = 0 }
+
+    [Serializable]
+    public struct DMVoicePronunciation
+    {
+        [Tooltip("Word as written in subtitles / game data (e.g. Kade).")] public string word;
+        [Tooltip("Spelling sent to the TTS model only (e.g. Kayd). Subtitles keep the word.")] public string audioSpelling;
+    }
+
+    /// <summary>
+    /// Editor-time voice actor for the local TTS bake (Genesis Studio > Audio > Voices).
+    /// Lines are baked to WAV AudioClips; nothing is generated at runtime.
+    /// </summary>
+    [CreateAssetMenu(menuName = "Project/Audio/Voice Actor", fileName = "DMVoiceActor")]
+    public sealed class DMVoiceActor : ScriptableObject
+    {
+        public const float PitchSubtle = -1f, PitchDefault = -2f, PitchExtreme = -4f;
+        public const float GapSubtle = 0.15f, GapDefault = 0.25f, GapExtreme = 0.6f;
+
+        public string displayName = "New Voice";
+        public DMVoiceProvider provider = DMVoiceProvider.ParlerLocal;
+        public string modelId = "parler-tts/parler-tts-mini-v1";
+        [Tooltip("Parler named speaker (keeps the voice consistent across lines).")] public string speaker = "Rick";
+        [Tooltip("Voice description. {speaker} is replaced by the speaker name; if missing, the speaker name is prefixed.")]
+        [TextArea(3, 8)] public string description = "{speaker} speaks with a calm male voice, close-up recording, very clear audio.";
+        [Tooltip("Pitch shift in semitones applied at bake (librosa, timing kept).")]
+        [Range(-12f, 12f)] public float pitchSemitones;
+
+        [Header("Advanced")]
+        public int seed = 42;
+        [Tooltip("Re-roll the seed (up to 5 tries) when a line is outside this length range.")]
+        [Range(0.5f, 10f)] public float minSeconds = 4f;
+        [Range(2f, 60f)] public float maxSeconds = 8f;
+        public List<DMVoicePronunciation> pronunciations = new List<DMVoicePronunciation>();
+        [Tooltip("Generate each sentence separately (same seed) and join them. Better accuracy on paragraphs.")]
+        public bool splitSentences = true;
+        [Tooltip("Silence between sentences (seconds). +0.15 s after '...'.")]
+        [Range(0f, 2f)] public float sentenceGap = GapDefault;
+        public bool trimSilence = true;
+        [Range(10f, 80f)] public float trimTopDb = 40f;
+        [Range(0f, 1f)] public float tailPadSeconds = 0.15f;
+
+        [Header("Radio filter (baked)")]
+        public bool radioFilter;
+        [Range(50f, 1500f)] public float radioLowHz = 300f;
+        [Range(1500f, 10000f)] public float radioHighHz = 3400f;
+        [Range(0f, 1f)] public float radioDrive = 0.2f;
+        [Range(0f, 0.2f)] public float radioNoise = 0.01f;
+
+        public string BuildDescription()
+        {
+            string d = description ?? string.Empty;
+            return d.Contains("{speaker}") ? d.Replace("{speaker}", speaker) : speaker + "'s voice: " + d;
+        }
+
+        public string ApplyPronunciation(string text)
+        {
+            if (string.IsNullOrEmpty(text) || pronunciations == null) return text;
+            foreach (var p in pronunciations)
+                if (!string.IsNullOrEmpty(p.word) && p.audioSpelling != null)
+                    text = text.Replace(p.word, p.audioSpelling);
+            return text;
+        }
+
+        /// <summary>Settings fingerprint used for change detection.</summary>
+        public string SettingsKey()
+        {
+            var s = new System.Text.StringBuilder();
+            s.Append(provider).Append('|').Append(modelId).Append('|').Append(speaker).Append('|').Append(description)
+             .Append('|').Append(pitchSemitones.ToString("0.###")).Append('|').Append(seed).Append('|').Append(minSeconds).Append('|').Append(maxSeconds)
+             .Append('|').Append(trimSilence).Append(trimTopDb).Append(tailPadSeconds)
+             .Append('|').Append(splitSentences ? "S" : "s").Append(sentenceGap.ToString("0.###"))
+             .Append('|').Append(radioFilter).Append(radioLowHz).Append(radioHighHz).Append(radioDrive).Append(radioNoise);
+            if (pronunciations != null) foreach (var p in pronunciations) s.Append('|').Append(p.word).Append('>').Append(p.audioSpelling);
+            return s.ToString();
+        }
+    }
+}

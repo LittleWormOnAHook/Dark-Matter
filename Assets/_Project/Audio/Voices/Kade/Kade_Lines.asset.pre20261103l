@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09e56cc6f83e4e2ab954bcfa1f1f0adf, type: 3}
+  m_Name: Kade_Lines
+  m_EditorClassIdentifier: 
+  actor: {fileID: 11400000, guid: 582b3abc596948e6b8b016852181f145, type: 2}
+  lines:
+  - id: kade_Chap_1_Chat_1
+    subtitle: Well..., another day. okay....Jounral entry.......I need some adventure,
+      tired of the same old thing.... Nothing exciting ever happends, and it's always..., 
+      Kade.... fix this, Kade..., go get some parts, Kade.. we need you to go grab
+      a tank of plasma. I just dont see my self doing this the rest of my life....
+      Wel...l, time to get to work.
+    stageTag: QM.1
+    bakedHash: 7173fdb97fe3a7a8
+    clip: {fileID: 8300000, guid: 6b875b9d12cb51d4f86018bb126511cf, type: 3}
+  - id: kade_2
+    subtitle: Okay boss... headed over in a few
+    stageTag: QM.2
+    bakedHash: 9d666ada79378458
+    clip: {fileID: 8300000, guid: ec6f410a6e07ee1409d2137548ac8903, type: 3}

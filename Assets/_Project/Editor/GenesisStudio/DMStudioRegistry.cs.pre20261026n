@@ -1,0 +1,757 @@
+#if UNITY_EDITOR
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace Project.EditorTools.GenesisStudio
+{
+    public enum DMStudioPanelMode
+    {
+        SingletonAsset = 0,
+        AssetFolder = 1,
+        EmbeddedItemData = 2,
+        EmbeddedAmmo = 3,
+        EmbeddedCraftingItem = 4,
+        ExternalBlueprintTab = 5,
+        ExternalTool = 6,
+        PlayerSystemsLink = 7,
+        FootstepsCombined = 8,
+        EmbeddedCompanionEditor = 9,
+        EmbeddedCompanionSystems = 10,
+        CameraCombined = 11,
+        LandingCombined = 12,
+        ControlsInputEditor = 13,
+        PickupItemsCombined = 14,
+        BuildingLibrary = 15,
+        EnvironmentStrata = 16,
+        CombatPlanPlaceholder = 17,
+        EnemyTypesTable = 18,
+        CharacterCreatorCombined = 19,
+        CombatRangedLinks = 20
+    }
+
+    public readonly struct DMStudioSubtab
+    {
+        public readonly string Id;
+        public readonly string Label;
+        public readonly string Description;
+        public readonly DMStudioPanelMode Mode;
+        public readonly string AssetPath;
+        public readonly string SearchFolder;
+        public readonly string TypeFilter;
+        public readonly string ExternalMenuPath;
+        public readonly bool PlayModeSave;
+        public readonly DMStudioProfileSectionFilter SectionFilter;
+
+        public DMStudioSubtab(
+            string id,
+            string label,
+            string description,
+            DMStudioPanelMode mode,
+            string assetPath = null,
+            string searchFolder = null,
+            string typeFilter = null,
+            string externalMenuPath = null,
+            bool playModeSave = false,
+            DMStudioProfileSectionFilter sectionFilter = DMStudioProfileSectionFilter.None)
+        {
+            Id = id;
+            Label = label;
+            Description = description;
+            Mode = mode;
+            AssetPath = assetPath;
+            SearchFolder = searchFolder;
+            TypeFilter = typeFilter;
+            ExternalMenuPath = externalMenuPath;
+            PlayModeSave = playModeSave;
+            SectionFilter = sectionFilter;
+        }
+    }
+
+    public readonly struct DMStudioCategory
+    {
+        public readonly string Id;
+        public readonly string Label;
+        public readonly string Icon;
+        public readonly string Description;
+        public readonly Color Accent;
+        public readonly DMStudioSubtab[] Subtabs;
+
+        public DMStudioCategory(string id, string label, string icon, string description, Color accent, DMStudioSubtab[] subtabs)
+        {
+            Id = id;
+            Label = label;
+            Icon = icon;
+            Description = description;
+            Accent = accent;
+            Subtabs = subtabs ?? System.Array.Empty<DMStudioSubtab>();
+        }
+    }
+
+    /// <summary>
+    /// Canonical Genesis Studio navigation: categories, subtabs, asset paths, and play-mode-save roots.
+    /// </summary>
+    public static class DMStudioRegistry
+    {
+        private static DMStudioCategory[] categories;
+
+        public static IReadOnlyList<DMStudioCategory> Categories
+        {
+            get
+            {
+                if (categories == null)
+                    categories = BuildCategories();
+                return categories;
+            }
+        }
+
+        public static string[] GetPlayModeSaveRoots()
+        {
+            var roots = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+            for (int c = 0; c < Categories.Count; c++)
+            {
+                DMStudioSubtab[] subtabs = Categories[c].Subtabs;
+                for (int s = 0; s < subtabs.Length; s++)
+                {
+                    DMStudioSubtab sub = subtabs[s];
+                    if (!sub.PlayModeSave)
+                        continue;
+
+                    if (!string.IsNullOrEmpty(sub.SearchFolder))
+                        roots.Add(sub.SearchFolder);
+                    else if (!string.IsNullOrEmpty(sub.AssetPath))
+                    {
+                        int slash = sub.AssetPath.LastIndexOf('/');
+                        if (slash > 0)
+                            roots.Add(sub.AssetPath.Substring(0, slash));
+                    }
+                }
+            }
+
+            roots.Add("Assets/_Project/Resources/Landing");
+            roots.Add("Assets/_Project/Data/Companions");
+            roots.Add("Assets/_Project/Resources/CompanionAbilities");
+            roots.Add("Assets/_Project/Resources/CompanionClassProfiles");
+            return new List<string>(roots).ToArray();
+        }
+
+        private static DMStudioCategory[] BuildCategories()
+        {
+            return new[]
+            {
+                new DMStudioCategory(
+                    "survival",
+                    "Survival",
+                    "♡",
+                    "Health, energy, oxygen, walk/run/sprint gaits, exposure caps, fall damage, and hazard zone profiles.",
+                    FromHex("#D4A017"),
+                    new[]
+                    {
+                        new DMStudioSubtab(
+                            "stats-pools",
+                            "Stats & Pools",
+                            "Max pools, drains, regen, exposure recovery, and fall-damage thresholds.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Climb/DM_ClimbDashProfile.asset",
+                            playModeSave: true,
+                            sectionFilter: DMStudioProfileSectionFilter.SurvivalOnly),
+                        new DMStudioSubtab(
+                            "locomotion-gaits",
+                            "Walk / Run / Sprint",
+                            "Slow walk default, Shift jog, and double-tap Shift sprint burst multipliers.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Climb/DM_ClimbDashProfile.asset",
+                            playModeSave: true,
+                            sectionFilter: DMStudioProfileSectionFilter.LocomotionOnly),
+                        new DMStudioSubtab(
+                            "exposure",
+                            "Exposure Zones",
+                            "Cold, heat, radiation, sulfur, and shelter hazard profiles.",
+                            DMStudioPanelMode.AssetFolder,
+                            searchFolder: "Assets/_Project/Data/Exposure",
+                            typeFilter: "t:ExposureZoneProfile")
+                    }),
+                new DMStudioCategory(
+                    "player",
+                    "Player",
+                    "◆",
+                    "Player/enemy prefab authoring, climb, dash, jetpack, jump/landing, footsteps, camera, and live player wiring.",
+                    FromHex("#C02E7A"),
+                    new[]
+                    {
+                        new DMStudioSubtab(
+                            "character-creator-player",
+                            "Player Prefab",
+                            "Clone Player_Invector, paste a Humanoid Meshy FBX, and save a PlayerVisualDefinition.",
+                            DMStudioPanelMode.CharacterCreatorCombined),
+                        new DMStudioSubtab(
+                            "character-creator-enemy",
+                            "Enemy Prefab",
+                            "Clone HumanoidEnemy_Invector, paste mesh, then tune combat, AI, loot, health, and senses.",
+                            DMStudioPanelMode.CharacterCreatorCombined),
+                        new DMStudioSubtab(
+                            "character-creator-definitions",
+                            "Definitions",
+                            "Inspect saved PlayerVisualDefinition and EnemyDefinition assets. Custom starts an unsaved working copy.",
+                            DMStudioPanelMode.CharacterCreatorCombined),
+                        new DMStudioSubtab(
+                            "climb",
+                            "Climb",
+                            "Wall attach, mantle, climb/sprint stamina, surface layers, and ClingSense.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Climb/DM_ClimbDashProfile.asset",
+                            playModeSave: true,
+                            sectionFilter: DMStudioProfileSectionFilter.ClimbOnly),
+                        new DMStudioSubtab(
+                            "dash",
+                            "Dash",
+                            "Double-tap slide, stamina cost, hologram, streaks, and smoke VFX.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Climb/DM_ClimbDashProfile.asset",
+                            playModeSave: true,
+                            sectionFilter: DMStudioProfileSectionFilter.DashOnly),
+                        new DMStudioSubtab(
+                            "jetpack",
+                            "Jetpack",
+                            "Boost, hover, and jetpack energy drain.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Features/Jetpack/Data/DMJetpackProfile.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "landing",
+                            "Jump/Landing",
+                            "Regular jump bounce, early land timing, foot snap, probes, clip lengths, 3-tier height bands, and clip library.",
+                            DMStudioPanelMode.LandingCombined,
+                            "Assets/_Project/Resources/Landing/DMLandingProfile.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "pickup-items",
+                            "Pickup Items",
+                            "Hold-E time, prompt range, focus cone and toast; the library of world pickup prefabs; and the item + pickup prefab creator.",
+                            DMStudioPanelMode.PickupItemsCombined,
+                            "Assets/_Project/Resources/Interaction/DM_PickupProfile.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "footsteps",
+                            "Footsteps",
+                            "Look (marks, dust, tags, terrain 0-10) and audio clip libraries in one place.",
+                            DMStudioPanelMode.FootstepsCombined,
+                            "Assets/_Project/Resources/Player/DM_FootstepProfile.asset",
+                            playModeSave: true),
+                                                new DMStudioSubtab(
+                            "camera",
+                            "Camera",
+                            "Mouse zoom, aim/sprint pull, wall collision push, near clip, optics, and prefab camera wiring.",
+                            DMStudioPanelMode.CameraCombined,
+                            "Assets/_Project/Resources/Player/DM_CameraProfile.asset",
+                            playModeSave: true),
+new DMStudioSubtab(
+                            "player-systems",
+                            "Player Systems",
+                            "Toggle DM modules on Player_v7 Variant (MonoBehaviour — not a profile asset).",
+                            DMStudioPanelMode.PlayerSystemsLink)
+                    }),
+                new DMStudioCategory(
+                    "world",
+                    "World",
+                    "◎",
+                    "Map calibration, fog-of-war, the Io clock, and loot chests.",
+                    FromHex("#4A4A5A"),
+                    new[]
+                    {
+                        new DMStudioSubtab(
+                            "map",
+                            "Map Calibration",
+                            "Journal / minimap UV, zoom meters, fog-of-war.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Map/DMWorldMapCalibrationProfile.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "terrain-splats",
+                            "Terrain Layer Render",
+                            "Per splat: height blend on/off, parallax on select Io layers, normal/tile overrides.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/World/DM_TerrainSplatRenderProfile.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "sliding-doors",
+                            "Sliding Doors",
+                            "Slide/rotate motion, open direction, timing, pooled VFX, and door SFX profiles.",
+                            DMStudioPanelMode.AssetFolder,
+                            searchFolder: "Assets/_Project/Resources/Environment/SlidingDoors",
+                            typeFilter: "t:DMSlidingDoorProfile",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "io-clock",
+                            "Io Clock",
+                            "30-hour Io day, real-time scale, and new-game start time.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/World/DM_IoClockProfile.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "sky-orbit",
+                            "Sky & Orbit",
+                            "Io sky (2026-10-26m): Sky Look Preset Custom/Subtle/Normal/Extreme at top; night dither + smoother MW/aurora FBM; Night Light/Shadow; sun path, eclipse, Jupiter + moons.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/World/DM_IoSkyProfile.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "loot-chest-timers",
+                            "Loot Chests - Timers",
+                            "World Reloot window, emptied dissolve, Single Loot removal, and full-inventory hold.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Loot/DM_LootChestProfile.asset",
+                            playModeSave: true,
+                            sectionFilter: DMStudioProfileSectionFilter.LootChestTimersOnly),
+                        new DMStudioSubtab(
+                            "loot-chest-presentation",
+                            "Loot Chests - Presentation",
+                            "Lid timing, loot window delay, ranges, storage defaults, and dissolve look.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Loot/DM_LootChestProfile.asset",
+                            playModeSave: true,
+                            sectionFilter: DMStudioProfileSectionFilter.LootChestPresentationOnly),
+                        new DMStudioSubtab(
+                            "vendors",
+                            "Vendors",
+                            "Commissary / Tech markups and daily AC purse.",
+                            DMStudioPanelMode.AssetFolder,
+                            searchFolder: "Assets/_Project/Resources/Vendors",
+                            typeFilter: "t:DMVendorProfile",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "vendor-catalogs",
+                            "Vendor Stock",
+                            "Daily listing stock min/max and catalog rows.",
+                            DMStudioPanelMode.AssetFolder,
+                            searchFolder: "Assets/_Project/Resources/Vendors",
+                            typeFilter: "t:DMVendorCatalog",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "vendor-buy-logs",
+                            "Vendor Buy Logs",
+                            "What each vendor will buy from the player. Not shop stock.",
+                            DMStudioPanelMode.AssetFolder,
+                            searchFolder: "Assets/_Project/Resources/Vendors",
+                            typeFilter: "t:DMVendorBuyLog",
+                            playModeSave: true)
+                    }),
+                new DMStudioCategory(
+                    "environment",
+                    "Environment",
+                    "▲",
+                    "Procedural environment authoring: strata, rocks and cliffs.",
+                    FromHex("#FF8A2A"),
+                    new[]
+                    {
+                        new DMStudioSubtab(
+                            "strata",
+                            "Strata",
+                            "Rocks and Cliffs: drop base prefabs, pick profile / style, preview at 512, save prefabs and library items (Genesis PCG Rock Creation).",
+                            DMStudioPanelMode.EnvironmentStrata)
+                    }),
+                new DMStudioCategory(
+                    "combat",
+                    "Combat",
+                    "✦",
+                    "Combat Core, melee animations, Combat Studio, ammo FX, enemy hit marks, AI / director, and §31 phase placeholders.",
+                    FromHex("#8F1E5E"),
+                    new[]
+                    {
+                        new DMStudioSubtab(
+                            "combat-core",
+                            "Combat Core",
+                            "DM_CombatCoreProfile — flat inspector here; Combat Studio groups the same fields under Player vs Enemy.",
+                            DMStudioPanelMode.AssetFolder,
+                            searchFolder: "Assets/_Project/Resources/Combat",
+                            typeFilter: "t:DM_CombatCoreProfile",
+                            playModeSave: true,
+                            sectionFilter: DMStudioProfileSectionFilter.CombatCoreOnly),
+                        new DMStudioSubtab(
+                            "melee-animations",
+                            "Melee Animations",
+                            "Per-weapon Mixamo / PROTOFACTOR clip families for Invector attack states.",
+                            DMStudioPanelMode.AssetFolder,
+                            searchFolder: "Assets/_Project/Resources/Combat",
+                            typeFilter: "t:DM_MeleeAnimationSet",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "combat-studio",
+                            "Combat Studio",
+                            "Combat Studio — Core & Melee use Player / Enemy headings; Ranged links, Play (v1.6.5), §31 Roadmap (Oct 2026 disk sync).",
+                            DMStudioPanelMode.ExternalTool,
+                            externalMenuPath: "Tools/Dark Matter Genesis/Combat/Combat Studio"),
+                        new DMStudioSubtab(
+                            "combat-ranged",
+                            "Ranged",
+                            "Genesis ranged authoring jump list — same links as Combat Studio → Ranged (Ammo FX, scope, hit catalog, surface damage).",
+                            DMStudioPanelMode.CombatRangedLinks),
+                        new DMStudioSubtab(
+                            "combat-throwables",
+                            "Throwables",
+                            "DM_CombatCoreProfile — grenade enable, splash radius/damage, VFX/force/shake, cook fuse, landing ring, Hot Cross arm hold. Live in Play.",
+                            DMStudioPanelMode.AssetFolder,
+                            searchFolder: "Assets/_Project/Resources/Combat",
+                            typeFilter: "t:DM_CombatCoreProfile",
+                            playModeSave: true,
+                            sectionFilter: DMStudioProfileSectionFilter.CombatThrowablesOnly),
+                        new DMStudioSubtab(
+                            "combat-turrets",
+                            "Turrets",
+                            "DM_TurretProfile — defaults for placed turrets. Per-prefab faction, ammo mode, vendor VFX, barrel, and ranges live on DMTurretRuntime / Instance Authority. Playable menu is Auto or Enter. Live in Play.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Combat/DM_TurretProfile.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "ammo-fx",
+                            "Ammo FX",
+                            "Per-type projectile / impact profiles (ItemData + combat FX).",
+                            DMStudioPanelMode.AssetFolder,
+                            searchFolder: "Assets/_Project/Data/Items/Ammo",
+                            typeFilter: "t:DMAmmoFxProfile",
+                            playModeSave: true,
+                            sectionFilter: DMStudioProfileSectionFilter.CombatAmmoOnly),
+                        new DMStudioSubtab(
+                            "scope-overlay",
+                            "Scope Overlay",
+                            "UITK scoped ADS art — reticle, ring, outer mil-dot, center mask (DM_ScopeProfile). Live in Play; skills still gate sway/zoom/cadence/accuracy/damage.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Combat/DM_ScopeProfile.asset",
+                            playModeSave: true,
+                            sectionFilter: DMStudioProfileSectionFilter.ScopeOverlayOnly),
+                        new DMStudioSubtab(
+                            "scope-profile",
+                            "Scope Profile",
+                            "Full DM_ScopeProfile — scoped range, FOV, scopeAdsRightMouseToggle (RMB/LT click toggle vs hold ADS when Scope mode armed), scopeAdsEnablesZoomOverlay, fire interval, damage multipliers, ammo gate, audio, overlay. Rifles skill_scope_* modifiers apply in Play.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Combat/DM_ScopeProfile.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "hit-catalog",
+                            "Hit Catalog",
+                            "Surface tag → hit mark mapping for ranged combat.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Data/Items/Ammo/DMAmmoFxCatalog.asset"),
+                        new DMStudioSubtab(
+                            "enemy-hit-marks",
+                            "Hit Marks",
+                            "Enemy bullet and melee slash hit marks — DM_EnemyHitMarkProfile (Resources/Combat): mark limit, glow cool-down, bullet + slash decal size, surface normal offset / depth centre bias, hitbox template scale, debug emissive visibility, effect budget / distance, and blood / coolant / spark response per body type (Humanoid, Android, Robot). Live in Play.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Combat/DM_EnemyHitMarkProfile.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "surface-damage",
+                            "Surface Damage",
+                            "Rock carving from ammo hits: global switch, cut-face / rim look, debris, limits. Per-ammo carve lives on each Ammo FX profile.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Carve/DMCarveSettings.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "carve-tool",
+                            "Carve Tool",
+                            "Edit Mode brush: click = one cut, hold + drag = continuous. Fracture / Erosion / Blast presets.",
+                            DMStudioPanelMode.ExternalTool,
+                            externalMenuPath: Project.EditorTools.SurfaceCarve.DMCarveToolWindow.MenuPath),
+                        new DMStudioSubtab(
+                            "combat-ai-awareness",
+                            "AI & awareness",
+                            "§31 #3 utility brain — DM_EnemyBrainProfile (Resources/Combat): archetype rows, personality multipliers, condition thresholds, defend / retreat scoring, chase wall standoff (~0.5 m) / stuck retreat. Live in Play.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Combat/DM_EnemyBrainProfile.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "combat-enemy-chase-wall",
+                            "Chase wall & fan",
+                            "Filtered slice of DM_EnemyBrainProfile: wall slide, standoff buffer, predictive fan rays, hysteresis, and stuck retreat — NavMesh-free chase geometry.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Combat/DM_EnemyBrainProfile.asset",
+                            playModeSave: true,
+                            sectionFilter: DMStudioProfileSectionFilter.EnemyBrainChaseWallOnly),
+                        new DMStudioSubtab(
+                            "combat-enemy-types",
+                            "Enemy Types",
+                            "Every EnemyDefinition plus prefabs that use it: category, archetype, personalities, body type, prefer-ranged, and profile overrides. Global brain / engagement profiles remain the defaults.",
+                            DMStudioPanelMode.EnemyTypesTable),
+                        new DMStudioSubtab(
+                            "combat-director-tokens",
+                            "Director & tokens",
+                            "Phase 3 spacing — DM_EnemyEngagementProfile (Resources/Combat): one melee attacker per target, token hand-off / anti-thrash, hold ring, holder sidestep / taunt / feint, facing and tracking. Live in Play. Attack slots by enemy count live under Combat Director.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Combat/DM_EnemyEngagementProfile.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "combat-director-slots",
+                            "Combat Director",
+                            "Phase 4 start (§31 #4) — DM_CombatDirectorProfile (Resources/Combat): enable / rollback (off = Phase 3 one-attacker only), attack slots by enemy count (1v1 = 1, 2–4 = 1–2, 5–8 = 2–3, larger scales), intensity dial, hard max, slot rotation. Flank (side/back hold points) + group morale live (2026-10-25s), presets below. Live in Play.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Combat/DM_CombatDirectorProfile.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "combat-momentum-finishers",
+                            "Momentum & spin",
+                            "Slice 5 E3 (2026-10-25s/26a) - DM_MomentumProfile (Resources/Combat): momentum meter gains / chain / decay / loss on hit, Spin AoE (wind-up, eased 360, radius, damage, poise). SPIN INPUT: hold Attack (KBM Left Mouse / pad Right Trigger) with a full meter for Spin Hold Seconds, or a charged release with a full meter. Presets + Play-mode Fill / Test Spin.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Combat/DM_MomentumProfile.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "combat-finishers-taunts",
+                            "Finishers, taunts & camera",
+                            "Slice 6 (2026-10-26l) - Finisher: hold Use+Attack (E/LMB or West/RT); damage = MaxHP * percent * mult (no forced kill); other melee faster when available; jetpack Rad/Heat/Cold/Mix blink; HP cue; taunts; camera. Feel + Lights presets.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Combat/DM_FinisherTauntProfile.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "combat-melee-lock",
+                            "Melee lock (stay close)",
+                            "2026-10-26b - DM_MeleeLockProfile (Resources/AI): gun enemies with a melee weapon (Humadroid by default) stop ranged backing-off while you fight them with a drawn melee weapon, and hold Hold Distance so your swings land. Presets Subtle / Default / Extreme.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/AI/DM_MeleeLockProfile.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "combat-sick-stick-specials",
+                            "Sick Stick & specials",
+                            "§31 #7–8 — Sick Stick trigger/puke, specials, Overdrive. Info only; no profile asset yet.",
+                            DMStudioPanelMode.CombatPlanPlaceholder,
+                            assetPath: "Assets/_Project/Documentation/Design/Combat/DMG_Combat_Plan_v2.md"),
+                        new DMStudioSubtab(
+                            "combat-body-dismemberment",
+                            "Body & dismemberment",
+                            "§31 #10 — body components, weak points, dismemberment, functional damage. Info only; no profile asset yet.",
+                            DMStudioPanelMode.CombatPlanPlaceholder,
+                            assetPath: "Assets/_Project/Documentation/Design/Combat/DMG_Combat_Plan_v2.md"),
+                        new DMStudioSubtab(
+                            "combat-encounters-difficulty",
+                            "Encounters & difficulty",
+                            "§31 #15–16 — authored encounters, faction battles, difficulty (tokens / detection / poise, not health). Info only; no profile asset yet.",
+                            DMStudioPanelMode.CombatPlanPlaceholder,
+                            assetPath: "Assets/_Project/Documentation/Design/Combat/DMG_Combat_Plan_v2.md")
+                    }),
+                new DMStudioCategory(
+                    "companions",
+                    "Companions",
+                    "◇",
+                    "Companion chassis, roster data, class loadouts, abilities, and AI behavior.",
+                    FromHex("#4A4A5A"),
+                    new[]
+                    {
+                        new DMStudioSubtab(
+                            "companion-editor",
+                            "Companion Editor",
+                            "Build the Invector chassis, author roster data, generate Companion / Echo / Recruit prefabs, and sync the catalog.",
+                            DMStudioPanelMode.EmbeddedCompanionEditor),
+                        new DMStudioSubtab(
+                            "class-profiles",
+                            "Class Profiles",
+                            "Med-tech, salvage, logistics, comms slot limits and default abilities.",
+                            DMStudioPanelMode.AssetFolder,
+                            searchFolder: "Assets/_Project/Resources/CompanionClassProfiles",
+                            typeFilter: "t:CompanionClassProfile",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "companion-systems",
+                            "Loadouts & AI",
+                            "Weapon / tool loadouts, abilities, follow behavior, and live scene companion AI.",
+                            DMStudioPanelMode.EmbeddedCompanionSystems,
+                            playModeSave: true)
+                    }),
+                new DMStudioCategory(
+                    "crafting",
+                    "Crafting",
+                    "⚙",
+                    "Blueprints, items, ammo authoring — embed creators or open full manager.",
+                    FromHex("#C02E7A"),
+                    new[]
+                    {
+                        new DMStudioSubtab(
+                            "blueprints",
+                            "Blueprints",
+                            "Recipe definitions, ingredients, and outputs.",
+                            DMStudioPanelMode.ExternalBlueprintTab,
+                            externalMenuPath: DarkMatterGenesisEditorMenus.BlueprintCraftingManager),
+                        new DMStudioSubtab(
+                            "ammo-creator",
+                            "Ammo Creator",
+                            "New ammo type + DMAmmoFxProfile + prefabs.",
+                            DMStudioPanelMode.EmbeddedAmmo),
+                        new DMStudioSubtab(
+                            "crafting-item",
+                            "Crafting Item",
+                            "Ingredients and craft outputs.",
+                            DMStudioPanelMode.EmbeddedCraftingItem),
+                        new DMStudioSubtab(
+                            "registry",
+                            "Blueprint Registry",
+                            "Sync Resources/Crafting/BlueprintRegistry.",
+                            DMStudioPanelMode.ExternalBlueprintTab,
+                            externalMenuPath: DarkMatterGenesisEditorMenus.BlueprintCraftingManager)
+                    }),
+                new DMStudioCategory(
+                    "controls",
+                    "Controls",
+                    "⌘",
+                    "RETIRED binding editor — use InputSystem_Actions.inputactions (Project Settings > Input System Package).",
+                    FromHex("#4EC8E8"),
+                    new[]
+                    {
+                        new DMStudioSubtab(
+                            "bindings",
+                            "Bindings",
+                            "Opens a pointer to InputSystem_Actions only — Studio does not write binds.",
+                            DMStudioPanelMode.ControlsInputEditor,
+                            "Assets/_Project/Settings/Input/InputSystem_Actions.inputactions"),
+                        // 2026-10-25i: controller Journal schema tuning.
+                        new DMStudioSubtab(
+                            "journal-pad",
+                            "Journal Controller",
+                            "Gamepad Journal: D-pad/stick focus, A opens tabs. Inventory: A tap = select/use, HOLD A = pick up ghost, move with D-pad/stick (incl. hotbar), release A to drop (snaps to slot under ghost or nearest empty within Snap Radius, else returns). X tap = Use, HOLD X = item menu (Move = ghost mode; A/X drops). B cancels.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/UI/Controls/DMJournalPadProfile.asset"),
+                        // 2026-10-26a: momentum spin binding (Attack action; no new input action).
+                        new DMStudioSubtab(
+                            "spin-binding",
+                            "Momentum Spin",
+                            "Spin (Slice 5): HOLD Attack with a full momentum meter - KBM: hold Left Mouse; Gamepad: hold Right Trigger (InputSystem_Actions Player/Attack, unchanged). Also fires on a charged release with a full meter. Hold time / toggles: Spin Hold Seconds, Spin On Hold Attack, Spin Auto On Charged Release.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Combat/DM_MomentumProfile.asset")
+                    }),
+                new DMStudioCategory(
+                    "ui",
+                    "UI",
+                    "▣",
+                    "Scanner optics, journal skill-tree lines, and layout tooling.",
+                    FromHex("#EDE9E4"),
+                    new[]
+                    {
+                        new DMStudioSubtab(
+                            "skill-tree-lines",
+                            "Skill Tree Lines",
+                            "Journal prerequisite link sprites, gold glow strength, and line thickness.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/UI/Skills/Tree/DMSkillTreeLineProfile.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "scanner",
+                            "Scanner Highlight",
+                            "Optics scan outline / highlight profile.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Scanner/ScannerHighlightProfile.asset"),
+                        new DMStudioSubtab(
+                            "ui-studio",
+                            "UI Studio",
+                            "Browse panels, preview sandbox, layout profiles.",
+                            DMStudioPanelMode.ExternalTool,
+                            externalMenuPath: DarkMatterGenesisEditorMenus.Ui + "UI Studio")
+                    }),
+                new DMStudioCategory(
+                    "building",
+                    "Building",
+                    "⌂",
+                    "Stone build mode — keep Building Studio in sync when adding subsystems.",
+                    FromHex("#C02E7A"),
+                    new[]
+                    {
+                        new DMStudioSubtab(
+                            "building-preview",
+                            "Preview Ghosts",
+                            "Snap/build and blocked hologram materials, colors, and alpha.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Building/DM_BuildingGhostProfile.asset",
+                            playModeSave: true,
+                            sectionFilter: DMStudioProfileSectionFilter.BuildingPreviewOnly),
+                        new DMStudioSubtab(
+                            "building-tints",
+                            "Built Tints",
+                            "Finished mesh and window glass colors on the ghost profile.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Building/DM_BuildingGhostProfile.asset",
+                            playModeSave: true,
+                            sectionFilter: DMStudioProfileSectionFilter.BuildingBuiltTintsOnly),
+                        new DMStudioSubtab(
+                            "building-snap",
+                            "Snap & Grid",
+                            "Module size, yaw/height, edge and top snap ranges.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Building/DM_BuildingGhostProfile.asset",
+                            playModeSave: true,
+                            sectionFilter: DMStudioProfileSectionFilter.BuildingSnapOnly),
+                        new DMStudioSubtab(
+                            "building-placement",
+                            "Placement",
+                            "Hold build/destroy, aim, overlap, door seat drop.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Building/DM_BuildingGhostProfile.asset",
+                            playModeSave: true,
+                            sectionFilter: DMStudioProfileSectionFilter.BuildingPlacementOnly),
+                        new DMStudioSubtab(
+                            "building-door",
+                            "Doors",
+                            "Swing angle, duration, and E interact range.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Building/DM_BuildingGhostProfile.asset",
+                            playModeSave: true,
+                            sectionFilter: DMStudioProfileSectionFilter.BuildingDoorOnly),
+                        new DMStudioSubtab(
+                            "building-creation-fx",
+                            "Creation Effects",
+                            "Pop, bounce, VFX and material swap when a hold-to-build finishes.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/Building/DM_BuildingCreationFxProfile.asset",
+                            playModeSave: true),
+                        new DMStudioSubtab(
+                            "building-library",
+                            "Library",
+                            "Build styles (Stone, Iron, Silicate, ...): each kit's cost item, finishes, kit shapes and parts with prefab, icon, shape and cost.",
+                            DMStudioPanelMode.BuildingLibrary),
+                        new DMStudioSubtab(
+                            "building-studio",
+                            "Building Studio",
+                            "Full grouped editor — preview, snap, placement, doors, M-key materials, Roadmap tab.",
+                            DMStudioPanelMode.ExternalTool,
+                            externalMenuPath: "Tools/Dark Matter Genesis/Buildings/Building Studio")
+                    }),
+                new DMStudioCategory(
+                    "audio",
+                    "Audio",
+                    "♫",
+                    "Global music, SFX, and footstep libraries.",
+                    FromHex("#8C7F75"),
+                    new[]
+                    {
+                        new DMStudioSubtab(
+                            "game-audio",
+                            "Game Audio",
+                            "Music, body impacts, weapon clashes, player pain and circular hit-direction feedback.",
+                            DMStudioPanelMode.SingletonAsset,
+                            "Assets/_Project/Resources/GameAudioProfile.asset",
+                            playModeSave: true)
+                    }),
+                new DMStudioCategory(
+                    "rendering",
+                    "Rendering",
+                    "\u25C8",
+                    "DM shaders (DM_ copies only; nothing is reassigned automatically).",
+                    FromHex("#6FA8DC"),
+                    new[]
+                    {
+                        new DMStudioSubtab(
+                            "rendering-dm-terrain",
+                            "DM Shaders: Terrain",
+                            "DM_TerrainParallax material: height blend, parallax offset / POM, distance + grazing fade, per-layer strength, anti-tiling.",
+                            DMStudioPanelMode.ExternalTool,
+                            externalMenuPath: DMStudioTerrainShaderWindow.MenuPath),
+                        new DMStudioSubtab(
+                            "rendering-dm-master",
+                            "DM Shaders: Master",
+                            "DM/Master (HDRP Lit copy + extras). Converter creates DM_ material copies only; dry run by default; CSV manifest.",
+                            DMStudioPanelMode.ExternalTool,
+                            externalMenuPath: DMStudioMasterShaderWindow.MenuPath)
+                    })
+            };
+        }
+
+        private static Color FromHex(string hex)
+        {
+            return ColorUtility.TryParseHtmlString(hex, out Color c) ? c : Color.white;
+        }
+    }
+}
+#endif

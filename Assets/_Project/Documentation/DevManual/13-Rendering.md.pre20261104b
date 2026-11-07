@@ -1,0 +1,33 @@
+# Rendering — Genesis Studio
+
+**Status:** Stub (generated tables; notes pending)  
+**Open:** Tools → Dark Matter Genesis → Genesis Studio → **Rendering**  
+DM shaders (DM_ copies only; nothing is reassigned automatically).
+
+## Tabs
+
+- [DM Shaders: Terrain](#dm-shaders-terrain)
+- [DM Shaders: Master](#dm-shaders-master)
+
+## DM Shaders: Terrain
+
+**What it does:** DM_TerrainParallax material: height blend, parallax offset / POM, distance + grazing fade, per-layer strength, anti-tiling.
+
+**Where:**
+- Studio: `Genesis Studio / Rendering / DM Shaders: Terrain` (panel mode `ExternalTool`)
+
+## DM Shaders: Master
+
+**What it does:** DM/Master (HDRP Lit copy + extras). Converter creates DM_ material copies only; dry run by default; CSV manifest.
+
+**Where:**
+- Studio: `Genesis Studio / Rendering / DM Shaders: Master` (panel mode `ExternalTool`)
+
+## DM Terrain Parallax: debug baseColor (2026-11-04a)
+
+`DM_TerrainParallax_Splatmap.hlsl` `TerrainLitDebug()` sets `baseColor` to black first. The 8-layer chain now ends in a texture-streaming fallback `else`. This removes the "use of potentially uninitialized variable (baseColor)" warning at line 591. Normal rendering is unchanged, because the function only feeds HDRP debug display.
+
+## Vendor shader graphs: DXR pass stripping (2026-11-04a)
+
+`Assets/_Project/Editor/Rendering/DMRayTracingPassStripper.cs` is an `IPreprocessShaders` build hook. It strips only the ray tracing (DXR) passes of `Shader Graphs/PW_Water_RP` and `Shader Graphs/BotD_Graph_Lit_TranslucentAlphaCutoff`. Those passes use ddx/ddy and implicit-LOD sampling, which `lib_6_3` closesthit shaders reject, so they never compiled. Stripping them removes about 141 build shader errors. The vendor graphs are not edited and raster rendering is untouched. These surfaces still do not show in RT reflections or path tracing, the same as before. To restore the old behaviour, set `DMRayTracingPassStripper.Enabled = false` or add more names to its list.
+

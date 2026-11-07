@@ -1189,8 +1189,11 @@ namespace Project.AI.Invector
         private void PrepareBonesForSafeRagdoll()
         {
             float maxDepenetration = Mathf.Max(0.25f, maxBoneDepenetrationSpeed);
-            Rigidbody rootBody = GetComponent<Rigidbody>();
-            Rigidbody[] bodies = GetComponentsInChildren<Rigidbody>(true);
+            // Ragdoll transition: refresh cached membership once (stable state untouched) so the
+            // per-physics-step Zero/Clamp passes reuse it without hierarchy scans.
+            if (_physicsCache != null)
+                _physicsCache.RefreshMembership();
+            GetBoneBodies(out Rigidbody rootBody, out Rigidbody[] bodies);
             for (int i = 0; i < bodies.Length; i++)
             {
                 Rigidbody body = bodies[i];
@@ -1202,10 +1205,29 @@ namespace Project.AI.Invector
             }
         }
 
+        /// <summary>
+        /// Cached EnemyInvectorPhysicsCache membership when present; original hierarchy scan otherwise.
+        /// Callers still skip null/root/kinematic bodies exactly as before.
+        /// </summary>
+        private void GetBoneBodies(out Rigidbody rootBody, out Rigidbody[] bodies)
+        {
+            if (_physicsCache == null)
+                _physicsCache = GetComponent<EnemyInvectorPhysicsCache>();
+
+            if (_physicsCache != null)
+            {
+                bodies = _physicsCache.BoneBodies;
+                rootBody = _physicsCache.RootBody;
+                return;
+            }
+
+            rootBody = GetComponent<Rigidbody>();
+            bodies = GetComponentsInChildren<Rigidbody>(true);
+        }
+
         private void ZeroBoneVelocitiesImmediate()
         {
-            Rigidbody rootBody = GetComponent<Rigidbody>();
-            Rigidbody[] bodies = GetComponentsInChildren<Rigidbody>(true);
+            GetBoneBodies(out Rigidbody rootBody, out Rigidbody[] bodies);
             for (int i = 0; i < bodies.Length; i++)
             {
                 Rigidbody body = bodies[i];
@@ -1293,8 +1315,7 @@ namespace Project.AI.Invector
         {
             float maxSpeed = Mathf.Max(0.5f, maxBoneSpeed);
             float maxSpeedSqr = maxSpeed * maxSpeed;
-            Rigidbody rootBody = GetComponent<Rigidbody>();
-            Rigidbody[] bodies = GetComponentsInChildren<Rigidbody>(true);
+            GetBoneBodies(out Rigidbody rootBody, out Rigidbody[] bodies);
             for (int i = 0; i < bodies.Length; i++)
             {
                 Rigidbody body = bodies[i];

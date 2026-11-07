@@ -4,6 +4,19 @@
 **Open:** Tools → Dark Matter Genesis → Genesis Studio → **Controls**  
 RETIRED binding editor — use InputSystem_Actions.inputactions (Project Settings > Input System Package).
 
+## Control scheme auto-switch (2026-11-05b)
+
+`DMInputSchemeRouter` on the live player (`PlayerInput` + Invector `vThirdPersonInput`) keeps **Keyboard&Mouse** vs **Gamepad** in sync for Editor and standalone builds.
+
+- **Gamepad promotion:** deliberate face/shoulder/trigger press, D-pad, or stick deflection above deadzone **0.28** (ignores drift). **KBM promotion:** key press or mouse button only (not mouse delta — avoids fighting the pad).
+- **Hot-connect / wake:** `InputSystem.onDeviceChange` (Added/Reconnected/Enabled) switches to Gamepad when a pad appears.
+- **Spawn / reload:** one-frame deferred evaluate prefers Gamepad when a pad is connected and KBM is idle; `DMSceneStack` calls `RefreshLiveInstance()` after Mars/IO switch and single-scene reload.
+- **Invector:** mutes `GenericInput` on Gamepad scheme; logs `scheme -> … (GenericInput muted/restored)` only when the scheme **changes** (stamp `controller-scheme-router 1105a`).
+- **Compile note (2026-11-05f):** `global::Invector.vCharacterController` and `UnityEngine.InputSystem` both define `InputDevice`; router code uses `UnityInputDevice` alias for Input System devices.
+- **UI locks:** unchanged — modal gates still disable gameplay maps; journal gamepad nav uses the same router flags.
+
+Runtime verification in standalone builds is still required after merge.
+
 ## Movement controls (2026-10-25e)
 
 | Move | Keyboard / mouse | Gamepad |

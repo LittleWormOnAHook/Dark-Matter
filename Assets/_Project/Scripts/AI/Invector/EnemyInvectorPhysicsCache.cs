@@ -19,14 +19,45 @@ namespace Project.AI.Invector
             Refresh();
         }
 
+        /// <summary>Root rigidbody as of the last membership refresh (may be null).</summary>
+        public Rigidbody RootBody
+        {
+            get
+            {
+                if (_boneBodies == null)
+                    RefreshMembership();
+                return _rootBody;
+            }
+        }
+
+        /// <summary>
+        /// Cached non-root rigidbodies (includes inactive). Entries may be destroyed; callers must null-check.
+        /// Refreshed on Awake, rig repair (Refresh) and ragdoll transitions (RefreshMembership).
+        /// </summary>
+        public Rigidbody[] BoneBodies
+        {
+            get
+            {
+                if (_boneBodies == null)
+                    RefreshMembership();
+                return _boneBodies;
+            }
+        }
+
         public void Refresh()
+        {
+            RefreshMembership();
+            _bonesStable = false;
+        }
+
+        /// <summary>Rebuilds rigidbody membership without changing the bones-stable state.</summary>
+        public void RefreshMembership()
         {
             _rootBody = GetComponent<Rigidbody>();
             Rigidbody[] allBodies = GetComponentsInChildren<Rigidbody>(true);
             if (allBodies == null || allBodies.Length == 0)
             {
                 _boneBodies = System.Array.Empty<Rigidbody>();
-                _bonesStable = false;
                 return;
             }
 
@@ -55,8 +86,6 @@ namespace Project.AI.Invector
                     _boneBodies[write++] = body;
                 }
             }
-
-            _bonesStable = false;
         }
 
         public void StabilizeAllRigidbodies()

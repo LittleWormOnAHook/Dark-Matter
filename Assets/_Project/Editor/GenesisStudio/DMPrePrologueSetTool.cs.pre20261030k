@@ -1,0 +1,307 @@
+// 2026-10-30f: Pre-Prologue Set (Mars / AAPS-07) set-dressing spawner.
+// Everything spawns under ONE root "PrePrologue_Set" (zones: Fence, Landing, Maintenance, Junk, O2_Terraform, Props), so Clear = fully reversible.
+// Area = measured building footprint (x -976..-758, z -402..-280) + margin; huge-bounds MARS bundles are ignored.
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine;
+
+namespace Project.EditorTools.GenesisStudio
+{
+    public sealed class DMPrePrologueSetTool : EditorWindow
+    {
+        public const string RootName = "PrePrologue_Set";
+        static readonly string[] Zones = { "Fence", "Landing", "Maintenance", "Junk", "O2_Terraform", "Props" };
+
+        const string PSW = "Assets/PolygonSciFiWorlds/Prefabs/";
+        const string CC = "Assets/_Creepy_Cat/_3D Scifi Kit Vol 3/Prefabs/Props/";
+        const string BC = "Assets/Buildings_constructor/Prefabs/";
+        const string SIK = "Assets/SciFi_Industrial_LevelKit_2.0/Models/prefabs/v 2.0/";
+
+        public static readonly string[] ShuttleOptions =
+        {
+            PSW + "Props/Vehicles/SM_Veh_DropShip_01.prefab",
+            CC + "_Update 1.04-Mars Rover & DropShip/_Props/P_Drop_Ship_Mark_01.prefab",
+            CC + "_Update 1.05-Spaceship Akorn/_Spaceship/P_Spaceship_Akorn_Mark_1.prefab",
+        };
+        static readonly string[] ShuttleNames = { "SM_Veh_DropShip_01 (default)", "P_Drop_Ship_Mark_01", "Akorn Mark 1" };
+
+        // Settings (EditorPrefs-backed)
+        public static int Seed { get => EditorPrefs.GetInt("DMPPS.seed", 2160); set => EditorPrefs.SetInt("DMPPS.seed", value); }
+        public static float Density { get => EditorPrefs.GetFloat("DMPPS.density", 1f); set => EditorPrefs.SetFloat("DMPPS.density", value); }
+        public static int Shuttle { get => EditorPrefs.GetInt("DMPPS.shuttle", 0); set => EditorPrefs.SetInt("DMPPS.shuttle", value); }
+
+        // Fence rectangle (world XZ) + gates
+        public static float XMin = -1000f, XMax = -735f, ZMin = -430f, ZMax = -215f;
+        public static float SouthGateX = -867f, WestGateZ = -322f;
+        // Built footprint (keep-out for scatter)
+        static readonly Rect Built = Rect.MinMaxRect(-980f, -406f, -754f, -276f);
+
+        static System.Random rng;
+        static readonly Dictionary<string, Vector3> sizeCache = new Dictionary<string, Vector3>();
+
+        [MenuItem("Tools/Genesis Studio/Pre-Prologue Set")]
+        public static void Open() { GetWindow<DMPrePrologueSetTool>("Pre-Prologue Set"); }
+
+        void OnGUI()
+        {
+            EditorGUILayout.LabelField("Pre-Prologue Set (Mars AAPS-07)", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox("Spawns under '" + RootName + "' only. Clear removes just that root/zone. Save the scene yourself.", MessageType.Info);
+            Seed = EditorGUILayout.IntField("Seed", Seed);
+            Density = EditorGUILayout.Slider("Density", Density, 0.1f, 4f);
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Subtle (0.5)")) Density = 0.5f;
+            if (GUILayout.Button("Default (1.0)")) Density = 1f;
+            if (GUILayout.Button("Extreme (2.0)")) Density = 2f;
+            EditorGUILayout.EndHorizontal();
+            Shuttle = EditorGUILayout.Popup("Shuttle", Mathf.Clamp(Shuttle, 0, ShuttleOptions.Length - 1), ShuttleNames);
+            EditorGUILayout.Space();
+            foreach (var z in Zones)
+            {
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField(z, GUILayout.Width(110));
+                if (GUILayout.Button("Spawn")) SpawnZone(z);
+                if (GUILayout.Button("Clear")) ClearZone(z);
+                EditorGUILayout.LabelField(CountZone(z) + " objs", GUILayout.Width(70));
+                EditorGUILayout.EndHorizontal();
+            }
+            EditorGUILayout.Space();
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Spawn All")) SpawnAll();
+            if (GUILayout.Button("Clear All")) ClearAll();
+            EditorGUILayout.EndHorizontal();
+        }
+
+        // ---------- public API ----------
+        public static string SpawnAll()
+        {
+            var sb = new System.Text.StringBuilder();
+            foreach (var z in Zones) sb.Append(z).Append('=').Append(SpawnZone(z)).Append(' ');
+            return sb.ToString();
+        }
+
+        public static void ClearAll()
+        {
+            var r = GameObject.Find(RootName);
+            if (r != null) Undo.DestroyObjectImmediate(r);
+        }
+
+        public static int CountZone(string zone)
+        {
+            var r = GameObject.Find(RootName); if (r == null) return 0;
+            var t = r.transform.Find(zone); return t == null ? 0 : t.childCount;
+        }
+
+        public static void ClearZone(string zone)
+        {
+            var r = GameObject.Find(RootName); if (r == null) return;
+            var t = r.transform.Find(zone); if (t != null) Undo.DestroyObjectImmediate(t.gameObject);
+        }
+
+        public static int SpawnZone(string zone)
+        {
+            ClearZone(zone);
+            Transform parent = ZoneRoot(zone);
+            rng = new System.Random(Seed * 31 + zone.GetHashCode());
+            switch (zone)
+            {
+                case "Fence": SpawnFence(parent); break;
+                case "Landing": SpawnLanding(parent); break;
+                case "Maintenance": SpawnMaintenance(parent); break;
+                case "Junk": SpawnJunk(parent); break;
+                case "O2_Terraform": SpawnO2(parent); break;
+                case "Props": SpawnProps(parent); break;
+            }
+            UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(parent.gameObject.scene);
+            return parent.childCount;
+        }
+
+        // ---------- zones ----------
+        static void SpawnFence(Transform p)
+        {
+            string wallA = PSW + "Buildings/SM_Bld_Corp_Wall_01.prefab", wallB = PSW + "Buildings/SM_Bld_Corp_Wall_02.prefab";
+            string gate = PSW + "Buildings/SM_Bld_Corp_Wall_Gate_01.prefab";
+            string corner = PSW + "Buildings/SM_Bld_Corp_Wall_Tower_Corner_01.prefab", tower = PSW + "Buildings/SM_Bld_Corp_Wall_Tower_01.prefab";
+            string[] light = { BC + "Fence/Fence_01.prefab", BC + "Fence/Fence_02.prefab", BC + "Fence/Fence_03.prefab", BC + "Fence/Fence_04.prefab" };
+            Vector2 sw = new Vector2(XMin, ZMin), se = new Vector2(XMax, ZMin), ne = new Vector2(XMax, ZMax), nw = new Vector2(XMin, ZMax);
+            // South (main gate), East, North (lighter fence - landing field side), West (service gate)
+            // Corp_Wall_01 = 20 m measured; Wall_02 (3.4 m) is too short to tile. Lighter Fence_0x (~2 m, knee-high) only rings the junk yard.
+            Side(p, sw, se, new[] { wallA }, tower, gate, SouthGateX - XMin);
+            Side(p, se, ne, new[] { wallA }, tower, null, -1f);
+            Side(p, ne, nw, new[] { wallA }, tower, null, -1f);
+            Side(p, nw, sw, new[] { wallA }, tower, gate, ZMax - WestGateZ);
+            string[] lt = { BC + "Fence/Fence_07.prefab", BC + "Fence/Fence_08.prefab" };
+            Side(p, new Vector2(-947f, -405f), new Vector2(-947f, -428f), lt, null, null, -1f);
+            Side(p, new Vector2(-995f, -405f), new Vector2(-947f, -405f), lt, null, null, -1f);
+            Place(corner, p, sw.x, sw.y, 0f); Place(corner, p, se.x, se.y, 90f); Place(corner, p, ne.x, ne.y, 180f); Place(corner, p, nw.x, nw.y, 270f);
+        }
+
+        // Walks a side laying measured pieces; gate centred at gateAt metres from 'a'; a tower every ~60 m.
+        static void Side(Transform p, Vector2 a, Vector2 b, string[] pieces, string tower, string gate, float gateAt)
+        {
+            Vector2 d = b - a; float len = d.magnitude; Vector2 u = d / len;
+            float yaw = Mathf.Atan2(u.x, u.y) * Mathf.Rad2Deg;
+            float pos = 4f, nextTower = 60f;
+            float gateLen = gate != null ? Mathf.Max(4f, LongAxis(gate, out _)) : 0f;
+            bool gateDone = gate == null;
+            int i = 0;
+            while (pos < len - 4f)
+            {
+                if (!gateDone && pos + 8f >= gateAt - gateLen * 0.5f)
+                {
+                    float c = gateAt; LongAxis(gate, out bool gz);
+                    Vector2 g = a + u * c; Place(gate, p, g.x, g.y, yaw + (gz ? 0f : -90f));
+                    pos = c + gateLen * 0.5f; gateDone = true; continue;
+                }
+                string pc = pieces[i++ % pieces.Length];
+                float L = Mathf.Max(1f, LongAxis(pc, out bool alongZ));
+                if (pos + L > len - 2f) break;
+                Vector2 m = a + u * (pos + L * 0.5f);
+                Place(pc, p, m.x, m.y, yaw + (alongZ ? 0f : -90f));
+                pos += L;
+                if (tower != null && pos >= nextTower && pos < len - 20f) { Vector2 t = a + u * pos; Place(tower, p, t.x, t.y, yaw); nextTower += 60f; }
+            }
+        }
+
+        static void SpawnLanding(Transform p)
+        {
+            string[] pads = { PSW + "Buildings/SM_Bld_Pod_Pad_01.prefab", PSW + "Buildings/SM_Bld_Pod_Pad_01.prefab", PSW + "Buildings/SM_Bld_Pod_Pad_01.prefab" }; // 22 x 22 m measured
+            float x = -905f;
+            for (int i = 0; i < pads.Length; i++)
+            {
+                float w = Mathf.Max(12f, Size(pads[i]).x);
+                Place(pads[i], p, x + w * 0.5f, -245f, 0f);
+                // shuttles on pads 0 and 1 (evacuation fleet); pad 2 left empty (beat 6)
+                if (i < 2) Place(ShuttleOptions[Mathf.Clamp(Shuttle, 0, ShuttleOptions.Length - 1)], p, x + w * 0.5f, -245f, 180f, ShuttleScale());
+                x += w + 6f;
+            }
+            Place(PSW + "Buildings/SM_Bld_Corp_Control_Tower_01.prefab", p, -920f, -232f, 90f);
+            Scatter(p, new[] { PSW + "Props/SM_Prop_Crate_03.prefab", PSW + "Props/SM_Prop_Crate_07.prefab", PSW + "Props/SM_Prop_Container_01.prefab" }, Rect.MinMaxRect(-925f, -265f, -815f, -255f), N(6));
+        }
+
+        static void SpawnMaintenance(Transform p)
+        {
+            string rov = CC + "_Update 1.04-Mars Rover & DropShip/";
+            Place(PSW + "Props/Vehicles/SM_Veh_Buggy_01.prefab", p, -985f, -330f, 80f);
+            Place(PSW + "Props/Vehicles/SM_Veh_Buggy_01.prefab", p, -985f, -344f, 100f);
+            Place(rov + "_Props/P_Rover_Mark_01.prefab", p, -968f, -296f, 200f);
+            Place(rov + "_Props/P_Rover_Mark_02.prefab", p, -952f, -296f, 160f);
+            Place(rov + "_Props/P_Rover_Body_01.prefab", p, -987f, -305f, 30f);
+            Place(rov + "_Props/P_Rover_Big_Wheel_Left_01.prefab", p, -982f, -300f, 70f);
+            Place(rov + "_Props/P_Rover_Big_Wheel_Right_01.prefab", p, -990f, -311f, 10f);
+            Place(PSW + "Props/SM_Prop_HoverPad_01.prefab", p, -970f, -365f, 0f);
+            // grounded shuttle "not meant to fly" (QM.8)
+            Place(CC + "_Update 1.05-Spaceship Akorn/_Spaceship/P_Spaceship_Akorn_Mark_2.prefab", p, -972f, -380f, 120f);
+            Scatter(p, new[] { PSW + "Props/SM_Prop_Crate_01.prefab", PSW + "Props/SM_Prop_Crate_05.prefab", PSW + "Props/SM_Prop_Crate_09.prefab" }, Rect.MinMaxRect(-995f, -395f, -978f, -290f), N(8));
+        }
+
+        static void SpawnJunk(Transform p)
+        {
+            var junk = new List<string>();
+            for (int i = 1; i <= 5; i++) junk.Add(PSW + "Environments/SM_Env_Ground_Junk_0" + i + ".prefab");
+            for (int i = 1; i <= 4; i++) junk.Add(PSW + "Props/SM_Prop_Junk_Cardboard_0" + i + ".prefab");
+            for (int i = 0; i <= 4; i++) junk.Add(SIK + "Pipes/Pipe_A_1mts_0" + i + ".prefab");
+            junk.Add(CC + "_Update 1.04-Mars Rover & DropShip/_Props/P_Rover_Body_02.prefab");
+            Scatter(p, junk.ToArray(), Rect.MinMaxRect(-995f, -427f, -950f, -408f), N(18));
+            Scatter(p, new[] { PSW + "Props/SM_Prop_Crate_11.prefab", PSW + "Props/SM_Prop_Crate_12.prefab", PSW + "Props/SM_Prop_Container_01.prefab" }, Rect.MinMaxRect(-995f, -427f, -950f, -408f), N(6));
+        }
+
+        static void SpawnO2(Transform p)
+        {
+            int silos = Mathf.Clamp(N(6), 2, 12);
+            for (int i = 0; i < silos; i++)
+                Place(PSW + "Buildings/SM_Bld_Pod_Silo_0" + (1 + i % 8) + ".prefab", p, -822f + (i % 6) * 11f, -413f - (i / 6) * 9f, 0f);
+            Place(PSW + "Buildings/SM_Bld_Corp_Generator_01.prefab", p, -752f, -418f, 0f);
+            Place(PSW + "Buildings/SM_Bld_Corp_Generator_01.prefab", p, -752f, -403f, 0f);
+            for (int i = 0; i < 3; i++) Place(PSW + "Buildings/SM_Bld_Scav_Refinery_Pipe_Hub_01.prefab", p, -820f + i * 14f, -425f, 0f); // Core_Vent_01 is 55 m - too big
+            for (int i = 0; i < 4; i++) Place(PSW + "Buildings/SM_Bld_Scav_Refinery_Pipe_01.prefab", p, -815f + i * 12f, -398f, 90f);
+            Place(SIK + "_Prebuilt Modules/Buildings/Big/Big TOWER 1.prefab", p, -770f, -425f, 0f, 0.35f); // 86 m -> ~30 m O2 stack
+            Place(SIK + "_Prebuilt Modules/Buildings/Big/Big TOWER 2.prefab", p, -790f, -425f, 0f, 0.3f);
+            Place(PSW + "Buildings/SM_Bld_Corp_Comms_Tower_01.prefab", p, -742f, -390f, 0f);
+            Scatter(p, new[] { PSW + "Props/SM_Prop_SolarPanel_01.prefab", PSW + "Props/SM_Prop_SolarPanel_02.prefab" }, Rect.MinMaxRect(-790f, -428f, -765f, -408f), N(4));
+        }
+
+        static void SpawnProps(Transform p)
+        {
+            var list = new List<string>();
+            for (int i = 1; i <= 15; i++) list.Add(PSW + "Props/SM_Prop_Crate_" + i.ToString("00") + ".prefab");
+            for (int i = 1; i <= 6; i++) list.Add(PSW + "Props/SM_Prop_Antenna_" + i.ToString("00") + ".prefab");
+            list.Add(PSW + "Props/SM_Prop_Satellite_01.prefab");
+            list.Add(PSW + "Buildings/SM_Bld_Core_Antenna_Greeble_01.prefab");
+            // ring between built area and fence, avoiding zones
+            int want = N(30), tries = 0, made = 0;
+            while (made < want && tries++ < want * 30)
+            {
+                float x = Rf(XMin + 6f, XMax - 6f), z = Rf(ZMin + 6f, ZMax - 6f);
+                if (Built.Contains(new Vector2(x, z))) continue;
+                if (z > -270f) continue; // landing field
+                if (x < -945f && z < -290f) continue; // maintenance/junk
+                if (x > -830f && z < -395f) continue; // O2
+                if (Place(list[rng.Next(list.Count)], p, x, z, Rf(0f, 360f)) != null) made++;
+            }
+        }
+
+        // ---------- helpers ----------
+        static float ShuttleScale() { float l = Mathf.Max(Size(ShuttleOptions[Mathf.Clamp(Shuttle, 0, ShuttleOptions.Length - 1)]).x, Size(ShuttleOptions[Mathf.Clamp(Shuttle, 0, ShuttleOptions.Length - 1)]).z); return Mathf.Clamp(20f / Mathf.Max(1f, l), 0.2f, 1.5f); } // fit ~20 m on a 22 m pad
+        static int N(int baseCount) { return Mathf.Max(1, Mathf.RoundToInt(baseCount * Density)); }
+        static float Rf(float a, float b) { return a + (float)rng.NextDouble() * (b - a); }
+
+        static void Scatter(Transform p, string[] list, Rect r, int count)
+        {
+            int tries = 0, made = 0;
+            while (made < count && tries++ < count * 20)
+                if (Place(list[rng.Next(list.Length)], p, Rf(r.xMin, r.xMax), Rf(r.yMin, r.yMax), Rf(0f, 360f)) != null) made++;
+        }
+
+        static Transform ZoneRoot(string zone)
+        {
+            var r = GameObject.Find(RootName);
+            if (r == null) { r = new GameObject(RootName); Undo.RegisterCreatedObjectUndo(r, "Pre-Prologue Set"); }
+            var t = r.transform.Find(zone);
+            if (t == null) { var g = new GameObject(zone); Undo.RegisterCreatedObjectUndo(g, "Pre-Prologue Set"); g.transform.SetParent(r.transform, false); t = g.transform; }
+            return t;
+        }
+
+        static float Ground(float x, float z)
+        {
+            var t = Terrain.activeTerrain;
+            return t != null ? t.SampleHeight(new Vector3(x, 0f, z)) + t.transform.position.y : 0f;
+        }
+
+        public static GameObject Place(string path, Transform parent, float x, float z, float yaw, float scale = 1f)
+        {
+            var pf = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (pf == null) { Debug.LogWarning("[PrePrologueSet] missing prefab " + path); return null; }
+            var go = (GameObject)PrefabUtility.InstantiatePrefab(pf, parent);
+            Undo.RegisterCreatedObjectUndo(go, "Pre-Prologue Set");
+            go.transform.SetPositionAndRotation(new Vector3(x, Ground(x, z), z), Quaternion.Euler(0f, yaw, 0f));
+            if (!Mathf.Approximately(scale, 1f)) go.transform.localScale = pf.transform.localScale * scale;
+            return go;
+        }
+
+        // Measured prefab size (renderer bounds at identity), cached.
+        public static Vector3 Size(string path)
+        {
+            if (sizeCache.TryGetValue(path, out var s)) return s;
+            s = Vector3.one;
+            var pf = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (pf != null)
+            {
+                var go = (GameObject)PrefabUtility.InstantiatePrefab(pf);
+                go.hideFlags = HideFlags.HideAndDontSave;
+                go.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+                bool has = false; Bounds b = default;
+                foreach (var rr in go.GetComponentsInChildren<Renderer>())
+                { if (rr is ParticleSystemRenderer) continue; if (!has) { b = rr.bounds; has = true; } else b.Encapsulate(rr.bounds); }
+                if (has) s = b.size;
+                DestroyImmediate(go);
+            }
+            sizeCache[path] = s;
+            return s;
+        }
+
+        static float LongAxis(string path, out bool alongZ)
+        {
+            var s = Size(path); alongZ = s.z > s.x; return alongZ ? s.z : s.x;
+        }
+    }
+}

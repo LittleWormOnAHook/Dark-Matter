@@ -1,0 +1,2993 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using Invector;
+using Invector.vCharacterController;
+using Invector.vCharacterController.vActions;
+using Invector.vMelee;
+using Invector.vShooter;
+using Project.Combat;
+using Project.Core;
+using Project.Data;
+using Project.Prototypes.Weapons;
+using Project.Interaction;
+using Project.Inventory;
+using UnityEngine;
+
+namespace Project.Player.Invector
+{
+    /// <summary>
+    /// Maps Pioneer hotbar/equipment to Invector shooter and melee weapon instances.
+    /// </summary>
+    [DefaultExecutionOrder(-100)]
+    [DisallowMultipleComponent]
+    [RequireComponent(typeof(PioneerInvectorBootstrap))]
+    [RequireComponent(typeof(EquipmentController))]
+    public class PioneerInvectorWeaponBridge : MonoBehaviour
+    {
+        public const string PreloadedMeleeWeaponSlotsRootName = "PreloadedMeleeWeaponSlots";
+        public const string PreloadedRangedWeaponSlotsRootName = "PreloadedRangedWeaponSlots";
+
+        [Serializable]
+        public sealed class MeleeWeaponSlot
+        {
+            public string slotId;
+            public ItemData item;
+            public GameObject drawnInstance;
+            public GameObject holsteredInstance;
+        }
+
+        [Serializable]
+        public sealed class RangedWeaponSlot
+        {
+            public string slotId;
+            public ItemData item;
+            public GameObject drawnInstance;
+            public GameObject holsteredInstance;
+
+            [NonSerialized] public Transform cachedMuzzle;
+        }
+
+        [Header("Default Invector Prefabs")]
+        [SerializeField] private GameObject defaultPistolPrefab;
+        [SerializeField] private GameObject defaultRiflePrefab;
+        [SerializeField] private GameObject defaultMeleeSwordPrefab;
+        [SerializeField] private GameObject defaultMeleeTwoHandPrefab;
+
+        [Header("Preloaded Melee Slots")]
+        [SerializeField] private List<MeleeWeaponSlot> meleeWeaponSlots = new();
+
+        [Header("Preloaded Ranged Slots")]
+        [SerializeField] private List<RangedWeaponSlot> rangedWeaponSlots = new();
+
+        private PioneerInvectorBootstrap _bootstrap;
+        private EquipmentController _equipment;
+        private InventorySystem _inventory;
+        private vShooterManager _shooterManager;
+        private vMeleeManager _meleeManager;
+        private vCollectMeleeControl _collectControl;
+
+        private readonly Dictionary<ItemData, GameObject> _spawnedInstances = new();
+        private readonly Dictionary<ItemData, MeleeWeaponSlot> _meleeSlotLookup = new();
+        private readonly Dictionary<ItemData, RangedWeaponSlot> _rangedSlotLookup = new();
+        private readonly Dictionary<GameObject, AuthoredSlotTransform> _authoredSlotTransforms = new();
+        private ItemData _activeItem;
+        private bool _startupWeaponLayoutReady;
+        private Coroutine _drawHolsterRoutine;
+        private Animator _animator;
+
+        private struct AuthoredSlotTransform
+        {
+            public Transform Parent;
+            public Vector3 LocalPosition;
+            public Quaternion LocalRotation;
+            public Vector3 LocalScale;
+        }
+
+        public ItemData ActiveEquippedItem => _activeItem;
+
+        public bool IsHolsterPreviewActive => _holsterPreviewActive;
+
+        public GameObject TryGetWeaponInstance(ItemData item)
+        {
+            if (item == null)
+                return null;
+
+            if (item.itemType == ItemType.MeleeWeapon && TryGetMeleeSlot(item, out MeleeWeaponSlot slot))
+                return slot.drawnInstance;
+
+            if (item.IsRangedWeapon && TryGetRangedSlot(item, out RangedWeaponSlot rangedSlot))
+                return rangedSlot.drawnInstance;
+
+            return _spawnedInstances.TryGetValue(item, out GameObject instance) ? instance : null;
+        }
+
+        public GameObject TryGetHolsteredWeaponInstance(ItemData item)
+        {
+            if (item != null && item.itemType == ItemType.MeleeWeapon && TryGetMeleeSlot(item, out MeleeWeaponSlot slot))
+                return slot.holsteredInstance;
+
+            if (item != null && item.IsRangedWeapon && TryGetRangedSlot(item, out RangedWeaponSlot rangedSlot))
+                return rangedSlot.holsteredInstance;
+
+            return TryGetWeaponInstance(item);
+        }
+
+        public Transform FindHolsterSocket(ItemData item)
+        {
+            return FindHolsterSocket(transform, item);
+        }
+
+        /// <summary>
+        /// Resolves the transform that should own a holstered weapon instance.
+        /// Prefers HandgunHolder/RifleHolder under the skinned VBOT_ bone when present —
+        /// BodySnaps/RightUpLeg holders use ~0.01 scale and break ItemData sheathed TRS.
+        /// </summary>
+        public static Transform FindHolsterSocket(Transform root, ItemData item)
+        {
+            if (root == null)
+                return null;
+
+            string socketName = ResolveHolsterSocketName(item);
+            Transform bone = FindPreferredSheatheBone(root, socketName);
+            string holderName = ResolveHolsterHolderName(item);
+
+            if (bone != null && !string.IsNullOrEmpty(holderName))
+            {
+                Transform holder = FindChildTransformByName(bone, holderName);
+                if (holder != null)
+                    return holder;
+            }
+
+            if (bone != null)
+                return bone;
+
+            if (!string.IsNullOrEmpty(holderName))
+            {
+                Transform holder = FindPreferredHolsterHolder(root, holderName);
+                if (holder != null)
+                    return holder;
+            }
+
+            return FindChildTransformByName(root, socketName);
+        }
+
+        public static string ResolveHolsterSocketName(ItemData item)
+        {
+            if (item == null)
+                return "Spine2";
+
+            // Explicit Spine2 on one-handed pistols is legacy — prefer hip holster.
+            if (!string.IsNullOrWhiteSpace(item.sheatheSocketName) &&
+                !item.sheatheSocketName.Equals("Spine", StringComparison.OrdinalIgnoreCase) &&
+                !item.sheatheSocketName.Equals("Spine2", StringComparison.OrdinalIgnoreCase))
+            {
+                return item.sheatheSocketName;
+            }
+
+            return ResolveDefaultHolsterSocketName(item);
+        }
+
+        /// <summary>
+        /// Invector holder under the sheathe bone. One-handed hip → HandgunHolder; two-handed → RifleHolder.
+        /// </summary>
+        public static string ResolveHolsterHolderName(ItemData item)
+        {
+            if (item == null)
+                return null;
+
+            // Mining pistol holsters on the hip like other one-handed ranged weapons.
+            if (item.weaponGrip == WeaponGrip.TwoHanded || item.IsTwoHanded)
+                return "RifleHolder";
+
+            string socketName = ResolveHolsterSocketName(item);
+            if (socketName.Equals("RightUpLeg", StringComparison.OrdinalIgnoreCase) ||
+                socketName.Equals("LeftUpLeg", StringComparison.OrdinalIgnoreCase))
+                return "HandgunHolder";
+
+            return item.IsRangedWeapon ? "HandgunHolder" : null;
+        }
+
+        private static Transform FindPreferredSheatheBone(Transform root, string socketName)
+        {
+            if (root == null || string.IsNullOrWhiteSpace(socketName))
+                return null;
+
+            // Skinned armature bones are named VBOT_:RightUpLeg; BodySnaps/RightUpLeg is the Invector proxy.
+            Transform vbot = FindChildTransformByName(root, "VBOT_:" + socketName);
+            if (vbot != null)
+                return vbot;
+
+            return FindChildTransformByName(root, socketName);
+        }
+
+        private static Transform FindPreferredHolsterHolder(Transform root, string holderName)
+        {
+            if (root == null || string.IsNullOrWhiteSpace(holderName))
+                return null;
+
+            Transform best = null;
+            FindPreferredHolsterHolderRecursive(root, holderName, ref best);
+            return best;
+        }
+
+        private static void FindPreferredHolsterHolderRecursive(Transform current, string holderName, ref Transform best)
+        {
+            if (current == null)
+                return;
+
+            if (current.name.Equals(holderName, StringComparison.OrdinalIgnoreCase))
+            {
+                // Prefer holders under VBOT_ bones (local scale ~1) over BodySnaps (~0.01).
+                bool underVbot = IsUnderVbotBone(current);
+                if (best == null || (underVbot && !IsUnderVbotBone(best)))
+                    best = current;
+            }
+
+            for (int i = 0; i < current.childCount; i++)
+                FindPreferredHolsterHolderRecursive(current.GetChild(i), holderName, ref best);
+        }
+
+        private static bool IsUnderVbotBone(Transform t)
+        {
+            for (Transform c = t; c != null; c = c.parent)
+            {
+                if (c.name.StartsWith("VBOT_:", StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+
+            return false;
+        }
+
+        public static string ResolveDefaultMeleeHolsterSocketName(ItemData item)
+        {
+            return ResolveDefaultHolsterSocketName(item);
+        }
+
+        /// <summary>
+        /// One-handed pistols / melee hip holster on RightUpLeg; two-handed / other on Spine2.
+        /// </summary>
+        public static string ResolveDefaultHolsterSocketName(ItemData item)
+        {
+            if (item == null)
+                return "Spine2";
+
+            if (item.itemType == ItemType.MeleeWeapon && !item.IsTwoHanded)
+                return "RightUpLeg";
+
+            if (item.IsRangedWeapon && item.weaponGrip != WeaponGrip.TwoHanded)
+                return "RightUpLeg";
+
+            return "Spine2";
+        }
+
+        public void BeginHolsterPreview(ItemData item)
+        {
+            if (item == null || !_bootstrap.IsActive)
+                return;
+
+            GameObject prefab = ResolveWeaponPrefab(item);
+            if (prefab == null)
+                return;
+
+            _holsterPreviewActive = true;
+            _holsterPreviewItem = item;
+            HideAllSpawnedWeapons();
+            ClearInvectorWeapons();
+
+            if (item.itemType == ItemType.MeleeWeapon)
+            {
+                if (TryGetMeleeSlot(item, out MeleeWeaponSlot slot) && slot.holsteredInstance != null)
+                    ShowMeleeHolsteredSlot(item, slot);
+                else
+                    Debug.LogWarning($"PioneerInvectorWeaponBridge: missing Holstered_ slot for '{item.name}'.");
+                return;
+            }
+
+            if (item.IsRangedWeapon)
+            {
+                if (TryGetRangedSlot(item, out RangedWeaponSlot slot) && slot.holsteredInstance != null)
+                {
+                    ShowRangedHolsteredSlot(item, slot);
+                }
+                else
+                {
+                    HideRuntimeGeneratedWeaponsForItem(item);
+                    Debug.LogWarning($"PioneerInvectorWeaponBridge: missing Holstered_ slot for '{item.name}'.");
+                }
+                return;
+            }
+
+            GameObject instance = GetOrCreateInstance(item, prefab);
+            Transform socket = FindHolsterSocket(item);
+            if (socket == null)
+                return;
+
+            instance.transform.SetParent(socket, false);
+            ApplySheathedTransform(instance, item);
+            StripEquippedWeaponPhysics(instance);
+            instance.SetActive(true);
+        }
+
+        public void EndHolsterPreview()
+        {
+            if (!_holsterPreviewActive)
+                return;
+
+            _holsterPreviewActive = false;
+            _holsterPreviewItem = null;
+            RefreshEquippedWeapon();
+        }
+
+        public static void ApplySheathedTransformToInstance(ItemData item, GameObject instance)
+        {
+            ApplySheathedTransform(instance, item);
+        }
+
+        private bool _holsterPreviewActive;
+        private ItemData _holsterPreviewItem;
+
+        private void Awake()
+        {
+            _bootstrap = GetComponent<PioneerInvectorBootstrap>();
+            _equipment = GetComponent<EquipmentController>();
+            _inventory = GetComponent<InventorySystem>();
+            _shooterManager = GetComponent<vShooterManager>();
+            _meleeManager = GetComponent<vMeleeManager>();
+            _collectControl = GetComponent<vCollectMeleeControl>();
+            BindPreloadedMeleeSlots();
+            BindPreloadedRangedSlots();
+        }
+
+        public void RebindPreloadedMeleeSlots()
+        {
+            BindPreloadedMeleeSlots();
+        }
+
+        public void RebindPreloadedRangedSlots()
+        {
+            BindPreloadedRangedSlots();
+        }
+
+        public void PrepareForVehicleBoarding()
+        {
+            ForceAuthoredSlotCaptures();
+            ClearInvectorWeapons();
+            RestoreAuthoredWeaponSlotTransforms();
+            HideAllSpawnedWeapons();
+        }
+
+        public void ScheduleRestoreAfterVehicleExit()
+        {
+            StopCoroutine(nameof(RestoreAfterVehicleExitRoutine));
+            StartCoroutine(RestoreAfterVehicleExitRoutine());
+        }
+
+        private IEnumerator RestoreAfterVehicleExitRoutine()
+        {
+            yield return null;
+            RestoreAfterVehicleExit();
+        }
+
+        public void RestoreAfterVehicleExit()
+        {
+            ClearInvectorWeapons();
+            RefreshEquippedWeapon();
+        }
+
+        public void EnsureAuthoredSlotCaptures()
+        {
+            CaptureAuthoredSlots(meleeWeaponSlots);
+            CaptureAuthoredSlots(rangedWeaponSlots);
+        }
+
+        private void ForceAuthoredSlotCaptures()
+        {
+            ForceCaptureAuthoredSlots(meleeWeaponSlots);
+            ForceCaptureAuthoredSlots(rangedWeaponSlots);
+        }
+
+        private void OnEnable()
+        {
+            if (_equipment != null)
+                _equipment.OnSelectedHotbarChanged += HandleEquipmentChanged;
+            if (_inventory != null)
+                _inventory.OnInventoryChanged += HandleInventoryChanged;
+            GameSession.GameStarted += HandleGameStarted;
+        }
+
+        private void OnDisable()
+        {
+            if (_equipment != null)
+                _equipment.OnSelectedHotbarChanged -= HandleEquipmentChanged;
+            if (_inventory != null)
+                _inventory.OnInventoryChanged -= HandleInventoryChanged;
+            GameSession.GameStarted -= HandleGameStarted;
+        }
+
+        private void Start()
+        {
+            StartCoroutine(FinalizeStartupWeaponLayoutRoutine());
+        }
+
+        private IEnumerator FinalizeStartupWeaponLayoutRoutine()
+        {
+            // vSnapToBody / vShooterManager Start run at default order 0, after this bridge's Start.
+            // Refreshing equipped visuals before they run leaves weapons on unstaged handlers.
+            yield return null;
+            yield return null;
+            FinalizeStartupWeaponLayout();
+        }
+
+        private void FinalizeStartupWeaponLayout()
+        {
+            if (_startupWeaponLayoutReady || !_bootstrap.IsActive)
+                return;
+
+            _startupWeaponLayoutReady = true;
+            _equipment?.HolsterWeapon();
+            HideAllSpawnedWeapons();
+            ClearInvectorWeapons();
+            ForceAuthoredSlotCaptures();
+            RefreshEquippedWeapon();
+        }
+
+        private void HandleEquipmentChanged(int _)
+        {
+            if (!_bootstrap.IsActive || !_startupWeaponLayoutReady)
+                return;
+
+            RefreshEquippedWeaponWithDrawHolsterAnim();
+        }
+
+        private void HandleInventoryChanged()
+        {
+            if (!_bootstrap.IsActive || !_startupWeaponLayoutReady)
+                return;
+
+            // World pickups / inventory adds must NOT tear down and re-equip a drawn gun.
+            // Re-equipping Invector weapons with isInfinityAmmo retriggers reload SFX even for
+            // mushrooms, scrap, etc. Only refresh when the drawn/holstered weapon identity changed.
+            if (!NeedsWeaponVisualRefreshAfterInventoryChange())
+                return;
+
+            RefreshEquippedWeapon();
+        }
+
+        /// <summary>
+        /// True when hotbar weapon identity no longer matches what the bridge is showing.
+        /// Unrelated stack adds (loot, scrap, ammo credit) return false.
+        /// </summary>
+        private bool NeedsWeaponVisualRefreshAfterInventoryChange()
+        {
+            if (_equipment == null)
+                return false;
+
+            if (_holsterPreviewActive)
+                return true;
+
+            if (_equipment.IsWeaponDrawn)
+            {
+                ItemData drawn = _equipment.DrawnWeaponItem;
+                if (drawn != _activeItem)
+                    return true;
+
+                return drawn != null && !IsDrawnWeaponPresentationActive(drawn);
+            }
+
+            // Holstered: refresh if we still think a drawn weapon is active, or holster target changed.
+            if (_activeItem != null)
+                return true;
+
+            ItemData equipped = _equipment.EquippedItem;
+            if (equipped == null || !equipped.IsEquippable)
+                return false;
+
+            return !IsHolsteredWeaponPresentationActive(equipped);
+        }
+
+        private bool IsDrawnWeaponPresentationActive(ItemData item)
+        {
+            if (item == null)
+                return false;
+
+            if (item.IsRangedWeapon && TryGetRangedSlot(item, out RangedWeaponSlot ranged))
+            {
+                return ranged.drawnInstance != null
+                    && ranged.drawnInstance.activeInHierarchy
+                    && _shooterManager != null
+                    && _shooterManager.CurrentWeapon != null
+                    && _shooterManager.CurrentWeapon.transform.IsChildOf(ranged.drawnInstance.transform);
+            }
+
+            if (item.itemType == ItemType.MeleeWeapon && TryGetMeleeSlot(item, out MeleeWeaponSlot melee))
+            {
+                return melee.drawnInstance != null
+                    && melee.drawnInstance.activeInHierarchy
+                    && _meleeManager != null
+                    && _meleeManager.rightWeapon != null
+                    && _meleeManager.rightWeapon.transform.IsChildOf(melee.drawnInstance.transform);
+            }
+
+            if (_spawnedInstances.TryGetValue(item, out GameObject instance))
+                return instance != null && instance.activeInHierarchy;
+
+            return false;
+        }
+
+        private bool IsHolsteredWeaponPresentationActive(ItemData item)
+        {
+            if (item == null)
+                return true;
+
+            if (item.IsRangedWeapon && TryGetRangedSlot(item, out RangedWeaponSlot ranged))
+                return ranged.holsteredInstance != null && ranged.holsteredInstance.activeInHierarchy;
+
+            if (item.itemType == ItemType.MeleeWeapon && TryGetMeleeSlot(item, out MeleeWeaponSlot melee))
+                return melee.holsteredInstance != null && melee.holsteredInstance.activeInHierarchy;
+
+            return true;
+        }
+
+        private void HandleGameStarted()
+        {
+            if (!_bootstrap.IsActive)
+                return;
+
+            if (!_startupWeaponLayoutReady)
+                FinalizeStartupWeaponLayout();
+            else
+                RefreshEquippedWeapon();
+        }
+
+        private void RefreshEquippedWeaponWithDrawHolsterAnim()
+        {
+            PioneerAnimationPlanSettings settings = PioneerAnimationPlanSettings.Resolve(gameObject);
+            if (settings == null || !settings.enableDrawHolsterAnims)
+            {
+                RefreshEquippedWeapon();
+                return;
+            }
+
+            if (_holsterPreviewActive || !NeedsWeaponVisualRefreshAfterInventoryChange())
+            {
+                RefreshEquippedWeapon();
+                return;
+            }
+
+            PioneerShooterMeleeInput input = GetComponent<PioneerShooterMeleeInput>();
+            if (input != null && (input.IsAimingActive || input.isReloading || input.isEquipping))
+            {
+                RefreshEquippedWeapon();
+                return;
+            }
+
+            ItemData incomingDrawn = _equipment != null && _equipment.IsWeaponDrawn
+                ? _equipment.DrawnWeaponItem
+                : null;
+            ItemData animItem = incomingDrawn != null
+                ? incomingDrawn
+                : (_activeItem != null ? _activeItem : (_equipment != null ? _equipment.EquippedItem : null));
+
+            if (animItem == null || (!animItem.IsRangedWeapon && animItem.itemType != ItemType.MeleeWeapon))
+            {
+                RefreshEquippedWeapon();
+                return;
+            }
+
+            if (_drawHolsterRoutine != null)
+                StopCoroutine(_drawHolsterRoutine);
+
+            _drawHolsterRoutine = StartCoroutine(DrawHolsterThenRefresh(animItem));
+        }
+
+        private IEnumerator DrawHolsterThenRefresh(ItemData animItem)
+        {
+            Animator animator = ResolveWeaponAnimator();
+            string stateName = IsTwoHandHolsterItem(animItem) ? "HighBack" : "LowBack";
+            float delay = ResolveDrawHolsterDelay(animator, stateName);
+
+            if (animator != null && animator.enabled && animator.gameObject.activeInHierarchy)
+            {
+                int layer = animator.GetLayerIndex("UpperBody");
+                if (layer >= 0)
+                    animator.CrossFade(stateName, 0.25f, layer);
+                else
+                    animator.CrossFade(stateName, 0.25f);
+            }
+
+            if (delay > 0f)
+                yield return new WaitForSeconds(delay);
+
+            RefreshEquippedWeapon();
+            _drawHolsterRoutine = null;
+        }
+
+        private Animator ResolveWeaponAnimator()
+        {
+            if (_animator != null)
+                return _animator;
+
+            PioneerShooterMeleeInput input = GetComponent<PioneerShooterMeleeInput>();
+            if (input != null && input.animator != null)
+                _animator = input.animator;
+            else
+                _animator = GetComponent<Animator>();
+
+            if (_animator == null)
+                _animator = GetComponentInChildren<Animator>(true);
+
+            return _animator;
+        }
+
+        private static bool IsTwoHandHolsterItem(ItemData item)
+        {
+            if (item == null)
+                return false;
+
+            if (item.weaponGrip == WeaponGrip.TwoHanded || item.IsTwoHanded)
+                return true;
+
+            string holder = ResolveHolsterHolderName(item);
+            if (!string.IsNullOrEmpty(holder) &&
+                holder.Equals("RifleHolder", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            string socket = ResolveHolsterSocketName(item);
+            return !string.IsNullOrEmpty(socket) &&
+                   (socket.Equals("Spine", StringComparison.OrdinalIgnoreCase) ||
+                    socket.Equals("Spine2", StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static float ResolveDrawHolsterDelay(Animator animator, string stateName)
+        {
+            const float fallback = 0.3f;
+            if (animator == null || animator.runtimeAnimatorController == null || string.IsNullOrEmpty(stateName))
+                return fallback;
+
+            AnimationClip[] clips = animator.runtimeAnimatorController.animationClips;
+            if (clips == null)
+                return fallback;
+
+            for (int i = 0; i < clips.Length; i++)
+            {
+                AnimationClip clip = clips[i];
+                if (clip == null || string.IsNullOrEmpty(clip.name))
+                    continue;
+
+                if (clip.name.IndexOf(stateName, StringComparison.OrdinalIgnoreCase) < 0)
+                    continue;
+
+                return Mathf.Clamp(clip.length * 0.35f, 0.2f, 0.4f);
+            }
+
+            return fallback;
+        }
+
+        private bool _refreshingEquipped; // 2026-10-12 reentrancy guard (equip events fired from inside a refresh)
+
+        public void RefreshEquippedWeapon()
+        {
+            if (_refreshingEquipped) return;
+            _refreshingEquipped = true;
+            try
+            {
+                RefreshEquippedWeaponCore();
+                ApplyHotbarHolsters(); // 2026-10-12: all hotbar weapons holstered on the body (DM_CombatCoreProfile, Player holsters)
+            }
+            finally { _refreshingEquipped = false; }
+        }
+
+        private enum HolsterLocation { Other, Spine, LeftLeg, RightLeg }
+
+        private static HolsterLocation ResolveHolsterLocation(GameObject holstered, ItemData item)
+        {
+            for (Transform t = holstered != null ? holstered.transform.parent : null; t != null; t = t.parent)
+            {
+                string n = t.name;
+                if (n.IndexOf("LeftUpLeg", StringComparison.OrdinalIgnoreCase) >= 0 || n.IndexOf("LeftLeg", StringComparison.OrdinalIgnoreCase) >= 0 || n.IndexOf("Thigh_L", StringComparison.OrdinalIgnoreCase) >= 0) return HolsterLocation.LeftLeg;
+                if (n.IndexOf("RightUpLeg", StringComparison.OrdinalIgnoreCase) >= 0 || n.IndexOf("RightLeg", StringComparison.OrdinalIgnoreCase) >= 0 || n.IndexOf("Thigh_R", StringComparison.OrdinalIgnoreCase) >= 0) return HolsterLocation.RightLeg;
+                if (n.IndexOf("Spine", StringComparison.OrdinalIgnoreCase) >= 0 || n.IndexOf("Chest", StringComparison.OrdinalIgnoreCase) >= 0) return HolsterLocation.Spine;
+                if (n.IndexOf("Hips", StringComparison.OrdinalIgnoreCase) >= 0) break;
+            }
+            string socket = ResolveHolsterSocketName(item) ?? string.Empty;
+            if (socket.IndexOf("Left", StringComparison.OrdinalIgnoreCase) >= 0) return HolsterLocation.LeftLeg;
+            if (socket.IndexOf("Right", StringComparison.OrdinalIgnoreCase) >= 0) return HolsterLocation.RightLeg;
+            if (socket.IndexOf("Spine", StringComparison.OrdinalIgnoreCase) >= 0) return HolsterLocation.Spine;
+            return HolsterLocation.Other;
+        }
+
+        /// <summary>2026-10-12: shows the Holstered_ slot of every hotbar weapon that is not drawn.
+        /// Melee: one per location (Spine / Left leg / Right leg), max holsterMaxMeleeVisible incl. the drawn one. Never moves slots (hand-set placements kept).</summary>
+        private void ApplyHotbarHolsters()
+        {
+            DM_CombatCoreProfile p = DM_CombatCoreProfile.Live;
+            if (p == null || !p.holsterAllHotbarWeapons || _equipment == null || _holsterPreviewActive)
+                return;
+
+            ItemData drawn = _equipment.IsWeaponDrawn ? _equipment.DrawnWeaponItem : null;
+            ItemData equipped = _equipment.EquippedItem;
+            int meleeVisible = drawn != null && drawn.itemType == ItemType.MeleeWeapon ? 1 : 0;
+            var usedMelee = new HashSet<HolsterLocation>();
+            var usedRanged = new HashSet<HolsterLocation>();
+            var seen = new HashSet<ItemData>();
+
+            // the equipped (not drawn) weapon claims its location first, then hotbar order
+            for (int k = -1; k < EquipmentController.WeaponSlotCount; k++)
+            {
+                ItemData item = k < 0 ? equipped : _equipment.GetHotbarItem(_equipment.GetWeaponHotbarSlot(k));
+                if (item == null || !seen.Add(item) || item == drawn)
+                    continue;
+                if (Project.Combat.DMRanged.DMRangedMorphRuntime.IsPlayerDisabledWeapon(item)) // 2026-10-28g retired for the player
+                    continue;
+
+                if (item.itemType == ItemType.MeleeWeapon)
+                {
+                    if (!TryGetMeleeSlot(item, out MeleeWeaponSlot ms) || ms.holsteredInstance == null)
+                        continue;
+                    HolsterLocation loc = ResolveHolsterLocation(ms.holsteredInstance, item);
+                    bool show = meleeVisible < Mathf.Max(1, p.holsterMaxMeleeVisible)
+                        && (!p.holsterOneMeleePerLocation || loc == HolsterLocation.Other || usedMelee.Add(loc));
+                    if (show) { ShowMeleeHolsteredSlot(item, ms); meleeVisible++; }
+                    else ms.holsteredInstance.SetActive(false);
+                }
+                else if (item.IsRangedWeapon)
+                {
+                    if (!TryGetRangedSlot(item, out RangedWeaponSlot rs) || rs.holsteredInstance == null)
+                        continue;
+                    if (SharesActiveDrawnSlot(rs)) // 2026-10-28g: never hide the drawn weapon's holder via another item mapped to it
+                        continue;
+                    HolsterLocation loc = ResolveHolsterLocation(rs.holsteredInstance, item);
+                    bool show = !p.holsterOneRangedPerLocation || loc == HolsterLocation.Other || usedRanged.Add(loc);
+                    if (show) ShowRangedHolsteredSlot(item, rs);
+                    else rs.holsteredInstance.SetActive(false);
+                }
+            }
+        }
+
+        private void RefreshEquippedWeaponCore()
+        {
+            if (_holsterPreviewActive && _holsterPreviewItem != null)
+            {
+                BeginHolsterPreview(_holsterPreviewItem);
+                return;
+            }
+
+            if (_equipment == null || !_equipment.IsWeaponDrawn)
+            {
+                // Already holstered with the correct visual — skip teardown (avoids reload SFX).
+                if (_activeItem == null)
+                {
+                    ItemData holsterTarget = _equipment != null ? _equipment.EquippedItem : null;
+                    if (holsterTarget == null || !holsterTarget.IsEquippable || IsHolsteredWeaponPresentationActive(holsterTarget))
+                        return;
+                }
+
+                HideAllSpawnedWeapons();
+                _activeItem = null;
+                ClearInvectorWeapons();
+                ShowHolsteredWeaponIfNeeded();
+                return;
+            }
+
+            _holsterPreviewActive = false;
+            _holsterPreviewItem = null;
+
+            ItemData item = _equipment.DrawnWeaponItem;
+            // Same drawn weapon already live on the shooter/melee manager — do not unequip/re-equip.
+            // Inventory pickups used to hit this path every time and play pistol reload audio.
+            if (item != null && item == _activeItem && IsDrawnWeaponPresentationActive(item))
+                return;
+
+            HideAllSpawnedWeapons();
+
+            _activeItem = item;
+            if (item == null)
+            {
+                ClearInvectorWeapons();
+                return;
+            }
+
+            GameObject prefab = ResolveWeaponPrefab(item);
+            if (prefab == null)
+            {
+                ClearInvectorWeapons();
+                return;
+            }
+
+            if (item.itemType == ItemType.MeleeWeapon
+                && TryGetMeleeSlot(item, out MeleeWeaponSlot slot)
+                && slot.drawnInstance != null)
+            {
+                ShowMeleeDrawnSlot(item, slot);
+                return;
+            }
+
+            if (item.IsRangedWeapon)
+            {
+                if (TryGetRangedSlot(item, out RangedWeaponSlot rangedSlot) && rangedSlot.drawnInstance != null)
+                {
+                    ShowRangedDrawnSlot(item, rangedSlot);
+                }
+                else
+                {
+                    HideRuntimeGeneratedWeaponsForItem(item);
+                    Debug.LogWarning($"PioneerInvectorWeaponBridge: missing Drawn_ slot for '{item.name}'.");
+                }
+                return;
+            }
+
+            GameObject instance = GetOrCreateInstance(item, prefab);
+            AttachWeaponToHandler(instance, item);
+            instance.SetActive(true);
+
+            if (item.IsRangedWeapon)
+                EquipRanged(instance);
+            else if (item.itemType == ItemType.MeleeWeapon)
+                EquipMelee(instance);
+
+            ApplyItemStats(item, instance);
+            StripEquippedWeaponPhysics(instance);
+        }
+
+        private void ShowMeleeDrawnSlot(ItemData item, MeleeWeaponSlot slot)
+        {
+            if (item == null || slot == null || slot.drawnInstance == null)
+                return;
+
+            if (slot.holsteredInstance != null)
+                slot.holsteredInstance.SetActive(false);
+
+            ClearInvectorWeapons();
+            GameObject instance = slot.drawnInstance;
+
+            PrepareDrawnMeleeSlot(instance, item);
+            instance.SetActive(true);
+            EquipMelee(instance);
+            ApplyItemStats(item, instance);
+        }
+
+        private void ShowMeleeHolsteredSlot(ItemData item, MeleeWeaponSlot slot)
+        {
+            if (item == null || slot == null || slot.holsteredInstance == null)
+                return;
+
+            if (slot.drawnInstance != null)
+                slot.drawnInstance.SetActive(false);
+
+            GameObject instance = slot.holsteredInstance;
+
+            PrepareHolsteredVisualSlot(instance, item);
+            instance.SetActive(true);
+        }
+
+        private void ShowRangedDrawnSlot(ItemData item, RangedWeaponSlot slot)
+        {
+            if (item == null || slot == null || slot.drawnInstance == null)
+                return;
+
+            if (slot.holsteredInstance != null)
+                slot.holsteredInstance.SetActive(false);
+
+            ClearInvectorWeapons();
+            GameObject instance = slot.drawnInstance;
+
+            PrepareDrawnRangedSlot(instance, item);
+            instance.SetActive(true);
+            EquipRanged(instance);
+            ApplyItemStats(item, instance);
+        }
+
+        private void ShowRangedHolsteredSlot(ItemData item, RangedWeaponSlot slot)
+        {
+            if (item == null || slot == null || slot.holsteredInstance == null)
+                return;
+
+            if (slot.drawnInstance != null)
+                slot.drawnInstance.SetActive(false);
+
+            GameObject instance = slot.holsteredInstance;
+
+            // Holstered ranged slots are visual-only; drawn slots keep the live vShooterWeapon.
+            HideRuntimeGeneratedWeaponsForItem(item);
+            PrepareHolsteredVisualSlot(instance, item);
+            instance.SetActive(true);
+        }
+
+        private bool TryGetMeleeSlot(ItemData item, out MeleeWeaponSlot slot)
+        {
+            slot = null;
+            if (item == null)
+                return false;
+
+            if (!_meleeSlotLookup.TryGetValue(item, out slot) || slot == null)
+            {
+                slot = FindSerializedMeleeSlot(item) ?? new MeleeWeaponSlot
+                {
+                    slotId = MakeSafeSlotName(item.itemName, item.name),
+                    item = item
+                };
+            }
+
+            if (slot.drawnInstance == null)
+                slot.drawnInstance = FindNamedSlotInstance(this, transform, "Drawn_", item);
+            if (slot.holsteredInstance == null)
+                slot.holsteredInstance = FindNamedSlotInstance(this, transform, "Holstered_", item);
+
+            // Ranged weapons must have both authored slots. If either one is missing,
+            // do not fall back to the old generated InvectorWeapon_* holster flow.
+            if (slot.drawnInstance == null || slot.holsteredInstance == null)
+            {
+                slot = null;
+                return false;
+            }
+
+            _meleeSlotLookup[item] = slot;
+            return true;
+        }
+
+        private MeleeWeaponSlot FindSerializedMeleeSlot(ItemData item)
+        {
+            if (item == null || meleeWeaponSlots == null)
+                return null;
+
+            for (int i = 0; i < meleeWeaponSlots.Count; i++)
+            {
+                MeleeWeaponSlot slot = meleeWeaponSlots[i];
+                if (slot != null && slot.item == item)
+                    return slot;
+            }
+
+            return null;
+        }
+
+        // 2026-10-28g: true when this slot reuses the drawn/holster holder of the currently active (drawn) item.
+        private bool SharesActiveDrawnSlot(RangedWeaponSlot rs)
+        {
+            if (rs == null || _activeItem == null || rs.item == _activeItem) return false;
+            if (!_rangedSlotLookup.TryGetValue(_activeItem, out RangedWeaponSlot a) || a == null || a == rs) return false;
+            return (rs.drawnInstance != null && rs.drawnInstance == a.drawnInstance) || (rs.holsteredInstance != null && rs.holsteredInstance == a.holsteredInstance);
+        }
+
+        private bool TryGetRangedSlot(ItemData item, out RangedWeaponSlot slot)
+        {
+            slot = null;
+            if (item == null)
+                return false;
+            if (Project.Combat.DMRanged.DMRangedMorphRuntime.IsPlayerDisabledWeapon(item)) // 2026-10-28g: retired items get no player slot (DM Ranged owns the holders)
+                return false;
+
+            if (!_rangedSlotLookup.TryGetValue(item, out slot) || slot == null)
+            {
+                slot = FindSerializedRangedSlot(item) ?? new RangedWeaponSlot
+                {
+                    slotId = MakeSafeSlotName(item.itemName, item.name),
+                    item = item
+                };
+            }
+
+            if (slot.drawnInstance == null)
+            {
+                slot.drawnInstance = FindNamedSlotInstance(this, transform, "Drawn_", item);
+                slot.cachedMuzzle = null;
+                RangedFireSolver.ResetWeaponAimSmoothing();
+            }
+            if (slot.holsteredInstance == null)
+                slot.holsteredInstance = FindNamedSlotInstance(this, transform, "Holstered_", item);
+
+            if (Project.Combat.DMRanged.DMRangedMorphRuntime.IsDMRanged(item))
+                BindDMRangedSlot(slot);
+
+            if (slot.drawnInstance == null && slot.holsteredInstance == null)
+            {
+                slot = null;
+                return false;
+            }
+
+            _rangedSlotLookup[item] = slot;
+            return true;
+        }
+
+        /// <summary>
+        /// Resolves the muzzle transform on the active drawn ranged slot for the given item.
+        /// Prefers the authored Pioneer <c>Muzzle</c> on the visible mesh — never the hidden
+        /// Invector <c>muzzle</c> that sits slightly below the barrel.
+        /// </summary>
+        /// <summary>20261028a: DM Ranged lives inside Anthony's placed slots (any Drawn_/Holstered_ ancestor).
+        /// Only adds the driver component; never moves or re-parents the placed instance.</summary>
+        private void BindDMRangedSlot(RangedWeaponSlot slot)
+        {
+            if (slot == null || !Application.isPlaying)
+                return;
+            Animation[] anims = GetComponentsInChildren<Animation>(true);
+            for (int i = 0; i < anims.Length; i++)
+            {
+                Transform t = anims[i] != null ? anims[i].transform : null;
+                if (!Project.Combat.DMRanged.DMRangedMorphRuntime.IsDMRangedVisual(t))
+                    continue;
+                if (t.GetComponent<Project.Combat.DMRanged.DMRangedMorphDriver>() == null)
+                    t.gameObject.AddComponent<Project.Combat.DMRanged.DMRangedMorphDriver>();
+                for (Transform p = t.parent; p != null && p != transform; p = p.parent)
+                {
+                    if (p.name.StartsWith("Drawn_", StringComparison.Ordinal))
+                    {
+                        if (slot.drawnInstance == null) { slot.drawnInstance = p.gameObject; slot.cachedMuzzle = null; }
+                        break;
+                    }
+                    if (p.name.StartsWith("Holstered_", StringComparison.Ordinal))
+                    {
+                        if (slot.holsteredInstance == null) slot.holsteredInstance = p.gameObject;
+                        break;
+                    }
+                }
+            }
+        }
+
+        public bool TryGetActiveDrawnMuzzle(ItemData item, out Transform muzzle)
+        {
+            muzzle = null;
+            if (!TryGetRangedSlot(item, out RangedWeaponSlot slot) || slot?.drawnInstance == null)
+                return false;
+
+            if (!slot.drawnInstance.activeInHierarchy)
+                return false;
+
+            if (Project.Combat.DMRanged.DMRangedMorphRuntime.IsDMRanged(item) && Project.Combat.DMRanged.DMRangedMorphRuntime.ActiveMuzzle != null)
+            {
+                muzzle = Project.Combat.DMRanged.DMRangedMorphRuntime.ActiveMuzzle; // per-form anchor following the animated barrel
+                slot.cachedMuzzle = muzzle;
+                return true;
+            }
+
+            if (TryPickPreferredDrawnMuzzle(slot.drawnInstance.transform, out muzzle))
+            {
+                slot.cachedMuzzle = muzzle;
+                return true;
+            }
+
+            muzzle = slot.drawnInstance.transform;
+            slot.cachedMuzzle = muzzle;
+            return true;
+        }
+
+        private static bool TryPickPreferredDrawnMuzzle(Transform root, out Transform muzzle)
+        {
+            muzzle = null;
+            if (root == null)
+                return false;
+
+            Transform authoredOnVisual = null;
+            Transform laserStack = null;
+            Transform authoredNamed = null;
+            Transform miningTip = null;
+            Transform fuzzyOnVisual = null;
+            Transform vendorMuzzle = null;
+
+            Transform[] children = root.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < children.Length; i++)
+            {
+                Transform t = children[i];
+                if (t == null)
+                    continue;
+
+                bool underVisual = IsUnderPioneerVisual(t, root);
+                bool exactMuzzle = t.name.Equals("Muzzle", StringComparison.Ordinal);
+                bool vendorNamed = t.name.Equals("muzzle", StringComparison.Ordinal);
+
+                if ((exactMuzzle || vendorNamed) && HasLaserStack(t) && laserStack == null)
+                    laserStack = t;
+
+                if (exactMuzzle && underVisual && authoredOnVisual == null)
+                    authoredOnVisual = t;
+                else if (exactMuzzle && authoredNamed == null)
+                    authoredNamed = t;
+                else if (vendorNamed && vendorMuzzle == null)
+                    vendorMuzzle = t;
+                else if (t.name.Equals("MiningBeamMuzzle", StringComparison.OrdinalIgnoreCase) && miningTip == null)
+                    miningTip = t;
+                else if (fuzzyOnVisual == null
+                    && t.name.IndexOf("uzzle", StringComparison.OrdinalIgnoreCase) >= 0
+                    && underVisual)
+                    fuzzyOnVisual = t;
+            }
+
+            muzzle = authoredOnVisual
+                ?? laserStack
+                ?? authoredNamed
+                ?? miningTip
+                ?? fuzzyOnVisual
+                ?? vendorMuzzle;
+            return muzzle != null;
+        }
+
+        private static bool IsUnderPioneerVisual(Transform t, Transform root)
+        {
+            Transform p = t;
+            while (p != null && p != root)
+            {
+                if (p.name.StartsWith("PioneerVisual_", StringComparison.Ordinal))
+                    return true;
+                p = p.parent;
+            }
+
+            return false;
+        }
+
+        private static bool HasLaserStack(Transform muzzle)
+        {
+            if (muzzle == null)
+                return false;
+
+            Transform laser = muzzle.Find("Laser");
+            if (laser == null)
+            {
+                for (int c = 0; c < muzzle.childCount; c++)
+                {
+                    Transform child = muzzle.GetChild(c);
+                    if (child != null && child.name.Equals("Laser", StringComparison.OrdinalIgnoreCase))
+                    {
+                        laser = child;
+                        break;
+                    }
+                }
+            }
+
+            return laser != null && laser.GetComponent<LineRenderer>() != null;
+        }
+
+        /// <summary>
+        /// World-space barrel tip sampled from the active Pioneer mining visual (post-aim / IK safe).
+        /// </summary>
+        public bool TryGetActiveDrawnMiningTip(ItemData item, out Vector3 tipWorld)
+        {
+            tipWorld = default;
+            if (!TryGetRangedSlot(item, out RangedWeaponSlot slot) || slot?.drawnInstance == null)
+                return false;
+
+            if (!slot.drawnInstance.activeInHierarchy)
+                return false;
+
+            Transform weaponRoot = slot.drawnInstance.transform;
+            Transform visual = null;
+            Transform[] children = slot.drawnInstance.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < children.Length; i++)
+            {
+                Transform t = children[i];
+                if (t != null && t.name.StartsWith("PioneerVisual_", StringComparison.Ordinal))
+                {
+                    visual = t;
+                    break;
+                }
+            }
+
+            if (visual == null)
+                return false;
+
+            tipWorld = ResolveMiningMeshTipWorld(visual, weaponRoot);
+            return true;
+        }
+
+        private RangedWeaponSlot FindSerializedRangedSlot(ItemData item)
+        {
+            if (item == null || rangedWeaponSlots == null)
+                return null;
+
+            for (int i = 0; i < rangedWeaponSlots.Count; i++)
+            {
+                RangedWeaponSlot slot = rangedWeaponSlots[i];
+                if (slot != null && slot.item == item)
+                    return slot;
+            }
+
+            return null;
+        }
+
+        private static GameObject FindNamedSlotInstance(
+            PioneerInvectorWeaponBridge bridge,
+            Transform root,
+            string prefix,
+            ItemData item)
+        {
+            if (item == null || string.IsNullOrEmpty(prefix) || root == null)
+                return null;
+
+            GameObject serialized = ResolveSerializedSlotInstance(bridge, item, prefix);
+            if (serialized != null && serialized.transform.IsChildOf(root))
+                return serialized;
+
+            string itemName = MakeSafeSlotName(item.itemName, item.name);
+            string assetName = MakeSafeSlotName(item.name, item.itemName);
+            string[] slotNames = BuildSlotNameCandidates(prefix, itemName, assetName, item);
+
+            Transform visual = root.Find("Visual");
+            if (visual != null)
+            {
+                for (int i = 0; i < slotNames.Length; i++)
+                {
+                    Transform preferred = FindWeaponSlotUnderVisual(visual, slotNames[i]);
+                    if (preferred != null)
+                        return preferred.gameObject;
+                }
+            }
+
+            for (int i = 0; i < slotNames.Length; i++)
+            {
+                Transform match = FindChildTransformByName(root, slotNames[i]);
+                if (match != null)
+                    return match.gameObject;
+            }
+
+            return null;
+        }
+
+        private static GameObject ResolveSerializedSlotInstance(
+            PioneerInvectorWeaponBridge bridge,
+            ItemData item,
+            string prefix)
+        {
+            if (bridge == null || item == null)
+                return null;
+
+            bool drawn = prefix.Equals("Drawn_", StringComparison.Ordinal);
+            RangedWeaponSlot ranged = bridge.FindSerializedRangedSlot(item);
+            if (ranged != null)
+                return drawn ? ranged.drawnInstance : ranged.holsteredInstance;
+
+            MeleeWeaponSlot melee = bridge.FindSerializedMeleeSlot(item);
+            if (melee != null)
+                return drawn ? melee.drawnInstance : melee.holsteredInstance;
+
+            return null;
+        }
+
+        private static string[] BuildSlotNameCandidates(
+            string prefix,
+            string itemName,
+            string assetName,
+            ItemData item)
+        {
+            var names = new List<string>(4);
+            AddSlotNameCandidate(names, prefix + itemName);
+            if (assetName != itemName)
+                AddSlotNameCandidate(names, prefix + assetName);
+            if (!string.IsNullOrWhiteSpace(item.itemName))
+                AddSlotNameCandidate(names, prefix + item.itemName);
+            if (!string.IsNullOrWhiteSpace(item.name))
+                AddSlotNameCandidate(names, prefix + item.name);
+
+            return names.ToArray();
+        }
+
+        private static void AddSlotNameCandidate(List<string> names, string candidate)
+        {
+            if (string.IsNullOrEmpty(candidate))
+                return;
+
+            for (int i = 0; i < names.Count; i++)
+            {
+                if (names[i].Equals(candidate, StringComparison.OrdinalIgnoreCase))
+                    return;
+            }
+
+            names.Add(candidate);
+        }
+
+        private static Transform FindWeaponSlotUnderVisual(Transform visualRoot, string slotName)
+        {
+            if (visualRoot == null || string.IsNullOrEmpty(slotName))
+                return null;
+
+            Transform[] all = visualRoot.GetComponentsInChildren<Transform>(true);
+            Transform best = null;
+            int bestScore = int.MinValue;
+            for (int i = 0; i < all.Length; i++)
+            {
+                Transform t = all[i];
+                if (t == null || !t.name.Equals(slotName, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                int score = ScoreVisualWeaponSlotPath(t);
+                if (score > bestScore)
+                {
+                    best = t;
+                    bestScore = score;
+                }
+            }
+
+            return best;
+        }
+
+        private static int ScoreVisualWeaponSlotPath(Transform slotTransform)
+        {
+            int score = 0;
+            Transform walk = slotTransform;
+            while (walk != null)
+            {
+                if (walk.name.Equals("RightHandlers", StringComparison.Ordinal))
+                    score += 40;
+                else if (walk.name.Equals("Handlers", StringComparison.Ordinal))
+                    score += 20;
+                else if (walk.name.Equals("RightHand", StringComparison.Ordinal))
+                    score += 10;
+                else if (walk.name.Equals("R_Hand", StringComparison.Ordinal))
+                    score += 5;
+
+                walk = walk.parent;
+            }
+
+            return score;
+        }
+
+        public static void ApplyItemStatsToInstance(ItemData item, GameObject instance)
+        {
+            ApplyItemStats(item, instance);
+        }
+
+        public static GameObject FindPreloadedDrawnSlot(Transform root, ItemData item)
+        {
+            PioneerInvectorWeaponBridge bridge = root != null
+                ? root.GetComponent<PioneerInvectorWeaponBridge>()
+                : null;
+            return FindNamedSlotInstance(bridge, root, "Drawn_", item);
+        }
+
+        public static GameObject FindPreloadedHolsteredSlot(Transform root, ItemData item)
+        {
+            PioneerInvectorWeaponBridge bridge = root != null
+                ? root.GetComponent<PioneerInvectorWeaponBridge>()
+                : null;
+            return FindNamedSlotInstance(bridge, root, "Holstered_", item);
+        }
+
+        public static string MakeSafeSlotName(string preferred, string fallback)
+        {
+            string raw = string.IsNullOrWhiteSpace(preferred) ? fallback : preferred;
+            if (string.IsNullOrWhiteSpace(raw))
+                raw = "MeleeWeapon";
+
+            char[] chars = raw.ToCharArray();
+            for (int i = 0; i < chars.Length; i++)
+            {
+                if (!char.IsLetterOrDigit(chars[i]) && chars[i] != '_')
+                    chars[i] = '_';
+            }
+
+            return new string(chars);
+        }
+
+        private void BindPreloadedMeleeSlots()
+        {
+            _meleeSlotLookup.Clear();
+            if (meleeWeaponSlots == null)
+                return;
+
+            for (int i = 0; i < meleeWeaponSlots.Count; i++)
+            {
+                MeleeWeaponSlot slot = meleeWeaponSlots[i];
+                if (slot == null || slot.item == null)
+                    continue;
+
+                _meleeSlotLookup[slot.item] = slot;
+                ResolveMeleeSlotInstances(slot);
+                if (slot.drawnInstance != null)
+                {
+                    PrepareDrawnMeleeSlot(slot.drawnInstance, slot.item);
+                    slot.drawnInstance.SetActive(false);
+                }
+
+                if (slot.holsteredInstance != null)
+                {
+                    PrepareHolsteredVisualSlot(slot.holsteredInstance, slot.item);
+                    slot.holsteredInstance.SetActive(false);
+                }
+            }
+        }
+
+        private void BindPreloadedRangedSlots()
+        {
+            _rangedSlotLookup.Clear();
+            if (rangedWeaponSlots == null)
+                return;
+
+            for (int i = 0; i < rangedWeaponSlots.Count; i++)
+            {
+                RangedWeaponSlot slot = rangedWeaponSlots[i];
+                if (slot == null || slot.item == null)
+                    continue;
+
+                _rangedSlotLookup[slot.item] = slot;
+                ResolveRangedSlotInstances(slot);
+                if (slot.drawnInstance != null)
+                {
+                    PrepareDrawnRangedSlot(slot.drawnInstance, slot.item);
+                    slot.drawnInstance.SetActive(false);
+                }
+
+                if (slot.holsteredInstance != null)
+                {
+                    PrepareHolsteredVisualSlot(slot.holsteredInstance, slot.item);
+                    slot.holsteredInstance.SetActive(false);
+                }
+            }
+        }
+
+        private void ResolveMeleeSlotInstances(MeleeWeaponSlot slot)
+        {
+            if (slot?.item == null)
+                return;
+
+            if (slot.drawnInstance == null)
+                slot.drawnInstance = FindNamedSlotInstance(this, transform, "Drawn_", slot.item);
+            if (slot.holsteredInstance == null)
+                slot.holsteredInstance = FindNamedSlotInstance(this, transform, "Holstered_", slot.item);
+        }
+
+        private void ResolveRangedSlotInstances(RangedWeaponSlot slot)
+        {
+            if (slot?.item == null)
+                return;
+
+            if (slot.drawnInstance == null)
+                slot.drawnInstance = FindNamedSlotInstance(this, transform, "Drawn_", slot.item);
+            if (slot.holsteredInstance == null)
+                slot.holsteredInstance = FindNamedSlotInstance(this, transform, "Holstered_", slot.item);
+        }
+
+        private void CaptureAuthoredSlots<TSlot>(IReadOnlyList<TSlot> slots)
+            where TSlot : class
+        {
+            if (slots == null)
+                return;
+
+            for (int i = 0; i < slots.Count; i++)
+            {
+                switch (slots[i])
+                {
+                    case MeleeWeaponSlot meleeSlot:
+                        ResolveMeleeSlotInstances(meleeSlot);
+                        CaptureAuthoredSlotTransform(meleeSlot.drawnInstance);
+                        CaptureAuthoredSlotTransform(meleeSlot.holsteredInstance);
+                        break;
+                    case RangedWeaponSlot rangedSlot:
+                        ResolveRangedSlotInstances(rangedSlot);
+                        CaptureAuthoredSlotTransform(rangedSlot.drawnInstance);
+                        CaptureAuthoredSlotTransform(rangedSlot.holsteredInstance);
+                        break;
+                }
+            }
+        }
+
+        private void CaptureAuthoredSlotTransform(GameObject instance)
+        {
+            if (instance == null || _authoredSlotTransforms.ContainsKey(instance))
+                return;
+
+            StoreAuthoredSlotTransform(instance);
+        }
+
+        private void ForceCaptureAuthoredSlotTransform(GameObject instance)
+        {
+            if (instance == null)
+                return;
+
+            StoreAuthoredSlotTransform(instance);
+        }
+
+        private void StoreAuthoredSlotTransform(GameObject instance)
+        {
+            Transform slotTransform = instance.transform;
+            _authoredSlotTransforms[instance] = new AuthoredSlotTransform
+            {
+                Parent = slotTransform.parent,
+                LocalPosition = slotTransform.localPosition,
+                LocalRotation = slotTransform.localRotation,
+                LocalScale = slotTransform.localScale
+            };
+        }
+
+        private void ForceCaptureAuthoredSlots<TSlot>(IReadOnlyList<TSlot> slots)
+            where TSlot : class
+        {
+            if (slots == null)
+                return;
+
+            for (int i = 0; i < slots.Count; i++)
+            {
+                switch (slots[i])
+                {
+                    case MeleeWeaponSlot meleeSlot:
+                        ResolveMeleeSlotInstances(meleeSlot);
+                        ForceCaptureAuthoredSlotTransform(meleeSlot.drawnInstance);
+                        ForceCaptureAuthoredSlotTransform(meleeSlot.holsteredInstance);
+                        break;
+                    case RangedWeaponSlot rangedSlot:
+                        ResolveRangedSlotInstances(rangedSlot);
+                        ForceCaptureAuthoredSlotTransform(rangedSlot.drawnInstance);
+                        ForceCaptureAuthoredSlotTransform(rangedSlot.holsteredInstance);
+                        break;
+                }
+            }
+        }
+
+        private void RestoreAuthoredWeaponSlotTransforms()
+        {
+            RestorePreloadedSlotTransforms(meleeWeaponSlots);
+            RestorePreloadedSlotTransforms(rangedWeaponSlots);
+        }
+
+        private void RestorePreloadedSlotTransforms<TSlot>(IReadOnlyList<TSlot> slots)
+            where TSlot : class
+        {
+            if (slots == null)
+                return;
+
+            for (int i = 0; i < slots.Count; i++)
+            {
+                switch (slots[i])
+                {
+                    case MeleeWeaponSlot meleeSlot:
+                        RestoreAuthoredSlotTransform(meleeSlot.drawnInstance);
+                        RestoreAuthoredSlotTransform(meleeSlot.holsteredInstance);
+                        break;
+                    case RangedWeaponSlot rangedSlot:
+                        RestoreAuthoredSlotTransform(rangedSlot.drawnInstance);
+                        RestoreAuthoredSlotTransform(rangedSlot.holsteredInstance);
+                        break;
+                }
+            }
+        }
+
+        private void RestoreAuthoredSlotTransform(GameObject instance)
+        {
+            if (instance == null)
+                return;
+
+            if (!_authoredSlotTransforms.TryGetValue(instance, out AuthoredSlotTransform authored))
+                return;
+
+            Transform slotTransform = instance.transform;
+            if (authored.Parent != null)
+                slotTransform.SetParent(authored.Parent, false);
+
+            slotTransform.localPosition = authored.LocalPosition;
+            slotTransform.localRotation = authored.LocalRotation;
+            slotTransform.localScale = authored.LocalScale;
+        }
+
+        private GameObject ResolveWeaponPrefab(ItemData item)
+        {
+            if (item.invectorWeaponPrefab != null)
+                return item.invectorWeaponPrefab;
+
+            if (item.IsRangedWeapon)
+                return item.weaponGrip == WeaponGrip.TwoHanded ? defaultRiflePrefab : defaultPistolPrefab;
+
+            if (item.itemType == ItemType.MeleeWeapon)
+                return item.IsTwoHanded ? defaultMeleeTwoHandPrefab : defaultMeleeSwordPrefab;
+
+            return null;
+        }
+
+        private GameObject GetOrCreateInstance(ItemData item, GameObject prefab)
+        {
+            if (_spawnedInstances.TryGetValue(item, out GameObject existing) && existing != null)
+                return existing;
+
+            GameObject instance = Instantiate(prefab);
+            instance.name = $"InvectorWeapon_{item.itemName}";
+            PreparePreloadedWeaponInstance(instance, item, prefab);
+            instance.SetActive(false);
+            _spawnedInstances[item] = instance;
+            return instance;
+        }
+
+        private static void MountAuthoredWeaponVisual(GameObject invectorInstance, ItemData item, GameObject invectorPrefab)
+        {
+            if (invectorInstance == null || item == null)
+                return;
+
+            GameObject visualPrefab = item.heldPrefab != null ? item.heldPrefab : item.worldPrefab;
+            if (visualPrefab == null || visualPrefab == invectorPrefab)
+                return;
+
+            EquippedVisualMarker existingVisual = FindMountedVisual(invectorInstance, item);
+            if (existingVisual != null)
+            {
+                existingVisual.gameObject.SetActive(true);
+                EnableRenderersUnder(existingVisual.transform);
+                StripAuthoredVisualForEquippedWeapon(existingVisual.gameObject, item);
+                HideVendorRenderers(invectorInstance, existingVisual.transform);
+                AlignMiningToolAimAxis(invectorInstance, existingVisual.transform, item);
+                return;
+            }
+
+            GameObject visual = Instantiate(visualPrefab, invectorInstance.transform, false);
+            visual.name = $"PioneerVisual_{visualPrefab.name}";
+            visual.SetActive(true);
+            EnableRenderersUnder(visual.transform);
+            StripAuthoredVisualForEquippedWeapon(visual, item);
+            AlignMiningToolAimAxis(invectorInstance, visual.transform, item);
+
+            if (HasRenderer(visual))
+                HideVendorRenderers(invectorInstance, visual.transform);
+        }
+
+        /// <summary>
+        /// Re-applies ItemData held/invector visuals on an existing Drawn_/Holstered_ slot and hides
+        /// leftover VBOT / GreatSword vendor meshes so the visible mesh matches the item.
+        /// </summary>
+        public static void SyncPreloadedSlotVisuals(GameObject slotInstance, ItemData item, GameObject invectorPrefab, bool holstered)
+        {
+            if (slotInstance == null || item == null)
+                return;
+
+            if (holstered)
+            {
+                EnsureHolsteredMeshMatchesItem(slotInstance, item);
+                PrepareHolsteredVisualSlot(slotInstance, item);
+                EnableRenderersUnder(slotInstance.transform);
+                return;
+            }
+
+            RemoveOrphanPioneerVisuals(slotInstance, item);
+
+            if (item.itemType == ItemType.MeleeWeapon)
+                PrepareDrawnMeleeSlot(slotInstance, item, invectorPrefab);
+            else if (item.IsRangedWeapon)
+                PrepareDrawnRangedSlot(slotInstance, item, invectorPrefab);
+            else
+                PreparePreloadedWeaponInstance(slotInstance, item, invectorPrefab);
+
+            // Prefer authored PioneerVisual; keep VBOT template meshes component-disabled.
+            EquippedVisualMarker pioneer = FindMountedVisual(slotInstance, item);
+            if (pioneer != null)
+            {
+                pioneer.gameObject.SetActive(true);
+                EnableRenderersUnder(pioneer.transform);
+                HideVendorRenderers(slotInstance, pioneer.transform);
+            }
+            else
+            {
+                EnableRenderersUnder(slotInstance.transform);
+            }
+        }
+
+        /// <summary>
+        /// Older mounts left unmarked PioneerVisual_* siblings; HideVendor then disables them as
+        /// "vendor" leftovers. Keep the ItemData-marked visual (or a single survivor) only.
+        /// </summary>
+        private static void RemoveOrphanPioneerVisuals(GameObject slotInstance, ItemData item)
+        {
+            if (slotInstance == null)
+                return;
+
+            EquippedVisualMarker keep = FindMountedVisual(slotInstance, item);
+            Transform keepTransform = keep != null ? keep.transform : null;
+
+            if (keepTransform == null)
+            {
+                for (int i = 0; i < slotInstance.transform.childCount; i++)
+                {
+                    Transform child = slotInstance.transform.GetChild(i);
+                    if (child == null || !child.name.StartsWith("PioneerVisual_", StringComparison.Ordinal))
+                        continue;
+
+                    keepTransform = child;
+                    EquippedVisualMarker marker = child.GetComponent<EquippedVisualMarker>();
+                    if (marker == null)
+                        marker = child.gameObject.AddComponent<EquippedVisualMarker>();
+                    if (item != null)
+                        marker.BindItem(item);
+                    break;
+                }
+            }
+
+            List<GameObject> toDestroy = new List<GameObject>(4);
+            for (int i = 0; i < slotInstance.transform.childCount; i++)
+            {
+                Transform child = slotInstance.transform.GetChild(i);
+                if (child == null || !child.name.StartsWith("PioneerVisual_", StringComparison.Ordinal))
+                    continue;
+                if (keepTransform != null && child == keepTransform)
+                    continue;
+                toDestroy.Add(child.gameObject);
+            }
+
+            for (int i = 0; i < toDestroy.Count; i++)
+            {
+                if (toDestroy[i] != null)
+                    DestroyUnityObject(toDestroy[i]);
+            }
+        }
+
+        private static void EnsureHolsteredMeshMatchesItem(GameObject holstered, ItemData item)
+        {
+            GameObject visualPrefab = item.heldPrefab != null ? item.heldPrefab : item.worldPrefab;
+            if (visualPrefab == null || holstered == null)
+                return;
+            if (Project.Combat.DMRanged.DMRangedMorphRuntime.ContainsDMRangedVisual(holstered))
+                return; // 20261028a never strip Anthony's placed DM Ranged
+
+            if (HolsterMeshesMatchReference(holstered, visualPrefab))
+                return;
+
+            // Strip leftover VBOT / wrong meshes, then mount the ItemData held/world visual.
+            Transform root = holstered.transform;
+            for (int i = root.childCount - 1; i >= 0; i--)
+            {
+                Transform child = root.GetChild(i);
+                if (child == null)
+                    continue;
+                if (child.GetComponent<MeshFilter>() != null ||
+                    child.GetComponent<MeshRenderer>() != null ||
+                    child.GetComponentInChildren<Renderer>(true) != null)
+                    DestroyUnityObject(child.gameObject);
+            }
+
+            MeshFilter selfFilter = holstered.GetComponent<MeshFilter>();
+            MeshRenderer selfRenderer = holstered.GetComponent<MeshRenderer>();
+            if (selfFilter != null)
+                DestroyUnityObject(selfFilter);
+            if (selfRenderer != null)
+                DestroyUnityObject(selfRenderer);
+
+            GameObject visual = UnityEngine.Object.Instantiate(visualPrefab, holstered.transform, false);
+            visual.name = $"PioneerVisual_{visualPrefab.name}";
+            visual.SetActive(true);
+            visual.transform.localPosition = Vector3.zero;
+            visual.transform.localRotation = Quaternion.identity;
+            visual.transform.localScale = Vector3.one;
+            StripAuthoredVisualForEquippedWeapon(visual, item);
+            EnableRenderersUnder(visual.transform);
+        }
+
+        private static bool HolsterMeshesMatchReference(GameObject holstered, GameObject reference)
+        {
+            HashSet<string> referenceMeshes = CollectMeshNames(reference);
+            if (referenceMeshes.Count == 0)
+                return true;
+
+            HashSet<string> holsterMeshes = CollectMeshNames(holstered);
+            if (holsterMeshes.Count == 0)
+                return false;
+
+            foreach (string meshName in holsterMeshes)
+            {
+                if (referenceMeshes.Contains(meshName))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static HashSet<string> CollectMeshNames(GameObject root)
+        {
+            HashSet<string> names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (root == null)
+                return names;
+
+            MeshFilter[] filters = root.GetComponentsInChildren<MeshFilter>(true);
+            for (int i = 0; i < filters.Length; i++)
+            {
+                if (filters[i] != null && filters[i].sharedMesh != null)
+                    names.Add(filters[i].sharedMesh.name);
+            }
+
+            SkinnedMeshRenderer[] skinned = root.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            for (int i = 0; i < skinned.Length; i++)
+            {
+                if (skinned[i] != null && skinned[i].sharedMesh != null)
+                    names.Add(skinned[i].sharedMesh.name);
+            }
+
+            return names;
+        }
+
+        private static void EnableRenderersUnder(Transform root)
+        {
+            if (root == null)
+                return;
+
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null || IsResourceScanCone(renderer.transform))
+                    continue;
+
+                renderer.enabled = true;
+                if (!renderer.gameObject.activeSelf)
+                    renderer.gameObject.SetActive(true);
+            }
+        }
+
+        /// <summary>
+        /// Authored mining scan VFX under Drawn_DM_Mining_Tool/renderer — stays off until DMIMiningResourceScanner enables it.
+        /// </summary>
+        private static bool IsResourceScanCone(Transform t)
+        {
+            while (t != null)
+            {
+                if (t.name.Equals("Scan Cone Field", StringComparison.OrdinalIgnoreCase)
+                    || t.name.Equals("Scan Cone", StringComparison.OrdinalIgnoreCase))
+                    return true;
+                t = t.parent;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Leaves the authored Scan Cone Field on the mining muzzle inactive until
+        /// <see cref="DMIMiningResourceScanner"/> enables it during F-scan.
+        /// </summary>
+        private static void EnsureMiningScanCone(GameObject invectorInstance, Transform visual)
+        {
+            if (invectorInstance == null)
+                return;
+
+            Transform field = FindTransformNamed(invectorInstance.transform, "Scan Cone Field");
+            if (field != null)
+                field.gameObject.SetActive(false);
+
+            Transform legacy = FindTransformNamed(invectorInstance.transform, "Scan Cone");
+            if (legacy != null)
+                legacy.gameObject.SetActive(false);
+        }
+
+        private static Transform FindTransformNamed(Transform root, string objectName)
+        {
+            if (root == null || string.IsNullOrEmpty(objectName))
+                return null;
+
+            Transform[] children = root.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < children.Length; i++)
+            {
+                Transform child = children[i];
+                if (child != null && child.name.Equals(objectName, StringComparison.OrdinalIgnoreCase))
+                    return child;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// DM Mining Tool mesh is authored along local +X, while Invector aims along weapon +Z.
+        /// Rotate the Pioneer visual so barrel shares the aim axis, keep a stable MiningBeamMuzzle
+        /// bound to vShooterWeapon.muzzle (never leave a destroyed muzzle ref - that freezes aim camera),
+        /// and seat the mesh / leftHandIK on the grip.
+        /// </summary>
+        private static void AlignMiningToolAimAxis(GameObject invectorInstance, Transform visual, ItemData item)
+        {
+            if (invectorInstance == null || visual == null || item == null || !item.isMiningTool)
+                return;
+
+            Transform weaponRoot = invectorInstance.transform;
+
+            // Keep the authored visual pose — do not rewrite localPosition/euler (that moved the
+            // mining pistol in-hand). Only ensure the beam muzzle exists and is bound.
+            EnsureMiningBeamMuzzle(invectorInstance, visual, weaponRoot);
+            EnsureMiningScanCone(invectorInstance, visual);
+
+            if (item.weaponGrip == WeaponGrip.TwoHanded)
+                AlignMiningLeftHandIk(invectorInstance, visual, weaponRoot);
+        }
+
+        /// <summary>
+        /// Runtime-safe: rebind muzzle / visual even when PrepareDrawnRangedSlot is called without an invector prefab.
+        /// </summary>
+        private static void EnsureMiningToolRuntimeBindings(GameObject instance, ItemData item)
+        {
+            if (instance == null || item == null || !item.isMiningTool)
+                return;
+
+            Transform visual = null;
+            Transform[] children = instance.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < children.Length; i++)
+            {
+                Transform t = children[i];
+                if (t != null && t.name.StartsWith("PioneerVisual_", StringComparison.Ordinal))
+                {
+                    visual = t;
+                    break;
+                }
+            }
+
+            if (visual != null)
+                AlignMiningToolAimAxis(instance, visual, item);
+            else
+                EnsureMiningBeamMuzzle(instance, null, instance.transform);
+        }
+
+        private static Vector3 ResolveMiningVisualBarrelEuler(Transform visual)
+        {
+            Bounds localBounds = GetMiningVisualLocalBounds(visual);
+            Vector3 size = localBounds.size;
+            if (size.sqrMagnitude < 0.000001f)
+                return Vector3.zero;
+
+            // Bulky legacy tool authored along +X; pistol meshes are usually along +Z already.
+            if (size.x > size.z * 1.15f && size.x >= size.y)
+                return new Vector3(0f, 270f, 0f);
+
+            return Vector3.zero;
+        }
+
+        private static Vector3 ResolveMiningVisualGripOffset(Transform visual)
+        {
+            Vector3 offset = new Vector3(0f, -0.01f, 0.06f);
+            Bounds localBounds = GetMiningVisualLocalBounds(visual);
+            if (localBounds.size.sqrMagnitude < 0.000001f)
+                return offset;
+
+            float halfLength = Mathf.Max(localBounds.extents.x, localBounds.extents.z);
+            offset.z = Mathf.Clamp(halfLength * 0.25f, 0.04f, 0.2f);
+            return offset;
+        }
+
+        private static Vector3 ResolveMiningMeshTipWorld(Transform visual, Transform weaponRoot)
+        {
+            Vector3 tipWorld = weaponRoot.position + weaponRoot.forward * 0.35f;
+            float best = float.NegativeInfinity;
+
+            // Mining Pistol mesh assets can report zero MeshFilter/localBounds while Renderer.bounds
+            // is valid — build tip candidates from world bounds remapped into each renderer.
+            Renderer[] renderers = visual.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null || !renderer.enabled)
+                    continue;
+
+                Bounds worldBounds = renderer.bounds;
+                if (worldBounds.size.sqrMagnitude < 0.000001f)
+                    continue;
+
+                Vector3 c = worldBounds.center;
+                Vector3 e = worldBounds.extents;
+                // True directional tip of an AABB is always a corner, not a face midpoint.
+                Vector3[] candidates =
+                {
+                    c + new Vector3( e.x,  e.y,  e.z),
+                    c + new Vector3( e.x,  e.y, -e.z),
+                    c + new Vector3( e.x, -e.y,  e.z),
+                    c + new Vector3( e.x, -e.y, -e.z),
+                    c + new Vector3(-e.x,  e.y,  e.z),
+                    c + new Vector3(-e.x,  e.y, -e.z),
+                    c + new Vector3(-e.x, -e.y,  e.z),
+                    c + new Vector3(-e.x, -e.y, -e.z)
+                };
+
+                for (int n = 0; n < candidates.Length; n++)
+                {
+                    float score = Vector3.Dot(candidates[n] - weaponRoot.position, weaponRoot.forward);
+                    if (score > best)
+                    {
+                        best = score;
+                        tipWorld = candidates[n];
+                    }
+                }
+            }
+
+            return tipWorld;
+        }
+
+        private static Bounds GetMiningVisualLocalBounds(Transform visual)
+        {
+            if (visual == null)
+                return new Bounds(Vector3.zero, Vector3.zero);
+
+            // Prefer remapping live renderer world bounds into visual space — authored Mining Pistol
+            // meshes often have empty MeshFilter.bounds / localBounds.
+            bool has = false;
+            Bounds local = new Bounds(Vector3.zero, Vector3.zero);
+            Renderer[] renderers = visual.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null)
+                    continue;
+
+                Bounds wb = renderer.bounds;
+                if (wb.size.sqrMagnitude < 0.000001f)
+                    continue;
+
+                for (int x = -1; x <= 1; x += 2)
+                for (int y = -1; y <= 1; y += 2)
+                for (int z = -1; z <= 1; z += 2)
+                {
+                    Vector3 corner = wb.center + Vector3.Scale(wb.extents, new Vector3(x, y, z));
+                    Vector3 inVisual = visual.InverseTransformPoint(corner);
+                    if (!has)
+                    {
+                        local = new Bounds(inVisual, Vector3.zero);
+                        has = true;
+                    }
+                    else
+                    {
+                        local.Encapsulate(inVisual);
+                    }
+                }
+            }
+
+            if (has)
+                return local;
+
+            MeshRenderer meshRenderer = visual.GetComponentInChildren<MeshRenderer>(true);
+            if (meshRenderer != null && meshRenderer.localBounds.size.sqrMagnitude > 0.000001f)
+                return meshRenderer.localBounds;
+
+            MeshFilter filter = visual.GetComponentInChildren<MeshFilter>(true);
+            if (filter != null && filter.sharedMesh != null && filter.sharedMesh.bounds.size.sqrMagnitude > 0.000001f)
+                return filter.sharedMesh.bounds;
+
+            return new Bounds(Vector3.zero, Vector3.zero);
+        }
+
+        private static void EnsureMiningBeamMuzzle(GameObject invectorInstance, Transform visual, Transform weaponRoot)
+        {
+            if (invectorInstance == null || weaponRoot == null)
+                return;
+
+            Transform tip = null;
+            Transform[] children = invectorInstance.GetComponentsInChildren<Transform>(true);
+
+            // Prefer the authored barrel muzzle (artist-placed) over any runtime tip.
+            for (int i = 0; i < children.Length; i++)
+            {
+                Transform child = children[i];
+                if (child == null)
+                    continue;
+
+                if (child.name.Equals("muzzle", StringComparison.OrdinalIgnoreCase) ||
+                    child.name.Equals("Muzzle", StringComparison.OrdinalIgnoreCase))
+                {
+                    tip = child;
+                    break;
+                }
+            }
+
+            if (tip == null)
+            {
+                for (int i = 0; i < children.Length; i++)
+                {
+                    Transform child = children[i];
+                    if (child != null && child.name.Equals("MiningBeamMuzzle", StringComparison.OrdinalIgnoreCase))
+                    {
+                        tip = child;
+                        break;
+                    }
+                }
+            }
+
+            // Only create a runtime tip when no authored muzzle exists. Never rewrite an authored muzzle pose.
+            bool createdTip = false;
+            bool authoredMuzzle = tip != null &&
+                (tip.name.Equals("muzzle", StringComparison.OrdinalIgnoreCase) ||
+                 tip.name.Equals("Muzzle", StringComparison.OrdinalIgnoreCase));
+
+            if (tip == null)
+            {
+                GameObject tipGo = new GameObject("MiningBeamMuzzle");
+                tip = tipGo.transform;
+                createdTip = true;
+            }
+
+            if (createdTip)
+            {
+                Transform tipParent = visual != null ? visual : weaponRoot;
+                if (tip.parent != tipParent)
+                    tip.SetParent(tipParent, true);
+
+                Vector3 tipWorld = visual != null
+                    ? ResolveMiningMeshTipWorld(visual, weaponRoot)
+                    : weaponRoot.position + weaponRoot.forward * 0.35f;
+                tip.position = tipWorld;
+                tip.rotation = Quaternion.LookRotation(weaponRoot.forward, weaponRoot.up);
+            }
+            else if (!authoredMuzzle && tip.parent == null)
+            {
+                Transform tipParent = visual != null ? visual : weaponRoot;
+                tip.SetParent(tipParent, true);
+            }
+
+            foreach (vShooterWeapon shooter in invectorInstance.GetComponentsInChildren<vShooterWeapon>(true))
+            {
+                if (shooter != null)
+                    shooter.muzzle = tip;
+            }
+        }
+
+        private static void AlignMiningLeftHandIk(GameObject invectorInstance, Transform visual, Transform weaponRoot)
+        {
+            if (invectorInstance == null || weaponRoot == null)
+                return;
+
+            Transform leftIk = null;
+            Transform[] children = invectorInstance.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < children.Length; i++)
+            {
+                Transform t = children[i];
+                if (t != null && t.name.Equals("leftHandIK", StringComparison.OrdinalIgnoreCase))
+                {
+                    leftIk = t;
+                    break;
+                }
+            }
+
+            if (leftIk == null)
+                return;
+
+            // Seat support hand on the underside / mid body of the mining tool (weapon local space).
+            Vector3 targetLocal = new Vector3(0.02f, -0.03f, 0.18f);
+            if (visual != null)
+            {
+                Renderer renderer = visual.GetComponentInChildren<Renderer>(true);
+                if (renderer != null)
+                {
+                    Vector3 localCenter = weaponRoot.InverseTransformPoint(renderer.bounds.center);
+                    targetLocal = new Vector3(localCenter.x + 0.02f, localCenter.y - 0.04f, Mathf.Max(0.12f, localCenter.z * 0.55f));
+                }
+            }
+
+            leftIk.position = weaponRoot.TransformPoint(targetLocal);
+            // Keep a natural palm-up support pose relative to the weapon.
+            leftIk.rotation = weaponRoot.rotation * Quaternion.Euler(280f, 40f, 200f);
+
+            foreach (vShooterWeapon shooter in invectorInstance.GetComponentsInChildren<vShooterWeapon>(true))
+            {
+                if (shooter != null)
+                    shooter.handIKTarget = leftIk;
+            }
+        }
+
+        public static void PreparePreloadedWeaponInstance(GameObject instance, ItemData item, GameObject invectorPrefab = null)
+        {
+            if (instance == null)
+                return;
+
+            StripInvectorPickupUi(instance);
+            if (item != null && invectorPrefab != null)
+                MountAuthoredWeaponVisual(instance, item, invectorPrefab);
+            EnsureMiningToolRuntimeBindings(instance, item);
+            StripEquippedWeaponPhysics(instance);
+        }
+
+        public static void PrepareDrawnMeleeSlot(GameObject instance, ItemData item, GameObject invectorPrefab = null)
+        {
+            PreparePreloadedWeaponInstance(instance, item, invectorPrefab);
+        }
+
+        public static void PrepareDrawnRangedSlot(GameObject instance, ItemData item, GameObject invectorPrefab = null)
+        {
+            PreparePreloadedWeaponInstance(instance, item, invectorPrefab);
+        }
+
+        public static void PrepareHolsteredVisualSlot(GameObject instance, ItemData item)
+        {
+            if (instance == null)
+                return;
+
+            foreach (vMeleeWeapon weapon in instance.GetComponentsInChildren<vMeleeWeapon>(true))
+                DestroyUnityObject(weapon);
+
+            foreach (vShooterWeapon weapon in instance.GetComponentsInChildren<vShooterWeapon>(true))
+                DestroyUnityObject(weapon);
+
+            foreach (vHitBox hitBox in instance.GetComponentsInChildren<vHitBox>(true))
+                DestroyUnityObject(hitBox);
+
+            StripAuthoredVisualForEquippedWeapon(instance, item);
+        }
+
+        private static EquippedVisualMarker FindMountedVisual(GameObject root, ItemData item)
+        {
+            EquippedVisualMarker[] markers = root.GetComponentsInChildren<EquippedVisualMarker>(true);
+            for (int i = 0; i < markers.Length; i++)
+            {
+                EquippedVisualMarker marker = markers[i];
+                if (marker != null && marker.SourceItem == item)
+                    return marker;
+            }
+
+            return null;
+        }
+
+        private static bool HasRenderer(GameObject root)
+        {
+            return root != null && root.GetComponentInChildren<Renderer>(true) != null;
+        }
+
+        private static void HideVendorRenderers(GameObject root, Transform ignoredRoot)
+        {
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null || (ignoredRoot != null && renderer.transform.IsChildOf(ignoredRoot)))
+                    continue;
+
+                renderer.enabled = false;
+            }
+        }
+
+        private static void StripAuthoredVisualForEquippedWeapon(GameObject visual, ItemData item)
+        {
+            if (visual == null)
+                return;
+
+            EquippedVisualMarker marker = visual.GetComponent<EquippedVisualMarker>();
+            if (marker == null)
+                marker = visual.AddComponent<EquippedVisualMarker>();
+            marker.BindItem(item);
+
+            SetLayerRecursively(visual, 0);
+
+            foreach (ItemPickup pickup in visual.GetComponentsInChildren<ItemPickup>(true))
+                DestroyUnityObject(pickup);
+
+            foreach (ResourceNode node in visual.GetComponentsInChildren<ResourceNode>(true))
+                DestroyUnityObject(node);
+
+            foreach (vCollectableStandalone collectable in visual.GetComponentsInChildren<vCollectableStandalone>(true))
+                DestroyUnityObject(collectable);
+
+            foreach (Collider collider in visual.GetComponentsInChildren<Collider>(true))
+                collider.enabled = false;
+
+            foreach (Rigidbody body in visual.GetComponentsInChildren<Rigidbody>(true))
+            {
+                DestroyUnityObject(body);
+            }
+        }
+
+        private static void SetLayerRecursively(GameObject obj, int layer)
+        {
+            obj.layer = layer;
+            Transform root = obj.transform;
+            for (int i = 0; i < root.childCount; i++)
+                SetLayerRecursively(root.GetChild(i).gameObject, layer);
+        }
+
+        private static void StripInvectorPickupUi(GameObject instance)
+        {
+            if (instance == null)
+                return;
+
+            Transform root = instance.transform;
+            for (int i = root.childCount - 1; i >= 0; i--)
+            {
+                Transform child = root.GetChild(i);
+                if (child.name.StartsWith("vActionText", StringComparison.OrdinalIgnoreCase))
+                    DestroyUnityObject(child.gameObject);
+            }
+
+            vCollectableStandalone[] collectables = instance.GetComponentsInChildren<vCollectableStandalone>(true);
+            for (int i = 0; i < collectables.Length; i++)
+            {
+                vCollectableStandalone collectable = collectables[i];
+                if (collectable == null)
+                    continue;
+
+                collectable.enabled = false;
+            }
+
+            Collider[] colliders = instance.GetComponentsInChildren<Collider>(true);
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                Collider collider = colliders[i];
+                if (collider == null)
+                    continue;
+
+                if (collider.GetComponentInParent<vHitBox>() != null)
+                    continue;
+
+                collider.enabled = false;
+            }
+        }
+
+        private void AttachWeaponToHandler(GameObject instance, ItemData item)
+        {
+            if (instance == null)
+                return;
+
+            bool useLeftHand = false;
+            vShooterWeapon shooterWeapon = instance.GetComponent<vShooterWeapon>();
+            if (shooterWeapon != null)
+                useLeftHand = shooterWeapon.isLeftWeapon;
+
+            string equipPointName = ResolveEquipPointName(item, instance);
+
+            Transform socket = ResolveEquipSocket(useLeftHand, equipPointName);
+            if (socket == null)
+                return;
+
+            instance.transform.SetParent(socket, false);
+            ApplyHeldTransform(instance, item);
+            StripEquippedWeaponPhysics(instance);
+        }
+
+        private static string ResolveEquipPointName(ItemData item, GameObject instance)
+        {
+            if (item != null &&
+                !string.IsNullOrEmpty(item.equipSocketName) &&
+                !item.equipSocketName.Equals("RightHand", StringComparison.OrdinalIgnoreCase))
+            {
+                return item.equipSocketName;
+            }
+
+            vCollectableStandalone collectable = instance.GetComponentInChildren<vCollectableStandalone>(true);
+            if (collectable != null && !string.IsNullOrEmpty(collectable.targetEquipPoint))
+                return collectable.targetEquipPoint;
+
+            return null;
+        }
+
+        private static void ApplyHeldTransform(GameObject instance, ItemData item)
+        {
+            if (item == null)
+            {
+                instance.transform.localPosition = Vector3.zero;
+                instance.transform.localRotation = Quaternion.identity;
+                return;
+            }
+
+            instance.transform.localPosition = item.heldLocalPosition;
+            instance.transform.localScale = item.heldLocalScale;
+            if (item.useHeldLocalRotation)
+                instance.transform.localRotation = item.heldLocalRotation;
+            else
+                instance.transform.localEulerAngles = item.heldLocalEuler;
+        }
+
+        private static void ApplySheathedTransform(GameObject instance, ItemData item)
+        {
+            if (instance == null)
+                return;
+
+            if (item == null)
+            {
+                instance.transform.localPosition = Vector3.zero;
+                instance.transform.localRotation = Quaternion.identity;
+                instance.transform.localScale = Vector3.one;
+                return;
+            }
+
+            instance.transform.localPosition = item.sheathedLocalPosition;
+            instance.transform.localScale = item.sheathedLocalScale == Vector3.zero
+                ? Vector3.one
+                : item.sheathedLocalScale;
+
+            if (item.useSheathedLocalRotation)
+                instance.transform.localRotation = item.sheathedLocalRotation;
+            else
+                instance.transform.localEulerAngles = item.sheathedLocalEuler;
+        }
+
+        private static Transform FindChildTransformByName(Transform root, string name)
+        {
+            if (root == null || string.IsNullOrEmpty(name))
+                return null;
+
+            if (root.name.Equals(name, StringComparison.OrdinalIgnoreCase))
+                return root;
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform found = FindChildTransformByName(root.GetChild(i), name);
+                if (found != null)
+                    return found;
+            }
+
+            return null;
+        }
+
+        private Transform ResolveEquipSocket(bool useLeftHand, string equipPointName)
+        {
+            if (_collectControl == null)
+                return null;
+
+            vHandler handler = useLeftHand ? _collectControl.leftHandler : _collectControl.rightHandler;
+            Transform socket = handler.defaultHandler;
+            if (string.IsNullOrEmpty(equipPointName) || handler.customHandlers == null)
+                return socket;
+
+            for (int i = 0; i < handler.customHandlers.Count; i++)
+            {
+                Transform custom = handler.customHandlers[i];
+                if (custom != null && custom.name.Equals(equipPointName))
+                    return custom;
+            }
+
+            return socket;
+        }
+
+        private void EquipRanged(GameObject instance)
+        {
+            if (_meleeManager != null)
+            {
+                _meleeManager.SetRightWeapon((GameObject)null);
+                _meleeManager.SetLeftWeapon((GameObject)null);
+            }
+
+            PrepareUnifiedProjectileWeapon(instance, _activeItem);
+
+            if (_shooterManager != null)
+            {
+                // vAssaultRifle / Survival Rifle keep vShooterWeapon on a child.
+                // Invector SetRightWeapon(GameObject) only GetComponent on the root, so
+                // passing the slot root leaves CurrentActiveWeapon null and R is ignored.
+                GameObject shooterObject = ResolveShooterWeaponObject(instance);
+                _shooterManager.SetRightWeapon(shooterObject != null ? shooterObject : instance);
+            }
+        }
+
+        /// <summary>Rebinds Invector rWeapon from the drawn slot when the rifle child was missed.</summary>
+        public void EnsureDrawnShooterBound()
+        {
+            if (_shooterManager != null && _shooterManager.CurrentWeapon != null)
+                return;
+
+            ItemData item = _equipment != null ? _equipment.DrawnWeaponItem : null;
+            if (item == null || !item.IsRangedWeapon)
+                return;
+
+            GameObject drawn = FindPreloadedDrawnSlot(transform, item);
+            if (drawn == null)
+                drawn = TryGetWeaponInstance(item);
+            if (drawn == null)
+                return;
+
+            PrepareUnifiedProjectileWeapon(drawn, item);
+            GameObject shooterObject = ResolveShooterWeaponObject(drawn);
+            if (shooterObject != null && _shooterManager != null)
+                _shooterManager.SetRightWeapon(shooterObject);
+        }
+
+        private static GameObject ResolveShooterWeaponObject(GameObject instance)
+        {
+            if (instance == null)
+                return null;
+
+            vShooterWeapon shooter = instance.GetComponent<vShooterWeapon>();
+            if (shooter == null)
+                shooter = instance.GetComponentInChildren<vShooterWeapon>(true);
+            return shooter != null ? shooter.gameObject : null;
+        }
+
+        /// <summary>
+        /// Fully hands ranged shot-effects ownership to our own ammo-driven pipeline. Invector's
+        /// vShooterWeaponBase.ShotEffect() independently spawns its own physical bullet+trail
+        /// (projectile), plays its own bundled gunshot (fireClip), fires its own muzzle-flash
+        /// particle emitters (emittShurykenParticle), and flashes its own light (lightOnShot) — all
+        /// on top of whatever CombatProjectileSpawner/CombatHitResolver do for the equipped ammo.
+        /// Clearing all of them here (at equip time, mirroring CompanionInvectorLoadoutBridge) means
+        /// every visual/audio effect comes from our own ammoItem-driven system. isInfinityAmmo stays
+        /// true so Invector's native reserve never gates the player — finite ammo is enforced only
+        /// by WeaponAmmoState (Standard/Gunpowder are no longer treated as infinite for the player).
+        /// Companions/enemies keep true infinite fire via their own loadout bridges. dontUseReload
+        /// stays false so Invector's reload animation/timing is still available —
+        /// PioneerInvectorAmmoBridge decides when a round is available and when a reload should
+        /// start, purely from WeaponAmmoState. weapon.ammo is left for
+        /// PioneerInvectorAmmoBridge.SyncMagazineFromPioneer to set correctly on the next sync tick,
+        /// rather than being force-filled here.
+        /// </summary>
+        private void PrepareUnifiedProjectileWeapon(GameObject instance, ItemData weaponItem)
+        {
+            if (instance == null)
+                return;
+
+            ItemData ammoItem = ResolveLoadedAmmo();
+            foreach (vShooterWeapon weapon in instance.GetComponentsInChildren<vShooterWeapon>(true))
+            {
+                if (weapon == null)
+                    continue;
+
+                weapon.projectile = null;
+                weapon.fireClip = null;
+                weapon.emittShurykenParticle = null;
+                weapon.lightOnShot = null;
+                weapon.isInfinityAmmo = true;
+                weapon.dontUseReload = false;
+                weapon.autoReload = false;
+                // Mining uses continuous beam audio while charged; empty plasma uses the same
+                // shared dry-fire click as other guns (never the handgun fireClip).
+                ApplySharedEmptyClickClip(weapon);
+                EnsureReloadAudioSource(weapon);
+                SilenceWeaponAimClicks(weapon);
+                PioneerInvectorRecoilUtility.ApplyWeaponRecoilTuning(weapon, weaponItem, ammoItem);
+            }
+        }
+
+        /// <summary>
+        /// Invector weapon prefabs wire vShooterWeapon.onEnableAim / onDisableAim to AimAudioSource.PlayOneShot
+        /// (MediumWeaponAim etc.). While ADS is held the muzzle aim check chatters, so SetActiveAim(true/false)
+        /// re-fired the click repeatedly. We prefer silence: swap any aim event whose persistent listeners all
+        /// target AudioSources for an empty event and mute the dedicated aim sources. Idempotent per instance;
+        /// prefab assets are untouched (runtime instance only).
+        /// </summary>
+        public static void SilenceWeaponAimClicks(vShooterWeapon weapon)
+        {
+            if (weapon == null)
+                return;
+
+            // Remember the prefab's aim-in / aim-out clips BEFORE the events are emptied so
+            // PioneerShooterMeleeInput can play each exactly once on the ADS press / release edge.
+            CacheAimEdgeClips(weapon);
+
+            weapon.onEnableAim = StripAudioOnlyAimEvent(weapon.onEnableAim);
+            weapon.onDisableAim = StripAudioOnlyAimEvent(weapon.onDisableAim);
+        }
+
+        private sealed class AimEdgeClips
+        {
+            public AudioClip enter;
+            public AudioClip exit;
+        }
+
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<vShooterWeapon, AimEdgeClips> AimEdgeClipCache =
+            new System.Runtime.CompilerServices.ConditionalWeakTable<vShooterWeapon, AimEdgeClips>();
+
+        /// <summary>Clip played once when ADS starts (weapon's onEnableAim clip, e.g. MediumWeaponAim). May be null.</summary>
+        public static AudioClip GetAimEnterClip(vShooterWeapon weapon)
+        {
+            return weapon != null && AimEdgeClipCache.TryGetValue(weapon, out AimEdgeClips c) ? c.enter : null;
+        }
+
+        /// <summary>
+        /// Clip played once when ADS ends (weapon's onDisableAim clip, e.g. MediumWeaponUmAim).
+        /// Falls back to the aim-in clip when the weapon only has one. May be null.
+        /// </summary>
+        public static AudioClip GetAimExitClip(vShooterWeapon weapon)
+        {
+            if (weapon == null || !AimEdgeClipCache.TryGetValue(weapon, out AimEdgeClips c))
+                return null;
+            return c.exit != null ? c.exit : c.enter;
+        }
+
+        private static void CacheAimEdgeClips(vShooterWeapon weapon)
+        {
+            // Idempotent: once events are stripped they report no clips, so never overwrite good data.
+            if (AimEdgeClipCache.TryGetValue(weapon, out AimEdgeClips existing) && (existing.enter != null || existing.exit != null))
+                return;
+
+            AudioClip enter = ReadAudioOnlyEventClip(weapon.onEnableAim);
+            AudioClip exit = ReadAudioOnlyEventClip(weapon.onDisableAim);
+            if (enter == null && exit == null)
+                return;
+
+            AimEdgeClipCache.Remove(weapon);
+            AimEdgeClipCache.Add(weapon, new AimEdgeClips { enter = enter, exit = exit });
+        }
+
+        private static readonly System.Reflection.BindingFlags AimReflectFlags =
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public;
+
+        private static System.Reflection.FieldInfo FindFieldInHierarchy(System.Type type, string name)
+        {
+            for (System.Type t = type; t != null; t = t.BaseType)
+            {
+                System.Reflection.FieldInfo f = t.GetField(name, AimReflectFlags | System.Reflection.BindingFlags.DeclaredOnly);
+                if (f != null)
+                    return f;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Reads the AudioClip argument of an AudioSource.PlayOneShot persistent listener. Persistent args are not
+        /// public API at runtime, so read the serialized fields; fall back to the target AudioSource's own clip.
+        /// </summary>
+        private static AudioClip ReadAudioOnlyEventClip(UnityEngine.Events.UnityEvent evt)
+        {
+            if (evt == null)
+                return null;
+
+            int count = evt.GetPersistentEventCount();
+            if (count == 0)
+                return null;
+
+            System.Collections.IList calls = null;
+            try
+            {
+                System.Reflection.FieldInfo groupField = FindFieldInHierarchy(evt.GetType(), "m_PersistentCalls");
+                object group = groupField?.GetValue(evt);
+                System.Reflection.FieldInfo callsField = group != null ? FindFieldInHierarchy(group.GetType(), "m_Calls") : null;
+                calls = callsField?.GetValue(group) as System.Collections.IList;
+            }
+            catch (System.Exception)
+            {
+                calls = null;
+            }
+
+            for (int i = 0; i < count; i++)
+            {
+                AudioSource src = evt.GetPersistentTarget(i) as AudioSource;
+                if (src == null)
+                    continue;
+
+                if (calls != null && i < calls.Count && calls[i] != null)
+                {
+                    try
+                    {
+                        object call = calls[i];
+                        object args = FindFieldInHierarchy(call.GetType(), "m_Arguments")?.GetValue(call);
+                        object obj = args != null ? FindFieldInHierarchy(args.GetType(), "m_ObjectArgument")?.GetValue(args) : null;
+                        if (obj is AudioClip argClip && argClip != null)
+                            return argClip;
+                    }
+                    catch (System.Exception)
+                    {
+                        // fall through to the source clip
+                    }
+                }
+
+                if (src.clip != null)
+                    return src.clip;
+            }
+
+            return null;
+        }
+
+        private static UnityEngine.Events.UnityEvent StripAudioOnlyAimEvent(UnityEngine.Events.UnityEvent evt)
+        {
+            if (evt == null)
+                return new UnityEngine.Events.UnityEvent();
+
+            int count = evt.GetPersistentEventCount();
+            if (count == 0)
+                return evt;
+
+            bool audioOnly = true;
+            for (int i = 0; i < count; i++)
+            {
+                UnityEngine.Object target = evt.GetPersistentTarget(i);
+                AudioSource src = target as AudioSource;
+                if (src == null)
+                {
+                    audioOnly = false;
+                    continue;
+                }
+
+                // Dedicated aim sources only; never mute the weapon's shared fire/reload source.
+                if (src.gameObject.name.IndexOf("Aim", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    src.Stop();
+                    src.mute = true;
+                    src.playOnAwake = false;
+                }
+            }
+
+            return audioOnly ? new UnityEngine.Events.UnityEvent() : evt;
+        }
+
+        private ItemData ResolveLoadedAmmo()
+        {
+            WeaponAmmoState ammoState = GetComponent<WeaponAmmoState>();
+            if (ammoState == null || _equipment == null)
+                return null;
+
+            return ammoState.GetLoadedAmmoItem(_equipment.ActiveWeaponHotbarSlot);
+        }
+
+        private static AudioClip _sharedEmptyClickClip;
+
+        private static void ApplySharedEmptyClickClip(vShooterWeapon weapon)
+        {
+            if (weapon == null)
+                return;
+
+            if (_sharedEmptyClickClip == null)
+            {
+                _sharedEmptyClickClip = Resources.Load<AudioClip>("Audio/EmptyClip_A");
+#if UNITY_EDITOR
+                if (_sharedEmptyClickClip == null)
+                {
+                    _sharedEmptyClickClip = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(
+                        "Assets/Invector-3rdPersonController/Shooter/Audio/Weapons/EmptyClip_A.mp3");
+                }
+#endif
+            }
+
+            if (_sharedEmptyClickClip != null)
+                weapon.emptyClip = _sharedEmptyClickClip;
+        }
+
+        /// <summary>
+        /// Invector FinishReloadEffect calls PlayOneShot on reloadSource (defaults to the fire
+        /// AudioSource). Holstered/preloaded copies often leave that source disabled, which logs
+        /// "Can not play a disabled audio source" when a reload finishes. Re-enable for the drawn
+        /// weapon so Invector reload SFX can play safely.
+        /// </summary>
+        private static void EnsureReloadAudioSource(vShooterWeapon weapon)
+        {
+            if (weapon == null)
+                return;
+
+            AudioSource reloadSource = weapon.reloadSource != null ? weapon.reloadSource : weapon.source;
+            if (reloadSource == null)
+                return;
+
+            if (weapon.gameObject.activeInHierarchy && !reloadSource.enabled)
+                reloadSource.enabled = true;
+        }
+
+        private void EquipMelee(GameObject instance)
+        {
+            if (_shooterManager != null)
+                _shooterManager.SetRightWeapon((GameObject)null);
+
+            if (_meleeManager == null || instance == null)
+                return;
+
+            // SetRightWeapon(GameObject) only GetComponent on the root. Sword components
+            // often sit on a child, which left rightWeapon null and swing hitboxes off.
+            vMeleeWeapon weapon = instance.GetComponent<vMeleeWeapon>();
+            if (weapon == null)
+                weapon = instance.GetComponentInChildren<vMeleeWeapon>(true);
+            if (weapon == null)
+                return;
+
+            weapon.useStrongAttack = true;
+            if (weapon.attackID <= 0)
+                weapon.attackID = 1;
+            if (weapon.movesetID <= 0)
+                weapon.movesetID = 1;
+
+            PioneerMeleeHitboxTuning.ApplyToWeapon(weapon);
+            EnsureMeleeHitBoxes(weapon);
+            weapon.enabled = true;
+            _meleeManager.SetRightWeapon(weapon);
+        }
+
+        private static void EnsureMeleeHitBoxes(vMeleeWeapon weapon)
+        {
+            if (weapon == null)
+                return;
+
+            if (weapon.hitBoxes == null)
+                weapon.hitBoxes = new List<vHitBox>();
+            if (weapon.damage == null)
+                weapon.damage = new vDamage();
+
+            vHitBox[] boxes = weapon.GetComponentsInChildren<vHitBox>(true);
+            for (int i = 0; i < boxes.Length; i++)
+            {
+                vHitBox box = boxes[i];
+                if (box == null)
+                    continue;
+
+                box.enabled = true;
+                box.attackObject = weapon;
+                if (box.damagePercentage <= 0)
+                    box.damagePercentage = 100;
+
+                Collider trigger = box.GetComponent<Collider>();
+                if (trigger != null)
+                    trigger.isTrigger = true;
+
+                if (!weapon.hitBoxes.Contains(box))
+                    weapon.hitBoxes.Add(box);
+            }
+        }
+
+        private void ShowHolsteredWeaponIfNeeded()
+        {
+            if (_holsterPreviewActive)
+                return;
+
+            ItemData item = _equipment.EquippedItem;
+            if (item == null || !item.IsEquippable)
+                return;
+
+            if (item.itemType == ItemType.MeleeWeapon)
+            {
+                if (TryGetMeleeSlot(item, out MeleeWeaponSlot slot) && slot.holsteredInstance != null)
+                    ShowMeleeHolsteredSlot(item, slot);
+                else
+                    Debug.LogWarning($"PioneerInvectorWeaponBridge: missing Holstered_ slot for '{item.name}'.");
+                return;
+            }
+
+            if (item.IsRangedWeapon)
+            {
+                if (TryGetRangedSlot(item, out RangedWeaponSlot slot) && slot.holsteredInstance != null)
+                {
+                    ShowRangedHolsteredSlot(item, slot);
+                }
+                else
+                {
+                    HideRuntimeGeneratedWeaponsForItem(item);
+                    Debug.LogWarning($"PioneerInvectorWeaponBridge: missing Holstered_ slot for '{item.name}'.");
+                }
+                return;
+            }
+
+            GameObject prefab = ResolveWeaponPrefab(item);
+            if (prefab == null)
+                return;
+
+            GameObject instance = GetOrCreateInstance(item, prefab);
+            Transform socket = FindHolsterSocket(item);
+            if (socket == null)
+                return;
+
+            instance.transform.SetParent(socket, false);
+            ApplySheathedTransform(instance, item);
+            StripEquippedWeaponPhysics(instance);
+            instance.SetActive(true);
+        }
+
+        private static void StripEquippedWeaponPhysics(GameObject instance)
+        {
+            if (instance == null)
+                return;
+
+            Collider[] colliders = instance.GetComponentsInChildren<Collider>(true);
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                Collider collider = colliders[i];
+                if (collider == null)
+                    continue;
+
+                // vHitBox triggers are controlled by vMeleeManager during attack windows.
+                if (collider.GetComponentInParent<vHitBox>() != null)
+                    continue;
+
+                collider.enabled = false;
+            }
+
+            Rigidbody[] bodies = instance.GetComponentsInChildren<Rigidbody>(true);
+            for (int i = 0; i < bodies.Length; i++)
+            {
+                Rigidbody body = bodies[i];
+                if (body != null)
+                    DestroyUnityObject(body);
+            }
+        }
+
+        private static void DestroyUnityObject(UnityEngine.Object obj)
+        {
+            if (obj == null)
+                return;
+
+#if UNITY_EDITOR
+            // Prefab contents opened via PrefabUtility.LoadPrefabContents live in a preview
+            // scene. Deferred Destroy would run after SaveAsPrefabAsset, so strip immediately.
+            GameObject go = obj as GameObject;
+            if (go == null && obj is Component component)
+                go = component.gameObject;
+
+            bool inPreviewScene = go != null &&
+                UnityEditor.SceneManagement.EditorSceneManager.IsPreviewScene(go.scene);
+
+            if (!Application.isPlaying || inPreviewScene)
+            {
+                DestroyImmediate(obj, true);
+                return;
+            }
+#endif
+            Destroy(obj);
+        }
+
+        private void ClearInvectorWeapons()
+        {
+            if (_shooterManager != null)
+                _shooterManager.SetRightWeapon((GameObject)null);
+
+            if (_meleeManager != null)
+                _meleeManager.SetRightWeapon((GameObject)null);
+        }
+
+        private void HideAllSpawnedWeapons()
+        {
+            foreach (KeyValuePair<ItemData, GameObject> pair in _spawnedInstances)
+            {
+                if (pair.Value != null)
+                    pair.Value.SetActive(false);
+            }
+
+            if (meleeWeaponSlots != null)
+            {
+                for (int i = 0; i < meleeWeaponSlots.Count; i++)
+                {
+                    MeleeWeaponSlot slot = meleeWeaponSlots[i];
+                    if (slot == null)
+                        continue;
+
+                    if (slot.drawnInstance != null)
+                        slot.drawnInstance.SetActive(false);
+                    if (slot.holsteredInstance != null)
+                        slot.holsteredInstance.SetActive(false);
+                }
+            }
+
+            if (rangedWeaponSlots != null)
+            {
+                for (int i = 0; i < rangedWeaponSlots.Count; i++)
+                {
+                    RangedWeaponSlot slot = rangedWeaponSlots[i];
+                    if (slot == null)
+                        continue;
+
+                    if (slot.drawnInstance != null)
+                        slot.drawnInstance.SetActive(false);
+                    if (slot.holsteredInstance != null)
+                        slot.holsteredInstance.SetActive(false);
+                }
+            }
+        }
+
+        private void HideRuntimeGeneratedWeaponsForItem(ItemData item)
+        {
+            if (item == null)
+                return;
+
+            string displayName = item.itemName ?? string.Empty;
+            string assetName = item.name ?? string.Empty;
+            Transform root = transform;
+            for (int i = root.childCount - 1; i >= 0; i--)
+                HideRuntimeGeneratedWeaponsForItem(root.GetChild(i), displayName, assetName);
+        }
+
+        private static void HideRuntimeGeneratedWeaponsForItem(Transform node, string displayName, string assetName)
+        {
+            if (node == null)
+                return;
+
+            for (int i = node.childCount - 1; i >= 0; i--)
+                HideRuntimeGeneratedWeaponsForItem(node.GetChild(i), displayName, assetName);
+
+            string name = node.name;
+            if (!name.StartsWith("InvectorWeapon_", StringComparison.Ordinal))
+                return;
+
+            bool matchesDisplayName = !string.IsNullOrWhiteSpace(displayName) &&
+                                      name.IndexOf(displayName, StringComparison.OrdinalIgnoreCase) >= 0;
+            bool matchesAssetName = !string.IsNullOrWhiteSpace(assetName) &&
+                                    name.IndexOf(assetName, StringComparison.OrdinalIgnoreCase) >= 0;
+            if (matchesDisplayName || matchesAssetName)
+                node.gameObject.SetActive(false);
+        }
+
+        private static void ApplyItemStats(ItemData item, GameObject instance)
+        {
+            if (item == null || instance == null)
+                return;
+
+            vShooterWeapon shooterWeapon = instance.GetComponent<vShooterWeapon>();
+            if (shooterWeapon != null)
+            {
+                ItemData ammoItem = null;
+                WeaponAmmoState ammoState = instance.GetComponentInParent<WeaponAmmoState>();
+                EquipmentController equipment = instance.GetComponentInParent<EquipmentController>();
+                if (ammoState != null && equipment != null)
+                    ammoItem = ammoState.GetLoadedAmmoItem(equipment.ActiveWeaponHotbarSlot);
+
+                PioneerInvectorRecoilUtility.ApplyRangedTiming(shooterWeapon, item, ammoItem);
+                if (DMWeaponMorphRuntime.TryApplyRangedOverrides(item, out _, out _, out _,
+                        out float fireRate, out _, out _, out int mag, out float reload, out _))
+                {
+                    if (fireRate > 0.01f)
+                        shooterWeapon.shootFrequency = 1f / fireRate;
+                    if (mag > 0)
+                        shooterWeapon.clipSize = mag;
+                    if (reload > 0.01f)
+                        shooterWeapon.reloadTime = reload;
+                }
+            }
+
+            vMeleeWeapon meleeWeapon = instance.GetComponentInChildren<vMeleeWeapon>(true);
+            if (meleeWeapon != null)
+            {
+                if (meleeWeapon.damage == null)
+                    meleeWeapon.damage = new vDamage();
+
+                float meleeDmg = item.GetAverageMeleeDamage();
+                if (DMWeaponMorphRuntime.TryApplyMeleeOverrides(item, out float md, out _, out _, out _, out _))
+                    meleeDmg = md;
+                meleeWeapon.damage.damageValue = Mathf.RoundToInt(meleeDmg);
+            }
+        }
+    }
+}

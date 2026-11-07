@@ -58,8 +58,9 @@ namespace Project.UI
 
             if (DMUiToolkitMenus.HandlesWindow(WindowId))
             {
+                // Round8: UITK paints this window; the hidden legacy uGUI content is never shown, so skip its
+                // full Refresh() (legacy inventory RefreshUI / quest list rebuild on every open). OnShow kept for state.
                 OnShow();
-                Refresh();
                 return;
             }
 

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Project.Map
 {
@@ -11,6 +12,14 @@ namespace Project.Map
     public class WorldMapOriginMarker : MonoBehaviour
     {
         public const string DefaultObjectName = "Map Zero";
+
+        private const double MissingOriginRetrySeconds = 1d;
+        private static WorldMapOriginMarker cachedMarker;
+        private static bool searchedForMarker;
+        private static double nextMissingOriginSearch;
+        private static bool sceneCallbacksRegistered;
+
+        static readonly Unity.Profiling.ProfilerMarker s_PfFind = new Unity.Profiling.ProfilerMarker("DM.Map.OriginMarker.Find");
 
         [SerializeField] private Vector2 worldSizeMeters = new Vector2(
             WorldMapProvider.MultiTerrainWorldSizeMeters,
@@ -27,12 +36,73 @@ namespace Project.Map
 
         public static WorldMapOriginMarker FindInScene()
         {
-            WorldMapOriginMarker[] markers = FindObjectsByType<WorldMapOriginMarker>(FindObjectsInactive.Include);
-            if (markers.Length > 0)
-                return markers[0];
+            EnsureSceneCallbacks();
+            // Preserve Include semantics: disabled/inactive markers remain eligible.
+            if (cachedMarker != null)
+                return cachedMarker;
 
-            GameObject named = GameObject.Find(DefaultObjectName);
-            return named != null ? named.GetComponent<WorldMapOriginMarker>() : null;
+            // A destroyed Unity object is not a cached miss; resolve its replacement immediately.
+            if (!ReferenceEquals(cachedMarker, null))
+                InvalidateCache();
+
+            double now = Application.isPlaying ? Time.unscaledTimeAsDouble : Time.realtimeSinceStartupAsDouble;
+            if (searchedForMarker && now < nextMissingOriginSearch
+                && nextMissingOriginSearch - now <= MissingOriginRetrySeconds)
+                return null;
+
+            using (s_PfFind.Auto())
+            {
+                // Keep the original selection/order when multiple markers exist; do not self-register.
+                WorldMapOriginMarker[] markers = FindObjectsByType<WorldMapOriginMarker>(FindObjectsInactive.Include);
+                if (markers.Length > 0)
+                    cachedMarker = markers[0];
+                else
+                {
+                    GameObject named = GameObject.Find(DefaultObjectName);
+                    cachedMarker = named != null ? named.GetComponent<WorldMapOriginMarker>() : null;
+                }
+            }
+
+            searchedForMarker = true;
+            nextMissingOriginSearch = now + MissingOriginRetrySeconds;
+            return cachedMarker;
+        }
+
+        public static void InvalidateCache()
+        {
+            cachedMarker = null;
+            searchedForMarker = false;
+            nextMissingOriginSearch = 0d;
+        }
+
+        private static void EnsureSceneCallbacks()
+        {
+            if (sceneCallbacksRegistered)
+                return;
+
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
+            SceneManager.sceneLoaded += HandleSceneLoaded;
+            SceneManager.sceneUnloaded -= HandleSceneUnloaded;
+            SceneManager.sceneUnloaded += HandleSceneUnloaded;
+            SceneManager.activeSceneChanged -= HandleActiveSceneChanged;
+            SceneManager.activeSceneChanged += HandleActiveSceneChanged;
+            sceneCallbacksRegistered = true;
+        }
+
+        private static void HandleSceneLoaded(Scene scene, LoadSceneMode mode) => InvalidateCache();
+        private static void HandleSceneUnloaded(Scene scene) => InvalidateCache();
+        private static void HandleActiveSceneChanged(Scene previous, Scene next) => InvalidateCache();
+
+        private void OnEnable() => InvalidateCache();
+        private void OnDisable() => InvalidateCache();
+        private void OnDestroy() => InvalidateCache();
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetOriginCache()
+        {
+            InvalidateCache();
+            sceneCallbacksRegistered = false;
+            EnsureSceneCallbacks();
         }
 
         public Bounds BuildWorldBounds()

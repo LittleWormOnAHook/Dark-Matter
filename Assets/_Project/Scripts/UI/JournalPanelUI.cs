@@ -191,6 +191,10 @@ namespace Project.UI
       return true;
     }
 
+    private static readonly Unity.Profiling.ProfilerMarker s_pmSwitchConflicts = new Unity.Profiling.ProfilerMarker("DM.Journal.Open.CloseConflicting");
+    private static readonly Unity.Profiling.ProfilerMarker s_pmSwitchNavigator = new Unity.Profiling.ProfilerMarker("DM.Journal.Open.NavigatorSwitch");
+    private static readonly Unity.Profiling.ProfilerMarker s_pmSwitchFront = new Unity.Profiling.ProfilerMarker("DM.Journal.Open.FrontAndPointer");
+
     public bool TryToggleTab(JournalWindowId windowId)
     {
       if (!GameSession.HasStarted)
@@ -230,24 +234,76 @@ namespace Project.UI
         return true;
       }
 
-      CloseConflictingPanels();
-      navigator.SwitchToWindow(windowId);
-      ItemHoverTooltip.HideAny();
-      RecipeHoverTooltip.HideAny();
-      UiFrontLayer.BringLayerToFront(transform);
-      EnsurePointerForOpenJournal();
+      // Round6: open-path breakdown markers.
+      using (s_pmSwitchConflicts.Auto())
+        CloseConflictingPanels();
+      using (s_pmSwitchNavigator.Auto())
+        navigator.SwitchToWindow(windowId);
+      using (s_pmSwitchFront.Auto())
+      {
+        ItemHoverTooltip.HideAny();
+        RecipeHoverTooltip.HideAny();
+        UiFrontLayer.BringLayerToFront(transform);
+        EnsurePointerForOpenJournal(this);
+      }
       return true;
     }
 
-    public static void EnsurePointerForOpenJournal()
+    // Cached lookups for EnsurePointerForOpenJournal (called every frame while the journal is open).
+    // Validated each call; a scene search only runs when the cache is invalid, and failed searches
+    // are throttled (no permanent negative cache).
+    private const float PointerLookupRetrySeconds = 0.5f;
+    private static JournalPanelUI s_cachedJournal;
+    private static PlayerController s_cachedPlayerController;
+    private static float s_nextJournalSearchTime;
+    private static float s_nextPlayerSearchTime;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetPointerLookupCache()
     {
-      JournalPanelUI journal = FindAnyObjectByType<JournalPanelUI>(FindObjectsInactive.Include);
+      s_cachedJournal = null;
+      s_cachedPlayerController = null;
+      s_nextJournalSearchTime = 0f;
+      s_nextPlayerSearchTime = 0f;
+    }
+
+    internal static JournalPanelUI ResolveCachedJournal()
+    {
+      if (s_cachedJournal != null)
+        return s_cachedJournal;
+      if (Time.unscaledTime < s_nextJournalSearchTime)
+        return null;
+      s_cachedJournal = FindAnyObjectByType<JournalPanelUI>(FindObjectsInactive.Include);
+      if (s_cachedJournal == null)
+        s_nextJournalSearchTime = Time.unscaledTime + PointerLookupRetrySeconds;
+      return s_cachedJournal;
+    }
+
+    private static PlayerController ResolveCachedPlayerController()
+    {
+      if (s_cachedPlayerController != null && s_cachedPlayerController.gameObject.activeInHierarchy)
+        return s_cachedPlayerController;
+      s_cachedPlayerController = null;
+      if (Time.unscaledTime < s_nextPlayerSearchTime)
+        return null;
+      s_cachedPlayerController = FindAnyObjectByType<PlayerController>();
+      if (s_cachedPlayerController == null)
+        s_nextPlayerSearchTime = Time.unscaledTime + PointerLookupRetrySeconds;
+      return s_cachedPlayerController;
+    }
+
+    public static void EnsurePointerForOpenJournal() => EnsurePointerForOpenJournal(null);
+
+    /// <summary>Same as the parameterless overload; pass an already-bound journal to skip the lookup.</summary>
+    public static void EnsurePointerForOpenJournal(JournalPanelUI knownJournal)
+    {
+      JournalPanelUI journal = knownJournal != null ? knownJournal : ResolveCachedJournal();
       if (journal == null || !journal.IsOpen)
         return;
 
       GameplayInputRecovery.CancelPendingCursorRestore();
 
-      PlayerController player = FindAnyObjectByType<PlayerController>();
+      PlayerController player = ResolveCachedPlayerController();
       if (player != null)
         player.SetJournalOpen(true);
       else

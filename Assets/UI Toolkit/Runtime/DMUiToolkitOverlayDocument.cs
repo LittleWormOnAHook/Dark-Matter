@@ -214,6 +214,21 @@ namespace Project.UI
         private static void ResetNamedHosts()
         {
             namedHosts.Clear();
+            namedMisses.Clear();
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded -= ClearNamedMissesOnLoad;
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded += ClearNamedMissesOnLoad;
+        }
+
+        // Round9: negative cache. A miss falls through to MainMenuController.ResolveMainCanvas, which does two
+        // FindObjectsByType<Transform>(Include) whole-scene walks (~55 ms / 3.5 MB each in Editor). Journal open
+        // looked up 14 absent legacy hosts + UITK_Menus that way every open/close (~0.8 s / 49 MB).
+        // Misses are remembered for NamedMissTtl seconds and dropped on scene load / RegisterNamed.
+        private const float NamedMissTtl = 30f;
+        private static readonly Dictionary<string, float> namedMisses = new Dictionary<string, float>(32);
+
+        private static void ClearNamedMissesOnLoad(UnityEngine.SceneManagement.Scene s, UnityEngine.SceneManagement.LoadSceneMode m)
+        {
+            namedMisses.Clear();
         }
 
         public static void RegisterNamed(string objectName, GameObject host)
@@ -221,6 +236,7 @@ namespace Project.UI
             if (string.IsNullOrEmpty(objectName) || host == null)
                 return;
             namedHosts[objectName] = host;
+            namedMisses.Remove(objectName);
         }
 
         public static GameObject FindNamed(string objectName)
@@ -233,9 +249,17 @@ namespace Project.UI
                 && cached.name == objectName)
                 return cached;
 
+            if (namedMisses.TryGetValue(objectName, out float missedAt) && Time.unscaledTime - missedAt < NamedMissTtl)
+                return null;
+
             GameObject found = FindNamedInKnownTrees(objectName);
             if (found != null)
+            {
                 namedHosts[objectName] = found;
+                namedMisses.Remove(objectName);
+            }
+            else
+                namedMisses[objectName] = Time.unscaledTime;
             return found;
         }
 

@@ -1,0 +1,36 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace Project.Audio.Voice
+{
+    [Serializable]
+    public sealed class DMVoiceLine
+    {
+        public string id = "line_01";
+        [TextArea(1, 4)] public string subtitle = "";
+        [Tooltip("Optional quest stage tag, e.g. QM.3.")] public string stageTag = "";
+        [Tooltip("Hash of text + actor settings at last bake.")] public string bakedHash = "";
+        public AudioClip clip;
+    }
+
+    /// <summary>Lines for one voice actor. Baked in Genesis Studio > Audio > Voices.</summary>
+    [CreateAssetMenu(menuName = "Project/Audio/Voice Line Set", fileName = "DMVoiceLineSet")]
+    public sealed class DMVoiceLineSet : ScriptableObject
+    {
+        public DMVoiceActor actor;
+        public List<DMVoiceLine> lines = new List<DMVoiceLine>();
+
+        public static string ComputeHash(DMVoiceActor actor, DMVoiceLine line)
+        {
+            string key = (line != null ? line.subtitle : "") + "#" + (actor != null ? actor.SettingsKey() : "");
+            using (var sha = System.Security.Cryptography.SHA1.Create())
+            {
+                byte[] h = sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(key));
+                return BitConverter.ToString(h, 0, 8).Replace("-", "").ToLowerInvariant();
+            }
+        }
+
+        public bool IsDirty(DMVoiceLine line) => line.clip == null || line.bakedHash != ComputeHash(actor, line);
+    }
+}

@@ -41,8 +41,21 @@ namespace Project.Progression
         public int UnspentSkillPoints => unspentSkillPoints;
         public IReadOnlyDictionary<string, int> SkillRanks => skillRanks;
 
+        public int SkillRanksVersion { get; private set; }
+
         public event Action OnXpChanged;
         public event Action<int, int> OnLevelUp;
+        public event Action OnSkillRanksChanged;
+
+        /// <summary>
+        /// Call after any allocated skill-rank change (spend, save/load, reset, or future use-based gains).
+        /// HUD caches poll <see cref="SkillRanksVersion"/> or subscribe to <see cref="OnSkillRanksChanged"/>.
+        /// </summary>
+        public void NotifySkillRanksChanged()
+        {
+            SkillRanksVersion++;
+            OnSkillRanksChanged?.Invoke();
+        }
 
         private void Awake()
         {
@@ -245,6 +258,7 @@ namespace Project.Progression
 
             unspentSkillPoints -= costPerRank;
             skillRanks[skillId] = rank + 1;
+            NotifySkillRanksChanged();
             OnXpChanged?.Invoke();
             return true;
         }
@@ -327,6 +341,7 @@ namespace Project.Progression
             }
 
             DMSaveLoadRegistry.RecordLive("apply-save", -1, "ApplySaveSnapshot", $"Applied save Lv {level} XP {currentXp} SP {unspentSkillPoints}");
+            NotifySkillRanksChanged();
             OnXpChanged?.Invoke();
         }
 
@@ -357,6 +372,7 @@ namespace Project.Progression
             xpBaselineInitialized = false;
             EnsureXpBaselineForCurrentLevel();
             DMSaveLoadRegistry.RecordLive("new-game-reset", -1, "ResetToNewGame", $"Reset to level {level} / {unspentSkillPoints} SP");
+            NotifySkillRanksChanged();
             OnXpChanged?.Invoke();
         }
 

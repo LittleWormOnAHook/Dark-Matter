@@ -1,0 +1,146 @@
+#if UNITY_EDITOR
+// 2026-10-30m: perf fix 2. Shadow casting off on small / low-value renderers + Static flags on set dressing.
+// Undo + log (Logs/perf30m.tsv: GlobalObjectId, kind, original value); Restore reads it back.
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.Rendering;
+
+namespace Project.EditorTools.GenesisStudio
+{
+    public static class DMStudioPerf30m
+    {
+        public const float SmallSize = 1.5f;      // renderer bounds max dimension below this = clutter
+        public const float BaseRadius = 400f;     // "base area" around PrePrologue_Set / MARS Prefabs
+        public const float OccluderSize = 4f;     // static objects bigger than this also occlude
+        static readonly string[] NoShadowAreas = { "Fence", "Junk", "Props" };
+        static readonly string[] KeepNames = { "Pylon", "Tower", "Ship", "Crane", "Rover", "Radar", "Reactor", "Tank", "Biodome", "P_Base", "Building", "Spaceship", "Silo" };
+        static readonly string[] DynamicNames = { "Pickup", "_World", "Turret", "Player", "Kade", "NPC", "Enemy", "Weapon", "Gaia", "Vendor", "Door", "Elevator", "Spawn" };
+        static string LogPath => System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Application.dataPath), "Logs", "perf30m.tsv");
+
+        public static bool IsDynamic(Transform t)
+        {
+            for (Transform p = t; p != null; p = p.parent)
+            {
+                if (p.GetComponent<Rigidbody>() || p.GetComponent<Animator>() || p.GetComponent<Animation>() || p.GetComponent<CharacterController>() || p.CompareTag("Player")) return true;
+                foreach (string n in DynamicNames) if (p.name.Contains(n)) return true;
+                foreach (MonoBehaviour mb in p.GetComponents<MonoBehaviour>()) { if (mb == null) continue; string ns = mb.GetType().Namespace ?? ""; if (!ns.StartsWith("UnityEngine") && !ns.StartsWith("Unity.") && !ns.StartsWith("TMPro")) return true; } // gameplay script = interactable
+            }
+            return false;
+        }
+
+        static bool IsKeep(Transform t) { for (Transform p = t; p != null; p = p.parent) foreach (string n in KeepNames) if (p.name.Contains(n)) return true; return false; }
+        static float MaxDim(Bounds b) => Mathf.Max(b.size.x, Mathf.Max(b.size.y, b.size.z));
+
+        static string AreaOf(Transform t, Transform set) { for (Transform p = t; p != null; p = p.parent) if (p.parent == set) return p.name; return null; }
+
+        /// <summary>Shadow rule: true = this renderer should not cast shadows.</summary>
+        public static bool ShouldCull(Renderer r, Transform set)
+        {
+            if (r is ParticleSystemRenderer || r is LineRenderer || r is TrailRenderer) return false;
+            if (r.shadowCastingMode != ShadowCastingMode.On) return false;
+            string area = set != null ? AreaOf(r.transform, set) : null;
+            if (area != null && NoShadowAreas.Contains(area) && !IsKeep(r.transform)) return true;
+            return MaxDim(r.bounds) < SmallSize && !IsDynamic(r.transform);
+        }
+
+        static IEnumerable<Renderer> BaseRenderers(out Transform set)
+        {
+            var go = GameObject.Find("PrePrologue_Set"); set = go ? go.transform : null;
+            Vector3 c = set ? set.position : Vector3.zero;
+            var mars = GameObject.Find("MARS Prefabs");
+            var list = new List<Renderer>();
+            foreach (Renderer r in Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None))
+            {
+                if (!r.gameObject.scene.IsValid() || (r.hideFlags & HideFlags.DontSave) != 0) continue;
+                bool inSet = set && r.transform.IsChildOf(set);
+                bool inMars = mars && r.transform.IsChildOf(mars.transform);
+                if (inSet || inMars || (set && Vector3.Distance(r.bounds.center, c) < BaseRadius && !r.GetComponent<Terrain>())) list.Add(r);
+            }
+            return list;
+        }
+
+        public static string Stats()
+        {
+            int sc = 0, st = 0; long tris = 0, stTris = 0;
+            foreach (Renderer r in Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None))
+            {
+                if (!r.gameObject.scene.IsValid() || !r.enabled) continue;
+                if (r.shadowCastingMode != ShadowCastingMode.Off && !(r is ParticleSystemRenderer)) sc++;
+                bool s = (GameObjectUtility.GetStaticEditorFlags(r.gameObject) & StaticEditorFlags.BatchingStatic) != 0; if (s) st++;
+                var mf = r.GetComponent<MeshFilter>(); Mesh m = mf ? mf.sharedMesh : (r is SkinnedMeshRenderer sk ? sk.sharedMesh : null);
+                if (m != null && m.isReadable || m != null) { long t = 0; for (int i = 0; i < m.subMeshCount; i++) t += (long)m.GetIndexCount(i) / 3; tris += t; if (r.shadowCastingMode != ShadowCastingMode.Off) stTris += t; }
+            }
+            return "shadowCasters=" + sc + " batchingStatic=" + st + " tris=" + tris + " shadowCasterTris=" + stTris;
+        }
+
+        public static string Apply()
+        {
+            Transform set;
+            var rs = BaseRenderers(out set).ToList();
+            Undo.IncrementCurrentGroup(); int g = Undo.GetCurrentGroup(); Undo.SetCurrentGroupName("30m Perf: shadows + static");
+            var lines = new List<string>(); int sh = 0, stc = 0;
+            foreach (Renderer r in rs)
+                if (ShouldCull(r, set))
+                {
+                    lines.Add(GlobalObjectId.GetGlobalObjectIdSlow(r) + "\tshadow\t" + (int)r.shadowCastingMode);
+                    Undo.RecordObject(r, "shadow"); r.shadowCastingMode = ShadowCastingMode.Off; EditorUtility.SetDirty(r); sh++;
+                }
+            // Static: everything under PrePrologue_Set + MARS Prefabs that is not dynamic / interactable.
+            var roots = new List<Transform>(); if (set) roots.Add(set); var mars = GameObject.Find("MARS Prefabs"); if (mars) roots.Add(mars.transform);
+            foreach (Transform root in roots)
+                foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
+                {
+                    if (t == root || IsDynamic(t)) continue;
+                    var r = t.GetComponent<Renderer>(); if (r == null || r is ParticleSystemRenderer) continue;
+                    var want = StaticEditorFlags.BatchingStatic | StaticEditorFlags.OccludeeStatic;
+                    if (MaxDim(r.bounds) >= OccluderSize) want |= StaticEditorFlags.OccluderStatic;
+                    var cur = GameObjectUtility.GetStaticEditorFlags(t.gameObject);
+                    if ((cur & want) == want) continue;
+                    lines.Add(GlobalObjectId.GetGlobalObjectIdSlow(t.gameObject) + "\tstatic\t" + (int)cur);
+                    Undo.RecordObject(t.gameObject, "static"); GameObjectUtility.SetStaticEditorFlags(t.gameObject, cur | want); stc++;
+                }
+            Undo.CollapseUndoOperations(g);
+            Directory.CreateDirectory(System.IO.Path.GetDirectoryName(LogPath));
+            File.AppendAllLines(LogPath, lines);
+            UnityEditor.SceneManagement.EditorSceneManager.MarkAllScenesDirty();
+            return "shadowOff=" + sh + " staticSet=" + stc;
+        }
+
+        /// <summary>Tool spawn defaults: apply the 30m rules to a newly spawned PrePrologue_Set object.</summary>
+        public static void ApplyToSpawned(GameObject go)
+        {
+            if (go == null) return;
+            var setGo = GameObject.Find("PrePrologue_Set"); Transform set = setGo ? setGo.transform : null;
+            foreach (Renderer r in go.GetComponentsInChildren<Renderer>(true)) if (ShouldCull(r, set)) r.shadowCastingMode = ShadowCastingMode.Off;
+            foreach (Transform t in go.GetComponentsInChildren<Transform>(true))
+            {
+                if (IsDynamic(t)) continue; var r = t.GetComponent<Renderer>(); if (r == null || r is ParticleSystemRenderer) continue;
+                var f = StaticEditorFlags.BatchingStatic | StaticEditorFlags.OccludeeStatic; if (MaxDim(r.bounds) >= OccluderSize) f |= StaticEditorFlags.OccluderStatic;
+                GameObjectUtility.SetStaticEditorFlags(t.gameObject, GameObjectUtility.GetStaticEditorFlags(t.gameObject) | f);
+            }
+        }
+
+        public static string Restore()
+        {
+            if (!File.Exists(LogPath)) return "no log";
+            Undo.IncrementCurrentGroup(); int g = Undo.GetCurrentGroup(); Undo.SetCurrentGroupName("30m Perf restore");
+            int n = 0, miss = 0;
+            foreach (string line in File.ReadAllLines(LogPath).Reverse())
+            {
+                string[] p = line.Split('\t'); if (p.Length < 3 || !GlobalObjectId.TryParse(p[0], out GlobalObjectId id)) { miss++; continue; }
+                Object o = GlobalObjectId.GlobalObjectIdentifierToObjectSlow(id); int v = int.Parse(p[2]);
+                if (p[1] == "shadow" && o is Renderer r) { Undo.RecordObject(r, "shadow"); r.shadowCastingMode = (ShadowCastingMode)v; EditorUtility.SetDirty(r); n++; }
+                else if (p[1] == "static" && o is GameObject go) { Undo.RecordObject(go, "static"); GameObjectUtility.SetStaticEditorFlags(go, (StaticEditorFlags)v); n++; }
+                else miss++;
+            }
+            Undo.CollapseUndoOperations(g);
+            File.Move(LogPath, LogPath + ".restored_" + System.DateTime.Now.ToString("yyyyMMdd_HHmmss"));
+            UnityEditor.SceneManagement.EditorSceneManager.MarkAllScenesDirty();
+            return "restored=" + n + " missing=" + miss;
+        }
+    }
+}
+#endif

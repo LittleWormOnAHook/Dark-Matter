@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d90dc72998174903a7262f1f2700abdd, type: 3}
+  m_Name: VA_Kade
+  m_EditorClassIdentifier: 
+  displayName: Kade
+  provider: 0
+  modelId: parler-tts/parler-tts-mini-v1
+  speaker: Rick
+  description: '{speaker} speaks with an extremely deep, very low-pitched, bass,
+    gravelly male voice and a native New York accent, slow and calm, close-up recording,
+    very clear audio.'
+  pitchSemitones: 0
+  seed: 56
+  minSeconds: 4
+  maxSeconds: 8
+  pronunciations:
+  - word: Kade
+    audioSpelling: Kayd
+  splitSentences: 1
+  sentenceGap: 0.25
+  trimSilence: 1
+  trimTopDb: 40
+  tailPadSeconds: 0.15
+  radioFilter: 0
+  radioLowHz: 300
+  radioHighHz: 3400
+  radioDrive: 0.2
+  radioNoise: 0.01

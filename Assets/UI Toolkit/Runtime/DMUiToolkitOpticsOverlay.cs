@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Project.Data;
 using UnityEngine;
+using Unity.Profiling;
 using UnityEngine.UIElements;
 
 namespace Project.UI
@@ -13,6 +14,15 @@ namespace Project.UI
     [DisallowMultipleComponent]
     public sealed class DMUiToolkitOpticsOverlay : MonoBehaviour
     {
+        // Scope investigation: cached samples only; runtime behavior is unchanged.
+        private static readonly ProfilerMarker OpticsAttach = new ProfilerMarker("DM.Optics.EnsureAttached");
+        private static readonly ProfilerMarker OpticsBind = new ProfilerMarker("DM.Optics.UI.Bind");
+        private static readonly ProfilerMarker OpticsScope = new ProfilerMarker("DM.Optics.Scope.Apply");
+        private static readonly ProfilerMarker OpticsDiag = new ProfilerMarker("DM.Optics.Diagnostics");
+        private static readonly ProfilerMarker OpticsCanvas = new ProfilerMarker("DM.Optics.LegacyCanvas");
+        private static readonly ProfilerMarker OpticsSprites = new ProfilerMarker("DM.Optics.Assets.ApplySprites");
+        private static readonly ProfilerMarker OpticsCrosshair = new ProfilerMarker("DM.Optics.Assets.Crosshair");
+
         public const string HostName = "UITK_Optics";
         public const int SortingOrder = 1100;
         public const string UxmlPath = "Assets/UI Toolkit/Screens/OpticsOverlay.uxml";
@@ -67,23 +77,53 @@ namespace Project.UI
         private static void ResetStatics()
         {
             instance = null;
+            // Fix F: pre-warm the scope overlay when gameplay starts so the first scope open has no build hitch.
+            Project.Core.GameSession.GameStarted -= Prewarm;
+            Project.Core.GameSession.GameStarted += Prewarm;
+        }
+
+        private static readonly ProfilerMarker OpticsPrewarm = new ProfilerMarker("DM.Optics.Prewarm");
+
+        /// <summary>
+        /// Optional pre-warm: attaches the overlay (UIDocument + UXML/USS bind + sprite assignment, host stays hidden)
+        /// and resolves the scope crosshair sprite ahead of the first scope open. No visual change; safe to call repeatedly.
+        /// </summary>
+        /// <summary>True once the overlay component exists (document bound, host hidden).</summary>
+        public static bool IsAttached => instance != null;
+
+        public static void Prewarm()
+        {
+            using (OpticsPrewarm.Auto())
+            {
+                if (!Application.isPlaying || !DMUiToolkitConfig.IsEnabled)
+                    return;
+
+                EnsureAttached();
+
+                Project.Combat.DM_ScopeProfile p = Project.Combat.DM_ScopeProfile.Live;
+                if (p != null && p.useNewScopeArt && p.scopeOverlayUseSpriteCrosshair)
+                    p.ResolveRifleScopeCrosshairSprite();
+            }
         }
 
 
         public static void EnsureAttached()
         {
-            if (!Application.isPlaying || !DMUiToolkitConfig.IsEnabled)
-                return;
+            using (OpticsAttach.Auto())
+            {
+                if (!Application.isPlaying || !DMUiToolkitConfig.IsEnabled)
+                    return;
 
-            if (instance != null)
-                return;
+                if (instance != null)
+                    return;
 
-            GameObject host = FindHost();
-            if (host == null)
-                host = CreateHost();
+                GameObject host = FindHost();
+                if (host == null)
+                    host = CreateHost();
 
-            if (host.GetComponent<DMUiToolkitOpticsOverlay>() == null)
-                host.AddComponent<DMUiToolkitOpticsOverlay>();
+                if (host.GetComponent<DMUiToolkitOpticsOverlay>() == null)
+                    host.AddComponent<DMUiToolkitOpticsOverlay>();
+            }
         }
 
         public static void SyncFromUgui(OpticsOverlayUI ugui)
@@ -201,157 +241,156 @@ namespace Project.UI
 
         private void ApplyScopeState(Project.Combat.DM_ScopeProfile p)
         {
-            scopeShowing = true;
-            visible = true;
-            toolType = ToolType.Binoculars;
-            passthrough = true;
-            boundTexture = null;
-
-            bool rifle = Project.Combat.DMScopeMode.IsScopedRifle;
-            Vector2 sway = Project.Combat.DMScopeMode.ReticleSway;
-            float ringDiameterPx = p.ResolveRingOuterDiameterPx(rifle);
-
-            SetHostVisible(true);
-            SetDisplay(binocularRoot, true);
-            SetDisplay(scannerRoot, false);
-            SetScannerBorderVisible(false);
-            SetDisplay(scanningLabel, false);
-            SetDisplay(modeLabel, false);
-            SetDisplay(hintLabel, true);
-            SetDisplay(viewport, false);
-
-            bool useNewArt = p.useNewScopeArt;
-            bool useSpriteOuter = p.scopeOverlayUseSpriteCrosshair && useNewArt;
-            Sprite crossSprite = useSpriteOuter ? p.ResolveRifleScopeCrosshairSprite() : null;
-            bool showOuterSprite = crossSprite != null && useSpriteOuter;
-
-            SetDisplay(scopeOuter, !useNewArt);
-            SetDisplay(scopeInner, false);
-            SetDisplay(crosshairH, false);
-            SetDisplay(crosshairV, false);
-
-            float reticlePresentationScale = rifle
-                ? 1f
-                : Mathf.Clamp(p.pistolScopeReticleScale, 0.1f, 1f);
-            float ringLayoutDiameterPx = p.ResolveCenterMaskOuterDiameterPx(rifle, reticlePresentationScale);
-
-            ClearPassthroughDim();
-
-            if (reticle != null)
+            using (OpticsScope.Auto())
             {
-                reticle.Offset = sway;
-                reticle.UseWeaponScopedColors = useNewArt;
-                reticle.WeaponIsRifle = rifle;
-                if (useNewArt)
-                {
-                    reticle.Style = DMScopeReticleElement.ReticleStyle.ScopedInnerRing;
-                    reticle.RingOuterDiameterPx = ringDiameterPx;
-                    reticle.PresentationScale = reticlePresentationScale;
-                    reticle.DrawCrosshair = true;
-                    reticle.DrawHexGrid = false;
-                    SetDisplay(reticle, true);
-                    reticle.Refresh();
-                    reticle.BringToFront();
-                    if (Time.unscaledTime >= scopeDiagNext) // 2026-11-04x build-only missing reticle: one line per 2 s while scoped
-                    {
-                        scopeDiagNext = Time.unscaledTime + 2f;
-                        Debug.Log("[ScopeDiag] reticle rect=" + reticle.contentRect + " world=" + reticle.worldBound
-                            + " disp=" + reticle.resolvedStyle.display + " parentDisp=" + (reticle.parent != null ? reticle.parent.resolvedStyle.display.ToString() : "-")
-                            + " vis=" + reticle.resolvedStyle.visibility + " rootOpacity=" + (opticsRoot != null ? opticsRoot.resolvedStyle.opacity : -1f)
-                            + " ringPx=" + ringDiameterPx + " ringCol=" + p.ResolveScopedRingColor(rifle) + " retCol=" + p.ResolveScopedReticleColor(rifle)
-                            + " panel=" + (document != null && document.panelSettings != null ? document.panelSettings.name : "null")
-                            + " sort=" + (document != null ? document.sortingOrder : -1f) + " docOn=" + (document != null && document.isActiveAndEnabled)
-                            + " blend=" + Project.Combat.DMScopeMode.ZoomBlend.ToString("F2"));
-                    }
-                }
-                else
-                {
-                    reticle.PresentationScale = 1f;
-                    SetDisplay(reticle, false);
-                }
-            }
+                scopeShowing = true;
+                visible = true;
+                toolType = ToolType.Binoculars;
+                passthrough = true;
+                boundTexture = null;
 
-            SetDisplay(scopeCrosshairSprite, false);
-            if (showOuterSprite && scopeCrosshairSprite != null)
-            {
-                float crossPx = RifleCrosshairBasePixels * p.ResolveOuterCrosshairScale(rifle);
-                scopeCrosshairSprite.style.width = crossPx;
-                scopeCrosshairSprite.style.height = crossPx;
-                scopeCrosshairSprite.style.left = Length.Percent(50f);
-                scopeCrosshairSprite.style.top = Length.Percent(50f);
-                scopeCrosshairSprite.style.right = StyleKeyword.Auto;
-                scopeCrosshairSprite.style.bottom = StyleKeyword.Auto;
-                scopeCrosshairSprite.style.marginLeft = -crossPx * 0.5f + sway.x;
-                scopeCrosshairSprite.style.marginTop = -crossPx * 0.5f + sway.y;
-                scopeCrosshairSprite.style.unityBackgroundImageTintColor = p.ResolveOuterCrosshairTint(rifle);
-                if (!DMUiToolkitStyle.TrySetSpriteBackground(scopeCrosshairSprite, crossSprite, ScaleMode.ScaleToFit)
-                    && crossSprite.texture != null)
-                    DMUiToolkitStyle.TrySetTextureBackground(scopeCrosshairSprite, crossSprite.texture, ScaleMode.ScaleToFit);
+                bool rifle = Project.Combat.DMScopeMode.IsScopedRifle;
+                Vector2 sway = Project.Combat.DMScopeMode.ReticleSway;
+                float ringDiameterPx = p.ResolveRingOuterDiameterPx(rifle);
 
-                SetDisplay(scopeCrosshairSprite, true);
-                scopeCrosshairSprite.SendToBack();
+                SetHostVisible(true);
+                SetDisplay(binocularRoot, true);
+                SetDisplay(scannerRoot, false);
+                SetScannerBorderVisible(false);
+                SetDisplay(scanningLabel, false);
+                SetDisplay(modeLabel, false);
+                SetDisplay(hintLabel, true);
+                SetDisplay(viewport, false);
+
+                bool useNewArt = p.useNewScopeArt;
+                bool useSpriteOuter = p.scopeOverlayUseSpriteCrosshair && useNewArt;
+                Sprite crossSprite;
+                using (OpticsCrosshair.Auto()) { crossSprite = useSpriteOuter ? p.ResolveRifleScopeCrosshairSprite() : null; }
+                bool showOuterSprite = crossSprite != null && useSpriteOuter;
+
+                SetDisplay(scopeOuter, !useNewArt);
+                SetDisplay(scopeInner, false);
+                SetDisplay(crosshairH, false);
+                SetDisplay(crosshairV, false);
+
+                float reticlePresentationScale = rifle
+                    ? 1f
+                    : Mathf.Clamp(p.pistolScopeReticleScale, 0.1f, 1f);
+                float ringLayoutDiameterPx = p.ResolveCenterMaskOuterDiameterPx(rifle, reticlePresentationScale);
+
+                ClearPassthroughDim();
 
                 if (reticle != null)
+                {
+                    reticle.Offset = sway;
+                    reticle.UseWeaponScopedColors = useNewArt;
+                    reticle.WeaponIsRifle = rifle;
+                    if (useNewArt)
+                    {
+                        reticle.Style = DMScopeReticleElement.ReticleStyle.ScopedInnerRing;
+                        reticle.RingOuterDiameterPx = ringDiameterPx;
+                        reticle.PresentationScale = reticlePresentationScale;
+                        reticle.DrawCrosshair = true;
+                        reticle.DrawHexGrid = false;
+                        SetDisplay(reticle, true);
+                        reticle.Refresh();
+                        reticle.BringToFront();
+                        if (Project.Combat.DMScopeMode.ScopeDiagnosticsEnabled && Time.unscaledTime >= scopeDiagNext) // 2026-11-04x build-only missing reticle: one line per 2 s while scoped
+                        {
+                            scopeDiagNext = Time.unscaledTime + 2f;
+                            using (OpticsDiag.Auto())
+                            {
+                                Debug.Log("[ScopeDiag] reticle rect=" + reticle.contentRect + " world=" + reticle.worldBound
+                                    + " disp=" + reticle.resolvedStyle.display + " parentDisp=" + (reticle.parent != null ? reticle.parent.resolvedStyle.display.ToString() : "-")
+                                    + " vis=" + reticle.resolvedStyle.visibility + " rootOpacity=" + (opticsRoot != null ? opticsRoot.resolvedStyle.opacity : -1f)
+                                    + " ringPx=" + ringDiameterPx + " ringCol=" + p.ResolveScopedRingColor(rifle) + " retCol=" + p.ResolveScopedReticleColor(rifle)
+                                    + " panel=" + (document != null && document.panelSettings != null ? document.panelSettings.name : "null")
+                                    + " sort=" + (document != null ? document.sortingOrder : -1f) + " docOn=" + (document != null && document.isActiveAndEnabled)
+                                    + " blend=" + Project.Combat.DMScopeMode.ZoomBlend.ToString("F2"));
+                            }
+                        }
+                    }
+                    else
+                    {
+                        reticle.PresentationScale = 1f;
+                        SetDisplay(reticle, false);
+                    }
+                }
+
+                SetDisplay(scopeCrosshairSprite, false);
+                if (showOuterSprite && scopeCrosshairSprite != null)
+                {
+                    float crossPx = RifleCrosshairBasePixels * p.ResolveOuterCrosshairScale(rifle);
+                    scopeCrosshairSprite.style.width = crossPx;
+                    scopeCrosshairSprite.style.height = crossPx;
+                    scopeCrosshairSprite.style.left = Length.Percent(50f);
+                    scopeCrosshairSprite.style.top = Length.Percent(50f);
+                    scopeCrosshairSprite.style.right = StyleKeyword.Auto;
+                    scopeCrosshairSprite.style.bottom = StyleKeyword.Auto;
+                    scopeCrosshairSprite.style.marginLeft = -crossPx * 0.5f + sway.x;
+                    scopeCrosshairSprite.style.marginTop = -crossPx * 0.5f + sway.y;
+                    scopeCrosshairSprite.style.unityBackgroundImageTintColor = p.ResolveOuterCrosshairTint(rifle);
+                    if (!DMUiToolkitStyle.TrySetSpriteBackground(scopeCrosshairSprite, crossSprite, ScaleMode.ScaleToFit)
+                        && crossSprite.texture != null)
+                        DMUiToolkitStyle.TrySetTextureBackground(scopeCrosshairSprite, crossSprite.texture, ScaleMode.ScaleToFit);
+
+                    SetDisplay(scopeCrosshairSprite, true);
+                    scopeCrosshairSprite.SendToBack();
+
+                    if (reticle != null)
+                        reticle.BringToFront();
+                }
+
+                if (rangeLabel != null)
+                {
+                    // pass y: anchor just above the outer orange circle's top edge; follows sway + scale.
+                    float outerRadiusPx = Mathf.Max(8f, ringDiameterPx * reticlePresentationScale) * 0.5f;
+                    if (showOuterSprite)
+                        outerRadiusPx = Mathf.Max(outerRadiusPx, RifleCrosshairBasePixels * p.ResolveOuterCrosshairScale(rifle) * 0.5f);
+                    float labelH = rangeLabel.resolvedStyle.height;
+                    if (float.IsNaN(labelH) || labelH <= 0f) labelH = 28f;
+                    rangeLabel.style.bottom = StyleKeyword.Auto;
+                    rangeLabel.style.top = Length.Percent(50f);
+                    rangeLabel.style.marginTop = sway.y - outerRadiusPx - p.rangeLabelGapPx - labelH;
+                    rangeLabel.style.translate = new Translate(sway.x, 0f);
+                    rangeLabel.style.unityTextAlign = TextAnchor.LowerCenter;
+                }
+
+                if (reticle != null && reticle.resolvedStyle.display != DisplayStyle.None)
                     reticle.BringToFront();
-            }
 
-            if (rangeLabel != null)
-            {
-                // pass y: anchor just above the outer orange circle's top edge; follows sway + scale.
-                float outerRadiusPx = Mathf.Max(8f, ringDiameterPx * reticlePresentationScale) * 0.5f;
-                if (showOuterSprite)
-                    outerRadiusPx = Mathf.Max(outerRadiusPx, RifleCrosshairBasePixels * p.ResolveOuterCrosshairScale(rifle) * 0.5f);
-                float labelH = rangeLabel.resolvedStyle.height;
-                if (float.IsNaN(labelH) || labelH <= 0f) labelH = 28f;
-                rangeLabel.style.bottom = StyleKeyword.Auto;
-                rangeLabel.style.top = Length.Percent(50f);
-                rangeLabel.style.marginTop = sway.y - outerRadiusPx - p.rangeLabelGapPx - labelH;
-                rangeLabel.style.translate = new Translate(sway.x, 0f);
-                rangeLabel.style.unityTextAlign = TextAnchor.LowerCenter;
-            }
+                if (opticsRoot != null)
+                    opticsRoot.style.opacity = 1f;
 
-            if (reticle != null && reticle.resolvedStyle.display != DisplayStyle.None)
-                reticle.BringToFront();
+                if (hintLabel != null)
+                {
+                    hintLabel.text = Time.unscaledTime < Project.Combat.DMScopeMode.BlockedAmmoUntil
+                        ? Project.Combat.DMScopeMode.BlockedAmmoMessage
+                        : p.scopeHint;
+                    SetDisplay(hintLabel, true);
+                }
 
-            if (opticsRoot != null)
-                opticsRoot.style.opacity = 1f;
-
-            if (hintLabel != null)
-            {
-                hintLabel.text = Time.unscaledTime < Project.Combat.DMScopeMode.BlockedAmmoUntil
-                    ? Project.Combat.DMScopeMode.BlockedAmmoMessage
-                    : p.scopeHint;
-                SetDisplay(hintLabel, true);
-            }
-
-            if (rangeLabel != null)
-            {
-                rangeLabel.text = Project.Combat.DMScopeMode.FormatScopedRangeReadout();
-                SetDisplay(rangeLabel, true);
+                if (rangeLabel != null)
+                {
+                    string rangeText = Project.Combat.DMScopeMode.FormatScopedRangeReadout();
+                    if (rangeLabel.text != rangeText) rangeLabel.text = rangeText;
+                    SetDisplay(rangeLabel, true);
+                }
             }
         }
 
         private void SetOpticsCanvasEnabled(bool enabled)
         {
-            if (boundOpticsCanvas == null)
+            using (OpticsCanvas.Auto())
             {
-                Canvas[] canvases = FindObjectsByType<Canvas>(FindObjectsInactive.Include);
-                for (int i = 0; i < canvases.Length; i++)
-                {
-                    Canvas canvas = canvases[i];
-                    if (canvas != null && canvas.gameObject.name == "OpticsOverlayCanvas")
-                    {
-                        boundOpticsCanvas = canvas;
-                        break;
-                    }
-                }
+                boundOpticsCanvas = OpticsOverlayUI.CachedLegacyCanvas();
+
+                if (boundOpticsCanvas != null && boundOpticsCanvas.enabled != enabled)
+                    boundOpticsCanvas.enabled = enabled;
+
+                if (!enabled)
+                    OpticsOverlayUI.EnsureRetiredWhenUitkOwns();
             }
-
-            if (boundOpticsCanvas != null && boundOpticsCanvas.enabled != enabled)
-                boundOpticsCanvas.enabled = enabled;
-
-            if (!enabled)
-                OpticsOverlayUI.EnsureRetiredWhenUitkOwns();
         }
 
         private void OnDestroy()
@@ -368,65 +407,71 @@ namespace Project.UI
 
         private void BindDocument()
         {
-            document = DMUiToolkitOverlayDocument.Ensure(HostName, UxmlPath, UssPath, SortingOrder);
-            if (document == null)
-                return;
-
-            VisualElement root = document.rootVisualElement;
-            if (root == null)
-                return;
-
-            opticsRoot = root.Q<VisualElement>("optics-root") ?? root;
-            viewport = root.Q<VisualElement>("optics-viewport");
-            dim = root.Q<VisualElement>("optics-dim");
-            binocularRoot = root.Q<VisualElement>("optics-binocular");
-            scopeOuter = root.Q<VisualElement>("optics-scope-outer");
-            scopeInner = root.Q<VisualElement>("optics-scope-inner");
-            scannerRoot = root.Q<VisualElement>("optics-scanner");
-            scannerBorderTop = root.Q<VisualElement>("optics-scanner-border-top");
-            scannerBorderBottom = root.Q<VisualElement>("optics-scanner-border-bottom");
-            scannerBorderLeft = root.Q<VisualElement>("optics-scanner-border-left");
-            scannerBorderRight = root.Q<VisualElement>("optics-scanner-border-right");
-            markersRoot = root.Q<VisualElement>("optics-markers");
-            modeLabel = root.Q<Label>("optics-mode");
-            hintLabel = root.Q<Label>("optics-hint");
-            rangeLabel = root.Q<Label>("optics-range");
-            scanningLabel = root.Q<Label>("optics-scanning");
-            crosshairH = root.Q<VisualElement>("optics-crosshair-h");
-            crosshairV = root.Q<VisualElement>("optics-crosshair-v");
-            VisualElement scopeHost = opticsRoot ?? root;
-            if (reticle == null || reticle.parent == null)
+            using (OpticsBind.Auto())
             {
-                reticle = new DMScopeReticleElement();
-                int idx = binocularRoot != null && binocularRoot.parent == scopeHost
-                    ? scopeHost.IndexOf(binocularRoot) + 1
-                    : scopeHost.childCount;
-                scopeHost.Insert(idx, reticle);
+                document = DMUiToolkitOverlayDocument.Ensure(HostName, UxmlPath, UssPath, SortingOrder);
+                if (document == null)
+                    return;
+
+                VisualElement root = document.rootVisualElement;
+                if (root == null)
+                    return;
+
+                opticsRoot = root.Q<VisualElement>("optics-root") ?? root;
+                viewport = root.Q<VisualElement>("optics-viewport");
+                dim = root.Q<VisualElement>("optics-dim");
+                binocularRoot = root.Q<VisualElement>("optics-binocular");
+                scopeOuter = root.Q<VisualElement>("optics-scope-outer");
+                scopeInner = root.Q<VisualElement>("optics-scope-inner");
+                scannerRoot = root.Q<VisualElement>("optics-scanner");
+                scannerBorderTop = root.Q<VisualElement>("optics-scanner-border-top");
+                scannerBorderBottom = root.Q<VisualElement>("optics-scanner-border-bottom");
+                scannerBorderLeft = root.Q<VisualElement>("optics-scanner-border-left");
+                scannerBorderRight = root.Q<VisualElement>("optics-scanner-border-right");
+                markersRoot = root.Q<VisualElement>("optics-markers");
+                modeLabel = root.Q<Label>("optics-mode");
+                hintLabel = root.Q<Label>("optics-hint");
+                rangeLabel = root.Q<Label>("optics-range");
+                scanningLabel = root.Q<Label>("optics-scanning");
+                crosshairH = root.Q<VisualElement>("optics-crosshair-h");
+                crosshairV = root.Q<VisualElement>("optics-crosshair-v");
+                VisualElement scopeHost = opticsRoot ?? root;
+                if (reticle == null || reticle.parent == null)
+                {
+                    reticle = new DMScopeReticleElement();
+                    int idx = binocularRoot != null && binocularRoot.parent == scopeHost
+                        ? scopeHost.IndexOf(binocularRoot) + 1
+                        : scopeHost.childCount;
+                    scopeHost.Insert(idx, reticle);
+                }
+
+                scopeCrosshairSprite = root.Q<VisualElement>("optics-scope-crosshair");
+                if (scopeCrosshairSprite == null || scopeCrosshairSprite.parent != scopeHost)
+                {
+                    if (scopeCrosshairSprite != null)
+                        scopeCrosshairSprite.RemoveFromHierarchy();
+
+                    scopeCrosshairSprite = new VisualElement { name = "optics-scope-crosshair" };
+                    scopeCrosshairSprite.AddToClassList("dmg-optics-scope-crosshair");
+                    scopeCrosshairSprite.pickingMode = PickingMode.Ignore;
+                    scopeCrosshairSprite.style.position = Position.Absolute;
+                    scopeHost.Add(scopeCrosshairSprite);
+                }
+
+                ApplySprites();
+                SetHostVisible(false);
             }
-
-            scopeCrosshairSprite = root.Q<VisualElement>("optics-scope-crosshair");
-            if (scopeCrosshairSprite == null || scopeCrosshairSprite.parent != scopeHost)
-            {
-                if (scopeCrosshairSprite != null)
-                    scopeCrosshairSprite.RemoveFromHierarchy();
-
-                scopeCrosshairSprite = new VisualElement { name = "optics-scope-crosshair" };
-                scopeCrosshairSprite.AddToClassList("dmg-optics-scope-crosshair");
-                scopeCrosshairSprite.pickingMode = PickingMode.Ignore;
-                scopeCrosshairSprite.style.position = Position.Absolute;
-                scopeHost.Add(scopeCrosshairSprite);
-            }
-
-            ApplySprites();
-            SetHostVisible(false);
         }
 
         private void ApplySprites()
         {
-            SetBackground(scopeOuter, OpticsUiSprites.BinocularScopeOuter);
-            SetBackground(scopeInner, OpticsUiSprites.BinocularScopeInnerGlow);
-            if (viewport != null && OpticsUiSprites.ViewportBackground != null)
-                SetBackground(viewport, OpticsUiSprites.ViewportBackground);
+            using (OpticsSprites.Auto())
+            {
+                SetBackground(scopeOuter, OpticsUiSprites.BinocularScopeOuter);
+                SetBackground(scopeInner, OpticsUiSprites.BinocularScopeInnerGlow);
+                if (viewport != null && OpticsUiSprites.ViewportBackground != null)
+                    SetBackground(viewport, OpticsUiSprites.ViewportBackground);
+            }
         }
 
         private static void SetBackground(VisualElement element, Sprite sprite)

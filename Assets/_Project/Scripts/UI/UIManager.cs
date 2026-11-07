@@ -146,6 +146,18 @@ namespace Project.UI
             if (!GameSession.HasStarted || !context.performed)
                 return;
 
+            if (Project.Player.Invector.WeaponModeSwitchController.TryDeferPadJournal(context))
+                return;
+
+            ToggleJournalFromPadRelease();
+        }
+
+        /// <summary>Journal toggle body; also replayed by D-pad Up release (WeaponModeSwitchController).</summary>
+        public void ToggleJournalFromPadRelease()
+        {
+            if (!GameSession.HasStarted)
+                return;
+
             if (DMUiToolkitMenus.TryToggleJournalTab(JournalWindowId.JournalQuest, journalHotkey: true))
                 return;
 
@@ -299,10 +311,13 @@ namespace Project.UI
             GetJournalPanel()?.TryToggleTab(JournalWindowId.Pet);
         }
 
+        private static readonly Unity.Profiling.ProfilerMarker s_pmUiCancel = new Unity.Profiling.ProfilerMarker("DM.Input.UIManager.Cancel");
+
         public void OnUiCancel(InputAction.CallbackContext context)
         {
             if (!context.performed)
                 return;
+            using var _pmCancel = s_pmUiCancel.Auto();
 
             if (GameplayKeyboardShortcuts.IsModalUiOpenForCancel())
                 GameplayKeyboardShortcuts.HandleUiCancelBack();

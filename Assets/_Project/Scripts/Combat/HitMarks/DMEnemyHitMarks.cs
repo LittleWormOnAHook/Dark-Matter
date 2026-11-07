@@ -855,6 +855,9 @@ namespace Project.Combat
             if (slot.Root == null)
             {
                 slot.Root = new GameObject(SlotObjectPrefix + index);
+                // Start inactive: HDRP DecalProjector.OnEnable warns "null Material" if enabled before
+                // ConfigureProjector assigns one. Stamp paths activate the root after materials are set.
+                slot.Root.SetActive(false);
                 slot.Root.transform.SetParent(transform, false);
             }
 

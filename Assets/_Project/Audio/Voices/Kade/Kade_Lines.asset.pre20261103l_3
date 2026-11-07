@@ -1,0 +1,70 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09e56cc6f83e4e2ab954bcfa1f1f0adf, type: 3}
+  m_Name: Kade_Lines
+  m_EditorClassIdentifier: 
+  actor: {fileID: 11400000, guid: 582b3abc596948e6b8b016852181f145, type: 2}
+  lines:
+  - id: kade_Chap_1_Chat_1_01
+    subtitle: Well... , another day. okay.... Jounral entry.......
+    stageTag: QM.1
+    seed: 0
+    bakedHash: 
+    clip: {fileID: 0}
+  - id: kade_Chap_1_Chat_1_02
+    subtitle: I need some adventure, tired of the same old thing....
+    stageTag: QM.1
+    seed: 0
+    bakedHash: 
+    clip: {fileID: 0}
+  - id: kade_Chap_1_Chat_1_03
+    subtitle: Nothing exciting ever happends, and it's always... ,  Kade....
+    stageTag: QM.1
+    seed: 0
+    bakedHash: 
+    clip: {fileID: 0}
+  - id: kade_Chap_1_Chat_1_04
+    subtitle: fix this, Kade...
+    stageTag: QM.1
+    seed: 0
+    bakedHash: 
+    clip: {fileID: 0}
+  - id: kade_Chap_1_Chat_1_05
+    subtitle: ', go get some parts, Kade..'
+    stageTag: QM.1
+    seed: 0
+    bakedHash: 
+    clip: {fileID: 0}
+  - id: kade_Chap_1_Chat_1_06
+    subtitle: we need you to go grab a tank of plasma.
+    stageTag: QM.1
+    seed: 0
+    bakedHash: 
+    clip: {fileID: 0}
+  - id: kade_Chap_1_Chat_1_07
+    subtitle: I just dont see my self doing this the rest of my life.... Wel...
+    stageTag: QM.1
+    seed: 0
+    bakedHash: 
+    clip: {fileID: 0}
+  - id: kade_Chap_1_Chat_1_08
+    subtitle: l, time to get to work.
+    stageTag: QM.1
+    seed: 0
+    bakedHash: 
+    clip: {fileID: 0}
+  - id: kade_2
+    subtitle: Okay boss... headed over in a few
+    stageTag: QM.2
+    seed: 56
+    bakedHash: 7cbe5027ef2c87e5
+    clip: {fileID: 8300000, guid: ec6f410a6e07ee1409d2137548ac8903, type: 3}

@@ -25,7 +25,7 @@ MonoBehaviour:
   sunDisc31o: 1
   essentialsOverBotd31h: 1
   debugHourAdvances: 0
-  clockMinHour31v: 5.5
+  clockMinHour31v: 3.3
   clockMaxHour31v: 15
   clockRangeMode31v: 0
   editModeClockRuns: 1
@@ -39,7 +39,7 @@ MonoBehaviour:
   autoSpawnController: 1
   onlyInScenesWithJupiter: 1
   skyBodyShader: {fileID: 4800000, guid: a32e9106cf6171c48a524cba2fe54c0b, type: 3}
-  debugHourOverride: 5.5
+  debugHourOverride: 12.4
   debugHourEnabled: 1
   startHour: 11.6
   sunLightName: BOTD Directional Light(Clone)

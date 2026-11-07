@@ -4,9 +4,11 @@ using Project.Data;
 using Project.Inventory;
 using Project.UI;
 using Invector.vShooter;
+using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Project.Player;
+using Project.Building;
 
 namespace Project.Player.Invector
 {
@@ -18,7 +20,7 @@ namespace Project.Player.Invector
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PioneerInvectorBootstrap))]
     [DefaultExecutionOrder(620)]
-    public class WeaponModeSwitchController : MonoBehaviour
+    public partial class WeaponModeSwitchController : MonoBehaviour
     {
         private const float HoldSecondsToOpen = 1.2f;
         private const float AimLaserMaxRange = 80f;
@@ -30,6 +32,15 @@ namespace Project.Player.Invector
         private const string PrefRifleLaserBeam = "DM.WeaponMode.SurvivalRifle.Laser.v2";
         private const string PrefPistolLaserSight = "DM.WeaponMode.SciFiPistol.LaserSight.v2";
         private const string PrefPistolLaserBeam = "DM.WeaponMode.SciFiPistol.Laser.v2";
+
+        // Trace markers for the one-frame Update spike (frame 1127). Cached statics, negligible overhead.
+        private static readonly ProfilerMarker s_pmProcessReload = new ProfilerMarker("WeaponModeSwitch.ProcessReloadKey");
+        private static readonly ProfilerMarker s_pmOpenMenu = new ProfilerMarker("WeaponModeSwitch.OpenModeSwitchMenu");
+        private static readonly ProfilerMarker s_pmApplyLaserModes = new ProfilerMarker("WeaponModeSwitch.ApplyLaserModes");
+        private static readonly ProfilerMarker s_pmDisableStacks = new ProfilerMarker("WeaponModeSwitch.DisableLaserStacks");
+        private static readonly ProfilerMarker s_pmBindAimLaser = new ProfilerMarker("WeaponModeSwitch.BindActiveAimLaser");
+        private static readonly ProfilerMarker s_pmEnforceOff = new ProfilerMarker("WeaponModeSwitch.EnforceLaserPrefOff");
+        private static readonly ProfilerMarker s_pmReticle = new ProfilerMarker("WeaponModeSwitch.AimLaserToReticle");
 
         private PioneerInvectorBootstrap bootstrap;
         private EquipmentController equipment;
@@ -84,12 +95,14 @@ namespace Project.Player.Invector
         {
             if (equipment != null)
                 equipment.OnSelectedHotbarChanged += HandleHotbarChanged;
+            Project.Combat.DMRanged.DMRangedMorphRuntime.FormChanged += HandleMorphFormChanged; // Round6
         }
 
         private void OnDisable()
         {
             if (equipment != null)
                 equipment.OnSelectedHotbarChanged -= HandleHotbarChanged;
+            Project.Combat.DMRanged.DMRangedMorphRuntime.FormChanged -= HandleMorphFormChanged; // Round6
             CancelHold();
             // Do NOT walk the full player hierarchy here — Player_Invector is huge and
             // domain reload OnDisable would freeze the editor for minutes.
@@ -99,11 +112,45 @@ namespace Project.Player.Invector
         private void Start()
         {
             ApplyLaserModes();
+            if (Application.isPlaying)
+                StartCoroutine(PrewarmMenuWhenReady());
+        }
+
+        // Round3: warm the weapon-mode menu once per session after gameplay starts (hidden; no state change).
+        private System.Collections.IEnumerator PrewarmMenuWhenReady()
+        {
+            float giveUpAt = Time.unscaledTime + 180f;
+            while (!GameSession.HasStarted && Time.unscaledTime < giveUpAt)
+                yield return null;
+            if (!GameSession.HasStarted)
+                yield break;
+            yield return null;
+            yield return null;
+            for (int attempt = 0; attempt < 10 && !DMUiToolkitWorldMenus.IsWeaponMenuPrewarmed; attempt++)
+            {
+                if (!WeaponModeSwitchMenuUI.IsOpen)
+                    DMUiToolkitWorldMenus.PrewarmWeaponMenu();
+                for (int w = 0; w < 5 && !DMUiToolkitWorldMenus.IsWeaponMenuPrewarmed; w++)
+                    yield return null;
+            }
+
+            // Round4: journal + inventory invisible build-only warm (staggered after the weapon menu).
+            for (int attempt = 0; attempt < 10 && !DMUiToolkitMenus.IsMenusPrewarmed; attempt++)
+            {
+                yield return null;
+                if (!DMUiToolkitMenus.IsOpen)
+                    DMUiToolkitMenus.PrewarmJournalAndInventory();
+                for (int w = 0; w < 8 && !DMUiToolkitMenus.IsMenusPrewarmed; w++)
+                    yield return null;
+            }
         }
 
         private void Update()
         {
-            ProcessReloadKey();
+            using (s_pmProcessReload.Auto())
+                ProcessReloadKey();
+
+            ProcessDpadUpModeSwitchHold();
 
             bool aiming = IsPlayerAiming();
             if (aiming == lastAppliedAiming)
@@ -113,10 +160,24 @@ namespace Project.Player.Invector
             ApplyLaserModes();
         }
 
+        private ItemData _lastSeenDrawn;
+
         private void LateUpdate()
         {
+            // Round3: draw / holster / swap without a hotbar event (Invector draw input, pooled re-instantiation)
+            // used to leave a prefab-default-on laser stack visible until the next aim edge. Re-apply on change.
+            ItemData drawnNow = equipment != null ? equipment.DrawnWeaponItem : null;
+            if (drawnNow != _lastSeenDrawn)
+            {
+                _lastSeenDrawn = drawnNow;
+                ApplyLaserModes();
+            }
+
             if (IsPlayerAiming())
-                EnforceLaserPrefOffWhileAiming();
+            {
+                using (s_pmEnforceOff.Auto())
+                    EnforceLaserPrefOffWhileAiming();
+            }
 
             if (!lastAppliedAiming || activeAimLaserRoot == null)
                 return;
@@ -131,7 +192,8 @@ namespace Project.Player.Invector
             if (cachedPulse != null && cachedPulse.enabled)
                 return;
 
-            UpdateActiveAimLaserToReticle();
+            using (s_pmReticle.Auto())
+                UpdateActiveAimLaserToReticle();
         }
 
         private void HandleHotbarChanged(int _)
@@ -197,6 +259,71 @@ namespace Project.Player.Invector
             holdingReload = false;
             if (!openedMenuThisHold)
                 TryRequestManualReload();
+        }
+
+        // 20261106: Gamepad D-pad Up hold (1.2 s) opens Mode Switch while a ranged weapon is drawn.
+        // Journal tap on D-pad Up is deferred to release in that state only; otherwise it stays instant.
+        private static WeaponModeSwitchController s_dpadOwner;
+        private static bool s_dpadUpDeferred;
+        private static bool s_dpadUpOpened;
+        private static float s_dpadUpStart;
+        private static int s_dpadUpFrame = -1;
+
+        /// <summary>Called by Journal action handlers. True = this D-pad Up press is owned by the hold; skip the journal now.</summary>
+        public static bool TryDeferPadJournal(InputAction.CallbackContext context)
+        {
+            if (s_dpadUpFrame == Time.frameCount && s_dpadUpDeferred)
+                return true;
+
+            Gamepad pad = context.control != null ? context.control.device as Gamepad : null;
+            if (pad == null || context.control != pad.dpad.up)
+                return false;
+
+            WeaponModeSwitchController owner = s_dpadOwner;
+            if (owner == null || !owner.CanDpadUpOpenMenu())
+                return false;
+
+            s_dpadUpDeferred = true;
+            s_dpadUpOpened = false;
+            s_dpadUpStart = Time.unscaledTime;
+            s_dpadUpFrame = Time.frameCount;
+            return true;
+        }
+
+        private bool CanDpadUpOpenMenu()
+        {
+            if (bootstrap == null || !bootstrap.IsActive || WeaponModeSwitchMenuUI.IsOpen)
+                return false;
+            if (DMBuildingMode.IsActive || UiInputGuard.BlocksGameplayEquipmentInput)
+                return false;
+            if (playerController != null && playerController.BlocksCombatInput)
+                return false;
+            return equipment != null && equipment.HasActiveRangedWeapon();
+        }
+
+        private void ProcessDpadUpModeSwitchHold()
+        {
+            s_dpadOwner = this;
+            if (!s_dpadUpDeferred)
+                return;
+
+            Gamepad pad = Gamepad.current;
+            if (pad != null && pad.dpad.up.isPressed)
+            {
+                if (!s_dpadUpOpened && Time.unscaledTime - s_dpadUpStart >= HoldSecondsToOpen)
+                {
+                    s_dpadUpOpened = true;
+                    if (CanDpadUpOpenMenu())
+                        OpenModeSwitchMenu();
+                }
+                return;
+            }
+
+            bool fireJournal = !s_dpadUpOpened;
+            s_dpadUpDeferred = false;
+            s_dpadUpOpened = false;
+            if (fireJournal)
+                Object.FindAnyObjectByType<UIManager>()?.ToggleJournalFromPadRelease();
         }
 
         private void CancelHold()
@@ -321,17 +448,170 @@ namespace Project.Player.Invector
             if (drawn == null)
                 return;
 
-            bool wantsLaser = IsSciFiPistol(drawn)
-                ? pistolLaserBeamEnabled || pistolLaserSightEnabled
-                : IsSurvivalRifle(drawn) && (rifleLaserBeamEnabled || rifleLaserSightEnabled);
+            // Round4: no wantsLaser early-out. Per component type: whatever the pref does not allow for the drawn
+            // weapon class is forced off on every known root (pistol + rifle + drawn slot/visual); only the bound
+            // active aim beam/sight that the pref allows is kept.
+            bool isDmr = TryGetDMRangedCategory(drawn, out bool dmrPistol, out int dmrForm); // Round6
+            bool isPistol = isDmr ? dmrPistol : IsSciFiPistol(drawn);
+            bool isRifle = isDmr ? !dmrPistol : !isPistol && IsSurvivalRifle(drawn);
+            bool allowBeam = isPistol ? pistolLaserBeamEnabled : isRifle && rifleLaserBeamEnabled;
+            bool allowSight = isPistol ? pistolLaserSightEnabled : isRifle && rifleLaserSightEnabled;
+            // Round5: pref ON must show the beam/dot. If the bound stack is missing or not the live (active)
+            // weapon copy, rebind (throttled) before enforcing, then keep the bound parts enabled each frame.
+            if ((allowBeam || allowSight) && Time.unscaledTime >= _nextRebindAttempt && !IsBoundStackLive(allowBeam, allowSight))
+            {
+                _nextRebindAttempt = Time.unscaledTime + RebindIntervalSeconds;
+                ClearActiveAimLaser();
+                if (isDmr)
+                    BindDMRangedLaser(allowBeam, allowSight, dmrForm);
+                else
+                BindActiveAimLaser(
+                    isPistol ? FindDrawnWeapon(DrawnSciFiPistolName, IsSciFiPistol) : FindDrawnWeapon(DrawnSurvivalRifleName, IsSurvivalRifle),
+                    allowBeam,
+                    allowSight);
+            }
+            LineRenderer keepLine = allowBeam ? activeAimLaserLine : null;
+            SpriteRenderer keepSprite = allowSight ? activeAimLaserSight : null;
+            if (keepLine != null && !keepLine.enabled)
+                keepLine.enabled = true;
+            if (keepSprite != null && !keepSprite.enabled)
+                keepSprite.enabled = true;
 
-            if (wantsLaser)
+            // Round3: resolve weapon roots only when the drawn weapon changes, aiming (re)starts, a root died,
+            // or every EnforceRootRefreshSeconds; the disable itself still runs every aimed frame on cached
+            // components (cheap, no alloc), so lasers stay off exactly as before.
+            bool fresh = _enforceLastFrame != Time.frameCount - 1;
+            _enforceLastFrame = Time.frameCount;
+            bool rootsInvalid = false;
+            for (int i = 0; i < _enforceRoots.Count; i++)
+            {
+                if (_enforceRoots[i] == null) { rootsInvalid = true; break; }
+            }
+            if (fresh || rootsInvalid || drawn != _enforceDrawn || Time.unscaledTime >= _nextEnforceRootRefresh)
+            {
+                _enforceDrawn = drawn;
+                _nextEnforceRootRefresh = Time.unscaledTime + EnforceRootRefreshSeconds;
+                CollectKnownWeaponRoots(_enforceRoots);
+            }
+
+            using (s_pmDisableStacks.Auto())
+            {
+                for (int i = 0; i < _enforceRoots.Count; i++)
+                    DisableLaserStacksUnder(_enforceRoots[i], keepLine, keepSprite);
+            }
+        }
+
+        private const float EnforceRootRefreshSeconds = 1f;
+        private const float RebindIntervalSeconds = 0.2f;
+        private float _nextRebindAttempt;
+
+        private bool IsBoundStackLive(bool needBeam, bool needSight)
+        {
+            if (activeAimLaserRoot == null || !activeAimLaserRoot.gameObject.activeInHierarchy)
+                return false;
+            if (needBeam && (activeAimLaserLine == null || !activeAimLaserLine.gameObject.activeInHierarchy))
+                return false;
+            if (needSight && (activeAimLaserSight == null || !activeAimLaserSight.gameObject.activeInHierarchy))
+                return false;
+            return true;
+        }
+        private readonly System.Collections.Generic.List<Transform> _enforceRoots = new System.Collections.Generic.List<Transform>(4);
+        private ItemData _enforceDrawn;
+        private float _nextEnforceRootRefresh;
+        private int _enforceLastFrame = -10;
+
+        private sealed class LaserStackCache
+        {
+            public int HierarchyCount = -1;
+            public readonly System.Collections.Generic.List<LineRenderer> Lines = new System.Collections.Generic.List<LineRenderer>(2);
+            public readonly System.Collections.Generic.List<vLaserSight> Sights = new System.Collections.Generic.List<vLaserSight>(2);
+            public readonly System.Collections.Generic.List<SpriteRenderer> Sprites = new System.Collections.Generic.List<SpriteRenderer>(2);
+        }
+        private readonly System.Collections.Generic.Dictionary<Transform, LaserStackCache> _laserStackCaches =
+            new System.Collections.Generic.Dictionary<Transform, LaserStackCache>();
+
+        /// <summary>Same roots DisableLaserStacksOnKnownWeaponsCore visits (null entries skipped).</summary>
+        private void CollectKnownWeaponRoots(System.Collections.Generic.List<Transform> roots)
+        {
+            roots.Clear();
+            AddRoot(roots, FindNamedChild(DrawnSciFiPistolName));
+            AddRoot(roots, FindNamedChild(DrawnSurvivalRifleName));
+            if (equipment == null)
                 return;
+            ItemData drawn = equipment.DrawnWeaponItem ?? equipment.EquippedItem;
+            if (drawn == null)
+                return;
+            GameObject slot = PioneerInvectorWeaponBridge.FindPreloadedDrawnSlot(transform, drawn);
+            if (slot != null)
+                AddRoot(roots, slot.transform);
+            if (weaponBridge != null)
+            {
+                GameObject visual = weaponBridge.TryGetWeaponInstance(drawn);
+                if (visual != null)
+                    AddRoot(roots, visual.transform);
+            }
+            // Round6: the runtime DM Ranged stack lives under the live morph visual.
+            if (_dmrRoot != null && _dmrDriver != null && !roots.Contains(_dmrDriver.transform))
+                AddRoot(roots, _dmrDriver.transform);
+        }
 
-            DisableLaserStacksOnKnownWeapons();
+        private static void AddRoot(System.Collections.Generic.List<Transform> roots, Transform t)
+        {
+            if (t != null)
+                roots.Add(t);
+        }
+
+        private LaserStackCache GetLaserStackCache(Transform root)
+        {
+            if (!_laserStackCaches.TryGetValue(root, out LaserStackCache cache))
+            {
+                cache = new LaserStackCache();
+                _laserStackCaches[root] = cache;
+            }
+
+            bool stale = cache.HierarchyCount != root.hierarchyCount;
+            if (!stale)
+            {
+                for (int i = 0; i < cache.Lines.Count && !stale; i++) stale = cache.Lines[i] == null;
+                for (int i = 0; i < cache.Sprites.Count && !stale; i++) stale = cache.Sprites[i] == null;
+            }
+            if (!stale)
+                return cache;
+
+            cache.HierarchyCount = root.hierarchyCount;
+            cache.Lines.Clear();
+            cache.Sights.Clear();
+            cache.Sprites.Clear();
+            LineRenderer[] lines = root.GetComponentsInChildren<LineRenderer>(true);
+            for (int i = 0; i < lines.Length; i++)
+            {
+                LineRenderer line = lines[i];
+                if (line == null || !line.gameObject.name.Equals("Laser", System.StringComparison.OrdinalIgnoreCase))
+                    continue;
+                cache.Lines.Add(line);
+                vLaserSight sight = line.GetComponent<vLaserSight>();
+                if (sight != null)
+                    cache.Sights.Add(sight);
+            }
+            Transform[] transforms = root.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < transforms.Length; i++)
+            {
+                Transform t = transforms[i];
+                if (t == null || !t.name.Equals("laserSight", System.StringComparison.OrdinalIgnoreCase))
+                    continue;
+                if (t.TryGetComponent(out SpriteRenderer sr))
+                    cache.Sprites.Add(sr);
+            }
+            return cache;
         }
 
         private void ApplyLaserModes(bool? forceAiming)
+        {
+            using (s_pmApplyLaserModes.Auto())
+                ApplyLaserModesCore(forceAiming);
+        }
+
+        private void ApplyLaserModesCore(bool? forceAiming)
         {
             bool aiming = forceAiming ?? IsPlayerAiming();
             lastAppliedAiming = aiming;
@@ -348,7 +628,15 @@ namespace Project.Player.Invector
             if (drawn == null)
                 return;
 
-            if (IsSciFiPistol(drawn))
+            if (TryGetDMRangedCategory(drawn, out bool dmrPistol, out int dmrForm)) // Round6: morph weapon
+            {
+                using (s_pmBindAimLaser.Auto())
+                    BindDMRangedLaser(
+                        dmrPistol ? pistolLaserBeamEnabled : rifleLaserBeamEnabled,
+                        dmrPistol ? pistolLaserSightEnabled : rifleLaserSightEnabled,
+                        dmrForm);
+            }
+            else if (IsSciFiPistol(drawn))
             {
                 BindActiveAimLaser(
                     FindDrawnWeapon(DrawnSciFiPistolName, IsSciFiPistol),
@@ -375,10 +663,16 @@ namespace Project.Player.Invector
 
         private void BindActiveAimLaser(Transform drawn, bool beamEnabled, bool sightEnabled)
         {
+            using (s_pmBindAimLaser.Auto())
+                BindActiveAimLaserCore(drawn, beamEnabled, sightEnabled);
+        }
+
+        private void BindActiveAimLaserCore(Transform drawn, bool beamEnabled, bool sightEnabled)
+        {
             if (drawn == null || (!beamEnabled && !sightEnabled))
                 return;
 
-            if (!TryResolveLaserStack(drawn, out LineRenderer laserLine, out SpriteRenderer laserSight, out Transform laserRoot))
+            if (!TryResolveLaserStack(drawn, sightEnabled, out LineRenderer laserLine, out SpriteRenderer laserSight, out Transform laserRoot))
                 return;
 
             activeAimLaserRoot = laserRoot;
@@ -460,6 +754,12 @@ namespace Project.Player.Invector
 
         private void DisableLaserStacksOnKnownWeapons()
         {
+            using (s_pmDisableStacks.Auto())
+                DisableLaserStacksOnKnownWeaponsCore();
+        }
+
+        private void DisableLaserStacksOnKnownWeaponsCore()
+        {
             DisableLaserStacksUnder(FindNamedChild(DrawnSciFiPistolName));
             DisableLaserStacksUnder(FindNamedChild(DrawnSurvivalRifleName));
 
@@ -482,33 +782,33 @@ namespace Project.Player.Invector
             }
         }
 
-        private void DisableLaserStacksUnder(Transform root)
+        private void DisableLaserStacksUnder(Transform root) => DisableLaserStacksUnder(root, null, null);
+
+        // Round4: keepLine / keepSprite = the pref-allowed active aim components (null = disable everything).
+        // vLaserSight drivers are always off while we own aim (BindActiveAimLaser disables them too).
+        private void DisableLaserStacksUnder(Transform root, LineRenderer keepLine, SpriteRenderer keepSprite)
         {
             if (root == null)
                 return;
 
-            LineRenderer[] lines = root.GetComponentsInChildren<LineRenderer>(true);
-            for (int i = 0; i < lines.Length; i++)
+            // Round3: cached membership (rebuilt on hierarchy change / destroyed entry); same components disabled.
+            LaserStackCache cache = GetLaserStackCache(root);
+            for (int i = 0; i < cache.Lines.Count; i++)
             {
-                LineRenderer line = lines[i];
-                if (line == null || line.gameObject == null)
-                    continue;
-                if (!line.gameObject.name.Equals("Laser", System.StringComparison.OrdinalIgnoreCase))
-                    continue;
-
-                line.enabled = false;
-                vLaserSight sight = line.GetComponent<vLaserSight>();
-                if (sight != null)
+                LineRenderer line = cache.Lines[i];
+                if (line != null && line.enabled && line != keepLine)
+                    line.enabled = false;
+            }
+            for (int i = 0; i < cache.Sights.Count; i++)
+            {
+                vLaserSight sight = cache.Sights[i];
+                if (sight != null && sight.enabled)
                     sight.enabled = false;
             }
-
-            Transform[] transforms = root.GetComponentsInChildren<Transform>(true);
-            for (int i = 0; i < transforms.Length; i++)
+            for (int i = 0; i < cache.Sprites.Count; i++)
             {
-                Transform t = transforms[i];
-                if (t == null || !t.name.Equals("laserSight", System.StringComparison.OrdinalIgnoreCase))
-                    continue;
-                if (t.TryGetComponent(out SpriteRenderer sr))
+                SpriteRenderer sr = cache.Sprites[i];
+                if (sr != null && sr.enabled && sr != keepSprite)
                     sr.enabled = false;
             }
         }
@@ -542,6 +842,11 @@ namespace Project.Player.Invector
 
         private void OpenModeSwitchMenu()
         {
+            using var _ = s_pmOpenMenu.Auto();
+            // Weapon/scope menu never opens while aiming (R hold and D-pad Up hold both route here).
+            // The hold is consumed (no reload / no journal on release); taps are unaffected.
+            if (IsPlayerAiming())
+                return;
             UIManager uiManager = Object.FindAnyObjectByType<UIManager>();
             Transform canvasRoot = uiManager != null ? uiManager.transform : null;
             WeaponModeSwitchMenuUI menu = WeaponModeSwitchMenuUI.EnsureExists(canvasRoot);
@@ -555,16 +860,21 @@ namespace Project.Player.Invector
                 ItemData active = equipment.DrawnWeaponItem ?? equipment.EquippedItem;
                 if (active != null && itemMatch(active))
                 {
+                    // Round5: prefer whichever candidate is actually live (active in hierarchy); several copies
+                    // (preloaded slot, bridge visual, named Drawn_* child) can each carry a Laser/laserSight stack.
                     GameObject drawnSlot = PioneerInvectorWeaponBridge.FindPreloadedDrawnSlot(transform, active);
+                    GameObject visual = weaponBridge != null ? weaponBridge.TryGetWeaponInstance(active) : null;
+                    if (drawnSlot != null && drawnSlot.activeInHierarchy)
+                        return drawnSlot.transform;
+                    if (visual != null && visual.activeInHierarchy)
+                        return visual.transform;
+                    Transform namedLive = FindNamedChild(drawnObjectName);
+                    if (namedLive != null && namedLive.gameObject.activeInHierarchy)
+                        return namedLive;
                     if (drawnSlot != null)
                         return drawnSlot.transform;
-
-                    if (weaponBridge != null)
-                    {
-                        GameObject visual = weaponBridge.TryGetWeaponInstance(active);
-                        if (visual != null)
-                            return visual.transform;
-                    }
+                    if (visual != null)
+                        return visual.transform;
                 }
             }
 
@@ -573,6 +883,7 @@ namespace Project.Player.Invector
 
         private static bool TryResolveLaserStack(
             Transform drawn,
+            bool activateSight,
             out LineRenderer laserLine,
             out SpriteRenderer laserSight,
             out Transform laserRoot)
@@ -583,17 +894,19 @@ namespace Project.Player.Invector
             if (drawn == null)
                 return false;
 
-            Transform laser = FindChildRecursive(drawn, "Laser");
+            Transform laser = FindChildRecursivePreferActive(drawn, "Laser");
             if (laser != null)
             {
                 laserRoot = laser;
                 laserLine = laser.GetComponent<LineRenderer>();
             }
 
-            Transform sight = FindChildRecursive(drawn, "laserSight");
+            Transform sight = FindChildRecursivePreferActive(drawn, "laserSight");
             if (sight != null)
             {
-                sight.gameObject.SetActive(true);
+                // Round4: only activate the sight object when the pref wants the sight (was unconditional).
+                if (activateSight && !sight.gameObject.activeSelf)
+                    sight.gameObject.SetActive(true);
                 laserSight = sight.GetComponent<SpriteRenderer>();
             }
 
@@ -626,6 +939,27 @@ namespace Project.Player.Invector
                 return true;
 
             return item.name.IndexOf("sci_fi_pistol", System.StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        // Round5: first active match wins (inactive duplicate stacks were being bound and then the visible one
+        // was force-disabled by enforcement); falls back to the first match of any state.
+        private static Transform FindChildRecursivePreferActive(Transform root, string childName)
+        {
+            if (root == null || string.IsNullOrEmpty(childName))
+                return null;
+            Transform first = null;
+            Transform[] children = root.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < children.Length; i++)
+            {
+                Transform child = children[i];
+                if (child == null || !child.name.Equals(childName, System.StringComparison.OrdinalIgnoreCase))
+                    continue;
+                if (child.gameObject.activeInHierarchy)
+                    return child;
+                if (first == null)
+                    first = child;
+            }
+            return first;
         }
 
         private static Transform FindChildRecursive(Transform root, string childName)

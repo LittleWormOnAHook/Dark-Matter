@@ -20,6 +20,13 @@ namespace Project.Combat
         private float _next;
         private readonly List<Collider> _cols = new List<Collider>(64);
         private readonly HashSet<int> _reported = new HashSet<int>();
+        // Collider membership cache: rebuilt when the hierarchy's transform count changes (equip/unequip,
+        // pickups, attachments), after a ragdoll/death pause, on enable, or every MembershipRefreshSeconds
+        // as a safety net. IgnoreCollision is still re-applied on every guard tick from the cached list.
+        private const float MembershipRefreshSeconds = 2f;
+        private int _cachedHierarchyCount = -1;
+        private float _nextMembershipRefresh;
+        private bool _membershipDirty = true;
 
         public static void Ensure(GameObject player)
         {
@@ -34,6 +41,16 @@ namespace Project.Combat
             _motor = GetComponent<vThirdPersonMotor>();
         }
 
+        private void OnEnable()
+        {
+            _membershipDirty = true;
+        }
+
+        private void OnTransformChildrenChanged()
+        {
+            _membershipDirty = true;
+        }
+
         private void LateUpdate()
         {
             DM_CombatCoreProfile p = DM_CombatCoreProfile.Live;
@@ -43,10 +60,20 @@ namespace Project.Combat
                 return;
             _next = Time.unscaledTime + Mathf.Max(0.05f, p.playerSelfCollisionGuardInterval);
             if (_motor != null && (_motor.ragdolled || _motor.isDead))
+            {
+                _membershipDirty = true;
                 return;
+            }
 
-            _cols.Clear();
-            GetComponentsInChildren(true, _cols);
+            int hierarchyCount = transform.hierarchyCount;
+            if (_membershipDirty || hierarchyCount != _cachedHierarchyCount || Time.unscaledTime >= _nextMembershipRefresh)
+            {
+                _cols.Clear();
+                GetComponentsInChildren(true, _cols);
+                _cachedHierarchyCount = hierarchyCount;
+                _nextMembershipRefresh = Time.unscaledTime + MembershipRefreshSeconds;
+                _membershipDirty = false;
+            }
             for (int i = 0; i < _cols.Count; i++)
             {
                 Collider c = _cols[i];

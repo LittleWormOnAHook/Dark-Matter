@@ -1,0 +1,81 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3a5f884c88d47c49a6878a3fca32596, type: 3}
+  m_Name: DM_WeaponMorphStudioSettings
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Prototypes.Weapons.DM_WeaponMorphStudioSettings
+  preset: 1
+  morphDurationSeconds: 0.3
+  morphCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  bladeExtendSeconds: 0.22
+  bladeExtendCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  gunMorphDurationMin: 0.1
+  gunMorphDurationMax: 1.2
+  metalColor: {r: 0.72, g: 0.74, b: 0.78, a: 1}
+  lightColor: {r: 0.85, g: 0.95, b: 1, a: 0.85}
+  plasmaColor: {r: 0.35, g: 1, b: 0.55, a: 0.9}
+  ionColor: {r: 0.55, g: 0.35, b: 1, a: 0.9}
+  laserColor: {r: 1, g: 0.25, b: 0.3, a: 0.95}
+  cryoColor: {r: 0.45, g: 0.85, b: 1, a: 0.9}
+  metalLength: 0.85
+  lightLength: 1.05
+  plasmaLength: 1.15
+  ionLength: 1
+  laserLength: 1.25
+  cryoLength: 0.95
+  _stashDuration: 0.3
+  _stashBladeExtend: 0.22

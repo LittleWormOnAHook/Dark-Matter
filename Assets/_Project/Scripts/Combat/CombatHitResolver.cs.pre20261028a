@@ -1,0 +1,729 @@
+using Project.AI;
+using Project.AI.Invector;
+using Project.Audio;
+using Project.Companions;
+using Project.Combat.Turrets;
+using Project.Core;
+using Project.Data;
+using Project.Interaction;
+using Project.Progression;
+using Project.Survival;
+using Project.UI;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace Project.Combat
+{
+    /// <summary>
+    /// Shared on-hit resolution (direct damage, splash/AoE, elemental status effects, impact VFX)
+    /// used by both the traveling CombatProjectile and the instant hitscan beam path in
+    /// CombatProjectileSpawner, so ammo behaves identically regardless of travel mode.
+    /// </summary>
+    public static class CombatHitResolver
+    {
+        /// <summary>
+        /// Broadcast radius for ranged impact noise. Listeners still gate with their own hearingRange
+        /// (EnemySenses / DMICreatureAiController): hear if distance &lt;= hearingRange + this radius.
+        /// </summary>
+        public const float DefaultImpactNoiseRadius = 10f;
+
+        private static readonly Collider[] SplashOverlapBuffer = new Collider[48];
+
+        private readonly struct SplashTarget
+        {
+            public readonly IDamageable Damageable;
+            public readonly Collider Collider;
+            public readonly Vector3 Closest;
+            public readonly float Distance;
+
+            public SplashTarget(IDamageable damageable, Collider collider, Vector3 closest, float distance)
+            {
+                Damageable = damageable;
+                Collider = collider;
+                Closest = closest;
+                Distance = distance;
+            }
+        }
+
+        public static bool IsOwnerCollider(GameObject owner, Collider collider)
+        {
+            if (collider == null || owner == null)
+                return false;
+
+            return collider.transform.IsChildOf(owner.transform) || collider.gameObject == owner;
+        }
+
+        /// <summary>
+        /// World impact shared by projectile + hitscan: VFX, hit SFX, and combat-impact noise so
+        /// nearby enemies/creatures can hear and optionally aggro — even when the shot hits a wall.
+        /// </summary>
+        public static void HandleRangedWorldImpact(
+            ItemData ammoItem,
+            ItemData weapon,
+            Vector3 hitPoint,
+            Vector3 hitNormal,
+            GameObject owner,
+            GameObject receiver = null,
+            bool playHitAudio = true,
+            GameObject impactVfxOverride = null)
+        {
+            DMCombatFx.PlayWorldImpact(ammoItem, weapon, hitPoint, hitNormal, receiver, impactVfxOverride);
+
+            if (playHitAudio)
+                PlayImpactHitAudio(hitPoint);
+
+            // 2026-10-14 (a): player misses alert enemies near the impact (DM_CombatCoreProfile.rangedImpactAlertRadius).
+            float noiseRadius = DefaultImpactNoiseRadius;
+            if (CombatPlayerSourceUtility.IsPlayerOrPioneerSource(owner))
+            {
+                DM_CombatCoreProfile cp = DM_CombatCoreProfile.Live;
+                noiseRadius = cp != null ? cp.rangedImpactAlertRadius : 8f;
+            }
+            EnemyNoiseEvents.RaiseCombatImpactNoise(hitPoint, noiseRadius, owner);
+        }
+
+        public static void PlayImpactHitAudio(Vector3 hitPoint, bool isCritical = false)
+        {
+            GameAudioManager audio = GameAudioManager.Instance;
+            if (audio == null)
+                return;
+
+            audio.PlayRangedHit(hitPoint, isCritical);
+        }
+
+        /// <summary>Applies direct damage to whatever the collider resolves to, plus VFX/UI feedback.</summary>
+        /// <param name="surfaceNormal">Hit surface normal (ranged). Used for blood / hit-mark orientation.</param>
+        /// <param name="fxTravelDirection">Shot travel direction for FX only (stagger / death impulse keep <paramref name="travelDirection"/>).</param>
+        /// <param name="fxAmmoItem">Ammo used only to pick FX / §16 element rules (does not change damage info).</param>
+        /// <param name="fxWeapon">Weapon used only to resolve the ammo FX profile.</param>
+        /// <param name="rangedHitMarks">Ranged gun hit: EnemyHealth targets route to DMEnemyHitMarks (body-type splatter + burn decals).</param>
+        public static void ApplyDirectHit(
+            Collider collider,
+            Vector3 hitPoint,
+            Vector3 travelDirection,
+            float damage,
+            bool isCritical,
+            GameObject owner,
+            ItemData ammoItem = null,
+            Vector3 surfaceNormal = default,
+            Vector3 fxTravelDirection = default,
+            ItemData fxAmmoItem = null,
+            ItemData fxWeapon = null,
+            bool rangedHitMarks = false)
+        {
+            IDamageable damageable = DamageableUtility.GetDamageable(collider);
+            if (damageable == null)
+                return;
+
+            if (owner != null)
+            {
+                DMTurretRuntime turretOwner = owner.GetComponent<DMTurretRuntime>();
+                if (turretOwner != null && !turretOwner.CanDamage(damageable))
+                    return;
+            }
+
+            GameObject damageSource = owner != null ? owner : collider.gameObject;
+
+            // Ranged hits never go through PioneerInvectorDamageReceiver / TryHitStagger. Stamp the
+            // killing impulse before TakeDamage so EnemyDeathSequence can launch the corpse ragdoll.
+            EnemyHealth enemyHealth = damageable as EnemyHealth;
+            if (enemyHealth == null && collider != null)
+                enemyHealth = collider.GetComponentInParent<EnemyHealth>();
+
+            EnemyInvectorRagdollBridge ragdollBridge = null;
+            if (enemyHealth != null && !enemyHealth.IsDead)
+            {
+                ragdollBridge = enemyHealth.GetComponent<EnemyInvectorRagdollBridge>();
+                ragdollBridge?.RememberHitForDeath(
+                    hitPoint,
+                    travelDirection,
+                    damage,
+                    damageSource != null ? damageSource.transform : null);
+            }
+
+            DamageInfo info = DamageInfo.FromHit(damage, isCritical, damageSource, hitPoint, ammoItem);
+            if (DMEnemyHitQuery.TryGetHitbox(collider, out DMEnemyHitbox hitbox))
+                info.BodyPart = hitbox.Zone;
+            else if (enemyHealth != null && collider != null)
+            {
+                Animator animator = enemyHealth.GetComponentInChildren<Animator>();
+                info.BodyPart = DMCombatBodyPartUtility.ResolveFromCollider(collider, animator);
+            }
+
+            if (enemyHealth != null && info.BodyPart != CombatBodyPart.None)
+            {
+                info.Amount = DMCombatBodyPartUtility.ApplyZoneDamageMultiplier(
+                    info.Amount,
+                    info.BodyPart,
+                    DM_EnemyHitMarkProfile.LiveOrDefault);
+
+                // 2026-10-13 (h): scoped player head/chest multipliers (DM_ScopeProfile + Scope skills).
+                if (DMScopeMode.IsScoped && owner != null && owner.transform.root == DMScopeMode.Instance.transform.root)
+                    info.Amount *= DMScopeMode.DamageMultiplier(info.BodyPart);
+            }
+
+            bool applied = CombatDamageApplicator.ApplyToDamageable(
+                damageable,
+                collider.transform.root.gameObject,
+                in info);
+
+            if (!applied)
+                return;
+
+            NotifyEnemyProjectileHitOnAlly(damageSource, damageable, collider.transform, damage);
+
+            if (ragdollBridge != null && enemyHealth != null && !enemyHealth.IsDead)
+            {
+                ragdollBridge.TryHitStaggerFromRanged(
+                    hitPoint,
+                    travelDirection,
+                    damage,
+                    isCritical,
+                    damageSource != null ? damageSource.transform : null);
+            }
+
+            Vector3 fxTravel = fxTravelDirection.sqrMagnitude > 0.0001f ? fxTravelDirection : travelDirection;
+            if (fxTravel.sqrMagnitude <= 0.0001f && damageSource != null)
+                fxTravel = hitPoint - damageSource.transform.position;
+            fxTravel = fxTravel.sqrMagnitude > 0.0001f ? fxTravel.normalized : Vector3.zero;
+
+            if (rangedHitMarks && enemyHealth != null)
+            {
+                // Enemy gun hits: body-type splatter / sparks + bone-parented burn decals (§16 element rules apply).
+                DMEnemyHitMarks.HandleRangedHit(
+                    enemyHealth,
+                    collider,
+                    hitPoint,
+                    surfaceNormal,
+                    fxTravel,
+                    damage,
+                    fxAmmoItem != null ? fxAmmoItem : ammoItem,
+                    fxWeapon);
+            }
+            else if (enemyHealth == null
+                     && rangedHitMarks
+                     && DMPlayerHitboxRig.TryHandleRangedHit(
+                         collider,
+                         hitPoint,
+                         surfaceNormal,
+                         fxTravel,
+                         damage,
+                         fxAmmoItem != null ? fxAmmoItem : ammoItem,
+                         fxWeapon))
+            {
+                // Player body hitbox (DMPlayerHitboxRig): body-type marks on the struck bone, no legacy splatter.
+            }
+            else if (enemyHealth == null)
+            {
+                // Non-enemy targets (player capsule fallback, companions, nodes) keep legacy splatter VFX.
+                Vector3 normal = surfaceNormal.sqrMagnitude > 0.0001f
+                    ? surfaceNormal.normalized
+                    : (fxTravel != Vector3.zero ? -fxTravel : Vector3.up);
+                Vector3 sprayDirection = fxTravel != Vector3.zero ? -fxTravel : normal;
+                CombatHitVfx.SpawnBloodSplatter(hitPoint, sprayDirection, normal, damage);
+            }
+
+            // EnemyHealth/CompanionHealth already show their own floating damage number inside
+            // TakeDamage (shared with the melee hit path) — showing it again here would double the
+            // popup on every ranged hit. Targets that don't self-report (player SurvivalStats,
+            // ResourceNode, etc.) still need us to show it.
+            if (!SelfReportsDamageUi(damageable))
+                CombatUiSpawner.ShowDamage(damage, hitPoint, isCritical);
+        }
+
+        private static bool SelfReportsDamageUi(IDamageable damageable)
+        {
+            return damageable is EnemyHealth || damageable is CompanionHealth;
+        }
+
+        /// <summary>
+        /// When an enemy-owned projectile/beam hits the player or a pioneer, raise squad alert events
+        /// and incoming-hit VFX. CompanionHealth already raises OnCompanionAttackedBy inside TakeDamage;
+        /// the player path must be handled here because SurvivalStats does not.
+        /// </summary>
+        private static void NotifyEnemyProjectileHitOnAlly(
+            GameObject owner,
+            IDamageable damageable,
+            Transform hitTransform,
+            float damage)
+        {
+            if (owner == null || damageable == null || damage <= 0f)
+                return;
+
+            EnemyHealth attacker = owner.GetComponentInParent<EnemyHealth>();
+            if (attacker == null || attacker.IsDead)
+                return;
+
+            Transform receiver = hitTransform != null ? hitTransform.root : null;
+
+            if (damageable is SurvivalStats)
+            {
+                PlayerCombatEvents.RaisePlayerAttackedBy(attacker);
+                if (receiver != null)
+                    CombatHitVfx.SpawnIncomingEnemyHit(attacker.transform, receiver, damage);
+                return;
+            }
+
+            if (damageable is CompanionHealth && receiver != null)
+                CombatHitVfx.SpawnIncomingEnemyHit(attacker.transform, receiver, damage);
+        }
+
+        /// <summary>Splash/AoE damage around the impact point, falling off linearly to ammoItem.splashDamageFalloff at the edge.</summary>
+        public static void ApplySplash(
+            ItemData ammoItem,
+            Vector3 center,
+            float centerDamage,
+            GameObject owner,
+            Collider excludeCollider)
+        {
+            ApplySplash(ammoItem, center, centerDamage, owner, excludeCollider, allowFollowUp: true);
+        }
+
+        /// <param name="allowFollowUp">False for Cluster Munitions second pulse so it cannot recurse.</param>
+        public static void ApplySplash(
+            ItemData ammoItem,
+            Vector3 center,
+            float centerDamage,
+            GameObject owner,
+            Collider excludeCollider,
+            bool allowFollowUp)
+        {
+            if (ammoItem == null || !ammoItem.HasSplashDamage)
+                return;
+
+            float radius = ammoItem.splashRadius > 0.05f ? ammoItem.splashRadius : 2.5f;
+            float damage = centerDamage;
+            float dotDurationScale = 1f;
+            bool forceResidue = false;
+            bool cluster = false;
+            bool cloud = false;
+            float clusterDamageScale = 0.48f;
+            float cloudDuration = 2f;
+
+            if (IsPlayerCombatOwner(owner))
+            {
+                radius *= PlayerSkillAllocator.GetSplashRadiusMultiplier();
+                damage *= PlayerSkillAllocator.GetSplashDamageMultiplier();
+                dotDurationScale = PlayerSkillAllocator.GetSplashDotDurationMultiplier();
+                forceResidue = PlayerSkillAllocator.HasHotResidue();
+                cluster = PlayerSkillAllocator.HasClusterMunitions();
+                cloud = PlayerSkillAllocator.HasPersistentHazard();
+                clusterDamageScale = PlayerSkillAllocator.GetClusterPulseDamageScale();
+                cloudDuration = PlayerSkillAllocator.GetPersistentHazardDuration();
+            }
+
+            ApplySplashPulse(ammoItem, center, damage, radius, owner, excludeCollider, dotDurationScale, forceResidue);
+
+            if (!allowFollowUp)
+                return;
+
+            // 2026-10-21e: the bubble is only a visual unless Cluster / Persistent Hazard follow-ups need it.
+            DMAmmoFxProfile bubbleProfile = DMCombatFx.ResolveProfile(ammoItem, null);
+            if (bubbleProfile != null && !bubbleProfile.showSplashBubble && !cluster && !cloud)
+                return;
+
+            DMAoeTriggerBubble.Spawn(
+                center,
+                radius,
+                ammoItem,
+                owner,
+                excludeCollider,
+                damage,
+                dotDurationScale,
+                forceResidue,
+                cluster,
+                cloud,
+                clusterDamageScale,
+                cloudDuration);
+        }
+
+        /// <summary>One overlap pulse at an explicit radius / payload. Used by the first blast and Cluster follow-up.</summary>
+        public static void ApplySplashPulse(
+            ItemData ammoItem,
+            Vector3 center,
+            float centerDamage,
+            float radius,
+            GameObject owner,
+            Collider excludeCollider,
+            float dotDurationScale = 1f,
+            bool forceResidue = false)
+        {
+            if (ammoItem == null || radius <= 0.05f || centerDamage <= 0.01f)
+                return;
+
+            int hitCount = Physics.OverlapSphereNonAlloc(
+                center,
+                radius,
+                SplashOverlapBuffer,
+                ~0,
+                QueryTriggerInteraction.Ignore);
+
+            if (hitCount <= 0)
+                return;
+
+            // One entry per damageable (its closest collider): multi-collider targets (hitbox / ragdoll
+            // bones) used to take splash damage + status once per overlapping collider. The directly hit
+            // target is excluded as a whole, not just the collider the projectile struck. Copying out of
+            // the shared static buffer also keeps a nested pulse (death effects) from clobbering it.
+            IDamageable excludedDamageable = excludeCollider != null
+                ? DamageableUtility.GetDamageable(excludeCollider)
+                : null;
+            List<SplashTarget> targets = new List<SplashTarget>(hitCount);
+            for (int i = 0; i < hitCount; i++)
+            {
+                Collider candidate = SplashOverlapBuffer[i];
+                SplashOverlapBuffer[i] = null;
+                if (candidate == null || candidate == excludeCollider || IsOwnerCollider(owner, candidate))
+                    continue;
+
+                IDamageable candidateDamageable = DamageableUtility.GetDamageable(candidate);
+                if (candidateDamageable == null
+                    || (excludedDamageable != null && ReferenceEquals(candidateDamageable, excludedDamageable)))
+                    continue;
+
+                Vector3 candidateClosest = GetClosestPointSafe(candidate, center);
+                float candidateDistance = Vector3.Distance(center, candidateClosest);
+                int existing = -1;
+                for (int j = 0; j < targets.Count; j++)
+                {
+                    if (ReferenceEquals(targets[j].Damageable, candidateDamageable))
+                    {
+                        existing = j;
+                        break;
+                    }
+                }
+
+                SplashTarget entry = new SplashTarget(candidateDamageable, candidate, candidateClosest, candidateDistance);
+                if (existing < 0)
+                    targets.Add(entry);
+                else if (candidateDistance < targets[existing].Distance)
+                    targets[existing] = entry;
+            }
+
+            for (int i = 0; i < targets.Count; i++)
+            {
+                Collider hitCollider = targets[i].Collider;
+                IDamageable damageable = targets[i].Damageable;
+                Vector3 closest = targets[i].Closest;
+                float distance = targets[i].Distance;
+                float t = Mathf.Clamp01(distance / Mathf.Max(0.01f, radius));
+                float falloffDamage = Mathf.Lerp(centerDamage, centerDamage * ammoItem.splashDamageFalloff, t);
+                if (falloffDamage <= 0.01f)
+                    continue;
+
+                EnemyHealth splashEnemy = damageable as EnemyHealth;
+                if (splashEnemy == null)
+                    splashEnemy = hitCollider.GetComponentInParent<EnemyHealth>();
+                if (splashEnemy != null && !splashEnemy.IsDead)
+                {
+                    Vector3 outward = closest - center;
+                    if (outward.sqrMagnitude < 0.0001f)
+                        outward = Vector3.up;
+                    splashEnemy.GetComponent<EnemyInvectorRagdollBridge>()?.RememberHitForDeath(
+                        closest,
+                        outward,
+                        falloffDamage,
+                        owner != null ? owner.transform : null);
+                }
+
+                DamageInfo splashInfo = DamageInfo.FromHit(falloffDamage, false, owner, closest, ammoItem);
+                CombatDamageApplicator.ApplyToDamageable(
+                    damageable,
+                    hitCollider.transform.root.gameObject,
+                    in splashInfo);
+                if (!SelfReportsDamageUi(damageable))
+                    CombatUiSpawner.ShowDamage(falloffDamage, closest, false);
+                Vector3 splashOutward = (closest - center).sqrMagnitude > 0.0001f ? (closest - center).normalized : Vector3.up;
+                ApplyStatusEffect(
+                    ammoItem,
+                    hitCollider,
+                    owner,
+                    dotDurationScale,
+                    forceResidue,
+                    falloffDamage * 0.08f,
+                    closest,
+                    splashOutward,
+                    Vector3.zero);
+
+                if (splashEnemy != null && !splashEnemy.IsDead)
+                {
+                    Vector3 outward = (closest - center).sqrMagnitude > 0.0001f ? (closest - center).normalized : Vector3.up;
+                    DMEnemyHitMarks.HandleSplashHit(
+                        splashEnemy,
+                        hitCollider,
+                        closest,
+                        outward,
+                        falloffDamage,
+                        ammoItem);
+                }
+            }
+        }
+
+        private static bool IsPlayerCombatOwner(GameObject owner)
+        {
+            if (owner == null)
+                return false;
+
+            Transform current = owner.transform;
+            while (current != null)
+            {
+                if (current.CompareTag("Player"))
+                    return true;
+                current = current.parent;
+            }
+
+            return owner.GetComponentInParent<SurvivalStats>() != null
+                && owner.GetComponentInParent<EnemyHealth>() == null
+                && owner.GetComponentInParent<CompanionHealth>() == null;
+        }
+
+        /// <summary>
+        /// Collider.ClosestPoint only supports Box/Sphere/Capsule and convex MeshColliders.
+        /// </summary>
+        private static Vector3 GetClosestPointSafe(Collider collider, Vector3 point)
+        {
+            if (collider == null)
+                return point;
+
+            if (collider is BoxCollider
+                || collider is SphereCollider
+                || collider is CapsuleCollider
+                || (collider is MeshCollider meshCollider && meshCollider.convex))
+            {
+                return collider.ClosestPoint(point);
+            }
+
+            return collider.bounds.ClosestPoint(point);
+        }
+
+        /// <summary>Applies the ammo's elemental status effect (Burning/Frozen/Shocked/etc.) to whatever the collider resolves to.</summary>
+        public static void ApplyStatusEffect(ItemData ammoItem, Collider collider, GameObject owner)
+        {
+            ApplyStatusEffect(ammoItem, collider, owner, 1f, false, 0f);
+        }
+
+        public static void ApplyStatusEffect(
+            ItemData ammoItem,
+            Collider collider,
+            GameObject owner,
+            float durationScale,
+            bool forceResidue,
+            float residueTickFallback,
+            Vector3 hitPoint = default,
+            Vector3 surfaceNormal = default,
+            Vector3 travelDirection = default)
+        {
+            if (ammoItem == null || collider == null)
+                return;
+
+            if (!ammoItem.HasStatusEffect && !forceResidue)
+                return;
+
+            CombatStatusEffect.Apply(
+                ammoItem,
+                collider.gameObject,
+                owner,
+                durationScale,
+                forceResidue,
+                residueTickFallback,
+                collider,
+                hitPoint,
+                surfaceNormal,
+                travelDirection);
+        }
+
+        public static void SpawnImpactVfx(
+            ItemData ammoItem,
+            ItemData weapon,
+            Vector3 point,
+            Vector3 normal,
+            GameObject impactVfxOverride = null,
+            GameObject receiver = null)
+        {
+            GameObject prefab = impactVfxOverride;
+            if (prefab == null)
+                prefab = DMCombatFx.ResolveDefaultImpact(ammoItem, weapon);
+
+            if (prefab == null)
+                return;
+
+            Quaternion rotation = normal.sqrMagnitude > 0.0001f
+                ? Quaternion.LookRotation(normal, Vector3.up)
+                : Quaternion.identity;
+
+            Transform attach = CombatVfxUtility.ResolveImpactAttachTransform(receiver);
+            GameObject instance = PoolManager.Spawn(prefab, point, rotation, attach);
+            if (instance != null && attach != null)
+                instance.transform.SetPositionAndRotation(point, rotation);
+
+            if (instance != null)
+                CombatVfxUtility.NormalizeAttachedWorldScale(instance.transform);
+
+            CombatVfxUtility.PreparePooledOneShotVfx(instance, 4f);
+        }
+
+        public static void SpawnMuzzleFlash(ItemData ammoItem, ItemData weapon, Transform muzzle)
+        {
+            DMCombatFx.PlayMuzzle(ammoItem, weapon, muzzle);
+        }
+
+        /// <summary>
+        /// Pulse laser visual: stretches beamVfx (preferred) or tracerPrefab from muzzle to impact.
+        /// Used by hitscan laser ammo — no traveling projectile is spawned.
+        /// Attaches <see cref="HitscanBeamMuzzleFollow"/> so the beam stays glued to the live muzzle
+        /// while the shooter moves / tracks (visual only; damage already applied at fire time).
+        /// </summary>
+        public static void SpawnHitscanBeamVisual(
+            ItemData ammoItem,
+            ItemData weapon,
+            Transform muzzle,
+            Vector3 origin,
+            Vector3 endPoint,
+            Vector3 direction,
+            float range)
+        {
+            Vector3 delta = endPoint - origin;
+            float length = delta.magnitude;
+            if (length < 0.01f)
+                return;
+
+            float followRange = Mathf.Max(1f, range > 0.01f ? range : length);
+
+            // Prefer the drawn weapon's muzzle/Laser/laserSight stack (Sci-Fi Pistol, Survival Rifle, Mining Tool, etc.).
+            // 2026-10-21c: ammo can force its own beam prefab (Lightning Gun) instead of the weapon laser stack.
+            DMAmmoFxProfile beamProfile = DMCombatFx.ResolveProfile(ammoItem, weapon);
+            bool forceAmmoBeam = beamProfile != null && beamProfile.beamUsesAmmoPrefab && DMCombatFx.ResolveBeam(ammoItem, weapon) != null;
+            if (!forceAmmoBeam && TryPulseWeaponLaserStack(muzzle, followRange, 0.35f))
+                return;
+
+            GameObject beamPrefab = DMCombatFx.ResolveBeam(ammoItem, weapon);
+
+            GameObject tracerPrefab = CombatVfxUtility.ResolveTracerPrefab(ammoItem, weapon);
+
+            Vector3 dir = direction.sqrMagnitude > 0.0001f ? direction.normalized : delta / length;
+            Quaternion rotation = Quaternion.LookRotation(dir, Vector3.up);
+
+            if (beamPrefab != null)
+            {
+                GameObject beam = PoolManager.Spawn(beamPrefab, origin, rotation);
+                ApplyBeamLine(beam, origin, endPoint);
+                AttachMuzzleFollow(beam, muzzle, followRange);
+                CombatVfxUtility.PreparePooledOneShotVfx(beam, 0.35f);
+            }
+            else if (tracerPrefab != null)
+            {
+                // Particle/trail tracers: place along the shot and scale to span muzzle→impact.
+                GameObject tracer = PoolManager.Spawn(tracerPrefab, origin, rotation);
+                CombatVfxUtility.PrepareAttachedTracer(tracer, origin, dir);
+                DMVendorImpactAudio.SuppressVendorDriver(tracer); // 24n
+                ApplyBeamLine(tracer, origin, endPoint);
+                StretchTracerAlongBeam(tracer, length);
+                AttachMuzzleFollow(tracer, muzzle, followRange);
+                CombatVfxUtility.PreparePooledOneShotVfx(tracer, 0.45f);
+            }
+        }
+
+        private static bool TryPulseWeaponLaserStack(Transform muzzle, float range, float durationSeconds)
+        {
+            if (muzzle == null)
+                return false;
+
+            if (!HitscanBeamMuzzleFollow.TryFindWeaponLaserStack(muzzle, out Transform laser, out Transform stackMuzzle))
+                return false;
+
+            HitscanBeamMuzzleFollow follow = laser.GetComponent<HitscanBeamMuzzleFollow>();
+            if (follow == null)
+                follow = laser.gameObject.AddComponent<HitscanBeamMuzzleFollow>();
+
+            follow.enabled = true;
+            follow.ConfigureWeaponLaserPulse(laser, stackMuzzle, range, durationSeconds);
+            return true;
+        }
+
+        private static void AttachMuzzleFollow(GameObject root, Transform muzzle, float range)
+        {
+            if (root == null || muzzle == null)
+                return;
+
+            HitscanBeamMuzzleFollow follow = root.GetComponent<HitscanBeamMuzzleFollow>();
+            if (follow == null)
+                follow = root.AddComponent<HitscanBeamMuzzleFollow>();
+
+            follow.enabled = true;
+            follow.Configure(muzzle, range);
+        }
+
+        private static void ApplyBeamLine(GameObject root, Vector3 origin, Vector3 endPoint)
+        {
+            if (root == null)
+                return;
+
+            LineRenderer[] lines = root.GetComponentsInChildren<LineRenderer>(true);
+            for (int i = 0; i < lines.Length; i++)
+            {
+                LineRenderer line = lines[i];
+                if (line == null)
+                    continue;
+
+                line.useWorldSpace = true;
+                line.positionCount = 2;
+                line.SetPosition(0, origin);
+                line.SetPosition(1, endPoint);
+                line.enabled = true;
+            }
+        }
+
+        private static void StretchTracerAlongBeam(GameObject root, float length)
+        {
+            if (root == null)
+                return;
+
+            // Particle-only tracers (ballistic bullet FX) must not be Z-stretched to beam length —
+            // that explodes local emission offsets into multi-meter displacement behind the player.
+            // LineRenderer beams already get exact endpoints via ApplyBeamLine.
+            if (root.GetComponentInChildren<LineRenderer>(true) == null &&
+                root.GetComponentInChildren<MeshRenderer>(true) == null &&
+                root.GetComponentInChildren<ParticleSystem>(true) != null)
+            {
+                return;
+            }
+
+            Transform t = root.transform;
+            Vector3 scale = t.localScale;
+            if (scale.z > 0.001f && length > 0.01f)
+            {
+                // Many projectile visuals are ~1 unit long on Z — stretch to beam length.
+                scale.z = length;
+                t.localScale = scale;
+            }
+        }
+
+        /// <summary>One-shot firing sound played at the muzzle position. Falls back to the weapon's own fire sound if the loaded ammo doesn't specify one — except hitscan laser ammo, which must not steal gunfire SFX. Mining tools use continuous beam audio via DMIMiningController instead.</summary>
+        public static void PlayFireSound(ItemData ammoItem, ItemData weapon, Transform muzzle)
+        {
+            // Mining owns continuous hold-fire audio — never play pulse/gunshot SFX.
+            if (weapon != null && weapon.isMiningTool)
+                return;
+
+            AudioClip clip = ammoItem != null ? ammoItem.fireSound : null;
+            if (clip == null &&
+                (ammoItem == null || !ammoItem.isHitscanBeam) &&
+                weapon != null)
+            {
+                clip = weapon.fireSound;
+            }
+
+            if (clip == null || muzzle == null)
+                return;
+
+            // 2026-10-13 (h): scoped player shots are louder / lower (DM_ScopeProfile).
+            if (DMScopeMode.IsScoped && muzzle.root == DMScopeMode.Instance.transform.root)
+            {
+                GameAudioManager.PlayWorldSfxPitched(clip, muzzle.position, DMScopeMode.ShotVolume, DMScopeMode.ShotPitch);
+                return;
+            }
+
+            GameAudioManager.PlayWorldSfx(clip, muzzle.position, 1f);
+        }
+    }
+}

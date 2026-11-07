@@ -1,0 +1,137 @@
+#if UNITY_EDITOR
+// 2026-10-30l: sun shadow readability. Sun shadow knobs (Subtle/Default/Extreme) + prop light shadow budget.
+// HDRP max shadow requests = 48 (Genesis_HDRP_Balanced); 147 shadowed prop lights (point = 6 requests each) can drop the
+// sun's cascade requests. "Limit" keeps the N strongest prop lights shadowed and turns the rest off (Undo + log);
+// "Restore" puts every logged light back from Logs/propLightShadows30l.tsv.
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Project.World.Sky;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.Rendering.HighDefinition;
+
+namespace Project.EditorTools.GenesisStudio
+{
+    public static class DMStudioShadowBudget
+    {
+        public const string SunName = "BOTD Directional Light(Clone)";
+        static string LogPath => System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Application.dataPath), "Logs", "propLightShadows30l.tsv");
+
+        public static void Draw(DM_IoSkyProfile sky)
+        {
+            if (sky == null) return;
+            EditorGUILayout.Space(4f);
+            EditorGUILayout.LabelField("Sun Shadows (30l)", EditorStyles.boldLabel);
+            float md = EditorGUILayout.Slider("  Shadow Max Distance (m)", sky.shadowMaxDistance, 50f, 400f);
+            float c0 = EditorGUILayout.Slider("  Cascade Split 0", sky.shadowCascadeSplit0, 0.02f, 0.2f);
+            float cl = EditorGUILayout.Slider("  Contact Shadow Length", sky.contactShadowLength, 0f, 0.5f);
+            float fl = EditorGUILayout.Slider("  Shadow Floor Lift", sky.shadowFloorLift, 0f, 0.3f);
+            if (!Mathf.Approximately(md, sky.shadowMaxDistance) || !Mathf.Approximately(c0, sky.shadowCascadeSplit0) || !Mathf.Approximately(cl, sky.contactShadowLength) || !Mathf.Approximately(fl, sky.shadowFloorLift))
+            { Undo.RecordObject(sky, "Sun shadows"); sky.shadowMaxDistance = md; sky.shadowCascadeSplit0 = c0; sky.contactShadowLength = cl; sky.shadowFloorLift = fl; EditorUtility.SetDirty(sky); }
+            Light sun = FindSun();
+            if (sun != null)
+            {
+                var hd = sun.GetComponent<HDAdditionalLightData>();
+                int[] ro = { 512, 1024, 2048, 4096 };
+                int cur = hd != null && hd.shadowResolution.useOverride ? hd.shadowResolution.@override : 0;
+                int idx = EditorGUILayout.Popup("  Sun Shadow Resolution", System.Array.IndexOf(ro, cur) + 1, new[] { "Quality tier", "512", "1024", "2048", "4096" });
+                if (hd != null && idx != System.Array.IndexOf(ro, cur) + 1) SetSunRes(idx == 0 ? 0 : ro[idx - 1]);
+                bool soft = sun.shadows == LightShadows.Soft;
+                bool ns = EditorGUILayout.Toggle("  Sun Soft Shadows", soft);
+                if (ns != soft) { Undo.RecordObject(sun, "Sun shadow type"); sun.shadows = ns ? LightShadows.Soft : LightShadows.Hard; EditorUtility.SetDirty(sun); }
+            }
+            EditorGUILayout.BeginHorizontal();
+            string[] pn = { "Sun: Subtle", "Default", "Extreme (crisp)" };
+            for (int i = 0; i < 3; i++) if (GUILayout.Button(pn[i])) ApplyPreset(sky, i);
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("  Prop light shadows: " + CountShadowed() + " shadowed", GUILayout.MinWidth(180f));
+            if (GUILayout.Button("Limit to 4 hero")) Limit(4);
+            if (GUILayout.Button("Restore")) Restore();
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.BeginHorizontal(); // 30m perf fix 2
+            EditorGUILayout.LabelField("  Perf 30m (small shadows off + Static)", GUILayout.MinWidth(180f));
+            if (GUILayout.Button("Apply 30m")) Debug.Log("[30m] " + DMStudioPerf30m.Apply());
+            if (GUILayout.Button("Restore 30m")) Debug.Log("[30m] " + DMStudioPerf30m.Restore());
+            EditorGUILayout.EndHorizontal();
+        }
+
+        public static Light FindSun()
+        {
+            foreach (Light l in Object.FindObjectsByType<Light>(FindObjectsSortMode.None))
+                if (l.name == SunName && l.type == LightType.Directional) return l;
+            return null;
+        }
+
+        public static void SetSunRes(int res)
+        {
+            Light sun = FindSun(); if (sun == null) return;
+            var hd = sun.GetComponent<HDAdditionalLightData>(); if (hd == null) return;
+            Undo.RecordObject(hd, "Sun shadow resolution");
+            hd.shadowResolution.useOverride = res > 0;
+            if (res > 0) hd.shadowResolution.@override = res;
+            EditorUtility.SetDirty(hd);
+        }
+
+        /// <summary>0 Subtle, 1 Default, 2 Extreme (crisp).</summary>
+        public static void ApplyPreset(DM_IoSkyProfile sky, int preset)
+        {
+            Undo.RecordObject(sky, "Sun shadow preset");
+            if (preset <= 0) { sky.shadowMaxDistance = 150f; sky.shadowCascadeSplit0 = 0.07f; sky.contactShadowLength = 0.05f; sky.shadowFloorLift = 0.11f; sky.shadeFillStrength = 0.5f; }
+            else if (preset == 1) { sky.shadowMaxDistance = 200f; sky.shadowCascadeSplit0 = 0.06f; sky.contactShadowLength = 0.1f; sky.shadowFloorLift = 0.06f; sky.shadeFillStrength = 0.35f; }
+            else { sky.shadowMaxDistance = 250f; sky.shadowCascadeSplit0 = 0.05f; sky.contactShadowLength = 0.15f; sky.shadowFloorLift = 0.03f; sky.shadeFillStrength = 0.2f; }
+            EditorUtility.SetDirty(sky);
+            SetSunRes(preset <= 0 ? 1024 : preset == 1 ? 2048 : 4096);
+            Light sun = FindSun(); if (sun != null) { Undo.RecordObject(sun, "Sun shadow type"); sun.shadows = preset <= 0 ? LightShadows.Soft : LightShadows.Hard; EditorUtility.SetDirty(sun); }
+        }
+
+        static IEnumerable<Light> PropLights() =>
+            Object.FindObjectsByType<Light>(FindObjectsInactive.Include, FindObjectsSortMode.None)
+                .Where(l => l.type != LightType.Directional && l.gameObject.scene.IsValid() && (l.hideFlags & HideFlags.DontSave) == 0);
+
+        public static int CountShadowed() => PropLights().Count(l => l.enabled && l.gameObject.activeInHierarchy && l.shadows != LightShadows.None);
+
+        public static string Limit(int keep)
+        {
+            var on = PropLights().Where(l => l.shadows != LightShadows.None).ToList();
+            var hero = new HashSet<Light>(on.Where(l => l.enabled && l.gameObject.activeInHierarchy)
+                .OrderByDescending(l => l.intensity * l.range * l.range * (l.type == LightType.Spot ? 1.5f : 1f)).Take(keep));
+            Undo.IncrementCurrentGroup(); int g = Undo.GetCurrentGroup(); Undo.SetCurrentGroupName("30l Limit prop light shadows");
+            var lines = new List<string>(); int n = 0;
+            foreach (Light l in on)
+            {
+                if (hero.Contains(l)) continue;
+                lines.Add(GlobalObjectId.GetGlobalObjectIdSlow(l) + "\t" + (int)l.shadows + "\t" + PathOf(l.transform));
+                Undo.RecordObject(l, "shadow off"); l.shadows = LightShadows.None; EditorUtility.SetDirty(l); n++;
+            }
+            Undo.CollapseUndoOperations(g);
+            Directory.CreateDirectory(System.IO.Path.GetDirectoryName(LogPath));
+            File.AppendAllLines(LogPath, lines);
+            UnityEditor.SceneManagement.EditorSceneManager.MarkAllScenesDirty();
+            return "off=" + n + " kept=" + string.Join(", ", hero.Select(h => PathOf(h.transform)));
+        }
+
+        public static string Restore()
+        {
+            if (!File.Exists(LogPath)) return "no log";
+            Undo.IncrementCurrentGroup(); int g = Undo.GetCurrentGroup(); Undo.SetCurrentGroupName("30l Restore prop light shadows");
+            int n = 0, miss = 0;
+            foreach (string line in File.ReadAllLines(LogPath))
+            {
+                string[] p = line.Split('\t'); if (p.Length < 2) continue;
+                if (!GlobalObjectId.TryParse(p[0], out GlobalObjectId id)) { miss++; continue; }
+                var l = GlobalObjectId.GlobalObjectIdentifierToObjectSlow(id) as Light;
+                if (l == null) { miss++; continue; }
+                Undo.RecordObject(l, "shadow restore"); l.shadows = (LightShadows)int.Parse(p[1]); EditorUtility.SetDirty(l); n++;
+            }
+            Undo.CollapseUndoOperations(g);
+            File.Move(LogPath, LogPath + ".restored_" + System.DateTime.Now.ToString("yyyyMMdd_HHmmss"));
+            UnityEditor.SceneManagement.EditorSceneManager.MarkAllScenesDirty();
+            return "restored=" + n + " missing=" + miss;
+        }
+
+        static string PathOf(Transform t) { string s = t.name; while (t.parent != null) { t = t.parent; s = t.name + "/" + s; } return s; }
+    }
+}
+#endif

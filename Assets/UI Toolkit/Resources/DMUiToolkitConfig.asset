@@ -18,5 +18,6 @@ MonoBehaviour:
   damageVignetteAlpha: 0.5
   showPilotCluster: 1
   pilotClusterRefreshHz: 15
+  pilotClusterSkillDashRefreshSeconds: 30
   worldChromeInteractDotPaintHz: 30
   worldChromeBarPaintHz: 8

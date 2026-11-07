@@ -107,6 +107,8 @@ namespace Project.EditorTools.Audit
             private static string _unlockNote = "";
             private static readonly System.Collections.Generic.Dictionary<string, int> _unlockPrev = new System.Collections.Generic.Dictionary<string, int>();
             private static System.Collections.Generic.Dictionary<string, int> _unlockRanks;
+            private static object _unlockProgressionInst;
+            private static System.Type _unlockProgressionType;
             private static readonly string[] UnlockIds = { "skill_system_jetpack", "skill_system_dash", "skill_system_climb" };
 
             /// <summary>Jetpack, dash and climbing are gated by Journal Tier-0 skills (DMSkillMovementSystemGates -> PlayerSkillAllocator.GetSkillRank > 0).
@@ -126,6 +128,8 @@ namespace Project.EditorTools.Audit
                     if (inst == null || f == null) { _unlockNote = "movement unlock skipped: progression instance or skillRanks field not found"; return; }
                     _unlockRanks = f.GetValue(inst) as System.Collections.Generic.Dictionary<string, int>;
                     if (_unlockRanks == null) { _unlockNote = "movement unlock skipped: skillRanks is not a Dictionary<string,int>"; return; }
+                    _unlockProgressionInst = inst;
+                    _unlockProgressionType = pm;
                     var sb = new System.Text.StringBuilder();
                     foreach (string id in UnlockIds)
                     {
@@ -134,6 +138,9 @@ namespace Project.EditorTools.Audit
                         if (!had || prev < 1) _unlockRanks[id] = 1;
                         sb.Append(id + " " + (had ? prev.ToString() : "absent") + "->" + _unlockRanks[id] + "; ");
                     }
+                    var notify = pm.GetMethod("NotifySkillRanksChanged", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                    if (notify != null)
+                        notify.Invoke(inst, null);
                     _unlockNote = "Jetpack/dash/climb unlocked for the run by writing rank 1 into the in-memory skill ranks (" + sb + "restored at exit; no skill points spent, no save, no asset written)";
                 }
                 catch (Exception e) { _unlockNote = "movement unlock failed: " + e.Message; }
@@ -145,9 +152,17 @@ namespace Project.EditorTools.Audit
                 {
                     if (_unlockRanks != null)
                         foreach (var kv in _unlockPrev) { if (kv.Value < 0) _unlockRanks.Remove(kv.Key); else _unlockRanks[kv.Key] = kv.Value; }
+                    if (_unlockProgressionType != null && _unlockProgressionInst != null)
+                    {
+                        var notify = _unlockProgressionType.GetMethod("NotifySkillRanksChanged", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                        if (notify != null)
+                            notify.Invoke(_unlockProgressionInst, null);
+                    }
                 }
                 catch { /* ignore */ }
                 _unlockPrev.Clear(); _unlockRanks = null;
+                _unlockProgressionInst = null;
+                _unlockProgressionType = null;
             }
             private static string Snapshot()
             {

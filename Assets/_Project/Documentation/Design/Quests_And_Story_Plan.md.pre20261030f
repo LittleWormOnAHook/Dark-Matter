@@ -1,0 +1,248 @@
+# Quests & Story Plan
+
+**Status:** Design draft — August 2026 · **Restored from git Oct 8, 2026** (`c701c830f`)  
+**Alignment (Oct 8, 2026):** Prologue locks, P0–P8 timing, and step-by-step flow → `Prologue_Playthrough_And_Camp_Bootstrap_Plan.md` (§3). Campaign **10 Memory Cores** at prologue handoff supersedes §2.2 “≥3” until GDD A6 is updated. **2 Mars-survivor companions** (no starter pick) per GDD 5.0 / `Player_Identity_Kade.md`.  
+**Authority:** GDD 5.0 (Appendix A6 story lock; Appendix B disk truth), Io world-content phase map, Kade identity doc.  
+**Player:** **Kade** (fixed name) — see `Player_Identity_Kade.md`.
+
+This document is the **single quests + story roadmap** for Dark Matter: Genesis. It ties the main arc, side quests, prototype quests, and biome campaign order into one place so implementation does not invent competing story tracks.
+
+---
+
+## 1. Design pillars
+
+| Pillar | Rule |
+|--------|------|
+| **Rumors until proven** | Io history, failed expeditions, aliens, and The Overseer’s past are **suspicions** until Memory Cores / evidence prove otherwise (Kade plan §7). |
+| **One quest framework** | Story, side, and procedural missions all use `QuestDefinition` / `QuestManager` (GDD). No parallel quest engines. |
+| **Quests are outputs** | Long-term: `StoryDirector` drives beats; QuestManager executes tracked objectives (`Audit_06_Story.md`). |
+| **AC only** | Rewards in AC / items / XP / unlocks — never a second currency. New Game starts at **0 UEA** (free starter companion). |
+| **The Overseer is the mystery hub** | Not a day-one chatty bot. Colony Ops handles radio until The Overseer awakens and climbs the trust ladder. |
+
+---
+
+## 2. Main story arc (canon)
+
+### 2.1 Spine
+
+```
+New Game (Kade background → free starter companion)
+  → Deploy to Io / B6 hub
+  → Discover dormant The Overseer machine (prologue)
+  → Repair quest (3 parts) → awaken (hostile → wary)
+  → Memory Core loop (find → setpiece → attach → Resonance Event)
+  → Trust ladder unlocks advisory radio + deeper lore
+  → Campaign biomes escalate toward B7 / story capstone
+```
+
+### 2.2 Act map
+
+| Act | Name | Player goal | Story outcome |
+|-----|------|-------------|---------------|
+| **0** | **Charter** | Choose Kade background + starter companion | Origin flags, synergies, 0 UEA, Hard Mode optional |
+| **I** | **Prologue — Dormant Machine** | Find The Overseer shell; accept repair quest | Machine marked; Colony Ops is still the radio voice |
+| **II** | **Repair** | Recover **3** repair objects; restore power/core/interface | The Overseer awakens angry; first true lore dump (still incomplete) |
+| **III** | **Memory Cores** | Recover primary cores (design target: **≥3**) | Each attach → Resonance Event (10–15 min world change) + fragment |
+| **IV** | **Trust & Advisory** | Raise The Overseer trust (wary → advisor → friend) | Trust-gated radio; tips; companion chat relay later |
+| **V** | **Capstone** | B7 / deep Resonance thread | Resolve “what happened on Io” with evidence, not rumor |
+
+### 2.3 The Overseer beats (GDD A6)
+
+1. **Discovery** — Idle machine / probe shell; interact starts repair quest.  
+2. **Awakening** — Slightly hostile; group killed by something sinister; Memory Cores once housed here.  
+3. **Core loop** — Find → recovery setpiece → slot into The Overseer → Resonance Event + unlocks.  
+4. **Trust ladder** — Angry → wary → advisor → friend (unprompted radio later).  
+5. **Identity** — The Overseer **is** an Echo sealed in a machine — distinct from rescueable surface Echoes.
+
+### 2.4 Resonance Events (constraints)
+
+- Duration band: **10–15 minutes** world change.  
+- May spike storms, damage Command Center, injure (not kill) base-22, spawn Echo opportunities.  
+- Weather lock: Resonance Supercell can force **FULL PAUSE** (same shelter rules as sulfur storms).  
+- Player-facing copy stays evidence-based; writer canon stays internal until cores prove it (Kade §7.8).
+
+---
+
+### 2.5 Pre-Prologue: Mars (AAPS-07) — added 2026-10-30e
+**Sources:** Anthony's "Mars Pre-Prologue | AAPS-07 — Narrative Canon & Development Handoff" (StoryQuest.docx, wording kept below) + Anthony's brief (Oct 30, 2026). Scene: `Dark Matter Mars-The Beginning`.
+
+**Anthony's brief (verbatim intent):** The pre-prologue is set in a confined area around the buildings already on the map, with a perimeter fence built from project assets, misc sci-fi props, a landing area, a maintenance area for buggies and ships, a parts/junk area, and air/terraforming equipment with stacks for local oxygen production. Normal day for Kade performing maintenance; equipment starts breaking down; the ~20 NPCs evacuate on a few shuttles. Kade and 2 future companions are abandoned and have to fix a shuttle not meant to fly. End of pre-prologue: they fix the shuttle, make orbit into radio range and are picked up by a transport ship headed to Neptune; Kade takes a job to Io. The Prologue starts with the crash landing on Io.
+
+**From the handoff doc (wording kept):**
+- Story year 2160. "The Mars opening establishes Kade as a capable working contractor before the cosmic mystery begins."
+- Kade: 35 in 2160, born on Earth ~2125; parents died during an expedition to Io ("officially described as an accident"); grandmother died when he was eight; foster care; ran away at fourteen and stowed away to Mars; dock/cargo work, maintenance, mechanical repairs → independent contractor, terraforming worker, occasional bounty hunter, eventually a ship owner. "He does not begin as a chosen hero."
+- AAPS-07: "remote Mars industrial/scientific station" — quarters/habitation, central operations, maintenance workshop, scientific operations, docking/cargo, atmospheric-processing infrastructure. "It is functioning at the start, not already ruined." Visual: dark gray painted metal, restrained wear/corrosion, mineral dust, exposed conduits, practical warning markings.
+- Runtime target 20–27 min (pacing goal). **No combat.** Emotional arc: routine → unease → concern → emergency → abandonment → desperation → escape.
+- Corporate conspiracy: a conglomerate "knowingly abandons personnel and falsifies records". Kade first sees an industrial catastrophe; the corporation later sends bounty hunters (incl. on Io). Name, motive, trigger and evidence object not finalized. "Do not presume a connection between the corporation and the ancient aliens."
+- Transition: "Kade takes an Io assignment through an anonymous or underground contracting board. Earlier missions there have failed." A magnetic/EM or alien-associated phenomenon causes the crash on arrival (mechanism undecided).
+- Do not spoil on Mars: Echo mother reveal; Kairos; memory cores.
+
+**Story beats (doc beats 1–8 mapped to the brief):**
+| # | Doc beat | Brief / set location |
+|---|---|---|
+| 1 | Kade's quarters — normal start-of-shift routine | Hab building (existing) |
+| 2 | Reporting for work — workers, status terminals, manageable trouble | Walk the compound; idle/task NPCs |
+| 3 | Maintenance assignment — diagnose, retrieve part, open panel, repair, confirm | Maintenance area (buggies/ships) + parts/junk area |
+| 4 | Warning signs — pressure, power, conflicting instructions, comms restrictions | O2 stacks / terraforming equipment start failing |
+| 5 | Cascading emergency — alarms, failures, blocked routes (no combat) | ~20 NPCs evacuate on a few shuttles (landing area) |
+| 6 | Abandoned docking sector — workers left behind, corporation falsified records | Empty landing area |
+| 7 | Two survivors — female systems engineer, male security/logistics specialist (names undecided) | Met in compound |
+| 8 | Escape — trio prepares a shuttle, Kade unknowingly carries evidence | Fix shuttle "not meant to fly" → orbit → radio range → Neptune-bound transport pickup → Kade takes Io job |
+| → | Prologue | Crash landing on Io (Act I Landing Scar) |
+
+**NPC roles (working):** Kade (player); Systems Engineer (F, future companion); Security/Logistics Specialist (M, future companion); Ops/Dispatch voice (radio); Shift supervisor; ~20 workers (maintenance techs, terraforming/atmo techs, dock/cargo handlers, science staff, shuttle pilots) — idle + task/animation-driven, then evacuation runners; Transport ship captain/comms (Neptune-bound, radio + pickup).
+
+**Radio calls (draft list, wording TBD):** R1 shift-start dispatch to Kade; R2 maintenance ticket (part + location); R3 O2 stack pressure anomaly; R4 conflicting supervisor vs ops instructions; R5 comms restriction notice; R6 station-wide evacuation order; R7 shuttle departure calls (shuttles 1..n); R8 dead air / Kade's unanswered calls (abandonment); R9 survivors on local channel; R10 shuttle pre-flight checklist; R11 orbit distress call; R12 Neptune transport reply + pickup; R13 job board / Io contract offer.
+
+**Cinematics list (draft):** C1 opening establishing shot of AAPS-07 (functioning); C2 quarters wake-up; C3 first equipment failure (O2 stack vents); C4 evacuation — shuttles lifting off; C5 abandonment realization at the empty landing area; C6 meeting the two survivors; C7 shuttle launch; C8 orbit + transport ship rendezvous; C9 aboard transport — Kade takes the Io job; → Prologue C10 Io approach + crash.
+
+**⚠ Contradictions / open (flagged, not resolved):**
+1. **Memory cores:** handoff doc says Kairos needs **nine**; this doc / Prologue docs lock **10 Memory Cores**.
+2. **Kade background:** handoff doc gives a fixed backstory; Act 0 / Q0.2 still has **Kade Background Select** (choose a background).
+3. **Spine 2.1** still reads "free starter companion"; handoff + Q0.3 say 2 Mars survivors, no pick.
+4. **Io job source:** doc = "anonymous or underground contracting board"; brief = job taken after pickup by a **Neptune-bound transport**. Compatible if the board is accessed aboard — confirm.
+5. **Setting:** doc = station interior (quarters, corridors, six connected areas, docking sector); brief = **outdoor fenced compound** around existing buildings. Confirm interior/exterior split.
+6. **Who is left:** doc beat 6 "workers were left behind" (plural) vs brief only Kade + 2 abandoned after ~20 NPCs evacuate.
+7. **Escape vehicle:** doc undecided ("shuttle or spacecraft"); brief = shuttle not meant to fly + orbit pickup. Doc also says Kade is "eventually a ship owner" — why no own ship?
+8. **Arrival on Io:** Q0.5 "Shuttle Descent" / Act 0 "Dropship committed" vs crash landing; whose vehicle crashes (transport's dropship?) — confirm.
+9. **Scene content:** the Mars scene currently has combat test items (Ion Turret, GreySpire Soldier, weapon pickups, Vendor Ammo); the pre-prologue is no-combat.
+10. Still open per doc: AAPS-07 name, population (brief ~20), corporation + companion names, initiating failure, evidence object, crash mechanism.
+
+## 3. Campaign biome order (story geography)
+
+From `Io_World_Content_Phase_Map.md` — do not reorder without updating that map + GDD.
+
+| Order | Biome | Story role |
+|-------|-------|------------|
+| 1 | **B6 Basalt Highlands** | Hub, tutorial underground grammar, early The Overseer discovery |
+| 2 | **B1** | First expedition ring; ecology + early side quests |
+| 3 | **B2** | Mid-ring pressure; deeper tubes |
+| 4 | **B3** | Path/vehicle tags; mid-campaign |
+| 5 | **B5 Polar Radiation Flats** | Story branch — rad/cold; Memory Core bias |
+| 6 | **B4 Calderas** | Volatile / living-world pressure after Polar |
+| 7 | **B7** | Post–Memory Core thread / capstone |
+
+**Overlay:** Expedition Graveyard (wrecks, androids, Rust Gardens) across B1–B6 — environmental storytelling, not a separate act.
+
+---
+
+## 4. Side quests (named + templates)
+
+### 4.1 Named side quests (design tickets)
+
+| ID / Name | Biome | Purpose | Reward / unlock |
+|-----------|-------|---------|-----------------|
+| **Lost Survey** | B6 | Find / repair survey beacon | Pet: **Beacon Hopper** (C11) |
+| *(Polar pet quest — TBD)* | B5 | Capture / rescue polar lifeform | Polar Skimmer / related pet |
+| Class tutorial quests | B6→B1 | Soft onboarding for companion classes | Skill tip + small AC |
+
+Additional named side quests land via `Io_World_Content_Milestone_Tickets.md` (IO-W\* narrative tickets). Prefer **one clear verb** per quest (gather, deliver, repair, escort, scan, recover).
+
+### 4.2 Activity templates (reuse)
+
+From `Io_Biome_Exploration_Gameplay_Plan.md` — author story and procedural missions from the same verbs:
+
+- Relay / cover-to-cover  
+- Probe repair / uplink  
+- Scan grove / anomaly  
+- Recover crate / Memory Core fragment  
+- Escort / extract Echo signal  
+- Storm shelter / crisis assist  
+
+Procedural missions may use dynamic achievement-style goals (`DynamicAchievementGenerator`) but **story missions stay authored** `QuestDefinition` assets.
+
+---
+
+## 5. Prototype quests (disk truth — shipped now)
+
+Runtime assets under `Assets/_Project/Resources/Quests/`:
+
+| Asset / id | Type | Notes |
+|------------|------|-------|
+| `GatherRocks` (`gather_rocks`) | CollectItem | Collect 3 Rocks → AC |
+| `Get more Rocks` | CollectItem | Collect 10 Rocks → item + AC |
+| `GuideSupplyRun` (`guide_supply_run`) | Talk + gather | Companion Guide stew / mushrooms |
+| `One_More` | Prototype | Additional board filler |
+
+**Quest giver:** `QuestGiver_PioneerGuide` — **temporary stand-in**. Replace with idle **The Overseer** machine interactable for Act I–II. Do not invent a second permanent human quest-hub NPC.
+
+**HUD / UI already live:** `ActiveQuestHudUI`, Journal quest preview, `QuestGiverDialogUI`.
+
+---
+
+## 6. Implementation backlog (story track)
+
+Ordered for value — aligns with GDD B3/B4 and World Engine spine.
+
+| Priority | Work | Depends on |
+|----------|------|------------|
+| P0 | Keep prototype board working in playable scene | — |
+| P1 | The Overseer idle machine prefab + interact → repair quest (3 objectives) | QuestDefinition assets |
+| P2 | Awaken dialogue + trust state on save (`GameSaveData`) | P1 |
+| P3 | First Memory Core recovery + attach UX + stub Resonance Event | P2 |
+| P4 | Colony Ops → The Overseer advisory handoff (comms) | Communications runtime |
+| P5 | Lost Survey side quest + Beacon Hopper grant | B6 content |
+| P6 | `StoryDirector` + migrate QuestManager behind `IQuestCommandService` | HLA / Audit_06 |
+| P7 | Full Resonance Events + B5→B4 story branch + B7 capstone | Biome world |
+
+**Out of scope for this plan file:** full Dialogue UI rewrite, LLM Phase 9+, marketplace Echo trading (forbidden).
+
+---
+
+## 7. New-game → first quest flow
+
+```
+Main Menu → New Game
+  → Kade Background Select (+ Hard Mode)     [Kade plan — not coded yet]
+  → Free Starter Companion Select (0 UEA)     [exists; still uses 5000 UEA Credits grant — align to 0]
+  → Welcome / controls
+  → Deploy (playable Genesis scene)
+  → Optional: accept prototype board quests from Pioneer Guide
+  → Story gate: discover The Overseer (when P1 lands) → repair quest becomes primary
+```
+
+Background choice feeds **rumor knowledge** and **comms tone** only at first; it does not skip Memory Cores or change the repair object list.
+
+---
+
+## 8. Data & save hooks (story)
+
+| Field / system | Purpose |
+|----------------|---------|
+| `GameSaveData` quest lists | Active / completed / turned-in ids (existing) |
+| `playerBackgroundId` / `hardModeEnabled` | Kade plan — add with background system |
+| `The OverseerTrustTier` / `The OverseerAwakened` | Future — trust ladder |
+| `memoryCoresAttached[]` | Future — Resonance progression |
+| `StoryWorldStateProvider` | Expose chapter + background for dialogue / directors |
+| `QuestRegistry` | Authored catalog under Resources/Quests |
+
+---
+
+## 9. Related docs (do not duplicate)
+
+| Doc | Owns |
+|-----|------|
+| `GAME_DESIGN_DOCUMENT_5.0.txt` | Canon locks (A6, economy, platforms) |
+| `Player_Identity_Kade.md` | Locked Kade identity, Hard Mode, rumor rules, companion roster locks |
+| `Prologue_Playthrough_And_Camp_Bootstrap_Plan.md` | Prologue mainline steps (§3), POIs, camp bootstrap |
+| `Io_World_Content_Phase_Map.md` | Biome unlock phases + pet quest tickets |
+| `Io_Biome_Exploration_Gameplay_Plan.md` | Biome verbs + activity templates |
+| `GAME_BREAKDOWN.txt` §11 | What is coded today |
+| `Audit_06_Story.md` | Architecture migrate path to StoryDirector |
+| `World_Engine_Disk_Status.md` | Disk truth before claiming shipped |
+
+---
+
+## 10. Acceptance checks
+
+A story/quests pass is “done enough” when:
+
+1. One written spine (this file) matches GDD A6 and Io campaign order.  
+2. Prototype quests still complete in Editor Play Mode.  
+3. Pioneer Guide is labeled temporary; The Overseer repair quest assets exist or are ticketed.  
+4. New Game economy matches **0 UEA + free companion** (code + GDD A8).  
+5. No player-facing lore contradicts the rumor-until-cores rule.
+
+---
+
+*Supersedes scattered one-off story notes in agent chats. Update this file when acts, named side quests, or The Overseer trust steps change.*

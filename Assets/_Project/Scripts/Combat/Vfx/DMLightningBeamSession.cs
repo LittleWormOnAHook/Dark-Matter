@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Project.AI;
 using Project.Core;
 using Project.Data;
@@ -40,6 +40,65 @@ namespace Project.Combat
         private readonly List<Bolt> bolts = new List<Bolt>();
         private readonly HashSet<MonoBehaviour> used = new HashSet<MonoBehaviour>();
 
+        // Perf (fixes-rest D): reusable per-session candidate buffers fed by live registries instead of
+        // FindObjectsByType, plus per-target component membership caches (positions always read live).
+        private readonly List<EnemyHealth> enemyBuf = new List<EnemyHealth>(32);
+        private readonly List<TrainingDummy> dummyBuf = new List<TrainingDummy>(8);
+        private readonly List<MonoBehaviour> candidateBuf = new List<MonoBehaviour>(40);
+        private readonly List<KeyValuePair<float, MonoBehaviour>> pickBuf = new List<KeyValuePair<float, MonoBehaviour>>(16);
+        private static readonly System.Comparison<KeyValuePair<float, MonoBehaviour>> PickByDistance = (x, y) => x.Key.CompareTo(y.Key);
+
+        private sealed class TargetCache
+        {
+            public int HierarchyCount = -1;
+            public Animator[] Animators;
+            public Collider[] Colliders;
+            public Renderer[] Renderers;
+        }
+        private readonly Dictionary<MonoBehaviour, TargetCache> targetCaches = new Dictionary<MonoBehaviour, TargetCache>();
+
+        /// <summary>Enemies first, then dummies (same order as the old FindObjectsByType pair).</summary>
+        private List<MonoBehaviour> GatherCandidates()
+        {
+            EnemyHealthSceneRegistry.CopyTo(enemyBuf);
+            TrainingDummy.CopyLiveTo(dummyBuf);
+            candidateBuf.Clear();
+            for (int i = 0; i < enemyBuf.Count; i++) candidateBuf.Add(enemyBuf[i]);
+            for (int i = 0; i < dummyBuf.Count; i++) candidateBuf.Add(dummyBuf[i]);
+            return candidateBuf;
+        }
+
+        // Membership (including inactive) re-scanned when the target's hierarchy size changes; the active/enabled
+        // filters are applied at read time, so results match GetComponent(s)InChildren(includeInactive: false).
+        private TargetCache CacheFor(MonoBehaviour e)
+        {
+            if (!targetCaches.TryGetValue(e, out TargetCache tc))
+            {
+                tc = new TargetCache();
+                targetCaches[e] = tc;
+            }
+            int hc = e.transform.hierarchyCount;
+            if (tc.HierarchyCount != hc || tc.Colliders == null)
+            {
+                tc.HierarchyCount = hc;
+                tc.Animators = e.GetComponentsInChildren<Animator>(true);
+                tc.Colliders = e.GetComponentsInChildren<Collider>(true);
+                tc.Renderers = e.GetComponentsInChildren<Renderer>(true);
+            }
+            return tc;
+        }
+
+        private Animator FirstActiveAnimator(MonoBehaviour e)
+        {
+            Animator[] anims = CacheFor(e).Animators;
+            for (int i = 0; i < anims.Length; i++)
+            {
+                Animator a = anims[i];
+                if (a != null && a.gameObject.activeInHierarchy) return a;
+            }
+            return null;
+        }
+
         public static void Fire(GameObject owner, Transform muzzle, ItemData weapon, ItemData ammo, DMAmmoFxProfile p,
             Vector3 direction, float damage, float range)
         {
@@ -52,7 +111,7 @@ namespace Project.Combat
             owner = o; muzzle = m; weapon = w; ammo = a; p = prof; damage = dmg; range = Mathf.Max(1f, rng);
             localDir = owner != null ? owner.transform.InverseTransformDirection(dir.normalized) : dir.normalized;
             prefab = DMCombatFx.ResolveBeam(a, w);
-            Log("fire: session prefab " + (prefab != null ? prefab.name : "NULL") + " speed " + p.boltSpeed + " maxLen " + p.boltMaxLength + " range " + range.ToString("0"));
+            { if (ChainDiagnosticsEnabled) Log("fire: session prefab " + (prefab != null ? prefab.name : "NULL") + " speed " + p.boltSpeed + " maxLen " + p.boltMaxLength + " range " + range.ToString("0")); }
             // 2026-10-21i: true detached projectile. Snapshot muzzle + direction and raycast ONCE at fire; no muzzle/aim follow afterwards.
             Vector3 start = muzzle.position, d0 = dir.sqrMagnitude > 1e-6f ? dir.normalized : muzzle.forward;
             bool hasHit = DMCombatRangedResolver.TryAimRaycast(start, d0, range, owner, out RaycastHit hit, RangedFireSolver.MuzzleRayStartSkin, 0f, ammo);
@@ -117,9 +176,9 @@ namespace Project.Combat
             return CenterMassOf(e) + Vector3.up * p.chainCenterMassHeightOffset;
         }
 
-        private static Vector3 CenterMassOf(MonoBehaviour e)
+        private Vector3 CenterMassOf(MonoBehaviour e)
         {
-            var anim = e.GetComponentInChildren<Animator>();
+            var anim = FirstActiveAnimator(e);
             if (anim != null && anim.isHuman)
             {
                 Transform t = anim.GetBoneTransform(HumanBodyBones.Chest);
@@ -128,25 +187,26 @@ namespace Project.Combat
                 if (t != null) return t.position;
             }
             Bounds bb = default; bool has = false;
-            foreach (var c in e.GetComponentsInChildren<Collider>(false))
+            TargetCache tcm = CacheFor(e);
+            foreach (var c in tcm.Colliders)
             {
-                if (c == null || !c.enabled || c.isTrigger) continue;
+                if (c == null || !c.gameObject.activeInHierarchy || !c.enabled || c.isTrigger) continue;
                 Bounds cb = c.bounds; if (cb.size.sqrMagnitude < 1e-6f) continue;
                 if (!has) { bb = cb; has = true; } else bb.Encapsulate(cb);
             }
             if (has) return bb.center;
-            foreach (var r in e.GetComponentsInChildren<Renderer>(false))
+            foreach (var r in tcm.Renderers)
             {
-                if (r == null || !r.enabled || r is ParticleSystemRenderer || r is LineRenderer || r is TrailRenderer) continue;
+                if (r == null || !r.gameObject.activeInHierarchy || !r.enabled || r is ParticleSystemRenderer || r is LineRenderer || r is TrailRenderer) continue;
                 if (!has) { bb = r.bounds; has = true; } else bb.Encapsulate(r.bounds);
             }
             if (has) return bb.center;
             return e.transform.position + Vector3.up * 1.2f;
         }
 
-        private static Vector3 LegacyChest(MonoBehaviour e)
+        private Vector3 LegacyChest(MonoBehaviour e)
         {
-            var anim = e.GetComponentInChildren<Animator>();
+            var anim = FirstActiveAnimator(e);
             if (anim != null && anim.isHuman)
             {
                 Transform t = anim.GetBoneTransform(HumanBodyBones.UpperChest);
@@ -176,9 +236,11 @@ namespace Project.Combat
             return m == null;
         }
 
+        private bool ChainDiagnosticsEnabled => p != null && p.chainDebugLog;
+
         private void Log(string msg)
         {
-            if (p != null && p.chainDebugLog) Debug.Log("[Chain] " + msg);
+            if (ChainDiagnosticsEnabled) Debug.Log("[Chain] " + msg);
         }
 
         private bool Excluded(Collider c)
@@ -244,7 +306,7 @@ namespace Project.Combat
                     tail = Mathf.Lerp(holdTail, Mathf.Max(0f, dist - 0.05f), k);
                     // 2026-10-21j: chain links (FromMuzzle false) are full bolts too: they hold at the enemy (ball) like the lead hit segment. 21i wrongly culled them after the 0.12 s retract.
                     bool keep = !b.StreamTail && (b.HasHit || !b.FromMuzzle);
-                    if (t >= (keep ? Mathf.Max(hold, retract) : retract)) { if (!b.FromMuzzle) Log("link " + b.ChainIndex + " finished after " + t.ToString("0.00") + " s (len " + dist.ToString("0.0") + ")"); Finish(b); continue; }
+                    if (t >= (keep ? Mathf.Max(hold, retract) : retract)) { if (!b.FromMuzzle) { if (ChainDiagnosticsEnabled) Log("link " + b.ChainIndex + " finished after " + t.ToString("0.00") + " s (len " + dist.ToString("0.0") + ")"); } Finish(b); continue; }
                     if (tick && t <= hold) Tick(b);
                 }
 
@@ -270,7 +332,7 @@ namespace Project.Combat
                 if (b.StreamTail || !b.HasHit) return; // 2026-10-21i: one hit (one mark) per shot, from the lead segment only
                 DMCombatRangedResolver.ApplyHitOutcome(b.Hit, b.Dir, b.Damage, false, owner, ammo, weapon);
                 MonoBehaviour first = EnemyOf(b.Hit.collider);
-                if (first == null || !p.chainEnabled || !p.chainSkillUnlocked) Log("hit " + b.Hit.collider.name + " -> candidates 0 -> skipped: " + (first == null ? "not an enemy/dummy" : !p.chainEnabled ? "chainEnabled off" : "chainSkillUnlocked off"));
+                if (first == null || !p.chainEnabled || !p.chainSkillUnlocked) { if (ChainDiagnosticsEnabled) Log("hit " + b.Hit.collider.name + " -> candidates 0 -> skipped: " + (first == null ? "not an enemy/dummy" : !p.chainEnabled ? "chainEnabled off" : "chainSkillUnlocked off")); }
                 if (first != null && p.chainEnabled && p.chainSkillUnlocked)
                 {
                     used.Add(first);
@@ -290,11 +352,11 @@ namespace Project.Combat
         private void FanOut(MonoBehaviour cur, Collider curCol, float dmg)
         {
             int max = Mathf.Max(0, p.chainMaxTargets);
-            if (max == 0) { Log("hit " + cur.name + " -> candidates - -> skipped: chainMaxTargets 0"); return; }
+            if (max == 0) { { if (ChainDiagnosticsEnabled) Log("hit " + cur.name + " -> candidates - -> skipped: chainMaxTargets 0"); } return; }
             Vector3 from = ChestOf(cur);
-            var all = new List<MonoBehaviour>(Object.FindObjectsByType<EnemyHealth>());
-            all.AddRange(Object.FindObjectsByType<TrainingDummy>());
-            var picks = new List<KeyValuePair<float, MonoBehaviour>>();
+            var all = GatherCandidates();
+            var picks = pickBuf;
+            picks.Clear();
             int n = 0, blockedLos = 0;
             for (int i = 0; i < all.Count; i++)
             {
@@ -305,18 +367,18 @@ namespace Project.Combat
                 float d = Vector3.Distance(from, to);
                 if (d > p.chainRange) continue;
                 n++;
-                if (p.chainRequiresLineOfSight && !Clear(from, to, cur, e)) { blockedLos++; Log("hit " + cur.name + " -> candidate " + e.name + " -> skipped: line of sight (" + d.ToString("0.0") + " m)"); continue; }
+                if (p.chainRequiresLineOfSight && !Clear(from, to, cur, e)) { blockedLos++; { if (ChainDiagnosticsEnabled) Log("hit " + cur.name + " -> candidate " + e.name + " -> skipped: line of sight (" + d.ToString("0.0") + " m)"); } continue; }
                 picks.Add(new KeyValuePair<float, MonoBehaviour>(d, e));
             }
-            picks.Sort((x, y) => x.Key.CompareTo(y.Key));
-            if (picks.Count == 0) { Log("hit " + cur.name + " -> candidates " + n + " -> skipped: " + (n == 0 ? "no live target within " + p.chainRange + " m" : blockedLos + " blocked by line of sight")); return; }
+            picks.Sort(PickByDistance);
+            if (picks.Count == 0) { { if (ChainDiagnosticsEnabled) Log("hit " + cur.name + " -> candidates " + n + " -> skipped: " + (n == 0 ? "no live target within " + p.chainRange + " m" : blockedLos + " blocked by line of sight")); } return; }
             float speed = Mathf.Max(1f, p.boltSpeed * p.chainSpeedScale);
             for (int k = 0; k < picks.Count; k++)
             {
                 MonoBehaviour e = picks[k].Value;
-                if (k >= max) { Log("hit " + cur.name + " -> candidate " + e.name + " -> skipped: chainMaxTargets " + max + " reached"); continue; }
+                if (k >= max) { { if (ChainDiagnosticsEnabled) Log("hit " + cur.name + " -> candidate " + e.name + " -> skipped: chainMaxTargets " + max + " reached"); } continue; }
                 Collider c = MainCollider(e);
-                if (c == null) { Log("hit " + cur.name + " -> candidate " + e.name + " -> skipped: no collider"); continue; }
+                if (c == null) { { if (ChainDiagnosticsEnabled) Log("hit " + cur.name + " -> candidate " + e.name + " -> skipped: no collider"); } continue; }
                 used.Add(e);
                 Bolt link = NewBolt(from);
                 link.FromCol = curCol; link.ToCol = c; link.Target = e;
@@ -325,20 +387,19 @@ namespace Project.Combat
                 link.Traveled = -Mathf.Max(0f, p.chainJumpDelay) * (k + 1) * speed;
                 StyleLink(link);
                 bolts.Add(link);
-                Log("hit " + cur.name + " -> candidates " + n + " -> jumped to " + e.name + " (fan " + (k + 1) + "/" + Mathf.Min(max, picks.Count) + ") dist=" + picks[k].Key.ToString("0.0") + " dmg=" + link.Damage.ToString("0.#"));
+                { if (ChainDiagnosticsEnabled) Log("hit " + cur.name + " -> candidates " + n + " -> jumped to " + e.name + " (fan " + (k + 1) + "/" + Mathf.Min(max, picks.Count) + ") dist=" + picks[k].Key.ToString("0.0") + " dmg=" + link.Damage.ToString("0.#")); }
             }
         }
 
         private void Chain(MonoBehaviour cur, Collider curCol, float dmg, int index)
         {
-            if (index >= Mathf.Max(0, p.chainMaxTargets)) { Log("hit " + cur.name + " -> candidates - -> skipped: chainMaxTargets " + p.chainMaxTargets + " reached"); return; }
+            if (index >= Mathf.Max(0, p.chainMaxTargets)) { { if (ChainDiagnosticsEnabled) Log("hit " + cur.name + " -> candidates - -> skipped: chainMaxTargets " + p.chainMaxTargets + " reached"); } return; }
             Vector3 from = curCol != null ? Center(curCol) : ChestOf(cur);
             // 2026-10-24i: candidates come from the live EnemyHealth set, not OverlapSphere(QueryTriggerInteraction.Ignore):
             // enemy hit volumes are mostly triggers / ragdoll colliders (disabled while alive), so the overlap often found no
             // enemy collider at all -> "no valid enemy" -> no bounce.
             MonoBehaviour best = null; Collider bestCol = null; float bestD = float.MaxValue; int n = 0, blockedLos = 0;
-            var all = new List<MonoBehaviour>(Object.FindObjectsByType<EnemyHealth>());
-            all.AddRange(Object.FindObjectsByType<TrainingDummy>());
+            var all = GatherCandidates();
             for (int i = 0; i < all.Count; i++)
             {
                 MonoBehaviour e = all[i];
@@ -354,7 +415,7 @@ namespace Project.Combat
                 if (c == null) continue;
                 best = e; bestCol = c; bestD = d;
             }
-            if (best == null) { Log("hit " + cur.name + " -> candidates " + n + " -> skipped: " + (n == 0 ? "no live target within " + p.chainRange + " m" : blockedLos + " blocked by line of sight / no collider") + " (jump " + (index + 1) + ")"); return; }
+            if (best == null) { { if (ChainDiagnosticsEnabled) Log("hit " + cur.name + " -> candidates " + n + " -> skipped: " + (n == 0 ? "no live target within " + p.chainRange + " m" : blockedLos + " blocked by line of sight / no collider") + " (jump " + (index + 1) + ")"); } return; }
             used.Add(best);
             Bolt link = NewBolt(from);
             link.FromCol = curCol; link.ToCol = bestCol; link.Target = best;
@@ -363,8 +424,8 @@ namespace Project.Combat
             link.Traveled = -Mathf.Max(0f, p.chainJumpDelay) * Mathf.Max(1f, p.boltSpeed * p.chainSpeedScale);
             StyleLink(link);
             bolts.Add(link);
-            Log("hit " + cur.name + " -> candidates " + n + " -> jumped to " + best.name + " (jump " + link.ChainIndex + "/" + p.chainMaxTargets + ") dist=" + bestD.ToString("0.0") + " dmg=" + link.Damage.ToString("0.#")
-                + " bolt=" + (link.Go != null ? link.Go.name + " active=" + link.Go.activeInHierarchy + " lines=" + (link.Lines != null ? link.Lines.Length : 0) : "NULL (prefab " + (prefab != null ? prefab.name : "null") + ")"));
+            { if (ChainDiagnosticsEnabled) Log("hit " + cur.name + " -> candidates " + n + " -> jumped to " + best.name + " (jump " + link.ChainIndex + "/" + p.chainMaxTargets + ") dist=" + bestD.ToString("0.0") + " dmg=" + link.Damage.ToString("0.#")
+                + " bolt=" + (link.Go != null ? link.Go.name + " active=" + link.Go.activeInHierarchy + " lines=" + (link.Lines != null ? link.Lines.Length : 0) : "NULL (prefab " + (prefab != null ? prefab.name : "null") + ")")); }
         }
 
         // 2026-10-24i: only world geometry blocks a jump. The old single Linecast stopped at the first collider (enemy weapon,
@@ -385,12 +446,12 @@ namespace Project.Combat
             return true;
         }
 
-        private static Collider MainCollider(MonoBehaviour e)
+        private Collider MainCollider(MonoBehaviour e)
         {
             Collider fallback = null;
-            foreach (var c in e.GetComponentsInChildren<Collider>(false))
+            foreach (var c in CacheFor(e).Colliders)
             {
-                if (c == null || !c.enabled) continue;
+                if (c == null || !c.gameObject.activeInHierarchy || !c.enabled) continue;
                 if (!c.isTrigger) return c;
                 if (fallback == null) fallback = c;
             }

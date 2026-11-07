@@ -1,0 +1,104 @@
+// 2026-10-28 (a): DM Ranged morphing weapon. One mesh (DM Ranged 1.fbx), one legacy clip, one ranged slot,
+// five forms that each behave as a different weapon (name, HUD label, stats, sound).
+using System;
+using System.Collections.Generic;
+using System.Reflection;
+using Project.Data;
+using Project.Inventory;
+using UnityEngine;
+
+namespace Project.Combat.DMRanged
+{
+    /// <summary>Static hook consulted by combat/HUD/input code.</summary>
+    public static class DMRangedMorphRuntime
+    {
+        const string PrefKey = "DMRanged.LastForm";
+        static int s_last = -1;
+        public static DMRangedMorphDriver Active { get; private set; }
+        public static DM_RangedMorphSettings Settings => DM_RangedMorphSettings.Instance;
+
+        public static int LastFormIndex
+        {
+            get
+            {
+                if (s_last < 0) s_last = PlayerPrefs.GetInt(PrefKey, Settings != null ? Settings.HolsterIndex : 0);
+                int n = Settings != null ? Settings.FormCount : 1;
+                return Mathf.Clamp(s_last, 0, Mathf.Max(0, n - 1));
+            }
+            set { s_last = value; PlayerPrefs.SetInt(PrefKey, value); }
+        }
+
+        public static bool IsDMRanged(ItemData item)
+        {
+            if (item == null) return false;
+            var s = Settings;
+            if (s != null && s.item == item) return true;
+            return string.Equals(item.name, "dm_ranged", StringComparison.OrdinalIgnoreCase);
+        }
+
+        public static bool IsPlayerDisabledWeapon(ItemData item)
+        {
+            var s = Settings;
+            if (item == null || s == null || !s.disableSciFiPistolForPlayer) return false;
+            if (s.disabledPlayerItem != null) return s.disabledPlayerItem == item;
+            return string.Equals(item.name, "sci_fi_pistol", StringComparison.OrdinalIgnoreCase);
+        }
+
+        public static bool IsDMRangedVisual(Transform t) =>
+            t != null && t.name.StartsWith("DM Ranged", StringComparison.Ordinal) && t.GetComponent<Animation>() != null;
+
+        public static bool ContainsDMRangedVisual(GameObject root)
+        {
+            if (root == null) return false;
+            var anims = root.GetComponentsInChildren<Animation>(true);
+            for (int i = 0; i < anims.Length; i++) if (IsDMRangedVisual(anims[i].transform)) return true;
+            return false;
+        }
+
+        internal static void Register(DMRangedMorphDriver d) { if (d != null) Active = d; }
+        internal static void Unregister(DMRangedMorphDriver d) { if (Active == d) Active = null; }
+
+        static bool LiveFor(ItemData item) =>
+            Active != null && Active.isActiveAndEnabled && Active.IsLiveFor(item);
+
+        public static bool IsMorphing => Active != null && Active.isActiveAndEnabled && Active.IsDrawnDMRanged && Active.IsMorphing;
+
+        public static bool TryGetActiveForm(ItemData item, out DMRangedForm form)
+        {
+            form = null;
+            var s = Settings;
+            if (s == null || !IsDMRanged(item) || s.FormCount == 0) return false;
+            int idx = LiveFor(item) ? Active.CurrentFormIndex : LastFormIndex;
+            form = s.forms[Mathf.Clamp(idx, 0, s.FormCount - 1)];
+            return true;
+        }
+
+        public static bool TryGetDrawnForm(out DMRangedForm form)
+        {
+            form = null;
+            if (Active == null || !Active.isActiveAndEnabled || !Active.IsDrawnDMRanged) return false;
+            return TryGetActiveForm(Active.DrawnItem, out form);
+        }
+
+        public static float BodyWeightScale => TryGetDrawnForm(out var f) && Settings != null ? Settings.Weight(f) : 1f;
+
+        public static bool TryCycle(EquipmentController equipment, int dir)
+        {
+            if (equipment == null || !equipment.IsWeaponDrawn || !IsDMRanged(equipment.DrawnWeaponItem)) return false;
+            if (Active == null || !Active.isActiveAndEnabled) return false;
+            Active.Cycle(dir);
+            return true;
+        }
+
+        public static string DisplayName(ItemData item)
+        {
+            if (TryGetActiveForm(item, out var f) && !string.IsNullOrWhiteSpace(f.displayName)) return f.displayName;
+            return item != null ? item.itemName : string.Empty;
+        }
+
+        public static string HudPrefix(ItemData item) =>
+            TryGetActiveForm(item, out var f) && !string.IsNullOrWhiteSpace(f.hudLabel) ? f.hudLabel + " " : string.Empty;
+
+        public static Transform ActiveMuzzle => Active != null && Active.isActiveAndEnabled ? Active.CurrentMuzzle : null;
+    }
+}

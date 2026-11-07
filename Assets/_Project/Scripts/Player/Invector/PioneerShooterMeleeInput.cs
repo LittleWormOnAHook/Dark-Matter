@@ -1,4 +1,4 @@
-using Invector.vCharacterController;
+﻿using Invector.vCharacterController;
 using InvInputDevice = Invector.vCharacterController.InputDevice;
 using Invector.vEventSystems;
 using Invector.vMelee;
@@ -262,16 +262,53 @@ namespace Project.Player.Invector
             tpCamera.ForceSetZoomDistance(MinCamDistance);
         }
 
+        // Build mode owns its controls, not combat. A held build input must be released before combat resumes.
+        private bool _buildCombatReleaseRequired;
+
+        private bool SuppressCombatForBuild()
+        {
+            if (DMBuildingMode.BlocksWeaponFireInput)
+                _buildCombatReleaseRequired = true;
+            else if (!_buildCombatReleaseRequired)
+                return false;
+            else if (!ReadShotHeld() && !ReadAimHeld()
+                && (Mouse.current == null || !Mouse.current.rightButton.isPressed)
+                && (shotInput == null || !shotInput.GetButton())
+                && (aimInput == null || !aimInput.GetButton()))
+            {
+                ClearBuildCombatState();
+                _buildCombatReleaseRequired = false;
+                return false;
+            }
+
+            ClearBuildCombatState();
+            return true;
+        }
+
+        private void ClearBuildCombatState()
+        {
+            // Locking Invector skips ShotInput, so cancel its queued shot/charge here and at DoShots too.
+            shootCountA = 0;
+            allowAttack = false;
+            _aimTiming = 0f;
+            isAimingByInput = false;
+            _miningScanAimHold = false;
+            DMScopeMode.Instance?.ClearToggleAdsLatch();
+            if (shooterManager != null && CurrentActiveWeapon != null)
+                CurrentActiveWeapon.powerCharge = 0f;
+        }
+
         protected override void Update()
         {
             if (GameplayWorldSimulation.IsFrozen)
                 return;
 
+            bool buildCombatSuppressed = SuppressCombatForBuild();
             TrackBlockPress();
             TryDrawWeaponOnAimPress();
 
             // Pad LT can be missed if AimInput runs while Player map was left disabled â€” nudge ADS early.
-            if (!GameplayKeyboardShortcuts.IsGameplayInputLockedByUi() && ReadAimHeld())
+            if (!buildCombatSuppressed && !GameplayKeyboardShortcuts.IsGameplayInputLockedByUi() && ReadAimHeld())
             {
                 if (_equipment == null || _equipment.IsWeaponDrawn)
                 {
@@ -430,6 +467,9 @@ namespace Project.Player.Invector
 
         public void SetMiningScanAimHold(bool held)
         {
+            if (SuppressCombatForBuild())
+                return;
+
             bool wasHeld = _miningScanAimHold;
             _miningScanAimHold = held;
             if (held && cc != null && !cc.ragdolled && CurrentActiveWeapon != null)
@@ -445,6 +485,9 @@ namespace Project.Player.Invector
 
         public override void AimInput()
         {
+            if (SuppressCombatForBuild())
+                return;
+
             if (cc == null || cc.ragdolled || DMWeaponMorphRuntime.IsMorphing) // 20261028a: no aim mid-morph
             {
                 isAimingByInput = false;
@@ -560,7 +603,7 @@ namespace Project.Player.Invector
         {
             get
             {
-                if (lockShooterInput)
+                if (lockShooterInput || DMBuildingMode.BlocksWeaponFireInput || _buildCombatReleaseRequired)
                     return false;
                 if (cc == null || cc.isRolling)
                     return false;
@@ -575,6 +618,9 @@ namespace Project.Player.Invector
         /// </summary>
         private void TryDrawWeaponOnAimPress()
         {
+            if (SuppressCombatForBuild())
+                return;
+
             if (_equipment == null || _equipment.IsWeaponDrawn)
                 return;
 
@@ -649,20 +695,36 @@ namespace Project.Player.Invector
             ApplyMeleeThreatFacing();
         }
 
+        // TEMP PERF INSTRUMENTATION (2026-11-06): remove after measurements.
+        static readonly Unity.Profiling.ProfilerMarker s_PfFixedPre  = new Unity.Profiling.ProfilerMarker("DM.PioneerInput.FixedUpdate.Pre");
+        static readonly Unity.Profiling.ProfilerMarker s_PfFixedBase = new Unity.Profiling.ProfilerMarker("DM.PioneerInput.FixedUpdate.Base");
+        static readonly Unity.Profiling.ProfilerMarker s_PfFixedPost = new Unity.Profiling.ProfilerMarker("DM.PioneerInput.FixedUpdate.Post");
+
         protected override void FixedUpdate()
         {
             if (GameplayWorldSimulation.IsFrozen)
                 return;
 
-            bool attackMoveFrame = BeginLightComboAttackMoveForFixedUpdate(out DM_CombatCoreProfile attackProfile);
-            // 2026-10-19 d: combo target lock owns attack rotation for this step (Invector ControlRotation skipped).
-            if (_attackFacing == null && (Project.Combat.DMMeleeAttackFacing.IsEnabled(DM_CombatCoreProfile.Live) || Project.Combat.DMMeleeAttackFacing.IsBlockEnabled(DM_CombatCoreProfile.Live)))
-                _attackFacing = Project.Combat.DMMeleeAttackFacing.Ensure(this);
-            bool facingOwned = _attackFacing != null && _attackFacing.BeginFixedStep();
-            base.FixedUpdate();
-            if (_attackFacing != null)
-                _attackFacing.EndFixedStep(facingOwned);
-            EndLightComboAttackMoveForFixedUpdate(attackMoveFrame);
+            bool attackMoveFrame;
+            bool facingOwned;
+            using (s_PfFixedPre.Auto())
+            {
+                attackMoveFrame = BeginLightComboAttackMoveForFixedUpdate(out DM_CombatCoreProfile attackProfile);
+                // 2026-10-19 d: combo target lock owns attack rotation for this step (Invector ControlRotation skipped).
+                if (_attackFacing == null && (Project.Combat.DMMeleeAttackFacing.IsEnabled(DM_CombatCoreProfile.Live) || Project.Combat.DMMeleeAttackFacing.IsBlockEnabled(DM_CombatCoreProfile.Live)))
+                    _attackFacing = Project.Combat.DMMeleeAttackFacing.Ensure(this);
+                facingOwned = _attackFacing != null && _attackFacing.BeginFixedStep();
+            }
+            using (s_PfFixedBase.Auto())
+            {
+                base.FixedUpdate();
+            }
+            using (s_PfFixedPost.Auto())
+            {
+                if (_attackFacing != null)
+                    _attackFacing.EndFixedStep(facingOwned);
+                EndLightComboAttackMoveForFixedUpdate(attackMoveFrame);
+            }
         }
 
         private bool IsGameplayInputDeferred()
@@ -1661,7 +1723,7 @@ namespace Project.Player.Invector
                 // immediately while OnAnimatorMove remains disabled by the revive owner.
                 animator.Play(empty, layer, 0f);
                 animator.Update(0f);
-                StripFullBodyAnimatorTags("LockMovement", "LockRotation", "CustomAction");
+                StripFullBodyAnimatorTags(s_stripTagsMoveRotAction);
             }
             if (cc != null)
             {
@@ -1746,7 +1808,7 @@ namespace Project.Player.Invector
             cc.lockAnimMovement = false;
             cc.lockAnimRotation = false;
             cc.lockMovement = false;
-            StripFullBodyAnimatorTags("LockMovement", "LockRotation");
+            StripFullBodyAnimatorTags(s_stripTagsMoveRot);
 
             float strafeMult = Mathf.Clamp(profile.lightComboStrafeSpeedMultiplier, 0.35f, 1.2f);
             if (!_lightComboAttackMoveSpeedBorrowed)
@@ -1803,10 +1865,42 @@ namespace Project.Player.Invector
             cc.lockAnimMovement = false;
             cc.lockAnimRotation = false;
             cc.lockMovement = false;
-            StripFullBodyAnimatorTags("LockMovement", "LockRotation");
+            StripFullBodyAnimatorTags(s_stripTagsMoveRot);
         }
 
-        private void StripFullBodyAnimatorTags(params string[] tagsToRemove)
+        // Perf (fixes-rest G): this runs every physics step during light-combo attack moves; the params arrays,
+        // HashSet and GetBehaviours array were per-call garbage. Same tags, same states, same removal.
+        private static readonly string[] s_stripTagsMoveRot = { "LockMovement", "LockRotation" };
+        private static readonly string[] s_stripTagsMoveRotAction = { "LockMovement", "LockRotation", "CustomAction" };
+        private readonly System.Collections.Generic.HashSet<vAnimatorStateInfos> _stripTagsSeen =
+            new System.Collections.Generic.HashSet<vAnimatorStateInfos>();
+        private vAnimatorTagBase[] _stripTagBehaviours;
+        private RuntimeAnimatorController _stripTagBehavioursController;
+        private Animator _stripTagBehavioursAnimator;
+
+        private vAnimatorTagBase[] GetCachedTagBehaviours()
+        {
+            RuntimeAnimatorController rac = animator.runtimeAnimatorController;
+            bool stale = _stripTagBehaviours == null
+                || _stripTagBehavioursAnimator != animator
+                || _stripTagBehavioursController != rac;
+            if (!stale)
+            {
+                for (int i = 0; i < _stripTagBehaviours.Length; i++)
+                {
+                    if (_stripTagBehaviours[i] == null) { stale = true; break; }
+                }
+            }
+            if (stale)
+            {
+                _stripTagBehaviours = animator.GetBehaviours<vAnimatorTagBase>();
+                _stripTagBehavioursAnimator = animator;
+                _stripTagBehavioursController = rac;
+            }
+            return _stripTagBehaviours;
+        }
+
+        private void StripFullBodyAnimatorTags(string[] tagsToRemove)
         {
             if (cc == null || cc.animatorStateInfos == null || tagsToRemove == null || tagsToRemove.Length == 0)
                 return;
@@ -1815,9 +1909,10 @@ namespace Project.Player.Invector
             if (layer < 0)
                 return;
 
-            System.Collections.Generic.HashSet<vAnimatorStateInfos> seen =
-                new System.Collections.Generic.HashSet<vAnimatorStateInfos> { cc.animatorStateInfos };
-            vAnimatorTagBase[] behaviours = animator.GetBehaviours<vAnimatorTagBase>();
+            System.Collections.Generic.HashSet<vAnimatorStateInfos> seen = _stripTagsSeen;
+            seen.Clear();
+            seen.Add(cc.animatorStateInfos);
+            vAnimatorTagBase[] behaviours = GetCachedTagBehaviours();
             for (int b = 0; b < behaviours.Length; b++)
             {
                 if (behaviours[b] == null || behaviours[b].stateInfos == null)
@@ -1839,6 +1934,7 @@ namespace Project.Player.Invector
                 for (int t = 0; t < tagsToRemove.Length; t++)
                     tagList.Remove(tagsToRemove[t]);
             }
+            seen.Clear();
         }
 
         private void TickMeleeFullBodyIdleRestore()
@@ -3332,7 +3428,7 @@ namespace Project.Player.Invector
 
         public override void ShotInput()
         {
-            if (DMBuildingMode.BlocksWeaponFireInput || DMWeaponMorphRuntime.BlocksWeaponFire)
+            if (SuppressCombatForBuild() || DMWeaponMorphRuntime.BlocksWeaponFire)
             {
                 shootCountA = 0;
                 return;
@@ -3386,6 +3482,9 @@ namespace Project.Player.Invector
 
         private static bool ReadAimHeld()
         {
+            if (DMBuildingMode.BlocksWeaponFireInput)
+                return false;
+
             if (DMPlayerInputActions.IsPressed("Aim"))
                 return true;
 
@@ -3492,6 +3591,9 @@ namespace Project.Player.Invector
 
         public override void DoShots()
         {
+            if (SuppressCombatForBuild())
+                return;
+
             if (shooterManager is PioneerShooterManager pioneerShooter)
                 pioneerShooter.SuppressNativeRecoil();
             else

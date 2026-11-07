@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Project.Combat
 {
@@ -51,6 +52,7 @@ namespace Project.Combat
 
         void OnValidate()
         {
+            InvalidateCrosshairCache();
             if (scopedCadencePreset == lastScopedCadencePreset) return;
             lastScopedCadencePreset = scopedCadencePreset;
             switch (scopedCadencePreset)
@@ -91,14 +93,55 @@ namespace Project.Combat
 
         public const string RifleCrosshairResourcesPath = "UI/Combat/sniperCrossHair";
         private static Sprite s_resolvedRifleCrosshair;
+        private static bool s_rifleCrosshairLoadAttempted;
+        private static DM_ScopeProfile s_crosshairOwner;
+        private static Sprite s_crosshairOverride;
+        private static int s_crosshairLibraryVersion = -1;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetCrosshairStatics()
+        {
+            SceneManager.sceneLoaded -= OnCrosshairSceneLoaded;
+            SceneManager.sceneLoaded += OnCrosshairSceneLoaded;
+            InvalidateCrosshairCache();
+        }
+
+        private static void OnCrosshairSceneLoaded(Scene scene, LoadSceneMode mode) => InvalidateCrosshairCache();
+
+        public static void InvalidateCrosshairCache()
+        {
+            s_resolvedRifleCrosshair = null;
+            s_rifleCrosshairLoadAttempted = false;
+            s_crosshairOwner = null;
+            s_crosshairOverride = null;
+            s_crosshairLibraryVersion = -1;
+        }
 
         /// <summary>Mil-dot overlay sprite; asset reference, then Resources fallback.</summary>
         public Sprite ResolveRifleScopeCrosshairSprite()
         {
+            int version = Project.UI.OpticsUiSprites.CacheVersion;
+            if (s_crosshairOwner != this || s_crosshairOverride != scopeCrosshairSprite || s_crosshairLibraryVersion != version)
+            {
+                InvalidateCrosshairCache();
+                s_crosshairOwner = this;
+                s_crosshairOverride = scopeCrosshairSprite;
+                s_crosshairLibraryVersion = version;
+            }
             if (scopeCrosshairSprite != null)
                 return scopeCrosshairSprite;
-            if (s_resolvedRifleCrosshair == null)
+            // An unloaded formerly-valid asset may be resolved again; a genuine miss stays cached.
+            if (s_resolvedRifleCrosshair == null && !ReferenceEquals(s_resolvedRifleCrosshair, null))
+            {
+                s_resolvedRifleCrosshair = null;
+                s_rifleCrosshairLoadAttempted = false;
+            }
+            // A miss is a result too: do not synchronously retry every scoped frame.
+            if (!s_rifleCrosshairLoadAttempted)
+            {
+                s_rifleCrosshairLoadAttempted = true;
                 s_resolvedRifleCrosshair = Resources.Load<Sprite>(RifleCrosshairResourcesPath);
+            }
             return s_resolvedRifleCrosshair;
         }
 

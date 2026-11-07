@@ -1,0 +1,1081 @@
+using System;
+using Project.Data;
+using Project.Interaction;
+using Project.Progression;
+using UnityEngine;
+using Project.Prototypes.Weapons;
+
+namespace Project.Inventory
+{
+    [RequireComponent(typeof(InventorySystem))]
+    public class EquipmentController : MonoBehaviour
+    {
+        [Header("Hotbar Selection")]
+        [SerializeField] private int selectedHotbarSlot = 0;
+
+        [Header("Weapon Slots")]
+        [Tooltip("Hotbar index for weapon slot 1 (keyboard 1).")]
+        [SerializeField] private int primaryWeaponHotbarSlot = 0;
+        [Tooltip("Hotbar index for weapon slot 2 (keyboard 2).")]
+        [SerializeField] private int secondaryWeaponHotbarSlot = 1;
+        [Tooltip("Hotbar index for weapon slot 3 (keyboard 3).")]
+        [SerializeField] private int tertiaryWeaponHotbarSlot = 2;
+        [Tooltip("Hotbar index for weapon slot 4 (keyboard 4).")]
+        [SerializeField] private int quaternaryWeaponHotbarSlot = 3;
+
+        public const int WeaponSlotCount = 4;
+
+        [Header("Toolbar")]
+        [Tooltip("Toolbar index for the scanner (keyboard N).")]
+        [SerializeField] private int scannerToolbarSlot = 0;
+        [Tooltip("Toolbar index for binoculars (keyboard comma; gamepad Binoculars action).")]
+        [SerializeField] private int binocularsToolbarSlot = 1;
+
+        private InventorySystem inventory;
+        private int activeWeaponSlot;
+        private int selectedToolbarSlot = -1;
+
+        public event Action<int> OnSelectedHotbarChanged;
+        public event Action OnToolbarSelectionChanged;
+
+        public int SelectedHotbarSlot => selectedHotbarSlot;
+        public int SelectedToolbarSlot => selectedToolbarSlot;
+        public bool IsToolbarActive => selectedToolbarSlot >= 0;
+        public int ActiveWeaponSlot => activeWeaponSlot;
+        public int PrimaryWeaponHotbarSlot => primaryWeaponHotbarSlot;
+        public int SecondaryWeaponHotbarSlot => secondaryWeaponHotbarSlot;
+        public int TertiaryWeaponHotbarSlot => tertiaryWeaponHotbarSlot;
+        public int QuaternaryWeaponHotbarSlot => quaternaryWeaponHotbarSlot;
+        public int ScannerToolbarSlot => scannerToolbarSlot;
+        public int BinocularsToolbarSlot => binocularsToolbarSlot;
+        public int ActiveWeaponHotbarSlot => GetWeaponHotbarSlot(activeWeaponSlot);
+        public int InactiveWeaponHotbarSlot => GetWeaponHotbarSlot((activeWeaponSlot + 1) % WeaponSlotCount);
+        public int SelectedSlotIndex => inventory != null ? inventory.inventorySize + selectedHotbarSlot : -1;
+        public bool IsWeaponDrawn { get; private set; }
+
+        public bool HasActiveMeleeWeapon()
+        {
+            if (!IsWeaponDrawn || !IsWeaponHotbarSlot(selectedHotbarSlot))
+                return false;
+
+            return IsMeleeWeaponItem(DrawnWeaponItem);
+        }
+
+        public bool HasActiveRangedWeapon()
+        {
+            if (!IsWeaponDrawn || !IsWeaponHotbarSlot(selectedHotbarSlot))
+                return false;
+
+            return IsRangedWeaponItem(DrawnWeaponItem);
+        }
+
+        public bool HasActiveWeapon()
+        {
+            if (!IsWeaponDrawn || !IsWeaponHotbarSlot(selectedHotbarSlot))
+                return false;
+
+            return IsWeaponItem(DrawnWeaponItem);
+        }
+
+        public ItemData EquippedItem => GetHotbarItem(ActiveWeaponHotbarSlot);
+
+        public ItemData SelectedHotbarItem => GetHotbarItem(selectedHotbarSlot);
+
+        /// <summary>
+        /// Weapon physically in hand when drawn. Uses active weapon slot, not UI selection alone.
+        /// </summary>
+        public ItemData DrawnWeaponItem
+        {
+            get
+            {
+                if (!IsWeaponDrawn)
+                    return null;
+
+                ItemData item = EquippedItem;
+                return item != null && IsWeaponItem(item) ? item : null;
+            }
+        }
+
+        /// <summary>True when the mining / multi-tool is physically drawn (Hot Cross hold-B build must stay available).</summary>
+        public bool IsDrawnMiningMultitool()
+        {
+            ItemData drawn = DrawnWeaponItem;
+            return drawn != null && drawn.isMiningTool;
+        }
+
+        public ItemData ActiveToolItem => GetToolbarItem(selectedToolbarSlot);
+
+        public ItemData SecondaryWeaponItem => GetHotbarItem(InactiveWeaponHotbarSlot);
+
+        public int GetWeaponHotbarSlot(int weaponSlotIndex)
+        {
+            weaponSlotIndex = Mathf.Clamp(weaponSlotIndex, 0, WeaponSlotCount - 1);
+            return weaponSlotIndex switch
+            {
+                0 => primaryWeaponHotbarSlot,
+                1 => secondaryWeaponHotbarSlot,
+                2 => tertiaryWeaponHotbarSlot,
+                3 => quaternaryWeaponHotbarSlot,
+                _ => primaryWeaponHotbarSlot
+            };
+        }
+
+        public int GetWeaponSlotIndexForHotbar(int hotbarSlot)
+        {
+            if (hotbarSlot == primaryWeaponHotbarSlot)
+                return 0;
+            if (hotbarSlot == secondaryWeaponHotbarSlot)
+                return 1;
+            if (hotbarSlot == tertiaryWeaponHotbarSlot)
+                return 2;
+            if (hotbarSlot == quaternaryWeaponHotbarSlot)
+                return 3;
+            return -1;
+        }
+
+        public void ForEachWeaponHotbarSlot(Action<int> visit)
+        {
+            if (visit == null)
+                return;
+
+            visit(primaryWeaponHotbarSlot);
+            visit(secondaryWeaponHotbarSlot);
+            visit(tertiaryWeaponHotbarSlot);
+            visit(quaternaryWeaponHotbarSlot);
+        }
+
+        public int FindFirstEmptyWeaponHotbarSlot()
+        {
+            int result = -1;
+            ForEachWeaponHotbarSlot(hotbarIndex =>
+            {
+                if (result >= 0)
+                    return;
+
+                if (GetHotbarItem(hotbarIndex) == null)
+                    result = hotbarIndex;
+            });
+            return result;
+        }
+
+        public int FindFirstEmptyToolbarSlot(ItemData toolItem)
+        {
+            if (inventory == null || toolItem == null || toolItem.itemType != ItemType.Tool)
+                return -1;
+
+            int preferred = toolItem.toolType == ToolType.Scanner ? scannerToolbarSlot : binocularsToolbarSlot;
+            preferred = Mathf.Clamp(preferred, 0, inventory.toolbarSize - 1);
+            if (GetToolbarItem(preferred) == null)
+                return preferred;
+
+            for (int i = 0; i < inventory.toolbarSize; i++)
+            {
+                if (GetToolbarItem(i) == null)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        public bool HasOpticsToolSelected()
+        {
+            ItemData item = ActiveToolItem;
+            return item != null && item.IsOpticsTool;
+        }
+
+        public bool HasEquippedItemOfType(ItemType itemType)
+        {
+            ItemData item = EquippedItem;
+            return item != null && item.itemType == itemType;
+        }
+
+        private void Awake()
+        {
+            inventory = GetComponent<InventorySystem>();
+            selectedHotbarSlot = Mathf.Clamp(selectedHotbarSlot, 0, Mathf.Max(0, inventory.hotbarSize - 1));
+            activeWeaponSlot = 0;
+            selectedHotbarSlot = ActiveWeaponHotbarSlot;
+            selectedToolbarSlot = -1;
+        }
+
+        private void Start()
+        {
+            RelocateMisplacedHotbarWeapons();
+            RelocateMisplacedHotbarTools();
+        }
+
+        private void OnEnable()
+        {
+            if (inventory != null)
+                inventory.OnInventoryChanged += HandleInventoryChanged;
+        }
+
+        private void OnDisable()
+        {
+            if (inventory != null)
+                inventory.OnInventoryChanged -= HandleInventoryChanged;
+        }
+
+        public void SwitchActiveWeapon()
+        {
+            ClearToolbarSelection();
+            if (!TryGetNextOccupiedWeaponSlot(activeWeaponSlot, out int candidate))
+            {
+                SyncWeaponDrawnState();
+                NotifySelectionChanged();
+                return;
+            }
+
+            activeWeaponSlot = candidate;
+            selectedHotbarSlot = GetWeaponHotbarSlot(candidate);
+            SyncWeaponDrawnState();
+            NotifySelectionChanged();
+        }
+
+        /// <summary>Next weapon slot (0-3) with an item, skipping empty and level-locked slots.</summary>
+        public bool TryGetNextOccupiedWeaponSlot(int fromWeaponSlot, out int nextWeaponSlot)
+        {
+            nextWeaponSlot = fromWeaponSlot;
+            fromWeaponSlot = Mathf.Clamp(fromWeaponSlot, 0, WeaponSlotCount - 1);
+
+            for (int offset = 1; offset <= WeaponSlotCount; offset++)
+            {
+                int candidate = (fromWeaponSlot + offset) % WeaponSlotCount;
+                int hotbarIndex = GetWeaponHotbarSlot(candidate);
+                ItemData item = GetHotbarItem(hotbarIndex);
+                if (item == null)
+                    continue;
+                if (!LevelUnlockUtility.PassesEquipGate(item, showToast: false))
+                    continue;
+
+                nextWeaponSlot = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>Next utility hotbar local index (typically 4-9) that has an item.</summary>
+        public bool TryGetNextOccupiedUtilityHotbarLocal(int fromLocalHotbarSlot, out int nextLocalHotbarSlot)
+        {
+            nextLocalHotbarSlot = fromLocalHotbarSlot;
+            if (inventory == null || inventory.hotbarSize <= 0)
+                return false;
+
+            int lastWeaponHotbar = Mathf.Max(
+                Mathf.Max(primaryWeaponHotbarSlot, secondaryWeaponHotbarSlot),
+                Mathf.Max(tertiaryWeaponHotbarSlot, quaternaryWeaponHotbarSlot));
+            int first = lastWeaponHotbar + 1;
+            int last = inventory.hotbarSize - 1;
+            if (last < first)
+                return false;
+
+            int span = last - first + 1;
+            int start = Mathf.Clamp(fromLocalHotbarSlot, first, last);
+            for (int offset = 1; offset <= span; offset++)
+            {
+                int candidate = first + ((start - first + offset) % span);
+                if (!IsUtilityHotbarSlot(candidate))
+                    continue;
+                if (GetHotbarItem(candidate) == null)
+                    continue;
+
+                nextLocalHotbarSlot = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>Next utility hotbar local index that holds the configured grenade item (Hot Cross lower-right).</summary>
+        public bool TryGetNextOccupiedGrenadeHotbarLocal(int fromLocalHotbarSlot, out int nextLocalHotbarSlot)
+        {
+            nextLocalHotbarSlot = fromLocalHotbarSlot;
+            if (inventory == null || inventory.hotbarSize <= 0 || !Project.Combat.DMIGrenadeThrowBridge.GrenadesEnabled)
+                return false;
+
+            ItemData grenadeItem = ResolveConfiguredGrenadeItem();
+            if (grenadeItem == null)
+                return false;
+
+            int lastWeaponHotbar = Mathf.Max(
+                Mathf.Max(primaryWeaponHotbarSlot, secondaryWeaponHotbarSlot),
+                Mathf.Max(tertiaryWeaponHotbarSlot, quaternaryWeaponHotbarSlot));
+            int first = lastWeaponHotbar + 1;
+            int last = inventory.hotbarSize - 1;
+            if (last < first)
+                return false;
+
+            int span = last - first + 1;
+            int start = Mathf.Clamp(fromLocalHotbarSlot, first, last);
+            for (int offset = 1; offset <= span; offset++)
+            {
+                int candidate = first + ((start - first + offset) % span);
+                if (!IsUtilityHotbarSlot(candidate))
+                    continue;
+
+                ItemData item = GetHotbarItem(candidate);
+                if (!Project.Combat.DMIGrenadeHotbarUtility.IsConfiguredGrenadeItem(item, grenadeItem))
+                    continue;
+
+                nextLocalHotbarSlot = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static ItemData ResolveConfiguredGrenadeItem()
+        {
+            Project.Combat.DMIGrenadeThrowBridge bridge =
+                Project.Core.PlayerLocator.FindOnLivePlayer<Project.Combat.DMIGrenadeThrowBridge>();
+            if (bridge != null && bridge.GrenadeItem != null)
+                return bridge.GrenadeItem;
+
+            return ItemRegistry.Resolve("Frag Grenade") ?? ItemRegistry.Resolve("DM_Frag_Grenade");
+        }
+
+        /// <summary>Next utility hotbar local index that holds a survival consumable (meds/food).</summary>
+        public bool TryGetNextOccupiedSurvivalHotbarLocal(int fromLocalHotbarSlot, out int nextLocalHotbarSlot)
+        {
+            nextLocalHotbarSlot = fromLocalHotbarSlot;
+            if (inventory == null || inventory.hotbarSize <= 0)
+                return false;
+
+            int lastWeaponHotbar = Mathf.Max(
+                Mathf.Max(primaryWeaponHotbarSlot, secondaryWeaponHotbarSlot),
+                Mathf.Max(tertiaryWeaponHotbarSlot, quaternaryWeaponHotbarSlot));
+            int first = lastWeaponHotbar + 1;
+            int last = inventory.hotbarSize - 1;
+            if (last < first)
+                return false;
+
+            int grenadeLocal = Project.Combat.DMIGrenadeHotbarUtility.ResolveHotbarLocalIndex();
+            int span = last - first + 1;
+            int start = Mathf.Clamp(fromLocalHotbarSlot, first, last);
+            for (int offset = 1; offset <= span; offset++)
+            {
+                int candidate = first + ((start - first + offset) % span);
+                if (!IsUtilityHotbarSlot(candidate) || candidate == grenadeLocal)
+                    continue;
+
+                ItemData item = GetHotbarItem(candidate);
+                if (!Project.Survival.DMISurvivalHotbarUtility.IsSurvivalConsumable(item))
+                    continue;
+
+                nextLocalHotbarSlot = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>Next utility hotbar local index that holds ammo or non-survival utilities (Hot Cross upper-right).</summary>
+        public bool TryGetNextOccupiedNonSurvivalUtilityHotbarLocal(int fromLocalHotbarSlot, out int nextLocalHotbarSlot)
+        {
+            nextLocalHotbarSlot = fromLocalHotbarSlot;
+            if (inventory == null || inventory.hotbarSize <= 0)
+                return false;
+
+            int lastWeaponHotbar = Mathf.Max(
+                Mathf.Max(primaryWeaponHotbarSlot, secondaryWeaponHotbarSlot),
+                Mathf.Max(tertiaryWeaponHotbarSlot, quaternaryWeaponHotbarSlot));
+            int first = lastWeaponHotbar + 1;
+            int last = inventory.hotbarSize - 1;
+            if (last < first)
+                return false;
+
+            int grenadeLocal = Project.Combat.DMIGrenadeHotbarUtility.ResolveHotbarLocalIndex();
+            int span = last - first + 1;
+            int start = Mathf.Clamp(fromLocalHotbarSlot, first, last);
+            for (int offset = 1; offset <= span; offset++)
+            {
+                int candidate = first + ((start - first + offset) % span);
+                if (!IsUtilityHotbarSlot(candidate) || candidate == grenadeLocal)
+                    continue;
+
+                ItemData item = GetHotbarItem(candidate);
+                if (item == null)
+                    continue;
+
+                if (Project.Survival.DMISurvivalHotbarUtility.IsSurvivalConsumable(item))
+                    continue;
+
+                nextLocalHotbarSlot = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>Next utility hotbar local index that holds ammo (CountsAsAmmo).</summary>
+        public bool TryGetNextOccupiedAmmoHotbarLocal(int fromLocalHotbarSlot, out int nextLocalHotbarSlot)
+        {
+            nextLocalHotbarSlot = fromLocalHotbarSlot;
+            if (inventory == null || inventory.hotbarSize <= 0)
+                return false;
+
+            int lastWeaponHotbar = Mathf.Max(
+                Mathf.Max(primaryWeaponHotbarSlot, secondaryWeaponHotbarSlot),
+                Mathf.Max(tertiaryWeaponHotbarSlot, quaternaryWeaponHotbarSlot));
+            int first = lastWeaponHotbar + 1;
+            int last = inventory.hotbarSize - 1;
+            if (last < first)
+                return false;
+
+            int grenadeLocal = Project.Combat.DMIGrenadeHotbarUtility.ResolveHotbarLocalIndex();
+            int span = last - first + 1;
+            int start = Mathf.Clamp(fromLocalHotbarSlot, first, last);
+            for (int offset = 1; offset <= span; offset++)
+            {
+                int candidate = first + ((start - first + offset) % span);
+                if (!IsUtilityHotbarSlot(candidate) || candidate == grenadeLocal)
+                    continue;
+                ItemData item = GetHotbarItem(candidate);
+                if (!IsAmmoItem(item))
+                    continue;
+
+                nextLocalHotbarSlot = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>True if any Hot Cross utility slot currently holds ammo.</summary>
+        public bool TryGetAnyAmmoHotbarLocal(out int ammoLocalHotbarSlot)
+        {
+            ammoLocalHotbarSlot = -1;
+            if (inventory == null || inventory.hotbarSize <= 0)
+                return false;
+
+            int lastWeaponHotbar = Mathf.Max(
+                Mathf.Max(primaryWeaponHotbarSlot, secondaryWeaponHotbarSlot),
+                Mathf.Max(tertiaryWeaponHotbarSlot, quaternaryWeaponHotbarSlot));
+            int first = lastWeaponHotbar + 1;
+            int grenadeLocal = Project.Combat.DMIGrenadeHotbarUtility.ResolveHotbarLocalIndex();
+            for (int slot = first; slot < inventory.hotbarSize; slot++)
+            {
+                if (!IsUtilityHotbarSlot(slot) || slot == grenadeLocal)
+                    continue;
+                if (!IsAmmoItem(GetHotbarItem(slot)))
+                    continue;
+                ammoLocalHotbarSlot = slot;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>Next weapon hotbar local index (typically 0-3) that has an equippable item.</summary>
+        public bool TryGetNextOccupiedWeaponHotbarLocal(int fromLocalHotbarSlot, out int nextLocalHotbarSlot)
+        {
+            nextLocalHotbarSlot = fromLocalHotbarSlot;
+            int fromWeaponSlot = GetWeaponSlotIndexForHotbar(fromLocalHotbarSlot);
+            if (fromWeaponSlot < 0)
+                fromWeaponSlot = activeWeaponSlot;
+
+            if (!TryGetNextOccupiedWeaponSlot(fromWeaponSlot, out int nextWeaponSlot))
+                return false;
+
+            nextLocalHotbarSlot = GetWeaponHotbarSlot(nextWeaponSlot);
+            return true;
+        }
+
+        public void SelectWeaponSlot(int weaponSlotIndex)
+        {
+            if (ShouldSuppressSelectionDuringOptics())
+                return;
+
+            weaponSlotIndex = Mathf.Clamp(weaponSlotIndex, 0, WeaponSlotCount - 1);
+            int hotbarIndex = GetWeaponHotbarSlot(weaponSlotIndex);
+            ItemData item = GetHotbarItem(hotbarIndex);
+            if (item != null && !LevelUnlockUtility.PassesEquipGate(item, showToast: true))
+                return;
+
+            ClearToolbarSelection();
+
+            if (activeWeaponSlot == weaponSlotIndex && selectedHotbarSlot == hotbarIndex)
+            {
+                // Morph prototypes: re-tap same slot cycles forms instead of holstering while drawn.
+                if (IsWeaponDrawn && DMWeaponMorphRuntime.TryCycleDrawnForm(this))
+                {
+                    NotifySelectionChanged();
+                    return;
+                }
+                IsWeaponDrawn = !IsWeaponDrawn;
+            }
+            else
+            {
+                activeWeaponSlot = weaponSlotIndex;
+                selectedHotbarSlot = hotbarIndex;
+                IsWeaponDrawn = HasEquippableInHotbarSlot(hotbarIndex);
+            }
+
+            SyncActiveWeaponSelection();
+            NotifySelectionChanged();
+        }
+
+        public void SelectHotbarSlot(int hotbarSlot)
+        {
+            if (ShouldSuppressSelectionDuringOptics())
+                return;
+
+            if (inventory == null || inventory.hotbarSize <= 0)
+                return;
+
+            int clamped = Mathf.Clamp(hotbarSlot, 0, inventory.hotbarSize - 1);
+
+            if (IsWeaponHotbarSlot(clamped))
+            {
+                SelectWeaponSlot(GetWeaponSlotIndexForHotbar(clamped));
+                return;
+            }
+
+            ItemData utilityItem = GetHotbarItem(clamped);
+            if (utilityItem != null && utilityItem.IsEquippable
+                && !LevelUnlockUtility.PassesEquipGate(utilityItem, showToast: true))
+                return;
+
+            ClearToolbarSelection();
+            selectedHotbarSlot = clamped;
+            SyncWeaponDrawnState();
+            NotifySelectionChanged();
+        }
+
+        public void SelectToolbarSlot(int toolbarSlot, bool allowToggleOff = true)
+        {
+            if (ShouldSuppressSelectionDuringOptics())
+                return;
+
+            if (inventory == null || inventory.toolbarSize <= 0)
+                return;
+
+            int clamped = Mathf.Clamp(toolbarSlot, 0, inventory.toolbarSize - 1);
+            ItemData item = GetToolbarItem(clamped);
+            if (item == null)
+            {
+                ClearToolbarSelection();
+                NotifySelectionChanged();
+                return;
+            }
+
+            if (!LevelUnlockUtility.PassesEquipGate(item, showToast: true))
+                return;
+
+            if (allowToggleOff && selectedToolbarSlot == clamped)
+                ClearToolbarSelection();
+            else
+                selectedToolbarSlot = clamped;
+
+            NotifySelectionChanged();
+        }
+
+        public bool TryEnsureToolbarTool(ToolType toolType, out int toolbarSlot)
+        {
+            toolbarSlot = -1;
+            if (inventory == null)
+                return false;
+
+            toolbarSlot = toolType == ToolType.Scanner ? scannerToolbarSlot : binocularsToolbarSlot;
+            toolbarSlot = Mathf.Clamp(toolbarSlot, 0, inventory.toolbarSize - 1);
+
+            ItemData inSlot = GetToolbarItem(toolbarSlot);
+            if (inSlot != null && inSlot.toolType == toolType)
+            {
+                if (!LevelUnlockUtility.PassesEquipGate(inSlot, showToast: true))
+                    return false;
+
+                selectedToolbarSlot = toolbarSlot;
+                NotifySelectionChanged();
+                return true;
+            }
+
+            int sourceAbsolute = FindInventorySlotWithTool(toolType);
+            if (sourceAbsolute < 0)
+                return false;
+
+            ItemData item = inventory.slots[sourceAbsolute].item;
+            TryEquipToolFromSlot(sourceAbsolute, item, selectAfterMove: true);
+            inSlot = GetToolbarItem(toolbarSlot);
+            return inSlot != null && inSlot.toolType == toolType;
+        }
+
+        private int FindInventorySlotWithTool(ToolType toolType)
+        {
+            for (int i = 0; i < inventory.slots.Count; i++)
+            {
+                InventorySystem.InventorySlot slot = inventory.slots[i];
+                if (slot == null || slot.IsEmpty || slot.item == null)
+                    continue;
+
+                if (slot.item.itemType == ItemType.Tool && slot.item.toolType == toolType)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        public bool SelectInventorySlot(int slotIndex)
+        {
+            if (inventory == null)
+                return false;
+
+            if (inventory.IsToolbarIndex(slotIndex))
+            {
+                SelectToolbarSlot(inventory.ToToolbarSlotIndex(slotIndex));
+                return true;
+            }
+
+            int hotbarStart = inventory.inventorySize;
+            int hotbarEnd = hotbarStart + inventory.hotbarSize;
+            if (slotIndex < hotbarStart || slotIndex >= hotbarEnd)
+                return false;
+
+            SelectHotbarSlot(slotIndex - hotbarStart);
+            return true;
+        }
+
+        public bool IsWeaponHotbarSlot(int hotbarSlot)
+        {
+            return GetWeaponSlotIndexForHotbar(hotbarSlot) >= 0;
+        }
+
+        public bool IsUtilityHotbarSlot(int hotbarSlot)
+        {
+            return hotbarSlot >= 0
+                && hotbarSlot < inventory.hotbarSize
+                && !IsWeaponHotbarSlot(hotbarSlot);
+        }
+
+        public static bool IsMeleeWeaponItem(ItemData item)
+        {
+            return item != null && item.itemType == ItemType.MeleeWeapon;
+        }
+
+        public static bool IsRangedWeaponItem(ItemData item)
+        {
+            return item != null && item.itemType == ItemType.RangedWeapon;
+        }
+
+        public static bool IsWeaponItem(ItemData item)
+        {
+            return IsMeleeWeaponItem(item) || IsRangedWeaponItem(item);
+        }
+
+        public static bool IsAmmoItem(ItemData item)
+        {
+            return item != null && item.CountsAsAmmo;
+        }
+
+        public bool CanPlaceItemInHotbarSlot(int hotbarSlot, ItemData item)
+        {
+            if (inventory == null || item == null || hotbarSlot < 0 || hotbarSlot >= inventory.hotbarSize)
+                return false;
+
+            if (item.itemType == ItemType.Tool)
+                return false;
+
+            if (IsWeaponHotbarSlot(hotbarSlot))
+                return IsWeaponItem(item);
+
+            return !IsWeaponItem(item);
+        }
+
+        public bool CanPlaceItemAt(int absoluteSlotIndex, ItemData item, bool showLevelToast = false)
+        {
+            if (inventory == null || item == null)
+                return false;
+
+            if (inventory.IsToolbarIndex(absoluteSlotIndex))
+            {
+                if (item.itemType != ItemType.Tool)
+                    return false;
+                // Loot plan D21: level-locked items stay in the main grid.
+                return LevelUnlockUtility.PassesLevelLock(item, showToast: showLevelToast);
+            }
+
+            if (!inventory.IsHotbarIndex(absoluteSlotIndex))
+                return true;
+
+            // Loot plan D21: every level-locked item kind (weapons, consumables, ammo, deployables)
+            // is refused on hotbar / Hot Cross slots until its equip or use level is reached.
+            if (!LevelUnlockUtility.PassesLevelLock(item, showToast: showLevelToast))
+                return false;
+
+            int hotbarIndex = absoluteSlotIndex - inventory.inventorySize;
+            return CanPlaceItemInHotbarSlot(hotbarIndex, item);
+        }
+
+        public bool IsToolbarSlotIndex(int toolbarSlot)
+        {
+            return toolbarSlot >= 0 && toolbarSlot < inventory.toolbarSize;
+        }
+
+        public bool IsActiveWeaponHotbarIndex(int absoluteSlotIndex)
+        {
+            if (inventory == null)
+                return false;
+
+            int hotbarIndex = absoluteSlotIndex - inventory.inventorySize;
+            return hotbarIndex == ActiveWeaponHotbarSlot;
+        }
+
+        public bool IsSelectedToolbarAbsoluteIndex(int absoluteSlotIndex)
+        {
+            if (inventory == null || selectedToolbarSlot < 0)
+                return false;
+
+            return absoluteSlotIndex == inventory.ToolbarStartIndex + selectedToolbarSlot;
+        }
+
+        public ItemData GetHotbarItem(int hotbarSlot)
+        {
+            if (inventory == null)
+                return null;
+
+            int index = inventory.inventorySize + hotbarSlot;
+            if (index < 0 || index >= inventory.slots.Count)
+                return null;
+
+            InventorySystem.InventorySlot slot = inventory.slots[index];
+            return slot == null || slot.IsEmpty ? null : slot.item;
+        }
+
+        public ItemData GetToolbarItem(int toolbarSlot)
+        {
+            if (inventory == null || !IsToolbarSlotIndex(toolbarSlot))
+                return null;
+
+            int index = inventory.ToolbarStartIndex + toolbarSlot;
+            if (index < 0 || index >= inventory.slots.Count)
+                return null;
+
+            InventorySystem.InventorySlot slot = inventory.slots[index];
+            return slot == null || slot.IsEmpty ? null : slot.item;
+        }
+
+        private void HandleInventoryChanged()
+        {
+            int previousHotbar = selectedHotbarSlot;
+            int previousToolbar = selectedToolbarSlot;
+            bool previousDrawn = IsWeaponDrawn;
+            ItemData previousDrawnWeapon = IsWeaponDrawn ? DrawnWeaponItem : null;
+
+            if (selectedToolbarSlot >= 0 && GetToolbarItem(selectedToolbarSlot) == null)
+                selectedToolbarSlot = -1;
+
+            SyncWeaponDrawnState();
+            if (IsWeaponDrawn)
+                SyncActiveWeaponSelection();
+
+            ItemData drawnWeapon = IsWeaponDrawn ? DrawnWeaponItem : null;
+            bool selectionChanged = selectedHotbarSlot != previousHotbar
+                || selectedToolbarSlot != previousToolbar
+                || IsWeaponDrawn != previousDrawn
+                || drawnWeapon != previousDrawnWeapon;
+
+            // Avoid notifying on every scrap/mushroom pickup â€” weapon bridge re-equip plays reload SFX.
+            if (selectionChanged)
+                NotifySelectionChanged();
+        }
+
+        private bool HasEquippableInHotbarSlot(int hotbarSlot)
+        {
+            ItemData item = GetHotbarItem(hotbarSlot);
+            return item != null
+                && item.IsEquippable
+                && LevelUnlockUtility.PassesEquipGate(item, showToast: false);
+        }
+
+        private void SyncWeaponDrawnState()
+        {
+            if (!IsWeaponHotbarSlot(selectedHotbarSlot))
+                IsWeaponDrawn = false;
+        }
+
+        private void SyncActiveWeaponSelection()
+        {
+            if (!IsWeaponDrawn)
+                return;
+
+            int activeHotbar = ActiveWeaponHotbarSlot;
+            if (!IsWeaponHotbarSlot(selectedHotbarSlot) || selectedHotbarSlot != activeHotbar)
+                selectedHotbarSlot = activeHotbar;
+        }
+
+        public void ApplySaveState(int hotbarSlot, int weaponSlot, bool drawn, int toolbarSlot = -1)
+        {
+            if (inventory == null)
+                return;
+
+            selectedHotbarSlot = Mathf.Clamp(hotbarSlot, 0, Mathf.Max(0, inventory.hotbarSize - 1));
+            activeWeaponSlot = Mathf.Clamp(weaponSlot, 0, WeaponSlotCount - 1);
+            selectedToolbarSlot = toolbarSlot >= 0 && GetToolbarItem(toolbarSlot) != null
+                ? Mathf.Clamp(toolbarSlot, 0, inventory.toolbarSize - 1)
+                : -1;
+
+            if (IsWeaponHotbarSlot(selectedHotbarSlot))
+                IsWeaponDrawn = drawn && HasEquippableInHotbarSlot(selectedHotbarSlot);
+            else
+                SyncWeaponDrawnState();
+
+            if (IsWeaponDrawn)
+                SyncActiveWeaponSelection();
+
+            NotifySelectionChanged();
+        }
+
+        public bool TryEquipItemFromSlot(int absoluteSlotIndex)
+        {
+            if (inventory == null)
+                return false;
+
+            if (absoluteSlotIndex < 0 || absoluteSlotIndex >= inventory.slots.Count)
+                return false;
+
+            InventorySystem.InventorySlot sourceSlot = inventory.slots[absoluteSlotIndex];
+            if (sourceSlot.IsEmpty || sourceSlot.item == null || !sourceSlot.item.IsEquippable)
+                return false;
+
+            if (!LevelUnlockUtility.PassesEquipGate(sourceSlot.item, showToast: true))
+                return false;
+
+            if (sourceSlot.item.itemType == ItemType.Tool)
+                return TryEquipToolFromSlot(absoluteSlotIndex, sourceSlot.item, selectAfterMove: false);
+
+            int targetHotbar = ResolveEquipHotbarSlot(absoluteSlotIndex);
+            int targetAbsolute = inventory.inventorySize + targetHotbar;
+
+            if (targetAbsolute != absoluteSlotIndex)
+                inventory.MoveOrMergeSlots(absoluteSlotIndex, targetAbsolute);
+
+            SelectHotbarSlot(targetHotbar);
+            return true;
+        }
+
+        public bool TryUnequipFromSlot(int absoluteSlotIndex)
+        {
+            if (inventory == null || (!inventory.IsHotbarIndex(absoluteSlotIndex) && !inventory.IsToolbarIndex(absoluteSlotIndex)))
+                return false;
+
+            if (inventory.slots[absoluteSlotIndex].IsEmpty)
+                return false;
+
+            int emptyInventorySlot = FindFirstEmptyMainInventorySlot();
+            if (emptyInventorySlot < 0)
+                return false;
+
+            inventory.SwapSlots(absoluteSlotIndex, emptyInventorySlot);
+
+            if (inventory.IsHotbarIndex(absoluteSlotIndex))
+                SyncWeaponDrawnState();
+            else if (inventory.IsToolbarIndex(absoluteSlotIndex) &&
+                     inventory.ToToolbarSlotIndex(absoluteSlotIndex) == selectedToolbarSlot)
+            {
+                selectedToolbarSlot = -1;
+            }
+
+            NotifySelectionChanged();
+            return true;
+        }
+
+        private bool TryEquipToolFromSlot(int absoluteSlotIndex, ItemData item, bool selectAfterMove = false)
+        {
+            int targetToolbarSlot = ResolveEquipToolbarSlot(item, absoluteSlotIndex);
+            int targetAbsolute = inventory.ToolbarStartIndex + targetToolbarSlot;
+
+            if (targetAbsolute != absoluteSlotIndex)
+                inventory.MoveOrMergeSlots(absoluteSlotIndex, targetAbsolute);
+
+            if (selectAfterMove)
+                SelectToolbarSlot(targetToolbarSlot, allowToggleOff: false);
+
+            return true;
+        }
+
+        private int ResolveEquipToolbarSlot(ItemData item, int sourceAbsolute)
+        {
+            int preferred = item.toolType == ToolType.Scanner ? scannerToolbarSlot : binocularsToolbarSlot;
+            preferred = Mathf.Clamp(preferred, 0, inventory.toolbarSize - 1);
+
+            int preferredAbsolute = inventory.ToolbarStartIndex + preferred;
+            if (sourceAbsolute == preferredAbsolute)
+                return preferred;
+
+            if (inventory.slots[preferredAbsolute].IsEmpty)
+                return preferred;
+
+            for (int i = 0; i < inventory.toolbarSize; i++)
+            {
+                int absolute = inventory.ToolbarStartIndex + i;
+                if (inventory.slots[absolute].IsEmpty)
+                    return i;
+            }
+
+            return preferred;
+        }
+
+        private int ResolveEquipHotbarSlot(int sourceAbsolute)
+        {
+            int hotbarStart = inventory.inventorySize;
+            int bestMatch = -1;
+
+            ForEachWeaponHotbarSlot(hotbarIndex =>
+            {
+                int absolute = hotbarStart + hotbarIndex;
+                if (sourceAbsolute == absolute)
+                    bestMatch = hotbarIndex;
+            });
+
+            if (bestMatch >= 0)
+                return bestMatch;
+
+            int firstEmpty = -1;
+            ForEachWeaponHotbarSlot(hotbarIndex =>
+            {
+                if (firstEmpty >= 0)
+                    return;
+
+                if (inventory.slots[hotbarStart + hotbarIndex].IsEmpty)
+                    firstEmpty = hotbarIndex;
+            });
+
+            if (firstEmpty >= 0)
+                return firstEmpty;
+
+            return ActiveWeaponHotbarSlot;
+        }
+
+        private int FindFirstEmptyMainInventorySlot()
+        {
+            for (int i = 0; i < inventory.inventorySize; i++)
+            {
+                if (inventory.slots[i].IsEmpty)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private void RelocateMisplacedHotbarWeapons()
+        {
+            if (inventory == null)
+                return;
+
+            int hotbarStart = inventory.inventorySize;
+            for (int hotbarIndex = 0; hotbarIndex < inventory.hotbarSize; hotbarIndex++)
+            {
+                if (IsWeaponHotbarSlot(hotbarIndex))
+                    continue;
+
+                int absoluteIndex = hotbarStart + hotbarIndex;
+                InventorySystem.InventorySlot slot = inventory.slots[absoluteIndex];
+                if (slot.IsEmpty || !IsWeaponItem(slot.item))
+                    continue;
+
+                int targetHotbar = ResolveEquipHotbarSlot(absoluteIndex);
+                int targetAbsolute = hotbarStart + targetHotbar;
+                if (targetAbsolute == absoluteIndex)
+                    continue;
+
+                if (inventory.slots[targetAbsolute].IsEmpty)
+                {
+                    inventory.SwapSlots(absoluteIndex, targetAbsolute);
+                    continue;
+                }
+
+                int emptyMainSlot = FindFirstEmptyMainInventorySlot();
+                if (emptyMainSlot >= 0)
+                    inventory.SwapSlots(absoluteIndex, emptyMainSlot);
+            }
+        }
+
+        private void RelocateMisplacedHotbarTools()
+        {
+            if (inventory == null)
+                return;
+
+            int hotbarStart = inventory.inventorySize;
+            for (int hotbarIndex = 0; hotbarIndex < inventory.hotbarSize; hotbarIndex++)
+            {
+                int absoluteIndex = hotbarStart + hotbarIndex;
+                InventorySystem.InventorySlot slot = inventory.slots[absoluteIndex];
+                if (slot.IsEmpty || slot.item == null || slot.item.itemType != ItemType.Tool)
+                    continue;
+
+                int targetToolbarSlot = ResolveEquipToolbarSlot(slot.item, absoluteIndex);
+                int targetAbsolute = inventory.ToolbarStartIndex + targetToolbarSlot;
+                if (targetAbsolute == absoluteIndex)
+                    continue;
+
+                if (inventory.slots[targetAbsolute].IsEmpty)
+                {
+                    inventory.SwapSlots(absoluteIndex, targetAbsolute);
+                    continue;
+                }
+
+                int emptyMainSlot = FindFirstEmptyMainInventorySlot();
+                if (emptyMainSlot >= 0)
+                    inventory.SwapSlots(absoluteIndex, emptyMainSlot);
+            }
+        }
+
+        public void ClearToolbarSelectionPublic()
+        {
+            ClearToolbarSelection();
+            NotifySelectionChanged();
+        }
+
+        public void HolsterWeapon()
+        {
+            if (!IsWeaponDrawn)
+                return;
+
+            IsWeaponDrawn = false;
+            Project.Combat.DMScopeMode.Instance?.ClearToggleAdsLatch();
+            NotifySelectionChanged();
+        }
+
+        /// <summary>
+        /// Arms (draws) the currently selected weapon slot, falling back to the active weapon slot.
+        /// Returns false when there is no equippable weapon to draw.
+        /// </summary>
+        public bool DrawWeapon()
+        {
+            if (IsWeaponDrawn)
+                return true;
+
+            int hotbarSlot = IsWeaponHotbarSlot(selectedHotbarSlot) ? selectedHotbarSlot : ActiveWeaponHotbarSlot;
+            if (!IsWeaponHotbarSlot(hotbarSlot) || !HasEquippableInHotbarSlot(hotbarSlot))
+                return false;
+
+            ClearToolbarSelection();
+            selectedHotbarSlot = hotbarSlot;
+            IsWeaponDrawn = true;
+            SyncActiveWeaponSelection();
+            NotifySelectionChanged();
+            return true;
+        }
+
+        private void ClearToolbarSelection()
+        {
+            if (selectedToolbarSlot < 0)
+                return;
+
+            selectedToolbarSlot = -1;
+        }
+
+        private bool ShouldSuppressSelectionDuringOptics()
+        {
+            OpticsController optics = GetComponent<OpticsController>();
+            return optics != null && optics.IsActive;
+        }
+
+        private void NotifySelectionChanged()
+        {
+            OnSelectedHotbarChanged?.Invoke(SelectedSlotIndex);
+            OnToolbarSelectionChanged?.Invoke();
+        }
+    }
+}

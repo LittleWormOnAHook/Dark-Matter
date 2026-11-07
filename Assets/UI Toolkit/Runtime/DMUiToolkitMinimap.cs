@@ -55,6 +55,9 @@ namespace Project.UI
         private float lastCompassStripWidth = -1f;
         private string lastCompassHeadingText;
         private RenderTexture viewRt;
+        private int lastTerrainCropFrame = -1;
+        private int lastTerrainCropRevision = -1;
+        private MapUI lastTerrainCropMapUi;
         private Texture lastBlitSource;
         private Vector2 lastBlitUv;
         private float lastBlitSpan;
@@ -75,6 +78,13 @@ namespace Project.UI
         private GameObject hiddenInfoPanel;
         private readonly List<CompassTick> ticks = new List<CompassTick>();
         private readonly Dictionary<MapMarker, CompassMarker> markerIcons = new Dictionary<MapMarker, CompassMarker>();
+
+        static readonly Unity.Profiling.ProfilerMarker s_PfLateUpdate = new Unity.Profiling.ProfilerMarker("DM.Minimap.LateUpdate");
+        static readonly Unity.Profiling.ProfilerMarker s_PfLateUpdateResolve = new Unity.Profiling.ProfilerMarker("DM.Minimap.LateUpdate.Resolve");
+        static readonly Unity.Profiling.ProfilerMarker s_PfLateUpdateCrop = new Unity.Profiling.ProfilerMarker("DM.Minimap.LateUpdate.Crop");
+        static readonly Unity.Profiling.ProfilerMarker s_PfViewParams = new Unity.Profiling.ProfilerMarker("DM.PilotHUD.Minimap.Position");
+        static readonly Unity.Profiling.ProfilerMarker s_PfFogParams = new Unity.Profiling.ProfilerMarker("DM.PilotHUD.Minimap.Fog.Params");
+        static readonly Unity.Profiling.ProfilerMarker s_PfBlit = new Unity.Profiling.ProfilerMarker("DM.Minimap.Blit");
 
         private struct CompassTick
         {
@@ -143,6 +153,7 @@ namespace Project.UI
 
         public static void InvalidateViewCache()
         {
+            MapUI.InvalidateSharedMinimapSnapshot();
             warnedMissingTexture = false;
             DMUiToolkitPilotCluster.MarkPresentationDirty();
             if (instance == null)
@@ -150,11 +161,14 @@ namespace Project.UI
 
             instance.lastBlitSource = null;
             instance.lastFogBlitSource = null;
+            instance.lastTerrainCropFrame = -1;
         }
 
         private void OnEnable()
         {
             instance = this;
+            lastTerrainCropFrame = -1;
+            MapUI.InvalidateSharedMinimapSnapshot();
             BindTree();
             HookMapProviderEvents();
         }
@@ -177,6 +191,8 @@ namespace Project.UI
             provider.MapTextureReady += InvalidateViewCache;
             provider.WorldBoundsChanged -= InvalidateViewCache;
             provider.WorldBoundsChanged += InvalidateViewCache;
+            provider.CalibrationChanged -= InvalidateViewCache;
+            provider.CalibrationChanged += InvalidateViewCache;
 
             MapFogOfWar fog = MapFogOfWar.Instance ?? MapFogOfWar.EnsureExists();
             if (fog != null)
@@ -194,6 +210,7 @@ namespace Project.UI
 
             provider.MapTextureReady -= InvalidateViewCache;
             provider.WorldBoundsChanged -= InvalidateViewCache;
+            provider.CalibrationChanged -= InvalidateViewCache;
 
             MapFogOfWar fog = MapFogOfWar.Instance;
             if (fog != null)
@@ -210,10 +227,13 @@ namespace Project.UI
 
         private void LateUpdate()
         {
-            if (!bound)
-                BindTree();
+            using (s_PfLateUpdate.Auto())
+            {
+                if (!bound)
+                    BindTree();
 
-            RefreshPresentation();
+                RefreshPresentation();
+            }
         }
 
         internal void BindTree()
@@ -329,7 +349,9 @@ namespace Project.UI
 
         private void RefreshPresentation()
         {
-            MapUI mapUi = ResolveMapUi();
+            MapUI mapUi;
+            using (s_PfLateUpdateResolve.Auto())
+                mapUi = ResolveMapUi();
             bool hudLive = DMUiToolkitConfig.IsEnabled
                 && DMUiToolkitBootstrap.IsRootActive
                 && GameSession.HasStarted
@@ -343,7 +365,11 @@ namespace Project.UI
                 DMUiToolkitConfig cropConfig = DMUiToolkitConfig.Instance;
                 float cropHz = cropConfig != null ? cropConfig.minimapCropRefreshHz : 1f / MinimapRefreshInterval;
                 nextViewRefreshTime = Time.unscaledTime + 1f / Mathf.Clamp(cropHz, 5f, 60f); // perf-1018b: Studio-editable
-                EnsureCroppedView(mapUi);
+                if (!TerrainCropCurrentThisFrame(mapUi))
+                {
+                    using (s_PfLateUpdateCrop.Auto())
+                        EnsureCroppedView(mapUi);
+                }
             }
 
             if (hudLive && mapUi != null && !uguiHidden)
@@ -381,20 +407,32 @@ namespace Project.UI
         /// Player-centered crop of the world bake into <see cref="viewRt"/>.
         /// Does not require the retired TR <c>minimap-view</c> element.
         /// </summary>
+        private bool TerrainCropCurrentThisFrame(MapUI mapUi)
+        {
+            return viewRt != null && viewRt.IsCreated()
+                && lastTerrainCropFrame == Time.frameCount
+                && lastTerrainCropMapUi == mapUi
+                && mapUi != null
+                && mapUi.IsMinimapViewSnapshotCurrent(lastTerrainCropRevision);
+        }
+
         public RenderTexture EnsureCroppedView(MapUI mapUi)
         {
-            if (mapUi == null)
+            if (mapUi == null || TerrainCropCurrentThisFrame(mapUi))
                 return viewRt;
 
             Texture source;
             Vector2 playerUv;
             float uvSpan;
             float facingYaw;
-            if (!mapUi.TryGetMinimapViewParams(out source, out playerUv, out uvSpan, out facingYaw))
+            using (s_PfViewParams.Auto())
             {
-                source = mapUi.MinimapSourceTexture;
-                playerUv = new Vector2(0.5f, 0.5f);
-                uvSpan = 0.25f;
+                if (!mapUi.TryGetMinimapViewParams(out source, out playerUv, out uvSpan, out facingYaw))
+                {
+                    source = mapUi.MinimapSourceTexture;
+                    playerUv = new Vector2(0.5f, 0.5f);
+                    uvSpan = 0.25f;
+                }
             }
 
             if (source == null)
@@ -430,6 +468,9 @@ namespace Project.UI
                 lastBlitInvertV = invertV;
             }
 
+            lastTerrainCropFrame = Time.frameCount;
+            lastTerrainCropRevision = mapUi.MinimapViewSnapshotRevision;
+            lastTerrainCropMapUi = mapUi;
             return rt;
         }
 
@@ -444,10 +485,13 @@ namespace Project.UI
             Vector2 playerUv;
             float uvSpan;
             float facingYaw;
-            if (mapUi == null || !mapUi.TryGetMinimapViewParams(out source, out playerUv, out uvSpan, out facingYaw))
+            using (s_PfFogParams.Auto())
             {
-                playerUv = new Vector2(0.5f, 0.5f);
-                uvSpan = 0.25f;
+                if (mapUi == null || !mapUi.TryGetMinimapViewParams(out source, out playerUv, out uvSpan, out facingYaw))
+                {
+                    playerUv = new Vector2(0.5f, 0.5f);
+                    uvSpan = 0.25f;
+                }
             }
 
             RenderTexture rt = EnsureFogViewRt();
@@ -645,11 +689,14 @@ namespace Project.UI
             float scaleY = invertVertical ? -span : span;
             float offsetX = invertHorizontal ? sampleX + span * 0.5f : sampleX - span * 0.5f;
             float offsetY = invertVertical ? sampleY + span * 0.5f : sampleY - span * 0.5f;
-            Graphics.Blit(source, dest, new Vector2(scaleX, scaleY), new Vector2(offsetX, offsetY));
+            using (s_PfBlit.Auto())
+                Graphics.Blit(source, dest, new Vector2(scaleX, scaleY), new Vector2(offsetX, offsetY));
         }
 
         private void ReleaseViewRt()
         {
+            lastTerrainCropFrame = -1;
+            lastTerrainCropMapUi = null;
             if (viewRt == null)
                 return;
 

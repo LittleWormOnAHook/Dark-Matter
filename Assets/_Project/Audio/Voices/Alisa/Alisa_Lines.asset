@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09e56cc6f83e4e2ab954bcfa1f1f0adf, type: 3}
+  m_Name: Alisa_Lines
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Audio.Voice.DMVoiceLineSet
+  actor: {fileID: 11400000, guid: 93fe1b938dc4af240a0a96236cdada4a, type: 2}
+  lines:
+  - id: alisa_1
+    subtitle: Good morning Kade, I have a few jobs for you....Come over to the communications...
+      Chop Chop
+    stageTag: 
+    seed: 0
+    bakedHash: bc30e6b4daad3468
+    clip: {fileID: 8300000, guid: ea8a6308bfc74bc42a6328e10a7ff186, type: 3}
+  - id: alisa_2
+    subtitle: Finally decided to come get some work done huh?..., Go ahead and look
+      at the jobs panel over
+    stageTag: Jobs
+    seed: 0
+    bakedHash: d66ba375bfe293e6
+    clip: {fileID: 8300000, guid: bd182d4e075a2ff4797b2851ffff7890, type: 3}

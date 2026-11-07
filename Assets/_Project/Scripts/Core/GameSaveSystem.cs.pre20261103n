@@ -1,0 +1,1079 @@
+using System;
+using System.IO;
+using Project.Building;
+using Project.Data;
+using Project.Inventory;
+using Project.Managers;
+using Project.Player;
+using Project.Crafting;
+using Project.Pet;
+using Project.Pioneers;
+using Project.Progression;
+using Project.Achievements;
+using Project.Quests;
+using Project.Survival;
+using Project.UI;
+using Project.Vehicles;
+using Project.Map;
+using Project.Vendor;
+using Project.World.Clock;
+using UnityEngine;
+
+namespace Project.Core
+{
+    public static class GameSaveSystem
+    {
+        public const int SlotCount = 10;
+        public const int ContinueSlotIndex = 0;
+        public const int AutosaveSlotCount = 2;
+        public const float AutosaveIntervalSeconds = 5f * 60f;
+        public const int CurrentSaveVersion = 24; // v24: loot chests (loot plan 9.1). v25 is reserved for Combat Plan v2.
+
+        private const string LegacySaveFileName = "savegame.json";
+        private const string SlotFileNameFormat = "savegame_slot{0}.json";
+        private const string WipeOncePrefKey = "DM_WipeAllSaves_20260904";
+        private const int WipeScanSlotCount = 16;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void WipeSavesOnNextStart()
+        {
+            if (PlayerPrefs.GetInt(WipeOncePrefKey, 0) != 0)
+                return;
+
+            DeleteAllSaveFiles();
+            PlayerPrefs.SetInt(WipeOncePrefKey, 1);
+            PlayerPrefs.Save();
+        }
+
+        public static bool IsAutosaveSlot(int slotIndex)
+        {
+            return slotIndex >= 0 && slotIndex < AutosaveSlotCount;
+        }
+
+        public static string GetSlotTitle(int slotIndex)
+        {
+            slotIndex = ClampSlot(slotIndex);
+            return IsAutosaveSlot(slotIndex)
+                ? $"Slot {slotIndex + 1} (Auto)"
+                : $"Slot {slotIndex + 1}";
+        }
+
+        public static int DeleteAllSaveFiles()
+        {
+            int deleted = 0;
+            deleted += TryDeleteFile(LegacySaveFilePath) ? 1 : 0;
+            deleted += TryDeleteFile(SettingsReloadFilePath) ? 1 : 0;
+            deleted += TryDeleteFile(Path.Combine(Application.persistentDataPath, "settings_reload_snapshot.json")) ? 1 : 0;
+
+            int scanCount = Mathf.Max(SlotCount, WipeScanSlotCount);
+            for (int i = 0; i < scanCount; i++)
+            {
+                if (TryDeleteFile(Path.Combine(Application.persistentDataPath, string.Format(SlotFileNameFormat, i))))
+                    deleted++;
+                if (TryDeleteFile(SaveSlotScreenshotUtility.GetRawScreenshotPath(i)))
+                    deleted++;
+            }
+
+            GameSettings.MarkSaveExists(false);
+            DMSaveLoadRegistry.Record("wipe", -1, "DeleteAllSaveFiles", $"Deleted {deleted} save files.");
+            return deleted;
+        }
+
+        public static bool TryAutosave(out string message)
+        {
+            return TryAutosave(null, out message);
+        }
+
+        /// <summary>Writes autosave slots 1-2; a non-null <paramref name="screenshot"/> becomes each slot's preview (savegame_slot{i}_preview.png).</summary>
+        public static bool TryAutosave(Texture2D screenshot, out string message)
+        {
+            if (!GameSession.HasStarted)
+            {
+                message = "Autosave skipped — expedition has not started.";
+                return false;
+            }
+
+            bool any = false;
+            string last = "Autosave failed.";
+            for (int i = 0; i < AutosaveSlotCount; i++)
+            {
+                if (TrySave(i, screenshot, out last))
+                    any = true;
+            }
+
+            message = any ? "Autosaved slots 1–2." : last;
+            if (any)
+                DMSaveLoadRegistry.RecordLive("autosave", 0, "TryAutosave", message);
+            return any;
+        }
+
+        public static bool HasContinueSave => HasSaveInSlot(ContinueSlotIndex);
+
+        public static bool HasAnySaveFile
+        {
+            get
+            {
+                for (int i = 0; i < SlotCount; i++)
+                {
+                    if (HasSaveInSlot(i))
+                        return true;
+                }
+
+                return File.Exists(LegacySaveFilePath);
+            }
+        }
+
+        /// <summary>
+        /// Newest written slot across autosave (0–1) and manual saves.
+        /// </summary>
+        public static bool TryGetNewestSaveSlot(out int slotIndex)
+        {
+            slotIndex = -1;
+            long newest = long.MinValue;
+            for (int i = 0; i < SlotCount; i++)
+            {
+                SaveSlotInfo info = GetSlotInfo(i);
+                if (!info.HasData)
+                    continue;
+
+                if (info.SavedAtUtcTicks < newest)
+                    continue;
+
+                newest = info.SavedAtUtcTicks;
+                slotIndex = i;
+            }
+
+            return slotIndex >= 0;
+        }
+
+        public static bool TryLoadNewestSave(out string message)
+        {
+            if (!TryGetNewestSaveSlot(out int slotIndex))
+            {
+                message = "No save to load.";
+                return false;
+            }
+
+            return TryLoad(slotIndex, out message);
+        }
+
+        /// <summary>Persists the active expedition to the continue slot before a settings reload.</summary>
+        public static bool TrySaveContinueExpedition(out string message)
+        {
+            return TrySave(ContinueSlotIndex, null, out message);
+        }
+
+        public static bool TryLoadContinueExpedition(out string message)
+        {
+            return TryLoad(ContinueSlotIndex, out message);
+        }
+
+        /// <summary>Live-session snapshot for Settings Apply reload. Does not touch Continue / numbered slots.</summary>
+        public static bool TrySaveSettingsReloadSnapshot(out string message)
+        {
+            if (!TryCaptureSaveData(-1, out GameSaveData data, out message))
+                return false;
+
+            File.WriteAllText(SettingsReloadFilePath, JsonUtility.ToJson(data, prettyPrint: true));
+            message = "Saved settings-reload snapshot.";
+            return true;
+        }
+
+        public static bool TryLoadSettingsReloadSnapshot(out string message)
+        {
+            if (!File.Exists(SettingsReloadFilePath))
+            {
+                message = "No settings-reload snapshot.";
+                return false;
+            }
+
+            GameSaveData data;
+            try
+            {
+                data = JsonUtility.FromJson<GameSaveData>(File.ReadAllText(SettingsReloadFilePath));
+            }
+            catch (Exception ex)
+            {
+                message = "Settings-reload snapshot was unreadable. " + ex.Message;
+                return false;
+            }
+
+            if (data == null)
+            {
+                message = "Settings-reload snapshot was empty.";
+                return false;
+            }
+
+            ApplySaveData(data);
+            message = "Restored settings-reload snapshot.";
+            return true;
+        }
+
+        private static string SettingsReloadFilePath =>
+            Path.Combine(Application.persistentDataPath, "savegame_settings_reload.json");
+
+        private static string LegacySaveFilePath =>
+            Path.Combine(Application.persistentDataPath, LegacySaveFileName);
+
+        public static string GetSlotFilePath(int slotIndex)
+        {
+            slotIndex = ClampSlot(slotIndex);
+            return Path.Combine(Application.persistentDataPath, string.Format(SlotFileNameFormat, slotIndex));
+        }
+
+        public static bool HasSaveInSlot(int slotIndex)
+        {
+            slotIndex = ClampSlot(slotIndex);
+            return File.Exists(GetSlotFilePath(slotIndex));
+        }
+
+        public static SaveSlotInfo GetSlotInfo(int slotIndex)
+        {
+            MigrateLegacySaveIfNeeded();
+            slotIndex = ClampSlot(slotIndex);
+            SaveSlotInfo info = new SaveSlotInfo
+            {
+                SlotIndex = slotIndex,
+                HasData = false
+            };
+
+            if (!TryReadSlotData(slotIndex, out GameSaveData data))
+                return info;
+
+            info.HasData = true;
+            info.HasScreenshot = SaveSlotScreenshotUtility.HasScreenshot(slotIndex);
+            info.SavedAtUtcTicks = data.savedAtUtcTicks;
+            info.Health = data.health;
+            info.AetherCredits = ResolveSavedAetherCredits(data);
+            info.PlayerLevel = data.version >= 10 ? data.playerLevel : 1;
+            return info;
+        }
+
+        private static float ResolveSavedAetherCredits(GameSaveData data)
+        {
+            if (data == null)
+                return 0f;
+
+            if (data.version >= 9)
+                return Mathf.Max(0f, data.aetherCredits) + Mathf.Max(0f, data.piWalletBalance);
+
+            return Mathf.Max(0f, data.piBalance);
+        }
+
+        public static bool TrySave(int slotIndex, out string message)
+        {
+            return TrySave(slotIndex, null, out message);
+        }
+
+        public static bool TrySave(int slotIndex, Texture2D screenshot, out string message)
+        {
+            slotIndex = ClampSlot(slotIndex);
+            if (!TryCaptureSaveData(slotIndex, out GameSaveData data, out message))
+                return false;
+
+            string json = JsonUtility.ToJson(data, prettyPrint: true);
+            File.WriteAllText(GetSlotFilePath(slotIndex), json);
+
+            if (screenshot != null)
+                SaveSlotScreenshotUtility.SaveScreenshot(slotIndex, screenshot);
+
+            GameSettings.MarkSaveExists(true);
+            message = $"Saved to slot {slotIndex + 1}.";
+            DMSaveLoadRegistry.RecordLive(
+                "save",
+                slotIndex,
+                "TrySave",
+                message);
+            return true;
+        }
+
+        public static bool TryDelete(int slotIndex, out string message)
+        {
+            slotIndex = ClampSlot(slotIndex);
+            string path = GetSlotFilePath(slotIndex);
+            bool hadFile = File.Exists(path);
+            if (hadFile)
+            {
+                try
+                {
+                    File.Delete(path);
+                }
+                catch (Exception ex)
+                {
+                    message = $"Could not delete slot {slotIndex + 1}. {ex.Message}";
+                    return false;
+                }
+            }
+
+            SaveSlotScreenshotUtility.DeleteScreenshot(slotIndex);
+
+            if (!HasAnySaveFile)
+                GameSettings.MarkSaveExists(false);
+
+            if (!hadFile)
+            {
+                message = $"Slot {slotIndex + 1} is empty.";
+                return false;
+            }
+
+            message = $"Deleted slot {slotIndex + 1}.";
+            DMSaveLoadRegistry.RecordLive("delete", slotIndex, "TryDelete", message);
+            return true;
+        }
+
+        private static bool TryCaptureSaveData(int slotIndex, out GameSaveData data, out string message)
+        {
+            data = new GameSaveData();
+            GameObject player = PlayerLocator.FindPlayerObject();
+            if (player == null)
+            {
+                message = "No player found to save.";
+                return false;
+            }
+
+            InventorySystem inventory = player.GetComponent<InventorySystem>();
+            SurvivalStats stats = player.GetComponent<SurvivalStats>();
+            EquipmentController equipment = player.GetComponent<EquipmentController>();
+            UIManager ui = UnityEngine.Object.FindAnyObjectByType<UIManager>();
+            QuestManager questManager = UnityEngine.Object.FindAnyObjectByType<QuestManager>();
+            CraftingManager craftingManager = UnityEngine.Object.FindAnyObjectByType<CraftingManager>();
+            PlayerProgressionManager progressionManager = player.GetComponent<PlayerProgressionManager>()
+                ?? PlayerProgressionManager.EnsureExists();
+            AchievementManager achievementManager = AchievementManager.EnsureExists();
+
+            PioneerRosterManager roster = UnityEngine.Object.FindAnyObjectByType<PioneerRosterManager>();
+            PetManager petManager = PetManager.EnsureExists();
+
+            if (inventory == null || stats == null)
+            {
+                message = "Player data is missing.";
+                return false;
+            }
+
+            data = new GameSaveData
+            {
+                version = CurrentSaveVersion,
+                slotIndex = slotIndex,
+                savedAtUtcTicks = DateTime.UtcNow.Ticks,
+                health = stats.CurrentHealth,
+                energy = stats.CurrentEnergy,
+                stamina = stats.CurrentStamina,
+                oxygen = stats.CurrentOxygen,
+                thermalStress = stats.CurrentThermalStress,
+                radiation = stats.CurrentRadiation,
+                sulfur = stats.CurrentSulfur,
+                volcano = stats.CurrentVolcano,
+                piBalance = 0f,
+                aetherCredits = roster != null ? roster.AetherCredits : (ui != null ? ui.GetAetherCredits() : 0f),
+                piWalletBalance = 0f,
+                starterPioneerSelected = roster != null && roster.StarterPioneerSelected,
+                workerCount = roster != null ? roster.WorkerCount : 0,
+                skilledPioneers = roster != null ? roster.BuildSaveRecords() : null,
+                expeditionTrioIds = roster != null ? roster.BuildExpeditionTrioSave() : null,
+                colonistAggregate = roster != null ? roster.BuildColonistAggregateSave() : null,
+                echoChronicle = roster != null ? roster.BuildEchoChronicleSave() : null,
+                buildingOperations = BuildingOperationRegistry.BuildSaveSnapshot(),
+                ownedPetIds = petManager != null ? petManager.BuildOwnedPetSave() : null,
+                toolbarPetId = petManager != null ? petManager.BuildToolbarPetSave() : string.Empty,
+                petTamingProgress = petManager != null ? petManager.BuildTamingSave() : null,
+                achievementProgress = achievementManager != null ? achievementManager.BuildSaveSnapshot() : null,
+                posX = player.transform.position.x,
+                posY = player.transform.position.y,
+                posZ = player.transform.position.z,
+                rotY = player.transform.eulerAngles.y,
+                selectedHotbarSlot = equipment != null ? equipment.SelectedHotbarSlot : 0,
+                selectedToolbarSlot = equipment != null ? equipment.SelectedToolbarSlot : -1,
+                activeWeaponSlot = equipment != null ? equipment.ActiveWeaponSlot : 0,
+                weaponDrawn = equipment == null || equipment.IsWeaponDrawn,
+                inventorySize = inventory.inventorySize,
+                unlockedMainSlots = inventory.unlockedMainSlots,
+                hotbarSize = inventory.hotbarSize,
+                toolbarSize = inventory.toolbarSize,
+                slots = BuildInventorySave(inventory),
+                questProgress = questManager != null ? questManager.BuildSaveProgress().ToArray() : null,
+                discoveredRecipeIds = craftingManager != null ? craftingManager.BuildSave() : null,
+                pendingRecipeScrollIds = craftingManager != null ? craftingManager.BuildPendingSave() : null,
+                vehicles = BuildVehicleSave(),
+                powerGenerators = BuildPowerGeneratorSave(),
+                fogOfWarMask = BuildFogOfWarSave(out int fogResolution),
+                fogOfWarResolution = fogResolution,
+                scannedDiscoveryIds = ScannerDiscoveryRegistry.BuildSave(),
+                identifiedResourceIds = ResourceIdentificationRegistry.BuildSave(),
+                pptKnownKeywordIds = Project.PPT.PptKeywordLog.BuildSave()
+            };
+
+            DMIoClock.CaptureSave(out data.ioDay, out data.ioHour, out data.ioMinute);
+            data.vendors = DMVendorRuntime.BuildSave();
+            data.storageCrates = Project.Storage.DMStorageCrateRuntime.BuildSave();
+            data.lootChests = Project.Events.DMLootChestRuntime.BuildSave();
+            data.builtPieces = DMBuildingSaveRuntime.BuildSave();
+
+            if (progressionManager != null)
+            {
+                ProgressionSaveSnapshot snapshot = progressionManager.BuildSaveSnapshot();
+                data.playerLevel = snapshot.playerLevel;
+                data.playerXp = snapshot.playerXp;
+                data.unspentSkillPoints = snapshot.unspentSkillPoints;
+                data.allocatedSkillIds = snapshot.allocatedSkillIds;
+                data.allocatedSkillRanks = snapshot.allocatedSkillRanks;
+                data.exploredXpIds = snapshot.exploredXpIds;
+                data.claimedOneTimeXpKeys = snapshot.claimedOneTimeXpKeys;
+            }
+
+            message = "Captured.";
+            return true;
+        }
+
+        public static bool TryLoad(int slotIndex, out string message)
+        {
+            slotIndex = ClampSlot(slotIndex);
+            MigrateLegacySaveIfNeeded();
+
+            if (!TryReadSlotData(slotIndex, out GameSaveData data))
+            {
+                message = $"Save slot {slotIndex + 1} is empty.";
+                return false;
+            }
+
+            ApplySaveData(data);
+            GameSettings.MarkSaveExists(true);
+            message = $"Loaded slot {slotIndex + 1}.";
+            DMSaveLoadRegistry.RecordLive("load", slotIndex, "TryLoad", message);
+            return true;
+        }
+
+        public static void ApplySaveData(GameSaveData data)
+        {
+            GameObject player = PlayerLocator.FindPlayerObject();
+            if (player == null)
+            {
+                Debug.LogError("GameSaveSystem: Player not found while loading.");
+                return;
+            }
+
+            GameSession.MarkStarted();
+
+            InventorySystem inventory = player.GetComponent<InventorySystem>();
+            SurvivalStats stats = player.GetComponent<SurvivalStats>();
+            EquipmentController equipment = player.GetComponent<EquipmentController>();
+            UIManager ui = UnityEngine.Object.FindAnyObjectByType<UIManager>();
+
+            if (inventory != null)
+            {
+                ApplyInventorySave(inventory, data.slots, data);
+                RefreshInventoryUiAfterLoad();
+            }
+
+            if (stats != null)
+            {
+                ResolveSurvivalValues(stats, data, out float health, out float energy, out float stamina, out float oxygen);
+                if (data.version >= 15)
+                {
+                    stats.ApplySaveState(
+                        health,
+                        energy,
+                        stamina,
+                        oxygen,
+                        data.thermalStress,
+                        data.radiation,
+                        data.sulfur,
+                        data.volcano);
+                }
+                else
+                {
+                    stats.ApplySaveState(health, energy, stamina, oxygen);
+                }
+
+                stats.SetSimulationPaused(false);
+            }
+
+            equipment?.ApplySaveState(
+                data.selectedHotbarSlot,
+                data.activeWeaponSlot,
+                data.weaponDrawn,
+                data.version >= 3 ? data.selectedToolbarSlot : -1);
+
+            Vector3 position = new Vector3(data.posX, data.posY, data.posZ);
+            player.transform.SetPositionAndRotation(position, Quaternion.Euler(0f, data.rotY, 0f));
+
+            PlayerDeathHandler deathHandler = player.GetComponent<PlayerDeathHandler>();
+            deathHandler?.FinalizePhysicsAfterSaveLoad();
+
+            PlayerController playerController = player.GetComponent<PlayerController>();
+            if (playerController != null)
+            {
+                playerController.SetGameplayPaused(false);
+                playerController.SetInventoryOpen(false);
+                playerController.SetJournalOpen(false);
+            }
+
+            if (ui != null)
+            {
+                ui.HideDeathPopup();
+                ui.RefreshSurvivalDisplay();
+            }
+
+            ApplyRosterSave(data, ui);
+            ApplyPetSave(data);
+            ApplyAchievementSave(data);
+            ApplyVehicleSave(data);
+            ApplyPowerGeneratorSave(data);
+            ApplyFogOfWarSave(data);
+            ApplyScannerDiscoverySave(data);
+            ApplyResourceIdentificationSave(data);
+            ApplyPptKeywordSave(data);
+            ApplyIoClockSave(data);
+            ApplyVendorSave(data);
+            ApplyStorageCrateSave(data);
+            ApplyLootChestSave(data);
+            DMBuildingSaveRuntime.ApplySave(data.builtPieces);
+
+            ApplyQuestSave(player, data.questProgress);
+            ApplyCraftingSave(player, data.discoveredRecipeIds, data.pendingRecipeScrollIds);
+            ApplyProgressionSave(player, data);
+
+            SimpleGameManager.Instance?.BeginNewGameSession(grantStartingItems: false);
+        }
+
+        private static void ApplyProgressionSave(GameObject player, GameSaveData data)
+        {
+            PlayerProgressionManager progression = player.GetComponent<PlayerProgressionManager>();
+            if (progression == null)
+                progression = PlayerProgressionManager.EnsureExists();
+
+            ProgressionStatScaler scaler = player.GetComponent<ProgressionStatScaler>();
+            if (scaler == null)
+                scaler = player.AddComponent<ProgressionStatScaler>();
+
+            if (data.version >= 10)
+            {
+                progression.ApplySaveSnapshot(new ProgressionSaveSnapshot
+                {
+                    playerLevel = data.playerLevel,
+                    playerXp = data.playerXp,
+                    unspentSkillPoints = data.unspentSkillPoints,
+                    allocatedSkillIds = data.allocatedSkillIds,
+                    allocatedSkillRanks = data.allocatedSkillRanks,
+                    exploredXpIds = data.exploredXpIds,
+                    claimedOneTimeXpKeys = data.claimedOneTimeXpKeys
+                });
+            }
+            else
+            {
+                progression.ResetToNewGame();
+            }
+
+            scaler.CaptureBaseMaxValues();
+            scaler.ApplyLevelScaling();
+        }
+
+        private static void ApplyRosterSave(GameSaveData data, UIManager ui)
+        {
+            PioneerRosterManager roster = PioneerRosterManager.EnsureExists();
+            if (roster == null)
+                return;
+
+            if (data.version >= 11)
+            {
+                roster.ApplySaveV11(
+                    data.aetherCredits,
+                    data.piWalletBalance,
+                    data.workerCount,
+                    data.starterPioneerSelected,
+                    data.skilledPioneers,
+                    data.expeditionTrioIds,
+                    data.colonistAggregate,
+                    data.echoChronicle);
+                roster.ApplyLegacyAcBalanceMigration(data.piBalance);
+                BuildingOperationRegistry.ApplySaveSnapshot(data.buildingOperations);
+                return;
+            }
+
+            if (data.version >= 9)
+            {
+                roster.ApplySave(
+                    data.aetherCredits,
+                    data.piWalletBalance,
+                    data.workerCount,
+                    data.starterPioneerSelected,
+                    data.skilledPioneers);
+                roster.ApplyLegacyAcBalanceMigration(data.piBalance);
+                roster.EnsureDefaultTrioIfNeededPublic();
+                return;
+            }
+
+            roster.ApplySave(0f, 0f, 0, false, null);
+            roster.ApplyLegacyAcBalanceMigration(data.piBalance);
+
+            if (ui != null)
+                ui.SetAetherCredits(roster.AetherCredits);
+        }
+
+        private static void ApplyPetSave(GameSaveData data)
+        {
+            if (data.version < 12)
+                return;
+
+            PetManager manager = PetManager.EnsureExists();
+            manager?.ApplySave(data.ownedPetIds, data.toolbarPetId);
+
+            if (data.version >= 13)
+                manager?.ApplyTamingSave(data.petTamingProgress);
+        }
+
+        private static void ApplyAchievementSave(GameSaveData data)
+        {
+            if (data.version < 13)
+                return;
+
+            AchievementManager manager = AchievementManager.EnsureExists();
+            manager?.ApplySave(data.achievementProgress);
+            DynamicAchievementGenerator.EnsureSessionGoals();
+        }
+
+        /// <summary>Snapshots every hovercraft in the scene (position/rotation, fuel, shield/health) so
+        /// it round-trips across a save/load instead of resetting to spawn defaults.</summary>
+        private static VehicleSaveEntry[] BuildVehicleSave()
+        {
+            HovercraftController[] crafts = UnityEngine.Object.FindObjectsByType<HovercraftController>(FindObjectsInactive.Include);
+            if (crafts == null || crafts.Length == 0)
+                return null;
+
+            VehicleSaveEntry[] entries = new VehicleSaveEntry[crafts.Length];
+            for (int i = 0; i < crafts.Length; i++)
+            {
+                HovercraftController craft = crafts[i];
+                HovercraftFuelSystem fuel = craft.GetComponent<HovercraftFuelSystem>();
+                HovercraftHealth health = craft.GetComponent<HovercraftHealth>();
+
+                entries[i] = new VehicleSaveEntry
+                {
+                    vehicleId = craft.gameObject.name,
+                    posX = craft.transform.position.x,
+                    posY = craft.transform.position.y,
+                    posZ = craft.transform.position.z,
+                    rotY = craft.transform.eulerAngles.y,
+                    currentFuel = fuel != null ? fuel.CurrentFuel : 0f,
+                    currentShield = health != null ? health.CurrentShield : 0f,
+                    currentHealth = health != null ? health.CurrentHealth : 0f,
+                    isDestroyed = health != null && health.IsDestroyed
+                };
+            }
+
+            return entries;
+        }
+
+        /// <summary>Restores hovercraft transforms/fuel/shield/health from a save file. No-ops on saves
+        /// older than version 16 or when a craft in the scene has no matching saved entry (new vehicle).</summary>
+        private static void ApplyVehicleSave(GameSaveData data)
+        {
+            if (data.version < 16 || data.vehicles == null || data.vehicles.Length == 0)
+                return;
+
+            HovercraftController[] crafts = UnityEngine.Object.FindObjectsByType<HovercraftController>(FindObjectsInactive.Include);
+            for (int i = 0; i < crafts.Length; i++)
+            {
+                HovercraftController craft = crafts[i];
+                VehicleSaveEntry entry = FindVehicleEntry(data.vehicles, craft.gameObject.name);
+                if (entry == null)
+                    continue;
+
+                craft.transform.SetPositionAndRotation(
+                    new Vector3(entry.posX, entry.posY, entry.posZ),
+                    Quaternion.Euler(0f, entry.rotY, 0f));
+
+                HovercraftFuelSystem fuel = craft.GetComponent<HovercraftFuelSystem>();
+                fuel?.SetFuel(entry.currentFuel);
+
+                HovercraftHealth health = craft.GetComponent<HovercraftHealth>();
+                health?.SetState(entry.currentShield, entry.currentHealth, entry.isDestroyed);
+            }
+        }
+
+        private static VehicleSaveEntry FindVehicleEntry(VehicleSaveEntry[] entries, string vehicleId)
+        {
+            for (int i = 0; i < entries.Length; i++)
+            {
+                if (entries[i] != null && entries[i].vehicleId == vehicleId)
+                    return entries[i];
+            }
+
+            return null;
+        }
+
+        /// <summary>Snapshots every per-building PowerGenerator's fuel tank, keyed by BuildingId, so
+        /// Command Center / Science Lab (and any future powered building) keep their fuel across a
+        /// save/load instead of resetting to their starting amount.</summary>
+        private static PowerGeneratorSaveEntry[] BuildPowerGeneratorSave()
+        {
+            PowerGenerator[] generators = UnityEngine.Object.FindObjectsByType<PowerGenerator>(FindObjectsInactive.Include);
+            if (generators == null || generators.Length == 0)
+                return null;
+
+            PowerGeneratorSaveEntry[] entries = new PowerGeneratorSaveEntry[generators.Length];
+            for (int i = 0; i < generators.Length; i++)
+            {
+                entries[i] = new PowerGeneratorSaveEntry
+                {
+                    buildingId = generators[i].BuildingId,
+                    currentFuel = generators[i].CurrentFuel
+                };
+            }
+
+            return entries;
+        }
+
+        private static void ApplyPowerGeneratorSave(GameSaveData data)
+        {
+            if (data.version < 17 || data.powerGenerators == null || data.powerGenerators.Length == 0)
+                return;
+
+            PowerGenerator[] generators = UnityEngine.Object.FindObjectsByType<PowerGenerator>(FindObjectsInactive.Include);
+            for (int i = 0; i < generators.Length; i++)
+            {
+                PowerGenerator generator = generators[i];
+                PowerGeneratorSaveEntry entry = FindPowerGeneratorEntry(data.powerGenerators, generator.BuildingId);
+                if (entry == null)
+                    continue;
+
+                generator.SetFuel(entry.currentFuel);
+            }
+        }
+
+        private static PowerGeneratorSaveEntry FindPowerGeneratorEntry(PowerGeneratorSaveEntry[] entries, string buildingId)
+        {
+            for (int i = 0; i < entries.Length; i++)
+            {
+                if (entries[i] != null && entries[i].buildingId == buildingId)
+                    return entries[i];
+            }
+
+            return null;
+        }
+
+        private static byte[] BuildFogOfWarSave(out int resolution)
+        {
+            if (!MapFogOfWar.SystemEnabled)
+            {
+                resolution = 0;
+                return null;
+            }
+
+            MapFogOfWar fog = MapFogOfWar.Instance ?? MapFogOfWar.EnsureExists();
+            if (fog == null)
+            {
+                resolution = 0;
+                return null;
+            }
+
+            resolution = fog.BuildSaveResolution();
+            byte[] mask = fog.BuildSave();
+            return mask != null && mask.Length > 0 ? mask : null;
+        }
+
+        private static void ApplyFogOfWarSave(GameSaveData data)
+        {
+            if (!MapFogOfWar.SystemEnabled)
+                return;
+
+            MapFogOfWar fog = MapFogOfWar.EnsureExists();
+            if (fog == null)
+                return;
+
+            if (data == null || data.version < 19 || data.fogOfWarMask == null || data.fogOfWarMask.Length == 0)
+            {
+                // Fresh / pre-fog saves: stamp an initial walk circle at the player so they aren't fully blind.
+                GameObject player = PlayerLocator.FindPlayerObject();
+                if (player != null)
+                    fog.RevealCircle(player.transform.position, MapFogOfWar.WalkRevealRadiusMeters, MapFogOfWar.WalkRevealEdgeSoftnessMeters);
+                return;
+            }
+
+            fog.ApplySave(data.fogOfWarMask, data.fogOfWarResolution);
+        }
+
+        private static void ApplyScannerDiscoverySave(GameSaveData data)
+        {
+            if (data == null || data.version < 20)
+            {
+                ScannerDiscoveryRegistry.Clear();
+                return;
+            }
+
+            ScannerDiscoveryRegistry.ApplySave(data.scannedDiscoveryIds);
+        }
+
+        private static void ApplyResourceIdentificationSave(GameSaveData data)
+        {
+            if (data == null || data.version < 21)
+            {
+                ResourceIdentificationRegistry.Clear();
+                return;
+            }
+
+            ResourceIdentificationRegistry.ApplySave(data.identifiedResourceIds);
+        }
+
+        private static void ApplyPptKeywordSave(GameSaveData data)
+        {
+            if (data == null || data.version < 22)
+                Project.PPT.PptKeywordLog.Clear();
+            else
+                Project.PPT.PptKeywordLog.ApplySave(data.pptKnownKeywordIds);
+
+            Project.PPT.PptManager.Instance?.EnsureSessionStartKeywords();
+        }
+
+        private static void ApplyIoClockSave(GameSaveData data)
+        {
+            if (data == null || data.version < 23)
+            {
+                DMIoClock.ResetToNewGame();
+                return;
+            }
+
+            DMIoClock.ApplySave(data.ioDay, data.ioHour, data.ioMinute);
+        }
+
+        private static void ApplyVendorSave(GameSaveData data)
+        {
+            if (data == null || data.version < 23)
+            {
+                DMVendorRuntime.ResetAll();
+                return;
+            }
+
+            DMVendorRuntime.ApplySave(data.vendors);
+        }
+
+        private static void ApplyStorageCrateSave(GameSaveData data)
+        {
+            if (data == null || data.version < 23)
+            {
+                Project.Storage.DMStorageCrateRuntime.ResetAll();
+                return;
+            }
+
+            Project.Storage.DMStorageCrateRuntime.ApplySave(data.storageCrates);
+        }
+
+        private static void ApplyLootChestSave(GameSaveData data)
+        {
+            // v23 and older carry no loot chest data: every chest starts fresh with its authored loot (9.1).
+            if (data == null || data.version < 24)
+            {
+                Project.Events.DMLootChestRuntime.ResetAll();
+                return;
+            }
+
+            Project.Events.DMLootChestRuntime.ApplySave(data.lootChests);
+        }
+
+        private static void ApplyCraftingSave(GameObject player, string[] discoveredRecipeIds, string[] pendingRecipeScrollIds)
+        {
+            CraftingManager craftingManager = UnityEngine.Object.FindAnyObjectByType<CraftingManager>();
+            if (craftingManager == null)
+                craftingManager = player.GetComponent<CraftingManager>() ?? player.AddComponent<CraftingManager>();
+
+            craftingManager.ApplySave(discoveredRecipeIds);
+            craftingManager.ApplyPendingSave(pendingRecipeScrollIds);
+        }
+
+        private static void ApplyQuestSave(GameObject player, QuestProgress[] savedQuestProgress)
+        {
+            if (savedQuestProgress == null)
+                return;
+
+            QuestManager questManager = QuestManager.EnsureExists();
+            if (questManager == null)
+                return;
+
+            questManager.ApplySaveProgress(savedQuestProgress);
+        }
+
+        private static void ResolveSurvivalValues(
+            SurvivalStats stats,
+            GameSaveData data,
+            out float health,
+            out float energy,
+            out float stamina,
+            out float oxygen)
+        {
+            health = data.health;
+            energy = data.energy;
+            stamina = data.stamina;
+            oxygen = data.oxygen;
+
+            if (data.version < 8)
+            {
+                float legacyHunger = data.hunger;
+                float legacyThirst = data.thirst;
+                float legacyStamina = data.energy;
+
+                if (health <= 0f)
+                    health = stats.maxHealth;
+
+                energy = (legacyHunger + legacyThirst) * 0.5f;
+                if (energy <= 0f && legacyHunger <= 0f && legacyThirst <= 0f)
+                    energy = stats.maxEnergy;
+
+                stamina = legacyStamina > 0f ? legacyStamina : stats.maxStamina;
+                oxygen = stats.maxOxygen;
+                return;
+            }
+
+            bool missingSurvivalFields = energy <= 0f && stamina <= 0f && oxygen <= 0f;
+            if (data.version < 2 && missingSurvivalFields)
+            {
+                health = health > 0f ? health : stats.maxHealth;
+                energy = stats.maxEnergy;
+                stamina = stats.maxStamina;
+                oxygen = stats.maxOxygen;
+            }
+        }
+
+        private static bool TryReadSlotData(int slotIndex, out GameSaveData data)
+        {
+            data = null;
+            slotIndex = ClampSlot(slotIndex);
+            string path = GetSlotFilePath(slotIndex);
+
+            if (!File.Exists(path))
+                return false;
+
+            string json = File.ReadAllText(path);
+            data = JsonUtility.FromJson<GameSaveData>(json);
+            return data != null;
+        }
+
+        private static void MigrateLegacySaveIfNeeded()
+        {
+            if (!File.Exists(LegacySaveFilePath) || HasSaveInSlot(0))
+                return;
+
+            try
+            {
+                string json = File.ReadAllText(LegacySaveFilePath);
+                GameSaveData data = JsonUtility.FromJson<GameSaveData>(json);
+                if (data == null)
+                    return;
+
+                data.slotIndex = 0;
+                if (data.savedAtUtcTicks <= 0)
+                    data.savedAtUtcTicks = DateTime.UtcNow.Ticks;
+
+                File.WriteAllText(GetSlotFilePath(0), JsonUtility.ToJson(data, prettyPrint: true));
+                File.Delete(LegacySaveFilePath);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"GameSaveSystem: Failed to migrate legacy save. {exception.Message}");
+            }
+        }
+
+        private static bool TryDeleteFile(string path)
+        {
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                return false;
+
+            try
+            {
+                File.Delete(path);
+                return true;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"GameSaveSystem: Failed to delete {path}. {exception.Message}");
+                return false;
+            }
+        }
+
+        private static int ClampSlot(int slotIndex)
+        {
+            return Mathf.Clamp(slotIndex, 0, SlotCount - 1);
+        }
+
+        private static InventorySlotSave[] BuildInventorySave(InventorySystem inventory)
+        {
+            InventorySlotSave[] result = new InventorySlotSave[inventory.slots.Count];
+            for (int i = 0; i < inventory.slots.Count; i++)
+            {
+                InventorySystem.InventorySlot slot = inventory.slots[i];
+                if (slot == null || slot.IsEmpty || slot.item == null)
+                {
+                    result[i] = new InventorySlotSave();
+                    continue;
+                }
+
+                result[i] = new InventorySlotSave
+                {
+                    itemId = slot.item.name,
+                    amount = slot.amount
+                };
+            }
+
+            return result;
+        }
+
+        private static void ApplyInventorySave(InventorySystem inventory, InventorySlotSave[] savedSlots, GameSaveData data)
+        {
+            if (inventory == null)
+                return;
+
+            if (data != null && data.version >= 7)
+            {
+                int unlocked = data.version >= 18
+                    ? data.unlockedMainSlots
+                    : Mathf.Clamp(data.inventorySize > 0 ? data.inventorySize : InventorySystem.DefaultUnlockedMainSlots,
+                        InventorySystem.DefaultUnlockedMainSlots,
+                        InventorySystem.DefaultTotalMainSlots);
+
+                int totalMain = data.version >= 18
+                    ? Mathf.Max(data.inventorySize, InventorySystem.DefaultTotalMainSlots)
+                    : InventorySystem.DefaultTotalMainSlots;
+
+                // Pre-v18 saves treated inventorySize as fully open capacity.
+                if (data.version < 18)
+                    unlocked = Mathf.Clamp(data.inventorySize > 0 ? data.inventorySize : unlocked, 1, totalMain);
+
+                inventory.EnsureSlotCounts(totalMain, data.hotbarSize, data.toolbarSize, unlocked);
+            }
+
+            inventory.ClearAllSlots();
+
+            if (savedSlots == null)
+            {
+                inventory.NotifyInventoryChanged();
+                return;
+            }
+
+            int count = Mathf.Min(savedSlots.Length, inventory.slots.Count);
+            for (int i = 0; i < count; i++)
+            {
+                InventorySlotSave saved = savedSlots[i];
+                if (saved == null || string.IsNullOrEmpty(saved.itemId) || saved.amount <= 0)
+                    continue;
+
+                ItemData item = ItemRegistry.Resolve(saved.itemId);
+                if (item == null)
+                {
+                    Debug.LogWarning($"GameSaveSystem: Unknown item '{saved.itemId}' in save file.");
+                    continue;
+                }
+
+                inventory.slots[i].item = item;
+                inventory.slots[i].amount = saved.amount;
+            }
+
+            inventory.NotifyInventoryChanged();
+        }
+
+        private static void RefreshInventoryUiAfterLoad()
+        {
+            InventoryUI inventoryUi = UnityEngine.Object.FindAnyObjectByType<InventoryUI>();
+            inventoryUi?.RebuildSlotsIfNeeded();
+            inventoryUi?.RefreshUI();
+            inventoryUi?.RefreshMainInventoryLayout();
+        }
+    }
+}

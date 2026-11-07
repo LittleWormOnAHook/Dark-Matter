@@ -93,8 +93,34 @@ namespace Project.Combat
             EnsureMeleeDamageReceiver();
         }
 
+        // Live enabled-dummy registry (mirrors EnemyHealthSceneRegistry) so chain lightning avoids scene scans.
+        private static readonly System.Collections.Generic.List<TrainingDummy> s_live =
+            new System.Collections.Generic.List<TrainingDummy>(16);
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetLiveRegistry() => s_live.Clear();
+
+        /// <summary>Copies live (enabled) dummies into <paramref name="buffer"/> (clears first).</summary>
+        public static void CopyLiveTo(System.Collections.Generic.List<TrainingDummy> buffer)
+        {
+            buffer.Clear();
+            for (int i = 0; i < s_live.Count; i++)
+            {
+                if (s_live[i] != null)
+                    buffer.Add(s_live[i]);
+            }
+        }
+
+        private void OnDisable()
+        {
+            s_live.Remove(this);
+        }
+
         private void OnEnable()
         {
+            if (!s_live.Contains(this))
+                s_live.Add(this);
+
             if (resetHealthOnEnable)
                 currentHealth = maxHealth;
 

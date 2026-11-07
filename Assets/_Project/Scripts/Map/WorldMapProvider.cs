@@ -129,6 +129,8 @@ namespace Project.Map
         private static Texture2D cachedFakeMapTexture;
         private static Texture2D cachedMinimapTexture;
         private Transform cachedMapOriginMarker;
+        // Keep an authored override separate from the field populated by runtime discovery.
+        private Transform configuredMapOriginMarker;
 
         internal static void ResetStaticState()
         {
@@ -146,6 +148,7 @@ namespace Project.Map
             }
 
             Instance = this;
+            configuredMapOriginMarker = mapOriginMarker;
             EnsureTerrainReference();
             EnsureCalibrationProfile();
             TryApplyMapArtReference();
@@ -378,6 +381,9 @@ namespace Project.Map
 
         private Vector3 ResolveMapGridOriginWorld()
         {
+            if (configuredMapOriginMarker != null)
+                return configuredMapOriginMarker.position;
+
             WorldMapOriginMarker originMarker = WorldMapOriginMarker.FindInScene();
             if (originMarker != null)
                 return originMarker.transform.position;
@@ -988,7 +994,9 @@ namespace Project.Map
             if (!preferMapOriginMarker)
                 return false;
 
-            WorldMapOriginMarker originMarker = WorldMapOriginMarker.FindInScene();
+            WorldMapOriginMarker originMarker = configuredMapOriginMarker != null
+                ? configuredMapOriginMarker.GetComponent<WorldMapOriginMarker>()
+                : WorldMapOriginMarker.FindInScene();
             if (originMarker != null)
             {
                 bounds = originMarker.BuildWorldBounds();
@@ -997,7 +1005,9 @@ namespace Project.Map
                 return true;
             }
 
-            Transform marker = mapOriginMarker != null ? mapOriginMarker : cachedMapOriginMarker;
+            Transform marker = configuredMapOriginMarker != null
+                ? configuredMapOriginMarker
+                : (mapOriginMarker != null ? mapOriginMarker : cachedMapOriginMarker);
             if (marker == null)
             {
                 GameObject found = GameObject.Find(WorldMapOriginMarker.DefaultObjectName);

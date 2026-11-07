@@ -1220,14 +1220,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.Turrets.DMTurretRuntime
   faction: 0
   controlMode: 0
+  ammoMode: 0
+  vendorFxType: 0
   ammoType: 0
+  barrelKind: 0
+  barrelDatabase: {fileID: 11400000, guid: eb3473c212bed93408925d4f24d42e1a, type: 2}
+  databaseBarrelId: 
+  databaseBarrelPrefab: {fileID: 0}
   useProfileDamage: 1
   damageOverride: 18
   instanceAuthority:
     overrideAmmoMode: 0
     ammoMode: 0
+    overrideVendorFxType: 0
+    vendorFxType: 0
     overrideAmmoType: 0
     ammoType: 0
+    overrideBarrelKind: 0
+    barrelKind: 0
+    overrideDatabaseBarrel: 0
+    databaseBarrelId: 
     overrideGameAmmoItems: 0
     gameWeaponItem: {fileID: 0}
     gameAmmoItem: {fileID: 0}
@@ -1249,6 +1261,45 @@ MonoBehaviour:
     fireRange: 22
     overrideMaxHealth: 0
     maxHealth: 100
+    overrideAimAcceptDegrees: 0
+    aimAcceptDegrees: 8
+    overrideAutoRestAfterNoTargetSeconds: 0
+    autoRestAfterNoTargetSeconds: 15
+    overrideTargetLosGraceSeconds: 0
+    targetLosGraceSeconds: 0.65
+    overrideTargetLosFailuresBeforeDrop: 0
+    targetLosFailuresBeforeDrop: 4
+    overrideScanHeadingSpeed: 0
+    scanHeadingSpeed: 18
+    overrideScanRetargetSeconds: 0
+    scanRetargetSeconds: 2.4
+    overrideScanElevationDegrees: 0
+    scanElevationDegrees: {x: -8, y: 12}
+  trackingAuthority:
+    overrideMountSwivel: 0
+    mount: {fileID: 0}
+    swivel: {fileID: 0}
+    overrideHeadingTrackingSpeed: 0
+    headingTrackingSpeed: 40
+    overrideElevationTrackingSpeed: 0
+    elevationTrackingSpeed: 30
+    overrideHeadingLimit: 0
+    headingLimit: {x: -180, y: 180}
+    overrideElevationLimit: 0
+    elevationLimit: {x: -15, y: 45}
+    overrideSmoothControlling: 0
+    smoothControlling: 0
+    editorDrawVisionCones: 1
+    overrideDebugDraw: 0
+    debugDraw: 0
+    overrideDebugTarget: 0
+    debugTarget: {fileID: 0}
+    overrideAnimators: 0
+    animators: []
+  vendorFxAuthority:
+    overrideVulcanFireRate: 0
+    vulcanFireRate: 0.07
+  interactRangeMeters: 3.5
   forgeTurret: {fileID: 6716816371746126755}
   fxController: {fileID: 4004126106213823960}
   barrel: {fileID: 6655793496038636374}
@@ -1290,7 +1341,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e6b14c2ede9371543bfd1aeaf880d843, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Combat.Turrets.DMTurretInteract
-  interactRange: 3.5
   interactCollider: {fileID: 0}
 --- !u!65 &4440953717196583997
 BoxCollider:

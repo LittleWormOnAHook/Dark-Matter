@@ -132,6 +132,7 @@ namespace Project.UI
         private int cachedStaminaBonus;
         private int cachedOxygenBonus;
         private int cachedHealthBonus;
+        private int lastSkillRanksVersion = -1;
         private int lastElevValue = int.MinValue;
         private int lastLatValue = int.MinValue;
         private int lastLongValue = int.MinValue;
@@ -261,32 +262,59 @@ namespace Project.UI
                 instance = null;
         }
 
+        // TEMP PERF INSTRUMENTATION (2026-11-06): remove after HUD LateUpdate measurements.
+        static readonly Unity.Profiling.ProfilerMarker s_PfLookups = new Unity.Profiling.ProfilerMarker("DM.PilotHUD.Lookups");
+        static readonly Unity.Profiling.ProfilerMarker s_PfSurvivalBars = new Unity.Profiling.ProfilerMarker("DM.PilotHUD.SurvivalBars");
+        static readonly Unity.Profiling.ProfilerMarker s_PfSkillDashes = new Unity.Profiling.ProfilerMarker("DM.PilotHUD.SkillDashes");
+        static readonly Unity.Profiling.ProfilerMarker s_PfLoad = new Unity.Profiling.ProfilerMarker("DM.PilotHUD.Load");
+        static readonly Unity.Profiling.ProfilerMarker s_PfElevation = new Unity.Profiling.ProfilerMarker("DM.PilotHUD.Elevation");
+        static readonly Unity.Profiling.ProfilerMarker s_PfLatLong = new Unity.Profiling.ProfilerMarker("DM.PilotHUD.LatLong");
+        static readonly Unity.Profiling.ProfilerMarker s_PfTemperature = new Unity.Profiling.ProfilerMarker("DM.PilotHUD.Temperature");
+        static readonly Unity.Profiling.ProfilerMarker s_PfZoneIcons = new Unity.Profiling.ProfilerMarker("DM.PilotHUD.ZoneIcons");
+        static readonly Unity.Profiling.ProfilerMarker s_PfDayTime = new Unity.Profiling.ProfilerMarker("DM.PilotHUD.DayTime");
+        static readonly Unity.Profiling.ProfilerMarker s_PfMinimap = new Unity.Profiling.ProfilerMarker("DM.PilotHUD.Minimap");
+        static readonly Unity.Profiling.ProfilerMarker s_PfMinimapPois = new Unity.Profiling.ProfilerMarker("DM.PilotHUD.MinimapPois");
+        static readonly Unity.Profiling.ProfilerMarker s_PfCompass = new Unity.Profiling.ProfilerMarker("DM.PilotHUD.Compass");
+        static readonly Unity.Profiling.ProfilerMarker s_PfCompassDots = new Unity.Profiling.ProfilerMarker("DM.PilotHUD.CompassDots");
+        static readonly Unity.Profiling.ProfilerMarker s_PfMinimapZoom = new Unity.Profiling.ProfilerMarker("DM.PilotHUD.MinimapZoom");
+        static readonly Unity.Profiling.ProfilerMarker s_PfOther = new Unity.Profiling.ProfilerMarker("DM.PilotHUD.Other");
+        static readonly Unity.Profiling.ProfilerMarker s_PfLatLongGrid = new Unity.Profiling.ProfilerMarker("DM.PilotHUD.LatLong.Grid");
+        static readonly Unity.Profiling.ProfilerMarker s_PfLatLongLabels = new Unity.Profiling.ProfilerMarker("DM.PilotHUD.LatLong.Labels");
+        static readonly Unity.Profiling.ProfilerMarker s_PfMinimapLookup = new Unity.Profiling.ProfilerMarker("DM.PilotHUD.Minimap.Lookup");
+        static readonly Unity.Profiling.ProfilerMarker s_PfMinimapCrop = new Unity.Profiling.ProfilerMarker("DM.PilotHUD.Minimap.Crop");
+        static readonly Unity.Profiling.ProfilerMarker s_PfMinimapFog = new Unity.Profiling.ProfilerMarker("DM.PilotHUD.Minimap.Fog");
+        static readonly Unity.Profiling.ProfilerMarker s_PfMinimapBind = new Unity.Profiling.ProfilerMarker("DM.PilotHUD.Minimap.Bind");
+        static readonly Unity.Profiling.ProfilerMarker s_PfMinimapRotate = new Unity.Profiling.ProfilerMarker("DM.PilotHUD.Minimap.Rotate");
+
         private void LateUpdate()
         {
-            DMUiToolkitConfig config = DMUiToolkitConfig.Instance;
-            if (config != null && !config.showPilotCluster)
+            using (s_PfLookups.Auto())
             {
-                if (root != null)
-                    DMUiToolkitOverlayDocument.SetShown(root, false);
-                return;
+                DMUiToolkitConfig config = DMUiToolkitConfig.Instance;
+                if (config != null && !config.showPilotCluster)
+                {
+                    if (root != null)
+                        DMUiToolkitOverlayDocument.SetShown(root, false);
+                    return;
+                }
+
+                if (!bound)
+                    BindTree();
+
+                bool want = WantShown();
+                DMUiToolkitOverlayDocument.SetShown(root, want);
+                if (!want || cluster == null)
+                    return;
+
+                float refreshHz = config != null ? config.pilotClusterRefreshHz : 15f;
+                refreshHz = Mathf.Clamp(refreshHz, 5f, 60f);
+                float interval = 1f / refreshHz;
+                if (!presentationDirty && Time.unscaledTime < nextPresentationRefresh)
+                    return;
+
+                nextPresentationRefresh = Time.unscaledTime + interval;
+                presentationDirty = false;
             }
-
-            if (!bound)
-                BindTree();
-
-            bool want = WantShown();
-            DMUiToolkitOverlayDocument.SetShown(root, want);
-            if (!want || cluster == null)
-                return;
-
-            float refreshHz = config != null ? config.pilotClusterRefreshHz : 15f;
-            refreshHz = Mathf.Clamp(refreshHz, 5f, 60f);
-            float interval = 1f / refreshHz;
-            if (!presentationDirty && Time.unscaledTime < nextPresentationRefresh)
-                return;
-
-            nextPresentationRefresh = Time.unscaledTime + interval;
-            presentationDirty = false;
             RefreshPresentation();
         }
 
@@ -378,13 +406,17 @@ namespace Project.UI
             ApplyMinimapPlayerIconRotation();
             BuildCompassTicks();
             bound = root != null;
+            lastSkillRanksVersion = -1;
             RefreshIoClock();
         }
 
         private void RefreshIoClock()
         {
-            SetLabelText(ioClockLabel, DMIoClock.DisplayText, ref lastIoClockText);
-            presentationDirty = true;
+            using (s_PfDayTime.Auto())
+            {
+                SetLabelText(ioClockLabel, DMIoClock.DisplayText, ref lastIoClockText);
+                presentationDirty = true;
+            }
         }
 
         private void ApplyMinimapPlayerIconRotation()
@@ -574,19 +606,28 @@ private void EnsureArcs()
 
         private void RefreshPresentation()
         {
-            if (cachedPlayerGo == null)
-                cachedPlayerGo = PlayerLocator.FindPlayerObject();
+            GameObject player;
+            SurvivalStats stats;
+            InventorySystem inventory;
+            MapUI mapUi;
+            using (s_PfLookups.Auto())
+            {
+                if (cachedPlayerGo == null)
+                    cachedPlayerGo = PlayerLocator.FindPlayerObject();
 
-            GameObject player = cachedPlayerGo;
-            SurvivalStats stats = ResolveStats(player);
-            InventorySystem inventory = ResolveInventory(player);
-            MapUI mapUi = ResolveMapUi();
+                player = cachedPlayerGo;
+                stats = ResolveStats(player);
+                inventory = ResolveInventory(player);
+                mapUi = ResolveMapUi();
+            }
 
             if (Time.unscaledTime >= nextHeavyRefresh)
             {
                 nextHeavyRefresh = Time.unscaledTime + MapCompassRefreshInterval;
-                RefreshBars(stats);
-                RefreshLoad(inventory);
+                using (s_PfSurvivalBars.Auto())
+                    RefreshBars(stats);
+                using (s_PfLoad.Auto())
+                    RefreshLoad(inventory);
                 RefreshWorld(mapUi, stats);
             }
 
@@ -602,9 +643,12 @@ private void EnsureArcs()
             {
                 nextMapCompassRefresh = Time.unscaledTime + MapCompassRefreshInterval;
                 lastMapCompassHeading = heading;
-                RefreshMap(mapUi);
-                RefreshCompass(mapUi);
-                TickMinimapZoom(mapUi);
+                using (s_PfMinimap.Auto())
+                    RefreshMap(mapUi);
+                using (s_PfCompass.Auto())
+                    RefreshCompass(mapUi);
+                using (s_PfMinimapZoom.Auto())
+                    TickMinimapZoom(mapUi);
             }
         }
 
@@ -628,18 +672,27 @@ private void EnsureArcs()
                 }
             }
 
-            // perf-1018b: skill-rank dashes walk every SkillDefinition (list alloc + name strings) x4;
-            // ranks change rarely, so refresh them on a Studio-editable interval (DMUiToolkitConfig).
-            float dashNow = Time.unscaledTime;
-            if (dashNow >= nextUpgradeDashRefresh || nextUpgradeDashRefresh - dashNow > 10f)
+            // Skill-rank dashes: recompute on SkillRanksVersion change / first refresh, plus a slow safety poll.
+            using (s_PfSkillDashes.Auto())
             {
+                float dashNow = Time.unscaledTime;
                 DMUiToolkitConfig dashConfig = DMUiToolkitConfig.Instance;
-                float dashInterval = dashConfig != null ? dashConfig.pilotClusterSkillDashRefreshSeconds : 1f;
-                nextUpgradeDashRefresh = dashNow + Mathf.Clamp(dashInterval, 0.1f, 5f);
-                cachedEnergyBonus = GetEnergyUpgradeDashes();
-                cachedStaminaBonus = GetStaminaUpgradeDashes();
-                cachedOxygenBonus = GetOxygenUpgradeDashes();
-                cachedHealthBonus = GetHealthUpgradeDashes();
+                float dashInterval = dashConfig != null ? dashConfig.pilotClusterSkillDashRefreshSeconds : 30f;
+                dashInterval = Mathf.Clamp(dashInterval, 0.1f, 120f);
+                PlayerProgressionManager progression = PlayerProgressionManager.Instance;
+                int version = progression != null ? progression.SkillRanksVersion : 0;
+                bool versionChanged = version != lastSkillRanksVersion;
+                bool safetyDue = dashNow >= nextUpgradeDashRefresh
+                    || nextUpgradeDashRefresh - dashNow > dashInterval + 1f;
+                if (versionChanged || safetyDue)
+                {
+                    nextUpgradeDashRefresh = dashNow + dashInterval;
+                    lastSkillRanksVersion = version;
+                    cachedEnergyBonus = GetEnergyUpgradeDashes();
+                    cachedStaminaBonus = GetStaminaUpgradeDashes();
+                    cachedOxygenBonus = GetOxygenUpgradeDashes();
+                    cachedHealthBonus = GetHealthUpgradeDashes();
+                }
             }
 
             int energyBonus = cachedEnergyBonus;
@@ -684,73 +737,99 @@ private void EnsureArcs()
 
         private void RefreshWorld(MapUI mapUi, SurvivalStats stats)
         {
-            ApplyMinimapPlayerIconRotation();
+            using (s_PfOther.Auto())
+                ApplyMinimapPlayerIconRotation();
 
             Vector3 pos = Vector3.zero;
             bool hasPos = mapUi != null && mapUi.HasMinimapPlayerPosition;
             if (hasPos)
                 pos = mapUi.MinimapPlayerWorldPosition;
 
-            ResolveExposure(stats);
+            using (s_PfLookups.Auto())
+                ResolveExposure(stats);
 
-            int elev = Mathf.RoundToInt(pos.y);
-            if (elevLabel != null && elev != lastElevValue)
+            using (s_PfElevation.Auto())
             {
-                lastElevValue = elev;
-                SetLabelText(elevLabel, "Elevation " + FormatSignedCoord(elev) + " M", ref lastElevText);
-            }
-
-            if (hasPos)
-            {
-                WorldMapProvider map = WorldMapProvider.Instance;
-                Vector2 grid = map != null ? map.WorldToGridXz(pos) : new Vector2(pos.x, pos.z);
-                // North is world +X, so grid.x is latitude and grid.y (world Z) is longitude.
-                int latValue = Mathf.RoundToInt(grid.x);
-                int longValue = Mathf.RoundToInt(grid.y);
-                if (latValue != lastLatValue)
+                int elev = Mathf.RoundToInt(pos.y);
+                if (elevLabel != null && elev != lastElevValue)
                 {
-                    lastLatValue = latValue;
-                    SetLabelText(latLabel, "Lat " + FormatSignedCoord(latValue), ref lastLatText);
-                }
-                if (longValue != lastLongValue)
-                {
-                    lastLongValue = longValue;
-                    SetLabelText(longLabel, "Long " + FormatSignedCoord(longValue), ref lastLongText);
+                    lastElevValue = elev;
+                    SetLabelText(elevLabel, "Elevation " + FormatSignedCoord(elev) + " M", ref lastElevText);
                 }
             }
-            else
-            {
-                lastLatValue = int.MinValue;
-                lastLongValue = int.MinValue;
-                SetLabelText(latLabel, "Lat ----", ref lastLatText);
-                SetLabelText(longLabel, "Long ----", ref lastLongText);
-            }
 
-            RefreshZoneIcons(hasPos ? pos : Vector3.zero);
-
-            float fahrenheit = stats != null ? stats.GetDisplayTemperatureFahrenheit() : 70f;
-            float thermal01 = ExposureTemperatureDisplay.FahrenheitToGaugeNormalized(fahrenheit);
-            int tempValue = Mathf.RoundToInt(fahrenheit);
-            if (tempLabel != null && tempValue != lastTempValue)
+            using (s_PfLatLong.Auto())
             {
-                lastTempValue = tempValue;
-                SetLabelText(tempLabel, tempValue + "\u00B0F", ref lastTempText);
-            }
-            if (thermal != null)
-                thermal.SetNormalized(thermal01);
-
-            if (zoneLabel != null)
-            {
-                string zone = "";
-                ExposureStatusSnapshot snap = ExposureStatusService.Current;
-                if (snap != null && !snap.DominantHazard.IsClear)
+                if (hasPos)
                 {
-                    zone = string.IsNullOrEmpty(snap.DominantHazard.DisplayName)
-                        ? ""
-                        : snap.DominantHazard.DisplayName.ToUpperInvariant();
+                    int latValue;
+                    int longValue;
+                    using (s_PfLatLongGrid.Auto())
+                    {
+                        WorldMapProvider map = WorldMapProvider.Instance;
+                        Vector2 grid = map != null ? map.WorldToGridXz(pos) : new Vector2(pos.x, pos.z);
+                        // North is world +X, so grid.x is latitude and grid.y (world Z) is longitude.
+                        latValue = Mathf.RoundToInt(grid.x);
+                        longValue = Mathf.RoundToInt(grid.y);
+                    }
+                    using (s_PfLatLongLabels.Auto())
+                    {
+                        if (latValue != lastLatValue)
+                        {
+                            lastLatValue = latValue;
+                            SetLabelText(latLabel, "Lat " + FormatSignedCoord(latValue), ref lastLatText);
+                        }
+                        if (longValue != lastLongValue)
+                        {
+                            lastLongValue = longValue;
+                            SetLabelText(longLabel, "Long " + FormatSignedCoord(longValue), ref lastLongText);
+                        }
+                    }
                 }
-                SetLabelText(zoneLabel, zone, ref lastZoneText);
-                zoneLabel.style.color = DarkMatterGenesisUiPalette.Gold;
+                else
+                {
+                    using (s_PfLatLongLabels.Auto())
+                    {
+                        lastLatValue = int.MinValue;
+                        lastLongValue = int.MinValue;
+                        SetLabelText(latLabel, "Lat ----", ref lastLatText);
+                        SetLabelText(longLabel, "Long ----", ref lastLongText);
+                    }
+                }
+            }
+
+            using (s_PfZoneIcons.Auto())
+                RefreshZoneIcons(hasPos ? pos : Vector3.zero);
+
+            using (s_PfTemperature.Auto())
+            {
+                float fahrenheit = stats != null ? stats.GetDisplayTemperatureFahrenheit() : 70f;
+                float thermal01 = ExposureTemperatureDisplay.FahrenheitToGaugeNormalized(fahrenheit);
+                int tempValue = Mathf.RoundToInt(fahrenheit);
+                if (tempLabel != null && tempValue != lastTempValue)
+                {
+                    lastTempValue = tempValue;
+                    SetLabelText(tempLabel, tempValue + "\u00B0F", ref lastTempText);
+                }
+                if (thermal != null)
+                    thermal.SetNormalized(thermal01);
+            }
+
+            using (s_PfOther.Auto())
+            {
+                if (zoneLabel != null)
+                {
+                    string zone = "";
+                    ExposureStatusSnapshot snap = ExposureStatusService.Current;
+                    if (snap != null && !snap.DominantHazard.IsClear)
+                    {
+                        zone = string.IsNullOrEmpty(snap.DominantHazard.DisplayName)
+                            ? ""
+                            : snap.DominantHazard.DisplayName.ToUpperInvariant();
+                    }
+                    SetLabelText(zoneLabel, zone, ref lastZoneText);
+                    zoneLabel.style.color = DarkMatterGenesisUiPalette.Gold;
+                }
             }
         }
 
@@ -766,48 +845,70 @@ private void EnsureArcs()
             }
 
             RenderTexture cropped = null;
-            DMUiToolkitMinimap minimap = cachedMinimap != null ? cachedMinimap : DMUiToolkitMinimap.Instance;
-            if (minimap == null && RetryDue(ref nextMinimapSearchTime))
-                minimap = FindAnyObjectByType<DMUiToolkitMinimap>(FindObjectsInactive.Include);
-            if (minimap != null)
-                cachedMinimap = minimap;
-            if (minimap != null)
-                cropped = minimap.EnsureCroppedView(mapUi);
-
-            if (cropped != null)
-                DMUiToolkitStyle.TrySetRenderTextureBackground(mapView, cropped, ScaleMode.ScaleAndCrop);
-            if (!mapOpacityApplied)
+            DMUiToolkitMinimap minimap;
+            using (s_PfMinimapLookup.Auto())
             {
-                mapView.style.opacity = 0.40f;
-                mapOpacityApplied = true;
+                minimap = cachedMinimap != null ? cachedMinimap : DMUiToolkitMinimap.Instance;
+                if (minimap == null && RetryDue(ref nextMinimapSearchTime))
+                    minimap = FindAnyObjectByType<DMUiToolkitMinimap>(FindObjectsInactive.Include);
+                if (minimap != null)
+                    cachedMinimap = minimap;
+            }
+            using (s_PfMinimapCrop.Auto())
+            {
+                if (minimap != null)
+                    cropped = minimap.EnsureCroppedView(mapUi);
             }
 
-            RenderTexture fogRt = minimap != null ? minimap.EnsureFogCroppedView(mapUi) : null;
+            using (s_PfMinimapBind.Auto())
+            {
+                if (cropped != null)
+                    DMUiToolkitStyle.TrySetRenderTextureBackground(mapView, cropped, ScaleMode.ScaleAndCrop);
+                if (!mapOpacityApplied)
+                {
+                    mapView.style.opacity = 0.40f;
+                    mapOpacityApplied = true;
+                }
+            }
+
+            RenderTexture fogRt = null;
+            using (s_PfMinimapFog.Auto())
+            {
+                if (minimap != null)
+                    fogRt = minimap.EnsureFogCroppedView(mapUi);
+            }
             bool showFog = fogRt != null;
-            if (mapFog != null)
+            using (s_PfMinimapBind.Auto())
             {
-                mapFog.style.display = showFog ? DisplayStyle.Flex : DisplayStyle.None;
-                if (showFog)
-                    DMUiToolkitStyle.TrySetRenderTextureBackground(mapFog, fogRt, ScaleMode.ScaleAndCrop);
-            }
-
-            float mapYaw = mapUi != null ? mapUi.MapCompassYaw : 0f;
-            WorldMapProvider map = WorldMapProvider.Instance;
-            Vector3 mapEuler = map != null ? map.GetMinimapViewEuler(mapYaw) : new Vector3(0f, 0f, -mapYaw);
-            if (float.IsNaN(lastMapYaw)
-                || !Mathf.Approximately(lastMapYaw, mapYaw)
-                || (lastMapEuler - mapEuler).sqrMagnitude > 0.0001f)
-            {
-                lastMapYaw = mapYaw;
-                lastMapEuler = mapEuler;
-                DMUiToolkitMenus.SetElementRotateEuler(mapView, mapEuler);
                 if (mapFog != null)
-                    DMUiToolkitMenus.SetElementRotateEuler(mapFog, mapEuler);
-                if (poiHost != null)
-                    DMUiToolkitMenus.SetElementRotateEuler(poiHost, mapEuler);
+                {
+                    mapFog.style.display = showFog ? DisplayStyle.Flex : DisplayStyle.None;
+                    if (showFog)
+                        DMUiToolkitStyle.TrySetRenderTextureBackground(mapFog, fogRt, ScaleMode.ScaleAndCrop);
+                }
             }
 
-            RefreshMapPois(mapUi);
+            using (s_PfMinimapRotate.Auto())
+            {
+                float mapYaw = mapUi != null ? mapUi.MapCompassYaw : 0f;
+                WorldMapProvider map = WorldMapProvider.Instance;
+                Vector3 mapEuler = map != null ? map.GetMinimapViewEuler(mapYaw) : new Vector3(0f, 0f, -mapYaw);
+                if (float.IsNaN(lastMapYaw)
+                    || !Mathf.Approximately(lastMapYaw, mapYaw)
+                    || (lastMapEuler - mapEuler).sqrMagnitude > 0.0001f)
+                {
+                    lastMapYaw = mapYaw;
+                    lastMapEuler = mapEuler;
+                    DMUiToolkitMenus.SetElementRotateEuler(mapView, mapEuler);
+                    if (mapFog != null)
+                        DMUiToolkitMenus.SetElementRotateEuler(mapFog, mapEuler);
+                    if (poiHost != null)
+                        DMUiToolkitMenus.SetElementRotateEuler(poiHost, mapEuler);
+                }
+            }
+
+            using (s_PfMinimapPois.Auto())
+                RefreshMapPois(mapUi);
         }
 
         private void RefreshMapPois(MapUI mapUi)
@@ -977,7 +1078,10 @@ private void EnsureArcs()
             }
 
             if (Time.unscaledTime >= nextCompassDotsRefresh || !headingStable)
-                RefreshCompassDots(mapUi, heading, halfFov, halfWidth, stripWidthStable);
+            {
+                using (s_PfCompassDots.Auto())
+                    RefreshCompassDots(mapUi, heading, halfFov, halfWidth, stripWidthStable);
+            }
         }
 
         private void RefreshCompassDots(MapUI mapUi, float heading, float halfFov, float halfWidth, float stripWidth)

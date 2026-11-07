@@ -87,42 +87,37 @@ Shader "DM/TerrainParallax"
         _DMPeakDetailScale7("Layer 7 Peak Detail Scale", Range(0.1, 20)) = 4
         [Header(DM Per Layer Height Maps)]
         [ToggleUI] _DMHeightMapForBlend("Height Blend Uses DM Height Maps", Float) = 0
-        [NoScaleOffset] _DMHeightMap0("Layer 0 Height Map (R)", 2D) = "gray" {}
+        // 2026-11-05: eight per-layer 2D height maps exceeded the D3D11 64-texture limit (~66). One 2DArray slot;
+        // DMTerrainParallaxHeightArrayBinder packs legacy _DMHeightMap0..7 material slots at runtime (no .mat edits).
+        [HideInInspector][NoScaleOffset] _DMHeightMapArray("DM Height Maps (8 slices)", 2DArray) = "" {}
         [ToggleUI] _DMUseHeightMap0("Layer 0 Use Height Map", Float) = 0
         _DMHeightScale0("Layer 0 Height Scale", Range(0, 4)) = 1
         _DMHeightOffset0("Layer 0 Height Offset", Range(-1, 1)) = 0
         _DMHeightContrast0("Layer 0 Height Contrast", Range(0, 8)) = 1
-        [NoScaleOffset] _DMHeightMap1("Layer 1 Height Map (R)", 2D) = "gray" {}
         [ToggleUI] _DMUseHeightMap1("Layer 1 Use Height Map", Float) = 0
         _DMHeightScale1("Layer 1 Height Scale", Range(0, 4)) = 1
         _DMHeightOffset1("Layer 1 Height Offset", Range(-1, 1)) = 0
         _DMHeightContrast1("Layer 1 Height Contrast", Range(0, 8)) = 1
-        [NoScaleOffset] _DMHeightMap2("Layer 2 Height Map (R)", 2D) = "gray" {}
         [ToggleUI] _DMUseHeightMap2("Layer 2 Use Height Map", Float) = 0
         _DMHeightScale2("Layer 2 Height Scale", Range(0, 4)) = 1
         _DMHeightOffset2("Layer 2 Height Offset", Range(-1, 1)) = 0
         _DMHeightContrast2("Layer 2 Height Contrast", Range(0, 8)) = 1
-        [NoScaleOffset] _DMHeightMap3("Layer 3 Height Map (R)", 2D) = "gray" {}
         [ToggleUI] _DMUseHeightMap3("Layer 3 Use Height Map", Float) = 0
         _DMHeightScale3("Layer 3 Height Scale", Range(0, 4)) = 1
         _DMHeightOffset3("Layer 3 Height Offset", Range(-1, 1)) = 0
         _DMHeightContrast3("Layer 3 Height Contrast", Range(0, 8)) = 1
-        [NoScaleOffset] _DMHeightMap4("Layer 4 Height Map (R)", 2D) = "gray" {}
         [ToggleUI] _DMUseHeightMap4("Layer 4 Use Height Map", Float) = 0
         _DMHeightScale4("Layer 4 Height Scale", Range(0, 4)) = 1
         _DMHeightOffset4("Layer 4 Height Offset", Range(-1, 1)) = 0
         _DMHeightContrast4("Layer 4 Height Contrast", Range(0, 8)) = 1
-        [NoScaleOffset] _DMHeightMap5("Layer 5 Height Map (R)", 2D) = "gray" {}
         [ToggleUI] _DMUseHeightMap5("Layer 5 Use Height Map", Float) = 0
         _DMHeightScale5("Layer 5 Height Scale", Range(0, 4)) = 1
         _DMHeightOffset5("Layer 5 Height Offset", Range(-1, 1)) = 0
         _DMHeightContrast5("Layer 5 Height Contrast", Range(0, 8)) = 1
-        [NoScaleOffset] _DMHeightMap6("Layer 6 Height Map (R)", 2D) = "gray" {}
         [ToggleUI] _DMUseHeightMap6("Layer 6 Use Height Map", Float) = 0
         _DMHeightScale6("Layer 6 Height Scale", Range(0, 4)) = 1
         _DMHeightOffset6("Layer 6 Height Offset", Range(-1, 1)) = 0
         _DMHeightContrast6("Layer 6 Height Contrast", Range(0, 8)) = 1
-        [NoScaleOffset] _DMHeightMap7("Layer 7 Height Map (R)", 2D) = "gray" {}
         [ToggleUI] _DMUseHeightMap7("Layer 7 Use Height Map", Float) = 0
         _DMHeightScale7("Layer 7 Height Scale", Range(0, 4)) = 1
         _DMHeightOffset7("Layer 7 Height Offset", Range(-1, 1)) = 0

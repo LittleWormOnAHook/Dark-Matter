@@ -67,7 +67,7 @@ MonoBehaviour:
   m_AtlasTextureIndex: 0
   m_IsMultiAtlasTexturesEnabled: 1
   m_GetFontFeatures: 1
-  m_ClearDynamicDataOnBuild: 1
+  m_ClearDynamicDataOnBuild: 0
   m_AtlasWidth: 2048
   m_AtlasHeight: 2048
   m_AtlasPadding: 8

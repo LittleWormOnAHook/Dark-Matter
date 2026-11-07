@@ -7,6 +7,7 @@ using Project.Progression;
 using Project.Player;
 using Project.UI;
 using UnityEngine;
+using Unity.Profiling;
 
 namespace Project.Combat
 {
@@ -22,8 +23,32 @@ namespace Project.Combat
     [DefaultExecutionOrder(32000)]
     public sealed class DMScopeMode : MonoBehaviour
     {
+        // Scope investigation: cached samples only; runtime behavior is unchanged.
+        private static readonly ProfilerMarker ScopeActivate = new ProfilerMarker("DM.Scope.Activate");
+        private static readonly ProfilerMarker ScopeDeactivate = new ProfilerMarker("DM.Scope.Deactivate");
+        private static readonly ProfilerMarker ScopeSwitch = new ProfilerMarker("DM.Scope.Switch");
+        private static readonly ProfilerMarker ScopeMenu = new ProfilerMarker("DM.Scope.MenuToggle");
+        private static readonly ProfilerMarker ScopePrefs = new ProfilerMarker("DM.Scope.Preferences.Save");
+        private static readonly ProfilerMarker ScopeDiag = new ProfilerMarker("DM.Scope.Diagnostics");
+        private static readonly ProfilerMarker ScopeCamera = new ProfilerMarker("DM.Scope.CameraZoom");
+        private static readonly ProfilerMarker ScopeCameraResolve = new ProfilerMarker("DM.Scope.Camera.Resolve");
+        private static readonly ProfilerMarker ScopeFire = new ProfilerMarker("DM.Scope.FireInterval");
+        private static readonly ProfilerMarker ScopeSway = new ProfilerMarker("DM.Scope.ReticleSway");
+        private static readonly ProfilerMarker ScopePresentation = new ProfilerMarker("DM.Scope.Presentation");
+        private static readonly ProfilerMarker ScopeWeapon = new ProfilerMarker("DM.Scope.Weapon.Resolve");
+        private static readonly ProfilerMarker ScopeClassify = new ProfilerMarker("DM.Scope.Weapon.Classify");
+        private static readonly ProfilerMarker ScopeSkills = new ProfilerMarker("DM.Scope.SkillBonus");
+        private static readonly ProfilerMarker ScopeRange = new ProfilerMarker("DM.Scope.Range.Measure");
+        private static readonly ProfilerMarker ScopeText = new ProfilerMarker("DM.Scope.Range.Text");
+        private static readonly ProfilerMarker ScopeProfile = new ProfilerMarker("DM.Scope.Profile.Resolve");
+
         private const string PrefRifle = "DM.Scope.Rifle";
         private const string PrefPistol = "DM.Scope.Pistol";
+        /// <summary>Opt-in scope/reticle diagnostics; leave off for performance captures.</summary>
+        public static bool ScopeDiagnosticsEnabled;
+        private static int _rangeReadoutState = -1;
+        private static int _rangeReadoutMeters;
+        private static string _rangeReadoutText = string.Empty;
 
         /// <summary>Upgrade hook: when the profile is not unlocked-by-default, code can set this.</summary>
         public static bool ScopeUnlockedHook;
@@ -90,6 +115,9 @@ namespace Project.Combat
         private static void ResetScopePrefsOnce()
         {
             _scopePrefsLoaded = false;
+            ScopeDiagnosticsEnabled = false;
+            _rangeReadoutState = -1;
+            _rangeReadoutText = string.Empty;
         }
 
         private void Awake()
@@ -100,6 +128,46 @@ namespace Project.Combat
                 _scopePrefsLoaded = true;
                 _rifleOn = PlayerPrefs.GetInt(PrefRifle, 0) == 1;
                 _pistolOn = PlayerPrefs.GetInt(PrefPistol, 0) == 1;
+            }
+        }
+
+        // Optics overlay pre-warm: once per scene, after gameplay has started and the HUD had a frame to bind.
+        // Prewarm only builds the hidden overlay + loads the crosshair; scope behavior/visuals are unchanged.
+        private static UnityEngine.SceneManagement.Scene s_opticsPrewarmedScene;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetOpticsPrewarmState() => s_opticsPrewarmedScene = default;
+
+        private void Start()
+        {
+            if (Application.isPlaying)
+                StartCoroutine(PrewarmOpticsWhenReady());
+        }
+
+        private System.Collections.IEnumerator PrewarmOpticsWhenReady()
+        {
+            UnityEngine.SceneManagement.Scene sceneHandle = gameObject.scene;
+            if (s_opticsPrewarmedScene == sceneHandle)
+                yield break;
+
+            float giveUpAt = Time.unscaledTime + 180f;
+            while (!GameSession.HasStarted && Time.unscaledTime < giveUpAt)
+                yield return null;
+            if (!GameSession.HasStarted)
+                yield break;
+
+            yield return null; // let HUD / UI Toolkit bootstrap bind first
+            for (int attempt = 0; attempt < 10; attempt++)
+            {
+                if (s_opticsPrewarmedScene == sceneHandle)
+                    yield break;
+                DMUiToolkitOpticsOverlay.Prewarm();
+                if (DMUiToolkitOpticsOverlay.IsAttached)
+                {
+                    s_opticsPrewarmedScene = sceneHandle;
+                    yield break;
+                }
+                yield return null;
             }
         }
 
@@ -116,35 +184,55 @@ namespace Project.Combat
 
         public void SetRifleScopeEnabled(bool on)
         {
-            _rifleOn = on;
-            PlayerPrefs.SetInt(PrefRifle, on ? 1 : 0);
-            PlayerPrefs.Save(); // 2026-11-04y build: menu toggles were not surviving the run
-            Debug.Log("[ScopeDiag] rifle scope -> " + (on ? "ON" : "OFF") + " on " + name + " armedNow=" + IsScopeModeArmed(ActiveWeapon()));
+            using (ScopeMenu.Auto())
+            {
+                _rifleOn = on;
+                PlayerPrefs.SetInt(PrefRifle, on ? 1 : 0);
+                using (ScopePrefs.Auto()) { PlayerPrefs.Save(); } // 2026-11-04y build: menu toggles were not surviving the run
+                if (ScopeDiagnosticsEnabled)
+                using (ScopeDiag.Auto())
+                {
+                    Debug.Log("[ScopeDiag] rifle scope -> " + (on ? "ON" : "OFF") + " on " + name + " armedNow=" + IsScopeModeArmed(ActiveWeapon()));
+                }
+            }
         }
 
         public void SetPistolScopeEnabled(bool on)
         {
-            _pistolOn = on;
-            PlayerPrefs.SetInt(PrefPistol, on ? 1 : 0);
-            PlayerPrefs.Save(); // 2026-11-04y build: menu toggles were not surviving the run
-            Debug.Log("[ScopeDiag] pistol scope -> " + (on ? "ON" : "OFF") + " on " + name + " armedNow=" + IsScopeModeArmed(ActiveWeapon()));
+            using (ScopeMenu.Auto())
+            {
+                _pistolOn = on;
+                PlayerPrefs.SetInt(PrefPistol, on ? 1 : 0);
+                using (ScopePrefs.Auto()) { PlayerPrefs.Save(); } // 2026-11-04y build: menu toggles were not surviving the run
+                if (ScopeDiagnosticsEnabled)
+                using (ScopeDiag.Auto())
+                {
+                    Debug.Log("[ScopeDiag] pistol scope -> " + (on ? "ON" : "OFF") + " on " + name + " armedNow=" + IsScopeModeArmed(ActiveWeapon()));
+                }
+            }
         }
 
         // 2026-10-13 (i): ItemData.IsTwoHanded is melee-only, so every ranged weapon read as "pistol" and both types shared the pistol toggle.
         public static bool IsRifle(ItemData w)
         {
-            if (w == null || !w.IsRangedWeapon || w.isMiningTool)
-                return false;
-            if (DMWeaponMorphRuntime.TryGetEffectiveWeaponGrip(w, out WeaponGrip morphGrip))
-                return morphGrip == WeaponGrip.TwoHanded;
-            return w.weaponGrip == WeaponGrip.TwoHanded;
+            using (ScopeClassify.Auto())
+            {
+                if (w == null || !w.IsRangedWeapon || w.isMiningTool)
+                    return false;
+                if (DMWeaponMorphRuntime.TryGetEffectiveWeaponGrip(w, out WeaponGrip morphGrip))
+                    return morphGrip == WeaponGrip.TwoHanded;
+                return w.weaponGrip == WeaponGrip.TwoHanded;
+            }
         }
 
         private ItemData ActiveWeapon()
         {
-            if (_equipment == null)
-                _equipment = GetComponentInParent<EquipmentController>() ?? FindAnyObjectByType<EquipmentController>();
-            return _equipment != null ? _equipment.DrawnWeaponItem : null;
+            using (ScopeWeapon.Auto())
+            {
+                if (_equipment == null)
+                    _equipment = GetComponentInParent<EquipmentController>() ?? FindAnyObjectByType<EquipmentController>();
+                return _equipment != null ? _equipment.DrawnWeaponItem : null;
+            }
         }
 
         private bool Aiming()
@@ -190,7 +278,8 @@ namespace Project.Combat
 
         private void LateUpdate()
         {
-            DM_ScopeProfile p = DM_ScopeProfile.Live;
+            DM_ScopeProfile p;
+            using (ScopeProfile.Auto()) { p = DM_ScopeProfile.Live; }
             ItemData w = ActiveWeapon();
             bool ranged = w != null && w.IsRangedWeapon && !w.isMiningTool;
             bool rifle = ranged && IsRifle(w);
@@ -200,14 +289,17 @@ namespace Project.Combat
 
             // 2026-11-04y build: the "held RMB, ADS zoomed, but no reticle / no scope zoom" case is exactly
             // scope mode not armed for the held weapon. Say so once every 2 s instead of failing silently.
-            if (!modeOn && Time.unscaledTime >= _scopeOffDiagNext)
+            if (ScopeDiagnosticsEnabled && !modeOn && Time.unscaledTime >= _scopeOffDiagNext)
             {
                 bool aiming = Aiming(); // resolves _input lazily (it is null until something asks)
                 if (aiming && ranged)
                 {
                     _scopeOffDiagNext = Time.unscaledTime + 2f;
-                    Debug.Log("[ScopeDiag] aiming " + (w != null ? w.name : "null") + " but scope OFF rifle=" + _rifleOn
-                        + " pistol=" + _pistolOn + " isRifle=" + rifle);
+                    using (ScopeDiag.Auto())
+                    {
+                        Debug.Log("[ScopeDiag] aiming " + (w != null ? w.name : "null") + " but scope OFF rifle=" + _rifleOn
+                            + " pistol=" + _pistolOn + " isRifle=" + rifle);
+                    }
                 }
             }
 
@@ -219,8 +311,11 @@ namespace Project.Combat
                 ExitScope(instant: false);
             else if (want && _scopedRifle != rifle)
             {
-                ExitScope(instant: true);
-                EnterScope(rifle);
+                using (ScopeSwitch.Auto())
+                {
+                    ExitScope(instant: true);
+                    EnterScope(rifle);
+                }
             }
 
             bool wantZoomView = _scoped && p.scopeAdsEnablesZoomOverlay;
@@ -241,63 +336,80 @@ namespace Project.Combat
 
         private void ApplyRifleScopePresentation(bool activeRifleScope)
         {
-            if (_cameraOverlay == null && Time.unscaledTime >= _nextOverlaySearchTime)
+            using (ScopePresentation.Auto())
             {
-                _nextOverlaySearchTime = Time.unscaledTime + 1f;
-                _cameraOverlay = FindAnyObjectByType<DMCameraCollisionOverlay>(FindObjectsInactive.Include);
+                if (_cameraOverlay == null && Time.unscaledTime >= _nextOverlaySearchTime)
+                {
+                    _nextOverlaySearchTime = Time.unscaledTime + 1f;
+                    _cameraOverlay = FindAnyObjectByType<DMCameraCollisionOverlay>(FindObjectsInactive.Include);
+                }
+                _cameraOverlay?.SetRifleScopePresentationHideBody(false);
             }
-            _cameraOverlay?.SetRifleScopePresentationHideBody(false);
         }
 
         private void EnterScope(bool rifle)
         {
-            if (Project.Prototypes.Weapons.DMWeaponMorphRuntime.IsMorphing) return; // 20261028a no scope mid-morph
-            _scoped = true;
-            _scopedRifle = rifle;
-            DMUiToolkitOpticsOverlay.EnsureAttached();
-            _cam = ResolveGameplayCamera();
-            if (_cam != null && _blend <= 0.001f)
-                _baseFov = _cam.fieldOfView;
-            DM_ScopeProfile dp = DM_ScopeProfile.Live; // 2026-11-04x build-only zoom check
-            Debug.Log("[ScopeDiag] enter rifle=" + rifle + " cam=" + (_cam != null ? _cam.name + " enabled=" + _cam.enabled : "null") + " baseFov=" + _baseFov.ToString("F1")
-                + " zoomOverlay=" + dp.scopeAdsEnablesZoomOverlay + " targetFov=" + (rifle ? dp.rifleScopedFov : dp.pistolScopedFov) + " newArt=" + dp.useNewScopeArt);
+            using (ScopeActivate.Auto())
+            {
+                if (Project.Prototypes.Weapons.DMWeaponMorphRuntime.IsMorphing) return; // 20261028a no scope mid-morph
+                _scoped = true;
+                _scopedRifle = rifle;
+                DMUiToolkitOpticsOverlay.EnsureAttached();
+                _cam = ResolveGameplayCamera();
+                if (_cam != null && _blend <= 0.001f)
+                    _baseFov = _cam.fieldOfView;
+                // Profile/string diagnostics are opt-in; scope mechanics above are unchanged.
+                if (ScopeDiagnosticsEnabled)
+                using (ScopeDiag.Auto())
+                {
+                    DM_ScopeProfile dp = DM_ScopeProfile.Live;
+                    Debug.Log("[ScopeDiag] enter rifle=" + rifle + " cam=" + (_cam != null ? _cam.name + " enabled=" + _cam.enabled : "null") + " baseFov=" + _baseFov.ToString("F1")
+                        + " zoomOverlay=" + dp.scopeAdsEnablesZoomOverlay + " targetFov=" + (rifle ? dp.rifleScopedFov : dp.pistolScopedFov) + " newArt=" + dp.useNewScopeArt);
+                }
+            }
         }
 
         private void ExitScope(bool instant)
         {
-            _scoped = false;
-            if (instant)
-                _toggleAdsActive = false;
-            ApplyRifleScopePresentation(false);
-            RestoreFireInterval();
-            if (instant)
+            using (ScopeDeactivate.Auto())
             {
-                _blend = 0f;
-                RestoreInvectorStateFov();
-                if (_cam != null && _baseFov > 0f)
-                    _cam.fieldOfView = _baseFov;
-                _baseFov = -1f;
+                _scoped = false;
+                if (instant)
+                    _toggleAdsActive = false;
+                ApplyRifleScopePresentation(false);
+                RestoreFireInterval();
+                if (instant)
+                {
+                    _blend = 0f;
+                    RestoreInvectorStateFov();
+                    if (_cam != null && _baseFov > 0f)
+                        _cam.fieldOfView = _baseFov;
+                    _baseFov = -1f;
+                }
             }
         }
 
         private void ApplyFov(DM_ScopeProfile p)
         {
-            if (_cam == null || _baseFov <= 0f)
-                return;
-            if (_blend <= 0f && !_scoped)
+            using (ScopeCamera.Auto())
             {
-                RestoreInvectorStateFov();
-                _cam.fieldOfView = _baseFov;
-                _baseFov = -1f;
-                return;
+                if (_cam == null || _baseFov <= 0f)
+                    return;
+                if (_blend <= 0f && !_scoped)
+                {
+                    RestoreInvectorStateFov();
+                    _cam.fieldOfView = _baseFov;
+                    _baseFov = -1f;
+                    return;
+                }
+                float zoomFov = _scopedRifle ? p.rifleScopedFov : p.pistolScopedFov;
+                float extra = Mathf.Clamp(Pct(SkillModifierType.ScopeZoomPercent), 0f, p.maxExtraZoom);
+                zoomFov = Mathf.Max(2f, zoomFov * (1f - extra));
+                float t = _blend * _blend * (3f - 2f * _blend);
+                float fov = Mathf.Lerp(_baseFov, zoomFov, t);
+                _cam.fieldOfView = fov;
+                DriveInvectorStateFov(fov);
             }
-            float zoomFov = _scopedRifle ? p.rifleScopedFov : p.pistolScopedFov;
-            float extra = Mathf.Clamp(Pct(SkillModifierType.ScopeZoomPercent), 0f, p.maxExtraZoom);
-            zoomFov = Mathf.Max(2f, zoomFov * (1f - extra));
-            float t = _blend * _blend * (3f - 2f * _blend);
-            float fov = Mathf.Lerp(_baseFov, zoomFov, t);
-            _cam.fieldOfView = fov;
-            DriveInvectorStateFov(fov);
         }
 
         // 2026-10-13 (i): the Invector third-person camera writes camera.fieldOfView = currentState.fov in FixedUpdate.
@@ -337,27 +449,30 @@ namespace Project.Combat
 
         private void ApplyFireInterval(DM_ScopeProfile p)
         {
-            if (!_scoped)
+            using (ScopeFire.Auto())
             {
-                RestoreFireInterval();
-                return;
-            }
-            if (_shooter == null)
-                _shooter = GetComponentInParent<vShooterManager>() ?? GetComponentInChildren<vShooterManager>();
-            vShooterWeapon cw = _shooter != null ? _shooter.CurrentWeapon : null;
-            if (cw != _patchedWeapon)
-            {
-                RestoreFireInterval();
-                if (cw != null)
+                if (!_scoped)
                 {
-                    _patchedWeapon = cw;
-                    _patchedOriginalFreq = cw.shootFrequency;
+                    RestoreFireInterval();
+                    return;
                 }
-            }
-            if (_patchedWeapon != null)
-            {
-                ItemData ammo = ResolveLoadedAmmo();
-                _patchedWeapon.shootFrequency = Mathf.Max(_patchedOriginalFreq, ScopedFireInterval(_scopedRifle, ammo));
+                if (_shooter == null)
+                    _shooter = GetComponentInParent<vShooterManager>() ?? GetComponentInChildren<vShooterManager>();
+                vShooterWeapon cw = _shooter != null ? _shooter.CurrentWeapon : null;
+                if (cw != _patchedWeapon)
+                {
+                    RestoreFireInterval();
+                    if (cw != null)
+                    {
+                        _patchedWeapon = cw;
+                        _patchedOriginalFreq = cw.shootFrequency;
+                    }
+                }
+                if (_patchedWeapon != null)
+                {
+                    ItemData ammo = ResolveLoadedAmmo();
+                    _patchedWeapon.shootFrequency = Mathf.Max(_patchedOriginalFreq, ScopedFireInterval(_scopedRifle, ammo));
+                }
             }
         }
 
@@ -385,20 +500,29 @@ namespace Project.Combat
 
         private void UpdateSway(DM_ScopeProfile p)
         {
-            if (_blend <= 0.001f)
+            using (ScopeSway.Auto())
             {
-                _swayAmp = 0f;
-                _sway = Vector2.zero;
-                return;
+                if (_blend <= 0.001f)
+                {
+                    _swayAmp = 0f;
+                    _sway = Vector2.zero;
+                    return;
+                }
+                float reduce = Mathf.Clamp(Pct(SkillModifierType.ScopeSteadyAimPercent), 0f, p.maxSwayReduction);
+                float amp = p.reticleSwayPixels * (1f - reduce) * _blend;
+                _swayAmp = amp;
+                float t = Time.time * p.reticleSwaySpeed;
+                _sway = new Vector2(Mathf.PerlinNoise(t, 0.37f) - 0.5f, Mathf.PerlinNoise(0.71f, t) - 0.5f) * 2f * amp;
             }
-            float reduce = Mathf.Clamp(Pct(SkillModifierType.ScopeSteadyAimPercent), 0f, p.maxSwayReduction);
-            float amp = p.reticleSwayPixels * (1f - reduce) * _blend;
-            _swayAmp = amp;
-            float t = Time.time * p.reticleSwaySpeed;
-            _sway = new Vector2(Mathf.PerlinNoise(t, 0.37f) - 0.5f, Mathf.PerlinNoise(0.71f, t) - 0.5f) * 2f * amp;
         }
 
-        private static float Pct(SkillModifierType type) => PlayerSkillAllocator.GetTotalBonusPercent(type) * 0.01f;
+        private static float Pct(SkillModifierType type)
+        {
+            using (ScopeSkills.Auto())
+            {
+                return PlayerSkillAllocator.GetTotalBonusPercent(type) * 0.01f;
+            }
+        }
 
         public static float ScopedFireInterval(bool rifle, ItemData loadedAmmo = null)
         {
@@ -436,32 +560,46 @@ namespace Project.Combat
         /// </summary>
         public static bool TryMeasureScopedAimDistanceMeters(out float distanceMeters)
         {
-            distanceMeters = 0f;
-            if (!IsScoped || ZoomBlend < 0.05f)
-                return false;
+            using (ScopeRange.Auto())
+            {
+                distanceMeters = 0f;
+                if (!IsScoped || ZoomBlend < 0.05f)
+                    return false;
 
-            Camera cam = ResolveGameplayCamera();
-            if (cam == null)
-                return false;
+                Camera cam = ResolveGameplayCamera();
+                if (cam == null)
+                    return false;
 
-            float cap = ResolveScopedRangeCapMeters();
-            float rayMax = Mathf.Max(cap * 4f, 250f);
-            Vector3 aimPoint = RangedFireSolver.ResolveReticleAimPoint(cam, rayMax, null, null);
-            distanceMeters = Vector3.Distance(cam.transform.position, aimPoint);
-            return true;
+                float cap = ResolveScopedRangeCapMeters();
+                float rayMax = Mathf.Max(cap * 4f, 250f);
+                Vector3 aimPoint = RangedFireSolver.ResolveReticleAimPoint(cam, rayMax, null, null);
+                distanceMeters = Vector3.Distance(cam.transform.position, aimPoint);
+                return true;
+            }
         }
 
         /// <summary>UITK scoped range line — live metres or locked readout when beyond skill cap.</summary>
         public static string FormatScopedRangeReadout()
         {
-            if (!TryMeasureScopedAimDistanceMeters(out float meters))
-                return string.Empty;
-
-            float cap = ResolveScopedRangeCapMeters();
-            if (meters > cap)
-                return "??m";
-
-            return Mathf.RoundToInt(meters) + " m";
+            using (ScopeText.Auto())
+            {
+                // Keep the ray/skill sampling live; cache only the displayed status and rounded metres.
+                int state = 0;
+                int rounded = 0;
+                if (TryMeasureScopedAimDistanceMeters(out float meters))
+                {
+                    float cap = ResolveScopedRangeCapMeters();
+                    state = meters > cap ? 1 : 2;
+                    if (state == 2) rounded = Mathf.RoundToInt(meters);
+                }
+                if (_rangeReadoutState != state || (state == 2 && _rangeReadoutMeters != rounded))
+                {
+                    _rangeReadoutState = state;
+                    _rangeReadoutMeters = rounded;
+                    _rangeReadoutText = state == 0 ? string.Empty : state == 1 ? "??m" : rounded + " m";
+                }
+                return _rangeReadoutText;
+            }
         }
 
         public static float ScopedAccuracyBonusPercent
@@ -525,14 +663,17 @@ namespace Project.Combat
 
         public static Camera ResolveGameplayCamera()
         {
-            PlayerController pc = PlayerLocator.FindPlayerController();
-            if (pc != null && pc.GameplayCamera != null)
-                return pc.GameplayCamera;
+            using (ScopeCameraResolve.Auto())
+            {
+                PlayerController pc = PlayerLocator.FindPlayerController();
+                if (pc != null && pc.GameplayCamera != null)
+                    return pc.GameplayCamera;
 
-            if (Instance != null && Instance._cam != null && Instance._cam.enabled)
-                return Instance._cam;
+                if (Instance != null && Instance._cam != null && Instance._cam.enabled)
+                    return Instance._cam;
 
-            return Camera.main;
+                return Camera.main;
+            }
         }
     }
 }

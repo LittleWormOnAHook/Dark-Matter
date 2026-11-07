@@ -1,5 +1,9 @@
 using System.Collections.Generic;
 using Project.AI;
+using Project.Core;
+using Project.Inventory;
+using Unity.Profiling;
+using UnityEngine.SceneManagement;
 using UnityEngine;
 
 namespace Project.Combat
@@ -104,13 +108,23 @@ namespace Project.Combat
         }
     }
 
-    /// <summary>Attaches DMHolsterSway to active Holstered_ objects on the player and enemies (round-robin scan, one root per frame).</summary>
+    /// <summary>Player-only discovery on equipment/lifecycle changes, with a slow safety sweep.</summary>
     public sealed class DMHolsterSwayManager : MonoBehaviour
     {
+        private static readonly ProfilerMarker ManagerUpdate = new ProfilerMarker("DM.HolsterSway.Manager.Update");
+        private static readonly ProfilerMarker Rescan = new ProfilerMarker("DM.HolsterSway.Rescan");
         private static DMHolsterSwayManager _inst;
-        private readonly List<Transform> _roots = new List<Transform>();
-        private int _cursor;
-        private float _nextRefresh;
+        private readonly List<Transform> _transforms = new List<Transform>(256);
+        private Transform _player;
+        private EquipmentController _equipment;
+        private InventorySystem _inventory;
+        private bool _dirty = true;
+        private bool _resolvePlayer = true;
+        private float _nextSafetyRescan;
+        private int _lastRescanFrame = -1;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() { _inst = null; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Boot()
@@ -121,25 +135,104 @@ namespace Project.Combat
             _inst = go.AddComponent<DMHolsterSwayManager>();
         }
 
+        private void OnEnable()
+        {
+            GameSession.GameStarted += OnPlayerLifecycleChanged;
+            SceneManager.sceneLoaded += OnSceneLoaded;
+            SceneManager.sceneUnloaded += OnSceneUnloaded;
+            SceneManager.activeSceneChanged += OnActiveSceneChanged;
+            OnPlayerLifecycleChanged();
+        }
+
+        private void OnDisable()
+        {
+            GameSession.GameStarted -= OnPlayerLifecycleChanged;
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            SceneManager.sceneUnloaded -= OnSceneUnloaded;
+            SceneManager.activeSceneChanged -= OnActiveSceneChanged;
+            UnbindPlayerEvents();
+        }
+
+        private void OnDestroy() { if (_inst == this) _inst = null; }
+        private void MarkDirty() { _dirty = true; }
+        private void OnSelectedHotbarChanged(int slot) { MarkDirty(); }
+        private void OnPlayerLifecycleChanged() { _resolvePlayer = true; MarkDirty(); }
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode) { OnPlayerLifecycleChanged(); }
+        private void OnSceneUnloaded(Scene scene) { OnPlayerLifecycleChanged(); }
+        private void OnActiveSceneChanged(Scene previous, Scene current) { OnPlayerLifecycleChanged(); }
+
+        private void UnbindPlayerEvents()
+        {
+            if (_equipment != null)
+            {
+                _equipment.OnSelectedHotbarChanged -= OnSelectedHotbarChanged;
+                _equipment.OnToolbarSelectionChanged -= MarkDirty;
+            }
+            if (_inventory != null) _inventory.OnInventoryChanged -= MarkDirty;
+            _equipment = null;
+            _inventory = null;
+        }
+
+        private void ResolvePlayer()
+        {
+            _resolvePlayer = false;
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
+            Transform root = player != null ? player.transform : null;
+            if (_player != root || (_player == null && !ReferenceEquals(_player, null)))
+            {
+                UnbindPlayerEvents();
+                _player = root;
+                _dirty = true;
+            }
+            if (_player == null) return;
+            EquipmentController equipment = _player.GetComponentInChildren<EquipmentController>(true);
+            InventorySystem inventory = _player.GetComponentInChildren<InventorySystem>(true);
+            if (_equipment == equipment && _inventory == inventory) return;
+            UnbindPlayerEvents();
+            _equipment = equipment;
+            _inventory = inventory;
+            if (_equipment != null)
+            {
+                _equipment.OnSelectedHotbarChanged += OnSelectedHotbarChanged;
+                _equipment.OnToolbarSelectionChanged += MarkDirty;
+            }
+            if (_inventory != null) _inventory.OnInventoryChanged += MarkDirty;
+            _dirty = true;
+        }
+
         private void Update()
         {
-            DM_CombatCoreProfile p = DM_CombatCoreProfile.Live;
-            if (p == null || p.holsterSwayAmount <= 0f) return;
-            if (Time.unscaledTime >= _nextRefresh)
+            using (ManagerUpdate.Auto())
             {
-                _nextRefresh = Time.unscaledTime + 2f;
-                _roots.Clear();
-                GameObject player = GameObject.FindGameObjectWithTag("Player");
-                if (player != null) _roots.Add(player.transform);
-                // 2026-10-13b: enemies get no holster sway (player only).
+                DM_CombatCoreProfile p = DM_CombatCoreProfile.Live;
+                if (p == null || p.holsterSwayAmount <= 0f) return;
+                // Respawn/load, activation and deferred placement are covered even without an event.
+                if (Time.unscaledTime >= _nextSafetyRescan)
+                {
+                    _nextSafetyRescan = Time.unscaledTime + 2f;
+                    _resolvePlayer = true;
+                    _dirty = true;
+                }
+                if (_player == null && !ReferenceEquals(_player, null))
+                    OnPlayerLifecycleChanged();
+                if (_resolvePlayer) ResolvePlayer();
+                if (!_dirty || _player == null || _lastRescanFrame == Time.frameCount) return;
+                _dirty = false;
+                _lastRescanFrame = Time.frameCount;
+                using (Rescan.Auto())
+                {
+                    _transforms.Clear();
+                    _player.GetComponentsInChildren<Transform>(true, _transforms);
+                    for (int i = 0; i < _transforms.Count; i++)
+                    {
+                        Transform t = _transforms[i];
+                        if (t != null && t.name.StartsWith("Holstered_", System.StringComparison.Ordinal)
+                            && t.GetComponent<DMHolsterSway>() == null)
+                            t.gameObject.AddComponent<DMHolsterSway>();
+                    }
+                    _transforms.Clear();
+                }
             }
-            if (_roots.Count == 0) return;
-            _cursor = (_cursor + 1) % _roots.Count;
-            Transform r = _roots[_cursor];
-            if (r == null) return;
-            foreach (Transform t in r.GetComponentsInChildren<Transform>(false))
-                if (t.name.StartsWith("Holstered_", System.StringComparison.Ordinal) && t.GetComponent<DMHolsterSway>() == null)
-                    t.gameObject.AddComponent<DMHolsterSway>();
         }
     }
 }

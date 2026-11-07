@@ -17,8 +17,12 @@ namespace Project.UI
     // Split out of MapUI.cs.
     public partial class MapUI
     {
+        private HovercraftController cachedMapPositionCraft;
+        private Rigidbody cachedMapPositionBody;
+
         private void HandleMapTextureReady()
         {
+            InvalidateSharedMinimapSnapshot();
             SyncMinimapSpanFromWorldBounds();
             MapFogOfWar.EnsureExists()?.RebindAfterMapRefresh();
             ApplyMapTexture();
@@ -163,7 +167,12 @@ namespace Project.UI
             {
                 HovercraftController craft = PlayerVehicleState.ActiveCraft;
                 Transform craftTransform = craft.transform;
-                Rigidbody body = craft.GetComponent<Rigidbody>();
+                if (cachedMapPositionCraft != craft || cachedMapPositionBody == null)
+                {
+                    cachedMapPositionCraft = craft;
+                    cachedMapPositionBody = craft.GetComponent<Rigidbody>();
+                }
+                Rigidbody body = cachedMapPositionBody;
                 float speed = body != null ? body.linearVelocity.magnitude : 0f;
                 bool moving = speed > VehicleMapPositionFreezeSpeed;
 

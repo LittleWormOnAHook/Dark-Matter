@@ -68,6 +68,45 @@ namespace Project.Features.Validation.Tests
             GameStateService.SetInstance(null);
         }
 
+        [Test]
+        public void InputSchemePromotion_StickDeadzone_IgnoresDrift()
+        {
+            Assert.IsFalse(AssemblyCSharpTestAccess.InvokeStaticBool(
+                "Project.Player.DMInputSchemePromotionRules",
+                "StickDeflects",
+                0.1f,
+                0.1f));
+            Assert.IsTrue(AssemblyCSharpTestAccess.InvokeStaticBool(
+                "Project.Player.DMInputSchemePromotionRules",
+                "StickDeflects",
+                0.5f,
+                0f));
+        }
+
+        [Test]
+        public void RefreshEventSystemOwnership_EditMode_DoesNotThrow()
+        {
+            Assert.DoesNotThrow(() =>
+            {
+                AssemblyCSharpTestAccess.InvokeStatic(
+                    "Project.UI.DMSceneStack",
+                    "RefreshEventSystemOwnership",
+                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static,
+                    null);
+            });
+        }
+
+        [Test]
+        public void TryRestoreExpeditionAfterSettingsReload_MissingSnapshots_ReturnsFalse()
+        {
+            bool ok = AssemblyCSharpTestAccess.TryInvokeStaticBoolOutString(
+                "Project.Core.GameSaveSystem",
+                "TryRestoreExpeditionAfterSettingsReload",
+                out string message);
+            Assert.IsFalse(ok);
+            StringAssert.Contains("Settings snapshot", message);
+        }
+
         private sealed class StubSessionWorldStateProvider : IWorldStateProvider
         {
             public string DomainId => "session";

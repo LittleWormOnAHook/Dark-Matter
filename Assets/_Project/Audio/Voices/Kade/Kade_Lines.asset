@@ -1,0 +1,77 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09e56cc6f83e4e2ab954bcfa1f1f0adf, type: 3}
+  m_Name: Kade_Lines
+  m_EditorClassIdentifier: 
+  actor: {fileID: 11400000, guid: 582b3abc596948e6b8b016852181f145, type: 2}
+  lines:
+  - id: kade_Chap_1_Chat_1_01
+    subtitle: Well... , another day. okay.... Journal entry.......
+    stageTag: QM.1
+    seed: 56
+    bakedHash: faaa88d4385564d2
+    clip: {fileID: 8300000, guid: a6cf1c234620bef45835cf2667a28ffb, type: 3}
+  - id: kade_Chap_1_Chat_1_02
+    subtitle: I need some adventure, tired of the same old thing....
+    stageTag: QM.1
+    seed: 56
+    bakedHash: 0445318def339779
+    clip: {fileID: 8300000, guid: 74e2fced91aaedf4094e205d70c44df0, type: 3}
+  - id: kade_Chap_1_Chat_1_03
+    subtitle: Nothing exciting ever happends, and it's always... ,  Kade....
+    stageTag: QM.1
+    seed: 56
+    bakedHash: 98ac9541df418e32
+    clip: {fileID: 8300000, guid: 7939306e71d19aa42b5b3a581dd408e1, type: 3}
+  - id: kade_Chap_1_Chat_1_04
+    subtitle: fix this, Kade...
+    stageTag: QM.1
+    seed: 56
+    bakedHash: 6ac91e7c0dd21daa
+    clip: {fileID: 8300000, guid: 2a0bb10ae0bb7fc4abc08d44d8b4d261, type: 3}
+  - id: kade_Chap_1_Chat_1_05
+    subtitle: ', go get some parts, Kade..'
+    stageTag: QM.1
+    seed: 56
+    bakedHash: 609d028d537e6686
+    clip: {fileID: 8300000, guid: 88d7b7c776322244a8d5e8dbd1c6e203, type: 3}
+  - id: kade_Chap_1_Chat_1_06
+    subtitle: we need you to go grab a tank of plasma.
+    stageTag: QM.1
+    seed: 56
+    bakedHash: 23d0077f3d3a6b8b
+    clip: {fileID: 8300000, guid: 2d76b30e739f7984fbe3187d4157c1e9, type: 3}
+  - id: kade_Chap_1_Chat_1_07
+    subtitle: I just dont see my self doing this the rest of my life.... Wel...
+    stageTag: QM.1
+    seed: 56
+    bakedHash: e369e477b9fb437e
+    clip: {fileID: 8300000, guid: e9faaa3484f51d64d95e17ad5e8429a5, type: 3}
+  - id: kade_Chap_1_Chat_1_08
+    subtitle: l, time to get to work.
+    stageTag: QM.1
+    seed: 56
+    bakedHash: d1f61d059651e931
+    clip: {fileID: 8300000, guid: 106b322389ea63d4383aaa8cc83ae843, type: 3}
+  - id: kade_2
+    subtitle: Okay boss..., headed over in a few
+    stageTag: QM.2
+    seed: 56
+    bakedHash: 1af97b760ac786b5
+    clip: {fileID: 8300000, guid: ec6f410a6e07ee1409d2137548ac8903, type: 3}
+  - id: kade_10
+    subtitle: Damn... its still buggy... I really need to get this thing looked at
+      soon
+    stageTag: VADA_1
+    seed: 56
+    bakedHash: d888faf451509bbe
+    clip: {fileID: 8300000, guid: 8f5eab54ed466d84687e1858929a13e8, type: 3}
