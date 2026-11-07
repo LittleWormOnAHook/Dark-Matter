@@ -1,0 +1,61 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5e5da265fbb8694bbb25bae560e1d01, type: 3}
+  m_Name: DMJetpackProfile_Starfield_Glide 1
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Features.Jetpack.DMJetpackProfile
+  maxBoostSeconds: 5.5
+  fullThrustEndSeconds: 5
+  releaseRegenBonusSeconds: 10
+  regenSecondsPerSecond: 0.35
+  energyDrainPerSecond: 0.1
+  upwardThrustForce: 10
+  descendForce: 14.89
+  descendInputThreshold: 0.74
+  descendBrakeStrength: 1
+  verticalResponse: 8
+  hoverGravityScale: 1.9
+  boostDescendGravityScale: 0.1
+  fadeFallGravityScale: 0.05
+  freeFallGravityScale: 0.05
+  coastFallGravityScale: 0.22
+  releaseUpwardBleed: 4.5
+  jetpackAirSpeed: 4
+  jetpackPlanarResponse: 5
+  directedVerticalScale: 0.575
+  directedRedirect: 10
+  jetpackSteerInputSmoothTime: 0.238
+  jetpackAirSmooth: 23.41
+  defaultAirSpeed: 2
+  jetpackMoveSmoothTime: 0.18
+  animBlendGain: 1.45
+  animLeanStrength: 0.14
+  animInputDeadzone: 0.08
+  flyAnimSpeed: 1
+  animStrafeThreshold: 0.5
+  landCrossFadeSeconds: 0.144
+  thrusterAlphaMin: 0.1
+  thrusterAlphaMax: 1
+  thrusterPowerSmoothTime: 0.18
+  flareFactorMultiplier: 0.9
+  slowSparksFactorMultiplier: 0.5
+  fastSparksFactorMultiplier: 0.5
+  distortionFactorMultiplier: 2.32
+  particleSpeedMultiplier: 2.39
+  particleLifetimeMultiplier: 1.1
+  thrusterAudioSmooth: 0.216
+  thrusterLayer1: {fileID: 8300000, guid: 7d531a2f50c1e994d9f7345bcdc94221, type: 3}
+  thrusterLayer1Volume: 0.55
+  thrusterLayer1Pitch: {x: 0.5, y: 0.65}
+  thrusterLayer2: {fileID: 8300000, guid: 7d531a2f50c1e994d9f7345bcdc94221, type: 3}
+  thrusterLayer2Volume: 0.4
+  thrusterLayer2Pitch: {x: 0.6, y: 0.75}
+  thrusterLayer2Start: 0.25

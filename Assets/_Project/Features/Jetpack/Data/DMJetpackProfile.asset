@@ -27,9 +27,9 @@ MonoBehaviour:
   fadeFallGravityScale: 0.18
   freeFallGravityScale: 1
   coastFallGravityScale: 0.3
-  releaseUpwardBleed: 6
+  releaseUpwardBleed: 4
   jetpackAirSpeed: 4.25
-  jetpackPlanarResponse: 26
+  jetpackPlanarResponse: 16
   directedVerticalScale: 0.35
   directedRedirect: 10
   jetpackSteerInputSmoothTime: 0.11
@@ -42,13 +42,6 @@ MonoBehaviour:
   flyAnimSpeed: 0.95
   animStrafeThreshold: 0.5
   landCrossFadeSeconds: 0.15
-  groundStateHysteresis: 0.1033
-  dangleAccelSmoothTime: 0.1402
-  dangleMaxAccel: 22
-  dangleInertiaStrength: 0.666
-  dangleOffsetSmoothTime: 0.14
-  animParamsPerFrame: 1
-  cameraLateUpdateFollow: 0
   thrusterAlphaMin: 0.1
   thrusterAlphaMax: 1
   thrusterPowerSmoothTime: 0.25
