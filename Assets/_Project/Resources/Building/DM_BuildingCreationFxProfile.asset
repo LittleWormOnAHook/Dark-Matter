@@ -94,12 +94,12 @@ MonoBehaviour:
   forceFieldMaterial: {fileID: 2100000, guid: fb6113fffce38ee49a2392b81e5b9313, type: 2}
   forceFieldColor: {r: 0.25, g: 0.75, b: 1.6, a: 1}
   forceFieldEdgeColor: {r: 0.6, g: 1.2, b: 2.4, a: 1}
-  forceFieldOpacity: 0.25
-  forceFieldEdgeGlow: 1.5
-  forceFieldEdgeWidth: 0.06
-  forceFieldPatternScale: 1.2
-  forceFieldScrollSpeed: 0.35
-  forceFieldPulseBrightness: 2.015
+  forceFieldOpacity: 0.158
+  forceFieldEdgeGlow: 0.6
+  forceFieldEdgeWidth: 0.034
+  forceFieldPatternScale: 3.43
+  forceFieldScrollSpeed: 1.05
+  forceFieldPulseBrightness: 2.73
   forceFieldPulseSeconds: 0.6
   forceFieldRippleSpeed: 3
   forceFieldRippleWidth: 0.35
@@ -119,6 +119,6 @@ MonoBehaviour:
   forceFieldCornerDepth: 0.24
   forceFieldStripMaterial: {fileID: 0}
   forceFieldStripUnpoweredColor: {r: 1, g: 0.05, b: 0.03, a: 1}
-  forceFieldStripPoweredColor: {r: 0.1, g: 1, b: 0.2, a: 1}
-  forceFieldStripGlow: 9.89
-  forceFieldStripThickness: 0.0441
+  forceFieldStripPoweredColor: {r: 0.3662527, g: 0.25415218, b: 0.43965724, a: 1}
+  forceFieldStripGlow: 3.5
+  forceFieldStripThickness: 0.015

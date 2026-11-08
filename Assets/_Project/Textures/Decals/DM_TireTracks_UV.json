@@ -1,0 +1,336 @@
+{
+  "uvOrigin": "bottom-left; index left-to-right in original source; 1-5 top row, 6-10 bottom row",
+  "tracks": [
+    {
+      "track": 1,
+      "sourceBounds": [
+        73,
+        49,
+        206,
+        854
+      ],
+      "pixelRectTopLeft": [
+        258,
+        64,
+        379,
+        1968
+      ],
+      "uvScale": [
+        0.092529296875,
+        0.48046875
+      ],
+      "uvBias": [
+        0.06298828125,
+        0.50390625
+      ],
+      "visibleWidthMetres": 0.3,
+      "meshAsset": "DM_TireTrack_01.asset",
+      "meshSizeMetres": [
+        0.36095238095238097,
+        0,
+        1.874285714285714
+      ],
+      "meshVertexCount": 4,
+      "meshTriangleCount": 2,
+      "heightOffsetMetres": 0.020000247
+    },
+    {
+      "track": 2,
+      "sourceBounds": [
+        256,
+        49,
+        389,
+        854
+      ],
+      "pixelRectTopLeft": [
+        1058,
+        64,
+        379,
+        1968
+      ],
+      "uvScale": [
+        0.092529296875,
+        0.48046875
+      ],
+      "uvBias": [
+        0.25830078125,
+        0.50390625
+      ],
+      "visibleWidthMetres": 0.3,
+      "meshAsset": "DM_TireTrack_02.asset",
+      "meshSizeMetres": [
+        0.36095238095238097,
+        0,
+        1.874285714285714
+      ],
+      "meshVertexCount": 4,
+      "meshTriangleCount": 2,
+      "heightOffsetMetres": 0.020000247
+    },
+    {
+      "track": 3,
+      "sourceBounds": [
+        438,
+        49,
+        571,
+        854
+      ],
+      "pixelRectTopLeft": [
+        1858,
+        64,
+        379,
+        1968
+      ],
+      "uvScale": [
+        0.092529296875,
+        0.48046875
+      ],
+      "uvBias": [
+        0.45361328125,
+        0.50390625
+      ],
+      "visibleWidthMetres": 0.3,
+      "meshAsset": "DM_TireTrack_03.asset",
+      "meshSizeMetres": [
+        0.36095238095238097,
+        0,
+        1.874285714285714
+      ],
+      "meshVertexCount": 4,
+      "meshTriangleCount": 2,
+      "heightOffsetMetres": 0.020000247
+    },
+    {
+      "track": 4,
+      "sourceBounds": [
+        621,
+        49,
+        754,
+        854
+      ],
+      "pixelRectTopLeft": [
+        2658,
+        64,
+        379,
+        1968
+      ],
+      "uvScale": [
+        0.092529296875,
+        0.48046875
+      ],
+      "uvBias": [
+        0.64892578125,
+        0.50390625
+      ],
+      "visibleWidthMetres": 0.3,
+      "meshAsset": "DM_TireTrack_04.asset",
+      "meshSizeMetres": [
+        0.36095238095238097,
+        0,
+        1.874285714285714
+      ],
+      "meshVertexCount": 4,
+      "meshTriangleCount": 2,
+      "heightOffsetMetres": 0.020000247
+    },
+    {
+      "track": 5,
+      "sourceBounds": [
+        803,
+        49,
+        936,
+        854
+      ],
+      "pixelRectTopLeft": [
+        3458,
+        64,
+        379,
+        1968
+      ],
+      "uvScale": [
+        0.092529296875,
+        0.48046875
+      ],
+      "uvBias": [
+        0.84423828125,
+        0.50390625
+      ],
+      "visibleWidthMetres": 0.3,
+      "meshAsset": "DM_TireTrack_05.asset",
+      "meshSizeMetres": [
+        0.36095238095238097,
+        0,
+        1.874285714285714
+      ],
+      "meshVertexCount": 4,
+      "meshTriangleCount": 2,
+      "heightOffsetMetres": 0.020000247
+    },
+    {
+      "track": 6,
+      "sourceBounds": [
+        985,
+        49,
+        1117,
+        854
+      ],
+      "pixelRectTopLeft": [
+        260,
+        2064,
+        376,
+        1968
+      ],
+      "uvScale": [
+        0.091796875,
+        0.48046875
+      ],
+      "uvBias": [
+        0.0634765625,
+        0.015625
+      ],
+      "visibleWidthMetres": 0.3,
+      "meshAsset": "DM_TireTrack_06.asset",
+      "meshSizeMetres": [
+        0.36153846153846153,
+        0,
+        1.8923076923076922
+      ],
+      "meshVertexCount": 4,
+      "meshTriangleCount": 2,
+      "heightOffsetMetres": 0.020000247
+    },
+    {
+      "track": 7,
+      "sourceBounds": [
+        1166,
+        49,
+        1299,
+        854
+      ],
+      "pixelRectTopLeft": [
+        1058,
+        2064,
+        379,
+        1968
+      ],
+      "uvScale": [
+        0.092529296875,
+        0.48046875
+      ],
+      "uvBias": [
+        0.25830078125,
+        0.015625
+      ],
+      "visibleWidthMetres": 0.3,
+      "meshAsset": "DM_TireTrack_07.asset",
+      "meshSizeMetres": [
+        0.36095238095238097,
+        0,
+        1.874285714285714
+      ],
+      "meshVertexCount": 4,
+      "meshTriangleCount": 2,
+      "heightOffsetMetres": 0.020000247
+    },
+    {
+      "track": 8,
+      "sourceBounds": [
+        1348,
+        49,
+        1481,
+        854
+      ],
+      "pixelRectTopLeft": [
+        1858,
+        2064,
+        379,
+        1968
+      ],
+      "uvScale": [
+        0.092529296875,
+        0.48046875
+      ],
+      "uvBias": [
+        0.45361328125,
+        0.015625
+      ],
+      "visibleWidthMetres": 0.3,
+      "meshAsset": "DM_TireTrack_08.asset",
+      "meshSizeMetres": [
+        0.36095238095238097,
+        0,
+        1.874285714285714
+      ],
+      "meshVertexCount": 4,
+      "meshTriangleCount": 2,
+      "heightOffsetMetres": 0.020000247
+    },
+    {
+      "track": 9,
+      "sourceBounds": [
+        1531,
+        49,
+        1664,
+        854
+      ],
+      "pixelRectTopLeft": [
+        2658,
+        2064,
+        379,
+        1968
+      ],
+      "uvScale": [
+        0.092529296875,
+        0.48046875
+      ],
+      "uvBias": [
+        0.64892578125,
+        0.015625
+      ],
+      "visibleWidthMetres": 0.3,
+      "meshAsset": "DM_TireTrack_09.asset",
+      "meshSizeMetres": [
+        0.36095238095238097,
+        0,
+        1.874285714285714
+      ],
+      "meshVertexCount": 4,
+      "meshTriangleCount": 2,
+      "heightOffsetMetres": 0.020000247
+    },
+    {
+      "track": 10,
+      "sourceBounds": [
+        1713,
+        49,
+        1846,
+        854
+      ],
+      "pixelRectTopLeft": [
+        3458,
+        2064,
+        379,
+        1968
+      ],
+      "uvScale": [
+        0.092529296875,
+        0.48046875
+      ],
+      "uvBias": [
+        0.84423828125,
+        0.015625
+      ],
+      "visibleWidthMetres": 0.3,
+      "meshAsset": "DM_TireTrack_10.asset",
+      "meshSizeMetres": [
+        0.36095238095238097,
+        0,
+        1.874285714285714
+      ],
+      "meshVertexCount": 4,
+      "meshTriangleCount": 2,
+      "heightOffsetMetres": 0.020000247
+    }
+  ],
+  "setup": "PUDDLE_02 mesh-plane clone; atlas UVs baked into individual quads; one shared HDRP/Lit transparent material; no DecalProjector"
+}

@@ -28,7 +28,7 @@ MonoBehaviour:
   freeFallGravityScale: 0.05
   coastFallGravityScale: 0.22
   releaseUpwardBleed: 4.5
-  jetpackAirSpeed: 4
+  jetpackAirSpeed: 6
   jetpackPlanarResponse: 5
   directedVerticalScale: 0.575
   directedRedirect: 10
@@ -45,13 +45,14 @@ MonoBehaviour:
   thrusterAlphaMin: 0.1
   thrusterAlphaMax: 1
   thrusterPowerSmoothTime: 0.18
-  flareFactorMultiplier: 0.9
-  slowSparksFactorMultiplier: 0.5
-  fastSparksFactorMultiplier: 0.5
-  distortionFactorMultiplier: 2.32
-  particleSpeedMultiplier: 2.39
-  particleLifetimeMultiplier: 1.1
-  thrusterAudioSmooth: 0.216
+  flareFactorMultiplier: 0.5
+  slowSparksFactorMultiplier: 0.3
+  fastSparksFactorMultiplier: 0.3
+  distortionFactorMultiplier: 2
+  particleSpeedMultiplier: 2
+  particleLifetimeMultiplier: 0.7
+  thrusterAudioSmooth: 0.233
+  thrusterAudioReleaseSeconds: 1
   thrusterLayer1: {fileID: 8300000, guid: 7d531a2f50c1e994d9f7345bcdc94221, type: 3}
   thrusterLayer1Volume: 0.55
   thrusterLayer1Pitch: {x: 0.5, y: 0.65}

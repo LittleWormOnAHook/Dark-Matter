@@ -38,7 +38,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _DMHeightMap2:
-        m_Texture: {fileID: 2800000, guid: aac52fc7694798f4bb6dcc1a91c9c7cd, type: 3}
+        m_Texture: {fileID: 2800000, guid: 4f2bdc9106a323f4e83dff76149e1f77, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _DMHeightMap3:
@@ -58,7 +58,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _DMHeightMap7:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: d3762aa566ac466199d8b84e6ea192d7, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _DMHeightMapArray:
@@ -84,127 +84,127 @@ Material:
     - _DMDepthOffset: 0
     - _DMDepthOffsetMax: 0.5
     - _DMDepthOffsetScale: 1
-    - _DMGrazingCos: 0.34
-    - _DMHeightAOMid: 0.75
-    - _DMHeightAOStrength: 0.466
-    - _DMHeightCenter: 1
+    - _DMGrazingCos: 0.112
+    - _DMHeightAOMid: 0.355
+    - _DMHeightAOStrength: 0.554
+    - _DMHeightCenter: 0
     - _DMHeightContrast0: 2.2
-    - _DMHeightContrast1: 0.43
-    - _DMHeightContrast2: 1.16
+    - _DMHeightContrast1: 2.19
+    - _DMHeightContrast2: 1.75
     - _DMHeightContrast3: 1.02
-    - _DMHeightContrast4: 3.81
+    - _DMHeightContrast4: 1.17
     - _DMHeightContrast5: 4.01
-    - _DMHeightContrast6: 0.7
-    - _DMHeightContrast7: 1
-    - _DMHeightMapForBlend: 1
+    - _DMHeightContrast6: 1.32
+    - _DMHeightContrast7: 0.41
+    - _DMHeightMapForBlend: 0
     - _DMHeightMipBias: 1.7
     - _DMHeightOffset0: 0.321
-    - _DMHeightOffset1: -0.03
-    - _DMHeightOffset2: 0.65
-    - _DMHeightOffset3: 0.222
-    - _DMHeightOffset4: 0.997
+    - _DMHeightOffset1: 0.258
+    - _DMHeightOffset2: -0.54
+    - _DMHeightOffset3: 0.32
+    - _DMHeightOffset4: 1
     - _DMHeightOffset5: 1
-    - _DMHeightOffset6: 0.229
-    - _DMHeightOffset7: 0
+    - _DMHeightOffset6: -0.306
+    - _DMHeightOffset7: 0.01
     - _DMHeightScale0: 0.34
-    - _DMHeightScale1: 0.8
-    - _DMHeightScale2: 0.19
+    - _DMHeightScale1: 1.29
+    - _DMHeightScale2: 1.85
     - _DMHeightScale3: 1.96
-    - _DMHeightScale4: 0.57
-    - _DMHeightScale5: 0.95
-    - _DMHeightScale6: 0.96
-    - _DMHeightScale7: 1
+    - _DMHeightScale4: 0.85
+    - _DMHeightScale5: 1.11
+    - _DMHeightScale6: 0.25
+    - _DMHeightScale7: 1.76
     - _DMLayerBrightness0: 2.97
-    - _DMLayerBrightness1: 0.81
-    - _DMLayerBrightness2: 1.25
+    - _DMLayerBrightness1: 1.9
+    - _DMLayerBrightness2: 2.46
     - _DMLayerBrightness3: 0.92
     - _DMLayerBrightness4: 2.28
     - _DMLayerBrightness5: 1.74
-    - _DMLayerBrightness6: 1
-    - _DMLayerBrightness7: 1
-    - _DMLayerHeightAO0: 2.07
-    - _DMLayerHeightAO1: 0.66
-    - _DMLayerHeightAO2: 2.83
-    - _DMLayerHeightAO3: 1.53
-    - _DMLayerHeightAO4: 0
+    - _DMLayerBrightness6: 1.43
+    - _DMLayerBrightness7: 2.82
+    - _DMLayerHeightAO0: 1.89
+    - _DMLayerHeightAO1: 0.56
+    - _DMLayerHeightAO2: 1.72
+    - _DMLayerHeightAO3: 1.45
+    - _DMLayerHeightAO4: 2.6
     - _DMLayerHeightAO5: 0.9
     - _DMLayerHeightAO6: 1.52
     - _DMLayerHeightAO7: 1.41
-    - _DMLayerParallax0: 1.55
-    - _DMLayerParallax1: 0.44
-    - _DMLayerParallax2: 0.32
-    - _DMLayerParallax3: 0.28
-    - _DMLayerParallax4: 0.38
-    - _DMLayerParallax5: 0.68
-    - _DMLayerParallax6: 1.88
-    - _DMLayerParallax7: 1.17
+    - _DMLayerParallax0: 0.91
+    - _DMLayerParallax1: 1.75
+    - _DMLayerParallax2: 0.24
+    - _DMLayerParallax3: 1.31
+    - _DMLayerParallax4: 0.8
+    - _DMLayerParallax5: 0.82
+    - _DMLayerParallax6: 0.56
+    - _DMLayerParallax7: 1.46
     - _DMLayerSaturation0: 0.56
-    - _DMLayerSaturation1: 0.83
-    - _DMLayerSaturation2: 1
+    - _DMLayerSaturation1: 1.239
+    - _DMLayerSaturation2: 1.31
     - _DMLayerSaturation3: 1.21
     - _DMLayerSaturation4: 1.37
     - _DMLayerSaturation5: 1.974
     - _DMLayerSaturation6: 1.135
-    - _DMLayerSaturation7: 1
+    - _DMLayerSaturation7: 0.58
     - _DMOffsetBias: 0.43
-    - _DMPOMFadeEnd: 94
-    - _DMPOMFadeStart: 0
+    - _DMPOMFadeEnd: 30
+    - _DMPOMFadeStart: 10
     - _DMPOMLayers: 2
-    - _DMPOMMinSteps: 23
-    - _DMPOMRefine: 2
-    - _DMPOMSteps: 64
-    - _DMParallaxFadeEnd: 62
-    - _DMParallaxFadeStart: 97
-    - _DMParallaxHeight: 0.12
+    - _DMPOMMinSteps: 4
+    - _DMPOMRefine: 3
+    - _DMPOMSteps: 24
+    - _DMParallaxFadeEnd: 60
+    - _DMParallaxFadeStart: 20
+    - _DMParallaxHeight: 0.198
     - _DMPeakDetail0: 0.536
-    - _DMPeakDetail1: 1
-    - _DMPeakDetail2: 0.022
+    - _DMPeakDetail1: 0.187
+    - _DMPeakDetail2: 0.73
     - _DMPeakDetail3: 0.495
-    - _DMPeakDetail4: 0.202
+    - _DMPeakDetail4: 0
     - _DMPeakDetail5: 0.582
     - _DMPeakDetail6: 0.503
-    - _DMPeakDetail7: 0.485
+    - _DMPeakDetail7: 0.555
     - _DMPeakDetailScale0: 10.68
-    - _DMPeakDetailScale1: 20
-    - _DMPeakDetailScale2: 20
+    - _DMPeakDetailScale1: 9.67
+    - _DMPeakDetailScale2: 11
     - _DMPeakDetailScale3: 9.89
-    - _DMPeakDetailScale4: 7.1
+    - _DMPeakDetailScale4: 9.99
     - _DMPeakDetailScale5: 11.2
     - _DMPeakDetailScale6: 10.54
-    - _DMPeakDetailScale7: 9.52
+    - _DMPeakDetailScale7: 9.8
     - _DMPeakKnee0: 0.775
-    - _DMPeakKnee1: 0.781
+    - _DMPeakKnee1: 0.624
     - _DMPeakKnee2: 1
     - _DMPeakKnee3: 0.748
-    - _DMPeakKnee4: 0.698
+    - _DMPeakKnee4: 1
     - _DMPeakKnee5: 0.829
     - _DMPeakKnee6: 0.75
-    - _DMPeakKnee7: 0.744
+    - _DMPeakKnee7: 0.758
     - _DMPeakSoftness0: 0.692
-    - _DMPeakSoftness1: 0.282
-    - _DMPeakSoftness2: 0.326
+    - _DMPeakSoftness1: 0.327
+    - _DMPeakSoftness2: 0
     - _DMPeakSoftness3: 0.477
     - _DMPeakSoftness4: 0
     - _DMPeakSoftness5: 0.679
     - _DMPeakSoftness6: 0.455
-    - _DMPeakSoftness7: 0.514
+    - _DMPeakSoftness7: 0.356
     - _DMSelfShadow: 1
-    - _DMShadowFadeEnd: 0
-    - _DMShadowFadeStart: 27
-    - _DMShadowLength: 1.32
+    - _DMShadowFadeEnd: 171
+    - _DMShadowFadeStart: 35
+    - _DMShadowLength: 1.9
     - _DMShadowSharpness: 9.2
     - _DMShadowSteps: 18
-    - _DMShadowStrength: 0.823
-    - _DMSlopeFadeEnd: 0.11
-    - _DMSlopeFadeStart: 0.27
-    - _DMUseHeightMap0: 1
-    - _DMUseHeightMap1: 1
+    - _DMShadowStrength: 1.03
+    - _DMSlopeFadeEnd: 0.221
+    - _DMSlopeFadeStart: 0.171
+    - _DMUseHeightMap0: 0
+    - _DMUseHeightMap1: 0
     - _DMUseHeightMap2: 0
-    - _DMUseHeightMap3: 1
-    - _DMUseHeightMap4: 1
+    - _DMUseHeightMap3: 0
+    - _DMUseHeightMap4: 0
     - _DMUseHeightMap5: 0
-    - _DMUseHeightMap6: 1
-    - _DMUseHeightMap7: 0
+    - _DMUseHeightMap6: 0
+    - _DMUseHeightMap7: 1
     - _DM_Parallax: 2
     - _EnableHeightBlend: 1
     - _EnableInstancedPerPixelNormal: 1
@@ -225,13 +225,13 @@ Material:
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _DMLayerTint0: {r: 1, g: 0.84490585, b: 0.081131995, a: 1}
-    - _DMLayerTint1: {r: 0.54509795, g: 0.27057922, b: 0.074503355, a: 1}
-    - _DMLayerTint2: {r: 1, g: 0.9697518, b: 0.8584906, a: 1}
+    - _DMLayerTint1: {r: 0.381128, g: 0.20536402, b: 0.07981879, a: 1}
+    - _DMLayerTint2: {r: 1, g: 1, b: 1, a: 1}
     - _DMLayerTint3: {r: 0.9547169, g: 0.75995743, b: 0, a: 1}
     - _DMLayerTint4: {r: 0.9773584, g: 0.9773584, b: 0.9773584, a: 1}
     - _DMLayerTint5: {r: 0.5849056, g: 0.28886092, b: 0.13132048, a: 1}
-    - _DMLayerTint6: {r: 1, g: 1, b: 1, a: 1}
-    - _DMLayerTint7: {r: 1, g: 1, b: 1, a: 1}
+    - _DMLayerTint6: {r: 0.6603774, g: 0.6603774, b: 0.6603774, a: 1}
+    - _DMLayerTint7: {r: 1, g: 0.9292197, b: 0.8962264, a: 1}
     - _DMSunDirFallback: {r: 0.3, g: 0.8, b: 0.3, a: 0}
     - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []

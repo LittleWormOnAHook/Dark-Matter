@@ -128,6 +128,12 @@ namespace Project.Combat
             bool playImpactAudio,
             GameObject impactVfxOverride)
         {
+            // Defensive gate for stale/external ranged hits: no field damage, marks, carving or impact VFX.
+            if (Project.Building.DMForceField.IsAmmoSurface(collider))
+            {
+                collider.GetComponent<Project.Building.DMForceField>()?.NotifyProjectilePass(hitPoint, travelDirection);
+                return;
+            }
             Vector3 fxTravel = travelDirection.sqrMagnitude > 0.0001f ? travelDirection.normalized : Vector3.zero;
             CombatHitResolver.ApplyDirectHit(
                 collider,

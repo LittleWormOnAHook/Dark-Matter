@@ -1,4 +1,4 @@
-using Invector.vCamera;
+﻿using Invector.vCamera;
 using Invector.vShooter;
 using Project.Core;
 using Project.Data;
@@ -59,6 +59,77 @@ namespace Project.Combat
         private static Vector3 _weaponAimOrigin;
         private static Vector3 _weaponAimForward;
         private static readonly RaycastHit[] AimRaycastBuffer = new RaycastHit[24];
+
+        // Visual sight query: one non-alloc physics cast, no combat/underfoot layer exclusions.
+        // Camera center includes scope sway; the beam is drawn from the muzzle to this reticle hit.
+        private static readonly RaycastHit[] SightHits = new RaycastHit[256];
+        private static int sightFrame = -1;
+        private static Transform sightMuzzle;
+        private static Camera sightCamera;
+        private static float sightRange;
+        private static bool sightFound;
+        private static RaycastHit sightHit;
+        private static Vector3 sightEnd;
+
+        public static bool TryResolveSurfaceSight(Camera camera, Transform muzzle, float range,
+            GameObject owner, out RaycastHit hit, out Vector3 end)
+        {
+            if (sightFrame == Time.frameCount && sightMuzzle == muzzle && sightCamera == camera && sightRange == range)
+            {
+                hit = sightHit;
+                end = sightEnd;
+                return sightFound;
+            }
+            Vector2 viewport = ResolveReticleViewportCenter();
+            Ray ray = camera != null
+                ? camera.ViewportPointToRay(new Vector3(viewport.x, viewport.y, 0f))
+                : new Ray(muzzle.position, muzzle.forward);
+            int count = Physics.RaycastNonAlloc(ray.origin, ray.direction, SightHits, range,
+                Physics.AllLayers, QueryTriggerInteraction.Ignore);
+            // Insertion sort avoids comparer/delegate allocations. Never assume physics hit order.
+            for (int i = 1; i < count; i++)
+            {
+                RaycastHit value = SightHits[i];
+                int j = i - 1;
+                while (j >= 0 && SightHits[j].distance > value.distance)
+                {
+                    SightHits[j + 1] = SightHits[j];
+                    j--;
+                }
+                SightHits[j + 1] = value;
+            }
+            hit = default;
+            bool found = false;
+            for (int i = 0; i < count; i++)
+            {
+                Collider c = SightHits[i].collider;
+                if (c == null || CombatHitResolver.IsOwnerCollider(owner, c)
+                    || (muzzle != null && c.transform.IsChildOf(muzzle))
+                    || Project.Building.DMForceField.IsAmmoSurface(c))
+                    continue;
+                hit = SightHits[i];
+                found = true;
+                break;
+            }
+            end = found ? hit.point : ray.GetPoint(range);
+            sightFrame = Time.frameCount;
+            sightMuzzle = muzzle;
+            sightCamera = camera;
+            sightRange = range;
+            sightFound = found;
+            sightHit = hit;
+            sightEnd = end;
+            return found;
+        }
+
+        public static void PlaceSurfaceSight(Transform sight, RaycastHit hit)
+        {
+            // Sprite lies in local XY. Its visible face (-Z) points out from the surface.
+            Vector3 normal = hit.normal.normalized;
+            Vector3 up = Mathf.Abs(normal.y) > 0.99f ? Vector3.forward : Vector3.up;
+            sight.SetPositionAndRotation(hit.point + normal * 0.003f,
+                Quaternion.LookRotation(-normal, up));
+        }
 
         public static Vector3 ResolveDirection(
             Vector3 cameraAimDirection,
@@ -230,7 +301,7 @@ namespace Project.Combat
             for (int i = 0; i < count; i++)
             {
                 RaycastHit hit = AimRaycastBuffer[i];
-                if (hit.collider == null)
+                if (hit.collider == null || Project.Building.DMForceField.IsAmmoSurface(hit.collider))
                     continue;
                 if (owner != null && CombatHitResolver.IsOwnerCollider(owner, hit.collider))
                     continue;

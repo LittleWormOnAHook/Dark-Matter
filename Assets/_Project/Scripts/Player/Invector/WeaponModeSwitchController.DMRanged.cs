@@ -95,6 +95,7 @@ namespace Project.Player.Invector
             activeAimLaserRoot = _dmrRoot;
             activeAimLaserLine = _dmrLine;
             activeAimLaserSight = _dmrSprite;
+            activeAimSightRequested = sightEnabled;
             if (_dmrLine != null)
             {
                 _dmrLine.useWorldSpace = true;

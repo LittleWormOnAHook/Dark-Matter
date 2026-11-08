@@ -40,7 +40,9 @@ namespace Project.SurfaceCarve
             if (m == null) return false;
 
             Color tint = m.HasProperty(BaseColorId) ? m.GetColor(BaseColorId) : m.HasProperty(ColorId) ? m.GetColor(ColorId) : Color.white;
-            Texture tex = m.HasProperty(BaseMapId) ? m.GetTexture(BaseMapId) : m.mainTexture;
+            // Procedural shaders (force fields, etc.) need not expose a main texture.
+            Texture tex = m.HasProperty(BaseMapId) ? m.GetTexture(BaseMapId)
+                : m.HasProperty("_MainTex") ? m.GetTexture("_MainTex") : null;
 
             if (s.debrisColorSource == DMCarveSettings.DebrisColorSource.SurfaceSample && tex is Texture2D t2 && t2.isReadable)
             {

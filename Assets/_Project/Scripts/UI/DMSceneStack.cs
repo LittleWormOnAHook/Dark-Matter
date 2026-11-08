@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Invector.vCharacterController;
 using Project.Core;
 using Project.Player;
+using Project.World;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
@@ -93,8 +94,9 @@ namespace Project.UI
             "CommunicationsBootstrap",
             "ProbeVolumePerSceneData",
             "Turret Audio Controler",
-            "Gaia Runtime",
-            "Gaia Tools",
+            // ioswitch: "Gaia Runtime" / "Gaia Tools" removed - they carry the world's own sun, lighting and
+            // terrain loader, so the hidden world must not keep them running. HideRootsOf/RestoreHiddenRoots
+            // switch them off/on with the rest of that world.
             "DM_UiRuntimeHost",
             "UITK_Root",
             "UITK_Loading",
@@ -293,6 +295,9 @@ namespace Project.UI
 
             ApplyWorldVisibility(destination, anchoredRig);
             ApplyPlayerOwnership(destination, anchoredRig);
+            // ioswitch: point the map at the shown world's provider and the live rig (gating unchanged).
+            Project.Map.WorldMapProvider.AdoptForScene(target);
+            MapUI.NotifyWorldSwitched();
             // 2026-11-04f: J / I / Cancel subscriptions must follow the rig that now owns the world
             // (each scene brings its own PlayerInput; the hidden one's action map is disabled).
             DMUiToolkitPlayerInputBridge.RebindForLivePlayer();
@@ -586,6 +591,11 @@ namespace Project.UI
                     : primary.transform.rotation;
                 source = $"where he left '{SceneName(shown)}'";
             }
+            else if (TryGetSpawnMarker(shownScene, out position, out rotation, out string spawnSource))
+            {
+                // ioswitch: a named spawn marker (DM_IoSpawn) wins over the parked Kade stand-in.
+                source = spawnSource;
+            }
             else if (authoredPositions.TryGetValue(shown, out position))
             {
                 rotation = authoredRotations.TryGetValue(shown, out Quaternion authoredRotation)
@@ -611,7 +621,7 @@ namespace Project.UI
                 return;
             }
 
-            position = ValidatePlacement(shown, position, source, out rotation, out string usedSource);
+            position = ValidatePlacement(shown, position, source, rotation, out rotation, out string usedSource);
             MoveRig(primary, position, rotation, usedSource);
 
             rigPlacementKnown = true;
@@ -630,11 +640,13 @@ namespace Project.UI
         /// when it fails the authored placement is used instead.
         /// </summary>
         private static Vector3 ValidatePlacement(DMSceneDestination shown, Vector3 candidate, string source,
-            out Quaternion rotation, out string usedSource)
+            Quaternion requested, out Quaternion rotation, out string usedSource)
         {
             usedSource = source;
 
-            if (authoredPositions.TryGetValue(shown, out Vector3 authored))
+            // ioswitch: a spawn marker is authoritative for Y (it may be geo-placed away from the stand-in).
+            bool fromMarker = source != null && source.Contains(IoSpawnMarkerName);
+            if (!fromMarker && authoredPositions.TryGetValue(shown, out Vector3 authored))
             {
                 // A stored Y this far from the world's own authored Y cannot belong to this world.
                 if (Mathf.Abs(candidate.y - authored.y) > WildYDelta)
@@ -642,7 +654,7 @@ namespace Project.UI
                     Debug.LogWarning($"{LogTag} rejected {source} {candidate}: its Y is "
                         + $"{Mathf.Abs(candidate.y - authored.y):0.0} m from the authored '{SceneName(shown)}' Y "
                         + $"({authored.y:0.##}). Using the authored placement instead.");
-                    rotation = authoredRotations.TryGetValue(shown, out Quaternion ar) ? ar : Quaternion.identity;
+                    rotation = authoredRotations.TryGetValue(shown, out Quaternion ar) ? ar : requested; // ioswitch
                     usedSource = $"authored '{SceneName(shown)}' placement (saved Y out of range)";
                     return authored;
                 }
@@ -654,17 +666,17 @@ namespace Project.UI
                 {
                     Debug.LogWarning($"{LogTag} rejected {source} {candidate}: no ground within "
                         + $"{GroundProbeDown:0} m in '{SceneName(shown)}'. Using the authored placement instead.");
-                    rotation = authoredRotations.TryGetValue(shown, out Quaternion ar2) ? ar2 : Quaternion.identity;
+                    rotation = authoredRotations.TryGetValue(shown, out Quaternion ar2) ? ar2 : requested; // ioswitch
                     usedSource = $"authored '{SceneName(shown)}' placement (no ground under the saved spot)";
                     return authored;
                 }
 
                 Debug.LogWarning($"{LogTag} no ground under {source} {candidate} and no authored placement; keeping it.");
-                rotation = savedRotations.TryGetValue(shown, out Quaternion sr) ? sr : Quaternion.identity;
+                rotation = requested; // ioswitch: keep the caller's facing (saved > marker > authored)
                 return candidate;
             }
 
-            rotation = savedRotations.TryGetValue(shown, out Quaternion savedRot) ? savedRot : Quaternion.identity;
+            rotation = requested; // ioswitch: was identity when no saved rotation (Io spawn faced 0 instead of authored 90)
             float targetY = surfaceY + GroundSkin;
             usedSource = $"{source} (grounded at y={surfaceY:0.##})";
             return new Vector3(candidate.x, targetY, candidate.z);
@@ -926,6 +938,43 @@ namespace Project.UI
             if (kadeInactive != null)
                 return kadeInactive;
             return anyActive != null ? anyActive : anyInactive;
+        }
+
+        public const string IoSpawnMarkerName = "DM_IoSpawn";
+
+        /// <summary>
+        /// ioswitch: named spawn marker (position + rotation) in the shown scene. Checked before the
+        /// parked Kade stand-in. A DMWorldSpawnPoint on it may have re-placed it from a lat/long first.
+        /// </summary>
+        public static bool TryGetSpawnMarker(Scene scene, out Vector3 position, out Quaternion rotation, out string source)
+        {
+            position = Vector3.zero;
+            rotation = Quaternion.identity;
+            source = null;
+            if (!scene.IsValid() || !scene.isLoaded)
+                return false;
+
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int r = 0; r < roots.Length; r++)
+            {
+                if (roots[r] == null)
+                    continue;
+                Transform[] transforms = roots[r].GetComponentsInChildren<Transform>(true);
+                for (int i = 0; i < transforms.Length; i++)
+                {
+                    Transform t = transforms[i];
+                    if (t == null || !string.Equals(t.name, IoSpawnMarkerName, StringComparison.Ordinal))
+                        continue;
+                    DMWorldSpawnPoint geo = t.GetComponent<DMWorldSpawnPoint>();
+                    if (geo != null)
+                        geo.ApplyGeoPlacement();
+                    position = t.position;
+                    rotation = t.rotation;
+                    source = $"'{IoSpawnMarkerName}' marker";
+                    return true;
+                }
+            }
+            return false;
         }
 
         /// <summary>

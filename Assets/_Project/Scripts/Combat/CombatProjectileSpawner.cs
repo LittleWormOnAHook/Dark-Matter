@@ -147,6 +147,7 @@ namespace Project.Combat
             }
 
             else Trace(owner, $"hitscan MISS (range {range:0.0})");
+            Project.Building.DMForceField.NotifyProjectileSegment(muzzlePos, endPoint);
             // Pulse/continuous laser ammo: tracers + beam line, never a traveling projectile.
             CombatHitResolver.SpawnHitscanBeamVisual(ammoItem, weapon, muzzle, origin, endPoint, direction, range);
         }

@@ -15,7 +15,8 @@ namespace Project.SurfaceCarve
         public static bool TryCarveFromAmmo(ItemData ammoItem, DMAmmoFxProfile profile, Vector3 point, Vector3 normal, GameObject receiver, out Vector3 markPoint)
         {
             markPoint = point;
-            if (!Application.isPlaying || receiver == null)
+            if (!Application.isPlaying || receiver == null
+                || receiver.GetComponentInParent<Project.Building.DMForceField>() != null)
                 return false;
 
             DMCarveSettings settings = DMCarveSettings.Active;

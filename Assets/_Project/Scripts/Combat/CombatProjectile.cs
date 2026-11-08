@@ -274,10 +274,12 @@ namespace Project.Combat
                     out RaycastHit boxHit)
                 && (!worldHit || boxHit.distance <= hit.distance))
             {
-                ResolveHit(boxHit.collider, boxHit.point, boxHit.normal);
-                return;
+                hit = boxHit;
+                worldHit = true;
             }
 
+            Project.Building.DMForceField.NotifyProjectileSegment(origin,
+                worldHit ? origin + direction * hit.distance : transform.position);
             if (worldHit)
                 ResolveHit(hit.collider, hit.point, hit.normal);
         }
@@ -300,7 +302,7 @@ namespace Project.Combat
             {
                 RaycastHit candidate = SweepBuffer[i];
                 Collider collider = candidate.collider;
-                if (collider == null)
+                if (collider == null || Project.Building.DMForceField.IsAmmoSurface(collider))
                     continue;
                 // Starting overlaps (distance 0, point zero) are owned by TryResolveOverlapHit.
                 if (candidate.distance <= 0f && candidate.point == Vector3.zero)
@@ -341,7 +343,8 @@ namespace Project.Combat
             for (int i = 0; i < count; i++)
             {
                 Collider candidate = OverlapBuffer[i];
-                if (candidate == null || CombatHitResolver.IsOwnerCollider(owner, candidate))
+                if (candidate == null || Project.Building.DMForceField.IsAmmoSurface(candidate)
+                    || CombatHitResolver.IsOwnerCollider(owner, candidate))
                     continue;
                 if (DMEnemyHitQuery.IsSupersededByHitboxRig(candidate))
                     continue;
@@ -378,6 +381,7 @@ namespace Project.Combat
             else
                 normal.Normalize();
 
+            Project.Building.DMForceField.NotifyProjectileSegment(previousPosition, hitPoint);
             ResolveHit(best, hitPoint, normal);
             return true;
         }

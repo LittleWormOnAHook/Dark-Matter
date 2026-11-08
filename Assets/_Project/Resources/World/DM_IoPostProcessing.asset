@@ -1156,7 +1156,7 @@ MonoBehaviour:
     m_OverrideState: 1
     m_Value: 0.055
   fullResolutionSS:
-    m_OverrideState: 1
+    m_OverrideState: 0
     m_Value: 1
   m_MaxRaySteps:
     m_OverrideState: 1

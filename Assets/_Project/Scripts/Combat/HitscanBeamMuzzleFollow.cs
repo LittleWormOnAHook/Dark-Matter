@@ -1,4 +1,4 @@
-using Invector.vShooter;
+﻿using Invector.vShooter;
 using Project.Core;
 using UnityEngine;
 
@@ -190,19 +190,25 @@ namespace Project.Combat
                 return;
 
             Vector3 origin = originTransform.position;
-            Vector3 direction = ResolveAimDirection(origin);
-            Vector3 endPoint = origin + direction * weaponRange;
-
+            Vector3 direction;
+            Vector3 endPoint;
+            RaycastHit hit;
+            bool hasSurface;
             GameObject owner = PlayerLocator.FindPlayerObject();
-            if (RangedFireSolver.TryRaycastAim(
-                    origin,
-                    direction,
-                    weaponRange,
-                    hitMask,
-                    owner,
-                    out RaycastHit hit,
-                    RangedFireSolver.MuzzleRayStartSkin))
-                endPoint = hit.point;
+            if (weaponStackMode)
+            {
+                if (aimCamera == null) aimCamera = Camera.main;
+                hasSurface = RangedFireSolver.TryResolveSurfaceSight(aimCamera, originTransform,
+                    weaponRange, owner, out hit, out endPoint);
+                direction = (endPoint - origin).normalized;
+            }
+            else
+            {
+                direction = ResolveAimDirection(origin);
+                hasSurface = RangedFireSolver.TryRaycastAim(origin, direction, weaponRange,
+                    hitMask, owner, out hit, RangedFireSolver.MuzzleRayStartSkin);
+                endPoint = hasSurface ? hit.point : origin + direction * weaponRange;
+            }
 
             if (lineRenderers != null)
             {
@@ -222,8 +228,9 @@ namespace Project.Combat
 
             if (laserSightSprite != null)
             {
-                laserSightSprite.gameObject.SetActive(true);
-                laserSightSprite.position = endPoint;
+                laserSightSprite.gameObject.SetActive(hasSurface);
+                if (hasSurface)
+                    RangedFireSolver.PlaceSurfaceSight(laserSightSprite, hit);
             }
 
             if (weaponStackMode)

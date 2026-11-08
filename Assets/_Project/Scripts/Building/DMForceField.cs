@@ -1,11 +1,11 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Project.Companions.Invector;
 using UnityEngine;
 
 namespace Project.Building
 {
     /// <summary>
-    /// Force field door (0926-force-fields). The solid box stops bullets, enemies and weather; it switches off while the player
+    /// Force field door (0926-force-fields). The solid box stops enemies and weather; ammo is filtered by the shared ranged queries; it switches off while the player
     /// or a companion is passing through, then closes again. Crossing the field plays a ripple, a glow pulse and an electric crackle.
     /// Look, sound and behaviour come from Building Studio > Creation Effects > Force fields.
     /// 0927-ff-corners: a small block sits in each corner, with a glowing strip sandwiched through its middle. With no base
@@ -20,6 +20,66 @@ namespace Project.Building
 
         const float ActorRefreshSeconds = 0.5f;
         const int RippleSlots = 4;
+
+        // Exact collider identity: layer 24 is shared with walls, so never exclude the whole Building layer.
+        static readonly Dictionary<Collider, DMForceField> AmmoSurfaces = new Dictionary<Collider, DMForceField>();
+        static readonly Dictionary<Collider, DMForceField> AmmoProbes = new Dictionary<Collider, DMForceField>();
+        static readonly RaycastHit[] AmmoPassHits = new RaycastHit[32];
+        const int AmmoProbeLayer = 2; // Ignore Raycast: only our explicit pass-effect query sees these triggers.
+        BoxCollider ammoProbe;
+        float nextAmmoSound;
+
+        public static bool IsAmmoSurface(Collider collider) => collider != null && AmmoSurfaces.ContainsKey(collider);
+
+        /// <summary>Only called for actual fired/travelled segments, never for reticle/aim queries.
+        /// Physics broadphase finds probes; no scans of fields or scene objects per projectile frame.</summary>
+        public static void NotifyProjectileSegment(Vector3 from, Vector3 to)
+        {
+            if (AmmoProbes.Count == 0) return;
+            Vector3 delta = to - from;
+            float length = delta.magnitude;
+            if (length < 0.00001f) return;
+            Vector3 dir = delta / length;
+            int count = Physics.RaycastNonAlloc(from, dir, AmmoPassHits, length, 1 << AmmoProbeLayer, QueryTriggerInteraction.Collide);
+            // Rare dense query fallback: never silently lose crossings when the fixed buffer fills.
+            RaycastHit[] hits = count == AmmoPassHits.Length
+                ? Physics.RaycastAll(from, dir, length, 1 << AmmoProbeLayer, QueryTriggerInteraction.Collide)
+                : AmmoPassHits;
+            if (hits != AmmoPassHits) count = hits.Length;
+            for (int i = 0; i < count; i++)
+                if (AmmoProbes.TryGetValue(hits[i].collider, out DMForceField field) && field != null)
+                    field.NotifyProjectilePass(hits[i].point, dir);
+        }
+
+        /// <summary>Reuses the friendly crossing ripple/glow/crackle, but never opens the body collider.</summary>
+        public void NotifyProjectilePass(Vector3 point, Vector3 direction)
+        {
+            if (!isActiveAndEnabled || solid == null || unpowered) return;
+            Vector3 half = solid.size * 0.5f;
+            Vector3 local = transform.InverseTransformPoint(point) - solid.center;
+            OnCrossed(null, local, half, ThinAxis(solid.size), DMBuildingCreationFxProfile.Live, Time.time);
+            PushBlock(DMBuildingCreationFxProfile.Live);
+        }
+
+        void RegisterAmmoProbe()
+        {
+            if (solid == null) return;
+            AmmoSurfaces[solid] = this;
+            if (ammoProbe == null)
+            {
+                var probe = new GameObject("FF_AmmoPassProbe") { layer = AmmoProbeLayer };
+                probe.transform.SetParent(transform, false);
+                ammoProbe = probe.AddComponent<BoxCollider>();
+                ammoProbe.isTrigger = true;
+            }
+            ammoProbe.center = solid.center;
+            Vector3 size = solid.size;
+            int thin = ThinAxis(size);
+            size[thin] = Mathf.Min(size[thin], 0.002f); // crossing location stays on the sheet, not the sense-depth box
+            ammoProbe.size = size;
+            ammoProbe.enabled = true;
+            AmmoProbes[ammoProbe] = this;
+        }
 
         static readonly List<Collider> Actors = new List<Collider>();
         static float actorsRefreshedAt = -10f;
@@ -89,6 +149,9 @@ namespace Project.Building
         float pulse;
         float closeAt;
 
+        /// <summary>Standalone placed field (DM_ForceField_Plane): always powered and not counted as a base power consumer.</summary>
+        [SerializeField] bool ignoreBasePower;
+
         public bool IsOpen => solid != null && !solid.enabled;
 
         void Awake()
@@ -121,7 +184,9 @@ namespace Project.Building
 
         void OnEnable()
         {
-            DMBasePower.RegisterConsumer(this, true);
+            RegisterAmmoProbe();
+            if (!ignoreBasePower)
+                DMBasePower.RegisterConsumer(this, true);
         }
 
         void OnDestroy()
@@ -132,6 +197,12 @@ namespace Project.Building
 
         void OnDisable()
         {
+            if (solid != null) AmmoSurfaces.Remove(solid);
+            if (ammoProbe != null)
+            {
+                AmmoProbes.Remove(ammoProbe);
+                ammoProbe.enabled = false;
+            }
             DMBasePower.UnregisterConsumer(this);
             if (solid != null)
             {
@@ -177,7 +248,7 @@ namespace Project.Building
         /// <summary>0926-generator: with no powered generator in the base the field shuts off and anyone can walk through.</summary>
         bool UpdatePower()
         {
-            bool powered = !DMBuildingGhostProfile.ForceFieldsNeedPower || DMBasePower.IsPowered(transform.position);
+            bool powered = ignoreBasePower || !DMBuildingGhostProfile.ForceFieldsNeedPower || DMBasePower.IsPowered(transform.position);
             if (powered == !unpowered)
                 return powered;
             unpowered = !powered;
@@ -302,9 +373,17 @@ namespace Project.Building
             pulse = 1f;
 
             float cooldown = fx != null ? fx.forceFieldSoundCooldown : 0.4f;
-            if (nextSound.TryGetValue(id, out float allowedAt) && now < allowedAt)
-                return;
-            nextSound[id] = now + cooldown;
+            if (id == null)
+            {
+                if (now < nextAmmoSound) return;
+                nextAmmoSound = now + cooldown;
+            }
+            else
+            {
+                if (nextSound.TryGetValue(id, out float allowedAt) && now < allowedAt)
+                    return;
+                nextSound[id] = now + cooldown;
+            }
 
             AudioClip clip = fx != null && fx.forceFieldPassClip != null ? fx.forceFieldPassClip : Crackle();
             float volume = fx != null ? fx.forceFieldPassVolume : 0.35f;

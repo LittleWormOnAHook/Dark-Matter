@@ -1,4 +1,4 @@
-using Project.Combat;
+﻿using Project.Combat;
 using Project.Core;
 using Project.Data;
 using Project.Inventory;
@@ -60,6 +60,7 @@ namespace Project.Player.Invector
         private LineRenderer activeAimLaserLine;
         private SpriteRenderer activeAimLaserSight;
         private Transform activeAimLaserRoot;
+        private bool activeAimSightRequested;
         private Transform cachedPulseRoot;
         private HitscanBeamMuzzleFollow cachedPulse;
 
@@ -678,6 +679,7 @@ namespace Project.Player.Invector
             activeAimLaserRoot = laserRoot;
             activeAimLaserLine = laserLine;
             activeAimLaserSight = laserSight;
+            activeAimSightRequested = sightEnabled;
 
             // Barrel-forward Invector sight fights reticle alignment — keep it off while we own aim.
             vLaserSight laserSightDriver = laserRoot != null ? laserRoot.GetComponent<vLaserSight>() : null;
@@ -710,18 +712,8 @@ namespace Project.Player.Invector
                 return;
 
             Vector3 origin = activeAimLaserRoot.position;
-            Vector3 direction = RangedFireSolver.ResolveMuzzleToReticleDirection(
-                cam,
-                origin,
-                AimLaserMaxRange,
-                out float aimDistance,
-                weaponMuzzle: activeAimLaserRoot);
-            Vector3 endPoint = origin + direction * Mathf.Max(aimDistance, 0.5f);
-
-            GameObject owner = gameObject;
-            int mask = Physics.DefaultRaycastLayers & ~(1 << 8);
-            if (RangedFireSolver.TryRaycastAim(origin, direction, AimLaserMaxRange, mask, owner, out RaycastHit hit, RangedFireSolver.MuzzleRayStartSkin))
-                endPoint = hit.point;
+            bool hasSurface = RangedFireSolver.TryResolveSurfaceSight(cam, activeAimLaserRoot,
+                AimLaserMaxRange, gameObject, out RaycastHit hit, out Vector3 endPoint);
 
             if (activeAimLaserLine != null && activeAimLaserLine.enabled)
             {
@@ -731,12 +723,12 @@ namespace Project.Player.Invector
                 activeAimLaserLine.SetPosition(1, endPoint);
             }
 
-            if (activeAimLaserSight != null && activeAimLaserSight.enabled)
+            if (activeAimLaserSight != null)
             {
-                activeAimLaserSight.transform.position = endPoint;
-                Vector3 toCam = cam.transform.position - endPoint;
-                if (toCam.sqrMagnitude > 0.0001f)
-                    activeAimLaserSight.transform.rotation = Quaternion.LookRotation(-toCam.normalized, Vector3.up);
+                // Hide only the renderer on a miss; preserve menu preference and authored scale/colour.
+                activeAimLaserSight.enabled = hasSurface && activeAimSightRequested;
+                if (hasSurface && activeAimLaserSight.enabled)
+                    RangedFireSolver.PlaceSurfaceSight(activeAimLaserSight.transform, hit);
             }
         }
 

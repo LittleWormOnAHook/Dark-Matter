@@ -90,6 +90,25 @@ namespace Project.UI
                 mapProvider.ApplySystemEnabled(active);
         }
 
+        /// <summary>
+        /// ioswitch: after a world switch, drop the cached map provider and player so every MapUI rebinds to
+        /// the shown world's WorldMapProvider and the live Kade on its next update. Does not change minimap gating.
+        /// </summary>
+        public static void NotifyWorldSwitched()
+        {
+            MapUI[] all = FindObjectsByType<MapUI>(FindObjectsInactive.Include);
+            for (int i = 0; i < all.Length; i++)
+            {
+                MapUI ui = all[i];
+                if (ui == null)
+                    continue;
+                ui.mapProvider = null;
+                ui.playerTransform = null;
+                ui.playerController = null;
+            }
+            InvalidateSharedMinimapSnapshot();
+        }
+
         private void BindPlayer()
         {
             if (playerTransform != null && playerController != null)

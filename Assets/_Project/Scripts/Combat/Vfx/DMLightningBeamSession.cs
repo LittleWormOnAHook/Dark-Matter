@@ -16,6 +16,26 @@ namespace Project.Combat
     [DefaultExecutionOrder(600)]
     public sealed class DMLightningBeamSession : MonoBehaviour
     {
+        // beamshadow: pooled beam instances whose lights were already made shadowless (scanned once per instance).
+        private static readonly HashSet<GameObject> shadowlessBeams = new HashSet<GameObject>();
+
+        private static void DisableBeamLightShadows(GameObject beam)
+        {
+            if (beam == null || !shadowlessBeams.Add(beam))
+                return;
+            if (shadowlessBeams.Count > 256)
+            {
+                shadowlessBeams.RemoveWhere(g => g == null);
+                shadowlessBeams.Add(beam);
+            }
+            Light[] lights = beam.GetComponentsInChildren<Light>(true);
+            for (int i = 0; i < lights.Length; i++)
+            {
+                // HDRP (Unity 6): Light.shadows is the authoritative shadow toggle; intensity/range/color untouched.
+                if (lights[i] != null && lights[i].shadows != LightShadows.None)
+                    lights[i].shadows = LightShadows.None;
+            }
+        }
         private sealed class Bolt
         {
             public GameObject Go;
@@ -138,6 +158,7 @@ namespace Project.Combat
                 {
                     // 2026-10-21h: a pooled instance must never keep a muzzle-follow (it would pin the line to the gun every frame).
                     foreach (var f in b.Go.GetComponentsInChildren<HitscanBeamMuzzleFollow>(true)) f.enabled = false;
+                    DisableBeamLightShadows(b.Go); // beamshadow: keep the glow, drop the 6 point-shadow requests per bolt
                     b.Lines = b.Go.GetComponentsInChildren<LineRenderer>(true);
                     for (int i = 0; i < b.Lines.Length; i++)
                     {
@@ -285,8 +306,11 @@ namespace Project.Combat
                 float head, tail;
                 if (b.ArriveTime < 0f)
                 {
+                    float previousHead = Mathf.Clamp(b.Traveled, 0f, dist);
                     b.Traveled += (b.FromMuzzle ? speed : Mathf.Max(1f, speed * p.chainSpeedScale)) * dt;
                     head = Mathf.Clamp(b.Traveled, 0f, dist);
+                    Project.Building.DMForceField.NotifyProjectileSegment(
+                        b.Start + b.Dir * previousHead, b.Start + b.Dir * head);
                     tail = Mathf.Max(0f, head - maxLen);
                     if (b.Traveled >= dist)
                     {
@@ -439,7 +463,7 @@ namespace Project.Combat
             for (int i = 0; i < n; i++)
             {
                 Collider c = LosHits[i].collider; LosHits[i] = default;
-                if (c == null) continue;
+                if (c == null || Project.Building.DMForceField.IsAmmoSurface(c)) continue;
                 if (EnemyOf(c) != null || Excluded(c) || c.attachedRigidbody != null || c is CharacterController) continue;
                 return false;
             }

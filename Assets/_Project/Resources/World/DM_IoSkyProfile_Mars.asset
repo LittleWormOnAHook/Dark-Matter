@@ -232,8 +232,8 @@ MonoBehaviour:
   nightShadowResolutionTier: 1
   nightShadowMaxDistance: 120
   nightSkyDayVisibility: 0.094
-  milkyWayDayVisibility: 0.311
-  milkyWaySmoothness: 0.347
+  milkyWayDayVisibility: 0
+  milkyWaySmoothness: 0.103
   nightSkyDitherEnabled: 0
   nightSkyDitherAmount: 0.55
   nightSkySoftExpPower: 0.28

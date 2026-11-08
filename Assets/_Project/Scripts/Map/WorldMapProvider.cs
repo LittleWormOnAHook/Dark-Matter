@@ -139,15 +139,80 @@ namespace Project.Map
             cachedMinimapTexture = null;
         }
 
+        // ioswitch: providers authored in another additively-loaded world wait here instead of being destroyed.
+        private static readonly System.Collections.Generic.List<WorldMapProvider> standbyProviders =
+            new System.Collections.Generic.List<WorldMapProvider>(2);
+        private bool initializedAsInstance;
+
         private void Awake()
         {
             if (Instance != null && Instance != this)
             {
-                Destroy(this);
+                if (Instance.gameObject.scene == gameObject.scene)
+                {
+                    Destroy(this);
+                    return;
+                }
+
+                // ioswitch: a different world (e.g. Io loaded on top of Mars) - keep for AdoptForScene().
+                if (!standbyProviders.Contains(this))
+                    standbyProviders.Add(this);
                 return;
             }
 
             Instance = this;
+            InitializeAsInstance();
+        }
+
+        /// <summary>
+        /// ioswitch: makes the provider that belongs to <paramref name="scene"/> the active Instance (DMSceneStack
+        /// calls this after a world switch). Returns false when that world has no provider (Instance unchanged).
+        /// </summary>
+        public static bool AdoptForScene(UnityEngine.SceneManagement.Scene scene)
+        {
+            if (!scene.IsValid() || !scene.isLoaded)
+                return false;
+            if (Instance != null && Instance.gameObject.scene == scene)
+                return true;
+
+            WorldMapProvider found = null;
+            standbyProviders.RemoveAll(p => p == null);
+            for (int i = 0; i < standbyProviders.Count; i++)
+            {
+                if (standbyProviders[i].gameObject.scene == scene) { found = standbyProviders[i]; break; }
+            }
+            if (found == null)
+            {
+                WorldMapProvider[] all = FindObjectsByType<WorldMapProvider>(FindObjectsInactive.Include);
+                for (int i = 0; i < all.Length; i++)
+                {
+                    if (all[i] != null && all[i].gameObject.scene == scene) { found = all[i]; break; }
+                }
+            }
+            if (found == null)
+                return false;
+
+            if (Instance != null && Instance != found && !standbyProviders.Contains(Instance))
+                standbyProviders.Add(Instance);
+            standbyProviders.Remove(found);
+            Instance = found;
+            if (!found.initializedAsInstance)
+            {
+                found.InitializeAsInstance();
+                if (!found.UsesStaticMapTexture())
+                    found.TryStartTerrainBuild();
+            }
+            else
+            {
+                found.EnsureTerrainReference();
+                found.RefreshWorldBounds();
+            }
+            return true;
+        }
+
+        private void InitializeAsInstance()
+        {
+            initializedAsInstance = true;
             configuredMapOriginMarker = mapOriginMarker;
             EnsureTerrainReference();
             EnsureCalibrationProfile();
@@ -166,6 +231,8 @@ namespace Project.Map
 
         private void Start()
         {
+            if (Instance != this)
+                return; // ioswitch: standby provider of a world that is not shown yet
             EnsureTerrainReference();
             RefreshWorldBounds();
 
@@ -188,6 +255,7 @@ namespace Project.Map
         {
             if (Instance == this)
                 Instance = null;
+            standbyProviders.Remove(this);
 
             if (buildRoutine != null)
             {

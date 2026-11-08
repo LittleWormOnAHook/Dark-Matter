@@ -25,9 +25,9 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _EdgeGlow: 0
+    - _EdgeGlow: 0.71
     - _EdgeWidth: 0.107
-    - _Opacity: 0.299
+    - _Opacity: 0.071
     - _PatternScale: 4.34
     - _Pulse: 0.98
     - _RippleLife: 0.6
